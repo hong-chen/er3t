@@ -157,7 +157,7 @@ How to Cite
 Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ for the most recent information.
 
 
-So far, two publications have used ER3T.
+So far, the following publications have used ER3T
 
 #. `Gristey et al., 2020 <https://doi.org/10.1175/JAS-D-19-0261.1>`_
 
