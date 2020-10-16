@@ -1,7 +1,7 @@
-ER3T (Education and Research 3D Radiative Transfer Toolbox)
+EaR3T (Education and Research 3D Radiative Transfer Toolbox)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ER3T provides high-level interfaces that can automate the process of running 3D
+EaR3T provides high-level interfaces that can automate the process of running 3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
 publicly available 3D radiative transfer models including MCARaTS (**implemented**),
 SHDOM (under development), and MYSTIC (under development).
@@ -157,7 +157,7 @@ How to Cite
 Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ for the most recent information.
 
 
-So far, the following publications have used ER3T
+So far, the following publications have used EaR3T
 
 #. `Gristey et al., 2020 <https://doi.org/10.1175/JAS-D-19-0261.1>`_
 
