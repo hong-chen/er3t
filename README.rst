@@ -164,9 +164,10 @@ So far, two publications have used ER3T.
    Continental Shallow Cumulus Fields: Observations and Large-Eddy Simulation. J. Atmos. Sci., 77, 1065-1080,
    https://doi.org/10.1175/JAS-D-19-0261.1.
 
-#. Gristey et al., 2020
+#. Gristey et al., 2020 (in review)
 
-   Gristey, J. J. et al.: On the relationship between shallow cumulus cloud field properties and surface solar irradiance, J. Atmospheric Sci., in review, 2020
+   Gristey, J. J., G. Feingold, I. B. Glenn, K. S. Schmidt, and H. Chen, 2020: On the relationship between
+   shallow cumulus cloud field properties and surface solar irradiance, Geophysical Research Letters.
 
 
 
