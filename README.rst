@@ -89,8 +89,10 @@ b) Unzip or untar the file after download;
 
 |
 
-If ``install.sh`` failed to download the data from Google Drive due to the following error
 
+**Error Solutions**
+
+If ``install.sh`` failed to download the data from Google Drive due to the following error
 
 ::
 
@@ -131,9 +133,11 @@ Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <
 
 So far, two publications have used ER3T.
 
-#. Gristey et al., 2019
+#. `Gristey et al., 2020 <https://doi.org/10.1175/JAS-D-19-0261.1>`_
 
-   Gristey, J. J. et al.: Surface solar irradiance in continental shallow cumulus cloud fields: observations and Large Eddy Simulation, J. Atmospheric Sci., 2019
+   Gristey, J. J., G. Feingold, I. B. Glenn, K. S. Schmidt, and H. Chen, 2020: Surface Solar Irradiance in
+   Continental Shallow Cumulus Fields: Observations and Large-Eddy Simulation. J. Atmos. Sci., 77, 1065-1080,
+   https://doi.org/10.1175/JAS-D-19-0261.1.
 
 #. Gristey et al., 2020
 
