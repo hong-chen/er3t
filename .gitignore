@@ -1,0 +1,32 @@
+# exceptions for er3t
+!tests
+!examples
+
+# system files
+.DS_Store
+
+# python files
+*.pyc
+__pycache__
+*.egg-info
+dist
+build
+*other*
+*for*
+
+# media files
+*graph*
+*.png
+*.mp4
+
+# data files
+*model*
+*data*
+*.hdf
+*.h5
+*.nc
+*.pk
+*.html
+
+# libRadtran
+randomseed
