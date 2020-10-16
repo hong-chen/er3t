@@ -126,9 +126,9 @@ Details can be found under ``tests/README.rst``
 |
 
 
-==========
-References
-==========
+================
+Acknowledgements
+================
 
 * The absorption database ``er3t/data/abs/abs_16g.h5`` was created by `Coddington et al. (2008) <https://doi.org/10.1029/2008JD010089>`_ using correlated-k method.
 
