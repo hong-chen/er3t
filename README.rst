@@ -130,17 +130,18 @@ Details can be found under ``tests/README.rst``
 References
 ==========
 
-The absorption database ``er3t/data/abs/abs_16g.h5`` was created by `Coddington et al. (2008) <https://doi.org/10.1029/2008JD010089>`_ using correlated-k method.
+* The absorption database ``er3t/data/abs/abs_16g.h5`` was created by `Coddington et al. (2008) <https://doi.org/10.1029/2008JD010089>`_ using correlated-k method.
 
-MCARaTS is a 3D radiative transfer model develop by `Iwabuchi (2006) <https://doi.org/10.1175/JAS3755.1>`_.
+    Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R. W., Román, M., Redemann, J., Russell, P. B., Liu, J.,
+    and Schaaf, C. C. (2008), Aircraft measurements of spectral surface albedo and its consistency with ground-based and
+    space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089.
+
 
 |
 
-* Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R. W., Román, M., Redemann, J., Russell, P. B., Liu, J.,
-  and Schaaf, C. C. (2008), Aircraft measurements of spectral surface albedo and its consistency with ground-based and
-  space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089.
+* MCARaTS is a 3D radiative transfer model developed by `Iwabuchi (2006) <https://doi.org/10.1175/JAS3755.1>`_.
 
-* Iwabuchi, H., 2006: Efficient Monte Carlo Methods for Radiative Transfer Modeling. J. Atmos. Sci., 63, 2324-2339, https://doi.org/10.1175/JAS3755.1.
+    Iwabuchi, H., 2006: Efficient Monte Carlo Methods for Radiative Transfer Modeling. J. Atmos. Sci., 63, 2324-2339, https://doi.org/10.1175/JAS3755.1.
 
 
 
