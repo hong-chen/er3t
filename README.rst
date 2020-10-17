@@ -141,7 +141,7 @@ Acknowledgements
 
 * MCARaTS is a 3D radiative transfer model developed by `Iwabuchi (2006) <https://doi.org/10.1175/JAS3755.1>`_.
 
-    Iwabuchi, H., 2006: Efficient Monte Carlo Methods for Radiative Transfer Modeling. J. Atmos. Sci., 63, 2324-2339, https://doi.org/10.1175/JAS3755.1.
+    Iwabuchi, H., 2006: Efficient Monte Carlo Methods for Radiative Transfer Modeling. J. Atmos. Sci., 63, 2324-2339, doi:10.1175/JAS3755.1.
 
 
 
@@ -163,7 +163,7 @@ So far, the following publications have used EaR3T
 
    Gristey, J. J., G. Feingold, I. B. Glenn, K. S. Schmidt, and H. Chen, 2020: Surface Solar Irradiance in
    Continental Shallow Cumulus Fields: Observations and Large-Eddy Simulation. J. Atmos. Sci., 77, 1065-1080,
-   https://doi.org/10.1175/JAS-D-19-0261.1.
+   doi:10.1175/JAS-D-19-0261.1.
 
 #. Gristey et al., 2020 (in review)
 
