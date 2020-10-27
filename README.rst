@@ -73,7 +73,7 @@ b) Under newly cloned ``er3t``, where it contains ``install.sh``, type in the fo
 
 |
 
-**2. From Public Release (will be available soon)**
+**2. From Public Release**
 
 a) Download the latest release from `here <https://github.com/hong-chen/er3t/releases/latest>`_;
 
@@ -165,10 +165,11 @@ So far, the following publications have used EaR3T
    Continental Shallow Cumulus Fields: Observations and Large-Eddy Simulation. J. Atmos. Sci., 77, 1065-1080,
    doi:10.1175/JAS-D-19-0261.1.
 
-#. Gristey et al., 2020 (in review)
+#. `Gristey et al., 2020 <https://doi.org/10.1029/2020GL090152>`_
 
    Gristey, J. J., G. Feingold, I. B. Glenn, K. S. Schmidt, and H. Chen, 2020: On the relationship between
-   shallow cumulus cloud field properties and surface solar irradiance, Geophysical Research Letters.
+   shallow cumulus cloud field properties and surface solar irradiance, Geophysical Research Letters, 47,
+   e2020GL090152, doi:10.1029/2020GL090152.
 
 
 
