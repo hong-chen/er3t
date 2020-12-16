@@ -197,10 +197,7 @@ class mca_atm_3d:
         if pha_obj is None:
             if self.verbose:
                 print("Warning [mca_atm_3d]: No phase function set specified - ignore thermodynamic phase/effective radius with g=0.85 (Henyey-Greenstein).")
-        else:
-            if self.verbose:
-                print("Warning [mca_atm_3d]: Phase functions were specified, but are not yet implemented.")
-            self.pha = pha_obj
+        self.pha = pha_obj
 
         # Go through cloud layers and check whether atm is compatible
         # e.g., whether the sizes of the Altitude array (z) and Thickness array (dz) are the same
@@ -240,8 +237,12 @@ class mca_atm_3d:
             atm_tmp[:, :, i]    = self.cld.lay['temperature']['data'][:, :, i] - self.atm.lay['temperature']['data'][lay_index[i]]
             atm_ext[:, :, i, 0] = self.cld.lay['extinction']['data'][:, :, i]
 
-        atm_omg[...] = 1.0
-        atm_apf[...] = 0.85
+
+        if self.pha is None:
+            atm_omg[...] = 1.0
+            atm_apf[...] = 0.85
+        else:
+            pass
 
         self.nml['Atm_nx']     = copy.deepcopy(self.cld.lay['nx'])
         self.nml['Atm_ny']     = copy.deepcopy(self.cld.lay['ny'])

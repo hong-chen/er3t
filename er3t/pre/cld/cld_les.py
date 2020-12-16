@@ -163,6 +163,7 @@ class cld_les:
         logic         = (Nc_3d>=1) & (cer_3d>0.0)
         ext_3d        = np.zeros_like(t_3d)
         ext_3d[logic] = 0.75 * q_factor / (1000.0*cer_3d[logic]*1e-6) * lwc_3d[logic]
+        cer_3d[np.logical_not(logic)] = np.nan
 
         if altitude is None:
             self.lay['altitude']    = {'data':z/1000.0, 'name':'Altitude'   , 'units':'km'}
@@ -237,6 +238,7 @@ class cld_les:
             p_new      = np.zeros(self.Nz, dtype=p.dtype)
             t_3d_new   = np.zeros((self.Nt, self.Nz, self.Ny, self.Nx), dtype=t_3d.dtype)
             ext_3d_new = np.zeros((self.Nt, self.Nz, self.Ny, self.Nx), dtype=t_3d.dtype)
+            cer_3d_new = np.zeros((self.Nt, self.Nz, self.Ny, self.Nx), dtype=t_3d.dtype)
 
             for i in range(self.Nz):
                 indices = np.where((z_km>=alt[i]) & (z_km<alt[i+1]))[0]
@@ -244,6 +246,7 @@ class cld_les:
                 if logic.sum() > 0:
                     p_new[i]               = p[logic].mean()
                     t_3d_new[:, i, :, :]   = np.mean(t_3d[:, logic, :, :], axis=1)
+                    cer_3d_new[:, i, :, :] = np.nanmean(cer_3d[:, logic, :, :], axis=1)
 
                     ext0 = np.zeros((self.Nt, self.Ny, self.Nx), dtype=ext_3d.dtype)
                     for index in indices:
@@ -253,6 +256,7 @@ class cld_les:
             self.lay['pressure']    = {'data':p_new       , 'name':'Pressure'   , 'units':'mb'}
             self.lay['temperature'] = {'data':t_3d_new    , 'name':'Temperature', 'units':'K'}
             self.lay['extinction']  = {'data':ext_3d_new  , 'name':'Extinction coefficients', 'units':'m^-1'}
+            self.lay['cer']         = {'data':cer_3d_new  , 'name':'Cloud effective radius' , 'units':'mm'}
 
 
     def downgrade(self, coarsing):

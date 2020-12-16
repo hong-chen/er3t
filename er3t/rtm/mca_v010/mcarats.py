@@ -59,7 +59,9 @@ class mcarats_ng:
                  atm_1ds             = [],                      \
                  atm_3ds             = [],                      \
 
-                 sfc_2d              = None,
+                 sfc_2d              = None,                    \
+
+                 sca                 = None,                    \
 
                  Ng                  = 16,                      \
                  fdir                = 'data/tmp/mca',          \
@@ -174,7 +176,7 @@ class mcarats_ng:
                 sensor_zenith_angle=sensor_zenith_angle, sensor_azimuth_angle=sensor_azimuth_angle, sensor_altitude=sensor_altitude)
 
             # MCARaTS scattering initialization
-            self.init_sca()
+            self.init_sca(sca=sca)
 
             # MCARaTS atm initialization
             self.init_atm(atm_1ds=atm_1ds, atm_3ds=atm_3ds)
@@ -187,7 +189,6 @@ class mcarats_ng:
 
             # Create MCARaTS input files (ASCII)
             self.gen_mca_inp(comment=comment)
-
 
             # Run MCARaTS to get output files (Binary)
             self.gen_mca_out()
@@ -261,11 +262,18 @@ class mcarats_ng:
                 sys.exit('Error   [mcarats_ng]: Cannot understand \'target=%s\'.' % self.target)
 
 
-    def init_sca(self):
+    def init_sca(self, sca=None):
 
         for ig in range(self.Ng):
             # this parameter is important, otherwise random memory segmentation error will occur
-            self.nml[ig]['Sca_npf'] = 0
+            if sca is None:
+                self.nml[ig]['Sca_npf'] = 0
+            else:
+                for key in sca.nml.keys():
+                    if os.path.exists(sca.nml['Sca_inpfile']['data']):
+                        os.system('mv %s %s' % (sca.nml['Sca_inpfile']['data'], self.fdir))
+                        sca.nml['Sca_inpfile']['data'] = os.path.basename(sca.nml['Sca_inpfile']['data'])
+                    self.nml[ig][key] = sca.nml[key]['data']
 
 
     def init_atm(self, atm_1ds=[], atm_3ds=[]):
@@ -316,8 +324,6 @@ class mcarats_ng:
 
 
     def init_sfc(self, sfc_2d=None, surface_albedo=0.03):
-
-
 
         for ig in range(self.Ng):
 
