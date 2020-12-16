@@ -33,12 +33,11 @@ class mca_sca:
     """
 
 
-    ID = 'MCARaTS 2D Surface'
+    ID = 'MCARaTS Scattering'
 
 
     def __init__(self,\
-                 atm_obj   = None, \
-                 sfc_obj   = None, \
+                 pha_obj   = None, \
                  fname     = None,
                  overwrite = True, \
                  verbose   = False,\
@@ -50,61 +49,51 @@ class mca_sca:
         self.quiet     = quiet
 
         if not self.quiet:
-            print('+ <mca_sfc_2d>')
+            print('+ <mca_sca>')
 
-        if atm_obj is None:
-            sys.exit('Error   [mca_sfc_2d]: Please provide an \'atm\' object for \'atm_obj\'.')
+        if pha_obj is None:
+            sys.exit('Error   [mca_sca]: Please provide an \'pha\' object for \'pha_obj\'.')
         else:
-            self.atm = atm_obj
+            self.pha = pha_obj
 
-        if sfc_obj is None:
-            sys.exit('Error   [mca_sfc_2d]: Please provide an \'sfc\' object for \'sfc_obj\'.')
-        else:
-            self.sfc = sfc_obj
-
-        self.pre_mca_2d_sfc()
+        self.pre_mca_sca()
 
         if self.overwrite:
             if fname is None:
-                fname = 'mca_sfc_2d.bin'
-            self.gen_mca_2d_sfc_file(fname)
+                fname = 'mca_sca.bin'
+            self.gen_mca_sca_file(fname)
 
         if not self.quiet:
             print('-')
 
 
-    def pre_mca_2d_sfc(self):
+    def pre_mca_sca(self, nskip=0, nanci=0):
 
         self.nml= {}
 
-        self.nml['Sfc_nxb'] = copy.deepcopy(self.sfc.data['nx'])
-        self.nml['Sfc_nyb'] = copy.deepcopy(self.sfc.data['ny'])
-
-        self.nml['Sfc_tmps2d'] = dict(data=np.zeros_like(self.sfc.data['alb']['data']), name='Temperature anomalies'    , units='K')    # temperature anomaly
-        self.nml['Sfc_jsfc2d'] = dict(data=np.ones_like(self.sfc.data['alb']['data']) , name='Surface distribution type', units='N/A')  # lambertian
-
-        sfc_psfc         = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=np.float64)
-        sfc_psfc[..., 0] = self.sfc.data['alb']['data']
-        self.nml['Sfc_psfc2d'] = dict(data=sfc_psfc, name='Surface distribution parameters', units='N/A')  # lambertian
+        self.nml['Sca_npf']   = dict(data=self.pha.data['pha']['data'].shape[1], name='Number of tabulated phase functions', units='N/A')
+        self.nml['Sca_nskip'] = dict(data=nskip, name='Number of phase functions to be skipped', units='N/A')
+        self.nml['Sca_nanci'] = dict(data=nanci, name='Number of ancillary data', units='N/A')
+        self.nml['Sca_nangi'] = dict(data=self.pha.data['angles']['data'].size, name='Number of angles', units='N/A')
 
 
-    def gen_mca_2d_sfc_file(self, fname):
+    def gen_mca_sca_file(self, fname):
 
-        self.nml['Sfc_inpfile'] = {'data':fname}
+        self.nml['Sca_inpfile'] = {'data':fname}
 
         f = open(fname, 'wb')
-        f.write(struct.pack('<%df' % self.nml['Sfc_tmps2d']['data'].size, *self.nml['Sfc_tmps2d']['data'].flatten(order='F')))
-        f.write(struct.pack('<%df' % self.nml['Sfc_jsfc2d']['data'].size, *self.nml['Sfc_jsfc2d']['data'].flatten(order='F')))
-        f.write(struct.pack('<%df' % self.nml['Sfc_psfc2d']['data'].size, *self.nml['Sfc_psfc2d']['data'].flatten(order='F')))
+        f.write(struct.pack('<%df' % self.pha.data['angles']['data'].size, *self.pha.data['angles']['data'].flatten(order='F')))
+        for i in range(self.nml['Sca_npf']['data']):
+            f.write(struct.pack('<%df' % self.pha.data['pha']['data'][:, i].size, *self.pha.data['pha']['data'][:, i].flatten(order='F')))
         f.close()
 
         if not self.quiet:
-            print('Message [mca_sfc_2d]: File \'%s\' is created.' % fname)
+            print('Message [mca_sca]: File \'%s\' is created.' % fname)
 
 
     def save_h5(self, fname):
 
-        self.nml['Sfc_inpfile'] = {'data':fname}
+        self.nml['Sca_inpfile'] = {'data':fname}
 
         f = h5py.File(fname, 'w')
         for key in self.nml.keys():
@@ -112,7 +101,7 @@ class mca_sca:
         f.close()
 
         if not self.quiet:
-            print('Message [mca_sfc_2d]: File \'%s\' is created.' % fname)
+            print('Message [mca_sca]: File \'%s\' is created.' % fname)
 
 
 
