@@ -15,19 +15,18 @@ class mca_sca:
     """
     Input:
         pha_obj=: keyword argument, default=None, atmosphere object, for example, atm_obj = atm_atmmod(fname='atm.pk')
-        abs_obj=: keyword argument, default=None, surface object, for example, sfc_obj = sfc_sat(fname='mod09.pk')
         verbose=: keyword argument, default=False, verbose tag
         quiet=  : keyword argument, default=False, quiet tag
 
     Output:
         self.nml: Python dictionary
-                ['Sca_nxb']
-                ['Sca_nyb']
-                ['Sca_tmps2d']
-                ['Sca_jsfc2d']
-                ['Sca_psfc2d']
+                ['Sca_npf']
+                ['Sca_nskip']
+                ['Sca_nanci']
+                ['Sca_nangi']
+               *['Sca_inpfile']
 
-        self.gen_mca_2d_sfc_file: method to create binary file of 2d surface
+        *self.gen_mca_sca_file: method to create binary file of tabulated phase functions
 
         self.save_h5: method to save data into HDF5 file
     """
@@ -98,6 +97,10 @@ class mca_sca:
         f = h5py.File(fname, 'w')
         for key in self.nml.keys():
             f[key] = self.nml[key]['data']
+
+        g = f.create_group('pha')
+        for key in self.pha.data.keys():
+            g[key] = self.pha.data[key]['data']
         f.close()
 
         if not self.quiet:

@@ -5,6 +5,8 @@ import numpy as np
 from netCDF4 import Dataset
 
 
+__alll__ = ['pha_mie']
+
 
 def read_pmom():
 
@@ -74,7 +76,6 @@ class pha_mie:
 
         self.data = {
                 'ang': {'data':angles    , 'name':'Angle'              , 'unit':'degree'},
-                # 'asy': {'data':asy_params, 'name':'Asymmetry parameter', 'unit':'N/A'},
                 'pha': {'data':pha       , 'name':'Phase function'     , 'unit':'N/A'}
                 }
 
@@ -82,4 +83,4 @@ class pha_mie:
 
 if __name__ == '__main__':
 
-    pha = pha_mie()
+    pass

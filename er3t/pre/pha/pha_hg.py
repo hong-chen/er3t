@@ -1,6 +1,8 @@
 import er3t
 
 
+__all__ = ['pha_hg']
+
 
 def cal_hg_pha_func(asy, ang):
 
