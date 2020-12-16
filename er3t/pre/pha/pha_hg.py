@@ -33,9 +33,9 @@ class pha_hg:
             pha[:, i] = cal_hg_pha_func(asy, angles)
 
         self.data = {
-                'ang': angles,
-                'asy': asy_params,
-                'pha': pha
+                'ang': {'data':angles    , 'name':'Angle'              , 'unit':'degree'},
+                'asy': {'data':asy_params, 'name':'Asymmetry parameter', 'unit':'N/A'},
+                'pha': {'data':pha       , 'name':'Phase function'     , 'unit':'N/A'}
                 }
 
 
