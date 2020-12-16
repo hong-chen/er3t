@@ -73,7 +73,7 @@ class mca_sca:
         self.nml['Sca_npf']   = dict(data=self.pha.data['pha']['data'].shape[1], name='Number of tabulated phase functions', units='N/A')
         self.nml['Sca_nskip'] = dict(data=nskip, name='Number of phase functions to be skipped', units='N/A')
         self.nml['Sca_nanci'] = dict(data=nanci, name='Number of ancillary data', units='N/A')
-        self.nml['Sca_nangi'] = dict(data=self.pha.data['angles']['data'].size, name='Number of angles', units='N/A')
+        self.nml['Sca_nangi'] = dict(data=self.pha.data['ang']['data'].size, name='Number of angles', units='N/A')
 
 
     def gen_mca_sca_file(self, fname):
@@ -81,7 +81,7 @@ class mca_sca:
         self.nml['Sca_inpfile'] = {'data':fname}
 
         f = open(fname, 'wb')
-        f.write(struct.pack('<%df' % self.pha.data['angles']['data'].size, *self.pha.data['angles']['data'].flatten(order='F')))
+        f.write(struct.pack('<%df' % self.pha.data['ang']['data'].size, *self.pha.data['ang']['data'].flatten(order='F')))
         for i in range(self.nml['Sca_npf']['data']):
             f.write(struct.pack('<%df' % self.pha.data['pha']['data'][:, i].size, *self.pha.data['pha']['data'][:, i].flatten(order='F')))
         f.close()

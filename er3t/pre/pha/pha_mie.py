@@ -1,16 +1,18 @@
-import er3t
 import h5py
 import os
 import numpy as np
 from netCDF4 import Dataset
 
+import er3t
 
-__alll__ = ['pha_mie']
 
 
-def read_pmom():
+__all__ = ['pha_mie_wc']
 
-    fname = '/Users/hoch4240/Chen/soft/er3t/tests/test-pha/wc.sol.mie.cdf'
+
+
+def read_pmom(fname):
+
     f = Dataset(fname, 'r')
 
     wvl  = f.variables['wavelen'][...]
@@ -28,13 +30,15 @@ def read_pmom():
 
 
 
-class pha_mie:
+class pha_mie_wc:
 
-    def __init__(self, wvl0=500.0):
+    fname_coef = '%s/pha/wc.sol.mie.cdf' % er3t.common.fdir_data
 
-        fdir_lrt = '/Users/hoch4240/Chen/soft/libradtran/v2.0.1'
+    def __init__(self,
+                 wvl0=500.0,
+                 verbose=False):
 
-        wvl, ref, ssa, asy, pmom = read_pmom()
+        fdir_lrt = os.environ['LIBRADTRAN_PY']
 
         angles = np.concatenate((
             np.arange(  0.0,   2.0, 0.01),
@@ -44,14 +48,15 @@ class pha_mie:
             np.arange( 15.0, 176.0, 1.0),
             np.arange(176.0, 180.1, 0.25),
             ))
-
         Na = angles.size
 
+        wvl, ref, ssa, asy, pmom = read_pmom(self.fname_coef)
         Np, Nr, Nl = pmom.shape
 
         index = np.argmin(np.abs(wvl-wvl0))
 
-        print('Extracting wavelength=%.2fnm' % wvl[index])
+        if verbose:
+            print('Extracting wavelength=%.2fnm' % wvl[index])
 
         pha = np.zeros((Na, Nr), dtype=np.float64)
 
@@ -60,7 +65,8 @@ class pha_mie:
             pmom0 = pmom[:, ir, index]
 
             if pmom0[-1] > 0.1:
-                print('Warning [pha_mie]: Ref=%.2f Legendre series did not converge.' % ref[ir])
+                if verbose:
+                    print('Warning [pha_mie]: Ref=%.2f Legendre series did not converge.' % ref[ir])
 
             fname_tmp_inp = os.path.abspath('tmp_pmom_inp.txt')
             fname_tmp_out = os.path.abspath('tmp_pmom_out.txt')
@@ -75,8 +81,12 @@ class pha_mie:
             pha[:, ir] = np.interp(angles, data0[:, 0], data0[:, 1])
 
         self.data = {
+                'wvl': {'data':wvl[index], 'name':'Wavelength'         , 'unit':'nm'},
                 'ang': {'data':angles    , 'name':'Angle'              , 'unit':'degree'},
-                'pha': {'data':pha       , 'name':'Phase function'     , 'unit':'N/A'}
+                'pha': {'data':pha       , 'name':'Phase function'     , 'unit':'N/A'},
+                'ssa': {'data':ssa[:, index], 'name':'Single scattering albedo', 'unit':'N/A'},
+                'asy': {'data':asy[:, index], 'name':'Asymmetry parameter'     , 'unit':'N/A'},
+                'ref': {'data':ref          , 'name':'Effective radius'        , 'unit':'mm'}
                 }
 
 
