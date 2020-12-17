@@ -187,7 +187,6 @@ class cld_sat:
         self.lay['lon']      = copy.deepcopy(self.sat.data['lon_2d'])
         self.lay['lat']      = copy.deepcopy(self.sat.data['lat_2d'])
         self.lay['cot']      = copy.deepcopy(self.sat.data['cot_2d'])
-        self.lay['cer']      = copy.deepcopy(self.sat.data['cer_2d'])
 
         self.lev['altitude'] = copy.deepcopy(self.atm.lev['altitude'])
 
@@ -196,6 +195,10 @@ class cld_sat:
         Nz   = t_1d.size
         t_3d      = np.empty((Nx, Ny, Nz), dtype=t_1d.dtype)
         t_3d[...] = t_1d[None, None, :]
+
+        cer_2d = self.sat.data['cer_2d']['data']
+        cer_3d = np.empty((Nx, Ny, Nz), dtype=cer_2d.dtype)
+        cer_3d[...] = cer_2d[:, :, None]
 
         self.lay['temperature'] = {'data':t_3d, 'name':'Temperature', 'units':'K'}
 
@@ -214,7 +217,7 @@ class cld_sat:
                     cth0 = cloud_top_height
 
                 cot0  = self.lay['cot']['data'][i, j]
-                cer0  = self.lay['cer']['data'][i, j]
+                cer0  = cer_2d[i, j]
                 indices =  np.where((alt>=cbh0) & (alt<=cth0))[0]
                 if indices.size == 0:
                     indices = np.array([2])
@@ -223,7 +226,9 @@ class cld_sat:
                 ext_3d[i, j, indices] = cal_ext(cot0, cer0)/dz
 
         ext_3d[np.isnan(ext_3d)] = 0.0
+        cer_3d[np.isnan(ext_3d)] = 0.0
         self.lay['extinction']   = {'data':ext_3d, 'name':'Extinction coefficients', 'units':'m^-1'}
+        self.lay['cer']          = {'data':cer_3d, 'name':'Effective radius'       , 'units':'mm'}
 
         self.Nx = Nx
         self.Ny = Ny
