@@ -269,7 +269,7 @@ class mca_atm_3d:
                 atm_omg[logic_cld, 0] = f_interp_ssa(cer[logic_cld])
                 atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
 
-                logic0 = (atm_apf>=0.0) & (atm_apf<ind[0])
+                logic0 = (atm_apf>0.0) & (atm_apf<ind[0])
                 atm_omg[logic0] = ssa[0]
                 atm_apf[logic0] = ind[0]
 
