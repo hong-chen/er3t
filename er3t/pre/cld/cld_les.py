@@ -29,6 +29,8 @@ class cld_les:
                 ['pressure']
                 ['temperature']   (x, y, z)
                 ['extinction']    (x, y, z)
+                ['cot']           (x, y, z)
+                ['cer']           (x, y, z)
 
         self.lev
                 ['altitude']
@@ -163,13 +165,15 @@ class cld_les:
         logic         = (Nc_3d>=1) & (cer_3d>0.0)
         ext_3d        = np.zeros_like(t_3d)
         ext_3d[logic] = 0.75 * q_factor / (1000.0*cer_3d[logic]*1e-6) * lwc_3d[logic]
-        cer_3d[np.logical_not(logic)] = np.nan
+        cer_3d[np.logical_not(logic)] = 0.0
 
         if altitude is None:
             self.lay['altitude']    = {'data':z/1000.0, 'name':'Altitude'   , 'units':'km'}
             self.lay['pressure']    = {'data':p       , 'name':'Pressure'   , 'units':'mb'}
             self.lay['temperature'] = {'data':t_3d    , 'name':'Temperature', 'units':'K'}
             self.lay['extinction']  = {'data':ext_3d  , 'name':'Extinction coefficients', 'units':'m^-1'}
+
+            self.lay['cer']          = {'data':cer_3d  , 'name':'Effective radius', 'units':'mm'}
 
             self.Nx = Nx
             self.Ny = Ny
@@ -246,7 +250,7 @@ class cld_les:
                 if logic.sum() > 0:
                     p_new[i]               = p[logic].mean()
                     t_3d_new[:, i, :, :]   = np.mean(t_3d[:, logic, :, :], axis=1)
-                    cer_3d_new[:, i, :, :] = np.nanmean(cer_3d[:, logic, :, :], axis=1)
+                    cer_3d_new[:, i, :, :] = np.mean(cer_3d[:, logic, :, :], axis=1)
 
                     ext0 = np.zeros((self.Nt, self.Ny, self.Nx), dtype=ext_3d.dtype)
                     for index in indices:

@@ -44,6 +44,7 @@ def load_mca_inp_nml():
     KNDFL=100
     Sca_inpfile(KNDFL)=' ': file names for scattering phase functions
     Sca_npf(KNDFL)=0      : # of tabulated phase functions in each file
+    Sca_nanci(KNDFL)=0    : # of ancillary file
     Sca_nangi(KNDFL)=100  : # of angles in each file
     Sca_nskip(KNDFL)=0    : # of data record lines to be skipped
     Sca_ndfl=0            : # of scattering phase function data files
@@ -54,6 +55,7 @@ def load_mca_inp_nml():
     mcarSca_nml_init = OrderedDict([
                        ('Sca_inpfile', None),
                        ('Sca_npf'    , None),
+                       ('Sca_nanci'  , None),
                        ('Sca_nangi'  , None),
                        ('Sca_nskip'  , None),
                        ('Sca_ndfl'   , None),
