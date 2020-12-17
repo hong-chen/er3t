@@ -1,5 +1,6 @@
 import sys
 import copy
+from scipy import interpolate
 import h5py
 import struct
 import numpy as np
@@ -197,10 +198,7 @@ class mca_atm_3d:
         if pha_obj is None:
             if self.verbose:
                 print("Warning [mca_atm_3d]: No phase function set specified - ignore thermodynamic phase/effective radius with g=0.85 (Henyey-Greenstein).")
-        else:
-            if self.verbose:
-                print("Warning [mca_atm_3d]: Phase functions were specified, but are not yet implemented.")
-            self.pha = pha_obj
+        self.pha = pha_obj
 
         # Go through cloud layers and check whether atm is compatible
         # e.g., whether the sizes of the Altitude array (z) and Thickness array (dz) are the same
@@ -240,8 +238,44 @@ class mca_atm_3d:
             atm_tmp[:, :, i]    = self.cld.lay['temperature']['data'][:, :, i] - self.atm.lay['temperature']['data'][lay_index[i]]
             atm_ext[:, :, i, 0] = self.cld.lay['extinction']['data'][:, :, i]
 
-        atm_omg[...] = 1.0
-        atm_apf[...] = 0.85
+
+        if self.pha is None:
+            atm_omg[...] = 1.0
+            atm_apf[...] = 0.85
+
+        else:
+            # Rayleigh scattering
+            atm_omg[...] = 1.0
+            atm_apf[...] = -1.0
+
+            logic_cld = (self.cld.lay['extinction']['data'].data > 0.0)
+
+            if self.pha.data['id']['data'].lower() == 'hg':
+
+                index = np.argmin(np.abs(self.pha.data['asy']['data']-0.85)) + 1.0
+                atm_apf[logic_cld, 0] = index
+
+            elif self.pha.data['id']['data'].lower() == 'mie':
+
+                cer = self.cld.lay['cer']['data'].data
+
+                ref = self.pha.data['ref']['data']
+                ssa = self.pha.data['ssa']['data']
+                ind = np.arange(float(ref.size)) + 1.0
+
+                f_interp_ssa = interpolate.interp1d(ref, ssa, bounds_error=False, fill_value='extrapolate')
+                f_interp_ind = interpolate.interp1d(ref, ind, bounds_error=False, fill_value='extrapolate')
+
+                atm_omg[logic_cld, 0] = f_interp_ssa(cer[logic_cld])
+                atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
+
+                logic0 = (atm_apf>0.0) & (atm_apf<ind[0])
+                atm_omg[logic0] = ssa[0]
+                atm_apf[logic0] = ind[0]
+
+                logic1 = (atm_apf>ind[-1])
+                atm_omg[logic1] = ssa[-1]
+                atm_apf[logic1] = ind[-1]
 
         self.nml['Atm_nx']     = copy.deepcopy(self.cld.lay['nx'])
         self.nml['Atm_ny']     = copy.deepcopy(self.cld.lay['ny'])
