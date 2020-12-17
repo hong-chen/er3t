@@ -81,6 +81,7 @@ class pha_mie_wc:
             pha[:, ir] = np.interp(angles, data0[:, 0], data0[:, 1])
 
         self.data = {
+                'id' : {'data':'Mie'     , 'name':'Mie'                , 'unit':'N/A'},
                 'wvl': {'data':wvl[index], 'name':'Wavelength'         , 'unit':'nm'},
                 'ang': {'data':angles    , 'name':'Angle'              , 'unit':'degree'},
                 'pha': {'data':pha       , 'name':'Phase function'     , 'unit':'N/A'},

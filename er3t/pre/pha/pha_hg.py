@@ -1,4 +1,5 @@
 import er3t
+import numpy as np
 
 
 __all__ = ['pha_hg']
@@ -27,7 +28,10 @@ def cal_hg_pha_func(asy, ang):
 
 class pha_hg:
 
-    def __init__(self, asy_params, angles):
+    def __init__(self, asy_params=[-0.85, 0.85], angles=np.linspace(0.0, 180.0, 1801)):
+
+        asy_params = np.array(asy_params)
+        angles     = np.array(angles)
 
         pha = np.zeros((angles.size, asy_params.size), dtype=np.float64)
 
@@ -35,6 +39,7 @@ class pha_hg:
             pha[:, i] = cal_hg_pha_func(asy, angles)
 
         self.data = {
+                'id' : {'data':'HG'      , 'name':'Henyey-Greenstein'  , 'unit':'N/A'},
                 'ang': {'data':angles    , 'name':'Angle'              , 'unit':'degree'},
                 'asy': {'data':asy_params, 'name':'Asymmetry parameter', 'unit':'N/A'},
                 'pha': {'data':pha       , 'name':'Phase function'     , 'unit':'N/A'}
