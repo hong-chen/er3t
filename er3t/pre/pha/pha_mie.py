@@ -104,7 +104,7 @@ class pha_mie_wc:
         if not os.path.exists(fdir):
             os.makedirs(fdir)
 
-        fname = '%s/pha_mie_wc_%07.2fnm.pk' % (fdir, wvl0)
+        fname = '%s/pha_mie_wc_%09.4fnm.pk' % (fdir, wvl0)
 
         if self.reuse:
             if os.path.exists(fname):
