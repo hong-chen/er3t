@@ -173,8 +173,6 @@ class pha_mie_wc:
 
 
 
-
 if __name__ == '__main__':
 
-    pha0 = pha_mie_wc()
     pass
