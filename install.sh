@@ -1,3 +1,6 @@
+# pack data
+# tar -czf er3t-data.tar.gz er3t/data tests/data
+
 # download data from google drive
 # ====================================================================================================
 if ! command -v gdown &> /dev/null
