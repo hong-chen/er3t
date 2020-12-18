@@ -110,8 +110,10 @@ class mcarats_ng:
         self.overwrite = overwrite
         self.mp_mode   = mp_mode
 
+        self.sca                 = sca
 
         self.surface_albedo      = surface_albedo
+        self.sfc_2d              = sfc_2d
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
 
@@ -428,7 +430,17 @@ class mcarats_ng:
         print('                     Date : %s' % self.date.strftime('%Y-%m-%d'))
         print('       Solar Zenith Angle : %.2f' % self.solar_zenith_angle)
         print('      Solar Azimuth Angle : %.2f' % self.solar_azimuth_angle)
-        print('           Surface Albedo : %.2f' % self.surface_albedo)
+
+        if self.sfc_2d is None:
+            print('           Surface Albedo : %.2f' % self.surface_albedo)
+        else:
+            print('           Surface Albedo : 2D domain')
+
+        if self.sca is None:
+            print('           Phase Function : HG (g=0.85)')
+        else:
+            print('           Phase Function : Mie')
+
         print('  Number of Photons / Set : %.1e (%s distribution over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
         print('           Number of Runs : %s(g) * %d(set)' % (self.Ng, self.Nrun))
         print('           Number of CPUs : %d(used) of %d(total)' % (self.Ncpu, self.Ncpu_total))
