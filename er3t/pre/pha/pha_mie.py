@@ -126,7 +126,7 @@ class pha_mie_wc:
         else:
             sys.exit('Error   [pha_mie_wc]: has not implemented interpolation for phase function yet.')
 
-        print('Message [pha_mie_wc]: calculating phase functions for %.2fnm ...' % wvl0)
+        print('Message [pha_mie_wc]: applying libRadtran/bin/phase to calculate phase functions for %.2fnm ...' % wvl0)
 
         pha = np.zeros((Na, Nr), dtype=np.float64)
 
