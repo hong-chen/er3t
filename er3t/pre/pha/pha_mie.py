@@ -59,8 +59,8 @@ class pha_mie_wc:
         pha0.data['ref']: effective radius
     """
 
-    fdir_pha_mie = '%s/pha/mie/wc' % er3t.common.fdir_data
-    fname_coef = '%s/pha/wc.sol.mie.cdf' % er3t.common.fdir_data
+    fdir_pha_mie = '%s/mie/wc' % er3t.common.fdir_data_pha
+    fname_coef = '%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha
 
     def __init__(self,
                  wvl0=500.0,

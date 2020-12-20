@@ -65,7 +65,7 @@ class atm_atmmod:
     def __init__(self,                \
                  levels       = None, \
                  fname        = None, \
-                 fname_atmmod = '%s/atmmod/afglus.dat' % er3t.common.fdir_data, \
+                 fname_atmmod = '%s/afglus.dat' % er3t.common.fdir_data_atmmod, \
                  overwrite    = False, \
                  verbose      = False):
 

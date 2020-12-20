@@ -54,7 +54,7 @@ class abs_16g:
 
     Ng       = 16
     group_s  = '/solar_v1.3'
-    fname_h5 = '%s/abs/abs_16g.h5' % er3t.common.fdir_data
+    fname_h5 = '%s/abs_16g.h5' % er3t.common.fdir_data_abs
 
     def __init__(self, \
                  wavelength = None,  \
