@@ -23,10 +23,11 @@ from er3t.pre.atm import atm_atmmod
 from er3t.pre.abs import abs_16g
 from er3t.pre.cld import cld_sat
 from er3t.pre.sfc import sfc_sat
+from er3t.pre.pha import pha_mie_wc as pha_mie
 from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, grid_modis_by_extent, grid_modis_by_lonlat, download_modis_https, get_sinusoidal_grid_tag, get_filename_tag, download_modis_rgb
 from er3t.util import cal_r_twostream
 
-from er3t.rtm.mca_v010 import mca_atm_1d, mca_atm_3d, mca_sfc_2d
+from er3t.rtm.mca_v010 import mca_atm_1d, mca_atm_3d, mca_sfc_2d, mca_sca
 from er3t.rtm.mca_v010 import mcarats_ng
 from er3t.rtm.mca_v010 import mca_out_ng
 
@@ -295,13 +296,23 @@ def cal_mca_rad_modis(date, sat, wavelength, cth=None, scale_factor=1.0, fdir='t
     sfc_2d    = mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     # =================================================================================
 
+    # pha object
+    # =================================================================================
+    pha0 = pha_mie(wvl0=wavelength)
+    # =================================================================================
+
+    # sca object
+    # =================================================================================
+    sca  = mca_sca(pha_obj=pha0)
+    # =================================================================================
+
     # cld object
     # =================================================================================
     modl1b    = pre_cld(sat, cth=cth, scale_factor=scale_factor, solver=solver)
     fname_cld = '%s/cld.pk' % fdir
     cld0      = cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
 
-    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % fdir)
+    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
     atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm_1ds = [atm1d0]
     atm_3ds = [atm3d0]
@@ -323,6 +334,7 @@ def cal_mca_rad_modis(date, sat, wavelength, cth=None, scale_factor=1.0, fdir='t
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             sfc_2d=sfc_2d,
+            sca=sca,
             Ng=abs0.Ng,
             target='radiance',
             solar_zenith_angle   = sza,

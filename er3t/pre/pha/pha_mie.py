@@ -81,7 +81,9 @@ class pha_mie_wc:
         self.reuse = reuse
         self.verbose = verbose
 
+        print('+')
         self.get_data(wvl0, angles)
+        print('-')
 
 
     def get_data(self,
@@ -124,7 +126,6 @@ class pha_mie_wc:
         else:
             sys.exit('Error   [pha_mie_wc]: has not implemented interpolation for phase function yet.')
 
-        print('+' % wvl0)
         print('Message [pha_mie_wc]: calculating phase functions for %.2fnm ...' % wvl0)
 
         pha = np.zeros((Na, Nr), dtype=np.float64)
@@ -167,7 +168,6 @@ class pha_mie_wc:
             pickle.dump(data, f)
 
         print('Message [pha_mie_wc]: phase function for %.2fnm has been store in %s.' % (wvl0, fname))
-        print('-' % wvl0)
 
         self.data = data
 
