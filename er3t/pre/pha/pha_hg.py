@@ -30,6 +30,24 @@ def cal_hg_pha_func(asy, ang):
 
 class pha_hg:
 
+    """
+    Henyey-Greenstein phase function object
+
+    Input:
+        asy_params: asymmetry parameters, Python list or numpy array, default=[-0.85, 0.85]
+        angles: angles in degree, Python list or numpy array, default=np.array([0.0, 1.0, ..., 180.0])
+
+    Output:
+        phase function object
+
+        pha0 = pha_hg(asy_params=[-0.85, 0.85], angles=np.linspace(0.0, 180.0, 1801))
+
+        pha0.data['id']['data']: identification of the phase function object
+        pha0.data['ang']['data']: angles in degree
+        pha0.data['asy']['data']: asymmetry parameters in degree
+        pha0.data['pha']['data']: phase functions
+    """
+
     def __init__(self, asy_params=[-0.85, 0.85], angles=np.linspace(0.0, 180.0, 1801)):
 
         asy_params = np.array(asy_params)

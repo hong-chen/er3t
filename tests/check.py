@@ -413,7 +413,7 @@ def main(date, region):
     # run calculations
     for wavelength in [650.0]:
         for solver in ['3D']:
-            cal_mca_rad_modis(date, sat0, wavelength, cth=2.0, scale_factor=1.0, fdir=fdir_tmp, solver=solver, overwrite=True)
+            cal_mca_rad_modis(date, sat0, wavelength, cth=3.0, scale_factor=3.0, fdir=fdir_tmp, solver=solver, overwrite=True)
 
 
 

@@ -16,6 +16,22 @@ __all__ = ['pha_mie_wc']
 
 def read_pmom(fname):
 
+    """
+    Read phase function file (netCDF) from libRadtran
+
+    Input:
+        fname: file path of the file
+
+    Output:
+        wvl, ref, ssa, asy, pmom = read_pmom(fname)
+
+        wvl: wavelength in nm
+        ref: effective radius in mm
+        ssa: single scattering albedo
+        asy: asymmetry parameter
+        pmom: pmom coefficients
+    """
+
     f = Dataset(fname, 'r')
 
     wvl  = f.variables['wavelen'][...]
@@ -44,6 +60,8 @@ class pha_mie_wc:
         *interpolate: boolen, whether to interpolate phase functions based on the wavelength, default is False
         reuse: boolen, whether to reuse the pre-existing phase functions stored at er3t/data/pha/mie, default is True
         verbose: boolen, whether to print all the messages, default is False
+
+        *still under development
 
     Output:
         phase object, e.g.,
