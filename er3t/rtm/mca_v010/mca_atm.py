@@ -248,10 +248,10 @@ class mca_atm_3d:
             atm_omg[...] = 1.0
             atm_apf[...] = -1.0
 
-            if isinstance(self.cld.lay['extinction']['data'], np.ndarray):
-                logic_cld = (self.cld.lay['extinction']['data'] > 0.0)
-            elif isinstance(self.cld.lay['extinction']['data'], np.ma.MaskedArray):
+            if isinstance(self.cld.lay['extinction']['data'], np.ma.MaskedArray):
                 logic_cld = (self.cld.lay['extinction']['data'].data > 0.0)
+            elif isinstance(self.cld.lay['extinction']['data'], np.ndarray):
+                logic_cld = (self.cld.lay['extinction']['data'] > 0.0)
 
             if self.pha.data['id']['data'].lower() == 'hg':
 
