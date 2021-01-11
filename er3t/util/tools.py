@@ -368,7 +368,7 @@ def cal_mol_ext(wv0, pz1, pz2):
 
 
 
-def cal_ext(cot, cer, Qe=2.0):
+def cal_ext(cot, cer, dz=1.0, Qe=2.0):
 
     """
     Calculate extinction (m^-1) from cloud optical thickness and cloud effective radius
@@ -384,13 +384,16 @@ def cal_ext(cot, cer, Qe=2.0):
     #         2*rho*cer
     lwp  = 2.0/3000.0 * cot * cer
 
+    # liquid water content
+    # assume vertically homogeneous distribution of cloud water
+    lwc  = lwp / dz
 
     # Extinction
     # from equation 7.70 in Petty's book
     #            3*Qe
     # ext = ---------------, where rho is the density of water
     #         4*rho*cer
-    ext = 0.75 * Qe * lwp / cer * 1.0e3
+    ext = 0.75 * Qe * lwc / cer * 1.0e3
 
     return ext
 
