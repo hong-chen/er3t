@@ -273,9 +273,7 @@ class cld_les:
         else:
             new_shape = (self.Nt//dnt, self.Nz//dnz, self.Ny//dny, self.Nx//dnx)
 
-            print(new_shape)
-            # if self.verbose:
-            if True:
+            if self.verbose:
                 print('Message [cld_les]: Downgrading data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
 
             self.lay['x']['data']         = downgrading(self.lay['x']['data']        , (self.Nx//dnx,), operation='sum')
@@ -283,7 +281,6 @@ class cld_les:
             self.lay['altitude']['data']  = downgrading(self.lay['altitude']['data'] , (self.Nz//dnz,), operation='sum')
             self.lay['pressure']['data']  = downgrading(self.lay['pressure']['data'] , (self.Nz//dnz,), operation='mean')
             self.lay['thickness']['data'] = downgrading(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
-            print(self.lay['thickness']['data'])
 
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
