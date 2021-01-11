@@ -273,19 +273,22 @@ class cld_les:
         else:
             new_shape = (self.Nt//dnt, self.Nz//dnz, self.Ny//dny, self.Nx//dnx)
 
-            if self.verbose:
-                print('Message [cld_les]: Downgrading data from dimension %s to %s ...' % (str(self.P.shape), str(new_shape)))
+            print(new_shape)
+            # if self.verbose:
+            if True:
+                print('Message [cld_les]: Downgrading data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
 
-            self.lay['x']['data']         = downgrading(self.lay['x']['data']        , (self.Nx//dnx,))
-            self.lay['y']['data']         = downgrading(self.lay['y']['data']        , (self.Ny//dny,))
-            self.lay['altitude']['data']  = downgrading(self.lay['altitude']['data'] , (self.Nz//dnz,))
-            self.lay['pressure']['data']  = downgrading(self.lay['pressure']['data'] , (self.Nz//dnz,))
-            self.lay['thickness']['data'] = downgrading(self.lay['thickness']['data'], (self.Nz//dnz,))
+            self.lay['x']['data']         = downgrading(self.lay['x']['data']        , (self.Nx//dnx,), operation='sum')
+            self.lay['y']['data']         = downgrading(self.lay['y']['data']        , (self.Ny//dny,), operation='sum')
+            self.lay['altitude']['data']  = downgrading(self.lay['altitude']['data'] , (self.Nz//dnz,), operation='sum')
+            self.lay['pressure']['data']  = downgrading(self.lay['pressure']['data'] , (self.Nz//dnz,), operation='mean')
+            self.lay['thickness']['data'] = downgrading(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
+            print(self.lay['thickness']['data'])
 
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
                     if self.lay[key]['data'].ndim == len(coarsing):
-                        self.lay[key]['data']  = downgrading(self.lay[key]['data'], new_shape)
+                        self.lay[key]['data']  = downgrading(self.lay[key]['data'], new_shape, operation='mean')
 
 
     def post_les(self):
