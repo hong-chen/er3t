@@ -248,9 +248,9 @@ class cld_sat:
             if self.verbose:
                 print('Message [cld_mod]: Downgrading data from dimension %s to %s ...' % (str(self.lay['Temperature']['data'].shape), str(new_shape)))
 
-            self.lay['x']['data']        = downgrading(self.lay['x']['data']       , (self.Nx//dnx,), operation='sum')
-            self.lay['y']['data']        = downgrading(self.lay['y']['data']       , (self.Ny//dny,), operation='sum')
-            self.lay['altitude']['data'] = downgrading(self.lay['altitude']['data'], (self.Nz//dnz,), operation='sum')
+            self.lay['x']['data']        = downgrading(self.lay['x']['data']       , (self.Nx//dnx,), operation='mean')
+            self.lay['y']['data']        = downgrading(self.lay['y']['data']       , (self.Ny//dny,), operation='mean')
+            self.lay['altitude']['data'] = downgrading(self.lay['altitude']['data'], (self.Nz//dnz,), operation='mean')
 
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
