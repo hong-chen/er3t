@@ -263,11 +263,13 @@ class modis_l2:
             raise ImportError(msg)
 
         if len(cop_flag) == 0:
+            vname_ctp     = 'Cloud_Phase_Optical_Properties'
             vname_cot     = 'Cloud_Optical_Thickness'
             vname_cer     = 'Cloud_Effective_Radius'
             vname_cot_err = 'Cloud_Optical_Thickness_Uncertainty'
             vname_cer_err = 'Cloud_Effective_Radius_Uncertainty'
         else:
+            vname_ctp     = 'Cloud_Phase_Optical_Properties'
             vname_cot     = 'Cloud_Optical_Thickness_%s' % cop_flag
             vname_cer     = 'Cloud_Effective_Radius_%s'  % cop_flag
             vname_cot_err = 'Cloud_Optical_Thickness_Uncertainty_%s' % cop_flag
@@ -279,6 +281,7 @@ class modis_l2:
         lat0       = f.select('Latitude')
         lon0       = f.select('Longitude')
 
+        ctp0       = f.select(vname_ctp)
         cot0       = f.select(vname_cot)
         cer0       = f.select(vname_cer)
         cot1       = f.select('%s_PCL' % vname_cot)
@@ -323,6 +326,7 @@ class modis_l2:
 
         # Calculate 1. cot, 2. cer, 3. ctp
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        ctp0_data     = get_data(ctp0)
         cot0_data     = get_data(cot0)
         cer0_data     = get_data(cer0)
         cot1_data     = get_data(cot1)
@@ -330,6 +334,7 @@ class modis_l2:
         cot_err0_data = get_data(cot_err0)
         cer_err0_data = get_data(cer_err0)
 
+        ctp     = ctp0_data.copy()
         cot     = cot0_data.copy()
         cer     = cer0_data.copy()
         cot_err = cot_err0_data.copy()
@@ -351,6 +356,7 @@ class modis_l2:
         f.end()
         # -------------------------------------------------------------------------------------------------
 
+        ctp = ctp[logic]
         cot = cot[logic]
         cer = cer[logic]
         cot_err = cot_err[logic]
@@ -363,6 +369,7 @@ class modis_l2:
 
             self.data['lon']   = dict(name='Longitude'                 , data=np.hstack((self.data['lon']['data'], lon    )), units='degrees')
             self.data['lat']   = dict(name='Latitude'                  , data=np.hstack((self.data['lat']['data'], lat    )), units='degrees')
+            self.data['ctp']   = dict(name='Cloud thermodynamic phase' , data=np.hstack((self.data['ctp']['data'], ctp    )), units='N/A')
             self.data['cot']   = dict(name='Cloud optical thickness'   , data=np.hstack((self.data['cot']['data'], cot    )), units='N/A')
             self.data['cer']   = dict(name='Cloud effective radius'    , data=np.hstack((self.data['cer']['data'], cer    )), units='micron')
             self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_err']['data'], cot*cot_err/100.0)), units='N/A')
@@ -378,6 +385,7 @@ class modis_l2:
             self.data  = {}
             self.data['lon']   = dict(name='Longitude'                 , data=lon    , units='degrees')
             self.data['lat']   = dict(name='Latitude'                  , data=lat    , units='degrees')
+            self.data['ctp']   = dict(name='Cloud thermodynamic phase' , data=ctp    , units='N/A')
             self.data['cot']   = dict(name='Cloud optical thickness'   , data=cot    , units='N/A')
             self.data['cer']   = dict(name='Cloud effective radius'    , data=cer    , units='micron')
             self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty' , data=cot*cot_err/100.0, units='N/A')
