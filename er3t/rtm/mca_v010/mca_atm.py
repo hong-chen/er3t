@@ -260,10 +260,10 @@ class mca_atm_3d:
 
             elif self.pha.data['id']['data'].lower() == 'mie':
 
-                if isinstance(self.cld.lay['cer']['data'], np.ndarray):
-                    cer = self.cld.lay['cer']['data']
-                elif isinstance(self.cld.lay['cer']['data'], np.ma.MaskedArray):
+                if isinstance(self.cld.lay['cer']['data'], np.ma.MaskedArray):
                     cer = self.cld.lay['cer']['data'].data
+                elif isinstance(self.cld.lay['cer']['data'], np.ndarray):
+                    cer = self.cld.lay['cer']['data']
 
                 ref = self.pha.data['ref']['data']
                 ssa = self.pha.data['ssa']['data']
