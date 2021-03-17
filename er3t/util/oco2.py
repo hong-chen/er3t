@@ -396,9 +396,9 @@ def download_oco2_https(
     year_str = str(dtime.timetuple().tm_year).zfill(4)
     doy_str  = str(dtime.timetuple().tm_yday).zfill(3)
 
-    if dataset_tag in ['OCO2_L2_Met.8', 'OCO2_L2_Met.8r', 'OCO2_L2_Met.9r', 'OCO2_L2_Standard.8', 'OCO2_L2_Standard.8r', 'OCO2_L1B_Science.8', 'OCO2_L1B_Science.8r', 'OCO2_L1B_Calibration.8', 'OCO2_L1B_Calibration.8r']:
+    if dataset_tag in ['OCO2_L2_Met.10', 'OCO2_L2_Met.10r', 'OCO2_L2_Standard.10', 'OCO2_L2_Standard.10r', 'OCO2_L1B_Science.10', 'OCO2_L1B_Science.10r', 'OCO2_L1B_Calibration.10', 'OCO2_L1B_Calibration.10r']:
         fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
-    elif dataset_tag in ['OCO2_L2_Lite_FP.8r', 'OCO2_L2_Lite_FP.9r', 'OCO2_L2_Lite_SIF.8r']:
+    elif dataset_tag in ['OCO2_L2_Lite_FP.9r', 'OCO2_L2_Lite_FP.10r', 'OCO2_L2_Lite_SIF.10r']:
         fdir_data = '%s/%s/%s' % (fdir_prefix, dataset_tag, year_str)
     else:
         sys.exit('Error   [download_oco2_https]: Do not support downloading \'%s\'.' % dataset_tag)
@@ -431,6 +431,7 @@ def download_oco2_https(
         for i in range(Nfile):
             dtime_s, dtime_e = get_dtime_from_xml('%s/%s' % (fdir_server, fnames_xml[i]))
             if (dtime>=dtime_s) & (dtime<=dtime_e):
+                print(dtime_s, dtime_e)
                 fname_server = '%s/%s' % (fdir_server, fnames_dat[i])
                 fnames_server.append(fname_server)
 
