@@ -661,7 +661,6 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
                         f.write(' %-15s = \'%s\'\n' % (var_key, var))
                 elif isinstance(var, np.ndarray):
 
-                    print(var_key, var)
                     var_str = nice_array_str(var)
 
                     if len(var_str) <= 80:
