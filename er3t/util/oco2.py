@@ -431,7 +431,6 @@ def download_oco2_https(
         for i in range(Nfile):
             dtime_s, dtime_e = get_dtime_from_xml('%s/%s' % (fdir_server, fnames_xml[i]))
             if (dtime>=dtime_s) & (dtime<=dtime_e):
-                print(dtime_s, dtime_e)
                 fname_server = '%s/%s' % (fdir_server, fnames_dat[i])
                 fnames_server.append(fname_server)
 
