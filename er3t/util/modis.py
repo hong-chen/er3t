@@ -62,6 +62,8 @@ class modis_l1b:
             filename = os.path.basename(fnames[0]).lower()
             if 'qkm' in filename:
                 self.resolution = 0.25
+            elif 'hkm' in filename:
+                self.resolution = 0.5
             elif '1km' in filename:
                 self.resolution = 1.0
             else:
@@ -105,8 +107,9 @@ class modis_l1b:
 
         # when resolution equals to 500 m
         elif check_equal(self.resolution, 0.5):
+            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
+            raw0      = f.select('EV_500_RefSB')
             wvl       = np.array([470.0, 555.0, 1240.0, 1640.0, 2130.0])
-            sys.exit('Error   [modis_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
 
         # when resolution equals to 1000 m
         elif check_equal(self.resolution, 1.0):
