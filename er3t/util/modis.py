@@ -1273,7 +1273,7 @@ def download_modis_https(
     try:
         app_key = os.environ['MODIS_APP_KEY']
     except KeyError:
-        app_key = 'EA7C812A-B2E1-11E8-BB0D-DEF50DDD974A'
+        app_key = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
         if verbose:
             print('Warning [download_modis_https]: Please get your app key by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/tools-and-services/data-download-scripts/#appkeys\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.bash_profile\'(Mac),\nexport MODIS_APP_KEY="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"\n')
 
