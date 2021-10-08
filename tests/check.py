@@ -403,7 +403,7 @@ def main(date, region):
 
     # download satellite data
     fname_sat = '%s/sat_%s.pk' % (fdir_data, date_s)
-    sat0 = satellite_download(date=date, fdir_out=fdir_data, extent=region, fname=fname_sat, overwrite=False)
+    sat0 = satellite_download(date=date, fdir_out=fdir_data, extent=region, fname=fname_sat, overwrite=True)
 
     # create tmp-data directory if it does not exist
     fdir_tmp = os.path.abspath('tmp-data/%s' % date_s)
