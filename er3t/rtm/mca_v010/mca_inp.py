@@ -661,13 +661,19 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
                         f.write(' %-15s = \'%s\'\n' % (var_key, var))
                 elif isinstance(var, np.ndarray):
 
-                    var_str = nice_array_str(var)
+                    if var.size > 1:
 
-                    if len(var_str) <= 80:
-                        f.write(' %-15s = %s\n' % (var_key, var_str))
-                    else:
-                        f.write(' %-15s =\n' % var_key)
-                        f.write('%s\n' % var_str)
+                        var_str = nice_array_str(var)
+
+                        if len(var_str) <= 80:
+                            f.write(' %-15s = %s\n' % (var_key, var_str))
+                        else:
+                            f.write(' %-15s =\n' % var_key)
+                            f.write('%s\n' % var_str)
+
+                    elif var.size == 1:
+                        f.write(' %-15s = %-g\n' % (var_key, var))
+
                 else:
                     sys.exit('Error   [mca_inp_file]: only types of int, float, str, ndarray are supported.')
 

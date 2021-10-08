@@ -13,7 +13,7 @@ from er3t.util import check_equal
 
 
 
-__all__ = ['modis_l1b', 'modis_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'grid_modis_by_extent', 'grid_modis_by_lonlat', 'upscale_modis_lonlat', \
+__all__ = ['get_data', 'modis_l1b', 'modis_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'grid_modis_by_extent', 'grid_modis_by_lonlat', 'upscale_modis_lonlat', \
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag', 'get_doy_tag']
 
 
@@ -1081,6 +1081,7 @@ def grid_modis_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='neare
         data_2d[logic] = 0.0
         return lon_2d, lat_2d, data_2d
     else:
+        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
         logic = np.isnan(data_2d0)
         data_2d0[logic] = 0.0
         return lon_2d, lat_2d, data_2d0
