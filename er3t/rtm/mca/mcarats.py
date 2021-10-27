@@ -90,6 +90,8 @@ class mcarats_ng:
                  quiet               = False                    \
                  ):
 
+        fdir = os.path.abspath(fdir)
+
         if not quiet:
             print('+ <mcarats_ng>')
 
@@ -110,8 +112,10 @@ class mcarats_ng:
         self.overwrite = overwrite
         self.mp_mode   = mp_mode
 
+        self.sca                 = sca
 
         self.surface_albedo      = surface_albedo
+        self.sfc_2d              = sfc_2d
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
 
@@ -271,8 +275,7 @@ class mcarats_ng:
             else:
                 for key in sca.nml.keys():
                     if os.path.exists(sca.nml['Sca_inpfile']['data']):
-                        os.system('mv %s %s' % (sca.nml['Sca_inpfile']['data'], self.fdir))
-                        sca.nml['Sca_inpfile']['data'] = os.path.basename(sca.nml['Sca_inpfile']['data'])
+                        sca.nml['Sca_inpfile']['data'] = os.path.relpath(sca.nml['Sca_inpfile']['data'], start=self.fdir)
                     self.nml[ig][key] = sca.nml[key]['data']
 
 
@@ -298,8 +301,7 @@ class mcarats_ng:
 
                         if key not in ['Atm_tmpa3d', 'Atm_abst3d', 'Atm_extp3d', 'Atm_omgp3d', 'Atm_apfp3d']:
                             if os.path.exists(atm_3d.nml['Atm_inpfile']['data']):
-                                os.system('mv %s %s' % (atm_3d.nml['Atm_inpfile']['data'], self.fdir))
-                                atm_3d.nml['Atm_inpfile']['data'] = os.path.basename(atm_3d.nml['Atm_inpfile']['data'])
+                                atm_3d.nml['Atm_inpfile']['data'] = os.path.relpath(atm_3d.nml['Atm_inpfile']['data'], start=self.fdir)
                             self.nml[ig][key] = atm_3d.nml[key]['data']
 
                 if self.target == 'radiance':
@@ -335,8 +337,7 @@ class mcarats_ng:
                 for key in sfc_2d.nml.keys():
                     if '2d' not in key:
                         if os.path.exists(sfc_2d.nml['Sfc_inpfile']['data']):
-                            os.system('mv %s %s' % (sfc_2d.nml['Sfc_inpfile']['data'], self.fdir))
-                            sfc_2d.nml['Sfc_inpfile']['data'] = os.path.basename(sfc_2d.nml['Sfc_inpfile']['data'])
+                            sfc_2d.nml['Sfc_inpfile']['data'] = os.path.relpath(sfc_2d.nml['Sfc_inpfile']['data'], start=self.fdir)
                         self.nml[ig][key] = sfc_2d.nml[key]['data']
 
             else:
@@ -428,7 +429,17 @@ class mcarats_ng:
         print('                     Date : %s' % self.date.strftime('%Y-%m-%d'))
         print('       Solar Zenith Angle : %.2f' % self.solar_zenith_angle)
         print('      Solar Azimuth Angle : %.2f' % self.solar_azimuth_angle)
-        print('           Surface Albedo : %.2f' % self.surface_albedo)
+
+        if self.sfc_2d is None:
+            print('           Surface Albedo : %.2f' % self.surface_albedo)
+        else:
+            print('           Surface Albedo : 2D domain')
+
+        if self.sca is None:
+            print('           Phase Function : HG (g=0.85)')
+        else:
+            print('           Phase Function : Mie')
+
         print('  Number of Photons / Set : %.1e (%s distribution over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
         print('           Number of Runs : %s(g) * %d(set)' % (self.Ng, self.Nrun))
         print('           Number of CPUs : %d(used) of %d(total)' % (self.Ncpu, self.Ncpu_total))

@@ -1,3 +1,4 @@
+import os
 import sys
 import copy
 import h5py
@@ -78,6 +79,8 @@ class mca_sca:
 
     def gen_mca_sca_file(self, fname):
 
+        fname = os.path.abspath(fname)
+
         self.nml['Sca_inpfile'] = {'data':fname}
 
         f = open(fname, 'wb')
@@ -91,6 +94,8 @@ class mca_sca:
 
 
     def save_h5(self, fname):
+
+        fname = os.path.abspath(fname)
 
         self.nml['Sca_inpfile'] = {'data':fname}
 

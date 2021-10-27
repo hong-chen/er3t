@@ -1,3 +1,4 @@
+import os
 import sys
 import copy
 from scipy import interpolate
@@ -248,10 +249,10 @@ class mca_atm_3d:
             atm_omg[...] = 1.0
             atm_apf[...] = -1.0
 
-            if isinstance(self.cld.lay['extinction']['data'], np.ndarray):
-                logic_cld = (self.cld.lay['extinction']['data'] > 0.0)
-            elif isinstance(self.cld.lay['extinction']['data'], np.ma.MaskedArray):
+            if isinstance(self.cld.lay['extinction']['data'], np.ma.MaskedArray):
                 logic_cld = (self.cld.lay['extinction']['data'].data > 0.0)
+            elif isinstance(self.cld.lay['extinction']['data'], np.ndarray):
+                logic_cld = (self.cld.lay['extinction']['data'] > 0.0)
 
             if self.pha.data['id']['data'].lower() == 'hg':
 
@@ -260,10 +261,10 @@ class mca_atm_3d:
 
             elif self.pha.data['id']['data'].lower() == 'mie':
 
-                if isinstance(self.cld.lay['cer']['data'], np.ndarray):
-                    cer = self.cld.lay['cer']['data']
-                elif isinstance(self.cld.lay['cer']['data'], np.ma.MaskedArray):
+                if isinstance(self.cld.lay['cer']['data'], np.ma.MaskedArray):
                     cer = self.cld.lay['cer']['data'].data
+                elif isinstance(self.cld.lay['cer']['data'], np.ndarray):
+                    cer = self.cld.lay['cer']['data']
 
                 ref = self.pha.data['ref']['data']
                 ssa = self.pha.data['ssa']['data']
@@ -339,6 +340,8 @@ class mca_atm_3d:
         if not self.quiet:
             print('Message [mca_atm_3d]: Creating 3D atm file \'%s\' for MCARaTS ...' % fname)
 
+        fname = os.path.abspath(fname)
+
         self.nml['Atm_inpfile'] = {'data':fname}
 
         f = open(fname, 'wb')
@@ -355,6 +358,8 @@ class mca_atm_3d:
 
 
     def save_h5(self, fname):
+
+        fname = os.path.abspath(fname)
 
         self.nml['Atm_inpfile'] = {'data':fname}
 
