@@ -303,7 +303,7 @@ def cal_mca_rad_modis(date, sat, wavelength, cth=None, scale_factor=1.0, fdir='t
 
     # sca object
     # =================================================================================
-    sca  = mca_sca(pha_obj=pha0)
+    sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir)
     # =================================================================================
 
     # cld object

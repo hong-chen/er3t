@@ -1,3 +1,4 @@
+import os
 import sys
 import copy
 import h5py
@@ -90,6 +91,8 @@ class mca_sfc_2d:
 
     def gen_mca_2d_sfc_file(self, fname):
 
+        fname = os.path.abspath(fname)
+
         self.nml['Sfc_inpfile'] = {'data':fname}
 
         f = open(fname, 'wb')
@@ -103,6 +106,8 @@ class mca_sfc_2d:
 
 
     def save_h5(self, fname):
+
+        fname = os.path.abspath(fname)
 
         self.nml['Sfc_inpfile'] = {'data':fname}
 

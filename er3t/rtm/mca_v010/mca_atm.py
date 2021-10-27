@@ -1,3 +1,4 @@
+import os
 import sys
 import copy
 from scipy import interpolate
@@ -339,6 +340,8 @@ class mca_atm_3d:
         if not self.quiet:
             print('Message [mca_atm_3d]: Creating 3D atm file \'%s\' for MCARaTS ...' % fname)
 
+        fname = os.path.abspath(fname)
+
         self.nml['Atm_inpfile'] = {'data':fname}
 
         f = open(fname, 'wb')
@@ -355,6 +358,8 @@ class mca_atm_3d:
 
 
     def save_h5(self, fname):
+
+        fname = os.path.abspath(fname)
 
         self.nml['Atm_inpfile'] = {'data':fname}
 

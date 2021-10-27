@@ -90,6 +90,8 @@ class mcarats_ng:
                  quiet               = False                    \
                  ):
 
+        fdir = os.path.abspath(fdir)
+
         if not quiet:
             print('+ <mcarats_ng>')
 
@@ -273,8 +275,9 @@ class mcarats_ng:
             else:
                 for key in sca.nml.keys():
                     if os.path.exists(sca.nml['Sca_inpfile']['data']):
-                        os.system('mv %s %s' % (sca.nml['Sca_inpfile']['data'], self.fdir))
-                        sca.nml['Sca_inpfile']['data'] = os.path.basename(sca.nml['Sca_inpfile']['data'])
+                        # os.system('mv %s %s' % (sca.nml['Sca_inpfile']['data'], self.fdir))
+                        # sca.nml['Sca_inpfile']['data'] = os.path.basename(sca.nml['Sca_inpfile']['data'])
+                        sca.nml['Sca_inpfile']['data'] = os.path.relpath(sca.nml['Sca_inpfile']['data'], start=self.fdir)
                     self.nml[ig][key] = sca.nml[key]['data']
 
 
@@ -300,8 +303,9 @@ class mcarats_ng:
 
                         if key not in ['Atm_tmpa3d', 'Atm_abst3d', 'Atm_extp3d', 'Atm_omgp3d', 'Atm_apfp3d']:
                             if os.path.exists(atm_3d.nml['Atm_inpfile']['data']):
-                                os.system('mv %s %s' % (atm_3d.nml['Atm_inpfile']['data'], self.fdir))
-                                atm_3d.nml['Atm_inpfile']['data'] = os.path.basename(atm_3d.nml['Atm_inpfile']['data'])
+                                # os.system('mv %s %s' % (atm_3d.nml['Atm_inpfile']['data'], self.fdir))
+                                # atm_3d.nml['Atm_inpfile']['data'] = os.path.basename(atm_3d.nml['Atm_inpfile']['data'])
+                                atm_3d.nml['Atm_inpfile']['data'] = os.path.relpath(atm_3d.nml['Atm_inpfile']['data'], start=self.fdir)
                             self.nml[ig][key] = atm_3d.nml[key]['data']
 
                 if self.target == 'radiance':
@@ -337,8 +341,9 @@ class mcarats_ng:
                 for key in sfc_2d.nml.keys():
                     if '2d' not in key:
                         if os.path.exists(sfc_2d.nml['Sfc_inpfile']['data']):
-                            os.system('mv %s %s' % (sfc_2d.nml['Sfc_inpfile']['data'], self.fdir))
-                            sfc_2d.nml['Sfc_inpfile']['data'] = os.path.basename(sfc_2d.nml['Sfc_inpfile']['data'])
+                            # os.system('mv %s %s' % (sfc_2d.nml['Sfc_inpfile']['data'], self.fdir))
+                            # sfc_2d.nml['Sfc_inpfile']['data'] = os.path.basename(sfc_2d.nml['Sfc_inpfile']['data'])
+                            sfc_2d.nml['Sfc_inpfile']['data'] = os.path.relpath(sfc_2d.nml['Sfc_inpfile']['data'], start=self.fdir)
                         self.nml[ig][key] = sfc_2d.nml[key]['data']
 
             else:
