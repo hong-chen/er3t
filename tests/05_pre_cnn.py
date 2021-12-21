@@ -491,6 +491,7 @@ if __name__ == '__main__':
 
     # step 2
     # run ERT for LES scenes at specified coarsening factor
+    # (spatial resolution depends on coarsening factor)
     # =============================================================================
     # for coarsen_factor in [1, 2, 4, 8]:
         # main_les_tak(coarsen_factor=coarsen_factor)
@@ -498,15 +499,19 @@ if __name__ == '__main__':
 
 
     # step 3
-    # split data into 64x64 mini tiles
+    # split/upsample the calculation so the spatial resolution is 100 m
     # =============================================================================
     # for fname in sorted(glob.glob('data/*coa-fac-2_coa-fac-2_600nm.h5')):
     #     split_data(fname, coarsen_factor=2)
+    # for fname in sorted(glob.glob('data/*coa-fac-4_coa-fac-4_600nm.h5')):
     #     split_data(fname, coarsen_factor=4)
+    # for fname in sorted(glob.glob('data/*coa-fac-8_coa-fac-8_600nm.h5')):
+    #     split_data(fname, coarsen_factor=8)
     # =============================================================================
 
 
     # step 4
+    # split data into 64x64 mini tiles
     # perform random selection based on Mean vs STD grids
     # =============================================================================
     # select_cloud_scene_new()
