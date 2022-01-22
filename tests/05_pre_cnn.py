@@ -74,7 +74,7 @@ class func_cot_vs_rad:
         for i in range(self.cot.size):
             cot0 = self.cot[i]
             fname = '%s/mca-out-rad-3d_cot-%.2f.h5' % (self.fdir, cot0)
-            out0  = mca_out_ng(fname=fname, mode='mean', squeeze=True)
+            out0  = mca_out_ng(fname=fname, mode='all', squeeze=True)
             self.rad = np.append(self.rad, out0.data['rad']['data'].mean())
 
     def run_all(self):
@@ -97,7 +97,7 @@ class func_cot_vs_rad:
         cer_2d    = np.zeros((2, 2), dtype=np.float64); cer_2d[...] = 12.0
         ext_3d    = np.zeros((2, 2, 2), dtype=np.float64)
 
-        fname_nc  = '/data/hong/mygit/er3t/tests/data/les.nc'
+        fname_nc  = 'data/les.nc'
         fname_les = '%s/les.pk' % self.fdir
         cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=True)
 
@@ -204,7 +204,8 @@ def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, coarsen_factor=2, ov
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             # photons=1e8*coarsen_factor,
-            photons=2e9,
+            # photons=2e9,
+            photons=1e6,
             weights=abs0.coef['weight']['data'],
             solver=solver,
             Ncpu=24,
@@ -240,15 +241,10 @@ def run(fdir, fname_nc, coarsen_factor=2):
         f_mca =  func_cot_vs_rad('data/ret/%3.3d' % wvl, wvl, run=False)
         run_mca_coarse_case(f_mca, wvl, fname_nc, fdir, coarsen_factor=coarsen_factor, overwrite=True)
 
-def main_les_tak(coarsen_factor=2):
+def main_les(coarsen_factor=2):
 
     fnames_nc = [
-            'data/7seas/x48km_TB_nt035_undg_tau1h_nndg_tau1h_v03_control/7SEAS_480x480x150_dx100m_dz40m_dt2sec_480_0000081000_mod.nc',
-            'data/7seas/x48km_TB_nt035_undg_tau1h_nndg_tau1h_v03_shear/7SEAS_480x480x150_dx100m_dz40m_dt2sec_480_0000081000_mod.nc',
-            'data/7seas/x48km_TB_nt150_undg_tau1h_nndg_tau1h_v03_control/7SEAS_480x480x150_dx100m_dz40m_dt2sec_480_0000081000_mod.nc',
-            'data/7seas/x48km_TB_nt150_undg_tau1h_nndg_tau1h_v03_shear/7SEAS_480x480x150_dx100m_dz40m_dt2sec_480_0000081000_mod.nc',
-            'data/7seas/x48km_TB_nt230_undg_tau1h_nndg_tau1h_v03_control/7SEAS_480x480x150_dx100m_dz40m_dt2sec_480_0000081000_mod.nc',
-            'data/7seas/x48km_TB_nt230_undg_tau1h_nndg_tau1h_v03_shear/7SEAS_480x480x150_dx100m_dz40m_dt2sec_480_0000081000_mod.nc'
+            'data/les.nc',
             ]
 
     for fname_nc in fnames_nc:
@@ -485,7 +481,7 @@ if __name__ == '__main__':
     # derive relationship of COT vs Radiance at a given wavelength
     # =============================================================================
     # wvl = 600.0
-    # f_mca =  func_cot_vs_rad('data/ret/%3.3d' % wvl, wvl, run=True)
+    # f_mca =  func_cot_vs_rad('data/ret/%3.3d' % wvl, wvl, run=False)
     # =============================================================================
 
 
@@ -493,8 +489,8 @@ if __name__ == '__main__':
     # run ERT for LES scenes at specified coarsening factor
     # (spatial resolution depends on coarsening factor)
     # =============================================================================
-    # for coarsen_factor in [1, 2, 4, 8]:
-        # main_les_tak(coarsen_factor=coarsen_factor)
+    # for coarsen_factor in [1, 2, 4]:
+    #     main_les(coarsen_factor=coarsen_factor)
     # =============================================================================
 
 
@@ -514,7 +510,7 @@ if __name__ == '__main__':
     # split data into 64x64 mini tiles
     # perform random selection based on Mean vs STD grids
     # =============================================================================
-    # select_cloud_scene_new()
+    # select_cloud_scene()
     # =============================================================================
 
     pass
