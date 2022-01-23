@@ -81,10 +81,11 @@ class mcarats_ng:
                  sensor_zenith_angle = 0.0,                     \
                  sensor_azimuth_angle= 0.0,                     \
                  sensor_altitude     = 705000.0,                \
+                 sensor_type         = 'satellite',             \
 
                  solver              = 0,                       \
                  photons             = 1e6,                     \
-                 weights             = None,                  \
+                 weights             = None,                    \
 
                  verbose             = False,                   \
                  quiet               = False                    \
@@ -122,6 +123,7 @@ class mcarats_ng:
         self.sensor_zenith_angle = sensor_zenith_angle
         self.sensor_azimuth_angle= sensor_azimuth_angle
         self.sensor_altitude     = sensor_altitude
+        self.sensor_type         = sensor_type
 
 
         self.Nrun    = Nrun
@@ -250,12 +252,22 @@ class mcarats_ng:
 
                 self.nml[ig]['Wld_mtarget'] = 2
 
-                self.nml[ig]['Rad_mrkind']  = 2
+                if 'satellite' in self.sensor_type.lower():
+                    self.nml[ig]['Rad_mrkind']  = 2
+                elif 'all-sky' in self.sensor_type.lower():
+                    self.nml[ig]['Rad_mrkind'] = 1
+                    self.nml[ig]['Rad_qmax']   = 180.0
+                    self.nml[ig]['Rad_apsize'] = 0.05
+                    self.nml[ig]['Rad_nxr'] = 100
+                    self.nml[ig]['Rad_nyr'] = 100
+                    self.nml[ig]['Rad_xpos'] = 0.5
+                    self.nml[ig]['Rad_ypos'] = 0.5
+
+
                 self.nml[ig]['Rad_mplen']   = 0
                 self.nml[ig]['Rad_mpmap']   = 1
                 self.nml[ig]['Rad_nrad']    = 1
 
-                self.nml[ig]['Rad_nrad']    = 1
                 self.nml[ig]['Rad_difr0']   = 7.5
                 self.nml[ig]['Rad_difr1']   = 0.0025
                 self.nml[ig]['Rad_the']     = 180.0 - sensor_zenith_angle
