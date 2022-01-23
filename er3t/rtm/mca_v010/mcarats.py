@@ -330,8 +330,8 @@ class mcarats_ng:
                             self.nml[ig]['Rad_nyr'] = 1
 
                     elif 'all-sky' in self.sensor_type.lower():
-                        self.nml[ig]['Rad_nxr'] = 600
-                        self.nml[ig]['Rad_nyr'] = 600
+                        self.nml[ig]['Rad_nxr'] = 250
+                        self.nml[ig]['Rad_nyr'] = 250
 
 
     def init_src(self, solar_zenith_angle=0.0, solar_azimuth_angle=0.0):

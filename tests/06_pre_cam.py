@@ -130,8 +130,8 @@ class aircraft:
             Ny = 480,
             dx = 100.0,
             dy = 100.0,
-            xpos = 0.5,
-            ypos = 0.0,
+            xpos = 0.2,
+            ypos = 0.1,
             ):
 
         """
@@ -146,6 +146,8 @@ class aircraft:
                 'extent': extent,
                 'Nx': Nx,
                 'Ny': Ny,
+                'dx': dx,
+                'dy': dy,
                 'xpos': xpos,
                 'ypos': ypos,
                 'lon' : lon,
@@ -156,6 +158,7 @@ class aircraft:
                 }
 
     def fly(
+            self,
             delta_seconds=1.0
             ):
 
@@ -182,7 +185,7 @@ class aircraft:
             self,
             fdir0='tmp-data/06',
             date = datetime.datetime(2019, 10, 5),
-            photons = 1e7,
+            photons = 5e7,
             solver = '3D',
             wavelength = 600.0,
             surface_albedo = 0.03,
