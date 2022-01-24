@@ -100,7 +100,7 @@ class aircraft:
         self.heading_angle = heading_angle
         self.altitude = altitude
 
-    def camera(
+    def install_camera(
             self,
             sensor_type = 'all-sky camera',
             field_of_view = 180.0,
@@ -123,7 +123,7 @@ class aircraft:
             'roll_angle_offset'   : roll_angle_offset
             }
 
-    def geoinfo(
+    def initialize_geoinfo(
             self,
             extent = [122.55, 123.0, 15.55, 16.0],
             Nx = 480,
@@ -157,7 +157,7 @@ class aircraft:
                 'Nfly': 0
                 }
 
-    def fly(
+    def fly_to_next(
             self,
             delta_seconds=1.0
             ):
@@ -185,7 +185,7 @@ class aircraft:
             self,
             fdir0='tmp-data/06',
             date = datetime.datetime(2019, 10, 5),
-            photons = 5e7,
+            photons = 1e8,
             solver = '3D',
             wavelength = 600.0,
             surface_albedo = 0.03,
@@ -238,7 +238,7 @@ class aircraft:
                 sensor_altitude = self.altitude,
                 sensor_type = self.camera['sensor_type'],
                 sensor_xpos = self.geoinfo['xpos'],
-                sensor_ypos = self.geoinfo['xpos'],
+                sensor_ypos = self.geoinfo['ypos'],
                 fdir='%s/rad_%s' % (fdir_scene, solver.lower()),
                 Nrun=3,
                 photons=photons,
@@ -262,13 +262,10 @@ class aircraft:
             plt.colorbar(cs)
             ax1.set_xlabel('X Index')
             ax1.set_ylabel('Y Index')
-            ax1.set_title('All-Sky Camera Radiance Simulation (%s Mode, %d nm, Scene %d)' % (solver, wavelength, self.geoinfo['Nfly']))
+            ax1.set_title('All-Sky Camera Radiance Simulation (%s Mode, %d nm, Scene %2.2d)' % (solver, wavelength, self.geoinfo['Nfly']))
             plt.savefig(fname_png, bbox_inches='tight')
             plt.close(fig)
         # ------------------------------------------------------------------------------------------------------
-
-
-
 
 
 
@@ -276,11 +273,11 @@ if __name__ == '__main__':
 
     # =============================================================================
     aircraft0 = aircraft()
-    aircraft0.camera()
-    aircraft0.geoinfo()
+    aircraft0.install_camera()
+    aircraft0.initialize_geoinfo()
     aircraft0.flyover_view()
 
     for i in range(20):
-        aircraft0.fly()
+        aircraft0.fly_to_next()
         aircraft0.flyover_view()
     # =============================================================================
