@@ -215,7 +215,8 @@ class aircraft:
         abs0      = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=False)
 
         fname_les = '%s/les.pk' % fdir0
-        cld0      = cld_les(fname_nc='data/les.nc', fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=False)
+        # cld0      = cld_les(fname_nc='data/les.nc', fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=False)
+        cld0      = cld_les(fname_nc='data/les.nc', altitude=levels, fname=fname_les, overwrite=False)
 
         atm1d0    = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
         atm3d0    = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % fdir0)
