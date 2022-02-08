@@ -88,18 +88,18 @@ class func_cot_vs_rad:
         levels    = np.linspace(0.0, 20.0, 21)
 
         fname_atm = '%s/atm.pk' % self.fdir
-        atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=True)
+        atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=False)
 
         fname_abs = '%s/abs.pk' % self.fdir
-        abs0      = abs_16g(wavelength=self.wavelength, fname=fname_abs, atm_obj=atm0, overwrite=True)
+        abs0      = abs_16g(wavelength=self.wavelength, fname=fname_abs, atm_obj=atm0, overwrite=False)
 
         cot_2d    = np.zeros((2, 2), dtype=np.float64); cot_2d[...] = cot
         cer_2d    = np.zeros((2, 2), dtype=np.float64); cer_2d[...] = 12.0
         ext_3d    = np.zeros((2, 2, 2), dtype=np.float64)
 
-        fname_nc  = 'data/les.nc'
+        fname_nc  = '../tests/data/les.nc'
         fname_les = '%s/les.pk' % self.fdir
-        cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=True)
+        cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=False)
 
         cld0.lev['altitude']['data']    = cld0.lay['altitude']['data'][2:5]
 
@@ -118,7 +118,7 @@ class func_cot_vs_rad:
         cld0.lay['extinction']['data']  = ext_3d
 
         atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-        atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir)
+        atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=False)
         atm_1ds   = [atm1d0]
         atm_3ds   = [atm3d0]
 
@@ -135,13 +135,13 @@ class func_cot_vs_rad:
                 sensor_azimuth_angle=0.0,
                 fdir='%s/%.2f/les_rad_3d' % (self.fdir, cot),
                 Nrun=1,
-                photons=1e7,
+                photons=1e5,
                 solver='3D',
                 Ncpu=24,
                 mp_mode='py',
                 overwrite=True)
 
-        out0 = mca_out_ng(fname='%s/mca-out-rad-3d_cot-%.2f.h5' % (self.fdir, cot), mca_obj=mca0, abs_obj=abs0, mode='all', squeeze=True, verbose=True, overwrite=True)
+        out0 = mca_out_ng(fname='%s/mca-out-rad-3d_cot-%.2f.h5' % (self.fdir, cot), mca_obj=mca0, abs_obj=abs0, mode='all', squeeze=True, verbose=True)
 
     def interp_from_rad(self, rad, method='cubic'):
 
@@ -159,7 +159,7 @@ class func_cot_vs_rad:
 
 
 
-def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, coarsen_factor=2, overwrite=True):
+def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, fdir_out='tmp-data/05_cnn-les_rad-sim/03_sim-ori', coarsen_factor=2, overwrite=True):
 
     fdir = '%s/%dnm' % (fdir0, wavelength)
 
@@ -203,8 +203,6 @@ def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, coarsen_factor=2, ov
             sensor_azimuth_angle=0.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
-            # photons=1e8*coarsen_factor,
-            # photons=2e9,
             photons=1e6,
             weights=abs0.coef['weight']['data'],
             solver=solver,
@@ -226,7 +224,10 @@ def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, coarsen_factor=2, ov
     cot_1d[cot_1d<0.0] = 0.0
     # =======================================================================================================
 
-    fname_new = 'data/data_%s_coa-fac-%d_%dnm.h5' % (os.path.basename(fdir0), coarsen_factor, wavelength)
+    if not os.path.exists(fdir_out):
+        os.makedirs(fdir_out)
+
+    fname_new = '%s/data_%s_%dnm.h5' % (fdir_out, os.path.basename(fdir0), wavelength)
     f = h5py.File(fname_new, 'w')
 
     f['cot_true'] = cot_true
@@ -238,23 +239,23 @@ def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, coarsen_factor=2, ov
 def run(fdir, fname_nc, coarsen_factor=2):
 
     for wvl in [600.0]:
-        f_mca =  func_cot_vs_rad('data/ret/%3.3d' % wvl, wvl, run=False)
+        f_mca =  func_cot_vs_rad('tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl, wvl, run=False)
         run_mca_coarse_case(f_mca, wvl, fname_nc, fdir, coarsen_factor=coarsen_factor, overwrite=True)
 
 def main_les(coarsen_factor=2):
 
     fnames_nc = [
-            'data/les.nc',
+            '../tests/data/les.nc',
             ]
 
     for fname_nc in fnames_nc:
-        run('tmp-data/%s_coa-fac-%d' % (fname_nc.split('/')[-2], coarsen_factor), fname_nc, coarsen_factor=coarsen_factor)
+        run('tmp-data/05_cnn-les_rad-sim/02_sim-raw/les_coa-fac-%d' % (coarsen_factor), fname_nc, coarsen_factor=coarsen_factor)
 
 
 
 
 
-def split_data(fname, coarsen_factor=2):
+def split_data_native_resolution(fname, coarsen_factor=2, fdir_out='tmp-data/05_cnn-les_rad-sim/04_sim-native'):
 
     with h5py.File(fname, 'r+') as f:
 
@@ -276,11 +277,14 @@ def split_data(fname, coarsen_factor=2):
                     del(f[key_new])
                 f[key_new] = data
 
+    if not os.path.exists(fdir_out):
+        os.makedirs(fdir_out)
+
     with h5py.File(fname, 'r') as f0:
         for i in range(coarsen_factor):
             for j in range(coarsen_factor):
                 N = i + j*coarsen_factor
-                fname_new = 'data/%s_%4.4d.h5' % (os.path.basename(fname).replace('.h5', ''), N)
+                fname_new = '%s/%s_%4.4d.h5' % (fdir_out, os.path.basename(fname).replace('.h5', ''), N)
                 with h5py.File(fname_new, 'w') as f:
                     for key in f0.keys():
                         if 'expand' in key:
@@ -294,7 +298,7 @@ def split_data(fname, coarsen_factor=2):
 
 
 
-def select_cloud_scene():
+def crop_select_cloud_scene():
 
     def coarsen(fname, vname, coarsen_factor):
 
@@ -342,9 +346,9 @@ def select_cloud_scene():
 
         return ref_std.ravel(), ref_mean.ravel(), x.ravel(), y.ravel()
 
-    def get_ref_std_ref_mean(coarsen_factor=2, Np=64, Dp=32, sza=29.162360459281544):
+    def get_ref_std_ref_mean(coarsen_factor=2, Np=64, Dp=32, sza=29.162360459281544, fdir='tmp-data/05_cnn-les_rad-sim/04_sim-native'):
 
-        fnames = sorted(glob.glob('data/*coa-fac-%d_coa-fac-%d*600nm*.h5' % (coarsen_factor, coarsen_factor)))
+        fnames = sorted(glob.glob('%s/*coa-fac-%d*600nm*.h5' % (fdir, coarsen_factor)))
 
         cot = {}
         for fname in fnames:
@@ -391,8 +395,10 @@ def select_cloud_scene():
     data = {}
     for key in data1.keys():
         if key == 'fnames':
+            # 'fnames' is Python list
             data[key] = data1[key] + data2[key] + data4[key]
         else:
+            # other variables are numpy array
             data[key] = np.concatenate((data1[key], data2[key], data4[key]))
 
 
@@ -400,6 +406,9 @@ def select_cloud_scene():
     ref_mean = data['ref_mean']
     indices  = np.arange(ref_std.size)
 
+    # even out the selection probability so coarsened data won't have higher
+    # possibility to be selected simply because it has larger data volum
+    # =======================================================================
     prob1 = np.zeros_like(data1['ref_mean'])
     prob1[...] = 0.33333/ prob1.size
 
@@ -411,17 +420,19 @@ def select_cloud_scene():
 
     prob = np.concatenate((prob1, prob2, prob4))
     data['prob'] = prob
+    # =======================================================================
 
 
-    # xedges = np.linspace(0.0, 0.3, 50)
-    # yedges = np.linspace(0.0, 0.3, 50)
+    # random selection
+    # maximum of 100 tiles in one ref-mean vs ref-std grid set by variable <Nselect>
+    # =======================================================================
     xedges = np.arange(0.0, 1.01, 0.02)
     yedges = np.arange(0.0, 0.45, 0.02)
     heatmap, xedges, yedges = np.histogram2d(ref_mean.ravel(), ref_std.ravel(), bins=(xedges, yedges))
     extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
     YY, XX = np.meshgrid((yedges[:-1]+yedges[1:])/2.0, (xedges[:-1]+xedges[1:])/2.0)
 
-    Nselect = 500
+    Nselect = 100
     indices_select = np.array([], dtype=np.int32)
     indices_plot = []
     for i in range(XX.shape[0]):
@@ -435,30 +446,15 @@ def select_cloud_scene():
                 indices_select = np.append(indices_select, indices_select0)
                 indices_plot.append(indices_select0[0])
 
-    # print(indices_select.size)
-    # print(np.unique(indices_select).size)
-    # exit()
-
-
-    # print(ref_mean.size)
-    # print(XX.size, (heatmap>0).sum(), heatmap[heatmap>0].min())
-    # values, counts = np.unique(heatmap[heatmap>0], return_counts=True)
-    # for value, count in zip(values, counts):
-    #     print(int(value), count)
-    # print()
-    # exit()
-
-
     fnames = []
     for index_select in indices_select:
         fnames.append(data['fnames'][index_select])
+    # =======================================================================
 
-    # for all the data
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # fnames = data['fnames'].copy()
-    # indices_select = np.arange(len(fnames))
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+    # sort data by LES file name
+    # why: this way the LES file will only be opened once to select mini tiles that come from the
+    #      same LES file to save time
+    # =======================================================================
     indices_sorted = np.array(sorted(range(len(fnames)), key=fnames.__getitem__))
 
     fnames_sorted = []
@@ -469,8 +465,47 @@ def select_cloud_scene():
     data_sorted['fnames'] = fnames_sorted
     for key in data.keys():
         if key != 'fnames':
-            print(key)
             data_sorted[key] = data[key][indices_select][indices_sorted]
+    # =======================================================================
+
+
+    # create mini tiles
+    # =======================================================================
+    fdir_out = 'tmp-data/05_cnn-les_rad-sim/05_sim-select'
+    if not os.path.exists(fdir_out):
+        os.makedirs(fdir_out)
+
+    fname0 = ''
+    for i, index_sorted in enumerate(indices_sorted):
+
+        while data_sorted['fnames'][i] != fname0:
+            try:
+                f0.close()
+            except:
+                pass
+            cot_true_split = coarsen(data_sorted['fnames'][i], 'cot_true', data_sorted['factor'][i])
+            cot_1d_split   = coarsen(data_sorted['fnames'][i], 'cot_1d', data_sorted['factor'][i])
+            rad_3d_split   = coarsen(data_sorted['fnames'][i], 'rad_3d', data_sorted['factor'][i])
+            fname0 = data_sorted['fnames'][i]
+            f0 = h5py.File(fname0, 'r')
+
+        index_x_s = data_sorted['index_x'][i]
+        index_y_s = data_sorted['index_y'][i]
+        index_x_e = data_sorted['index_x'][i] + 64
+        index_y_e = data_sorted['index_y'][i] + 64
+
+        cot0 = cot_true_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
+        ref0 = cal_r_twostream(cot0, a=0.0, g=0.85, mu=np.cos(np.deg2rad(29.162360459281544)))
+
+        index_str = '[%8.8d](%3.3d-%3.3d_%3.3d-%3.3d)' % (indices_select[index_sorted], index_x_s, index_x_e, index_y_s, index_y_e)
+
+        fname = '%s/%8.8d_%.4f_%.4f_%s_%s' % (fdir_out, i, np.nanmean(ref0), np.nanstd(ref0), index_str, os.path.basename(fname0))
+        f = h5py.File(fname, 'w')
+        f['cot_true'] = cot_true_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
+        f['cot_1d']   = cot_1d_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
+        f['rad_3d']   = rad_3d_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
+        f.close()
+    # =======================================================================
 
 
 
@@ -481,7 +516,7 @@ if __name__ == '__main__':
     # derive relationship of COT vs Radiance at a given wavelength
     # =============================================================================
     # wvl = 600.0
-    # f_mca =  func_cot_vs_rad('data/ret/%3.3d' % wvl, wvl, run=False)
+    # f_mca =  func_cot_vs_rad('tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl, wvl, run=True)
     # =============================================================================
 
 
@@ -497,12 +532,12 @@ if __name__ == '__main__':
     # step 3
     # split/upsample the calculation so the spatial resolution is 100 m
     # =============================================================================
-    # for fname in sorted(glob.glob('data/*coa-fac-2_coa-fac-2_600nm.h5')):
-    #     split_data(fname, coarsen_factor=2)
-    # for fname in sorted(glob.glob('data/*coa-fac-4_coa-fac-4_600nm.h5')):
-    #     split_data(fname, coarsen_factor=4)
-    # for fname in sorted(glob.glob('data/*coa-fac-8_coa-fac-8_600nm.h5')):
-    #     split_data(fname, coarsen_factor=8)
+    # for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-1_600nm.h5')):
+    #     split_data_native_resolution(fname, coarsen_factor=1)
+    # for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-2_600nm.h5')):
+    #     split_data_native_resolution(fname, coarsen_factor=2)
+    # for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-4_600nm.h5')):
+    #     split_data_native_resolution(fname, coarsen_factor=4)
     # =============================================================================
 
 
@@ -510,7 +545,7 @@ if __name__ == '__main__':
     # split data into 64x64 mini tiles
     # perform random selection based on Mean vs STD grids
     # =============================================================================
-    # select_cloud_scene()
+    # crop_select_cloud_scene()
     # =============================================================================
 
     pass
