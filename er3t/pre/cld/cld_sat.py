@@ -220,7 +220,8 @@ class cld_sat:
                 cer0  = cer_2d[i, j]
                 indices =  np.where((alt>=cbh0) & (alt<=cth0))[0]
                 if indices.size == 0:
-                    indices = np.array([2])
+                    indices = np.array([-1])
+
 
                 dz    = self.atm.lay['thickness']['data'][indices].sum() * 1000.0
                 ext_3d[i, j, indices] = cal_ext(cot0, cer0, dz=dz)
