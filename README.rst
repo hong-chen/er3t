@@ -154,22 +154,42 @@ Acknowledgements
 How to Cite
 ===========
 
-Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ for the most recent information.
+#. `Chen et al., 2022 <https://doi.org/10.5194/amt-2022-143>`_
 
+   Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
+   Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR3T) -
+   Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
+   Atmos. Meas. Tech. Discuss. [preprint], https://doi.org/10.5194/amt-2022-143, in review, 2022.
+
+
+Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ for the most recent information.
 
 So far, the following publications have used EaR3T
 
-#. `Gristey et al., 2020 <https://doi.org/10.1175/JAS-D-19-0261.1>`_
+#. `Nataraja et al., 2022 <https://doi.org/10.5194/amt-2022-45>`_
+   Nataraja, V., Schmidt, S., Chen, H., Yamaguchi, T., Kazil, J., Feingold, G., Wolf, K., and
+   Iwabuchi, H.: Segmentation-Based Multi-Pixel Cloud Optical Thickness Retrieval Using a Convolutional
+   Neural Network, Atmos. Meas. Tech. Discuss. [preprint], https://doi.org/10.5194/amt-2022-45,
+   in review, 2022.
 
-   Gristey, J. J., G. Feingold, I. B. Glenn, K. S. Schmidt, and H. Chen, 2020: Surface Solar Irradiance in
-   Continental Shallow Cumulus Fields: Observations and Large-Eddy Simulation. J. Atmos. Sci., 77, 1065-1080,
-   doi:10.1175/JAS-D-19-0261.1.
+
+#. `Gristey et al., 2022 <https://doi.org/10.1029/2022JD036822>`_
+   Gristey, J. J., Feingold, G., Glenn, I. B., Schmidt, K. S., and Chen, H.: Influence of Aerosol Embedded
+   in Shallow Cumulus Cloud Fields on the Surface Solar Irradiance, Journal of Geophysical Research: Atmospheres,
+   127, e2022JD036822, https://doi.org/10.1029/2022JD036822, 2022.
 
 #. `Gristey et al., 2020 <https://doi.org/10.1029/2020GL090152>`_
 
-   Gristey, J. J., G. Feingold, I. B. Glenn, K. S. Schmidt, and H. Chen, 2020: On the relationship between
-   shallow cumulus cloud field properties and surface solar irradiance, Geophysical Research Letters, 47,
-   e2020GL090152, doi:10.1029/2020GL090152.
+   Gristey, J. J., Feingold, G., Glenn, I. B., Schmidt, K. S., and Chen, H.: On the Relationship Between
+   Shallow Cumulus Cloud Field Properties and Surface Solar Irradiance, Geophysical Research Letters, 47,
+   e2020GL090152, https://doi.org/10.1029/2020GL090152, 2020.
+
+#. `Gristey et al., 2020 <https://doi.org/10.1175/JAS-D-19-0261.1>`_
+
+   Gristey, J. J., Feingold, G., Glenn, I. B., Schmidt, K. S., and Chen, H.: Surface Solar Irradiance in
+   Continental Shallow Cumulus Fields: Observations and Large-Eddy Simulation, J. Atmos. Sci., 77, 1065-1080,
+   https://doi.org/10.1175/JAS-D-19-0261.1, 2020.
+
 
 
 
