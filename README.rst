@@ -159,7 +159,7 @@ How to Cite
    Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR3T) -
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
-   Atmos. Meas. Tech. Discuss. [preprint], ht<span>tps:</span>//doi.org/10.5194/amt-2022-143, in review, 2022.
+   Atmos. Meas. Tech. Discuss. [preprint], https://doi.org/10.5194/amt-2022-143, in review, 2022.
 
 
 Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ for the most recent information.
