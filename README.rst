@@ -26,7 +26,7 @@ Dependencies
 
 |
 
-**2. Install** `MCARaTS <https://sites.google.com/site/mcarats/home>`_ **through the** `installation guide <https://sites.google.com/site/mcarats/mcarats-user-s-guide-version-0-10/2-installation>`_
+**2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_
 
 |
 
