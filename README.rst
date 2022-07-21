@@ -167,7 +167,7 @@ Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <
 |
 |
 
-So far, the following publications have used EaR<sup>3</sup>T
+So far, the following publications have used EaR3T
 
 #. `Nataraja et al., 2022 [in review] <https://doi.org/10.5194/amt-2022-45>`_
 
