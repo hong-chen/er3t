@@ -155,7 +155,7 @@ Acknowledgements
 How to Cite
 ===========
 
-* **`Chen et al., 2022 [in review] <https://doi.org/10.5194/amt-2022-143>`_**
+* `Chen et al., 2022 [in review] <https://doi.org/10.5194/amt-2022-143>`_
 
    Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR3T) -
@@ -182,7 +182,7 @@ So far, the following publications have used EaR3T
 
    Gristey, J. J., Feingold, G., Glenn, I. B., Schmidt, K. S., and Chen, H.: Influence of Aerosol Embedded
    in Shallow Cumulus Cloud Fields on the Surface Solar Irradiance, Journal of Geophysical Research: Atmospheres,
-   127, e2022JD036822, https://doi.org/10.1029/2022JD036822, 2022.
+   127, e2022JD036822, doi:10.1029/2022JD036822, 2022.
 
 #. `Gristey et al., 2020 <https://doi.org/10.1029/2020GL090152>`_
 
