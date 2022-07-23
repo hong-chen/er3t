@@ -12,7 +12,181 @@ from er3t.util import check_equal
 
 
 
-__all__ = ['oco2_std', 'oco2_met', 'get_fnames_from_web', 'get_dtime_from_xml', 'download_oco2_https']
+__all__ = ['oco_rad_nadir', 'oco2_std', 'oco2_met', 'get_fnames_from_web', 'get_dtime_from_xml', 'download_oco2_https']
+
+
+
+def convert_photon_unit(data_photon, wavelength, scale_factor=2.0):
+
+    c = 299792458.0
+    h = 6.62607015e-34
+    wavelength = wavelength * 1e-9
+    data = data_photon/1000.0*c*h/wavelength*scale_factor
+
+    return data
+
+
+
+class oco2_rad_nadir:
+
+    def __init__(self, sat):
+
+        self.fname_l1b = sat.fnames['oco_l1b'][0]
+        self.fname_std = sat.fnames['oco_std'][0]
+
+        self.extent = sat.extent
+
+        # =================================================================================
+        self.cal_wvl()
+        # after this, the following three functions will be created
+        # Input: index, range from 0 to 7, e.g., 0, 1, 2, ..., 7
+        # self.get_wvl_o2_a(index)
+        # self.get_wvl_co2_weak(index)
+        # self.get_wvl_co2_strong(index)
+        # =================================================================================
+
+        # =================================================================================
+        self.get_index(self.extent)
+        # after this, the following attributes will be created
+        # self.index_s: starting index
+        # self.index_e: ending index
+        # =================================================================================
+
+        # =================================================================================
+        self.overlap(index_s=self.index_s, index_e=self.index_e)
+        # after this, the following attributes will be created
+        # self.logic_l1b
+        # self.lon_l1b
+        # self.lat_l1b
+        # =================================================================================
+
+        # =================================================================================
+        self.get_data(index_s=self.index_s, index_e=self.index_e)
+        # after this, the following attributes will be created
+        # self.rad_o2_a
+        # self.rad_co2_weak
+        # self.rad_co2_strong
+        # =================================================================================
+
+    def cal_wvl(self, Nchan=1016):
+
+        """
+        Oxygen A band: centered at 765 nm
+        Weak CO2 band: centered at 1610 nm
+        Strong CO2 band: centered at 2060 nm
+        """
+
+        f = h5py.File(self.fname_l1b, 'r')
+        wvl_coef = f['InstrumentHeader/dispersion_coef_samp'][...]
+        f.close()
+
+        Nspec, Nfoot, Ncoef = wvl_coef.shape
+
+        wvl_o2_a       = np.zeros((Nfoot, Nchan), dtype=np.float64)
+        wvl_co2_weak   = np.zeros((Nfoot, Nchan), dtype=np.float64)
+        wvl_co2_strong = np.zeros((Nfoot, Nchan), dtype=np.float64)
+
+        chan = np.arange(1, Nchan+1)
+        for i in range(Nfoot):
+            for j in range(Ncoef):
+                wvl_o2_a[i, :]       += wvl_coef[0, i, j]*chan**j
+                wvl_co2_weak[i, :]   += wvl_coef[1, i, j]*chan**j
+                wvl_co2_strong[i, :] += wvl_coef[2, i, j]*chan**j
+
+        wvl_o2_a       *= 1000.0
+        wvl_co2_weak   *= 1000.0
+        wvl_co2_strong *= 1000.0
+
+        self.get_wvl_o2_a       = lambda index: wvl_o2_a[index, :]
+        self.get_wvl_co2_weak   = lambda index: wvl_co2_weak[index, :]
+        self.get_wvl_co2_strong = lambda index: wvl_co2_strong[index, :]
+
+    def get_index(self, extent):
+
+        if extent is None:
+            self.index_s = 0
+            self.index_e = None
+        else:
+            f = h5py.File(self.fname_l1b, 'r')
+            lon_l1b     = f['SoundingGeometry/sounding_longitude'][...]
+            lat_l1b     = f['SoundingGeometry/sounding_latitude'][...]
+
+            logic = (lon_l1b>=extent[0]) & (lon_l1b<=extent[1]) & (lat_l1b>=extent[2]) & (lat_l1b<=extent[3])
+            indices = np.where(np.sum(logic, axis=1)>0)[0]
+            self.index_s = indices[0]
+            self.index_e = indices[-1]
+
+    def overlap(self, index_s=0, index_e=None, lat0=0.0, lon0=0.0):
+
+        f       = h5py.File(self.fname_l1b, 'r')
+        if index_e is None:
+            lon_l1b = f['SoundingGeometry/sounding_longitude'][...][index_s:, ...]
+            lat_l1b = f['SoundingGeometry/sounding_latitude'][...][index_s:, ...]
+            snd_id  = f['SoundingGeometry/sounding_id'][...][index_s:, ...]
+        else:
+            lon_l1b     = f['SoundingGeometry/sounding_longitude'][...][index_s:index_e, ...]
+            lat_l1b     = f['SoundingGeometry/sounding_latitude'][...][index_s:index_e, ...]
+            snd_id_l1b  = f['SoundingGeometry/sounding_id'][...][index_s:index_e, ...]
+        f.close()
+
+        shape    = lon_l1b.shape
+        lon_l1b  = lon_l1b
+        lat_l1b  = lat_l1b
+
+        f       = h5py.File(self.fname_std, 'r')
+        lon_std = f['RetrievalGeometry/retrieval_longitude'][...]
+        lat_std = f['RetrievalGeometry/retrieval_latitude'][...]
+        xco2_std= f['RetrievalResults/xco2'][...]
+        snd_id_std = f['RetrievalHeader/sounding_id'][...]
+        sfc_pres_std = f['RetrievalResults/surface_pressure_fph'][...]
+        f.close()
+
+        self.logic_l1b = np.in1d(snd_id_l1b, snd_id_std).reshape(shape)
+
+        self.lon_l1b   = lon_l1b
+        self.lat_l1b   = lat_l1b
+        self.snd_id    = snd_id_l1b
+
+        xco2      = np.zeros_like(self.lon_l1b); xco2[...] = np.nan
+        sfc_pres  = np.zeros_like(self.lon_l1b); sfc_pres[...] = np.nan
+
+        for i in range(xco2.shape[0]):
+            for j in range(xco2.shape[1]):
+                logic = (snd_id_std==snd_id_l1b[i, j])
+                if logic.sum() == 1:
+                    xco2[i, j] = xco2_std[logic]
+                    sfc_pres[i, j] = sfc_pres_std[logic]
+                elif logic.sum() > 1:
+                    sys.exit('Error   [oco_rad_nadir]: More than one point is found.')
+
+        self.xco2      = xco2
+        self.sfc_pres  = sfc_pres
+
+    def get_data(self, index_s=0, index_e=None):
+
+        f       = h5py.File(self.fname_l1b, 'r')
+        if index_e is None:
+            self.rad_o2_a       = f['SoundingMeasurements/radiance_o2'][...][index_s:, ...]
+            self.rad_co2_weak   = f['SoundingMeasurements/radiance_weak_co2'][...][index_s:, ...]
+            self.rad_co2_strong = f['SoundingMeasurements/radiance_strong_co2'][...][index_s:, ...]
+            self.sza            = f['SoundingGeometry/sounding_solar_zenith'][...][index_s:, ...]
+            self.saa            = f['SoundingGeometry/sounding_solar_azimuth'][...][index_s:, ...]
+            self.vza            = f['SoundingGeometry/sounding_zenith'][...][index_s:, ...]
+            self.vaa            = f['SoundingGeometry/sounding_azimuth'][...][index_s:, ...]
+        else:
+            self.rad_o2_a       = f['SoundingMeasurements/radiance_o2'][...][index_s:index_e, ...]
+            self.rad_co2_weak   = f['SoundingMeasurements/radiance_weak_co2'][...][index_s:index_e, ...]
+            self.rad_co2_strong = f['SoundingMeasurements/radiance_strong_co2'][...][index_s:index_e, ...]
+            self.sza            = f['SoundingGeometry/sounding_solar_zenith'][...][index_s:index_e, ...]
+            self.saa            = f['SoundingGeometry/sounding_solar_azimuth'][...][index_s:index_e, ...]
+            self.vza            = f['SoundingGeometry/sounding_zenith'][...][index_s:index_e, ...]
+            self.vaa            = f['SoundingGeometry/sounding_azimuth'][...][index_s:index_e, ...]
+
+        for i in range(8):
+            self.rad_o2_a[:, i, :]       = convert_photon_unit(self.rad_o2_a[:, i, :]      , self.get_wvl_o2_a(i))
+            self.rad_co2_weak[:, i, :]   = convert_photon_unit(self.rad_co2_weak[:, i, :]  , self.get_wvl_co2_weak(i))
+            self.rad_co2_strong[:, i, :] = convert_photon_unit(self.rad_co2_strong[:, i, :], self.get_wvl_co2_strong(i))
+        f.close()
 
 
 
