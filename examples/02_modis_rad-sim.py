@@ -1,11 +1,11 @@
 """
 by Hong Chen (hong.chen.cu@gmail.com)
 
-This code serves as an example code to reproduce 3D/IPA MODIS radiance simulation for App. 2 in Chen et al. (2022).
+This code serves as an example code to reproduce 3D MODIS radiance simulation for App. 2 in Chen et al. (2022).
 
 The processes include:
-    1) automatically download and pre-process satellite data products (~2.2 GB data stored under data/02_modis_rad-sim)
-       from NASA data archive
+    1) `main_pre()`: automatically download and pre-process satellite data products (~640MB data stored under
+       data/02_modis_rad-sim/download) from NASA data archive
         a) aqua_rgb_2019-09-02_-109.60--106.50-35.90-39.00.png
         b) MYD021KM.A2019245.2025.061.2019246161115.hdf
         c) MYD02HKM.A2019245.2025.061.2019246161115.hdf
@@ -14,11 +14,15 @@ The processes include:
         f) MYD06_L2.A2019245.2025.061.2019246164334.hdf
         g) MYD09A1.A2019241.h09v05.006.2019250044127.hdf
 
-    2) run simulation
+    2) `main_sim()`: run simulation
         a) 3D mode
-        b) IPA mode
 
-Tested under:
+    3) `main_post()`: post-process data
+        a) extract radiance observations from pre-processed data
+        b) extract radiance simulations of EaR3T
+        c) plot
+
+This code has been tested under:
     1) Linux on 2022-07-22 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
@@ -38,6 +42,7 @@ from scipy.io import readsav
 from scipy import interpolate
 from scipy.optimize import curve_fit
 import matplotlib as mpl
+from matplotlib import rcParams, ticker
 import matplotlib.pyplot as plt
 import matplotlib.image as mpl_img
 from matplotlib.ticker import FixedLocator
@@ -179,7 +184,16 @@ def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, R_earth=6378000.0, verbose=Tru
 
     return lon, lat
 
-def pre_cld(sat, scale_factor=1.0, solver='3D'):
+def pre_cld_modis(sat, wvl, scale_factor=1.0, solver='3D'):
+
+    if (wvl>=620) & (wvl<=670):
+        wvl = 650
+    elif (wvl>=841) & (wvl<=876):
+        wvl = 860
+    else:
+        sys.exit('Error  [pre_cld_modis]: do not support wavelength of %d nm.' % wvl)
+
+    index = {650: 0, 860: 1}
 
     # Extract
     #   1. cloud top height (cth, 5km resolution);
@@ -205,10 +219,11 @@ def pre_cld(sat, scale_factor=1.0, solver='3D'):
     # ===================================================================================
 
 
-    # Process MODIS reflectance at 650 nm (250m resolution)
+    # Process MODIS radiance and reflectance at 650 nm (250m resolution)
     # ===================================================================================
     modl1b = modis_l1b(fnames=sat.fnames['mod_02'], extent=sat.extent)
-    lon_2d, lat_2d, ref_2d = grid_modis_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['ref']['data'][0, ...], extent=sat.extent)
+    lon_2d, lat_2d, ref_2d = grid_modis_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['ref']['data'][index[wvl], ...], extent=sat.extent)
+    lon_2d, lat_2d, rad_2d = grid_modis_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['rad']['data'][index[wvl], ...], extent=sat.extent)
     # ===================================================================================
 
 
@@ -279,9 +294,9 @@ def pre_cld(sat, scale_factor=1.0, solver='3D'):
     vaa[...] = np.nanmean(vaa)
 
     if solver == '3D':
-        lon_corr_p, lat_corr_p  = para_corr(lon, lat, vza, vaa, cth*1000.0, sfh*1000.0)
+        lon_corr, lat_corr  = para_corr(lon, lat, vza, vaa, cth*1000.0, sfh*1000.0)
     elif solver == 'IPA':
-        lon_corr_p, lat_corr_p  = para_corr(lon, lat, vza, vaa, sfh, sfh)
+        lon_corr, lat_corr  = para_corr(lon, lat, vza, vaa, sfh, sfh)
     # ====================================================================================================
 
 
@@ -333,9 +348,15 @@ def pre_cld(sat, scale_factor=1.0, solver='3D'):
     modl1b.data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=lon_2d)
     modl1b.data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=lat_2d)
     modl1b.data['ref_2d'] = dict(name='Gridded reflectance'             , units='N/A'        , data=ref_2d)
+    modl1b.data['rad_2d'] = dict(name='Gridded radiance'                , units='W/m2/nm/sr' , data=rad_2d)
     modl1b.data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=cot_2d_l1b*scale_factor)
     modl1b.data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micron'     , data=cer_2d_l1b)
     modl1b.data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=cth_2d_l1b)
+    modl1b.data['wvl']    = dict(name='Wavelength'                      , units='nm'         , data=wvl)
+    modl1b.data['sza']    = dict(name='Solar Zenith Angle'              , units='degree'     , data=np.nanmean(sza1))
+    modl1b.data['saa']    = dict(name='Solar Azimuth Angle'             , units='degree'     , data=np.nanmean(saa1))
+    modl1b.data['vza']    = dict(name='Sensor Zenith Angle'             , units='degree'     , data=np.nanmean(vza1))
+    modl1b.data['vaa']    = dict(name='Sensor Azimuth Angle'            , units='degree'     , data=np.nanmean(vaa1))
     # ===================================================================================
 
     return modl1b
@@ -343,19 +364,16 @@ def pre_cld(sat, scale_factor=1.0, solver='3D'):
 
 
 
-def pre_sfc(sat, wvl):
+def pre_sfc_modis(sat, wvl):
 
     if (wvl>=620) & (wvl<=670):
         wvl = 650
     elif (wvl>=841) & (wvl<=876):
         wvl = 860
     else:
-        sys.exit()
+        sys.exit('Error  [pre_sfc_modis]: do not support wavelength of %d nm.' % wvl)
 
-    index = {
-            650: 0,
-            860: 1
-            }
+    index = {650: 0, 860: 1}
 
     # Extract and grid MODIS surface reflectance
     #   band 1: 620  - 670  nm, index 0
@@ -388,7 +406,7 @@ class sat_tmp:
 def cal_mca_rad(sat, wavelength, photons=1e8, fdir='tmp-data', solver='3D', overwrite=False):
 
     """
-    Simulate OCO-2 radiance
+    Simulate MODIS radiance
     """
 
 
@@ -410,8 +428,8 @@ def cal_mca_rad(sat, wavelength, photons=1e8, fdir='tmp-data', solver='3D', over
     # sfc object
     # =================================================================================
     data = {}
-    f = h5py.File('01_oco2_rad-sim_pre-data.h5', 'r')
-    data['alb_2d'] = dict(data=f['mod/sfc/alb_0770'][...], name='Surface albedo', units='N/A')
+    f = h5py.File('02_modis_rad-sim_pre-data.h5', 'r')
+    data['alb_2d'] = dict(data=f['mod/sfc/alb_%4.4d' % wavelength][...], name='Surface albedo', units='N/A')
     data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
     data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
     f.close()
@@ -426,7 +444,7 @@ def cal_mca_rad(sat, wavelength, photons=1e8, fdir='tmp-data', solver='3D', over
     # cld object
     # =================================================================================
     data = {}
-    f = h5py.File('01_oco2_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('02_modis_rad-sim_pre-data.h5', 'r')
     data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['mod/rad/lon'][...])
     data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['mod/rad/lat'][...])
     data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_2s'][...])
@@ -460,11 +478,11 @@ def cal_mca_rad(sat, wavelength, photons=1e8, fdir='tmp-data', solver='3D', over
 
     # solar zenith/azimuth angles and sensor zenith/azimuth angles
     # =================================================================================
-    f = h5py.File('01_oco2_rad-sim_pre-data.h5', 'r')
-    sza = f['oco/sza'][...][f['oco/logic'][...]].mean()
-    saa = f['oco/saa'][...][f['oco/logic'][...]].mean()
-    vza = f['oco/vza'][...][f['oco/logic'][...]].mean()
-    vaa = f['oco/vaa'][...][f['oco/logic'][...]].mean()
+    f = h5py.File('02_modis_rad-sim_pre-data.h5', 'r')
+    sza = f['mod/rad/sza'][...].mean()
+    saa = f['mod/rad/saa'][...].mean()
+    vza = f['mod/rad/vza'][...].mean()
+    vaa = f['mod/rad/vaa'][...].mean()
     f.close()
     # =================================================================================
 
@@ -494,13 +512,13 @@ def cal_mca_rad(sat, wavelength, photons=1e8, fdir='tmp-data', solver='3D', over
             )
 
     # mcarats output
-    out0 = mca_out_ng(fname='%s/mca-out-rad-oco2-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    out0 = mca_out_ng(fname='%s/mca-out-rad-modis-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
     # =================================================================================
 
 
 
 
-def main_pre():
+def main_pre(wvl=650):
 
     # create data directory (for storing data) if the directory does not exist
     # ==================================================================================================
@@ -541,14 +559,21 @@ def main_pre():
     # ==================================================================================================
     mod_rgb = mpl_img.imread(sat0.fnames['mod_rgb'][0])
     g['rgb'] = mod_rgb
+
     print('Message [pre_data]: the processing of MODIS RGB imagery is complete.')
     # ==================================================================================================
 
     # cloud optical properties
     # ==================================================================================================
-    mod0 = pre_cld(sat0)
+    mod0 = pre_cld_modis(sat0, wvl)
     g1['lon'] = mod0.data['lon_2d']['data']
     g1['lat'] = mod0.data['lat_2d']['data']
+    g1['sza'] = mod0.data['sza']['data']
+    g1['saa'] = mod0.data['saa']['data']
+    g1['vza'] = mod0.data['vza']['data']
+    g1['vaa'] = mod0.data['vaa']['data']
+    g1['rad_%4.4d' % mod0.data['wvl']['data']] = mod0.data['rad_2d']['data']
+
     g2['cot_2s'] = mod0.data['cot_2d']['data']
     g2['cer_l2'] = mod0.data['cer_2d']['data']
     g2['cth_l2'] = mod0.data['cth_2d']['data']
@@ -558,7 +583,7 @@ def main_pre():
 
     # surface albedo
     # ==================================================================================================
-    mod_sfc = pre_sfc(sat0, 'o2a', scale=True, replace=True)
+    mod_sfc = pre_sfc_modis(sat0, wvl)
 
     g3['lon'] = mod_sfc.data['lon_2d']['data']
     g3['lat'] = mod_sfc.data['lat_2d']['data']
@@ -569,7 +594,7 @@ def main_pre():
 
     f0.close()
 
-def main_sim():
+def main_sim(wvl=650):
 
     # create data directory (for storing data) if the directory does not exist
     # ==================================================================================================
@@ -580,7 +605,7 @@ def main_sim():
     # ===============================================================
 
 
-    # create tmp-data/01_oco2_rad-sim directory if it does not exist
+    # create tmp-data/02_modis_rad-sim directory if it does not exist
     # ===============================================================
     fdir_tmp = os.path.abspath('tmp-data/%s' % (name_tag))
     if not os.path.exists(fdir_tmp):
@@ -588,140 +613,97 @@ def main_sim():
     # ===============================================================
 
 
-    # run radiance simulations under both 3D and IPA modes
+    # run radiance simulations under both 3D mode
     # ===============================================================
-    index = np.argmin(np.abs(wvls-770.0))
-    wavelength = wvls[index]
-    for solver in ['3D', 'IPA']:
-        cal_mca_rad(sat0, wavelength, fname_idl, fdir=fdir_tmp, solver=solver, overwrite=True, photons=1e7)
+    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True, photons=1e7)
     # ===============================================================
 
-def main_post(plot=False):
+def main_post(wvl=650, plot=False):
 
-    wvl0 = 768.5151
-
-    # read in OCO-2 measured radiance
+    # read in MODIS measured radiance
     # ==================================================================================================
-    f = h5py.File('01_oco2_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('02_modis_rad-sim_pre-data.h5', 'r')
     extent = f['extent'][...]
-    wvl_oco = f['oco/o2a/wvl'][...]
-    lon_oco = f['oco/lon'][...]
-    lat_oco = f['oco/lat'][...]
-    rad_oco = f['oco/o2a/rad'][...][:, :, np.argmin(np.abs(wvl_oco[0, 0, :]-wvl0))]
-    logic_oco = f['oco/logic'][...]
+    lon_mod = f['mod/rad/lon'][...]
+    lat_mod = f['mod/rad/lat'][...]
+    rad_mod = f['mod/rad/rad_%4.4d' % wvl][...]
     f.close()
     # ==================================================================================================
 
 
-    # read in EaR3T simulations (3D and IPA)
+    # read in EaR3T simulations (3D)
     # ==================================================================================================
-    fname = 'tmp-data/case_01_new_20220316/o2a/mca-out-rad-oco2-3d_%.4fnm.h5' % (wvl0)
+    fname = 'tmp-data/02_modis_rad-sim/mca-out-rad-modis-3d_%.4fnm.h5' % (wvl)
     f = h5py.File(fname, 'r')
-    rad_3d     = f['mean/rad'][...]
-    rad_3d_std = f['mean/rad_std'][...]
+    rad_rtm_3d     = f['mean/rad'][...]
+    rad_rtm_3d_std = f['mean/rad_std'][...]
     f.close()
-
-    fname = 'tmp-data/case_01_new_20220316/o2a/mca-out-rad-oco2-ipa_%.4fnm.h5' % (wvl0)
-    f = h5py.File(fname, 'r')
-    rad_ipa    = f['mean/rad'][...]
-    rad_ipa_std = f['mean/rad_std'][...]
-    f.close()
-    # ==================================================================================================
-
-
-    # collocate EaR3T simulations (2D domain) to OCO-2 measurement locations
-    # ==================================================================================================
-    rad_mca_3d = np.zeros_like(rad_oco)
-    rad_mca_3d_std = np.zeros_like(rad_oco)
-    rad_mca_ipa = np.zeros_like(rad_oco)
-    rad_mca_ipa_std = np.zeros_like(rad_oco)
-
-    for i in range(lon_oco.shape[0]):
-        for j in range(lon_oco.shape[1]):
-            lon0 = lon_oco[i, j]
-            lat0 = lat_oco[i, j]
-
-            index_lon = np.argmin(np.abs(lon_2d[:, 0]-lon0))
-            index_lat = np.argmin(np.abs(lat_2d[0, :]-lat0))
-
-            rad_mca_ipa[i, j]  = rad_ipa[index_lon, index_lat]
-            rad_mca_3d[i, j]   = rad_3d[index_lon, index_lat]
-
-            rad_mca_ipa_std[i, j]  = rad_ipa_std[index_lon, index_lat]
-            rad_mca_3d_std[i, j]   = rad_3d_std[index_lon, index_lat]
     # ==================================================================================================
 
 
     # save data
     # ==================================================================================================
-    f = h5py.File('01_oco2_rad-sim_post-data.h5', 'w')
-    f['wvl'] = wvl0
-    f['lon'] = lon_oco
-    f['lat'] = lat_oco
-    f['rad_obs'] = rad_oco
-    f['rad_sim_3d'] = rad_mca_3d
-    f['rad_sim_ipa'] = rad_mca_ipa
-    f['rad_sim_3d_std'] = rad_mca_3d_std
-    f['rad_sim_ipa_std'] = rad_mca_ipa_std
+    f = h5py.File('02_modis_rad-sim_post-data.h5', 'w')
+    f['wvl'] = wvl
+    f['lon'] = lon_mod
+    f['lat'] = lat_mod
+    f['extent']         = extent
+    f['rad_obs']        = rad_mod
+    f['rad_sim_3d']     = rad_rtm_3d
+    f['rad_sim_3d_std'] = rad_rtm_3d_std
     f.close()
     # ==================================================================================================
 
-    exit()
-
-
     if plot:
 
-        # average over latitude grid (0.01 degree)
         # ==================================================================================================
-        lat0 = np.arange(37.0, 39.01, 0.01)
-        lat = (lat0[1:] + lat0[:-1])/2.0
-
-        oco_rad = np.zeros_like(lat)
-        oco_rad_std = np.zeros_like(lat)
-
-        mca_rad_3d = np.zeros_like(lat)
-        mca_rad_3d_std = np.zeros_like(lat)
-
-        mca_rad_ipa = np.zeros_like(lat)
-        mca_rad_ipa_std = np.zeros_like(lat)
-
-        for i in range(lat.size):
-            logic = (lat_oco>=lat0[i]) & (lat_oco<lat0[i+1])
-            oco_rad[i] = np.mean(rad_oco[logic])
-            oco_rad_std[i] = np.std(rad_oco[logic])
-
-            mca_rad_3d[i] = np.mean(rad_mca_3d[logic])
-            mca_rad_3d_std[i] = np.std(rad_mca_3d[logic])
-
-            mca_rad_ipa[i] = np.mean(rad_mca_ipa[logic])
-            mca_rad_ipa_std[i] = np.std(rad_mca_ipa[logic])
-        # ==================================================================================================
-
-
-        # ==================================================================================================
-        fig = plt.figure(figsize=(10, 6.18))
-        ax1 = fig.add_subplot(111)
-        ax1.plot(lat, mca_rad_ipa, color='b', lw=1.5, alpha=0.5)
-        ax1.fill_between(lat, oco_rad-oco_rad_std, oco_rad+oco_rad_std, color='k', alpha=0.5, lw=0.0)
-        ax1.plot(lat, oco_rad, color='k', lw=1.5, alpha=0.8)
-        ax1.fill_between(lat, mca_rad_3d-mca_rad_3d_std, mca_rad_3d+mca_rad_3d_std, color='r', alpha=0.5, lw=0.0)
-        ax1.plot(lat, mca_rad_3d, color='r', lw=1.5, alpha=0.8)
-        ax1.set_xlim((37.0, 39.0))
-        ax1.set_ylim((0.0, 0.4))
+        fig = plt.figure(figsize=(10, 10))
+        ax1 = fig.add_subplot(221)
+        ax1.imshow(rad_mod.T, cmap='Greys_r', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
+        ax1.set_xlabel('Longititude [$^\circ$]')
+        ax1.set_ylabel('Latitude [$^\circ$]')
+        ax1.set_xlim((-109.0, -107.0))
+        ax1.set_ylim((37.0, 39.0))
         ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
-        ax1.set_xlabel('Latitude [$^\circ$]')
-        ax1.set_ylabel('Radiance [$\mathrm{W m^{-2} nm^{-1} sr^{-1}}$]')
+        ax1.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
+        ax1.set_title('MODIS Measured Radiance')
 
-        patches_legend = [
-                    mpatches.Patch(color='black' , label='OCO-2'),
-                    mpatches.Patch(color='red'   , label='RTM 3D'),
-                    mpatches.Patch(color='blue'  , label='RTM IPA')
-                    ]
-        ax1.legend(handles=patches_legend, loc='upper right', fontsize=12)
+        logic = (lon_mod>=-109.0) & (lon_mod<=-107.0) & (lat_mod>=37.0) & (lat_mod<=39.0)
 
-        plt.savefig('01_oco2_rad-sim.png', bbox_inches='tight')
+        xedges = np.arange(-0.01, 0.61, 0.005)
+        yedges = np.arange(-0.01, 0.61, 0.005)
+        heatmap, xedges, yedges = np.histogram2d(rad_mod[logic], rad_rtm_3d[logic], bins=(xedges, yedges))
+        YY, XX = np.meshgrid((yedges[:-1]+yedges[1:])/2.0, (xedges[:-1]+xedges[1:])/2.0)
+
+        levels = np.concatenate((np.arange(1.0, 10.0, 1.0),
+                                 np.arange(10.0, 200.0, 10.0),
+                                 np.arange(200.0, 1000.0, 100.0),
+                                 np.arange(1000.0, 10001.0, 5000.0)))
+
+        ax2 = fig.add_subplot(223)
+        cs = ax2.contourf(XX, YY, heatmap, levels, extend='both', locator=ticker.LogLocator(), cmap='jet')
+        ax2.plot([0.0, 1.0], [0.0, 1.0], lw=1.0, ls='--', color='gray', zorder=3)
+        ax2.set_xlim(0.0, 0.6)
+        ax2.set_ylim(0.0, 0.6)
+        ax2.set_xlabel('MODIS Measured Radiance')
+        ax2.set_ylabel('Simulated 3D Radiance')
+
+        ax3 = fig.add_subplot(224)
+        ax3.imshow(rad_rtm_3d.T, cmap='Greys_r', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
+        ax3.set_xlabel('Longititude [$^\circ$]')
+        ax3.set_ylabel('Latitude [$^\circ$]')
+        ax3.set_xlim((-109.0, -107.0))
+        ax3.set_ylim((37.0, 39.0))
+        ax3.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
+        ax3.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
+        ax3.set_title('EaR$^3$T Simulated 3D Radiance')
+
+        plt.subplots_adjust(hspace=0.4, wspace=0.4)
+
+        plt.savefig('02_modis_rad-sim.png', bbox_inches='tight')
         plt.show()
         # ==================================================================================================
+
 
 
 
@@ -729,12 +711,15 @@ if __name__ == '__main__':
 
     # Step 1. Download and Pre-process data, after run
     #   a. <02_modis_rad-sim_pre-data.h5> will be created under current directory
-    main_pre()
+    # main_pre()
 
-    # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
-    #   a. <> will be created under tmp-data/01_oco2_rad-sim/
-    #   b. <> will be created under tmp-data/01_oco2_rad-sim/
+    # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
+    #   a. <mca-out-rad-modis-3d_650.0000nm.h5> will be created under tmp-data/02_modis_rad-sim
     # main_sim()
 
-    # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
-    # main_post()
+    # Step 3. Post-process radiance observations and simulations for MODIS, after run
+    #   a. <02_modis_rad-sim_post-data.h5> will be created under current directory
+    #   b. <02_modis_rad-sim.png> will be created under current directory
+    # main_post(plot=True)
+
+    pass
