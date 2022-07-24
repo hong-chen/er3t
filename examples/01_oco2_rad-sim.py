@@ -1,7 +1,7 @@
 """
 by Hong Chen (hong.chen.cu@gmail.com)
 
-This code serves as an example code to reproduce 3D OCO-2 radiance simulation for App. 1 in Chen et al. (2022).
+This code serves as an example code to reproduce 3D/IPA OCO-2 radiance simulation for App. 1 in Chen et al. (2022).
 
 The processes include:
     1) automatically download and pre-process satellite data products (~2.2 GB data stored under data/01_oco2_rad-sim)
@@ -18,6 +18,8 @@ The processes include:
         j) oco2_L2StdND_27502a_190902_B10004r_200226231039.h5
 
     2) run simulation
+        a) 3D mode
+        b) IPA mode
 
 Tested under:
     1) Linux on 2022-07-22 by Hong Chen
@@ -30,21 +32,21 @@ Tested under:
 
 import os
 import sys
-import glob
 import pickle
 import h5py
 from pyhdf.SD import SD, SDC
 import numpy as np
 import datetime
-import time
 from scipy.io import readsav
 from scipy import interpolate
-from scipy import stats
 from scipy.optimize import curve_fit
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import matplotlib.image as mpl_img
+from matplotlib.ticker import FixedLocator
 
 from er3t.pre.atm import atm_atmmod
-from er3t.pre.abs import abs_16g, abs_oco_idl
+from er3t.pre.abs import abs_oco_idl
 from er3t.pre.cld import cld_sat
 from er3t.pre.sfc import sfc_sat
 from er3t.pre.pha import pha_mie_wc as pha_mie
@@ -639,7 +641,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, photons=1e8, fdir='tmp-data', solver
 
 
 
-def main_pre_data():
+def main_pre():
 
     # create data directory (for storing data) if the directory does not exist
     # ==================================================================================================
@@ -740,7 +742,7 @@ def main_pre_data():
 
     f0.close()
 
-def main_run_sim():
+def main_sim():
 
     # create data directory (for storing data) if the directory does not exist
     # ==================================================================================================
@@ -775,13 +777,146 @@ def main_run_sim():
         cal_mca_rad(sat0, wavelength, fname_idl, fdir=fdir_tmp, solver=solver, overwrite=True, photons=1e7)
     # ===============================================================
 
+def main_post(plot=False):
+
+    wvl0 = 768.5151
+
+    # read in OCO-2 measured radiance
+    # ==================================================================================================
+    f = h5py.File('01_oco2_rad-sim_pre-data.h5', 'r')
+    extent = f['extent'][...]
+    wvl_oco = f['oco/o2a/wvl'][...]
+    lon_oco = f['oco/lon'][...]
+    lat_oco = f['oco/lat'][...]
+    rad_oco = f['oco/o2a/rad'][...][:, :, np.argmin(np.abs(wvl_oco[0, 0, :]-wvl0))]
+    logic_oco = f['oco/logic'][...]
+    f.close()
+    # ==================================================================================================
+
+
+    # read in EaR3T simulations (3D and IPA)
+    # ==================================================================================================
+    fname = 'tmp-data/case_01_new_20220316/o2a/mca-out-rad-oco2-3d_%.4fnm.h5' % (wvl0)
+    f = h5py.File(fname, 'r')
+    rad_3d     = f['mean/rad'][...]
+    rad_3d_std = f['mean/rad_std'][...]
+    f.close()
+
+    fname = 'tmp-data/case_01_new_20220316/o2a/mca-out-rad-oco2-ipa_%.4fnm.h5' % (wvl0)
+    f = h5py.File(fname, 'r')
+    rad_ipa    = f['mean/rad'][...]
+    rad_ipa_std = f['mean/rad_std'][...]
+    f.close()
+    # ==================================================================================================
+
+
+    # collocate EaR3T simulations (2D domain) to OCO-2 measurement locations
+    # ==================================================================================================
+    rad_mca_3d = np.zeros_like(rad_oco)
+    rad_mca_3d_std = np.zeros_like(rad_oco)
+    rad_mca_ipa = np.zeros_like(rad_oco)
+    rad_mca_ipa_std = np.zeros_like(rad_oco)
+
+    for i in range(lon_oco.shape[0]):
+        for j in range(lon_oco.shape[1]):
+            lon0 = lon_oco[i, j]
+            lat0 = lat_oco[i, j]
+
+            index_lon = np.argmin(np.abs(lon_2d[:, 0]-lon0))
+            index_lat = np.argmin(np.abs(lat_2d[0, :]-lat0))
+
+            rad_mca_ipa[i, j]  = rad_ipa[index_lon, index_lat]
+            rad_mca_3d[i, j]   = rad_3d[index_lon, index_lat]
+
+            rad_mca_ipa_std[i, j]  = rad_ipa_std[index_lon, index_lat]
+            rad_mca_3d_std[i, j]   = rad_3d_std[index_lon, index_lat]
+    # ==================================================================================================
+
+
+    # save data
+    # ==================================================================================================
+    f = h5py.File('01_oco2_rad-sim_post-data.h5', 'w')
+    f['wvl'] = wvl0
+    f['lon'] = lon_oco
+    f['lat'] = lat_oco
+    f['rad_obs'] = rad_oco
+    f['rad_sim_3d'] = rad_mca_3d
+    f['rad_sim_ipa'] = rad_mca_ipa
+    f['rad_sim_3d_std'] = rad_mca_3d_std
+    f['rad_sim_ipa_std'] = rad_mca_ipa_std
+    f.close()
+    # ==================================================================================================
+
+    exit()
+
+
+    if plot:
+
+        # average over latitude grid (0.01 degree)
+        # ==================================================================================================
+        lat0 = np.arange(37.0, 39.01, 0.01)
+        lat = (lat0[1:] + lat0[:-1])/2.0
+
+        oco_rad = np.zeros_like(lat)
+        oco_rad_std = np.zeros_like(lat)
+
+        mca_rad_3d = np.zeros_like(lat)
+        mca_rad_3d_std = np.zeros_like(lat)
+
+        mca_rad_ipa = np.zeros_like(lat)
+        mca_rad_ipa_std = np.zeros_like(lat)
+
+        for i in range(lat.size):
+            logic = (lat_oco>=lat0[i]) & (lat_oco<lat0[i+1])
+            oco_rad[i] = np.mean(rad_oco[logic])
+            oco_rad_std[i] = np.std(rad_oco[logic])
+
+            mca_rad_3d[i] = np.mean(rad_mca_3d[logic])
+            mca_rad_3d_std[i] = np.std(rad_mca_3d[logic])
+
+            mca_rad_ipa[i] = np.mean(rad_mca_ipa[logic])
+            mca_rad_ipa_std[i] = np.std(rad_mca_ipa[logic])
+        # ==================================================================================================
+
+
+        # ==================================================================================================
+        fig = plt.figure(figsize=(10, 6.18))
+        ax1 = fig.add_subplot(111)
+        ax1.plot(lat, mca_rad_ipa, color='b', lw=1.5, alpha=0.5)
+        ax1.fill_between(lat, oco_rad-oco_rad_std, oco_rad+oco_rad_std, color='k', alpha=0.5, lw=0.0)
+        ax1.plot(lat, oco_rad, color='k', lw=1.5, alpha=0.8)
+        ax1.fill_between(lat, mca_rad_3d-mca_rad_3d_std, mca_rad_3d+mca_rad_3d_std, color='r', alpha=0.5, lw=0.0)
+        ax1.plot(lat, mca_rad_3d, color='r', lw=1.5, alpha=0.8)
+        ax1.set_xlim((37.0, 39.0))
+        ax1.set_ylim((0.0, 0.4))
+        ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
+        ax1.set_xlabel('Latitude [$^\circ$]')
+        ax1.set_ylabel('Radiance [$\mathrm{W m^{-2} nm^{-1} sr^{-1}}$]')
+
+        patches_legend = [
+                    mpatches.Patch(color='black' , label='OCO-2'),
+                    mpatches.Patch(color='red'   , label='RTM 3D'),
+                    mpatches.Patch(color='blue'  , label='RTM IPA')
+                    ]
+        ax1.legend(handles=patches_legend, loc='upper right', fontsize=12)
+
+        plt.savefig('01_oco2_rad-sim.png', bbox_inches='tight')
+        plt.show()
+        # ==================================================================================================
+
 
 
 if __name__ == '__main__':
 
-    # Download and Pre-process data, after run
-    #   <01_oco2_rad-sim_pre-data.h5> will be created under current directory
-    # main_pre_data()
+    # Step 1. Download and Pre-process data, after run
+    #   a. <01_oco2_rad-sim_pre-data.h5> will be created under current directory
+    # main_pre()
 
-    # Use EaR3T to run radiance simulations for OCO-2, after run
-    main_run_sim()
+    # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
+    #   a. <> will be created under tmp-data/01_oco2_rad-sim/
+    #   b. <> will be created under tmp-data/01_oco2_rad-sim/
+    # main_sim()
+
+    # Step 3. Post-process data, after run
+    #   a. <01_oco2_rad-sim_post-data.h5> will be created under current directory
+    main_post()
