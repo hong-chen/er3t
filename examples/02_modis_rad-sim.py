@@ -428,7 +428,7 @@ def cal_mca_rad(sat, wavelength, photons=1e8, fdir='tmp-data', solver='3D', over
     # sfc object
     # =================================================================================
     data = {}
-    f = h5py.File('02_modis_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('data/02_modis_rad-sim/pre-data.h5', 'r')
     data['alb_2d'] = dict(data=f['mod/sfc/alb_%4.4d' % wavelength][...], name='Surface albedo', units='N/A')
     data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
     data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
@@ -444,7 +444,7 @@ def cal_mca_rad(sat, wavelength, photons=1e8, fdir='tmp-data', solver='3D', over
     # cld object
     # =================================================================================
     data = {}
-    f = h5py.File('02_modis_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('data/02_modis_rad-sim/pre-data.h5', 'r')
     data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['mod/rad/lon'][...])
     data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['mod/rad/lat'][...])
     data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_2s'][...])
@@ -478,7 +478,7 @@ def cal_mca_rad(sat, wavelength, photons=1e8, fdir='tmp-data', solver='3D', over
 
     # solar zenith/azimuth angles and sensor zenith/azimuth angles
     # =================================================================================
-    f = h5py.File('02_modis_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('data/02_modis_rad-sim/pre-data.h5', 'r')
     sza = f['mod/rad/sza'][...].mean()
     saa = f['mod/rad/saa'][...].mean()
     vza = f['mod/rad/vza'][...].mean()
@@ -544,7 +544,7 @@ def main_pre(wvl=650):
 
     # pre-process downloaded data
     # ==================================================================================================
-    f0 = h5py.File('%s_pre-data.h5' % name_tag, 'w')
+    f0 = h5py.File('data/%s/pre-data.h5' % name_tag, 'w')
     f0['extent'] = sat0.extent
 
     # MODIS data groups in the HDF file
@@ -620,9 +620,18 @@ def main_sim(wvl=650):
 
 def main_post(wvl=650, plot=False):
 
+    # create data directory (for storing data) if the directory does not exist
+    # ==================================================================================================
+    name_tag = __file__.replace('.py', '')
+
+    fdir_data = os.path.abspath('data/%s' % name_tag)
+    if not os.path.exists(fdir_data):
+        os.makedirs(fdir_data)
+    # ==================================================================================================
+
     # read in MODIS measured radiance
     # ==================================================================================================
-    f = h5py.File('02_modis_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
     extent = f['extent'][...]
     lon_mod = f['mod/rad/lon'][...]
     lat_mod = f['mod/rad/lat'][...]
@@ -633,7 +642,7 @@ def main_post(wvl=650, plot=False):
 
     # read in EaR3T simulations (3D)
     # ==================================================================================================
-    fname = 'tmp-data/02_modis_rad-sim/mca-out-rad-modis-3d_%.4fnm.h5' % (wvl)
+    fname = 'tmp-data/%s/mca-out-rad-modis-3d_%.4fnm.h5' % (name_tag, wvl)
     f = h5py.File(fname, 'r')
     rad_rtm_3d     = f['mean/rad'][...]
     rad_rtm_3d_std = f['mean/rad_std'][...]
@@ -643,7 +652,7 @@ def main_post(wvl=650, plot=False):
 
     # save data
     # ==================================================================================================
-    f = h5py.File('02_modis_rad-sim_post-data.h5', 'w')
+    f = h5py.File('data/%s/post-data.h5' % name_tag, 'w')
     f['wvl'] = wvl
     f['lon'] = lon_mod
     f['lat'] = lat_mod
@@ -710,7 +719,7 @@ def main_post(wvl=650, plot=False):
 if __name__ == '__main__':
 
     # Step 1. Download and Pre-process data, after run
-    #   a. <02_modis_rad-sim_pre-data.h5> will be created under current directory
+    #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     # main_pre()
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
@@ -718,7 +727,7 @@ if __name__ == '__main__':
     # main_sim()
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
-    #   a. <02_modis_rad-sim_post-data.h5> will be created under current directory
+    #   a. <post-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim.png> will be created under current directory
     # main_post(plot=True)
 
