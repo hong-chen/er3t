@@ -1,6 +1,6 @@
 EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-![Discord Banner 2](https://discordapp.com/api/guilds/681619528945500252/widget.png?style=banner2)
+<img src="https://discordapp.com/api/guilds/681619528945500252/widget.png?style=shield" alt="Discord Shield"/>
 
 |
 
