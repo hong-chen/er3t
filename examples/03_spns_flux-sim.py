@@ -25,20 +25,12 @@ This code has been tested under:
 import os
 import sys
 import glob
-import copy
-from collections import OrderedDict
 import h5py
 import numpy as np
 import datetime
-import time
 import pickle
-import multiprocessing as mp
-from scipy.io import readsav
-from scipy import interpolate
 from scipy.interpolate import RegularGridInterpolator
-from tqdm import tqdm
 import matplotlib as mpl
-# mpl.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.ticker import FixedLocator
@@ -47,9 +39,6 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.image as mpimg
-
-import cartopy.crs as ccrs
-from owslib.wmts import WebMapTileService
 
 from er3t.pre.atm import atm_atmmod
 from er3t.pre.abs import abs_16g
@@ -60,13 +49,10 @@ from er3t.rtm.mca_v010 import mca_atm_1d, mca_atm_3d
 from er3t.rtm.mca_v010 import mcarats_ng
 from er3t.rtm.mca_v010 import mca_out_ng
 from er3t.rtm.mca_v010 import mca_sca
-from er3t.util import send_email
 from er3t.util.ahi import ahi_l2
 from er3t.util.modis import grid_modis_by_extent
 
 
-
-# passed test
 
 def get_jday_ahi(fnames):
 
@@ -169,7 +155,7 @@ def partition_flight_track(flt_trk, tmhr_interval=0.1, margin_x=1.0, margin_y=1.
 
 
 
-def run_mcarats_single(
+def cal_mca_flux(
         index,
         fname_sat,
         extent,
@@ -187,7 +173,7 @@ def run_mcarats_single(
         ):
 
     """
-    Run MCARaTS with specified inputs (a general function from 04_pre_mca.py)
+    flux simulation using EaR3T for flight track based on AHI cloud retrievals
     """
 
     # define an atmosphere object
@@ -230,7 +216,6 @@ def run_mcarats_single(
 
     pha0 = pha_mie(wvl0=wavelength)
     sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -388,8 +373,8 @@ class flt_sim:
             flt_trk = self.flt_trks[i]
             sat_img = self.sat_imgs[i]
 
-            atm0, cld_ahi0, mca_out_ipa0 = run_mcarats_single(i, sat_img['fname'], sat_img['extent'], flt_trk['sza0'], date=self.date, wavelength=self.wvl, solver='IPA', fdir=self.fdir, photons=self.photons, Ncpu=self.Ncpu, overwrite=overwrite, quiet=self.quiet)
-            atm0, cld_ahi0, mca_out_3d0  = run_mcarats_single(i, sat_img['fname'], sat_img['extent'], flt_trk['sza0'], date=self.date, wavelength=self.wvl, solver='3D' , fdir=self.fdir, photons=self.photons, Ncpu=self.Ncpu, overwrite=overwrite, quiet=self.quiet)
+            atm0, cld_ahi0, mca_out_ipa0 = cal_mca_flux(i, sat_img['fname'], sat_img['extent'], flt_trk['sza0'], date=self.date, wavelength=self.wvl, solver='IPA', fdir=self.fdir, photons=self.photons, Ncpu=self.Ncpu, overwrite=overwrite, quiet=self.quiet)
+            atm0, cld_ahi0, mca_out_3d0  = cal_mca_flux(i, sat_img['fname'], sat_img['extent'], flt_trk['sza0'], date=self.date, wavelength=self.wvl, solver='3D' , fdir=self.fdir, photons=self.photons, Ncpu=self.Ncpu, overwrite=overwrite, quiet=self.quiet)
 
             self.sat_imgs[i]['lon'] = cld_ahi0.lay['lon']['data']
             self.sat_imgs[i]['lat'] = cld_ahi0.lay['lat']['data']
@@ -602,10 +587,7 @@ if __name__ == '__main__':
     main_run()
 
 
-    # Step 3. Post-process radiance observations and simulations for MODIS, after run
+    # Step 2. Post-process radiance observations and simulations for SPN-S, after run
     #   a. <post-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim.png> will be created under current directory
     # main_post(plot=True)
-
-
-    # save_h5(date, wavelength=wavelength)
