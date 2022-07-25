@@ -11,15 +11,15 @@ from er3t.util import check_equal
 
 
 
-__all__ = ['himawari_l2']
+__all__ = ['ahi_l2']
 
 
-# HIMAWARI reader
+# reader for AHI (Advanced HIMAWARI Imager)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-class himawari_l2:
+class ahi_l2:
 
     """
-    Read HIMAWARI level 2 cloud product
+    Read AHI level 2 cloud product
 
     Input:
         fnames=   : keyword argument, default=None, Python list of the file path of the original HDF4 file
@@ -37,7 +37,7 @@ class himawari_l2:
     """
 
 
-    ID = 'MODIS Level 2 Cloud Product'
+    ID = 'AHI Level 2 Cloud Product'
 
 
     def __init__(self, \
