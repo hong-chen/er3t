@@ -3,6 +3,6 @@ from .tools import *
 from .modis import *
 from .seviri import *
 from .cloud import *
-from .himawari import *
+from .ahi import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
