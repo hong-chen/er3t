@@ -4,8 +4,8 @@ by Hong Chen (hong.chen.cu@gmail.com)
 This code serves as an example code to reproduce 3D/IPA OCO-2 radiance simulation for App. 1 in Chen et al. (2022).
 
 The processes include:
-    1) automatically download and pre-process satellite data products (~2.2 GB data stored under data/01_oco2_rad-sim)
-       from NASA data archive
+    1) automatically download and pre-process satellite data products (~2.2 GB data will be downloaded and
+       stored under data/01_oco2_rad-sim/download) from NASA data archive
         a) aqua_rgb_2019-09-02_-109.60--106.50-35.90-39.00.png
         b) MYD021KM.A2019245.2025.061.2019246161115.hdf
         c) MYD02HKM.A2019245.2025.061.2019246161115.hdf
@@ -21,7 +21,12 @@ The processes include:
         a) 3D mode
         b) IPA mode
 
-Tested under:
+    3) `main_post()`: post-process data
+        a) extract radiance observations from pre-processed data
+        b) extract radiance simulations of EaR3T
+        c) plot
+
+This code has been tested under:
     1) Linux on 2022-07-22 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
@@ -44,6 +49,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.image as mpl_img
 from matplotlib.ticker import FixedLocator
+import matplotlib.patches as mpatches
+
 
 from er3t.pre.atm import atm_atmmod
 from er3t.pre.abs import abs_oco_idl
@@ -219,7 +226,7 @@ def wind_corr(lon0, lat0, u, v, dt, R_earth=6378000.0, verbose=True):
 
     return lon, lat
 
-def pre_cld(sat, scale_factor=1.0, solver='3D'):
+def pre_cld_oco2(sat, scale_factor=1.0, solver='3D'):
 
     # Extract
     #   1. cloud top height (cth, 5km resolution);
@@ -436,6 +443,7 @@ def create_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, s
     else:
         slope = 1.0
 
+    print('slope:', slope)
     data_2d = data_bkg_2d*slope
 
     dx = x_bkg_2d[1, 0] - x_bkg_2d[0, 0]
@@ -448,7 +456,7 @@ def create_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, s
 
     return data_2d
 
-def pre_sfc(sat, tag, version='10r', scale=True, replace=True):
+def pre_sfc_oco2(sat, tag, version='10r', scale=True, replace=True):
 
     # Read in OCO-2 BRDF data
     if version == '10' or version == '10r':
@@ -461,7 +469,8 @@ def pre_sfc(sat, tag, version='10r', scale=True, replace=True):
                 'BRDFResults/brdf_reflectance_slope_weak_co2'
                   ]
     else:
-        exit('Error   [pre_sfc]: Cannot recognize version \'%s\'.' % version)
+        exit('Error   [pre_sfc_oco2]: Cannot recognize version \'%s\'.' % version)
+
     oco = oco2_std(fnames=sat.fnames['oco_std'], vnames=vnames, extent=sat.extent)
 
     # BRDF reflectance as surface albedo
@@ -551,7 +560,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, photons=1e8, fdir='tmp-data', solver
     # sfc object
     # =================================================================================
     data = {}
-    f = h5py.File('01_oco2_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
     data['alb_2d'] = dict(data=f['mod/sfc/alb_0770'][...], name='Surface albedo', units='N/A')
     data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
     data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
@@ -567,7 +576,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, photons=1e8, fdir='tmp-data', solver
     # cld object
     # =================================================================================
     data = {}
-    f = h5py.File('01_oco2_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
     data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['mod/rad/lon'][...])
     data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['mod/rad/lat'][...])
     data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_2s'][...])
@@ -601,7 +610,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, photons=1e8, fdir='tmp-data', solver
 
     # solar zenith/azimuth angles and sensor zenith/azimuth angles
     # =================================================================================
-    f = h5py.File('01_oco2_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
     sza = f['oco/sza'][...][f['oco/logic'][...]].mean()
     saa = f['oco/saa'][...][f['oco/logic'][...]].mean()
     vza = f['oco/vza'][...][f['oco/logic'][...]].mean()
@@ -667,7 +676,7 @@ def main_pre():
 
     # pre-process downloaded data
     # ==================================================================================================
-    f0 = h5py.File('%s_pre-data.h5' % name_tag, 'w')
+    f0 = h5py.File('data/%s/pre-data.h5' % name_tag, 'w')
     f0['extent'] = sat0.extent
 
     # MODIS data groups in the HDF file
@@ -682,12 +691,13 @@ def main_pre():
     # ==================================================================================================
     mod_rgb = mpl_img.imread(sat0.fnames['mod_rgb'][0])
     g['rgb'] = mod_rgb
+
     print('Message [pre_data]: the processing of MODIS RGB imagery is complete.')
     # ==================================================================================================
 
     # cloud optical properties
     # ==================================================================================================
-    mod0 = pre_cld(sat0)
+    mod0 = pre_cld_oco2(sat0)
     g1['lon'] = mod0.data['lon_2d']['data']
     g1['lat'] = mod0.data['lat_2d']['data']
     g2['cot_2s'] = mod0.data['cot_2d']['data']
@@ -699,7 +709,7 @@ def main_pre():
 
     # surface albedo
     # ==================================================================================================
-    mod_sfc = pre_sfc(sat0, 'o2a', scale=True, replace=True)
+    mod_sfc = pre_sfc_oco2(sat0, 'o2a', scale=True, replace=True)
 
     g3['lon'] = mod_sfc.data['lon_2d']['data']
     g3['lat'] = mod_sfc.data['lat_2d']['data']
@@ -774,7 +784,7 @@ def main_sim():
     index = np.argmin(np.abs(wvls-770.0))
     wavelength = wvls[index]
     for solver in ['3D', 'IPA']:
-        cal_mca_rad(sat0, wavelength, fname_idl, fdir=fdir_tmp, solver=solver, overwrite=True, photons=1e7)
+        cal_mca_rad(sat0, wavelength, fname_idl, fdir=fdir_tmp, solver=solver, overwrite=True, photons=1e8)
     # ===============================================================
 
 def main_post(plot=False):
@@ -783,26 +793,28 @@ def main_post(plot=False):
 
     # read in OCO-2 measured radiance
     # ==================================================================================================
-    f = h5py.File('01_oco2_rad-sim_pre-data.h5', 'r')
+    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
     extent = f['extent'][...]
     wvl_oco = f['oco/o2a/wvl'][...]
     lon_oco = f['oco/lon'][...]
     lat_oco = f['oco/lat'][...]
     rad_oco = f['oco/o2a/rad'][...][:, :, np.argmin(np.abs(wvl_oco[0, 0, :]-wvl0))]
     logic_oco = f['oco/logic'][...]
+    lon_2d = f['mod/rad/lon'][...]
+    lat_2d = f['mod/rad/lat'][...]
     f.close()
     # ==================================================================================================
 
 
     # read in EaR3T simulations (3D and IPA)
     # ==================================================================================================
-    fname = 'tmp-data/case_01_new_20220316/o2a/mca-out-rad-oco2-3d_%.4fnm.h5' % (wvl0)
+    fname = 'tmp-data/01_oco2_rad-sim/mca-out-rad-oco2-3d_%.4fnm.h5' % (wvl0)
     f = h5py.File(fname, 'r')
     rad_3d     = f['mean/rad'][...]
     rad_3d_std = f['mean/rad_std'][...]
     f.close()
 
-    fname = 'tmp-data/case_01_new_20220316/o2a/mca-out-rad-oco2-ipa_%.4fnm.h5' % (wvl0)
+    fname = 'tmp-data/01_oco2_rad-sim/mca-out-rad-oco2-ipa_%.4fnm.h5' % (wvl0)
     f = h5py.File(fname, 'r')
     rad_ipa    = f['mean/rad'][...]
     rad_ipa_std = f['mean/rad_std'][...]
@@ -835,7 +847,7 @@ def main_post(plot=False):
 
     # save data
     # ==================================================================================================
-    f = h5py.File('01_oco2_rad-sim_post-data.h5', 'w')
+    f = h5py.File('data/01_oco2_rad-sim/post-data.h5', 'w')
     f['wvl'] = wvl0
     f['lon'] = lon_oco
     f['lat'] = lat_oco
@@ -847,7 +859,6 @@ def main_post(plot=False):
     f.close()
     # ==================================================================================================
 
-    exit()
 
 
     if plot:
@@ -909,14 +920,17 @@ def main_post(plot=False):
 if __name__ == '__main__':
 
     # Step 1. Download and Pre-process data, after run
-    #   a. <01_oco2_rad-sim_pre-data.h5> will be created under current directory
+    #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
     # main_pre()
 
     # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
-    #   a. <> will be created under tmp-data/01_oco2_rad-sim/
-    #   b. <> will be created under tmp-data/01_oco2_rad-sim/
+    #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim
+    #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim
     # main_sim()
 
-    # Step 3. Post-process data, after run
-    #   a. <01_oco2_rad-sim_post-data.h5> will be created under current directory
-    main_post()
+    # Step 3. Post-process radiance observations and simulations for OCO-2, after run
+    #   a. <post-data.h5> will be created under data/01_oco2_rad-sim
+    #   b. <01_oco2_rad-sim.png> will be created under current directory
+    # main_post(plot=True)
+
+    pass

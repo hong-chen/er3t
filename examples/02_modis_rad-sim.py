@@ -4,8 +4,8 @@ by Hong Chen (hong.chen.cu@gmail.com)
 This code serves as an example code to reproduce 3D MODIS radiance simulation for App. 2 in Chen et al. (2022).
 
 The processes include:
-    1) `main_pre()`: automatically download and pre-process satellite data products (~640MB data stored under
-       data/02_modis_rad-sim/download) from NASA data archive
+    1) `main_pre()`: automatically download and pre-process satellite data products (~640MB data will be
+       downloaded and stored under data/02_modis_rad-sim/download) from NASA data archive
         a) aqua_rgb_2019-09-02_-109.60--106.50-35.90-39.00.png
         b) MYD021KM.A2019245.2025.061.2019246161115.hdf
         c) MYD02HKM.A2019245.2025.061.2019246161115.hdf
