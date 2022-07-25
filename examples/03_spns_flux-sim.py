@@ -61,63 +61,10 @@ from er3t.rtm.mca_v010 import mcarats_ng
 from er3t.rtm.mca_v010 import mca_out_ng
 from er3t.rtm.mca_v010 import mca_sca
 from er3t.util import send_email
-from er3t.util.himawari import himawari_l2
+from er3t.util.ahi import ahi_l2
 from er3t.util.modis import grid_modis_by_extent
 
 
-
-def save_h5(date,
-        wavelength=532.0,
-        vnames=['jday', 'lon', 'lat', 'sza', \
-            'tmhr', 'alt', 'f-up_ssfr', 'f-down_ssfr', 'f-down-diffuse_spns', 'f-down_spns', \
-            'cot', 'cer', 'cth', \
-            'f-down_mca-3d', 'f-down-diffuse_mca-3d', 'f-down-direct_mca-3d', 'f-up_mca-3d',\
-            'f-down_mca-3d-alt-all', 'f-down-diffuse_mca-3d-alt-all', 'f-down-direct_mca-3d-alt-all', 'f-up_mca-3d-alt-all',\
-            'f-down_mca-ipa', 'f-down-diffuse_mca-ipa', 'f-down-direct_mca-ipa', 'f-up_mca-ipa']):
-
-    date_s = date.strftime('%Y%m%d')
-
-    fname      = 'data/flt_sim_%09.4fnm_%s.pk' % (wavelength, date_s)
-    flt_sim0   = flt_sim(fname=fname)
-
-    fname_h5   = fname.replace('.pk', '.h5')
-    f = h5py.File(fname_h5, 'w')
-
-    for vname in vnames:
-
-        if 'alt-all' in vname:
-
-
-            for i in range(len(flt_sim0.flt_trks)):
-
-                flt_trk = flt_sim0.flt_trks[i]
-
-                if i == 0:
-                    if vname in flt_trk.keys():
-                        data0 = flt_trk[vname]
-                    else:
-                        data0 = np.repeat(np.nan, 21*flt_trk['jday'].size).reshape((-1, 21))
-                else:
-                    if vname in flt_trk.keys():
-                        data0 = np.vstack((data0, flt_trk[vname]))
-                    else:
-                        data0 = np.vstack((data0, np.repeat(np.nan, 21*flt_trk['jday'].size).reshape((-1, 21))))
-
-        else:
-            data0 = np.array([], dtype=np.float64)
-            for flt_trk in flt_sim0.flt_trks:
-                if vname in flt_trk.keys():
-                    data0 = np.append(data0, flt_trk[vname])
-                else:
-                    data0 = np.append(data0, np.repeat(np.nan, flt_trk['jday'].size))
-
-        f[vname] = data0
-
-    f.close()
-
-    # fname_des = '/data/hong/share/%s' % os.path.basename(fname_h5)
-    # os.system('cp %s %s' % (fname_h5, fname_des))
-    # os.system('chmod 777 %s' % fname_des)
 
 # passed test
 
@@ -229,7 +176,7 @@ def run_mcarats_single(
         solar_zenith_angle,
         cloud_top_height=None,
         fdir='tmp-data',
-        wavelength=532.0,
+        wavelength=745.0,
         date=datetime.datetime.now(),
         target='flux',
         solver='3D',
@@ -258,25 +205,25 @@ def run_mcarats_single(
 
     # define an cloud object
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    fname_cld = '%s/cld_him_%3.3d.pk' % (fdir, index)
+    fname_cld = '%s/cld_ahi_%3.3d.pk' % (fdir, index)
 
     if overwrite:
-        him0      = himawari_l2(fnames=[fname_sat], extent=extent, vnames=['cld_height_acha'])
-        lon_2d, lat_2d, cot_2d = grid_modis_by_extent(him0.data['lon']['data'], him0.data['lat']['data'], him0.data['cot']['data'], extent=extent)
-        lon_2d, lat_2d, cer_2d = grid_modis_by_extent(him0.data['lon']['data'], him0.data['lat']['data'], him0.data['cermg']['data'], extent=extent)
+        ahi0      = ahi_l2(fnames=[fname_sat], extent=extent, vnames=['cld_height_acha'])
+        lon_2d, lat_2d, cot_2d = grid_modis_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cot']['data'], extent=extent)
+        lon_2d, lat_2d, cer_2d = grid_modis_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cer']['data'], extent=extent)
         cot_2d[cot_2d>100.0] = 100.0
         cer_2d[cer_2d==0.0] = 1.0
-        him0.data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=lon_2d)
-        him0.data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=lat_2d)
-        him0.data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=cot_2d)
-        him0.data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=cer_2d)
+        ahi0.data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=lon_2d)
+        ahi0.data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=lat_2d)
+        ahi0.data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=cot_2d)
+        ahi0.data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=cer_2d)
 
         if cloud_top_height is None:
-            lon_2d, lat_2d, cth_2d = grid_modis_by_extent(him0.data['lon']['data'], him0.data['lat']['data'], him0.data['cld_height_acha']['data'], extent=extent)
+            lon_2d, lat_2d, cth_2d = grid_modis_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cld_height_acha']['data'], extent=extent)
             cth_2d[cth_2d<0.0]  = 0.0; cth_2d /= 1000.0
-            him0.data['cth_2d'] = dict(name='Gridded cloud top height', units='km', data=cth_2d)
-            cloud_top_height = him0.data['cth_2d']['data']
-        cld0 = cld_sat(sat_obj=him0, fname=fname_cld, cth=cloud_top_height, cgt=1.0, dz=(levels[1]-levels[0]), overwrite=overwrite)
+            ahi0.data['cth_2d'] = dict(name='Gridded cloud top height', units='km', data=cth_2d)
+            cloud_top_height = ahi0.data['cth_2d']['data']
+        cld0 = cld_sat(sat_obj=ahi0, fname=fname_cld, cth=cloud_top_height, cgt=1.0, dz=(levels[1]-levels[0]), overwrite=overwrite)
     else:
         cld0 = cld_sat(fname=fname_cld, overwrite=overwrite)
     # ----------------------------------------------------------------------------------------------------
@@ -304,7 +251,7 @@ def run_mcarats_single(
             date=date,
             weights=abs0.coef['weight']['data'],
             solar_zenith_angle=solar_zenith_angle,
-            fdir='%s/%.2fnm/himawari/%s/%3.3d' % (fdir, wavelength, solver.lower(), index),
+            fdir='%s/%.2fnm/ahi/%s/%3.3d' % (fdir, wavelength, solver.lower(), index),
             Nrun=3,
             photons=photons,
             solver=solver,
@@ -319,7 +266,7 @@ def run_mcarats_single(
 
     # define mcarats output object
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    out0 = mca_out_ng(fname='%s/mca-out-%s-%s_himawari_%3.3d.h5' % (fdir, target.lower(), solver.lower(), index), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, quiet=quiet, overwrite=overwrite)
+    out0 = mca_out_ng(fname='%s/mca-out-%s-%s_ahi_%3.3d.h5' % (fdir, target.lower(), solver.lower(), index), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, quiet=quiet, overwrite=overwrite)
     # ------------------------------------------------------------------------------------------------------
 
     return atm0, cld0, out0
@@ -376,6 +323,7 @@ class flt_sim:
             date=datetime.datetime.now(),
             photons=2e7,
             Ncpu=16,
+            fdir='tmp-data/03_spns_rad-sim',
             wavelength=None,
             flt_trks=None,
             sat_imgs=None,
@@ -390,6 +338,7 @@ class flt_sim:
         self.photons   = photons
         self.Ncpu      = Ncpu
         self.wvl       = wavelength
+        self.fdir      = fdir
         self.flt_trks  = flt_trks
         self.sat_imgs  = sat_imgs
         self.overwrite = overwrite
@@ -439,60 +388,55 @@ class flt_sim:
             flt_trk = self.flt_trks[i]
             sat_img = self.sat_imgs[i]
 
-            try:
-                atm0, cld_him0, mca_out_ipa0 = run_mcarats_single(i, sat_img['fname'], sat_img['extent'], flt_trk['sza0'], date=self.date, wavelength=self.wvl, solver='IPA', fdir='tmp-data/%s/%09.4fnm' % (self.date.strftime('%Y%m%d'), self.wvl), photons=self.photons, Ncpu=self.Ncpu, overwrite=overwrite, quiet=self.quiet)
-                atm0, cld_him0, mca_out_3d0  = run_mcarats_single(i, sat_img['fname'], sat_img['extent'], flt_trk['sza0'], date=self.date, wavelength=self.wvl, solver='3D' , fdir='tmp-data/%s/%09.4fnm' % (self.date.strftime('%Y%m%d'), self.wvl), photons=self.photons, Ncpu=self.Ncpu, overwrite=overwrite, quiet=self.quiet)
+            atm0, cld_ahi0, mca_out_ipa0 = run_mcarats_single(i, sat_img['fname'], sat_img['extent'], flt_trk['sza0'], date=self.date, wavelength=self.wvl, solver='IPA', fdir=self.fdir, photons=self.photons, Ncpu=self.Ncpu, overwrite=overwrite, quiet=self.quiet)
+            atm0, cld_ahi0, mca_out_3d0  = run_mcarats_single(i, sat_img['fname'], sat_img['extent'], flt_trk['sza0'], date=self.date, wavelength=self.wvl, solver='3D' , fdir=self.fdir, photons=self.photons, Ncpu=self.Ncpu, overwrite=overwrite, quiet=self.quiet)
 
-                self.sat_imgs[i]['lon'] = cld_him0.lay['lon']['data']
-                self.sat_imgs[i]['lat'] = cld_him0.lay['lat']['data']
-                self.sat_imgs[i]['cot'] = cld_him0.lay['cot']['data']
-                self.sat_imgs[i]['cer'] = cld_him0.lay['cer']['data']
+            self.sat_imgs[i]['lon'] = cld_ahi0.lay['lon']['data']
+            self.sat_imgs[i]['lat'] = cld_ahi0.lay['lat']['data']
+            self.sat_imgs[i]['cot'] = cld_ahi0.lay['cot']['data']
+            self.sat_imgs[i]['cer'] = cld_ahi0.lay['cer']['data']
 
-                lon_sat = self.sat_imgs[i]['lon'][:, 0]
-                lat_sat = self.sat_imgs[i]['lat'][0, :]
-                dlon    = lon_sat[1]-lon_sat[0]
-                dlat    = lat_sat[1]-lat_sat[0]
-                lon_trk = self.flt_trks[i]['lon']
-                lat_trk = self.flt_trks[i]['lat']
-                indices_lon = np.int_(np.round((lon_trk-lon_sat[0])/dlon, decimals=0))
-                indices_lat = np.int_(np.round((lat_trk-lat_sat[0])/dlat, decimals=0))
-                self.flt_trks[i]['cot'] = self.sat_imgs[i]['cot'][indices_lon, indices_lat]
-                self.flt_trks[i]['cer'] = self.sat_imgs[i]['cer'][indices_lon, indices_lat]
+            lon_sat = self.sat_imgs[i]['lon'][:, 0]
+            lat_sat = self.sat_imgs[i]['lat'][0, :]
+            dlon    = lon_sat[1]-lon_sat[0]
+            dlat    = lat_sat[1]-lat_sat[0]
+            lon_trk = self.flt_trks[i]['lon']
+            lat_trk = self.flt_trks[i]['lat']
+            indices_lon = np.int_(np.round((lon_trk-lon_sat[0])/dlon, decimals=0))
+            indices_lat = np.int_(np.round((lat_trk-lat_sat[0])/dlat, decimals=0))
+            self.flt_trks[i]['cot'] = self.sat_imgs[i]['cot'][indices_lon, indices_lat]
+            self.flt_trks[i]['cer'] = self.sat_imgs[i]['cer'][indices_lon, indices_lat]
 
-                if 'cth' in cld_him0.lay.keys():
-                    self.sat_imgs[i]['cth'] = cld_him0.lay['cth']['data']
-                    self.flt_trks[i]['cth'] = self.sat_imgs[i]['cth'][indices_lon, indices_lat]
+            if 'cth' in cld_ahi0.lay.keys():
+                self.sat_imgs[i]['cth'] = cld_ahi0.lay['cth']['data']
+                self.flt_trks[i]['cth'] = self.sat_imgs[i]['cth'][indices_lon, indices_lat]
 
-                data_3d_mca = {
-                    'lon'         : cld_him0.lay['lon']['data'][:, 0],
-                    'lat'         : cld_him0.lay['lat']['data'][0, :],
-                    'alt'         : atm0.lev['altitude']['data'],
-                    }
+            data_3d_mca = {
+                'lon'         : cld_ahi0.lay['lon']['data'][:, 0],
+                'lat'         : cld_ahi0.lay['lat']['data'][0, :],
+                'alt'         : atm0.lev['altitude']['data'],
+                }
 
-                index_h = np.argmin(np.abs(atm0.lev['altitude']['data']-flt_trk['alt0']))
-                if atm0.lev['altitude']['data'][index_h] > flt_trk['alt0']:
-                    index_h -= 1
-                if index_h < 0:
-                    index_h = 0
+            index_h = np.argmin(np.abs(atm0.lev['altitude']['data']-flt_trk['alt0']))
+            if atm0.lev['altitude']['data'][index_h] > flt_trk['alt0']:
+                index_h -= 1
+            if index_h < 0:
+                index_h = 0
 
-                for key in mca_out_3d0.data.keys():
-                    if key in ['f_down', 'f_down_diffuse', 'f_down_direct', 'f_up', 'toa']:
-                        if 'toa' not in key:
-                            vname = key.replace('_', '-') + '_mca-3d'
-                            self.sat_imgs[i][vname] = mca_out_3d0.data[key]['data'][..., index_h]
-                            data_3d_mca[vname] = mca_out_3d0.data[key]['data']
-                for key in mca_out_ipa0.data.keys():
-                    if key in ['f_down', 'f_down_diffuse', 'f_down_direct', 'f_up', 'toa']:
-                        if 'toa' not in key:
-                            vname = key.replace('_', '-') + '_mca-ipa'
-                            self.sat_imgs[i][vname] = mca_out_ipa0.data[key]['data'][..., index_h]
-                            data_3d_mca[vname] = mca_out_ipa0.data[key]['data']
+            for key in mca_out_3d0.data.keys():
+                if key in ['f_down', 'f_down_diffuse', 'f_down_direct', 'f_up', 'toa']:
+                    if 'toa' not in key:
+                        vname = key.replace('_', '-') + '_mca-3d'
+                        self.sat_imgs[i][vname] = mca_out_3d0.data[key]['data'][..., index_h]
+                        data_3d_mca[vname] = mca_out_3d0.data[key]['data']
+            for key in mca_out_ipa0.data.keys():
+                if key in ['f_down', 'f_down_diffuse', 'f_down_direct', 'f_up', 'toa']:
+                    if 'toa' not in key:
+                        vname = key.replace('_', '-') + '_mca-ipa'
+                        self.sat_imgs[i][vname] = mca_out_ipa0.data[key]['data'][..., index_h]
+                        data_3d_mca[vname] = mca_out_ipa0.data[key]['data']
 
-                self.flt_trks[i] = interpolate_3d_to_flight_track(flt_trk, data_3d_mca)
-
-            except:
-
-                pass
+            self.flt_trks[i] = interpolate_3d_to_flight_track(flt_trk, data_3d_mca)
 
     def dump(self, fname):
 
@@ -506,8 +450,8 @@ class flt_sim:
 
 
 
-def main_pre(
-        date,
+def main_run(
+        date=datetime.datetime(2019, 9, 20),
         wavelength=745.0,
         spns=True,
         run_rtm=True,
@@ -526,12 +470,11 @@ def main_pre(
     # ==================================================================================================
 
 
-    # pre-process the data
+    # pre-process the aircraft and satellite data
     # ==================================================================================================
     # get the avaiable satellite data (AHI) and calculate the time in hour for each file
     fnames_ahi = sorted(glob.glob('%s/*.nc' % (fdir_sat)))
     jday_ahi   = get_jday_ahi(fnames_ahi)
-
 
     # read in flight data
     fname_flt = 'data/%s/aux/spns_%s.h5' % (name_tag, date_s)
@@ -563,31 +506,106 @@ def main_pre(
         flt_trk['f-down_spns']= f_flt['spns_tot'][:, np.argmin(np.abs(f_flt['spns_wvl'][...]-wavelength))][logic]
 
     f_flt.close()
-    # ==================================================================================================
-
 
     # partition the flight track into multiple mini flight track segments
-    # ==================================================================================================
     flt_trks = partition_flight_track(flt_trk, tmhr_interval=0.05, margin_x=1.0, margin_y=1.0)
 
-    return flt_trks
+    # create python dictionary to store corresponding satellite imagery data info
+    sat_imgs = []
+    for i in range(len(flt_trks)):
+        sat_img = {}
+
+        index0  = np.argmin(np.abs(jday_ahi-flt_trks[i]['jday0']))
+        sat_img['fname']  = fnames_ahi[index0]
+        sat_img['extent'] = flt_trks[i]['extent']
+
+        sat_imgs.append(sat_img)
     # ==================================================================================================
 
-def main_sim():
 
-    sim0 = flt_sim(date=date, wavelength=wavelength, flt_trks=flt_trks, sat_imgs=sat_imgs, fname='data/flt_sim_%09.4fnm_%s.pk' % (wavelength, date_s), overwrite=True, overwrite_rtm=run_rtm)
+    # EaR3T simulation setup for the flight track
+    # ==================================================================================================
+    sim0 = flt_sim(
+            date=date,
+            wavelength=wavelength,
+            flt_trks=flt_trks,
+            sat_imgs=sat_imgs,
+            fname='data/03_spns_flux-sim/flt_sim_%s_%09.4fnm.pk' % (date_s, wavelength),
+            fdir=fdir,
+            overwrite=True,
+            overwrite_rtm=run_rtm
+            )
+    # ==================================================================================================
+
+def main_post(date,
+        wavelength=532.0,
+        vnames=['jday', 'lon', 'lat', 'sza', \
+            'tmhr', 'alt', 'f-up_ssfr', 'f-down_ssfr', 'f-down-diffuse_spns', 'f-down_spns', \
+            'cot', 'cer', 'cth', \
+            'f-down_mca-3d', 'f-down-diffuse_mca-3d', 'f-down-direct_mca-3d', 'f-up_mca-3d',\
+            'f-down_mca-3d-alt-all', 'f-down-diffuse_mca-3d-alt-all', 'f-down-direct_mca-3d-alt-all', 'f-up_mca-3d-alt-all',\
+            'f-down_mca-ipa', 'f-down-diffuse_mca-ipa', 'f-down-direct_mca-ipa', 'f-up_mca-ipa']):
+
+    date_s = date.strftime('%Y%m%d')
+
+    fname      = 'data/flt_sim_%09.4fnm_%s.pk' % (wavelength, date_s)
+    flt_sim0   = flt_sim(fname=fname)
+
+    fname_h5   = fname.replace('.pk', '.h5')
+    f = h5py.File(fname_h5, 'w')
+
+    for vname in vnames:
+
+        if 'alt-all' in vname:
+
+
+            for i in range(len(flt_sim0.flt_trks)):
+
+                flt_trk = flt_sim0.flt_trks[i]
+
+                if i == 0:
+                    if vname in flt_trk.keys():
+                        data0 = flt_trk[vname]
+                    else:
+                        data0 = np.repeat(np.nan, 21*flt_trk['jday'].size).reshape((-1, 21))
+                else:
+                    if vname in flt_trk.keys():
+                        data0 = np.vstack((data0, flt_trk[vname]))
+                    else:
+                        data0 = np.vstack((data0, np.repeat(np.nan, 21*flt_trk['jday'].size).reshape((-1, 21))))
+
+        else:
+            data0 = np.array([], dtype=np.float64)
+            for flt_trk in flt_sim0.flt_trks:
+                if vname in flt_trk.keys():
+                    data0 = np.append(data0, flt_trk[vname])
+                else:
+                    data0 = np.append(data0, np.repeat(np.nan, flt_trk['jday'].size))
+
+        f[vname] = data0
+
+    f.close()
+
+    # fname_des = '/data/hong/share/%s' % os.path.basename(fname_h5)
+    # os.system('cp %s %s' % (fname_h5, fname_des))
+    # os.system('chmod 777 %s' % fname_des)
 
 
 
 
 if __name__ == '__main__':
 
-    run_rtm=False
+    # Step 1. Pre-process aircraft and satellite data
+    #   a. partition flight track into mini flight track segments: stored in <flt_trks>
+    #   b. for each mini flight track segment, crop satellite imageries: stored in <sat_imgs>
+    #   c. setup simulation runs for the flight track segments
+    main_run()
 
-    wavelength = 745.0
 
-    date = datetime.datetime(2019, 9, 20)
+    # Step 3. Post-process radiance observations and simulations for MODIS, after run
+    #   a. <post-data.h5> will be created under data/02_modis_rad-sim
+    #   b. <02_modis_rad-sim.png> will be created under current directory
+    # main_post(plot=True)
 
-    main_pre(date, run_rtm=run_rtm, wavelength=wavelength, spns=True)
 
     # save_h5(date, wavelength=wavelength)
