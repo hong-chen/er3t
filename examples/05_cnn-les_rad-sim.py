@@ -97,7 +97,7 @@ class func_cot_vs_rad:
         cer_2d    = np.zeros((2, 2), dtype=np.float64); cer_2d[...] = 12.0
         ext_3d    = np.zeros((2, 2, 2), dtype=np.float64)
 
-        fname_nc  = '../tests/data/les.nc'
+        fname_nc  = 'data/test_mca/les.nc'
         fname_les = '%s/les.pk' % self.fdir
         cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=False)
 
