@@ -5,9 +5,23 @@ radiative transfer calculations for measured or modeled cloud/aerosol fields usi
 publicly available 3D radiative transfer models including MCARaTS (**implemented**),
 SHDOM (under development), and MYSTIC (under development).
 
+|
+|
+
+**How to cite**:
+
+* `Chen et al., 2022 [in review] <https://doi.org/10.5194/amt-2022-143>`_
+
+   Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
+   Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
+   Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
+   Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.
+
+
+Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ for the most recent information.
 
 |
-|
+
 
 ============
 Dependencies
@@ -151,21 +165,9 @@ Acknowledgements
 |
 
 ===========
-How to Cite
+Publications
 ===========
 
-* `Chen et al., 2022 [in review] <https://doi.org/10.5194/amt-2022-143>`_
-
-   Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
-   Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
-   Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
-   Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.
-
-
-Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ for the most recent information.
-
-|
-|
 
 So far, the following publications have used EaR³T
 
