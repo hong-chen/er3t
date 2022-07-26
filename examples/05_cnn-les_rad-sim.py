@@ -245,7 +245,7 @@ def run(fdir, fname_nc, coarsen_factor=2):
 def main_les(coarsen_factor=2):
 
     fnames_nc = [
-            '../tests/data/les.nc',
+            'data/test_mca/les.nc',
             ]
 
     for fname_nc in fnames_nc:

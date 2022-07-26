@@ -1,5 +1,5 @@
 # pack data
-# tar -czf er3t-data.tar.gz er3t/data tests/data
+# tar -czf er3t-data.tar.gz er3t/data
 
 # download data from google drive
 # ====================================================================================================
