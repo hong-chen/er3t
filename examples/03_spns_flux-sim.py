@@ -5,8 +5,11 @@ This code serves as an example code to reproduce 3D irradiance simulation for Ap
 Special note: due to large data volume, only partial flight track simulation is provided for illustration purpose.
 
 The processes include:
-    1) `main_sim()`: run simulation
-        a) 3D mode
+    1) `main_run()`: pre-process aircraft and satellite data and run simulations
+        a) partition flight track into mini flight track segments and collocate satellite imagery data
+        b) run simulations based on satellite imagery cloud retrievals
+            i) 3D mode
+            ii) IPA mode
 
     2) `main_post()`: post-process data
         a) extract radiance observations from pre-processed data
@@ -14,7 +17,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2022-07-22 by Hong Chen
+    1) Linux on 2022-07-26 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -32,13 +35,7 @@ import pickle
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.ticker import FixedLocator
-from matplotlib import rcParams
-import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import matplotlib.image as mpimg
 
 from er3t.pre.atm import atm_atmmod
 from er3t.pre.abs import abs_16g
@@ -133,7 +130,7 @@ def partition_flight_track(flt_trk, tmhr_interval=0.1, margin_x=1.0, margin_y=1.
 
     for i in range(jday_edges.size-1):
 
-        logic      = (flt_trk['jday']>=jday_edges[i]) & (flt_trk['jday']<=jday_edges[i+1]) & (np.logical_not(np.isnan(flt_trk['sza'])))
+        logic      = (flt_trk['jday']>=jday_edges[i]) & (flt_trk['jday']<jday_edges[i+1]) & (np.logical_not(np.isnan(flt_trk['sza'])))
         if logic.sum() > 0:
 
             flt_trk_segment = {}
@@ -214,8 +211,11 @@ def cal_mca_flux(
         cld0 = cld_sat(fname=fname_cld, overwrite=overwrite)
     # ----------------------------------------------------------------------------------------------------
 
+    # mie scattering phase function setup
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     pha0 = pha_mie(wvl0=wavelength)
     sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -226,7 +226,6 @@ def cal_mca_flux(
     atm_3ds = [atm3d0]
     # ------------------------------------------------------------------------------------------------------
 
-
     # define mcarats object
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     mca0 = mcarats_ng(
@@ -236,7 +235,7 @@ def cal_mca_flux(
             date=date,
             weights=abs0.coef['weight']['data'],
             solar_zenith_angle=solar_zenith_angle,
-            fdir='%s/%.2fnm/ahi/%s/%3.3d' % (fdir, wavelength, solver.lower(), index),
+            fdir='%s/ahi/%s/%3.3d' % (fdir, solver.lower(), index),
             Nrun=3,
             photons=photons,
             solver=solver,
@@ -247,7 +246,6 @@ def cal_mca_flux(
             overwrite=overwrite
             )
     # ------------------------------------------------------------------------------------------------------
-
 
     # define mcarats output object
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -306,7 +304,7 @@ class flt_sim:
     def __init__(
             self,
             date=datetime.datetime.now(),
-            photons=2e7,
+            photons=2e6,
             Ncpu=16,
             fdir='tmp-data/03_spns_rad-sim',
             wavelength=None,
@@ -378,8 +376,8 @@ class flt_sim:
 
             self.sat_imgs[i]['lon'] = cld_ahi0.lay['lon']['data']
             self.sat_imgs[i]['lat'] = cld_ahi0.lay['lat']['data']
-            self.sat_imgs[i]['cot'] = cld_ahi0.lay['cot']['data']
-            self.sat_imgs[i]['cer'] = cld_ahi0.lay['cer']['data']
+            self.sat_imgs[i]['cot'] = cld_ahi0.lay['cot']['data'] # cloud optical thickness (cot) is 2D (x, y)
+            self.sat_imgs[i]['cer'] = cld_ahi0.lay['cer']['data'] # cloud effective radius (cer) is 3D (x, y, z)
 
             lon_sat = self.sat_imgs[i]['lon'][:, 0]
             lat_sat = self.sat_imgs[i]['lat'][0, :]
@@ -390,7 +388,7 @@ class flt_sim:
             indices_lon = np.int_(np.round((lon_trk-lon_sat[0])/dlon, decimals=0))
             indices_lat = np.int_(np.round((lat_trk-lat_sat[0])/dlat, decimals=0))
             self.flt_trks[i]['cot'] = self.sat_imgs[i]['cot'][indices_lon, indices_lat]
-            self.flt_trks[i]['cer'] = self.sat_imgs[i]['cer'][indices_lon, indices_lat]
+            self.flt_trks[i]['cer'] = self.sat_imgs[i]['cer'][indices_lon, indices_lat, 0]
 
             if 'cth' in cld_ahi0.lay.keys():
                 self.sat_imgs[i]['cth'] = cld_ahi0.lay['cth']['data']
@@ -430,7 +428,6 @@ class flt_sim:
             if self.verbose:
                 print('Message [flt_sim]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
-
 
 
 
@@ -522,27 +519,33 @@ def main_run(
             )
     # ==================================================================================================
 
-def main_post(date,
-        wavelength=532.0,
+def main_post(
+        date=datetime.datetime(2019, 9, 20),
+        wavelength=745.0,
         vnames=['jday', 'lon', 'lat', 'sza', \
-            'tmhr', 'alt', 'f-up_ssfr', 'f-down_ssfr', 'f-down-diffuse_spns', 'f-down_spns', \
+            'tmhr', 'alt', 'f-down-diffuse_spns', 'f-down_spns', \
             'cot', 'cer', 'cth', \
             'f-down_mca-3d', 'f-down-diffuse_mca-3d', 'f-down-direct_mca-3d', 'f-up_mca-3d',\
             'f-down_mca-3d-alt-all', 'f-down-diffuse_mca-3d-alt-all', 'f-down-direct_mca-3d-alt-all', 'f-up_mca-3d-alt-all',\
-            'f-down_mca-ipa', 'f-down-diffuse_mca-ipa', 'f-down-direct_mca-ipa', 'f-up_mca-ipa']):
+            'f-down_mca-ipa', 'f-down-diffuse_mca-ipa', 'f-down-direct_mca-ipa', 'f-up_mca-ipa'],
+        plot=True
+        ):
 
+    # data post-processing
+    # ==================================================================================================
     date_s = date.strftime('%Y%m%d')
 
-    fname      = 'data/flt_sim_%09.4fnm_%s.pk' % (wavelength, date_s)
+    # aircraft measurements and simulations
+    fname      = 'data/03_spns_flux-sim/flt_sim_%s_%09.4fnm.pk' % (date_s, wavelength)
     flt_sim0   = flt_sim(fname=fname)
 
-    fname_h5   = fname.replace('.pk', '.h5')
+    # create hdf5 file to store data
+    fname_h5   = 'data/03_spns_flux-sim/post-data.h5'
     f = h5py.File(fname_h5, 'w')
 
     for vname in vnames:
 
         if 'alt-all' in vname:
-
 
             for i in range(len(flt_sim0.flt_trks)):
 
@@ -570,10 +573,44 @@ def main_post(date,
         f[vname] = data0
 
     f.close()
+    # ==================================================================================================
 
-    # fname_des = '/data/hong/share/%s' % os.path.basename(fname_h5)
-    # os.system('cp %s %s' % (fname_h5, fname_des))
-    # os.system('chmod 777 %s' % fname_des)
+    if plot:
+
+        f = h5py.File(fname_h5, 'r')
+        tmhr = f['tmhr'][...]
+        logic = (tmhr>=4.73611111) & (tmhr<=4.91388889)
+        lon  = f['lon'][...][logic]
+        f_down_spns   = f['f-down_spns'][...][logic]
+        f_down_sim_3d = f['f-down_mca-3d'][...][logic]
+        f_down_sim_ipa= f['f-down_mca-ipa'][...][logic]
+        f.close()
+
+        # =============================================================================
+        fig = plt.figure(figsize=(8, 6))
+        ax1 = fig.add_subplot(111)
+        ax1.scatter(lon, f_down_spns   , color='k', s=4, lw=0.0)
+        ax1.scatter(lon, f_down_sim_3d , color='r', s=4, lw=0.0)
+        ax1.scatter(lon, f_down_sim_ipa, color='b', s=4, lw=0.0)
+
+        breaks = [120.999, 121.123, 121.247, 121.377]
+        for break0 in breaks:
+            ax1.axvline(break0, lw=1.5, alpha=0.7, color='gray', ls='--')
+
+        patches_legend = [
+                    mpatches.Patch(color='black' , label='SPN-S'),
+                    mpatches.Patch(color='red'   , label='RTM 3D'),
+                    mpatches.Patch(color='blue'  , label='RTM IPA')
+                    ]
+        ax1.legend(handles=patches_legend, loc='upper center', fontsize=12)
+
+        ax1.set_ylim((0.0, 2.25))
+
+        ax1.set_xlabel('Longitude [$^\circ$]')
+        ax1.set_ylabel('Irradiance [$\mathrm{W m^{-2} nm^{-1}}$]')
+        plt.savefig('03_spns_flux-sim.png', bbox_inches='tight')
+        plt.show()
+        # =============================================================================
 
 
 
@@ -581,13 +618,14 @@ def main_post(date,
 if __name__ == '__main__':
 
     # Step 1. Pre-process aircraft and satellite data
-    #   a. partition flight track into mini flight track segments: stored in <flt_trks>
-    #   b. for each mini flight track segment, crop satellite imageries: stored in <sat_imgs>
+    #   a. partition flight track into mini flight track segments: stored in `flt_trks`
+    #   b. for each mini flight track segment, crop satellite imageries: stored in `sat_imgs`
     #   c. setup simulation runs for the flight track segments
-    main_run()
-
+    # main_run(run_rtm=True)
 
     # Step 2. Post-process radiance observations and simulations for SPN-S, after run
-    #   a. <post-data.h5> will be created under data/02_modis_rad-sim
-    #   b. <02_modis_rad-sim.png> will be created under current directory
+    #   a. <post-data.h5> will be created under data/03_spns_flux-sim
+    #   b. <03_spns_flux-sim.png> will be created under current directory
     # main_post(plot=True)
+
+    pass
