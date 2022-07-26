@@ -6,9 +6,8 @@ publicly available 3D radiative transfer models including MCARaTS (**implemented
 SHDOM (under development), and MYSTIC (under development).
 
 |
-|
 
-**How to cite**:
+**How to cite:**
 
 * `Chen et al., 2022 [in review] <https://doi.org/10.5194/amt-2022-143>`_
 
@@ -20,6 +19,7 @@ SHDOM (under development), and MYSTIC (under development).
 
 Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ for the most recent information.
 
+|
 |
 
 
