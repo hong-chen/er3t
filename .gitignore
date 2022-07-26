@@ -1,7 +1,8 @@
 # exceptions for er3t
 !tests
 !examples
-!examples/test*.py
+!examples/*.py
+!examples/*.sh
 
 # system files
 .DS_Store
