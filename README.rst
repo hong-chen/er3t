@@ -1,7 +1,7 @@
 EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: https://discordapp.com/api/guilds/681619528945500252/widget.png?style=banner4
+.. figure:: https://discordapp.com/api/guilds/681619528945500252/widget.png?style=banner2
    :alt: Discord
 
 EaR³T provides high-level interfaces that can automate the process of running 3D
