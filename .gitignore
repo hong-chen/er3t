@@ -1,5 +1,6 @@
 # exceptions for er3t
 !tests
+!tests/*.py
 !examples
 !examples/*.py
 !examples/*.sh
