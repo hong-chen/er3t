@@ -115,10 +115,10 @@ then run the command ``bash install.sh`` through a terminal again.
 How to Use
 ==========
 
-We provide various mini-examples under ``tests/04_pre_mca.py``. After installation, you can use the provided
-mini-examples to do test runs.
+We provide various mini-examples under ``examples``. After installation, you can use the provided
+example code to do test runs.
 
-Details can be found under ``tests/README.rst``
+Details can be found under ``examples/README.rst``
 
 
 |
