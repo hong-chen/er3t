@@ -81,10 +81,13 @@ class mcarats_ng:
                  sensor_zenith_angle = 0.0,                     \
                  sensor_azimuth_angle= 0.0,                     \
                  sensor_altitude     = 705000.0,                \
+                 sensor_type         = 'satellite',             \
+                 sensor_xpos         = 0.5,                     \
+                 sensor_ypos         = 0.5,                     \
 
                  solver              = 0,                       \
                  photons             = 1e6,                     \
-                 weights             = None,                  \
+                 weights             = None,                    \
 
                  verbose             = False,                   \
                  quiet               = False                    \
@@ -122,6 +125,9 @@ class mcarats_ng:
         self.sensor_zenith_angle = sensor_zenith_angle
         self.sensor_azimuth_angle= sensor_azimuth_angle
         self.sensor_altitude     = sensor_altitude
+        self.sensor_type         = sensor_type
+        self.sensor_xpos         = sensor_xpos
+        self.sensor_ypos         = sensor_ypos
 
 
         self.Nrun    = Nrun
@@ -177,7 +183,8 @@ class mcarats_ng:
 
             # MCARaTS wld initialization
             self.init_wld(verbose=verbose, tune=tune,
-                sensor_zenith_angle=sensor_zenith_angle, sensor_azimuth_angle=sensor_azimuth_angle, sensor_altitude=sensor_altitude)
+                sensor_zenith_angle=sensor_zenith_angle, sensor_azimuth_angle=sensor_azimuth_angle, \
+                sensor_type=sensor_type, sensor_altitude=sensor_altitude, sensor_xpos=sensor_xpos, sensor_ypos=sensor_ypos)
 
             # MCARaTS scattering initialization
             self.init_sca(sca=sca)
@@ -205,7 +212,8 @@ class mcarats_ng:
 
 
     def init_wld(self, tune=False, verbose=False, \
-        sensor_zenith_angle=0.0, sensor_azimuth_angle=0.0, sensor_altitude=705000.0):
+        sensor_zenith_angle=0.0, sensor_azimuth_angle=0.0, \
+        sensor_type='satellite', sensor_altitude=705000.0, sensor_xpos=0.5, sensor_ypos=0.5):
 
         if self.target.lower() in ['f', 'flux', 'irradiance']:
             self.target = 'flux'
@@ -250,12 +258,20 @@ class mcarats_ng:
 
                 self.nml[ig]['Wld_mtarget'] = 2
 
-                self.nml[ig]['Rad_mrkind']  = 2
+                if 'satellite' in sensor_type.lower():
+                    self.nml[ig]['Rad_mrkind']  = 2
+                elif 'all-sky' in sensor_type.lower():
+                    self.nml[ig]['Rad_mrkind'] = 1
+                    self.nml[ig]['Rad_qmax']   = 178.0
+                    self.nml[ig]['Rad_apsize'] = 0.05
+                    self.nml[ig]['Rad_xpos'] = sensor_xpos
+                    self.nml[ig]['Rad_ypos'] = sensor_ypos
+
+
                 self.nml[ig]['Rad_mplen']   = 0
                 self.nml[ig]['Rad_mpmap']   = 1
                 self.nml[ig]['Rad_nrad']    = 1
 
-                self.nml[ig]['Rad_nrad']    = 1
                 self.nml[ig]['Rad_difr0']   = 7.5
                 self.nml[ig]['Rad_difr1']   = 0.0025
                 self.nml[ig]['Rad_the']     = 180.0 - sensor_zenith_angle
@@ -305,12 +321,17 @@ class mcarats_ng:
                             self.nml[ig][key] = atm_3d.nml[key]['data']
 
                 if self.target == 'radiance':
-                    if 'Atm_nx' in atm_3d.nml.keys() and 'Atm_ny' in atm_3d.nml.keys():
-                        self.nml[ig]['Rad_nxr'] = atm_3d.nml['Atm_nx']['data']
-                        self.nml[ig]['Rad_nyr'] = atm_3d.nml['Atm_ny']['data']
-                    else:
-                        self.nml[ig]['Rad_nxr'] = 1
-                        self.nml[ig]['Rad_nyr'] = 1
+                    if 'satellite' in self.sensor_type.lower():
+                        if 'Atm_nx' in atm_3d.nml.keys() and 'Atm_ny' in atm_3d.nml.keys():
+                            self.nml[ig]['Rad_nxr'] = atm_3d.nml['Atm_nx']['data']
+                            self.nml[ig]['Rad_nyr'] = atm_3d.nml['Atm_ny']['data']
+                        else:
+                            self.nml[ig]['Rad_nxr'] = 1
+                            self.nml[ig]['Rad_nyr'] = 1
+
+                    elif 'all-sky' in self.sensor_type.lower():
+                        self.nml[ig]['Rad_nxr'] = 500
+                        self.nml[ig]['Rad_nyr'] = 500
 
 
     def init_src(self, solar_zenith_angle=0.0, solar_azimuth_angle=0.0):

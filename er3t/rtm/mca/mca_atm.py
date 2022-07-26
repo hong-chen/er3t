@@ -208,6 +208,12 @@ class mca_atm_3d:
 
         self.pre_mca_3d_atm()
 
+        if not self.overwrite:
+            if os.path.exists(fname):
+                self.nml['Atm_inpfile'] = {'data':fname}
+            else:
+                self.overwrite = True
+
         if self.overwrite:
             if fname is None:
                 fname = 'mca_atm_3d.bin'

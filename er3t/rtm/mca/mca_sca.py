@@ -58,10 +58,12 @@ class mca_sca:
 
         self.pre_mca_sca()
 
+        if fname is None:
+            fname = 'mca_sca.bin'
         if self.overwrite:
-            if fname is None:
-                fname = 'mca_sca.bin'
             self.gen_mca_sca_file(fname)
+        else:
+            self.nml['Sca_inpfile'] = {'data':fname}
 
         if not self.quiet:
             print('-')
