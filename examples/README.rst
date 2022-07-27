@@ -18,9 +18,9 @@ discussed in `Chen et al. (2022) <https://doi.org/10.5194/amt-2022-143>`_.
 |
 |
 
-=======================
-Get Access to EARTHDATA
-=======================
+============================
+Get Access to NASA EARTHDATA
+============================
 
 Code ``01`` and ``02`` contain some programs that can automatically download satellite data from NASA EARTHDATA.
 To get the data access, you will need to register an account with NASA EARTHDATA.
