@@ -63,9 +63,16 @@ Dependencies
 
         setenv MCARATS_V010_EXE "/path/to/the/compiled/MCARaTS/e.g./mcarats-0.10.4/src/mcarats"
 
+|
+
 **4*. Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `unofficial installation guide <https://github.com/hong-chen/notes/blob/master/libRadtran.md>`_
 
-    * This installation is optional. If installed, Mie scatter phase function will be supported.
+    * This installation is optional. If installed
+
+      #. Mie scattering phase function will be supported;
+
+      #. ``er3t.rtm.lrt`` can be used to perform 1D radiance/irradiance simulation (under development).
+
 |
 |
 
