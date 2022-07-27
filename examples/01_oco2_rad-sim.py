@@ -921,16 +921,22 @@ if __name__ == '__main__':
 
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
+    # =============================================================================
     # main_pre()
+    # =============================================================================
 
     # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
     #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim
     #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim
+    # =============================================================================
     # main_sim()
+    # =============================================================================
 
     # Step 3. Post-process radiance observations and simulations for OCO-2, after run
     #   a. <post-data.h5> will be created under data/01_oco2_rad-sim
     #   b. <01_oco2_rad-sim.png> will be created under current directory
+    # =============================================================================
     # main_post(plot=True)
+    # =============================================================================
 
     pass

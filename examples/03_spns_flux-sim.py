@@ -621,11 +621,15 @@ if __name__ == '__main__':
     #   a. partition flight track into mini flight track segments: stored in `flt_trks`
     #   b. for each mini flight track segment, crop satellite imageries: stored in `sat_imgs`
     #   c. setup simulation runs for the flight track segments
+    # =============================================================================
     # main_run(run_rtm=True)
+    # =============================================================================
 
     # Step 2. Post-process radiance observations and simulations for SPN-S, after run
     #   a. <post-data.h5> will be created under data/03_spns_flux-sim
     #   b. <03_spns_flux-sim.png> will be created under current directory
+    # =============================================================================
     # main_post(plot=True)
+    # =============================================================================
 
     pass

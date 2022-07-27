@@ -720,15 +720,21 @@ if __name__ == '__main__':
 
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
+    # =============================================================================
     # main_pre()
+    # =============================================================================
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
     #   a. <mca-out-rad-modis-3d_650.0000nm.h5> will be created under tmp-data/02_modis_rad-sim
+    # =============================================================================
     # main_sim()
+    # =============================================================================
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
     #   a. <post-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim.png> will be created under current directory
+    # =============================================================================
     # main_post(plot=True)
+    # =============================================================================
 
     pass

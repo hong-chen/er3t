@@ -462,19 +462,25 @@ if __name__ == '__main__':
     #    a. convert red channel radiance into reflectance
     #    b. estimate cloud optical thickness (cot) based on reflectance through two-stream approximation
     #    c. store data in <pre-data.h5> under data/04_cam_nadir_rad-sim
+    # =============================================================================
     # main_pre_ipa()
+    # =============================================================================
 
     # Step 2. Use CNN to predict cloud optical thickness from camera red channel radiance
     # Special note: to run the following function, tensorflow needs to be installed.
     #               If you have problems in setting up tensorflow enviroment, you can skip this step and
     #               use <pre-data_cnn.h5> provided under data/04_cam_nadir_rad-sim/aux instead.
     #               CNN model credit: Nataraja et al. 2022 (https://doi.org/10.5194/amt-2022-45)
+    # =============================================================================
     # main_pre_cnn()
+    # =============================================================================
 
     # Step 3. Use EaR3T to run radiance simulations for both cot_ipa and cot_cnn
     #    a. 3D radiance simulation using cot_ipa
     #    b. 3D radiance simulation using cot_cnn
+    # =============================================================================
     # main_sim()
+    # =============================================================================
 
     # Step 4. Post-process and plot
     #    a. save data in <post-data.h5> under data/04_cam_nadir_rad-sim
@@ -482,6 +488,8 @@ if __name__ == '__main__':
     #        2) radiance simulation based on cot_ipa
     #        3) radiance simulation based on cot_cnn
     #    b. plot
+    # =============================================================================
     # main_post()
+    # =============================================================================
 
     pass
