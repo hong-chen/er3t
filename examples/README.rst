@@ -16,14 +16,14 @@ Besides showcasing EaR³T, codes ``01`` to ``04`` can be used to reproduce scien
 discussed in `Chen et al. (2022) <https://doi.org/10.5194/amt-2022-143>`_.
 
 |
-
-Code ``01`` and ``02`` contain some programs that can automatically download satellite data from NASA EARTHDATA.
-To get the data access, you will need to register an account with NASA EARTHDATA.
+|
 
 =======================
 Get Access to EARTHDATA
 =======================
 
+Code ``01`` and ``02`` contain some programs that can automatically download satellite data from NASA EARTHDATA.
+To get the data access, you will need to register an account with NASA EARTHDATA.
 
 #. Register an account at `NASA EARTHDATA <https://urs.earthdata.nasa.gov>`_ ;
 
