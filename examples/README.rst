@@ -12,82 +12,125 @@ type in the following
 
 |
 
-
+Besides showcasing EaR³T, codes ``01`` to ``04`` can be used to reproduce scientific results
+discussed in `Chen et al. (2022) <https://doi.org/10.5194/amt-2022-143>`_.
 
 =====================
 01_oco2_rad-sim.py
 =====================
 
+This code provides realistic radiance simulations for OCO-2 (770 nm) based on publicly available MODIS surface and
+cloud products. The procecsses involve
+#. download satellite data;
+#. process radiative properties for surface and clouds;
+#. set up and run 3D radiative transfer model;
+#. compare simulations with radiance observations from OCO-2.
+Afore-mentioned steps are completely automated with minimum input of date and region of interest specified
+by user.
 
+The executable lines are located after the line ``if __name__ == __main__:``.
 
+To run the code, please comment/uncomment the line associated with each step.
+After saving the changes to the file, type in ``python 01_oco2_rad-sim.py`` in a terminal under ``er3t/examples``.
 
 =====================
 02_modis_rad-sim.py
 =====================
 
+This code provides realistic radiance simulations for MODIS (650 nm) based on publicly available MODIS surface and
+cloud products. The procecsses involve
+#. download satellite data;
+#. process radiative properties for surface and clouds;
+#. set up and run 3D radiative transfer model;
+#. compare simulations with radiance observations from MODIS.
+Afore-mentioned steps are completely automated with minimum input of date and region of interest specified
+by user.
 
+The executable lines are located after the line ``if __name__ == __main__:``.
 
+To run the code, please comment/uncomment the line associated with each step.
+After saving the changes to the file, type in ``python 02_modis_rad-sim.py`` in a terminal under ``er3t/examples``.
 
 =====================
 03_spns_flux-sim.py
 =====================
 
+This code provides realistic irradiance (flux) simulations (745 nm) for one CAMP²Ex flight track based on AHI
+cloud products. The procecsses involve
+#. partition flight track into mini flight track segments;
+#. set up and run 3D radiative transfer model based on AHI cloud product for each mini flight track segment;
+#. compare simulations with irradiance (flux) observations from SPN-S.
 
+The executable lines are located after the line ``if __name__ == __main__:``.
 
+To run the code, please comment/uncomment the line associated with each step.
+After saving the changes to the file, type in ``python 03_spns_flux-sim.py`` in a terminal under ``er3t/examples``.
 
 =====================
 04_cam_nadir_rad-sim.py
 =====================
 
+This code provides realistic radiance simulations (600 nm) for two cloud optical thickness fields derived from
+one airborne camera imagery during CAMP²Ex - 1) tradiational IPA retrieved and 2) context-aware CNN retrieved.
+#. apply IPA method (Two-Stream Approximation) to retrieve cloud optical thickness from camera imagery;
+#. apply CNN method to retrieve cloud optical thickness from camera imagery;
+#. set up and run 3D radiative transfer model for the two cloud optical thickness fields;
+#. compare simulations with radiance observations from camera.
 
+The executable lines are located after the line ``if __name__ == __main__:``.
+
+To run the code, please comment/uncomment the line associated with each step.
+After saving the changes to the file, type in ``python 04_cam_nadir_rad-sim.py`` in a terminal under ``er3t/examples``.
 
 =====================
 05_cnn-les_rad-sim.py
 =====================
 
+This code provides realistic radiance simulations based on LES data. It produces extensive training dataset (ground
+truth of cloud optical thickness, realistic radiance simulation) for training CNN.
+#. artificially create more LES cloud fields through coarsening by factor of 2 and 4;
+#. run radiance simulations for all the LES cloud fields (480x480);
+#. crop radiance simulations and cloud optical thickness fields into mini tiles (64x64);
+#. evenly select mini tiles based on the 1) cloud fraction (average radiance), and 2) cloud
+   inhomogeneity (standard deviation of radiance) for training.
 
+The executable lines are located after the line ``if __name__ == __main__:``.
 
-
-=====================
-06_cam_nadir_flyover.py
-=====================
-
-
-
-
+To run the code, please comment/uncomment the line associated with each step.
+After saving the changes to the file, type in ``python 05_cnn-les_rad-sim.py`` in a terminal under ``er3t/examples``.
 
 =====================
 test_mca.py
 =====================
 
-This program contains various test cases.
+This program contains various test cases using LES data.
 
-1. ``test_flux_clear_sky``
+#. ``test_flux_clear_sky``
 
    A test case that calculates flux profile (Nz) under clear-sky condition.
 
 
-2. ``test_flux_with_les_cloud3d``
+#. ``test_flux_with_les_cloud3d``
 
    A test case that calculates flux fields(Nx, Ny, Nz) using LES input.
 
 
-3. ``test_radiance_with_les_cloud3d``
+#. ``test_radiance_with_les_cloud3d``
 
    A test case that calculates radiance field (Nx, Ny) using LES input.
 
 
-4. ``test_flux_with_les_cloud3d_aerosol1d``
+#. ``test_flux_with_les_cloud3d_aerosol1d``
 
    A test case that calculates flux fields (Nx, Ny, Nz) using LES input and a user-defined 1D aerosol layer.
 
 
-5. ``test_flux_with_les_cloud3d_aerosol3d``
+#. ``test_flux_with_les_cloud3d_aerosol3d``
 
    A test case that calculates flux fields (Nx, Ny, Nz) using LES input and a user-defined 3D aerosol layer.
 
 
-6. ``test_radiance_with_les_cloud3d_aerosol3d``
+#. ``test_radiance_with_les_cloud3d_aerosol3d``
 
    A test case that calculates radiance field (Nx, Ny) using LES input and a user-defined 3D aerosol layer.
 
