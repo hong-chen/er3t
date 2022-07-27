@@ -10,6 +10,33 @@
 #SBATCH --output=sbatch-output_%x_%j.txt
 #SBATCH --job-name=les_04
 
+"""
+by Hong Chen (hong.chen.cu@gmail.com)
+
+This code serves as an example code to produce training data for CNN described in Nataraja et al. (2022).
+
+The processes include:
+    1) `func_cot_vs_rad`: run simulations to establish IPA relationship between COT and radiance for a given wavelength
+
+    2) `main_les`: coarsen a given LES cloud scene by factors of 2 and 4 and run radiance simulations for both the
+       original LES scene and coarsened scenes.
+
+    3) `split_data_native_resolution`: upscale the coarsened LES scenes to original spatial resolution of 100m and split
+       them into data with size of 480x480
+
+    4) `crop_select_cloud_scene`: crop the 480x480 data into 64x64 mini tiles that each contains ground truth of cloud
+       optical thickness from LES and realistic radiance simulated by EaR3T. A random selection is applied to evenly select
+       data at different cloud fractions and cloud inhomogeneities to avoid biasing CNN model.
+
+This code has been tested under:
+    1) Linux on 2022-07-27 by Hong Chen
+      Operating System: Red Hat Enterprise Linux
+           CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
+                Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
+          Architecture: x86-64
+
+"""
+
 import os
 import h5py
 import glob
@@ -30,18 +57,16 @@ from matplotlib import rcParams, ticker
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 
-from er3t.util.cloud import clouds
-
 from er3t.pre.atm import atm_atmmod
 from er3t.pre.abs import abs_16g, abs_oco_idl
 from er3t.pre.cld import cld_sat, cld_les
 from er3t.pre.sfc import sfc_sat
-from er3t.util.modis import modis_l1b, modis_l2, modis_09a1, grid_modis_by_extent, grid_modis_by_lonlat, download_modis_https, get_sinusoidal_grid_tag
 from er3t.util import cal_r_twostream, cal_ext
 
 from er3t.rtm.mca_v010 import mca_atm_1d, mca_atm_3d, mca_sfc_2d
 from er3t.rtm.mca_v010 import mcarats_ng
 from er3t.rtm.mca_v010 import mca_out_ng
+
 
 
 
@@ -158,7 +183,6 @@ class func_cot_vs_rad:
 
 
 
-
 def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, fdir_out='tmp-data/05_cnn-les_rad-sim/03_sim-ori', coarsen_factor=2, overwrite=True):
 
     fdir = '%s/%dnm' % (fdir0, wavelength)
@@ -254,7 +278,6 @@ def main_les(coarsen_factor=2):
 
 
 
-
 def split_data_native_resolution(fname, coarsen_factor=2, fdir_out='tmp-data/05_cnn-les_rad-sim/04_sim-native'):
 
     with h5py.File(fname, 'r+') as f:
@@ -293,7 +316,6 @@ def split_data_native_resolution(fname, coarsen_factor=2, fdir_out='tmp-data/05_
                             y_start = j*Ny
                             y_end   = (j+1) * Ny
                             f[key.replace('_expand', '')] = f0[key][...][x_start:x_end, y_start:y_end]
-
 
 
 
