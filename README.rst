@@ -13,7 +13,7 @@ SHDOM (under development), and MYSTIC (under development).
 
 **How to cite:**
 
-* `Chen et al., 2022 [in review] <https://doi.org/10.5194/amt-2022-143>`_
+* `Chen et al., 2022 <https://doi.org/10.5194/amt-2022-143>`_
 
    Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
@@ -176,14 +176,14 @@ Publications
 
 So far, the following publications have used EaR³T
 
-#. `Chen et al., 2022 [in review] <https://doi.org/10.5194/amt-2022-143>`_
+#. `Chen et al., 2022 <https://doi.org/10.5194/amt-2022-143>`_
 
    Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
    Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.
 
-#. `Nataraja et al., 2022 [in review] <https://doi.org/10.5194/amt-2022-45>`_
+#. `Nataraja et al., 2022 <https://doi.org/10.5194/amt-2022-45>`_
 
    Nataraja, V., Schmidt, S., Chen, H., Yamaguchi, T., Kazil, J., Feingold, G., Wolf, K., and
    Iwabuchi, H.: Segmentation-Based Multi-Pixel Cloud Optical Thickness Retrieval Using a Convolutional
