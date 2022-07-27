@@ -76,33 +76,6 @@ def test_high_res_atm(fdir):
 
 
 
-def test_non_equidistant_atm(fdir):
-
-    """
-    Test for module er3t.pre.atm.atm_atmmod
-    """
-
-    levels     = np.loadtxt('tmp-data/z_GRANDSAM.txt')/1000.0
-    fname_atm  = '%s/atm.pk' % fdir
-
-    atm_obj = atm_atmmod(levels=levels, verbose=True)
-
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    import matplotlib as mpl
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import FixedLocator
-    from matplotlib import rcParams
-
-    fig = plt.figure(figsize=(3, 7))
-    ax1 = fig.add_subplot(111)
-    ax1.scatter(atm_obj.lev['pressure']['data'], atm_obj.lev['altitude']['data'])
-    ax1.set_xlabel('Pressure [hPa]')
-    ax1.set_ylabel('Altitude [km]')
-    plt.show()
-    # ---------------------------------------------------------------------
-
-
-
 def main():
 
     # create tmp-data/01 directory if it does not exist
@@ -111,11 +84,9 @@ def main():
         os.makedirs(fdir)
 
 
-    # test_atm_atmmod(fdir)
+    test_atm_atmmod(fdir)
 
-    # test_high_res_atm(fdir)
-
-    test_non_equidistant_atm(fdir)
+    test_high_res_atm(fdir)
 
 
 

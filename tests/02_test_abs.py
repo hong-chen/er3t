@@ -146,7 +146,7 @@ def main():
     if not os.path.exists(fdir):
         os.makedirs(fdir)
 
-    # test_abs_16g(fdir)
+    test_abs_16g(fdir)
 
     # test_abs_oco(fdir)
 
