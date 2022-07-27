@@ -15,6 +15,31 @@ type in the following
 Besides showcasing EaR³T, codes ``01`` to ``04`` can be used to reproduce scientific results
 discussed in `Chen et al. (2022) <https://doi.org/10.5194/amt-2022-143>`_.
 
+|
+
+Code ``01`` and ``02`` contain some programs that can automatically download satellite data from NASA EARTHDATA.
+To get the data access, you will need to register an account with NASA EARTHDATA.
+
+=======================
+Get Access to EARTHDATA
+=======================
+
+
+#. Register an account at `NASA EARTHDATA <https://urs.earthdata.nasa.gov>`_ ;
+
+#. Create a ``.netrc`` file under your home directory, e.g., type in ``touch ~/.netrc``;
+
+#. Assume you registered with an username ``abc`` and a password ``123``, in the ``~/.netrc`` file, put in
+
+::
+
+    machine urs.earthdata.nasa.gov
+    login abc
+    password 123
+
+|
+|
+
 =====================
 01_oco2_rad-sim.py
 =====================
@@ -37,6 +62,9 @@ The executable lines are located after the line ``if __name__ == __main__:``.
 
 To run the code, please comment/uncomment the line associated with each step.
 After saving the changes to the file, type in ``python 01_oco2_rad-sim.py`` in a terminal under ``er3t/examples``.
+
+|
+|
 
 =====================
 02_modis_rad-sim.py
@@ -61,6 +89,9 @@ The executable lines are located after the line ``if __name__ == __main__:``.
 To run the code, please comment/uncomment the line associated with each step.
 After saving the changes to the file, type in ``python 02_modis_rad-sim.py`` in a terminal under ``er3t/examples``.
 
+|
+|
+
 =====================
 03_spns_flux-sim.py
 =====================
@@ -78,6 +109,9 @@ The executable lines are located after the line ``if __name__ == __main__:``.
 
 To run the code, please comment/uncomment the line associated with each step.
 After saving the changes to the file, type in ``python 03_spns_flux-sim.py`` in a terminal under ``er3t/examples``.
+
+|
+|
 
 =====================
 04_cam_nadir_rad-sim.py
@@ -99,6 +133,9 @@ The executable lines are located after the line ``if __name__ == __main__:``.
 To run the code, please comment/uncomment the line associated with each step.
 After saving the changes to the file, type in ``python 04_cam_nadir_rad-sim.py`` in a terminal under ``er3t/examples``.
 
+|
+|
+
 =====================
 05_cnn-les_rad-sim.py
 =====================
@@ -119,6 +156,9 @@ The executable lines are located after the line ``if __name__ == __main__:``.
 
 To run the code, please comment/uncomment the line associated with each step.
 After saving the changes to the file, type in ``python 05_cnn-les_rad-sim.py`` in a terminal under ``er3t/examples``.
+
+|
+|
 
 =====================
 test_mca.py
