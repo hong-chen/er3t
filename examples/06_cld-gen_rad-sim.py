@@ -325,6 +325,246 @@ class cld_gen:
 
         self.lay['thickness']   = {'data':dz , 'name':'Layer thickness', 'units':'km'}
 
+
+
+class CLD_3D_GEN:
+    """
+    Generate 3D cloud field (hemispherical clouds)
+    """
+    def __init__(self, domainX, domainY, cloudR, dpi=100):
+        self.fig = plt.figure(frameon=False, figsize=(domainX/dpi, domainY/dpi), dpi=dpi)
+        self.ax  = self.fig.add_axes([0.0, 0.0, 1.0, 1.0])
+        self.ax.axis('off')
+        self.ax.set_xlim([0, domainX])
+        self.ax.set_ylim([0, domainY])
+
+    def C_CLD_RAND
+
+
+
+class CLD2D_GEN:
+
+    def __init__(self,
+            cldGridSizeHalf = 1,       # number of grid space (squared shape)
+            cldFracLimit    = 0.2,
+            domXGrid0       = 200,
+            domYGrid0       = 200,
+            domGridSize     = 0.5,
+            ):
+
+        self.cldGridSizeHalf = cldGridSizeHalf
+        self.marginSize      = domGridSize * cldGridSizeHalf
+        self.cldSize         = domGridSize * cldGridSizeHalf * 2
+        self.cldFracLimit    = cldFracLimit
+        self.cldArea0        = self.cldSize ** 2
+        self.cldArea         = 0.0
+        self.cldNum          = 0
+
+        self.domXGrid0    = domXGrid0
+        self.domYGrid0    = domYGrid0
+        self.domXGrid     = domXGrid0 + cldGridSizeHalf * 2
+        self.domYGrid     = domYGrid0 + cldGridSizeHalf * 2
+
+        self.domXSize     = domGridSize * self.domXGrid
+        self.domYSize     = domGridSize * self.domYGrid
+        self.domArea      = self.domXSize * self.domYSize
+
+        self.cldFrac      = self.cldArea / self.domArea
+
+        self.cld2d        = np.zeros((self.domXGrid, self.domYGrid), dtype=np.int16)
+
+        self.cldCan       = np.zeros((self.domXGrid, self.domYGrid), dtype=np.int16)
+        self.cldCan[cldGridSizeHalf:-cldGridSizeHalf, cldGridSizeHalf:-cldGridSizeHalf] = 1
+
+    def C_CLD_RAND(self):
+        cldIndX  = np.random.randint(self.cldGridSizeHalf, high=self.domXGrid0+self.cldGridSizeHalf, size=1)
+        cldIndY  = np.random.randint(self.cldGridSizeHalf, high=self.domYGrid0+self.cldGridSizeHalf, size=1)
+        print 'Generating cloud...'
+        while self.cldFrac <= self.cldFracLimit:
+            while self.cldCan[cldIndX, cldIndY] != 1:
+                cldIndX  = np.random.randint(self.cldGridSizeHalf, high=self.domXGrid0+self.cldGridSizeHalf, size=1)
+                cldIndY  = np.random.randint(self.cldGridSizeHalf, high=self.domYGrid0+self.cldGridSizeHalf, size=1)
+            cldIndXS1 = cldIndX-self.cldGridSizeHalf
+            cldIndXE1 = cldIndX+self.cldGridSizeHalf
+            cldIndYS1 = cldIndY-self.cldGridSizeHalf
+            cldIndYE1 = cldIndY+self.cldGridSizeHalf
+            self.cld2d[cldIndXS1:cldIndXE1, cldIndYS1:cldIndYE1]  = 1
+
+            cldIndXS2 = cldIndX-self.cldGridSizeHalf*2
+            if cldIndXS2 < 0:
+                cldIndXS2 = 0
+            cldIndXE2 = cldIndX+self.cldGridSizeHalf*2
+            if cldIndXE2 > self.domXGrid:
+                cldIndXE2 = self.domXGrid
+            cldIndYS2 = cldIndY-self.cldGridSizeHalf*2
+            if cldIndYS2 < 0:
+                cldIndYS2 = 0
+            cldIndYE2 = cldIndY+self.cldGridSizeHalf*2
+            if cldIndYE2 > self.domYGrid:
+                cldIndYE2 = self.domYGrid
+            self.cldCan[cldIndXS2:cldIndXE2, cldIndYS2:cldIndYE2] = 0
+
+            self.cldArea += self.cldArea0
+            self.cldNum  += 1
+            self.cldFrac = self.cldArea / self.domArea
+            print '  Cloud #%d is created... Now cloud fraction is %f.' % (self.cldNum, self.cldFrac)
+        print '2D random cloud field has been generated. Please check object.cld2d.'
+
+
+def TEST():
+    cld2d = CLD2D_GEN(cldGridSizeHalf=3, cldFracLimit=0.45)
+    cld2d.C_CLD_RAND()
+    import matplotlib.pyplot as plt
+    fig = plt.figure(figsize=(6, 6))
+    ax1 = fig.add_subplot(111)
+    cs1 = plt.imshow(cld2d.cld2d*0.5, cmap='Greys', origin='lower')
+    ax1.set_xlim([0, 100])
+    ax1.set_ylim([0, 100])
+    plt.show()
+
+def CDATA():
+    import h5py
+    for cldFracLimit in [0.1, 0.45]:
+        for cldGridSizeHalf in [1, 3]:
+            cldSize = cldGridSizeHalf*0.5*2.0
+            cld2d = CLD2D_GEN(cldGridSizeHalf=cldGridSizeHalf, cldFracLimit=cldFracLimit, domXGrid0=200-2*cldGridSizeHalf, domYGrid0=200-2*cldGridSizeHalf)
+            cld2d.C_CLD_RAND()
+            fname = 'cldfrac-%.2f_cldsize-%.2f.h5' % (cldFracLimit, cldSize)
+            f = h5py.File(fname, 'w')
+            f['cld_field'] = cld2d.cld2d
+            f['cld_size']  = cldSize
+            f['cld_frac']  = cld2d.cldFrac
+            f['dom_grid_size'] = 0.5
+            f['dom_size_x'] = cld2d.domXSize
+            f['dom_size_y'] = cld2d.domYSize
+            f.close()
+
+def PLT_DATA():
+    import h5py
+    for cldFracLimit in [0.1, 0.45]:
+        for cldGridSizeHalf in [1, 3]:
+            #cld2d = CLD2D_GEN(cldGridSizeHalf=cldGridSizeHalf, cldFracLimit=cldFracLimit)
+            #cld2d.C_CLD_RAND()
+            cldSize = cldGridSizeHalf*0.5*2.0
+            fname = 'cldfrac-%.2f_cldsize-%.2f.h5' % (cldFracLimit, cldSize)
+            f = h5py.File(fname, 'r')
+            cld_field = f['cld_field'][...]
+            cld_size  = f['cld_size'][...]
+            cld_frac  = f['cld_frac'][...]
+            dom_size_x= f['dom_size_x'][...]
+            dom_size_y= f['dom_size_y'][...]
+            f.close()
+            print cld_size, cld_frac, dom_size_x, dom_size_y
+
+            import matplotlib.pyplot as plt
+            fig = plt.figure(figsize=(6, 6.2))
+            ax1 = fig.add_subplot(111)
+            cs1 = plt.imshow(cld_field, cmap='Greys', origin='lower')
+            ax1.set_xlim([0, cld_field.shape[0]-1])
+            ax1.set_ylim([0, cld_field.shape[1]-1])
+            plt.savefig('%s.png' % fname[:-3])
+
+class CLD2D_GEN:
+    def __init__(self,
+            cldFracLimit    = 0.3,
+            domGridNX       = 1000,
+            domGridNY       = 1000,
+            domGridSize     = 1.0
+            ):
+
+        self.cldFracLimit    = cldFracLimit
+        self.cldAreaTotal    = 0.0
+        self.cldNumTotal     = 0
+
+        self.domGridSize  = domGridSize
+        self.domGridNX    = domGridNX
+        self.domGridNY    = domGridNY
+        self.domSizeX     = domGridSize * self.domGridNX
+        self.domSizeY     = domGridSize * self.domGridNY
+        self.domArea      = self.domSizeX * self.domSizeY
+
+        self.cldFrac      = self.cldAreaTotal / self.domArea
+
+        self.cld2d        = np.zeros((self.domGridNX, self.domGridNY), dtype=np.int8)
+        #self.cldIndPool   = np.zeros((self.domGridNX, self.domGridNY), dtype=np.int8)
+        self.cldIndPool   = np.ones((self.domGridNX, self.domGridNY), dtype=np.int8)
+
+
+    def C_CLD_FIELD(self,
+            halfCldGridNX = 2,
+            halfCldGridNY = 2,
+            verbose       = False
+            ):
+
+        self.cldIndPool[halfCldGridNX:self.domGridNX-halfCldGridNX, halfCldGridNY:self.domGridNY-halfCldGridNY] = 0
+        cldIndX  = np.random.randint(halfCldGridNX, high=self.domGridNX-halfCldGridNX+1, size=1)
+        cldIndY  = np.random.randint(halfCldGridNY, high=self.domGridNY-halfCldGridNY+1, size=1)
+
+        print 'Generating cloud...'
+        while self.cldFrac <= self.cldFracLimit:
+            loopRecordNum = 0
+            while self.cldIndPool[cldIndX-halfCldGridNX:cldIndX+halfCldGridNX, cldIndY-halfCldGridNY:cldIndY+halfCldGridNY].sum() != 0:
+                cldIndX  = np.random.randint(halfCldGridNX, high=self.domGridNX-halfCldGridNX+1, size=1)
+                cldIndY  = np.random.randint(halfCldGridNY, high=self.domGridNY-halfCldGridNY+1, size=1)
+                loopRecordNum += 1
+                if loopRecordNum >= 1e6:
+                    print 'Endless loop occurs... Exit.'
+                    exit()
+
+            cldIndXS = cldIndX-halfCldGridNX
+            cldIndXE = cldIndX+halfCldGridNX
+            cldIndYS = cldIndY-halfCldGridNY
+            cldIndYE = cldIndY+halfCldGridNY
+
+            self.cld2d[cldIndXS:cldIndXE, cldIndYS:cldIndYE]       = 1
+            self.cldIndPool[cldIndXS:cldIndXE, cldIndYS:cldIndYE]  = 1
+
+            #cldIndXS2 = cldIndX-self.cldGridSizeHalf*2
+            #if cldIndXS2 < 0:
+                #cldIndXS2 = 0
+            #cldIndXE2 = cldIndX+self.cldGridSizeHalf*2
+            #if cldIndXE2 > self.domXGrid-1:
+                #cldIndXE2 = self.domXGrid-1
+            #cldIndYS2 = cldIndY-self.cldGridSizeHalf*2
+            #if cldIndYS2 < 0:
+                #cldIndYS2 = 0
+            #cldIndYE2 = cldIndY+self.cldGridSizeHalf*2
+            #if cldIndYE2 > self.domYGrid-1:
+                #cldIndXE2 = self.domYGrid-1
+
+            #halfCldGridNX = halfCldGridNX + 1
+            #halfCldGridNY = halfCldGridNY + 1
+
+            self.cldAreaTotal += (halfCldGridNX * 2 * self.domGridSize) * (halfCldGridNY * 2 * self.domGridSize)
+            self.cldNumTotal  += 1
+            self.cldFrac = self.cldAreaTotal / self.domArea
+            if verbose:
+                print '  Cloud #%d is created... Now cloud fraction is %f.' % (self.cldNumTotal, self.cldFrac)
+        print '2D random cloud field has been generated. Please check object.cld2d.'
+
+def TEST(cldFrac, runNum):
+    cld2d = CLD2D_GEN(cldFracLimit=cldFrac, domGridNX=1000, domGridNY=1000)
+    #halfCldGridNX = 20
+    #halfCldGridNY = 20
+    halfCldGridNX = 50
+    halfCldGridNY = 50
+    cld2d.C_CLD_FIELD(halfCldGridNX=halfCldGridNX, halfCldGridNY=halfCldGridNY, verbose=False)
+    cldSizeX = halfCldGridNX * 2 * cld2d.domGridSize
+    cldSizeY = halfCldGridNY * 2 * cld2d.domGridSize
+
+    print (cld2d.cld2d == 1).sum() * 1.0 / (cld2d.cld2d.ravel().size)
+
+    import matplotlib.pyplot as plt
+    fig = plt.figure(figsize=(6, 6))
+    ax1 = fig.add_subplot(111)
+    cs1 = plt.imshow(cld2d.cld2d, cmap='Greys', origin='lower')
+    plt.xlabel('X Grid Index')
+    plt.ylabel('Y Grid Index')
+    fig.suptitle('2D Random Cloud Field', fontsize=20, y=0.98)
+    plt.title('(Cloud Size: %.1fkm$\\times$%.1fkm; Cloud Fraction: %.1f)' % (cldSizeX/10.0, cldSizeY/10.0, cld2d.cldFracLimit), fontsize=12, y=1.015)
+    plt.savefig('squared_clouds_%.1f_%2.2d.png' % (cldFrac, runNum))
+    #plt.show()
+
 if __name__ == '__main__':
 
     pass
