@@ -55,10 +55,10 @@ from er3t.pre.pha import pha_mie_wc as pha_mie
 from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, grid_modis_by_extent, grid_modis_by_lonlat, download_modis_https, get_sinusoidal_grid_tag, get_filename_tag, download_modis_rgb
 from er3t.util import cal_r_twostream
 
-from er3t.rtm.mca_v010 import mca_atm_1d, mca_atm_3d, mca_sfc_2d
-from er3t.rtm.mca_v010 import mcarats_ng
-from er3t.rtm.mca_v010 import mca_out_ng
-from er3t.rtm.mca_v010 import mca_sca
+from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
+from er3t.rtm.mca import mcarats_ng
+from er3t.rtm.mca import mca_out_ng
+from er3t.rtm.mca import mca_sca
 
 
 

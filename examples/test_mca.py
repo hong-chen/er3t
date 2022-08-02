@@ -20,11 +20,11 @@ from er3t.pre.sfc import sfc_sat
 from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
 from er3t.rtm.mca import mcarats_ng
 from er3t.rtm.mca import mca_out_ng
-from er3t.util import send_email, cal_r_twostream
+from er3t.util import cal_r_twostream
 
 
 
-def test_flux_clear_sky(fdir, wavelength=650.0, solver='3D', overwrite=True):
+def test_flux_01_clear_sky(fdir, wavelength=650.0, solver='3D', overwrite=True):
 
     """
     A test run for clear sky case
@@ -179,10 +179,6 @@ def test_flux_clear_sky(fdir, wavelength=650.0, solver='3D', overwrite=True):
     plt.savefig(fname_png, bbox_inches='tight')
     plt.close(fig)
     # ------------------------------------------------------------------------------------------------------
-
-    # send email
-    # receiver = 'chenhong.cu@gmail.com'
-    # send_email(content='test_flux_clear_sky complete.', files=[fname_png, fname_h5], receiver=receiver)
 
 
 
@@ -373,8 +369,6 @@ def test_flux_with_les_cloud3d(fdir, wavelength=650.0, solver='3D', overwrite=Tr
         ax1.set_title('LES 3D Cloud (%s Mode), Upwelling Flux at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
-        # receiver = 'chenhong.cu@gmail.com'
-        # send_email(content='test_flux_with_les_cloud complete.', files=[fname_png], receiver=receiver)
     # ------------------------------------------------------------------------------------------------------
 
 
@@ -567,8 +561,6 @@ def test_radiance_with_les_cloud3d(fdir, wavelength=650.0, solver='3D', overwrit
         ax1.set_title('LES 3D Cloud (%s Mode), Radiance at %.2f nm' % (solver, wavelength))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
-        # receiver = 'chenhong.cu@gmail.com'
-        # send_email(content='test_radiance_with_les_cloud complete.', files=[fname_png], receiver=receiver)
     # ------------------------------------------------------------------------------------------------------
 
 
@@ -770,8 +762,6 @@ def test_flux_with_les_cloud3d_aerosol1d(fdir, wavelength=650.0, solver='3D', ov
     plt.close(fig)
     # ------------------------------------------------------------------------------------------------------
 
-    # receiver = 'chenhong.cu@gmail.com'
-    # send_email(content='test_flux_with_les_cloud complete.', files=[fname_png], receiver=receiver)
 
 
 
@@ -1193,8 +1183,6 @@ def test_radiance_with_les_cloud3d_aerosol3d(fdir, wavelength=650.0, solver='3D'
         ax1.set_title('Radiance at %.2f nm (%s Mode)' % (solver, wavelength))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
-        # receiver = 'chenhong.cu@gmail.com'
-        # send_email(content='test_radiance_with_les_cloud complete.', files=[fname_png], receiver=receiver)
     # ------------------------------------------------------------------------------------------------------
 
 
