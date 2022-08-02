@@ -1,5 +1,5 @@
 # pack data
-# tar -czf er3t-data-examples.tar.gz data/01_oco2_rad-sim/aux data/03_spns_flux-sim/aux data/04_cam_nadir_rad-sim/aux data/test_mca
+# tar -czf er3t-data-examples.tar.gz data/01_oco2_rad-sim/aux data/03_spns_flux-sim/aux data/04_cam_nadir_rad-sim/aux data/00_er3t_mca/aux
 
 # download data from google drive
 # ====================================================================================================
