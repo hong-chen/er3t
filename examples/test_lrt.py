@@ -6,15 +6,40 @@ import er3t.rtm.lrt as lrt
 
 
 
+def test_01_flux_clear_sky():
 
-def eg_02_clear_sky():
+    """
+    This following is an example for clear-sky calculation with default parameterization.
+    """
+
+    fdir_tmp = 'tmp-data/test_lrt/test_01_flux_clear_sky'
+    if not os.path.exists(fdir_tmp):
+        os.makedirs(fdir_tmp)
+
+
+    init = lrt.lrt_init_mono(
+            input_file  = '%s/input.txt' % fdir_tmp,
+            output_file = '%s/output.txt' % fdir_tmp
+            )
+
+    lrt.lrt_run(init)
+
+    data = lrt.lrt_read_uvspec([init])
+
+    # the flux calculated can be accessed through
+    print(data.f_up)
+    print(data.f_down)
+    print(data.f_down_diffuse)
+    print(data.f_down_direct)
+
+def test_02_flux_clear_sky():
 
     """
     The following example is similar to Example 1 but with user's input of surface albedo, solar zenith angle,
     wavelength etc.
     """
 
-    fdir_tmp = 'tmp-data/eg_02_clear_sky'
+    fdir_tmp = 'tmp-data/test_lrt/test_02_flux_clear_sky'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -41,15 +66,13 @@ def eg_02_clear_sky():
     print(data.f_down_diffuse)
     print(data.f_down_direct)
 
-
-
-def eg_03_clear_sky():
+def test_03_flux_clear_sky():
 
     """
     The following example is similar to Example 2 but for multiple calculations at different solar zenith angles.
     """
 
-    fdir_tmp = 'tmp-data/eg_03_clear_sky'
+    fdir_tmp = 'tmp-data/test_lrt/test_03_flux_clear_sky'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -83,16 +106,14 @@ def eg_03_clear_sky():
     print(data.f_down_diffuse)
     print(data.f_down_direct)
 
-
-
-def eg_04_cloud():
+def test_04_flux_cloud():
 
     """
     The following example is similar to Example 3 but for cloud calculations.
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/eg_04_cloud'
+    fdir_tmp = 'tmp-data/test_lrt/test_04_flux_cloud'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -134,16 +155,14 @@ def eg_04_cloud():
     print(data.f_down_diffuse)
     print(data.f_down_direct)
 
-
-
-def eg_05_cloud_and_aerosol():
+def test_05_flux_cloud_and_aerosol():
 
     """
     The following example is similar to Example 3 but for cloud calculations.
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/eg_05_cloud_and_aerosol'
+    fdir_tmp = 'tmp-data/test_lrt/test_05_flux_cloud_and_aerosol'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -194,43 +213,19 @@ def eg_05_cloud_and_aerosol():
     print(data.f_down_direct)
 
 
-def test_flux_clear_sky():
-
-    """
-    This following is an example for clear-sky calculation with default parameterization.
-    """
-
-    fdir_tmp = 'tmp-data/test_lrt/test_flux_clear_sky'
-    if not os.path.exists(fdir_tmp):
-        os.makedirs(fdir_tmp)
-
-
-    init = lrt.lrt_init_mono(
-            input_file  = '%s/input.txt' % fdir_tmp,
-            output_file = '%s/output.txt' % fdir_tmp
-            )
-
-    lrt.lrt_run(init)
-
-    data = lrt.lrt_read_uvspec([init])
-
-    # the flux calculated can be accessed through
-    print(data.f_up)
-    print(data.f_down)
-    print(data.f_down_diffuse)
-    print(data.f_down_direct)
 
 
 if __name__ == '__main__':
 
-    # eg_02_clear_sky()
 
-    # eg_03_clear_sky()
+    test_01_flux_clear_sky()
 
-    # eg_04_cloud()
+    test_02_flux_clear_sky()
 
-    # eg_05_cloud_and_aerosol()
+    test_03_flux_clear_sky()
 
-    test_flux_clear_sky()
+    test_04_flux_cloud()
+
+    test_05_flux_cloud_and_aerosol()
 
     pass
