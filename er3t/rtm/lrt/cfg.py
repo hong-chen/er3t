@@ -1,6 +1,8 @@
 import os
+import sys
 import numpy as np
 from collections import OrderedDict as OD
+import er3t.common
 
 
 
@@ -9,10 +11,16 @@ __all__ = ['get_lrt_cfg', 'get_cld_cfg', 'get_aer_cfg']
 
 
 def get_lrt_cfg(
-        lrt_fdir   = os.environ['LIBRADTRAN_PY'],
-        ssfr_fdir  = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'aux/ssfr'),
+        lrt_fdir   = None,
+        ssfr_fdir  = er3t.common.fdir_data_ssfr,
         spectral_resolution=0.1
         ):
+
+    if lrt_fdir is None:
+        if er3t.common.has_libradtran:
+            lrt_fdir = os.environ['LIBRADTRAN_V2_DIR']
+        else:
+            sys.exit('Error   [er3t.rtm.lrt]: Cannot locate libRadtran. Please make sure libRadtran is installed and specified at enviroment variable <LIBRADTRAN_V2_DIR>.')
 
     lrt_cfg = {
             'executable_file'    : '%s/bin/uvspec' % lrt_fdir,
