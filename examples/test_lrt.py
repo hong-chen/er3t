@@ -492,7 +492,6 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     plt.savefig('%s/%s.png' % (fdir_tmp, _metadata['Function']), bbox_inches='tight', metadata=_metadata)
     # =============================================================================
 
-    plt.show()
     plt.close(fig)
     # =============================================================================
 
@@ -605,7 +604,6 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     plt.savefig('%s/%s.png' % (fdir_tmp, _metadata['Function']), bbox_inches='tight', metadata=_metadata)
     # =============================================================================
 
-    plt.show()
     plt.close(fig)
     # =============================================================================
 
@@ -629,7 +627,8 @@ if __name__ == '__main__':
     # test_rad_04_cloud()
     # test_rad_05_cloud_and_aerosol()
 
-    # example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)
-    # example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)
+
+    example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)
+    example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)
 
     pass

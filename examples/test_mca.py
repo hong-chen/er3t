@@ -17,9 +17,9 @@ from er3t.pre.abs import abs_16g
 from er3t.pre.cld import cld_les, cld_sat
 from er3t.pre.sfc import sfc_sat
 
-from er3t.rtm.mca_v010 import mca_atm_1d, mca_atm_3d, mca_sfc_2d
-from er3t.rtm.mca_v010 import mcarats_ng
-from er3t.rtm.mca_v010 import mca_out_ng
+from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
+from er3t.rtm.mca import mcarats_ng
+from er3t.rtm.mca import mca_out_ng
 from er3t.util import send_email, cal_r_twostream
 
 

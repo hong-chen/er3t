@@ -3,6 +3,7 @@ import sys
 import datetime
 import multiprocessing as mp
 import numpy as np
+import er3t.common
 
 try:
     from tqdm import tqdm
@@ -45,7 +46,7 @@ class mca_run:
                  fnames_inp, \
                  fnames_out, \
 
-                 executable = os.environ['MCARATS_V010_EXE'], \
+                 executable = None, \
                  photons    = 1.0e6,  \
                  solver     = 0,      \
                  Ncpu       = 1,      \
@@ -55,10 +56,11 @@ class mca_run:
                  quiet      = False   \
                 ):
 
-
-        if not os.path.exists(executable):
-            sys.exit('Error   [mca_run]: cannot locate the mcarats executable file \'%s\'.' % executable)
-
+        if executable is None:
+            if er3t.common.has_mcarats:
+                executable = os.environ['MCARATS_V010_EXE']
+            else:
+                sys.exit('Error   [er3t.rtm.mca.mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>.')
 
         Nfile = len(fnames_inp)
         if len(fnames_out) != Nfile:
