@@ -19,7 +19,7 @@ def test_flux_01_clear_sky():
     This following is an example for clear-sky calculation with default parameterization.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_flux_01_clear_sky'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_01_clear_sky'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -46,7 +46,7 @@ def test_flux_02_clear_sky():
     wavelength etc.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_flux_02_clear_sky'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_02_clear_sky'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -79,7 +79,7 @@ def test_flux_03_clear_sky():
     The following example is similar to Example 2 but for multiple calculations at different solar zenith angles.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_flux_03_clear_sky'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_03_clear_sky'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -120,7 +120,7 @@ def test_flux_04_cloud():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_flux_04_cloud'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_04_cloud'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -169,7 +169,7 @@ def test_flux_05_cloud_and_aerosol():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_flux_05_cloud_and_aerosol'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_05_cloud_and_aerosol'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -228,7 +228,7 @@ def test_rad_01_clear_sky():
     This following is an example for clear-sky calculation with default parameterization.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_rad_01_clear_sky'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_01_clear_sky'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -251,7 +251,7 @@ def test_rad_02_clear_sky():
     wavelength etc.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_rad_02_clear_sky'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_02_clear_sky'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -284,7 +284,7 @@ def test_rad_03_clear_sky():
     The following example is similar to Example 2 but for multiple calculations at different solar zenith angles.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_rad_03_clear_sky'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_03_clear_sky'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -325,7 +325,7 @@ def test_rad_04_cloud():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_rad_04_cloud'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_04_cloud'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -374,7 +374,7 @@ def test_rad_05_cloud_and_aerosol():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/test_rad_05_cloud_and_aerosol'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_05_cloud_and_aerosol'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -435,7 +435,7 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/example_rad_01_sun_glint'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/example_rad_01_sun_glint'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -486,11 +486,7 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     ax1.set_theta_zero_location('N')
     ax1.set_theta_direction(-1)
 
-    # save png file and add metadata of hostname, script path, and function name
-    # =============================================================================
-    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    plt.savefig('%s/%s.png' % (fdir_tmp, _metadata['Function']), bbox_inches='tight', metadata=_metadata)
-    # =============================================================================
+    plt.savefig('tmp-data/00_er3t_lrt/%s' % sys._getframe().f_code.co_name, bbox_inches='tight')
 
     plt.close(fig)
     # =============================================================================
@@ -502,7 +498,7 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/test_lrt/example_rad_02_anisotropy'
+    fdir_tmp = 'tmp-data/00_er3t_lrt/example_rad_02_anisotropy'
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -598,11 +594,7 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     ax1.set_theta_zero_location('N')
     ax1.set_theta_direction(-1)
 
-    # save png file and add metadata of hostname, script path, and function name
-    # =============================================================================
-    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    plt.savefig('%s/%s.png' % (fdir_tmp, _metadata['Function']), bbox_inches='tight', metadata=_metadata)
-    # =============================================================================
+    plt.savefig('tmp-data/00_er3t_lrt/%s' % sys._getframe().f_code.co_name, bbox_inches='tight')
 
     plt.close(fig)
     # =============================================================================
@@ -614,18 +606,18 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
 if __name__ == '__main__':
 
 
-    # test_flux_01_clear_sky()
-    # test_flux_02_clear_sky()
-    # test_flux_03_clear_sky()
-    # test_flux_04_cloud()
-    # test_flux_05_cloud_and_aerosol()
+    test_flux_01_clear_sky()
+    test_flux_02_clear_sky()
+    test_flux_03_clear_sky()
+    test_flux_04_cloud()
+    test_flux_05_cloud_and_aerosol()
 
 
-    # test_rad_01_clear_sky()
-    # test_rad_02_clear_sky()
-    # test_rad_03_clear_sky()
-    # test_rad_04_cloud()
-    # test_rad_05_cloud_and_aerosol()
+    test_rad_01_clear_sky()
+    test_rad_02_clear_sky()
+    test_rad_03_clear_sky()
+    test_rad_04_cloud()
+    test_rad_05_cloud_and_aerosol()
 
 
     example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)

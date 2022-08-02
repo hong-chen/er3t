@@ -161,7 +161,7 @@ After saving the changes to the file, type in ``python 05_cnn-les_rad-sim.py`` i
 |
 
 =====================
-test_mca.py
+00_er3t_lrt.py
 =====================
 
 This program contains various test cases using LES data.
