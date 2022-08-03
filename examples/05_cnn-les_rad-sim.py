@@ -1,15 +1,3 @@
-#!/bin/env python
-
-#SBATCH --partition=shas
-#SBATCH --nodes=1
-#SBATCH --ntasks=24
-#SBATCH --ntasks-per-node=24
-#SBATCH --time=24:00:00
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=hong.chen-1@colorado.edu
-#SBATCH --output=sbatch-output_%x_%j.txt
-#SBATCH --job-name=les_04
-
 """
 by Hong Chen (hong.chen.cu@gmail.com)
 
@@ -122,7 +110,7 @@ class func_cot_vs_rad:
         cer_2d    = np.zeros((2, 2), dtype=np.float64); cer_2d[...] = 12.0
         ext_3d    = np.zeros((2, 2, 2), dtype=np.float64)
 
-        fname_nc  = 'data/test_mca/les.nc'
+        fname_nc  = 'data/00_er3t_mca/aux/les.nc'
         fname_les = '%s/les.pk' % self.fdir
         cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=False)
 
@@ -269,7 +257,7 @@ def run(fdir, fname_nc, coarsen_factor=2):
 def main_les(coarsen_factor=2):
 
     fnames_nc = [
-            'data/test_mca/les.nc',
+            'data/00_er3t_mca/aux/les.nc',
             ]
 
     for fname_nc in fnames_nc:
