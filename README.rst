@@ -7,7 +7,7 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 EaR³T provides high-level interfaces that can automate the process of performing 3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
 publicly available 3D radiative transfer models including MCARaTS (**implemented**),
-libRadtran/MYSTIC (under development), and SHDOM (future).
+libRadtran (**implemented**), and SHDOM (future).
 
 Applicable area:
 
@@ -59,7 +59,7 @@ Dependencies
 
 |
 
-**3. Specify path variable** ``MCARATS_V010_EXE``
+**3. Specify environment variable** ``MCARATS_V010_EXE``
 
     * If you are using ``bash`` shell, add the following line to the shell source file (e.g., ``~/.bashrc`` on Linux or ``~/.bash_profile`` on Mac):
 
@@ -78,11 +78,11 @@ Dependencies
 
 **4*. Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `official installation guide <http://www.libradtran.org/doku.php?id=download>`_ (or the `unofficial installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`_ by Hong Chen)
 
-    * This installation is optional. If installed
+    * This installation is optional. If installed, please specify environment variable ``LIBRADTRAN_V2_DIR`` for the directory that contains compiled libRadtran (the directory should contain ``bin``, ``lib``, ``src`` etc.). After installation,
 
       #. Mie scattering phase function will be supported;
 
-      #. ``er3t.rtm.lrt`` can be used to perform 1D radiance/irradiance simulation (under development).
+      #. ``er3t.rtm.lrt`` can be used to perform 1D radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
 
 |
 |
