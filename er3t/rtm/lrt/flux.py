@@ -8,8 +8,8 @@ import numpy as np
 import multiprocessing as mp
 from collections import OrderedDict as OD
 
-from lrt_util.util import *
-from lrt_util.cfg import *
+from .util import *
+from .cfg import *
 
 
 

@@ -63,9 +63,9 @@ from er3t.pre.cld import cld_sat, cld_les
 from er3t.pre.sfc import sfc_sat
 from er3t.util import cal_r_twostream, cal_ext
 
-from er3t.rtm.mca_v010 import mca_atm_1d, mca_atm_3d, mca_sfc_2d
-from er3t.rtm.mca_v010 import mcarats_ng
-from er3t.rtm.mca_v010 import mca_out_ng
+from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
+from er3t.rtm.mca import mcarats_ng
+from er3t.rtm.mca import mca_out_ng
 
 
 

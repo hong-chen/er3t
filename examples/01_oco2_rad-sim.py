@@ -61,10 +61,10 @@ from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, grid_modi
 from er3t.util.oco2 import oco2_rad_nadir, oco2_std, download_oco2_https
 from er3t.util import cal_r_twostream
 
-from er3t.rtm.mca_v010 import mca_atm_1d, mca_atm_3d, mca_sfc_2d
-from er3t.rtm.mca_v010 import mcarats_ng
-from er3t.rtm.mca_v010 import mca_out_ng
-from er3t.rtm.mca_v010 import mca_sca
+from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
+from er3t.rtm.mca import mcarats_ng
+from er3t.rtm.mca import mca_out_ng
+from er3t.rtm.mca import mca_sca
 
 
 

@@ -42,10 +42,10 @@ from er3t.pre.abs import abs_16g
 from er3t.pre.cld import cld_les, cld_sat
 from er3t.pre.pha import pha_mie_wc as pha_mie
 
-from er3t.rtm.mca_v010 import mca_atm_1d, mca_atm_3d
-from er3t.rtm.mca_v010 import mcarats_ng
-from er3t.rtm.mca_v010 import mca_out_ng
-from er3t.rtm.mca_v010 import mca_sca
+from er3t.rtm.mca import mca_atm_1d, mca_atm_3d
+from er3t.rtm.mca import mcarats_ng
+from er3t.rtm.mca import mca_out_ng
+from er3t.rtm.mca import mca_sca
 from er3t.util.ahi import ahi_l2
 from er3t.util.modis import grid_modis_by_extent
 

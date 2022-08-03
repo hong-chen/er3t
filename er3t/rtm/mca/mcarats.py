@@ -6,8 +6,8 @@ import multiprocessing as mp
 import numpy as np
 from tqdm import tqdm
 
-from er3t.rtm.mca_v010 import mca_inp_file
-from er3t.rtm.mca_v010 import mca_run
+from er3t.rtm.mca import mca_inp_file
+from er3t.rtm.mca import mca_run
 
 
 

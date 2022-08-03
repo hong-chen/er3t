@@ -132,8 +132,14 @@ class pha_mie_wc:
             fname,
             wvl0,
             angles,
-            fdir_lrt = os.environ['LIBRADTRAN_PY']
+            fdir_lrt=None
             ):
+
+        if fdir_lrt is None:
+            if er3t.common.has_libradtran:
+                fdir_lrt = os.environ['LIBRADTRAN_V2_DIR']
+            else:
+                sys.exit('Error   [er3t.pre.pha]: Cannot locate libRadtran. Please make sure libRadtran is installed and specified at enviroment variable <LIBRADTRAN_V2_DIR>.')
 
         Na = angles.size
         wvl, ref, ssa, asy, pmom = read_pmom(self.fname_coef)
