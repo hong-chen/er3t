@@ -131,7 +131,13 @@ class func_cot_vs_rad:
         cld0.lay['extinction']['data']  = ext_3d
 
         atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-        atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=False)
+
+        fname_atm3d = '%s/mca_atm_3d.bin' % self.fdir
+        if os.path.exists(fname_atm3d):
+            atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=False)
+        else:
+            atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=True)
+
         atm_1ds   = [atm1d0]
         atm_3ds   = [atm3d0]
 
@@ -524,38 +530,43 @@ if __name__ == '__main__':
 
     # step 1
     # derive relationship of COT vs Radiance at a given wavelength
+    # data stored under <tmp-data/05_cnn-les_rad-sim/01_ret>
     # =============================================================================
-    # wvl = 600.0
-    # f_mca =  func_cot_vs_rad('tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl, wvl, run=True)
+    wvl = 600.0
+    f_mca =  func_cot_vs_rad('tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl, wvl, run=True)
     # =============================================================================
 
 
     # step 2
     # run ERT for LES scenes at specified coarsening factor
     # (spatial resolution depends on coarsening factor)
+    # raw processing data is stored under <tmp-data/05_cnn-les_rad-sim/02_sim-raw>
+    # simulation output data is stored under <tmp-data/05_cnn-les_rad-sim/04_sim-ori>
     # =============================================================================
-    # for coarsen_factor in [1, 2, 4]:
-    #     main_les(coarsen_factor=coarsen_factor)
+    for coarsen_factor in [1, 2, 4]:
+        main_les(coarsen_factor=coarsen_factor)
     # =============================================================================
 
 
     # step 3
     # split/upsample the calculation so the spatial resolution is 100 m
+    # data stored under <tmp-data/05_cnn-les_rad-sim/04_sim-native>
     # =============================================================================
-    # for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-1_600nm.h5')):
-    #     split_data_native_resolution(fname, coarsen_factor=1)
-    # for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-2_600nm.h5')):
-    #     split_data_native_resolution(fname, coarsen_factor=2)
-    # for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-4_600nm.h5')):
-    #     split_data_native_resolution(fname, coarsen_factor=4)
+    for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-1_600nm.h5')):
+        split_data_native_resolution(fname, coarsen_factor=1)
+    for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-2_600nm.h5')):
+        split_data_native_resolution(fname, coarsen_factor=2)
+    for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-4_600nm.h5')):
+        split_data_native_resolution(fname, coarsen_factor=4)
     # =============================================================================
 
 
     # step 4
     # split data into 64x64 mini tiles
     # perform random selection based on Mean vs STD grids
+    # data stored under <tmp-data/05_cnn-les_rad-sim/05_sim-select>
     # =============================================================================
-    # crop_select_cloud_scene()
+    crop_select_cloud_scene()
     # =============================================================================
 
     pass
