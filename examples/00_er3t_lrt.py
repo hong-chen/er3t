@@ -487,8 +487,6 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     ax1.set_theta_direction(-1)
 
     plt.savefig('00_er3t_lrt-example_rad_01.png', bbox_inches='tight')
-
-    plt.show()
     plt.close(fig)
     # =============================================================================
 
@@ -596,8 +594,6 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     ax1.set_theta_direction(-1)
 
     plt.savefig('00_er3t_lrt-example_rad_02.png', bbox_inches='tight')
-
-    plt.show()
     plt.close(fig)
     # =============================================================================
 

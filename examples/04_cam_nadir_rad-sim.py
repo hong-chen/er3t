@@ -450,7 +450,7 @@ def main_post(plot=True):
         plt.subplots_adjust(hspace=0.45, wspace=0.45)
 
         plt.savefig('04_cam_nadir_rad-sim.png', bbox_inches='tight')
-        plt.show()
+        plt.close(fig)
         # =============================================================================
 
 

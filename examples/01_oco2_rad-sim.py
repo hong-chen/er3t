@@ -912,7 +912,7 @@ def main_post(plot=False):
         ax1.legend(handles=patches_legend, loc='upper right', fontsize=12)
 
         plt.savefig('01_oco2_rad-sim.png', bbox_inches='tight')
-        plt.show()
+        plt.close(fig)
         # ==================================================================================================
 
 

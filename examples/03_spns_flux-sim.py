@@ -609,7 +609,7 @@ def main_post(
         ax1.set_xlabel('Longitude [$^\circ$]')
         ax1.set_ylabel('Irradiance [$\mathrm{W m^{-2} nm^{-1}}$]')
         plt.savefig('03_spns_flux-sim.png', bbox_inches='tight')
-        plt.show()
+        plt.close(fig)
         # =============================================================================
 
 

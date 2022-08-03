@@ -710,7 +710,7 @@ def main_post(wvl=650, plot=False):
         plt.subplots_adjust(hspace=0.4, wspace=0.4)
 
         plt.savefig('02_modis_rad-sim.png', bbox_inches='tight')
-        plt.show()
+        plt.close(fig)
         # ==================================================================================================
 
 
