@@ -55,7 +55,7 @@ Dependencies
 
 |
 
-**2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_
+**2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or the `unofficial installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_)
 
 |
 
