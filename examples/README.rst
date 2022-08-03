@@ -194,7 +194,6 @@ This program contains various test cases using LES data.
 The executable lines are located after the line ``if __name__ == __main__:``.
 
 To run the code, please comment/uncomment the line associated with each test case.
-
 After saving the changes to the file, type in ``python 00_er3t_mca.py`` in a terminal under ``er3t/examples``.
 
 |
@@ -209,5 +208,4 @@ This program contains various test and example cases of calculating radiance and
 The executable lines are located after the line ``if __name__ == __main__:``.
 
 To run the code, please comment/uncomment the line associated with each test case.
-
 After saving the changes to the file, type in ``python 00_er3t_lrt.py`` in a terminal under ``er3t/examples``.
