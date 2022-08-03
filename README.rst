@@ -4,10 +4,10 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 .. figure:: https://discordapp.com/api/guilds/681619528945500252/widget.png?style=shield
    :target: https://discord.gg/ntqsguwaWv
 
-EaR³T provides high-level interfaces that can automate the process of performing 3D
+EaR³T provides high-level interfaces that can automate the process of performing 1D/3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
-publicly available 3D radiative transfer models including MCARaTS (**implemented**),
-libRadtran (**implemented**), and SHDOM (future).
+publicly available 1D/3D radiative transfer models including MCARaTS (**implemented**),
+libRadtran (**implemented**, 1D only), and SHDOM (future).
 
 Applicable area:
 
