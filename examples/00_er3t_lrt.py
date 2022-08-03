@@ -608,21 +608,21 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
 if __name__ == '__main__':
 
 
-    test_flux_01_clear_sky()
-    test_flux_02_clear_sky()
-    test_flux_03_clear_sky()
-    test_flux_04_cloud()
-    test_flux_05_cloud_and_aerosol()
+    # test_flux_01_clear_sky()
+    # test_flux_02_clear_sky()
+    # test_flux_03_clear_sky()
+    # test_flux_04_cloud()
+    # test_flux_05_cloud_and_aerosol()
 
 
-    test_rad_01_clear_sky()
-    test_rad_02_clear_sky()
-    test_rad_03_clear_sky()
-    test_rad_04_cloud()
-    test_rad_05_cloud_and_aerosol()
+    # test_rad_01_clear_sky()
+    # test_rad_02_clear_sky()
+    # test_rad_03_clear_sky()
+    # test_rad_04_cloud()
+    # test_rad_05_cloud_and_aerosol()
 
 
-    example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)
-    example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)
+    # example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)
+    # example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)
 
     pass
