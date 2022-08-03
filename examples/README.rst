@@ -161,40 +161,53 @@ After saving the changes to the file, type in ``python 05_cnn-les_rad-sim.py`` i
 |
 
 =====================
-00_er3t_lrt.py
+00_er3t_mca.py
 =====================
 
 This program contains various test cases using LES data.
 
-#. ``test_flux_clear_sky``
+#. ``test_01_flux_clear_sky``
 
    A test case that calculates flux profile (Nz) under clear-sky condition.
 
 
-#. ``test_flux_with_les_cloud3d``
+#. ``test_02_flux_les_cloud_3d``
 
-   A test case that calculates flux fields(Nx, Ny, Nz) using LES input.
-
-
-#. ``test_radiance_with_les_cloud3d``
-
-   A test case that calculates radiance field (Nx, Ny) using LES input.
+   A test case that calculates flux fields(Nx, Ny, Nz) using 3D LES cloud field.
 
 
-#. ``test_flux_with_les_cloud3d_aerosol1d``
+#. ``test_03_flux_les_cloud_3d_aerosol_1d``
 
-   A test case that calculates flux fields (Nx, Ny, Nz) using LES input and a user-defined 1D aerosol layer.
-
-
-#. ``test_flux_with_les_cloud3d_aerosol3d``
-
-   A test case that calculates flux fields (Nx, Ny, Nz) using LES input and a user-defined 3D aerosol layer.
+   A test case that calculates flux fields (Nx, Ny, Nz) using 3D LES cloud field and a user-defined 1D aerosol layer above clouds.
 
 
-#. ``test_radiance_with_les_cloud3d_aerosol3d``
+#. ``test_04_flux_les_cloud_3d_aerosol_3d``
 
-   A test case that calculates radiance field (Nx, Ny) using LES input and a user-defined 3D aerosol layer.
+   A test case that calculates flux fields (Nx, Ny, Nz) using 3D LES cloud field and a user-defined 3D aerosol layer near surface.
 
 
-To run a specific test case, please comment/uncomment corresponding lines in the ``main`` function.
-After saving the changes to the file, type in ``python test_mca.py`` in a terminal under ``er3t/examples``.
+#. ``test_05_rad_les_cloud_3d_aerosol_3d``
+
+   A test case that calculates radiance field (Nx, Ny) using 3D LES cloud field and a user-defined 3D aerosol layer near surface.
+
+
+The executable lines are located after the line ``if __name__ == __main__:``.
+
+To run the code, please comment/uncomment the line associated with each test case.
+
+After saving the changes to the file, type in ``python 00_er3t_mca.py`` in a terminal under ``er3t/examples``.
+
+|
+|
+
+=====================
+00_er3t_lrt.py
+=====================
+
+This program contains various test and example cases of calculating radiance and flux using libRadtran.
+
+The executable lines are located after the line ``if __name__ == __main__:``.
+
+To run the code, please comment/uncomment the line associated with each test case.
+
+After saving the changes to the file, type in ``python 00_er3t_lrt.py`` in a terminal under ``er3t/examples``.
