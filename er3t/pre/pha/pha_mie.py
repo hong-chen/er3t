@@ -61,8 +61,6 @@ class pha_mie_wc:
         reuse: boolen, whether to reuse the pre-existing phase functions stored at er3t/data/pha/mie, default is True
         verbose: boolen, whether to print all the messages, default is False
 
-        *still under development
-
     Output:
         phase object, e.g.,
         pha0 = pha_mie_wc(wvl0=500.0)
