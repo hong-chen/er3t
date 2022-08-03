@@ -613,28 +613,22 @@ class cld_gen:
         c1 = mpatches.Ellipse((50, 50), 100, 100, angle=45, color='k', lw=0.0)
         self.ax.add_artist(c1)
 
-
         self.fig.canvas.draw()
         buff = self.fig.canvas.tostring_rgb()
-        ncols, nrows = self.fig.canvas.get_width_height()
-        data = np.frombuffer(buff, dtype=np.uint8).reshape(nrows, ncols, 3)[:, :, 0]
-
-        print(data[:, 99])
+        self.data = np.frombuffer(buff, dtype=np.uint8).reshape(self.Ny, self.Nx, 3)[:, :, 0]
 
         self.fig.canvas.print_png('haha.png')
 
-    def _add_a_cloud():
+    def _add_a_cloud(self, x, y, width, height, angle):
 
-        pass
-
-    def _update_2d(self):
-
+        c0 = mpatches.Ellipse((x, y), width*2, height*2, angle=angle, color='black', lw=0.0)
+        self.ax.add_artist(c0)
         self.fig.canvas.draw()
         buff = self.fig.canvas.tostring_rgb()
-        data = np.frombuffer(buff, dtype=np.uint8).reshape(nrows, ncols, 3)[:, :, 0]
+        self.data = np.frombuffer(buff, dtype=np.uint8).reshape(self.Ny, self.Nx, 3)[:, :, 0]
 
-    def _cloud_records(self, x, y, width, height, angle):
-
+        # add this newly created cloud into self.clouds
+        # =============================================================================
         cloud0 = {
                 'ID': len(self.clouds),
                 'x' : x,
@@ -643,8 +637,16 @@ class cld_gen:
                 'height': height,
                 'angle' : angle
                 }
-
         self.clouds.append(cloud0)
+        # =============================================================================
+
+        pass
+
+    def _update_2d(self):
+
+        self.fig.canvas.draw()
+        buff = self.fig.canvas.tostring_rgb()
+        data = np.frombuffer(buff, dtype=np.uint8).reshape(nrows, ncols, 3)[:, :, 0]
 
 
 if __name__ == '__main__':
