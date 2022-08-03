@@ -55,7 +55,7 @@ Dependencies
 
 |
 
-**2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or the `unofficial installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_)
+**2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or the `unofficial installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_ by Hong Chen)
 
 |
 
@@ -76,7 +76,7 @@ Dependencies
 
 |
 
-**4*. Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `unofficial installation guide <https://github.com/hong-chen/notes/blob/master/libRadtran.md>`_
+**4*. Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `official installation guide <http://www.libradtran.org/doku.php?id=download>`_ (or the `unofficial installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`_ by Hong Chen)
 
     * This installation is optional. If installed
 
