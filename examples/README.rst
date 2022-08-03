@@ -12,8 +12,13 @@ type in the following
 
 |
 
-Besides showcasing EaR³T, codes ``01`` to ``04`` can be used to reproduce scientific results
-discussed in `Chen et al. (2022) <https://doi.org/10.5194/amt-2022-143>`_.
+Codes `00` can be used for quickly adapting the usage of `er3t.rtm.mca` (MCARaTS) and `er3t.rtm.lrt` (libRadtran).
+
+Codes ``01`` to ``04`` can be used to reproduce scientific results discussed in
+`Chen et al. (2022) <https://doi.org/10.5194/amt-2022-143>`_.
+
+The figure results for each example are provided in `check` directory for validation.
+
 
 |
 |
