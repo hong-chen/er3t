@@ -159,10 +159,10 @@ then run the command ``bash install.sh`` through a terminal again.
 How to Use
 ==========
 
-We provide various mini-examples under ``examples``. After installation, you can use the provided
-example code to do test runs.
+We provide various examples extend from simple demo to complicate research project under ``examples``.
+``examples/00_er3t_mca.py`` and ``examples/00_er3t_lrt.py`` can be used to perform test runs.
 
-Details can be found under ``examples/README.rst``
+Details can be found in ``examples/README.rst``
 
 
 |
