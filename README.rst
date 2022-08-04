@@ -4,10 +4,10 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 .. figure:: https://discordapp.com/api/guilds/681619528945500252/widget.png?style=shield
    :target: https://discord.gg/ntqsguwaWv
 
-EaR³T provides high-level interfaces that can automate the process of performing 1D/3D
+EaR³T provides high-level interfaces that can automate the process of performing IPA/3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
-publicly available 1D/3D radiative transfer models including MCARaTS (**implemented**),
-libRadtran (**implemented**, 1D only), and SHDOM (future).
+publicly available IPA/3D radiative transfer models including MCARaTS (**implemented**),
+libRadtran (**implemented**, IPA only), and SHDOM (future).
 
 Applicable area:
 
@@ -57,34 +57,34 @@ Dependencies
 
 **2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or the `unofficial installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_ by Hong Chen)
 
-|
+    * After installation, please specify environment variable** ``MCARATS_V010_EXE``. For example,
+      if you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
 
-**3. Specify environment variable** ``MCARATS_V010_EXE``
-
-    * If you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
-
-    ::
+      ::
 
         export MCARATS_V010_EXE="/path/to/the/compiled/MCARaTS/e.g./mcarats-0.10.4/src/mcarats"
 
 
-    * If you are using ``csh`` shell, add the following line to the shell source file (e.g., ``~/.cshrc``):
+      If you are using ``csh`` shell, add the following line to the shell source file (e.g., ``~/.cshrc``):
 
-    ::
+      ::
 
         setenv MCARATS_V010_EXE "/path/to/the/compiled/MCARaTS/e.g./mcarats-0.10.4/src/mcarats"
 
+    * When the installation processes are complete,
+      ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
+
 |
 
-**4. (optional) Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `official installation guide <http://www.libradtran.org/doku.php?id=download>`_ (or the `unofficial installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`_ by Hong Chen)
+**3. (optional) Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `official installation guide <http://www.libradtran.org/doku.php?id=download>`_ (or the `unofficial installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`_ by Hong Chen)
 
-    * If installed, please specify environment variable ``LIBRADTRAN_V2_DIR`` for the directory that contains compiled libRadtran (the directory should contain ``bin``, ``lib``, ``src`` etc.).
+    * After installation, please specify environment variable ``LIBRADTRAN_V2_DIR`` for the directory that contains compiled libRadtran (the directory should contain ``bin``, ``lib``, ``src`` etc.).
 
-    * After installation,
+    * When the installation processes are complete,
 
       #. Mie scattering phase function will be supported;
 
-      #. ``er3t.rtm.lrt`` can be used to perform 1D radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
+      #. ``er3t.rtm.lrt`` can be used to perform IPA radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
 
 |
 |
