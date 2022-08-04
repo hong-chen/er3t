@@ -12,7 +12,7 @@ type in the following
 
 |
 
-    If ``install-examples.sh`` failed to download the data from Google Drive for any reason, you can download the required data manually
+    If ``install-examples.sh`` fails to download the data from Google Drive for any reason, you can download the required data manually
     from `here <https://drive.google.com/file/d/1i5inbkybHE2bFwHIJ472-tZYRCZDqSOR>`_.
 
     After you download the file (``er3t-data-examples.tar.gz``), put it under ``er3t/examples`` directory where
