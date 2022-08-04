@@ -59,19 +59,12 @@ Dependencies
 
     * After installation, please specify environment variable ``MCARATS_V010_EXE``.
 
-      If you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file
+      For example, if you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file
       (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
 
       ::
 
         export MCARATS_V010_EXE="/somewhere/mcarats-0.10.4/src/mcarats"
-
-
-      If you are using ``csh`` shell, add the following line to the shell source file (e.g., ``~/.cshrc``):
-
-      ::
-
-        setenv MCARATS_V010_EXE "/somewhere/mcarats-0.10.4/src/mcarats"
 
     * When the installation processes are complete,
       ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
