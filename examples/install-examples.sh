@@ -19,9 +19,9 @@ sleep 1
 echo "<1.1> Downloading required data ... (this will take minutes to hours depending on your internet speed)"
 echo "Start =================================================="
 echo
-echo "command: gdown --id $er3t_data_google_id --output $er3t_data_local_filename"
+echo "command: gdown $er3t_data_google_id --output $er3t_data_local_filename"
 echo
-gdown --id $er3t_data_google_id --output $er3t_data_local_filename
+gdown $er3t_data_google_id --output $er3t_data_local_filename
 echo "Complete ==============================================="
 
 echo
