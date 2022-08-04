@@ -57,8 +57,10 @@ Dependencies
 
 **2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or the `unofficial installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_ by Hong Chen)
 
-    * After installation, please specify environment variable** ``MCARATS_V010_EXE``. For example,
-      if you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
+    * After installation, please specify environment variable ``MCARATS_V010_EXE``.
+
+      If you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
 
       ::
 
