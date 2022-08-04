@@ -61,7 +61,7 @@ Dependencies
 
 **3. Specify environment variable** ``MCARATS_V010_EXE``
 
-    * If you are using ``bash`` shell, add the following line to the shell source file (e.g., ``~/.bashrc`` on Linux or ``~/.bash_profile`` on Mac):
+    * If you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
 
     ::
 
