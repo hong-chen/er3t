@@ -64,14 +64,14 @@ Dependencies
 
       ::
 
-        export MCARATS_V010_EXE="/path/to/the/compiled/MCARaTS/e.g./mcarats-0.10.4/src/mcarats"
+        export MCARATS_V010_EXE="/somewhere/mcarats-0.10.4/src/mcarats"
 
 
       If you are using ``csh`` shell, add the following line to the shell source file (e.g., ``~/.cshrc``):
 
       ::
 
-        setenv MCARATS_V010_EXE "/path/to/the/compiled/MCARaTS/e.g./mcarats-0.10.4/src/mcarats"
+        setenv MCARATS_V010_EXE "/somewhere/mcarats-0.10.4/src/mcarats"
 
     * When the installation processes are complete,
       ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
