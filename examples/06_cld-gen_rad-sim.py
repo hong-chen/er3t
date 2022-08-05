@@ -18,7 +18,8 @@ from er3t.pre.cld import cld_gen_hem as cld_gen
 
 if __name__ == '__main__':
 
-    cld0 = cld_gen(fname='test.pk', radii=[1.0, 2.0, 8.0], weights=[0.6, 0.3, 0.1], cloud_frac_tgt=0.7, w2h_ratio=3.0, min_dist=1.5, overwrite=True)
+    # cld0 = cld_gen(fname='test.pk', radii=[1.0, 2.0, 8.0], weights=[0.6, 0.3, 0.1], cloud_frac_tgt=0.2, w2h_ratio=3.0, min_dist=1.5, overwrite=True, overlap=True)
+    cld0 = cld_gen(fname='test.pk', radii=[1.0, 2.0, 8.0], weights=[0.6, 0.3, 0.1], cloud_frac_tgt=0.2, w2h_ratio=3.0, min_dist=1.5, overwrite=True, overlap=False)
 
     # =============================================================================
     fig = plt.figure(figsize=(12, 5.5))
