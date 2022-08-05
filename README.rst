@@ -90,7 +90,7 @@ How to Install
 
 **You will need to have the dependencies installed first.**
 
-**1. From Github**
+**1. From Github (most up-to-date)**
 
 
 a) Open a terminal, type in the following
@@ -109,7 +109,7 @@ b) Under newly cloned ``er3t``, where it contains ``install.sh``, type in the fo
 
 |
 
-**2. From Public Release**
+**2. From Public Release (most reliable)**
 
 a) Download the latest release from `here <https://github.com/hong-chen/er3t/releases/latest>`_;
 
