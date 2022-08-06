@@ -37,7 +37,6 @@ class cld_sat:
                 ['lon']
                 ['lat']
                 ['altitude']
-                ['pressure']
                 ['temperature']   (x, y, z)
                 ['extinction']    (x, y, z)
 
