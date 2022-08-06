@@ -2,6 +2,8 @@ import os
 import sys
 import pickle
 import numpy as np
+from er3t.pre.atm import atm_atmmod
+
 
 
 __all__ = ['cld_gen_hem']
@@ -340,7 +342,7 @@ class cld_gen_hem:
     def __init__(
             self,
             fname=None,
-            altitude=np.arange(1.0, 6.1, 0.5),
+            altitude=np.arange(1.5, 6.6, 0.5),
             Nx=400,
             Ny=400,
             dx=0.1,
@@ -401,29 +403,41 @@ class cld_gen_hem:
 
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
-            if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
+            if hasattr(obj, 'lev') and hasattr(obj, 'lay') and hasattr(obj, 'clouds'):
                 if self.verbose:
-                    print('Message [pre.cld.cld_gen_hem]: Loading %s ...' % fname)
-                self.fname = obj.fname
-                self.lay   = obj.lay
-                self.lev   = obj.lev
+                    print('Message [cld_gen_hem]: Loading %s ...' % fname)
+                self.fname      = obj.fname
+                self.lay        = obj.lay
+                self.lev        = obj.lev
+                self.clouds     = obj.clouds
+                self.cloud_frac = obj.cloud_frac
+                self.space_3d   = obj.space_3d
+                self.x_3d       = obj.x_3d
+                self.y_3d       = obj.y_3d
+                self.z_3d       = obj.z_3d
+                self.x_2d       = obj.x_2d
+                self.y_2d       = obj.y_2d
+                self.min_dist   = obj.min_dist
+                self.w2h_ratio  = obj.w2h_ratio
             else:
-                sys.exit('Error   [pre.cld.cld_gen_hem]: %s is not the correct \'pickle\' file to load.' % fname)
+                sys.exit('Error   [cld_gen_hem]: %s is not the correct \'pickle\' file to load.' % fname)
 
     def run(self):
 
         if self.verbose:
             print('Message [cld_gen_hem]: Generating an artificial 3D cloud field filled with hemispherical clouds...')
 
-        dz = np.unique(self.altitude[1:]-self.altitude[:-1])
+        dz = self.altitude[1:]-self.altitude[:-1]
         if dz.size > 1:
-            sys.exit('Error   [cld_gen_hem]: Only support equidistant altitude (z), as well as equidistant x and y.')
+            print('Warning [cld_gen_hem]: Only support equidistant altitude (z), as well as equidistant x and y.')
 
         self.x = np.arange(self.Nx) * self.dx
         self.y = np.arange(self.Ny) * self.dy
 
-        self.z  = self.altitude-self.altitude[0]
         self.dz = dz[0]
+        altitude_new  = np.arange(self.altitude[0], min([self.altitude[-1], max(self.radii)/self.w2h_ratio+self.altitude[0]])+self.dz, self.dz)
+        self.altitude = altitude_new
+        self.z  = self.altitude-self.altitude[0]
         self.Nz = self.z.size
 
         self.x_2d, self.y_2d = np.meshgrid(self.x, self.y, indexing='ij')
@@ -438,12 +452,15 @@ class cld_gen_hem:
         radii = np.array(self.radii)
         if self.weights is not None:
             self.weights = np.array(self.weights)
+
         while (self.cloud_frac<self.cloud_frac_tgt) and (self.can_add_more):
-            self.add_a_cloud(np.random.choice(self.radii, p=self.weights), min_dist=self.min_dist, w2h_ratio=self.w2h_ratio, limit=1)
+            self.add_hem_cloud(np.random.choice(self.radii, p=self.weights), min_dist=self.min_dist, w2h_ratio=self.w2h_ratio, limit=1)
+
+        self.lev = {}
+        alt_lev = np.append(self.altitude-self.dz/2.0, self.altitude[-1]+self.dz/2.0)
+        self.lev['altitude'] = {'data':alt_lev, 'name':'Altitude', 'units':'km'}
 
         self.lay = {}
-        self.lev = {}
-
         self.lay['x']  = {'data':self.x , 'name':'X' , 'units':'km'}
         self.lay['y']  = {'data':self.y , 'name':'Y' , 'units':'km'}
         self.lay['z']  = {'data':self.z , 'name':'Z' , 'units':'km'}
@@ -453,6 +470,16 @@ class cld_gen_hem:
         self.lay['dx'] = {'data':self.dx, 'name':'dx', 'units':'km'}
         self.lay['dy'] = {'data':self.dy, 'name':'dy', 'units':'km'}
         self.lay['dz'] = {'data':self.dz, 'name':'dz', 'units':'km'}
+        self.lay['altitude']  = {'data':self.altitude, 'name':'Altitude', 'units':'km'}
+
+        thickness = self.lev['altitude']['data'][1:] - self.lev['altitude']['data'][:-1]
+        self.lay['thickness'] = {'data':thickness, 'name':'Layer thickness', 'units':'km'}
+
+        atm  = atm_atmmod(levels=alt_lev)
+        t_1d = atm.lay['temperature']['data']
+        t_3d = np.empty((self.Nx, self.Ny, self.Nz), dtype=t_1d.dtype)
+        t_3d[...] = t_1d[None, None, :]
+        self.lay['temperature'] = {'data':t_3d, 'name':'Temperature', 'units':'K'}
 
         self.pre_cld_opt_prop()
 
@@ -464,10 +491,10 @@ class cld_gen_hem:
                 print('Message [cld_gen_hem]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
 
-    def add_a_cloud(self, radius, min_dist=0, w2h_ratio=1.0, limit=1):
+    def add_hem_cloud(self, radius, min_dist=0, w2h_ratio=1.0, limit=1):
 
         """
-        Purpose: add a cloud into the 3D space
+        Purpose: add a hemispherical cloud into the 3D space
 
         Input:
             radius   : position argument, radius of the hemispherical cloud (units: km)
@@ -477,7 +504,9 @@ class cld_gen_hem:
         Output:
             1) if a cloud is successfully added,
                 i) self.clouds gets updated
-               ii) self.cloud_frac gets updated
+               ii) self.space_3d gets updated
+              iii) self.cloud_frac gets updated
+
             2) if not
                 i) self.trial gets updated
                ii) self.can_add_more gets updated
@@ -541,50 +570,35 @@ class cld_gen_hem:
             if self.trial >= self.trial_limit:
                 self.can_add_more = False
 
-    def pre_cld_opt_prop(self, extinction0=1.5e-6):
+    def pre_cld_opt_prop(self, ext0=0.03, cer0=12.0):
 
         """
         Assign cloud optical properties, e.g., cloud optical thickness, cloud effective radius
 
-        extinction0: volume extinction per m^3
+        ext0=: keyword argument, default=0.03, volume extinction coefficient, reference see https://doi.org/10.5194/acp-11-2903-2011 (units: m^-1)
+        cer0=: keyword argument, default=12.0, cloud effective radius (units: micron)
         """
 
-        extinction_per_grid = extinction0 * self.dx*self.dy * 1000.0**2
+        # cloud effective radius (3D)
+        data = self.space_3d.copy()
+        data[data>0] == cer0
+        self.lay['cer']  = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
 
-        self.ext_3d = extinction_per_grid * self.space_3d
+        # extinction coefficients (3D)
+        data = ext0*self.space_3d
+        self.lay['extinction']  = {'data':data, 'name':'Extinction coefficients', 'units':'m^-1'}
 
-        self.cot_2d = np.sum(self.ext_3d*self.dz*1000.0, axis=-1)
+        # cloud optical thickness (3D)
+        data = data*self.dz*1000.0
+        self.lay['cot']  = {'data':data, 'name':'Cloud optical thickness', 'units':'N/A'}
 
-    def test(self, q_factor=2, altitude=None):
+        # column integrated cloud optical thickness
+        self.lev['cot_2d']  = {'data':np.sum(data, axis=-1), 'name':'Cloud optical thickness', 'units':'N/A'}
 
+        # cloud top height
+        data = self.space_3d*self.dz
+        self.lev['cth_2d']  = {'data':np.sum(data, axis=-1)+self.lev['altitude']['data'][0], 'name':'Cloud top height', 'units':'km'}
 
-        # 3d temperature
-        # =============================================================================
-        # t_3d      = np.empty((Nt, Nz, Ny, Nx), dtype=p.dtype)
-        # t_3d[...] = t[None, :, None, None]
-        # =============================================================================
-
-        self.lay['altitude']    = {'data':z/1000.0, 'name':'Altitude'   , 'units':'km'}
-        self.lay['pressure']    = {'data':p       , 'name':'Pressure'   , 'units':'mb'}
-        self.lay['temperature'] = {'data':t_3d    , 'name':'Temperature', 'units':'K'}
-        self.lay['extinction']  = {'data':ext_3d  , 'name':'Extinction coefficients', 'units':'m^-1'}
-
-        self.lay['cer']          = {'data':cer_3d  , 'name':'Effective radius', 'units':'mm'}
-
-        self.Nx = Nx
-        self.Ny = Ny
-        self.Nz = Nz
-        self.Nt = Nt
-
-        dz  = self.lay['altitude']['data'][1:]-self.lay['altitude']['data'][:-1]
-        dz0 = dz[0]
-        diff = np.abs(dz-dz0)
-        if any([i>0.001 for i in diff]):
-            print('Warning [cld_les]: Non-equidistant intervals found in \'dz\'.')
-        dz  = np.append(dz, dz0)
-        alt = np.append(self.lay['altitude']['data']-dz0/2.0, self.lay['altitude']['data'][-1]+dz0/2.0)
-        self.lev['altitude']    = {'data':alt, 'name':'Altitude'       , 'units':'km'}
-        self.lay['thickness']   = {'data':dz , 'name':'Layer thickness', 'units':'km'}
 
 
 
