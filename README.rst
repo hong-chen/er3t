@@ -7,7 +7,7 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 EaR³T provides high-level interfaces that can automate the process of performing IPA/3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
 publicly available IPA/3D radiative transfer models including MCARaTS (**implemented**),
-libRadtran (**implemented**, IPA only), and SHDOM (future).
+libRadtran (**implemented**, IPA only), and SHDOM (under development).
 
 Applicable area:
 
@@ -85,7 +85,7 @@ Dependencies
 
 **4. (optional) Install** `AT3D <https://github.com/CloudTomography/AT3D>`_ (previously known as `pyshdom <https://github.com/aviadlevis/pyshdom>`_, a Python version of `SHDOM <https://coloradolinux.com/shdom>`_) **through the** `official installation guide <https://github.com/CloudTomography/AT3D#installation>`_
 
-    **Unavaiable, still under development**
+    **Unavaiable yet (under development)**
 
     * When the installation processes are complete,
 
