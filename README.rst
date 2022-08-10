@@ -87,9 +87,6 @@ Dependencies
 
     **Unavaiable yet (under development)**
 
-    * When the installation processes are complete,
-
-      #. ``er3t.rtm.shd`` can be used to perform 3D radiance/irradiance simulation (details see ``examples/00_er3t_shd.py``).
 
 |
 |
