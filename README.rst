@@ -83,9 +83,9 @@ Dependencies
 
 |
 
-**4. (optional) Install** `AT3D <https://github.com/CloudTomography/AT3D>`_ (previously known as `pyshdom <https://github.com/aviadlevis/pyshdom>`_, a Python version of `SHDOM <https://coloradolinux.com/shdom>`_ **through the** `official installation guide <https://github.com/CloudTomography/AT3D#installation>`_
+**4. (optional) Install** `AT3D <https://github.com/CloudTomography/AT3D>`_ (previously known as `pyshdom <https://github.com/aviadlevis/pyshdom>`_, a Python version of `SHDOM <https://coloradolinux.com/shdom>`_) **through the** `official installation guide <https://github.com/CloudTomography/AT3D#installation>`_
 
-    **Under development**
+    **Unavaiable, still under development**
 
     * When the installation processes are complete,
 
@@ -195,7 +195,7 @@ Acknowledgements
 
 |
 
-*  SHDOM is a 3D radiative transfer solver developed by `Evans (1998) <https://doi.org/10.1175/1520-0469(1998)055<0429:TSHDOM>2.0.CO;2>`_.
+*  SHDOM is a 3D radiative transfer solver developed by `Evans (1998) <https://doi.org/10.1175/1520-0469\(1998\)055\<0429:TSHDOM\>2.0.CO;2\>`_.
    The development of SHDOM by Evans has been discontinued since 2016. AT3D (previously known as pyshdom) is a Python version of SHDOM
    developed by `Levis et al. (2020) <https://doi.org/10.3390/rs12172831>`_.
 
