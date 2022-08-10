@@ -81,7 +81,7 @@ class cld_gen_hem:
             dy=0.1,
             radii=[5.0],
             weights=None,
-            w2h_ratio=1.0,
+            w2h_ratio=2.0,
             min_dist=0,
             cloud_frac_tgt=0.2,
             trial_limit=100,
@@ -139,11 +139,16 @@ class cld_gen_hem:
                 if self.verbose:
                     print('Message [cld_gen_hem]: Loading %s ...' % fname)
                 self.fname      = obj.fname
+                self.verbose    = obj.verbose
                 self.lay        = obj.lay
                 self.lev        = obj.lev
                 self.clouds     = obj.clouds
                 self.cloud_frac = obj.cloud_frac
                 self.space_3d   = obj.space_3d
+                self.x          = obj.x
+                self.y          = obj.y
+                self.z          = obj.z
+                self.dz         = obj.dz
                 self.x_3d       = obj.x_3d
                 self.y_3d       = obj.y_3d
                 self.z_3d       = obj.z_3d
@@ -302,13 +307,14 @@ class cld_gen_hem:
             if self.trial >= self.trial_limit:
                 self.can_add_more = False
 
-    def pre_cld_opt_prop(self, ext0=0.03, cer0=12.0):
+    def pre_cld_opt_prop(self, ext0=0.03, cer0=12.0, cot_scale=1.0):
 
         """
         Assign cloud optical properties, e.g., cloud optical thickness, cloud effective radius
 
         ext0=: keyword argument, default=0.03, volume extinction coefficient, reference see https://doi.org/10.5194/acp-11-2903-2011 (units: m^-1)
         cer0=: keyword argument, default=12.0, cloud effective radius (units: micron)
+        cot_scale=: keyword argument, default=1.0, scale factor for cloud optical thickness
         """
 
         # cloud effective radius (3D)
@@ -317,7 +323,7 @@ class cld_gen_hem:
         self.lay['cer']  = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
 
         # extinction coefficients (3D)
-        data = ext0*self.space_3d
+        data = ext0*cot_scale*self.space_3d
         self.lay['extinction']  = {'data':data, 'name':'Extinction coefficients', 'units':'m^-1'}
 
         # cloud optical thickness (3D)
@@ -330,6 +336,47 @@ class cld_gen_hem:
         # cloud top height
         data = self.space_3d*self.dz
         self.lev['cth_2d']  = {'data':np.sum(data, axis=-1)+self.lev['altitude']['data'][0], 'name':'Cloud top height', 'units':'km'}
+
+    def update_clouds(self, w2h_ratio=2.0, cot_scale=1.0, save=False):
+
+        """
+        Purpose: update existing cloud field with a new width-to-height ratio (w2h_ratio)
+                 and scale factor for cloud optical thickness (cot_scale)
+        """
+
+        self.space_3d = np.zeros_like(self.x_3d)
+
+        for cloud0 in self.clouds:
+
+            radius   = cloud0['radius']
+            index_x0 = cloud0['index_x']
+            index_y0 = cloud0['index_y']
+
+            loc_x = self.x[index_x0]
+            loc_y = self.y[index_y0]
+
+            ndx = int(radius//self.dx)
+            index_x_s = max((0, index_x0-ndx-1))
+            index_x_e = min((self.x.size-1, index_x0+ndx+1))
+
+            ndy = int(radius//self.dy)
+            index_y_s = max((0, index_y0-ndy-1))
+            index_y_e = min((self.y.size-1, index_y0+ndy+1))
+
+            logic_cloud0 = ((self.x_3d[index_x_s:index_x_e, index_y_s:index_y_e, :]-loc_x)**2 + \
+                            (self.y_3d[index_x_s:index_x_e, index_y_s:index_y_e, :]-loc_y)**2 + \
+                            (self.z_3d[index_x_s:index_x_e, index_y_s:index_y_e, :]*w2h_ratio)**2) <= radius**2
+            self.space_3d[index_x_s:index_x_e, index_y_s:index_y_e, :][logic_cloud0] = 1
+
+            if w2h_ratio < cloud0['w2h_ratio'] and self.verbose:
+                print('Warning [cld_gen_hem]: Cloud %2.2d is taller than before, cloud top might be cutted.' % cloud0['ID'])
+
+            cloud0['w2h_ratio'] = w2h_ratio
+
+        self.pre_cld_opt_prop(cot_scale=cot_scale)
+
+        if save:
+            self.dump(self.fname)
 
 
 
