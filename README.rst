@@ -193,8 +193,8 @@ Acknowledgements
 |
 
 *  SHDOM is a 3D radiative transfer solver developed by `Evans (1998) <https://doi.org/10.1175/1520-0469(1998)055%3C0429:TSHDOM%3E2.0.CO;2>`_.
-   The development of SHDOM by Evans has been discontinued since 2016. AT3D (previously known as pyshdom) is a Python version of SHDOM
-   developed by `Levis et al. (2020) <https://doi.org/10.3390/rs12172831>`_.
+   The development of SHDOM by Evans has been discontinued since 2016. AT3D (previously known as pyshdom) is a Python version of SHDOM under
+   active development by `Levis et al. (2020) <https://doi.org/10.3390/rs12172831>`_.
 
     Evans, K. F.: The spherical harmonics discrete ordinate method for three-dimensional atmospheric
     radiative transfer. J. Atmos. Sci. 1998, 55, 429–446.
