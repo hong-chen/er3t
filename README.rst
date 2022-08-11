@@ -197,7 +197,7 @@ Acknowledgements
    active development by `Levis et al. (2020) <https://doi.org/10.3390/rs12172831>`_.
 
     Evans, K. F.: The spherical harmonics discrete ordinate method for three-dimensional atmospheric
-    radiative transfer. J. Atmos. Sci. 1998, 55, 429–446.
+    radiative transfer, J. Atmos. Sci., 55, 429–446, 1998.
 
     |
 
