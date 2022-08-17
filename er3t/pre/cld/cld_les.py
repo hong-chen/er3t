@@ -282,6 +282,9 @@ class cld_les:
             self.lay['pressure']['data']  = downgrading(self.lay['pressure']['data'] , (self.Nz//dnz,), operation='mean')
             self.lay['thickness']['data'] = downgrading(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
 
+            self.lay['dx']['data'] *= dnx
+            self.lay['dy']['data'] *= dny
+
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
                     if self.lay[key]['data'].ndim == len(coarsen):

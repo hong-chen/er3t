@@ -3,6 +3,7 @@ import sys
 import pickle
 import numpy as np
 from er3t.pre.atm import atm_atmmod
+from er3t.util import downgrading
 
 
 
@@ -27,6 +28,7 @@ class cld_gen_hem:
         min_dist=   : keyword argument, default=0, minimum distance between each two clouds, the larger the number, the more sparse of the cloud fields
         cloud_frac= : keyword argument, default=0.2, target cloud fraction for the generated cloud field
         trial_limit=: keyword argument, default=100, number of trials if the cloud scene is too full to add new clouds
+        coarsen=    : keyword argument, default=[1, 1, 1], coarsening factors in x, y, and z
         overlap=    : keyword argument, default=False, whether different clouds can overlap
         overwrite=  : keyword argument, default=False, whether to overite
         verbose=    : keyword argument, default=True, verbose tag
@@ -85,6 +87,7 @@ class cld_gen_hem:
             min_dist=0,
             cloud_frac_tgt=0.2,
             trial_limit=100,
+            coarsen=[1, 1, 1],
             overlap=False,
             overwrite=False,
             verbose=True
@@ -217,6 +220,10 @@ class cld_gen_hem:
         t_3d = np.empty((self.Nx, self.Ny, self.Nz), dtype=t_1d.dtype)
         t_3d[...] = t_1d[None, None, :]
         self.lay['temperature'] = {'data':t_3d, 'name':'Temperature', 'units':'K'}
+
+        # downgrade (coarsen) data if needed
+        if any([i!=1 for i in self.coarsen]):
+            self.downgrade(self.coarsen)
 
         self.pre_cld_opt_prop()
 
@@ -377,6 +384,29 @@ class cld_gen_hem:
 
         if save:
             self.dump(self.fname)
+
+    def downgrade(self, coarsen):
+
+        dnx, dny, dnz = coarsen
+
+        if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or (self.Nz%dnz != 0):
+            sys.exit('Error   [cld_gen_hem]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['Temperature'].shape), str(coarsen)))
+        else:
+            new_shape = (self.Nx//dnx, self.Ny//dny, self.Nz//dnz)
+
+            if self.verbose:
+                print('Message [cld_gen_hem]: Downgrading data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
+
+            self.lay['x']['data']         = downgrading(self.lay['x']['data']        , (self.Nx//dnx,), operation='mean')
+            self.lay['y']['data']         = downgrading(self.lay['y']['data']        , (self.Ny//dny,), operation='mean')
+            self.lay['altitude']['data']  = downgrading(self.lay['altitude']['data'] , (self.Nz//dnz,), operation='mean')
+            self.lay['pressure']['data']  = downgrading(self.lay['pressure']['data'] , (self.Nz//dnz,), operation='mean')
+            self.lay['thickness']['data'] = downgrading(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
+
+            for key in self.lay.keys():
+                if isinstance(self.lay[key]['data'], np.ndarray):
+                    if self.lay[key]['data'].ndim == len(coarsen):
+                        self.lay[key]['data']  = downgrading(self.lay[key]['data'], new_shape, operation='mean')
 
 
 
