@@ -112,7 +112,7 @@ class func_cot_vs_rad:
 
         fname_nc  = 'data/00_er3t_mca/aux/les.nc'
         fname_les = '%s/les.pk' % self.fdir
-        cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=False)
+        cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=False)
 
         cld0.lev['altitude']['data']    = cld0.lay['altitude']['data'][2:5]
 
@@ -192,7 +192,7 @@ def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, fdir_out='tmp-data/0
     abs0      = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
 
     fname_les = '%s/les.pk' % fdir
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, altitude=atm0.lay['altitude']['data'], coarsing=[1, 1, 1, 1], overwrite=overwrite)
+    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, altitude=atm0.lay['altitude']['data'], coarsen=[1, 1, 1, 1], overwrite=overwrite)
 
     # radiance 3d
     # =======================================================================================================

@@ -17,7 +17,7 @@ class cld_les:
     Input:
         fname_nc= : keyword argument, default=None, the file path of the original netCDF4 file
         fname=    : keyword argument, default=None, the file path of the Python pickle file
-        coarsing= : keyword argument, default=[1, 1, 1, 1], the parameter to downgrade the data in [x, y, z, t]
+        coarsen=  : keyword argument, default=[1, 1, 1, 1], the parameter to downgrade the data in [x, y, z, t]
         overwrite=: keyword argument, default=False, whether to overwrite or not
         verbose=  : keyword argument, default=False, verbose tag
 
@@ -44,13 +44,13 @@ class cld_les:
                  fname_nc  = None, \
                  fname     = None, \
                  altitude  = None,
-                 coarsing  = [1, 1, 1, 1], \
+                 coarsen   = [1, 1, 1, 1], \
                  overwrite = False, \
                  verbose   = False):
 
         self.verbose = verbose     # verbose tag
         self.fname   = fname       # file name of the pickle file
-        self.coarsing = coarsing   # (dn_x, dn_y, dn_z, dn_t)
+        self.coarsen  = coarsen    # (dn_x, dn_y, dn_z, dn_t)
         self.altitude = altitude   # in km
 
         if ((self.fname is not None) and (os.path.exists(self.fname)) and (not overwrite)):
@@ -95,8 +95,8 @@ class cld_les:
         self.pre_les(fname_nc, altitude=self.altitude)
 
         # downgrade data if needed
-        if any([i!=1 for i in self.coarsing]):
-            self.downgrade(self.coarsing)
+        if any([i!=1 for i in self.coarsen]):
+            self.downgrade(self.coarsen)
 
         # post process
         self.post_les()
@@ -263,13 +263,13 @@ class cld_les:
             self.lay['cer']         = {'data':cer_3d_new  , 'name':'Cloud effective radius' , 'units':'mm'}
 
 
-    def downgrade(self, coarsing):
+    def downgrade(self, coarsen):
 
-        dnx, dny, dnz, dnt = coarsing
+        dnx, dny, dnz, dnt = coarsen
 
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or \
            (self.Nz%dnz != 0) or (self.Nt%dnt != 0):
-            sys.exit('Error   [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['Temperature'].shape), str(coarsing)))
+            sys.exit('Error   [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['Temperature'].shape), str(coarsen)))
         else:
             new_shape = (self.Nt//dnt, self.Nz//dnz, self.Ny//dny, self.Nx//dnx)
 
@@ -284,7 +284,7 @@ class cld_les:
 
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
-                    if self.lay[key]['data'].ndim == len(coarsing):
+                    if self.lay[key]['data'].ndim == len(coarsen):
                         self.lay[key]['data']  = downgrading(self.lay[key]['data'], new_shape, operation='mean')
 
 

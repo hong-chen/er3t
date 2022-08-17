@@ -268,7 +268,7 @@ def test_02_flux_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=overwrite)
+    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -472,7 +472,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=overwrite)
+    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -685,7 +685,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=overwrite)
+    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -908,7 +908,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=overwrite)
+    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
