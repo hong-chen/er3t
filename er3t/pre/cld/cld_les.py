@@ -17,7 +17,7 @@ class cld_les:
     Input:
         fname_nc= : keyword argument, default=None, the file path of the original netCDF4 file
         fname=    : keyword argument, default=None, the file path of the Python pickle file
-        coarsen=  : keyword argument, default=[1, 1, 1, 1], the parameter to downgrade the data in [x, y, z, t]
+        coarsen=  : keyword argument, default=[1, 1, 1, 1], the parameter to downscale the data in [x, y, z, t]
         overwrite=: keyword argument, default=False, whether to overwrite or not
         verbose=  : keyword argument, default=False, verbose tag
 
@@ -94,9 +94,9 @@ class cld_les:
         # pre process
         self.pre_les(fname_nc, altitude=self.altitude)
 
-        # downgrade data if needed
+        # downscale data if needed
         if any([i!=1 for i in self.coarsen]):
-            self.downgrade(self.coarsen)
+            self.downscale(self.coarsen)
 
         # post process
         self.post_les()
@@ -263,7 +263,7 @@ class cld_les:
             self.lay['cer']         = {'data':cer_3d_new  , 'name':'Cloud effective radius' , 'units':'mm'}
 
 
-    def downgrade(self, coarsen):
+    def downscale(self, coarsen):
 
         dnx, dny, dnz, dnt = coarsen
 
