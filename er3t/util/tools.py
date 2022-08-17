@@ -5,7 +5,7 @@ import numpy as np
 
 
 __all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', 'h5dset_to_pydict'] + \
-          ['combine_alt', 'get_lay_index', 'downgrading', 'mmr2vmr', 'cal_rho_air', 'cal_sol_fac', \
+          ['combine_alt', 'get_lay_index', 'downscaling', 'mmr2vmr', 'cal_rho_air', 'cal_sol_fac', \
            'cal_mol_ext', 'cal_ext', 'cal_r_twostream', 'cal_dist', 'cal_cth_hist']
 
 
@@ -228,7 +228,7 @@ def get_lay_index(lay, lay_ref):
 
 
 
-def downgrading(ndarray, new_shape, operation='mean'):
+def downscaling(ndarray, new_shape, operation='mean'):
 
     """
     Bins an ndarray in all axes based on the target shape, by summing or
@@ -238,18 +238,18 @@ def downgrading(ndarray, new_shape, operation='mean'):
         new axes must divide old ones.
 
     Input:
-        ndarray: numpy array, any dimension of array to be downgraded
+        ndarray: numpy array, any dimension of array to be downscaled
         new_shape: Python tuple or list, new dimension/shape of the array
-        operation=: string, can be 'mean' or 'sum', default='mean'
+        operation=: string, can be 'mean', 'sum', or 'max', default='mean'
 
     Output:
-        ndarray: numpy array, downgraded array
+        ndarray: numpy array, downscaled array
     """
     operation = operation.lower()
-    if not operation in ['sum', 'mean']:
-        raise ValueError('Error   [downgrading]: Operation of \'%s\' not supported.' % operation)
+    if not operation in ['sum', 'mean', 'max']:
+        raise ValueError('Error   [downscaling]: Operation of \'%s\' not supported.' % operation)
     if ndarray.ndim != len(new_shape):
-        raise ValueError("Error   [downgrading]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
+        raise ValueError("Error   [downscaling]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
 
     compression_pairs = [(d, c//d) for d,c in zip(new_shape, ndarray.shape)]
     flattened = [l for p in compression_pairs for l in p]

@@ -5,7 +5,7 @@ import numpy as np
 import copy
 from scipy import interpolate
 
-from er3t.util import mmr2vmr, cal_rho_air, downgrading, cal_ext, cal_dist
+from er3t.util import mmr2vmr, cal_rho_air, downscaling, cal_ext, cal_dist
 from er3t.pre.atm import atm_atmmod
 
 
@@ -20,7 +20,7 @@ class cld_sat:
     Input:
         sat_obj=  : keyword argument, default=None, the satellite object created from modis_l1b, modis_l2, seviri_l2 etc
         fname=    : keyword argument, default=None, the file path of the Python pickle file
-        coarsing= : keyword argument, default=[1, 1, 1], the parameter to downgrade the data in [x, y, z]
+        coarsen=  : keyword argument, default=[1, 1, 1], the parameter to downscale the data in [x, y, z]
         overwrite=: keyword argument, default=False, whether to overwrite or not
         verbose=  : keyword argument, default=False, verbose tag
 
@@ -55,12 +55,12 @@ class cld_sat:
                  cth       = None, \
                  cgt       = None, \
                  dz        = None, \
-                 coarsing  = [1, 1, 1], \
+                 coarsen   = [1, 1, 1], \
                  overwrite = False, \
                  verbose   = False):
 
         self.verbose    = verbose     # verbose tag
-        self.coarsing   = coarsing    # (dn_x, dn_y, dn_z)
+        self.coarsen    = coarsen     # (dn_x, dn_y, dn_z)
 
         self.fname      = fname       # file name of the pickle file
         self.extent     = extent
@@ -117,9 +117,9 @@ class cld_sat:
         # process
         self.process(self.sat, cloud_top_height=cth, cloud_geometrical_thickness=cgt, layer_thickness=dz)
 
-        # downgrade data if needed
-        if any([i!=1 for i in self.coarsing]):
-            self.downgrade(self.coarsing)
+        # downscale data if needed
+        if any([i!=1 for i in self.coarsen]):
+            self.downscale(self.coarsen)
 
 
     def dump(self, fname):
@@ -235,28 +235,31 @@ class cld_sat:
         self.Nz = Nz
 
 
-    def downgrade(self, coarsing):
+    def downscale(self, coarsen):
 
-        dnx, dny, dnz = coarsing
+        dnx, dny, dnz = coarsen
 
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or \
            (self.Nz%dnz != 0):
-            sys.exit('Error   [cld_mod]: the original dimension %s is not divisible with %s, please check input (dnx, dny, dnz).' % (str(self.lay['Temperature']['data'].shape), str(coarsing)))
+            sys.exit('Error   [cld_mod]: the original dimension %s is not divisible with %s, please check input (dnx, dny, dnz).' % (str(self.lay['temperature']['data'].shape), str(coarsen)))
         else:
             new_shape = (self.Nx//dnx, self.Ny//dny, self.Nz//dnz)
 
             if self.verbose:
-                print('Message [cld_mod]: Downgrading data from dimension %s to %s ...' % (str(self.lay['Temperature']['data'].shape), str(new_shape)))
+                print('Message [cld_mod]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
 
-            self.lay['x']['data']         = downgrading(self.lay['x']['data']       , (self.Nx//dnx,), operation='mean')
-            self.lay['y']['data']         = downgrading(self.lay['y']['data']       , (self.Ny//dny,), operation='mean')
-            self.lay['altitude']['data']  = downgrading(self.lay['altitude']['data'], (self.Nz//dnz,), operation='mean')
-            self.lay['thickness']['data'] = downgrading(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
+            self.lay['x']['data']         = downscaling(self.lay['x']['data']       , (self.Nx//dnx,), operation='mean')
+            self.lay['y']['data']         = downscaling(self.lay['y']['data']       , (self.Ny//dny,), operation='mean')
+            self.lay['altitude']['data']  = downscaling(self.lay['altitude']['data'], (self.Nz//dnz,), operation='mean')
+            self.lay['thickness']['data'] = downscaling(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
+
+            self.lay['dx']['data'] *= dnx
+            self.lay['dy']['data'] *= dny
 
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
-                    if self.lay[key]['data'].ndim == len(coarsing):
-                        self.lay[key]['data']  = downgrading(self.lay[key]['data'], new_shape, operation='mean')
+                    if self.lay[key]['data'].ndim == len(coarsen):
+                        self.lay[key]['data']  = downscaling(self.lay[key]['data'], new_shape, operation='mean')
 
 
 

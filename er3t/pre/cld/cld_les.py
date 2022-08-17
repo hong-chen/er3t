@@ -3,7 +3,7 @@ import sys
 import pickle
 import numpy as np
 
-from er3t.util import mmr2vmr, cal_rho_air, downgrading
+from er3t.util import mmr2vmr, cal_rho_air, downscaling
 
 
 
@@ -269,18 +269,18 @@ class cld_les:
 
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or \
            (self.Nz%dnz != 0) or (self.Nt%dnt != 0):
-            sys.exit('Error   [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['Temperature'].shape), str(coarsen)))
+            sys.exit('Error   [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['temperature']['data'].shape), str(coarsen)))
         else:
             new_shape = (self.Nt//dnt, self.Nz//dnz, self.Ny//dny, self.Nx//dnx)
 
             if self.verbose:
-                print('Message [cld_les]: Downgrading data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
+                print('Message [cld_les]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
 
-            self.lay['x']['data']         = downgrading(self.lay['x']['data']        , (self.Nx//dnx,), operation='mean')
-            self.lay['y']['data']         = downgrading(self.lay['y']['data']        , (self.Ny//dny,), operation='mean')
-            self.lay['altitude']['data']  = downgrading(self.lay['altitude']['data'] , (self.Nz//dnz,), operation='mean')
-            self.lay['pressure']['data']  = downgrading(self.lay['pressure']['data'] , (self.Nz//dnz,), operation='mean')
-            self.lay['thickness']['data'] = downgrading(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
+            self.lay['x']['data']         = downscaling(self.lay['x']['data']        , (self.Nx//dnx,), operation='mean')
+            self.lay['y']['data']         = downscaling(self.lay['y']['data']        , (self.Ny//dny,), operation='mean')
+            self.lay['altitude']['data']  = downscaling(self.lay['altitude']['data'] , (self.Nz//dnz,), operation='mean')
+            self.lay['pressure']['data']  = downscaling(self.lay['pressure']['data'] , (self.Nz//dnz,), operation='mean')
+            self.lay['thickness']['data'] = downscaling(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
 
             self.lay['dx']['data'] *= dnx
             self.lay['dy']['data'] *= dny
@@ -288,7 +288,7 @@ class cld_les:
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
                     if self.lay[key]['data'].ndim == len(coarsen):
-                        self.lay[key]['data']  = downgrading(self.lay[key]['data'], new_shape, operation='mean')
+                        self.lay[key]['data']  = downscaling(self.lay[key]['data'], new_shape, operation='mean')
 
 
     def post_les(self):
@@ -304,6 +304,7 @@ class cld_les:
             cot_3d[:, :, i] = self.lay['extinction']['data'][:, :, i] * dz * 1000.0
 
         self.lay['cot'] = {'data':cot_3d, 'name':'Cloud optical thickness'}
+
 
 
 if __name__ == '__main__':

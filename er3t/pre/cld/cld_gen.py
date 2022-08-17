@@ -3,7 +3,7 @@ import sys
 import pickle
 import numpy as np
 from er3t.pre.atm import atm_atmmod
-from er3t.util import downgrading
+from er3t.util import downscaling
 
 
 
@@ -28,7 +28,6 @@ class cld_gen_hem:
         min_dist=   : keyword argument, default=0, minimum distance between each two clouds, the larger the number, the more sparse of the cloud fields
         cloud_frac= : keyword argument, default=0.2, target cloud fraction for the generated cloud field
         trial_limit=: keyword argument, default=100, number of trials if the cloud scene is too full to add new clouds
-        coarsen=    : keyword argument, default=[1, 1, 1], coarsening factors in x, y, and z
         overlap=    : keyword argument, default=False, whether different clouds can overlap
         overwrite=  : keyword argument, default=False, whether to overite
         verbose=    : keyword argument, default=True, verbose tag
@@ -87,7 +86,6 @@ class cld_gen_hem:
             min_dist=0,
             cloud_frac_tgt=0.2,
             trial_limit=100,
-            coarsen=[1, 1, 1],
             overlap=False,
             overwrite=False,
             verbose=True
@@ -151,6 +149,11 @@ class cld_gen_hem:
                 self.x          = obj.x
                 self.y          = obj.y
                 self.z          = obj.z
+                self.Nx         = obj.Nx
+                self.Ny         = obj.Ny
+                self.Nz         = obj.Nz
+                self.dx         = obj.dx
+                self.dy         = obj.dy
                 self.dz         = obj.dz
                 self.x_3d       = obj.x_3d
                 self.y_3d       = obj.y_3d
@@ -221,11 +224,7 @@ class cld_gen_hem:
         t_3d[...] = t_1d[None, None, :]
         self.lay['temperature'] = {'data':t_3d, 'name':'Temperature', 'units':'K'}
 
-        # downgrade (coarsen) data if needed
-        if any([i!=1 for i in self.coarsen]):
-            self.downgrade(self.coarsen)
-
-        self.pre_cld_opt_prop()
+        self.cal_cld_opt_prop()
 
     def dump(self, fname):
 
@@ -314,7 +313,7 @@ class cld_gen_hem:
             if self.trial >= self.trial_limit:
                 self.can_add_more = False
 
-    def pre_cld_opt_prop(self, ext0=0.03, cer0=12.0, cot_scale=1.0):
+    def cal_cld_opt_prop(self, ext0=0.03, cer0=12.0, cot_scale=1.0):
 
         """
         Assign cloud optical properties, e.g., cloud optical thickness, cloud effective radius
@@ -326,30 +325,38 @@ class cld_gen_hem:
 
         # cloud effective radius (3D)
         data = self.space_3d.copy()
-        data[data>0] == cer0
-        self.lay['cer']  = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
+        data[data>0] = cer0
+        self.lay['cer'] = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
 
         # extinction coefficients (3D)
         data = ext0*cot_scale*self.space_3d
-        self.lay['extinction']  = {'data':data, 'name':'Extinction coefficients', 'units':'m^-1'}
+        self.lay['extinction'] = {'data':data, 'name':'Extinction coefficients', 'units':'m^-1'}
 
         # cloud optical thickness (3D)
         data = data*self.dz*1000.0
-        self.lay['cot']  = {'data':data, 'name':'Cloud optical thickness', 'units':'N/A'}
+        self.lay['cot'] = {'data':data, 'name':'Cloud optical thickness', 'units':'N/A'}
 
         # column integrated cloud optical thickness
-        self.lev['cot_2d']  = {'data':np.sum(data, axis=-1), 'name':'Cloud optical thickness', 'units':'N/A'}
+        self.lev['cot_2d'] = {'data':np.sum(data, axis=-1), 'name':'Cloud optical thickness', 'units':'N/A'}
 
         # cloud top height
         data = self.space_3d*self.dz
-        self.lev['cth_2d']  = {'data':np.sum(data, axis=-1)+self.lev['altitude']['data'][0], 'name':'Cloud top height', 'units':'km'}
+        self.lev['cth_2d'] = {'data':np.sum(data, axis=-1)+self.lev['altitude']['data'][0], 'name':'Cloud top height', 'units':'km'}
 
-    def update_clouds(self, w2h_ratio=2.0, cot_scale=1.0, save=False):
+    def update_clouds(
+            self,
+            w2h_ratio=2.0,
+            cot_scale=1.0,
+            coarsen=[1, 1, 1]
+            ):
 
         """
-        Purpose: update existing cloud field with a new width-to-height ratio (w2h_ratio)
-                 and scale factor for cloud optical thickness (cot_scale)
+        Purpose: update existing cloud field with new
+                 1) width-to-height ratio (w2h_ratio)
+                 2) scale factor for cloud optical thickness (cot_scale)
+                 3) coarsening factors in x, y, and z directions (coarsen)
         """
+
 
         self.space_3d = np.zeros_like(self.x_3d)
 
@@ -380,35 +387,65 @@ class cld_gen_hem:
 
             cloud0['w2h_ratio'] = w2h_ratio
 
-        self.pre_cld_opt_prop(cot_scale=cot_scale)
+        self.cal_cld_opt_prop(cot_scale=cot_scale)
 
-        if save:
-            self.dump(self.fname)
+        # downscale (coarsen) data if needed
+        if any([i!=1 for i in coarsen]):
+            self.downscale(coarsen)
 
-    def downgrade(self, coarsen):
+    def downscale(self, coarsen):
 
         dnx, dny, dnz = coarsen
 
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or (self.Nz%dnz != 0):
-            sys.exit('Error   [cld_gen_hem]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['Temperature'].shape), str(coarsen)))
+            sys.exit('Error   [cld_gen_hem]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz).' % (str(self.lay['temperature']['data'].shape), str(coarsen)))
         else:
             new_shape = (self.Nx//dnx, self.Ny//dny, self.Nz//dnz)
 
             if self.verbose:
-                print('Message [cld_gen_hem]: Downgrading data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
+                print('Message [cld_gen_hem]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
 
-            self.lay['x']['data']         = downgrading(self.lay['x']['data']        , (self.Nx//dnx,), operation='mean')
-            self.lay['y']['data']         = downgrading(self.lay['y']['data']        , (self.Ny//dny,), operation='mean')
-            self.lay['altitude']['data']  = downgrading(self.lay['altitude']['data'] , (self.Nz//dnz,), operation='mean')
-            self.lay['pressure']['data']  = downgrading(self.lay['pressure']['data'] , (self.Nz//dnz,), operation='mean')
-            self.lay['thickness']['data'] = downgrading(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
+            # self.lay
+            # =============================================================================
+            self.lay['x']['data']         = downscaling(self.lay['x']['data']        , (new_shape[0], ), operation='mean')
+            self.lay['y']['data']         = downscaling(self.lay['y']['data']        , (new_shape[1], ), operation='mean')
+            self.lay['z']['data']         = downscaling(self.lay['z']['data']        , (new_shape[2], ), operation='mean')
+
+            self.lay['altitude']['data']  = downscaling(self.lay['altitude']['data'] , (new_shape[2], ), operation='mean')
+            self.lay['thickness']['data'] = downscaling(self.lay['thickness']['data'], (new_shape[2], ), operation='sum')
+
+            self.lay['dx']['data'] *= dnx
+            self.lay['dy']['data'] *= dny
+            self.lay['dz']['data'] *= dnz
+
+            self.lay['nx']['data'] = new_shape[0]
+            self.lay['ny']['data'] = new_shape[1]
+            self.lay['nz']['data'] = new_shape[2]
 
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
                     if self.lay[key]['data'].ndim == len(coarsen):
-                        self.lay[key]['data']  = downgrading(self.lay[key]['data'], new_shape, operation='mean')
+                        if key in ['extinction', 'cot']:
+                            operation = 'mean'
+                        else:
+                            operation = 'max'
+                        self.lay[key]['data']  = downscaling(self.lay[key]['data'], new_shape, operation=operation)
+            # =============================================================================
 
+            # self.lev
+            # =============================================================================
+            alt_lev = np.append(self.lay['altitude']['data']-self.lay['dz']['data']/2.0, self.lay['altitude']['data'][-1]+self.lay['dz']['data']/2.0)
+            self.lev['altitude']['data'] = alt_lev
 
+            for key in self.lev.keys():
+                if isinstance(self.lev[key]['data'], np.ndarray):
+                    if self.lev[key]['data'].ndim == 2:
+                        if key in ['cot_2d']:
+                            operation = 'mean'
+                        else:
+                            operation = 'max'
+                        self.lev[key]['data']  = downscaling(self.lev[key]['data'], (new_shape[0], new_shape[1]), operation=operation)
+            # =============================================================================
 
 
 if __name__ == '__main__':

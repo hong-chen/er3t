@@ -5,7 +5,7 @@ import numpy as np
 import copy
 from scipy import interpolate
 
-from er3t.util import mmr2vmr, cal_rho_air, downgrading, cal_ext
+from er3t.util import mmr2vmr, cal_rho_air, downscaling, cal_ext
 from er3t.pre.atm import atm_atmmod
 
 try:
