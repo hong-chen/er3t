@@ -12,7 +12,7 @@ from er3t.util import check_equal
 
 
 
-__all__ = ['oco_rad_nadir', 'oco2_std', 'oco2_met', 'get_fnames_from_web', 'get_dtime_from_xml', 'download_oco2_https']
+__all__ = ['oco2_rad_nadir', 'oco2_std', 'oco2_met', 'get_fnames_from_web', 'get_dtime_from_xml', 'download_oco2_https']
 
 
 
