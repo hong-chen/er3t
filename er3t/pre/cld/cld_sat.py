@@ -5,7 +5,7 @@ import numpy as np
 import copy
 from scipy import interpolate
 
-from er3t.util import mmr2vmr, cal_rho_air, downscaling, cal_ext, cal_dist
+from er3t.util import mmr2vmr, cal_rho_air, downscale, cal_ext, cal_dist
 from er3t.pre.atm import atm_atmmod
 
 
@@ -248,10 +248,10 @@ class cld_sat:
             if self.verbose:
                 print('Message [cld_mod]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
 
-            self.lay['x']['data']         = downscaling(self.lay['x']['data']       , (self.Nx//dnx,), operation='mean')
-            self.lay['y']['data']         = downscaling(self.lay['y']['data']       , (self.Ny//dny,), operation='mean')
-            self.lay['altitude']['data']  = downscaling(self.lay['altitude']['data'], (self.Nz//dnz,), operation='mean')
-            self.lay['thickness']['data'] = downscaling(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
+            self.lay['x']['data']         = downscale(self.lay['x']['data']       , (self.Nx//dnx,), operation='mean')
+            self.lay['y']['data']         = downscale(self.lay['y']['data']       , (self.Ny//dny,), operation='mean')
+            self.lay['altitude']['data']  = downscale(self.lay['altitude']['data'], (self.Nz//dnz,), operation='mean')
+            self.lay['thickness']['data'] = downscale(self.lay['thickness']['data'], (self.Nz//dnz,), operation='sum')
 
             self.lay['dx']['data'] *= dnx
             self.lay['dy']['data'] *= dny
@@ -259,7 +259,7 @@ class cld_sat:
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
                     if self.lay[key]['data'].ndim == len(coarsen):
-                        self.lay[key]['data']  = downscaling(self.lay[key]['data'], new_shape, operation='mean')
+                        self.lay[key]['data']  = downscale(self.lay[key]['data'], new_shape, operation='mean')
 
 
 

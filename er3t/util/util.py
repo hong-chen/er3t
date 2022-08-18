@@ -4,13 +4,15 @@ import numpy as np
 
 
 
-__all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', 'h5dset_to_pydict'] + \
-          ['combine_alt', 'get_lay_index', 'downscaling', 'mmr2vmr', 'cal_rho_air', 'cal_sol_fac', \
-           'cal_mol_ext', 'cal_ext', 'cal_r_twostream', 'cal_dist', 'cal_cth_hist']
+__all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
+           'h5dset_to_pydict', 'grid_by_extent', 'grid_by_lonlat'] + \
+          ['combine_alt', 'get_lay_index', 'downscale', 'mmr2vmr', \
+           'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
+           'cal_r_twostream', 'cal_dist', 'cal_cth_hist']
 
 
 # tools
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#/---------------------------------------------------------------------------\
 
 def all_files(root_dir):
 
@@ -173,11 +175,137 @@ def h5dset_to_pydict(dset):
 
     return data
 
-# -----------------------------------------------------------------------------------------------------------------
+
+
+def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
+
+    """
+    Grid irregular MODIS data into a regular grid by input 'extent' (westmost, eastmost, southmost, northmost)
+
+    Input:
+        lon: numpy array, input longitude to be gridded
+        lat: numpy array, input latitude to be gridded
+        data: numpy array, input data to be gridded
+        extent=: Python list, [westmost, eastmost, southmost, northmost]
+        NxNy=: Python list, [Nx, Ny], lon_2d = np.linspace(westmost, eastmost, Nx)
+                                      lat_2d = np.linspace(southmost, northmost, Ny)
+
+    Output:
+        lon_2d : numpy array, gridded longitude
+        lat_2d : numpy array, gridded latitude
+        data_2d: numpy array, gridded data
+
+    How to use:
+        After read in the longitude latitude and data into lon0, lat0, data0
+        lon, lat data = grid_by_extent(lon0, lat0, data0, extent=[10, 15, 10, 20])
+    """
+
+    if extent is None:
+        extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+
+    if NxNy is None:
+        xy = (extent[1]-extent[0])*(extent[3]-extent[2])
+        N0 = np.sqrt(lon.size/xy)
+
+        Nx = int(N0*(extent[1]-extent[0]))
+        if Nx%2 == 1:
+            Nx += 1
+
+        Ny = int(N0*(extent[3]-extent[2]))
+        if Ny%2 == 1:
+            Ny += 1
+    else:
+        Nx, Ny = NxNy
+
+    lon_1d0 = np.linspace(extent[0], extent[1], Nx+1)
+    lat_1d0 = np.linspace(extent[2], extent[3], Ny+1)
+
+    lon_1d = (lon_1d0[1:]+lon_1d0[:-1])/2.0
+    lat_1d = (lat_1d0[1:]+lat_1d0[:-1])/2.0
+
+    lat_2d, lon_2d = np.meshgrid(lat_1d, lon_1d)
+
+    points   = np.transpose(np.vstack((lon, lat)))
+    data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
+
+    if method == 'nearest':
+        data_2d  = interpolate.griddata(points, data, (lon_2d, lat_2d), method='nearest')
+        logic = np.isnan(data_2d0) | np.isnan(data_2d)
+        data_2d[logic] = 0.0
+        return lon_2d, lat_2d, data_2d
+    else:
+        logic = np.isnan(data_2d0)
+        data_2d0[logic] = 0.0
+        return lon_2d, lat_2d, data_2d0
+
+
+
+def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest'):
+
+    """
+    Grid irregular MODIS data into a regular grid by input longitude and latitude
+
+    Input:
+        lon: numpy array, input longitude to be gridded
+        lat: numpy array, input latitude to be gridded
+        data: numpy array, input data to be gridded
+        lon_1d=: numpy array, the longitude of the grids
+        lat_1d=: numpy array, the latitude of the grids
+
+    Output:
+        lon_2d : numpy array, gridded longitude
+        lat_2d : numpy array, gridded latitude
+        data_2d: numpy array, gridded data
+
+    How to use:
+        After read in the longitude latitude and data into lon0, lat0, data0
+        lon, lat data = grid_by_lonlat(lon0, lat0, data0, lon_1d=np.linspace(10.0, 15.0, 100), lat_1d=np.linspace(10.0, 20.0, 100))
+    """
+
+    if lon_1d is None or lat_1d is None:
+
+        extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+
+        xy = (extent[1]-extent[0])*(extent[3]-extent[2])
+        N0 = np.sqrt(lon.size/xy)
+
+        Nx = int(N0*(extent[1]-extent[0]))
+        if Nx%2 == 1:
+            Nx += 1
+
+        Ny = int(N0*(extent[3]-extent[2]))
+        if Ny%2 == 1:
+            Ny += 1
+
+        lon_1d0 = np.linspace(extent[0], extent[1], Nx+1)
+        lat_1d0 = np.linspace(extent[2], extent[3], Ny+1)
+
+        lon_1d = (lon_1d0[1:]+lon_1d0[:-1])/2.0
+        lat_1d = (lat_1d0[1:]+lat_1d0[:-1])/2.0
+
+
+    lat_2d, lon_2d = np.meshgrid(lat_1d, lon_1d)
+
+    points   = np.transpose(np.vstack((lon, lat)))
+    data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
+
+    if method == 'nearest':
+        data_2d  = interpolate.griddata(points, data, (lon_2d, lat_2d), method='nearest')
+        logic = np.isnan(data_2d0) | np.isnan(data_2d)
+        data_2d[logic] = 0.0
+        return lon_2d, lat_2d, data_2d
+    else:
+        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
+        logic = np.isnan(data_2d0)
+        data_2d0[logic] = 0.0
+        return lon_2d, lat_2d, data_2d0
+
+#\---------------------------------------------------------------------------/
+
 
 
 # physics
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#/---------------------------------------------------------------------------\
 
 def combine_alt(atm_z, cld_z):
 
@@ -228,7 +356,7 @@ def get_lay_index(lay, lay_ref):
 
 
 
-def downscaling(ndarray, new_shape, operation='mean'):
+def downscale(ndarray, new_shape, operation='mean'):
 
     """
     Bins an ndarray in all axes based on the target shape, by summing or
@@ -247,9 +375,9 @@ def downscaling(ndarray, new_shape, operation='mean'):
     """
     operation = operation.lower()
     if not operation in ['sum', 'mean', 'max']:
-        raise ValueError('Error   [downscaling]: Operation of \'%s\' not supported.' % operation)
+        raise ValueError('Error   [downscale]: Operation of \'%s\' not supported.' % operation)
     if ndarray.ndim != len(new_shape):
-        raise ValueError("Error   [downscaling]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
+        raise ValueError("Error   [downscale]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
 
     compression_pairs = [(d, c//d) for d,c in zip(new_shape, ndarray.shape)]
     flattened = [l for p in compression_pairs for l in p]
@@ -455,7 +583,7 @@ def cal_cth_hist(cth):
 
     pass
 
-# -----------------------------------------------------------------------------------------------------------------
+#\---------------------------------------------------------------------------/
 
 if __name__ == '__main__':
 

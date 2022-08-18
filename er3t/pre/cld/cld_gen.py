@@ -3,7 +3,7 @@ import sys
 import pickle
 import numpy as np
 from er3t.pre.atm import atm_atmmod
-from er3t.util import downscaling
+from er3t.util import downscale
 
 
 
@@ -407,12 +407,12 @@ class cld_gen_hem:
 
             # self.lay
             # =============================================================================
-            self.lay['x']['data']         = downscaling(self.lay['x']['data']        , (new_shape[0], ), operation='mean')
-            self.lay['y']['data']         = downscaling(self.lay['y']['data']        , (new_shape[1], ), operation='mean')
-            self.lay['z']['data']         = downscaling(self.lay['z']['data']        , (new_shape[2], ), operation='mean')
+            self.lay['x']['data']         = downscale(self.lay['x']['data']        , (new_shape[0], ), operation='mean')
+            self.lay['y']['data']         = downscale(self.lay['y']['data']        , (new_shape[1], ), operation='mean')
+            self.lay['z']['data']         = downscale(self.lay['z']['data']        , (new_shape[2], ), operation='mean')
 
-            self.lay['altitude']['data']  = downscaling(self.lay['altitude']['data'] , (new_shape[2], ), operation='mean')
-            self.lay['thickness']['data'] = downscaling(self.lay['thickness']['data'], (new_shape[2], ), operation='sum')
+            self.lay['altitude']['data']  = downscale(self.lay['altitude']['data'] , (new_shape[2], ), operation='mean')
+            self.lay['thickness']['data'] = downscale(self.lay['thickness']['data'], (new_shape[2], ), operation='sum')
 
             self.lay['dx']['data'] *= dnx
             self.lay['dy']['data'] *= dny
@@ -429,7 +429,7 @@ class cld_gen_hem:
                             operation = 'mean'
                         else:
                             operation = 'max'
-                        self.lay[key]['data']  = downscaling(self.lay[key]['data'], new_shape, operation=operation)
+                        self.lay[key]['data']  = downscale(self.lay[key]['data'], new_shape, operation=operation)
             # =============================================================================
 
             # self.lev
@@ -444,7 +444,7 @@ class cld_gen_hem:
                             operation = 'mean'
                         else:
                             operation = 'max'
-                        self.lev[key]['data']  = downscaling(self.lev[key]['data'], (new_shape[0], new_shape[1]), operation=operation)
+                        self.lev[key]['data']  = downscale(self.lev[key]['data'], (new_shape[0], new_shape[1]), operation=operation)
             # =============================================================================
 
 
