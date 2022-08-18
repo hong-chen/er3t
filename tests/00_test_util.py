@@ -27,6 +27,8 @@ def test_modis():
 
 def test_viirs():
 
+    data_tag = '5200/VNP02IMG'
+
 
     pass
 

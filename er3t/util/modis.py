@@ -17,8 +17,9 @@ __all__ = ['get_data', 'modis_l1b', 'modis_l2', 'modis_03', 'modis_09a1', 'modis
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag', 'get_doy_tag']
 
 
-# MODIS reader
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# reader for MODIS (Moderate Resolution Imaging Spectroradiometer)
+#/---------------------------------------------------------------------------\
+
 class modis_l1b:
 
     """
@@ -940,14 +941,16 @@ class modis_tiff:
         self.latg = np.linspace(wesn[2],wesn[3],nx+1)
         self.lonm   = 0.5*(self.long[1:]+self.long[:-1])
         self.latm   = 0.5*(self.latg[1:]+self.latg[:-1])
-# ---------------------------------------------------------------------------------------------------------
+
+#\---------------------------------------------------------------------------/
 
 
 
 
 
 # Useful functions
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#/---------------------------------------------------------------------------\
+
 def get_data(hdf_dset):
 
     attrs = hdf_dset.attributes()
@@ -960,7 +963,6 @@ def get_data(hdf_dset):
         data = data + attrs['add_offset']
 
     return data
-
 
 
 
@@ -1455,8 +1457,8 @@ def get_doy_tag(date, day_interval=8):
     doy_tag = '%3.3d' % doys[np.argmin(np.abs(doys-doy))]
 
     return doy_tag
-# ---------------------------------------------------------------------------------------------------------
 
+#\---------------------------------------------------------------------------/
 
 
 if __name__=='__main__':
