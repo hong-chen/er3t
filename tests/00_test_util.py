@@ -3,6 +3,7 @@ Purpose:
     testing code under er3t/util
 """
 
+import er3t
 from er3t.util import download_laads_https
 from er3t.util.viirs import *
 

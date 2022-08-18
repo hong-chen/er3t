@@ -9,11 +9,13 @@ import shutil
 from http.cookiejar import CookieJar
 import urllib.request
 import requests
+
+import er3t.common
 from er3t.util import check_equal
 
 
 
-__all__ = []
+__all__ = ['viirs_03']
 
 
 # reader for VIIRS (Visible Infrared Imaging Radiometer Suite)
@@ -25,7 +27,7 @@ class viirs_l1b:
     Read VIIRS Level 1B file into an object `viirs_l1b`
 
     Input:
-        fnames=     : keyword argument, default=None, Python list of the file path of the original HDF4 files
+        fnames=     : keyword argument, default=None, Python list of the file path of the original netCDF files
         overwrite=  : keyword argument, default=False, whether to overwrite or not
         extent=     : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
         resolution= : keyword argument, default=None, data spatial resolution in km, can be detected from filename
@@ -67,7 +69,7 @@ class viirs_l1b:
             elif '1km' in filename:
                 self.resolution = 1.0
             else:
-                sys.exit('Error   [modis_l1b]: Resolution (in km) is not defined.')
+                sys.exit('Error   [viirs_l1b]: Resolution (in km) is not defined.')
         else:
             self.resolution = resolution
 
@@ -88,9 +90,9 @@ class viirs_l1b:
         """
 
         try:
-            from pyhdf.SD import SD, SDC
+            from netCDF4 import Dataset
         except ImportError:
-            msg = 'Warning [modis_l1b]: To use \'modis_l1b\', \'pyhdf\' needs to be installed.'
+            msg = 'Warning [viirs_l1b]: To use \'viirs_l1b\', \'netCDF4\' needs to be installed.'
             raise ImportError(msg)
 
         f     = SD(fname, SDC.READ)
@@ -101,23 +103,23 @@ class viirs_l1b:
 
         # when resolution equals to 250 m
         if check_equal(self.resolution, 0.25):
-            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
+            lon, lat  = upscale_viirs_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
             raw0      = f.select('EV_250_RefSB')
             wvl       = np.array([650.0, 860.0])
 
         # when resolution equals to 500 m
         elif check_equal(self.resolution, 0.5):
-            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
+            lon, lat  = upscale_viirs_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
             raw0      = f.select('EV_500_RefSB')
             wvl       = np.array([470.0, 555.0, 1240.0, 1640.0, 2130.0])
 
         # when resolution equals to 1000 m
         elif check_equal(self.resolution, 1.0):
-            # lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=False)
-            sys.exit('Error   [modis_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
+            # lon, lat  = upscale_viirs_lonlat(lon0[:], lat0[:], scale=5, extra_grid=False)
+            sys.exit('Error   [viirs_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
 
         else:
-            sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
+            sys.exit('Error   [viirs_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
 
 
         # 1. If region (extent=) is specified, filter data within the specified region
@@ -193,7 +195,178 @@ class viirs_l1b:
         f.close()
 
         if not self.quiet:
-            print('Message [modis_l1b]: File \'%s\' is created.' % fname)
+            print('Message [viirs_l1b]: File \'%s\' is created.' % fname)
+
+
+
+class viirs_03:
+
+    """
+    Read VIIRS 03 geolocation data
+
+    Input:
+        fnames=   : keyword argument, default=None, Python list of the file path of the original netCDF file
+        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        vnames=   : keyword argument, default=[], additional variable names to be read in to self.data
+        overwrite=: keyword argument, default=False, whether to overwrite or not
+        verbose=  : keyword argument, default=False, verbose tag
+
+    Output:
+        self.data
+                ['lon']
+                ['lat']
+                ['sza']
+                ['saa']
+                ['vza']
+                ['vaa']
+    """
+
+
+    ID = 'VIIRS 03 Geolocation Product'
+
+
+    def __init__(self, \
+                 fnames    = None,  \
+                 extent    = None,  \
+                 vnames    = [],    \
+                 overwrite = False, \
+                 verbose   = False):
+
+        self.fnames     = fnames      # file name of the pickle file
+        self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
+        self.verbose    = verbose     # verbose tag
+
+        for fname in self.fnames:
+
+            self.read(fname)
+
+            if len(vnames) > 0:
+                self.read_vars(fname, vnames=vnames)
+
+
+    def read(self, fname):
+
+        """
+        Read solar and sensor angles
+
+        self.data
+            ['lon']
+            ['lat']
+            ['sza']
+            ['saa']
+            ['vza']
+            ['vaa']
+
+        self.logic
+        """
+
+        if not er3t.common.has_netcdf4:
+            msg = 'Error   [viirs_03]: To use \'viirs_03\', \'netCDF4\' needs to be installed.'
+
+        from netCDF4 import Dataset
+
+        f     = Dataset(fname, 'r')
+
+        # lon lat
+        lat0       = f.groups['geolocation_data'].variables['latitude']
+        lon0       = f.groups['geolocation_data'].variables['longitude']
+
+        sza0       = f.groups['geolocation_data'].variables['solar_zenith']
+        saa0       = f.groups['geolocation_data'].variables['solar_azimuth']
+        vza0       = f.groups['geolocation_data'].variables['sensor_zenith']
+        vaa0       = f.groups['geolocation_data'].variables['sensor_azimuth']
+
+
+        # 1. If region (extent=) is specified, filter data within the specified region
+        # 2. If region (extent=) is not specified, filter invalid data
+        #/---------------------------------------------------------------------------\
+        lon = lon0[:]
+        lat = lat0[:]
+
+        if self.extent is None:
+
+            if 'actual_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['actual_range']
+                lat_range = lat0.attributes()['actual_range']
+            elif 'valid_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['valid_range']
+                lat_range = lat0.attributes()['valid_range']
+            else:
+                lon_range = [-180.0, 180.0]
+                lat_range = [-90.0 , 90.0]
+
+        else:
+
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
+
+        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+        lon       = lon[logic]
+        lat       = lat[logic]
+        #\---------------------------------------------------------------------------/
+
+
+        # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        sza0_data = get_data(sza0)
+        saa0_data = get_data(saa0)
+        vza0_data = get_data(vza0)
+        vaa0_data = get_data(vaa0)
+
+        sza = sza0_data[logic]
+        saa = saa0_data[logic]
+        vza = vza0_data[logic]
+        vaa = vaa0_data[logic]
+
+        f.end()
+        # -------------------------------------------------------------------------------------------------
+
+        if hasattr(self, 'data'):
+
+            self.logic[fname] = {'1km':logic}
+
+            self.data['lon']   = dict(name='Longitude'                 , data=np.hstack((self.data['lon']['data'], lon    )), units='degrees')
+            self.data['lat']   = dict(name='Latitude'                  , data=np.hstack((self.data['lat']['data'], lat    )), units='degrees')
+            self.data['sza']   = dict(name='Solar Zenith Angle'        , data=np.hstack((self.data['sza']['data'], sza    )), units='degrees')
+            self.data['saa']   = dict(name='Solar Azimuth Angle'       , data=np.hstack((self.data['saa']['data'], saa    )), units='degrees')
+            self.data['vza']   = dict(name='Sensor Zenith Angle'       , data=np.hstack((self.data['vza']['data'], vza    )), units='degrees')
+            self.data['vaa']   = dict(name='Sensor Azimuth Angle'      , data=np.hstack((self.data['vaa']['data'], vaa    )), units='degrees')
+
+        else:
+            self.logic = {}
+            self.logic[fname] = {'1km':logic}
+
+            self.data  = {}
+            self.data['lon']   = dict(name='Longitude'                 , data=lon    , units='degrees')
+            self.data['lat']   = dict(name='Latitude'                  , data=lat    , units='degrees')
+            self.data['sza']   = dict(name='Solar Zenith Angle'        , data=sza    , units='degrees')
+            self.data['saa']   = dict(name='Solar Azimuth Angle'       , data=saa    , units='degrees')
+            self.data['vza']   = dict(name='Sensor Zenith Angle'       , data=vza    , units='degrees')
+            self.data['vaa']   = dict(name='Sensor Azimuth Angle'      , data=vaa    , units='degrees')
+
+
+    def read_vars(self, fname, vnames=[]):
+
+        try:
+            from netCDF4 import Dataset
+        except ImportError:
+            msg = 'Warning [viirs_03]: To use \'viirs_03\', \'netCDF4\' needs to be installed.'
+            raise ImportError(msg)
+
+        logic = self.logic[fname]['1km']
+
+        f     = SD(fname, SDC.READ)
+
+        for vname in vnames:
+
+            data0 = f.select(vname)
+            data  = get_data(data0)[logic]
+            if vname.lower() in self.data.keys():
+                self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.attributes()['units'])
+            else:
+                self.data[vname.lower()] = dict(name=vname, data=data, units=data0.attributes()['units'])
+
+        f.end()
 
 #\---------------------------------------------------------------------------/
 
