@@ -15,7 +15,8 @@ __all__ = ['ahi_l2']
 
 
 # reader for AHI (Advanced HIMAWARI Imager)
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#/---------------------------------------------------------------------------\
+
 class ahi_l2:
 
     """
@@ -169,44 +170,9 @@ class ahi_l2:
                 self.data[vname.lower()] = dict(name=vname, data=data)
 
         f.close()
-# ---------------------------------------------------------------------------------------------------------
 
+#\---------------------------------------------------------------------------/
 
 if __name__=='__main__':
-
-    fname = '/argus/field/camp2ex_2019/sat/ftp.ssec.wisc.edu/camp2ex/clavrx/20190902/clavrx_H08_20190902_0020_CAMPEX.level2.nc'
-    extent = [115, 122, 14, 20]
-
-    him0 = himawari_l2(fnames=[fname], extent=extent, vnames=['cld_height_acha'])
-    cth  = him0.data['cld_height_acha']['data']
-    cth = cth[cth>0]
-
-    print(him0.data['cot']['data'].min())
-    print(him0.data['cot']['data'].max())
-    exit()
-
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    import matplotlib as mpl
-    # mpl.use('Agg')
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import FixedLocator
-    from matplotlib import rcParams
-    import matplotlib.gridspec as gridspec
-    import matplotlib.patches as mpatches
-    # import cartopy.crs as ccrs
-
-    fig = plt.figure(figsize=(8, 6))
-    ax1 = fig.add_subplot(111)
-    ax1.hist(cth, bins=100)
-    # ax1.set_xlim(())
-    # ax1.set_ylim(())
-    # ax1.set_xlabel('')
-    # ax1.set_ylabel('')
-    # ax1.set_title('')
-    # ax1.legend(loc='upper right', fontsize=12, framealpha=0.4)
-    # plt.savefig('test.png')
-    plt.show()
-    exit()
-    # ---------------------------------------------------------------------
 
     pass
