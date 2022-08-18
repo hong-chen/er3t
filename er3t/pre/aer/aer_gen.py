@@ -6,7 +6,7 @@ import copy
 from pyhdf.SD import SD, SDC
 from scipy import interpolate
 
-from er3t.util import mmr2vmr, cal_rho_air, downscaling
+from er3t.util import mmr2vmr, cal_rho_air, downscale
 from er3t.pre.atm import atm_atmmod
 
 

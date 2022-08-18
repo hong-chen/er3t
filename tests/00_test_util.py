@@ -3,6 +3,8 @@ Purpose:
     testing code under er3t/util
 """
 
+from er3t.util import download_laads_https
+from er3t.util.viirs import *
 
 def test_modis():
 
@@ -24,9 +26,13 @@ def test_modis():
     # download_modis_https(dtime, '6/MOD09A1','h01v10', day_interval=8, run=False)
 
 def test_viirs():
+
+
     pass
 
 
 if __name__ == '__main__':
 
-    test_modis()
+    # test_modis()
+
+    test_viirs()

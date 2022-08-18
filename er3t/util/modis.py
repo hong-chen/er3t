@@ -13,7 +13,7 @@ from er3t.util import check_equal
 
 
 
-__all__ = ['get_data', 'modis_l1b', 'modis_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'grid_modis_by_extent', 'grid_modis_by_lonlat', 'upscale_modis_lonlat', \
+__all__ = ['get_data', 'modis_l1b', 'modis_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'upscale_modis_lonlat', \
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag', 'get_doy_tag']
 
 
