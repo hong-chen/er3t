@@ -5,7 +5,8 @@ import numpy as np
 
 
 __all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
-           'h5dset_to_pydict', 'grid_by_extent', 'grid_by_lonlat'] + \
+           'h5dset_to_pydict', 'grid_by_extent', 'grid_by_lonlat', \
+           'download_laads_https'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_dist', 'cal_cth_hist']
@@ -180,7 +181,7 @@ def h5dset_to_pydict(dset):
 def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
 
     """
-    Grid irregular MODIS data into a regular grid by input 'extent' (westmost, eastmost, southmost, northmost)
+    Grid irregular data into a regular grid by input 'extent' (westmost, eastmost, southmost, northmost)
 
     Input:
         lon: numpy array, input longitude to be gridded
@@ -243,7 +244,7 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
 def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest'):
 
     """
-    Grid irregular MODIS data into a regular grid by input longitude and latitude
+    Grid irregular data into a regular grid by input longitude and latitude
 
     Input:
         lon: numpy array, input longitude to be gridded
@@ -299,6 +300,119 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest'):
         logic = np.isnan(data_2d0)
         data_2d0[logic] = 0.0
         return lon_2d, lat_2d, data_2d0
+
+
+
+def download_laads_https(
+             date,
+             dataset_tag,
+             filename_tag,
+             server='https://ladsweb.modaps.eosdis.nasa.gov',
+             fdir_prefix='/archive/allData',
+             day_interval=1,
+             fdir_out='data',
+             data_format=None,
+             run=True,
+             quiet=False,
+             verbose=True):
+
+
+    """
+    Input:
+        date: Python datetime object
+        dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
+        filename_tag: string, string pattern in the filename, e.g. '.2035.'
+        server=: string, data server
+        fdir_prefix=: string, data directory on NASA server
+        day_interval=: integer, for 8 day data, day_interval=8
+        fdir_out=: string, output data directory
+        data_format=None: e.g., 'hdf'
+        run=: boolen type, if true, the command will only be displayed but not run
+        quiet=: Boolen type, quiet tag
+        verbose=: Boolen type, verbose tag
+
+    Output:
+        fnames_local: Python list that contains downloaded satellite data file paths
+    """
+
+    try:
+        token = os.environ['EARTHDATA_TOKEN']
+    except KeyError:
+        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
+        if verbose:
+            print('Warning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.bash_profile\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n')
+
+    if shutil.which('curl'):
+        command_line_tool = 'curl'
+    elif shutil.which('wget'):
+        command_line_tool = 'wget'
+    else:
+        sys.exit('Error [download_laads_https]: \'download_laads_https\' needs \'curl\' or \'wget\' to be installed.')
+
+    year_str = str(date.timetuple().tm_year).zfill(4)
+    if day_interval == 1:
+        doy_str  = str(date.timetuple().tm_yday).zfill(3)
+    else:
+        doy_str = get_doy_tag(date, day_interval=day_interval)
+
+    fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
+
+    fdir_server = server + fdir_data
+    webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
+    content  = webpage.read().decode('utf-8')
+    lines    = content.split('\n')
+
+    commands = []
+    fnames_local = []
+    for line in lines:
+        filename = line.strip().split(',')[0]
+        if filename_tag in filename:
+            fname_server = '%s/%s' % (fdir_server, filename)
+            fname_local  = '%s/%s' % (fdir_out, filename)
+            fnames_local.append(fname_local)
+            if command_line_tool == 'curl':
+                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\'' % (fdir_out, token, fname_server, fname_local)
+            elif command_line_tool == 'wget':
+                command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
+            commands.append(command)
+
+    if not run:
+
+        if not quiet:
+            print('Message [download_laads_https]: The commands to run are:')
+            for command in commands:
+                print(command)
+                print()
+
+    else:
+
+        for i, command in enumerate(commands):
+
+            print('Message [download_laads_https]: Downloading %s ...' % fnames_local[i])
+            os.system(command)
+
+            fname_local = fnames_local[i]
+
+            if data_format is None:
+                data_format = os.path.basename(fname_local).split('.')[-1]
+
+            if data_format == 'hdf':
+
+                try:
+                    from pyhdf.SD import SD, SDC
+                except ImportError:
+                    msg = 'Warning [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
+                    raise ImportError(msg)
+
+                f = SD(fname_local, SDC.READ)
+                f.end()
+                print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+
+            else:
+
+                print('Warning [download_laads_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
+
+    return fnames_local
 
 #\---------------------------------------------------------------------------/
 

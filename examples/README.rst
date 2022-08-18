@@ -50,6 +50,9 @@ To get the data access, you will need to register an account with NASA EARTHDATA
     login abc
     password 123
 
+#. Request a token (instructions `here <https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens/>`_)
+   for your EARTHDATA account and store the token under environment variable ``EARTHDATA_TOKEN``, e.g., ``export EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"``.
+
 |
 |
 
