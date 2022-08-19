@@ -93,14 +93,27 @@ def test_download_worldview():
 
     from er3t.util import download_worldview_rgb
 
-    date = datetime.datetime(2022, 6, 1)
+    date = datetime.datetime(2022, 5, 18)
     extent = [-94.2607, -87.2079, 31.8594, 38.9122]
-    download_worldview_rgb(date, extent, instrument='viirs', satellite='snpp')
-    download_worldview_rgb(date, extent, instrument='viirs', satellite='noaa20')
     download_worldview_rgb(date, extent, instrument='modis', satellite='aqua')
     download_worldview_rgb(date, extent, instrument='modis', satellite='terra')
+    download_worldview_rgb(date, extent, instrument='viirs', satellite='snpp')
+    download_worldview_rgb(date, extent, instrument='viirs', satellite='noaa20')
 
 
+def main():
+    import cartopy.crs as ccrs
+    import matplotlib.pyplot as plt
+
+    url = 'https://map1c.vis.earthdata.nasa.gov/wmts-geo/wmts.cgi'
+    layer = 'VIIRS_CityLights_2012'
+
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.add_wmts(url, layer)
+    ax.set_extent((-15, 25, 35, 60))
+
+    plt.title('Suomi NPP Earth at night April/October 2012')
+    plt.show()
 
 if __name__ == '__main__':
 
@@ -110,4 +123,5 @@ if __name__ == '__main__':
 
     # test_download_laads()
 
-    # test_download_worldview()
+    test_download_worldview()
+    # main()

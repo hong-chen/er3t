@@ -436,14 +436,32 @@ def download_laads_https(
 def download_worldview_rgb(
         date,
         extent,
+        fdir='.',
         instrument='modis',
         satellite='aqua',
-        wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi',
-        fdir='.',
+        wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi',
         proj=None,
         coastline=False,
         run=True
         ):
+
+    """
+    Purpose: download satellite RGB imagery from NASA Worldview for a user-specified date and region
+
+    Inputs:
+        date: date object of <datetime.datetime>
+        extent: rectangular region, Python list of [west_most_longitude, east_most_longitude, south_most_latitude, north_most_latitude]
+        fdir=: directory to store RGB imagery from NASA Worldview
+        instrument=: satellite instrument, currently only supports 'modis' and 'viirs'
+        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis', and 'snpp' and 'noaa20' for 'viirs'
+        wmts_cgi=: cgi link to NASA Worldview GIBS (Global Imagery Browse Services)
+        proj=: map projection for plotting the RGB imagery
+        coastline=: boolen type, whether to plot coastline
+        run=: boolen type, whether to plot
+
+    Output:
+        fname: file name of the saved RGB file (png format)
+    """
 
     if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
         instrument = instrument.upper()
@@ -452,42 +470,34 @@ def download_worldview_rgb(
         instrument = instrument.upper()
         satellite  = satellite.upper()
     else:
-        sys.exit('Error   [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite))
+        msg = 'Error   [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        raise NameError(msg)
 
     date_s = date.strftime('%Y-%m-%d')
-    fname  = '%s/%s-%s_rgb_%s_%s.png' % (fdir, satellite, instrument, date_s, '-'.join(['%.2f' % extent0 for extent0 in extent]))
+    fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir, satellite, instrument, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
 
     if run:
 
         try:
             import matplotlib.pyplot as plt
         except ImportError:
-            msg = 'Error   [download_worldview_rgb]: To use \'download_worldview_rgb\', \'matplotlib\' needs to be installed.'
-            raise ImportError(msg)
-
-        try:
-            from owslib.wmts import WebMapTileService
-        except ImportError:
-            msg = 'Error   [download_worldview_rgb]: To use \'download_worldview_rgb\', \'owslib\' needs to be installed.'
+            msg = 'Error   [download_worldview_rgb]: Please install <matplotlib> to proceed.'
             raise ImportError(msg)
 
         try:
             import cartopy.crs as ccrs
         except ImportError:
-            msg = 'Error   [download_worldview_rgb]: To use \'download_worldview_rgb\', \'cartopy\' needs to be installed.'
+            msg = 'Error   [download_worldview_rgb]: Please install <cartopy> to proceed.'
             raise ImportError(msg)
-
 
         layer_name = '%s_%s_CorrectedReflectance_TrueColor' % (instrument, satellite)
 
         if proj is None:
             proj=ccrs.PlateCarree()
 
-        wmts = WebMapTileService(wmts_cgi)
-
         fig = plt.figure(figsize=(12, 6))
         ax1 = fig.add_subplot(111, projection=proj)
-        ax1.add_wmts(wmts, layer_name, wmts_kwargs={'time': date_s})
+        ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
         if coastline:
             ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
         ax1.set_extent(extent, crs=ccrs.PlateCarree())

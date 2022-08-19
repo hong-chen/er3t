@@ -54,6 +54,14 @@ Dependencies
         conda install -c anaconda beautifulsoup4
         conda install -c anaconda xarray
 
+    Additionally, for a complete functionality, e.g., downloading satellite imagery from NASA
+    WorldView or satellite data from LAADS DAAC,
+
+    ::
+
+        conda install -c conda-forge owslib==0.26
+
+
 |
 
 **2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or a step-by-step `installation guide (unofficial) <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_ by Hong Chen)
