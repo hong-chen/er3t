@@ -3,7 +3,7 @@ import sys
 import copy
 import pickle
 import numpy as np
-import h5py
+import warnings
 
 import er3t.common
 
@@ -34,7 +34,8 @@ def read_pmom(fname):
     if er3t.common.has_netcdf4:
         from netCDF4 import Dataset
     else:
-        sys.exit('Error   [read_pmom]: Please install <netCDF4> to proceed.')
+        msg = 'Error [read_pmom]: Please install <netCDF4> to proceed.'
+        raise ImportError(msg)
 
     f = Dataset(fname, 'r')
 
@@ -101,9 +102,7 @@ class pha_mie_wc:
         self.reuse = reuse
         self.verbose = verbose
 
-        print('+')
         self.get_data(wvl0, angles)
-        print('-')
 
 
     def get_data(self,
@@ -141,7 +140,8 @@ class pha_mie_wc:
             if er3t.common.has_libradtran:
                 fdir_lrt = os.environ['LIBRADTRAN_V2_DIR']
             else:
-                sys.exit('Error   [er3t.pre.pha]: Cannot locate libRadtran. Please make sure libRadtran is installed and specified at enviroment variable <LIBRADTRAN_V2_DIR>.')
+                msg = 'Error [pha_mie_wc]: Currently, Mie phase function support relies on libRadtran. Please make sure libRadtran is installed and specified at enviroment variable <LIBRADTRAN_V2_DIR>.'
+                raise OSError(msg)
 
         Na = angles.size
         wvl, ref, ssa, asy, pmom = read_pmom(self.fname_coef)
@@ -150,7 +150,8 @@ class pha_mie_wc:
         if not self.interpolate:
             index = np.argmin(np.abs(wvl-wvl0))
         else:
-            sys.exit('Error   [pha_mie_wc]: has not implemented interpolation for phase function yet.')
+            msg = 'Error [pha_mie_wc]: has not implemented interpolation for phase function yet.'
+            raise ValueError(msg)
 
         print('Message [pha_mie_wc]: applying libRadtran/bin/phase to calculate phase functions for %.2fnm ...' % wvl0)
 
@@ -162,7 +163,8 @@ class pha_mie_wc:
 
             if pmom0[-1] > 0.1:
                 if self.verbose:
-                    print('Warning [pha_mie]: Ref=%.2f Legendre series did not converge.' % ref[ir])
+                    msg = 'Warning [pha_mie]: Ref=%.2f Legendre series did not converge.' % ref[ir]
+                    warnings.warn(msg)
 
             fname_tmp_inp = os.path.abspath('tmp_pmom_inp.txt')
             fname_tmp_out = os.path.abspath('tmp_pmom_out.txt')
