@@ -6,7 +6,7 @@ import h5py
 import copy
 import numpy as np
 
-import er3t
+import er3t.common
 from er3t.pre.atm import atm_atmmod
 from er3t.util import all_files
 
@@ -55,6 +55,7 @@ class abs_16g:
     Ng       = 16
     group_s  = '/solar_v1.3'
     fname_h5 = '%s/abs_16g.h5' % er3t.common.fdir_data_abs
+    reference = 'Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R., Roman, M., Redemann, J., Russell, P. B., Liu, J., and Schaaf, C. C.: Aircraft measurements of spectral surface albedo and its consistency with ground based and space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089, 2008.'
 
     def __init__(self, \
                  wavelength = None,  \
@@ -66,6 +67,9 @@ class abs_16g:
         self.verbose   = verbose
         self.wvl       = wavelength
         self.nwl       = 1
+
+        if self.reference not in er3t.common.references:
+            er3t.common.references.append(reference)
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 

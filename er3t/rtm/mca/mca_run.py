@@ -3,7 +3,6 @@ import sys
 import datetime
 import multiprocessing as mp
 import numpy as np
-import er3t.common
 
 try:
     from tqdm import tqdm
@@ -40,7 +39,6 @@ class mca_run:
 
         2. if mp_mode='sh', a shell script will be saved.
     """
-
 
     def __init__(self,
                  fnames_inp, \
@@ -89,7 +87,6 @@ class mca_run:
             sys.exit('Error   [mca_run]: Cannot understand input \'mp_mode=\'%s\'\'' % mp_mode)
         self.mp_mode = mp_mode
 
-
         self.commands = []
         for i in range(Nfile):
 
@@ -106,7 +103,6 @@ class mca_run:
                 command = '%s %d %d %s %s' % (executable, photons_dist[i], solver, input_file, output_file)
 
             self.commands.append(command)
-
 
         if self.mp_mode == 'mpi' or self.mp_mode == 'py':
             self.run()

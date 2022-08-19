@@ -53,6 +53,7 @@ class mcarats_ng:
         MCARaTS output files created under path specified by 'fdir'
     """
 
+    reference = 'Iwabuchi, H.: Efficient Monte Carlo methods for radiative transfer modeling, J. Atmos. Sci., 63, 2324-2339, doi:10.1175/JAS3755.1, 2006.'
 
     def __init__(self,                                          \
 
@@ -106,6 +107,8 @@ class mcarats_ng:
             if verbose:
                 print('Message [mcarats_ng]: Directory \'%s\' already exists.' % fdir)
 
+        if self.reference not in er3t.common.references:
+            er3t.common.references.append(self.reference)
 
         self.Ng      = Ng
         self.date    = date

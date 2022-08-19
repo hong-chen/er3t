@@ -26,10 +26,10 @@ def test_download_worldview():
     date = datetime.datetime(2022, 5, 18)
     extent = [-94.2607, -87.2079, 31.8594, 38.9122]
 
-    download_worldview_rgb(date, extent, fdir='tmp-data', instrument='modis', satellite='aqua'  , fmt='png')
-    download_worldview_rgb(date, extent, fdir='tmp-data', instrument='modis', satellite='terra' , fmt='png')
-    download_worldview_rgb(date, extent, fdir='tmp-data', instrument='viirs', satellite='snpp'  , fmt='h5')
-    download_worldview_rgb(date, extent, fdir='tmp-data', instrument='viirs', satellite='noaa20', fmt='h5')
+    download_worldview_rgb(date, extent, fdir_out='tmp-data', instrument='modis', satellite='aqua'  , fmt='png')
+    download_worldview_rgb(date, extent, fdir_out='tmp-data', instrument='modis', satellite='terra' , fmt='png')
+    download_worldview_rgb(date, extent, fdir_out='tmp-data', instrument='viirs', satellite='snpp'  , fmt='h5')
+    download_worldview_rgb(date, extent, fdir_out='tmp-data', instrument='viirs', satellite='noaa20', fmt='h5')
 
 
 

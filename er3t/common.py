@@ -16,3 +16,7 @@ fdir_data_pha    = os.path.join(fdir_data, 'pha')
 fdir_data_atmmod = os.path.join(fdir_data, 'atmmod')
 fdir_data_slit   = os.path.join(fdir_data, 'slit')
 fdir_data_ssfr   = os.path.join(fdir_data_slit, 'ssfr')
+
+references = [
+        'Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.'
+        ]

@@ -112,7 +112,7 @@ def send_email(
         server.sendmail(sender_email, [receiver], msg.as_string())
         server.quit()
     except:
-        raise OSError("Error   [send_email]: Failed to send the email.")
+        raise OSError("Error [send_email]: Failed to send the email.")
 
 
 
@@ -129,7 +129,7 @@ def nice_array_str(array1d, numPerLine=6):
     """
 
     if array1d.ndim > 1:
-        raise ValueError('Error   [nice_array_str]: Only support 1-D array.')
+        raise ValueError('Error [nice_array_str]: Only support 1-D array.')
 
     niceString = ''
     numLine    = array1d.size // numPerLine
@@ -348,7 +348,7 @@ def download_laads_https(
              server='https://ladsweb.modaps.eosdis.nasa.gov',
              fdir_prefix='/archive/allData',
              day_interval=1,
-             fdir_out='data',
+             fdir_out='tmp-data',
              data_format=None,
              run=True,
              quiet=False,
@@ -440,7 +440,7 @@ def download_laads_https(
                 try:
                     from pyhdf.SD import SD, SDC
                 except ImportError:
-                    msg = 'Error   [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
+                    msg = 'Error [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
                     raise ImportError(msg)
 
                 f = SD(fname_local, SDC.READ)
@@ -459,7 +459,7 @@ def download_laads_https(
 def download_worldview_rgb(
         date,
         extent,
-        fdir='.',
+        fdir_out='tmp-data',
         instrument='modis',
         satellite='aqua',
         wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi',
@@ -475,7 +475,7 @@ def download_worldview_rgb(
     Inputs:
         date: date object of <datetime.datetime>
         extent: rectangular region, Python list of [west_most_longitude, east_most_longitude, south_most_latitude, north_most_latitude]
-        fdir=: directory to store RGB imagery from NASA Worldview
+        fdir_out=: directory to store RGB imagery from NASA Worldview
         instrument=: satellite instrument, currently only supports 'modis' and 'viirs'
         satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis', and 'snpp' and 'noaa20' for 'viirs'
         wmts_cgi=: cgi link to NASA Worldview GIBS (Global Imagery Browse Services)
@@ -499,11 +499,11 @@ def download_worldview_rgb(
         instrument = instrument.upper()
         satellite  = satellite.upper()
     else:
-        msg = 'Error   [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        msg = 'Error [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
         raise NameError(msg)
 
     date_s = date.strftime('%Y-%m-%d')
-    fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir, satellite, instrument, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+    fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
     fname  = os.path.abspath(fname)
 
     if run:
@@ -514,14 +514,17 @@ def download_worldview_rgb(
             import matplotlib.pyplot as plt
             import matplotlib.image as mpl_img
         except ImportError:
-            msg = 'Error   [download_worldview_rgb]: Please install <matplotlib> to proceed.'
+            msg = 'Error [download_worldview_rgb]: Please install <matplotlib> to proceed.'
             raise ImportError(msg)
 
         try:
             import cartopy.crs as ccrs
         except ImportError:
-            msg = 'Error   [download_worldview_rgb]: Please install <cartopy> to proceed.'
+            msg = 'Error [download_worldview_rgb]: Please install <cartopy> to proceed.'
             raise ImportError(msg)
+
+        if not os.path.exists(fdir_out):
+            os.makedirs(fdir_out)
 
         layer_name = '%s_%s_CorrectedReflectance_TrueColor' % (instrument, satellite)
 
@@ -548,7 +551,7 @@ def download_worldview_rgb(
         try:
             import h5py
         except ImportError:
-            msg = 'Error   [download_worldview_rgb]: Please install <h5py> to proceed.'
+            msg = 'Error [download_worldview_rgb]: Please install <h5py> to proceed.'
             raise ImportError(msg)
 
         data = mpl_img.imread(fname)
@@ -559,6 +562,9 @@ def download_worldview_rgb(
         fname = fname.replace('.png', '.h5')
 
         f = h5py.File(fname, 'w')
+
+        f['extent'] = extent
+
         f['lon'] = lon
         f['lon'].make_scale('Longitude')
 
@@ -571,6 +577,7 @@ def download_worldview_rgb(
         f['rgb'].dims[1].label = 'Latitude'
         f['rgb'].dims[1].attach_scale(f['lat'])
         f['rgb'].dims[2].label = 'RGB'
+
         f.close()
 
     return fname
@@ -625,7 +632,7 @@ def get_lay_index(lay, lay_ref):
         dd = np.abs(z-lay_ref[index])
         if dd > threshold:
             print(z, lay_ref[index])
-            raise ValueError("Error   [get_layer_index]: Mismatch between layer and reference layer: "+str(dd))
+            raise ValueError("Error [get_layer_index]: Mismatch between layer and reference layer: "+str(dd))
 
         layer_index = np.append(layer_index, index)
 
@@ -652,9 +659,9 @@ def downscale(ndarray, new_shape, operation='mean'):
     """
     operation = operation.lower()
     if not operation in ['sum', 'mean', 'max']:
-        raise ValueError('Error   [downscale]: Operation of \'%s\' not supported.' % operation)
+        raise ValueError('Error [downscale]: Operation of \'%s\' not supported.' % operation)
     if ndarray.ndim != len(new_shape):
-        raise ValueError("Error   [downscale]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
+        raise ValueError("Error [downscale]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
 
     compression_pairs = [(d, c//d) for d,c in zip(new_shape, ndarray.shape)]
     flattened = [l for p in compression_pairs for l in p]
