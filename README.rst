@@ -47,8 +47,8 @@ Dependencies
 
     ::
 
-        conda install -c conda-forge gdown
-        conda install -c conda-forge cartopy
+        conda install -c conda-forge gdown==4.5.1
+        conda install -c conda-forge cartopy==0.19
         conda install -c conda-forge pyhdf
         conda install -c anaconda netcdf4
         conda install -c anaconda beautifulsoup4
