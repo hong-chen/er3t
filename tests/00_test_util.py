@@ -19,6 +19,31 @@ import matplotlib.patches as mpatches
 
 
 
+def test_download_worldview():
+
+    from er3t.util import download_worldview_rgb
+
+    date = datetime.datetime(2022, 5, 18)
+    # extent = [-94.2607, -87.2079, 31.8594, 38.9122]
+    extent = [-94.2607, -87.2079, 31.8594, 34.9122]
+
+    download_worldview_rgb(date, extent, fdir='tmp-data', instrument='modis', satellite='aqua', fmt='h5')
+    download_worldview_rgb(date, extent, fdir='tmp-data', instrument='modis', satellite='terra')
+    download_worldview_rgb(date, extent, fdir='tmp-data', instrument='viirs', satellite='snpp')
+    download_worldview_rgb(date, extent, fdir='tmp-data', instrument='viirs', satellite='noaa20')
+
+
+
+def test_download_laads():
+
+    from er3t.util import download_laads_https
+
+
+
+    pass
+
+
+
 def test_modis():
 
     download_modis_rgb(datetime.datetime(2015, 9, 6), [-2.0077, 2.9159, 48.5883, 53.4864], fdir='.', which='aqua', coastline=True)
@@ -83,26 +108,6 @@ def test_viirs():
 
 
 
-def test_download_laads():
-
-    from er3t.util import download_laads_https
-
-
-
-    pass
-
-def test_download_worldview():
-
-    from er3t.util import download_worldview_rgb
-
-    date = datetime.datetime(2022, 5, 18)
-    extent = [-94.2607, -87.2079, 31.8594, 38.9122]
-
-    download_worldview_rgb(date, extent, instrument='modis', satellite='aqua')
-    download_worldview_rgb(date, extent, instrument='modis', satellite='terra')
-    download_worldview_rgb(date, extent, instrument='viirs', satellite='snpp')
-    download_worldview_rgb(date, extent, instrument='viirs', satellite='noaa20')
-
 
 def main():
     import cartopy.crs as ccrs
@@ -125,8 +130,8 @@ if __name__ == '__main__':
     # test_viirs()
 
 
-    # test_download_worldview() # passed on 2022-08-19
+    test_download_worldview() # passed test on 2022-08-19
 
-    test_download_laads()
+    # test_download_laads()
 
     # main()

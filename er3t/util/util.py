@@ -465,6 +465,7 @@ def download_worldview_rgb(
         wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi',
         proj=None,
         coastline=False,
+        fmt='png',
         run=True
         ):
 
@@ -480,6 +481,7 @@ def download_worldview_rgb(
         wmts_cgi=: cgi link to NASA Worldview GIBS (Global Imagery Browse Services)
         proj=: map projection for plotting the RGB imagery
         coastline=: boolen type, whether to plot coastline
+        fmt=: can be either 'png' or 'h5'
         run=: boolen type, whether to plot
 
     Output:
@@ -502,6 +504,7 @@ def download_worldview_rgb(
 
     date_s = date.strftime('%Y-%m-%d')
     fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir, satellite, instrument, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+    fname  = os.path.abspath(fname)
 
     if run:
 
@@ -509,6 +512,7 @@ def download_worldview_rgb(
             import matplotlib as mpl
             mpl.use('Agg')
             import matplotlib.pyplot as plt
+            import matplotlib.image as mpl_img
         except ImportError:
             msg = 'Error   [download_worldview_rgb]: Please install <matplotlib> to proceed.'
             raise ImportError(msg)
@@ -534,6 +538,40 @@ def download_worldview_rgb(
         ax1.axis('off')
         plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
         plt.close(fig)
+
+    if fmt == 'png':
+
+        pass
+
+    elif fmt == 'h5':
+
+        try:
+            import h5py
+        except ImportError:
+            msg = 'Error   [download_worldview_rgb]: Please install <h5py> to proceed.'
+            raise ImportError(msg)
+
+        data = mpl_img.imread(fname)
+
+        lon  = np.linspace(extent[0], extent[1], data.shape[0])
+        lat  = np.linspace(extent[2], extent[3], data.shape[1])
+
+        fname = fname.replace('.png', '.h5')
+
+        f = h5py.File(fname, 'w')
+        f['lon'] = lon
+        f['lon'].make_scale('Longitude')
+
+        f['lat'] = lat
+        f['lat'].make_scale('Latitude')
+
+        f['rgb'] = np.swapaxes(data[::-1, :, :3], 0, 1)
+        f['rgb'].dims[0].label = 'Longitude'
+        f['rgb'].dims[0].attach_scale(f['lon'])
+        f['rgb'].dims[1].label = 'Latitude'
+        f['rgb'].dims[1].attach_scale(f['lat'])
+        f['rgb'].dims[2].label = 'RGB'
+        f.close()
 
     return fname
 
