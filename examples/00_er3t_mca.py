@@ -25,6 +25,12 @@ from er3t.rtm.mca import mca_out_ng
 from er3t.rtm.mca import mca_sca
 from er3t.util import cal_r_twostream
 
+import er3t.common
+
+
+# global variables
+photons = 1e7
+Ncpu    = 8
 
 
 
@@ -126,10 +132,10 @@ def test_01_flux_clear_sky(
             Nrun=3,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
-            photons=1e6,
+            photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
-            Ncpu=14,
+            Ncpu=Ncpu,
             mp_mode='py',
             overwrite=overwrite
             )
@@ -192,6 +198,17 @@ def test_01_flux_clear_sky(
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     # ------------------------------------------------------------------------------------------------------
+
+    # References
+    # ------------------------------------------------------------------------------------------------------
+    print('\nReferences:')
+    print('-'*80)
+    for reference in er3t.common.references:
+        print(reference)
+        print('-'*80)
+    # ------------------------------------------------------------------------------------------------------
+
+
 
 def test_02_flux_les_cloud_3d(
         fdir='tmp-data/00_er3t_mca/test_02_flux_les_cloud_3d',
@@ -335,10 +352,10 @@ def test_02_flux_les_cloud_3d(
             solar_zenith_angle=30.0,
             solar_azimuth_angle=45.0,
             fdir='%s/%4.4d/les_cld3d/flux_%s' % (fdir, wavelength, solver.lower()),
-            photons=1e8,
+            photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
-            Ncpu=12,
+            Ncpu=Ncpu,
             mp_mode='py',
             overwrite=overwrite
             )
@@ -396,6 +413,17 @@ def test_02_flux_les_cloud_3d(
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     # ------------------------------------------------------------------------------------------------------
+
+    # References
+    # ------------------------------------------------------------------------------------------------------
+    print('\nReferences:')
+    print('-'*80)
+    for reference in er3t.common.references:
+        print(reference)
+        print('-'*80)
+    # ------------------------------------------------------------------------------------------------------
+
+
 
 def test_03_flux_les_cloud_3d_aerosol_1d(
         fdir='tmp-data/00_er3t_mca/test_03_flux_les_cloud_3d_aerosol_1d',
@@ -548,10 +576,10 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
             solar_zenith_angle=30.0,
             solar_azimuth_angle=45.0,
             fdir='%s/%4.4d/les_cld3d_aer1d/flux_%s' % (fdir, wavelength, solver.lower()),
-            photons=1e8,
+            photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
-            Ncpu=12,
+            Ncpu=Ncpu,
             mp_mode='py',
             overwrite=overwrite
             )
@@ -609,6 +637,17 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     # ------------------------------------------------------------------------------------------------------
+
+    # References
+    # ------------------------------------------------------------------------------------------------------
+    print('\nReferences:')
+    print('-'*80)
+    for reference in er3t.common.references:
+        print(reference)
+        print('-'*80)
+    # ------------------------------------------------------------------------------------------------------
+
+
 
 def test_04_flux_les_cloud_3d_aerosol_3d(
         fdir='tmp-data/00_er3t_mca/test_04_flux_les_cloud_3d_aerosol_3d',
@@ -768,10 +807,10 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
             solar_zenith_angle=30.0,
             solar_azimuth_angle=45.0,
             fdir='%s/%4.4d/les_cld3d_aer3d/flux_%s' % (fdir, wavelength, solver.lower()),
-            photons=1e8,
+            photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
-            Ncpu=12,
+            Ncpu=Ncpu,
             mp_mode='py',
             overwrite=overwrite
             )
@@ -829,6 +868,17 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     # ------------------------------------------------------------------------------------------------------
+
+    # References
+    # ------------------------------------------------------------------------------------------------------
+    print('\nReferences:')
+    print('-'*80)
+    for reference in er3t.common.references:
+        print(reference)
+        print('-'*80)
+    # ------------------------------------------------------------------------------------------------------
+
+
 
 def test_05_rad_les_cloud_3d_aerosol_3d(
         fdir='tmp-data/00_er3t_mca/test_05_rad_les_cloud_3d_aerosol_3d',
@@ -1004,10 +1054,10 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
             sensor_altitude=705000.0,
             fdir='%s/%4.4d/les_cld3d_aer3d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
-            photons=1e8,
+            photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
-            Ncpu=12,
+            Ncpu=Ncpu,
             mp_mode='py',
             overwrite=overwrite
             )
@@ -1053,6 +1103,17 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     # ------------------------------------------------------------------------------------------------------
+
+    # References
+    # ------------------------------------------------------------------------------------------------------
+    print('\nReferences:')
+    print('-'*80)
+    for reference in er3t.common.references:
+        print(reference)
+        print('-'*80)
+    # ------------------------------------------------------------------------------------------------------
+
+
 
 def test_06_rad_cld_gen_hem(
         fdir='tmp-data/00_er3t_mca/test_06_rad_cld_gen_hem',
@@ -1182,10 +1243,10 @@ def test_06_rad_cld_gen_hem(
             sensor_altitude=705000.0,
             fdir='%s/%4.4d/cld3d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
-            photons=1e8,
+            photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
-            Ncpu=12,
+            Ncpu=Ncpu,
             mp_mode='py',
             overwrite=overwrite
             )
@@ -1232,6 +1293,14 @@ def test_06_rad_cld_gen_hem(
         plt.close(fig)
     # =============================================================================
 
+    # References
+    # ------------------------------------------------------------------------------------------------------
+    print('\nReferences:')
+    print('-'*80)
+    for reference in er3t.common.references:
+        print(reference)
+        print('-'*80)
+    # ------------------------------------------------------------------------------------------------------
 
 
 
@@ -1239,7 +1308,7 @@ if __name__ == '__main__':
 
     # test_01_flux_clear_sky()
 
-    # test_02_flux_les_cloud_3d()
+    test_02_flux_les_cloud_3d()
 
     # test_03_flux_les_cloud_3d_aerosol_1d()
 

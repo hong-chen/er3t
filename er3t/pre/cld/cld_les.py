@@ -119,7 +119,7 @@ class cld_les:
         try:
             from netCDF4 import Dataset
         except ImportError:
-            msg = 'Warning [cld_les.py]: To use \'cld_les.py\', \'netCDF4\' needs to be installed.'
+            msg = 'Error [cld_les.py]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
         f = Dataset(fname_nc, 'r')
