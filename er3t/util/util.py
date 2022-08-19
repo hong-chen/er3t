@@ -449,7 +449,7 @@ def download_laads_https(
 
             else:
 
-                msg = 'Warning [download_laads_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
+                msg = 'Warning [download_laads_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local)
                 warnings.warn(msg)
 
     return fnames_local
