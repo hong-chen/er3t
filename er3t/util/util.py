@@ -181,6 +181,16 @@ def h5dset_to_pydict(dset):
 
 def dtime_to_jday(dtime):
 
+    """
+    Purpose: convert regular date and time (Python <datetime.datetime> object) to julian day (referenced to 0001-01-01)
+
+    Input:
+        dtime: Python <datetime.datetime> object
+
+    Output:
+        jday: julian day (float number)
+    """
+
     jday = (dtime - datetime.datetime(1, 1, 1)).total_seconds()/86400.0 + 1.0
 
     return jday
@@ -188,6 +198,16 @@ def dtime_to_jday(dtime):
 
 
 def jday_to_dtime(jday):
+
+    """
+    Purpose: convert julian day (referenced to 0001-01-01) to regular date and time (Python <datetime.datetime> object)
+
+    Input:
+        jday: julian day (float number)
+
+    Output:
+        dtime: Python <datetime.datetime> object
+    """
 
     dtime = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds=np.round(((jday-1)*86400.0), decimals=0))
 
@@ -461,6 +481,10 @@ def download_worldview_rgb(
 
     Output:
         fname: file name of the saved RGB file (png format)
+
+    Usage example:
+        import datetime
+        fname = download_wordview_rgb(datetime.datetime(2022, 5, 18), [-94.26,-87.21,31.86,38.91], instrument='modis', satellite='aqua')
     """
 
     if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
@@ -479,6 +503,8 @@ def download_worldview_rgb(
     if run:
 
         try:
+            import matplotlib as mpl
+            mpl.use('Agg')
             import matplotlib.pyplot as plt
         except ImportError:
             msg = 'Error   [download_worldview_rgb]: Please install <matplotlib> to proceed.'

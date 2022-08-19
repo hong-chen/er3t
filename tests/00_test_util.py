@@ -95,6 +95,7 @@ def test_download_worldview():
 
     date = datetime.datetime(2022, 5, 18)
     extent = [-94.2607, -87.2079, 31.8594, 38.9122]
+
     download_worldview_rgb(date, extent, instrument='modis', satellite='aqua')
     download_worldview_rgb(date, extent, instrument='modis', satellite='terra')
     download_worldview_rgb(date, extent, instrument='viirs', satellite='snpp')
