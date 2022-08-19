@@ -3,9 +3,9 @@ import sys
 import pickle
 import numpy as np
 import copy
-from pyhdf.SD import SD, SDC
 from scipy import interpolate
 
+import er3t.common
 from er3t.util import mmr2vmr, cal_rho_air, downscale
 from er3t.pre.atm import atm_atmmod
 
@@ -119,6 +119,11 @@ class aer_gen:
 
         self.lay = {}
         self.lev = {}
+
+        if er3t.comomn.has_hdf4:
+            from pyhdf.SD import SD, SDC
+        else:
+            sys.exit('Error   [aer_gen]: Please install <pyhdf> to proceed.')
 
         f     = SD(self.fname_h4, SDC.READ)
 

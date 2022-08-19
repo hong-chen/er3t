@@ -4,9 +4,8 @@ import copy
 import pickle
 import numpy as np
 import h5py
-from netCDF4 import Dataset
 
-import er3t
+import er3t.common
 
 
 
@@ -31,6 +30,11 @@ def read_pmom(fname):
         asy: asymmetry parameter
         pmom: pmom coefficients
     """
+
+    if er3t.common.has_netcdf4:
+        from netCDF4 import Dataset
+    else:
+        sys.exit('Error   [read_pmom]: Please install <netCDF4> to proceed.')
 
     f = Dataset(fname, 'r')
 

@@ -2,8 +2,6 @@ import os
 import sys
 import importlib.util
 
-__all__ = ['fdir_data']
-
 has_mcarats    = ('MCARATS_V010_EXE' in dict(os.environ))
 has_libradtran = ('LIBRADTRAN_V2_DIR' in dict(os.environ))
 has_token      = ('EARTHDATA_TOKEN' in dict(os.environ))

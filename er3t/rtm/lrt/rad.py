@@ -48,13 +48,17 @@ class lrt_init_mono_rad:
             spectral_resolution = 0.1,
             mute_list           = [],
             input_dict_extra    = None,
-            lrt_cfg = get_lrt_cfg(),
+            lrt_cfg = None,
             cld_cfg = None,
             aer_cfg = None,
             verbose = False
             ):
 
-        self.lrt_cfg         = lrt_cfg
+        if lrt_cfg is None:
+            self.lrt_cfg         = get_lrt_cfg()
+        else:
+            self.lrt_cfg         = lrt_cfg
+
         self.mute_list       = mute_list
 
         # executable file
@@ -269,13 +273,16 @@ class lrt_init_spec_rad:
             output_altitude     = None, # string, list, or numpy.array; units: km
             output_format       = 'lambda uu',
             spectral_resolution = 0.1,
-            lrt_cfg = get_lrt_cfg(),
+            lrt_cfg = None,
             cld_cfg = None,
             aer_cfg = None,
             verbose = False
             ):
 
-        self.lrt_cfg         = lrt_cfg
+        if lrt_cfg is None:
+            self.lrt_cfg         = get_lrt_cfg()
+        else:
+            self.lrt_cfg         = lrt_cfg
 
         # executable file
         self.executable_file = lrt_cfg['executable_file']
