@@ -553,8 +553,8 @@ def download_worldview_rgb(
 
         data = mpl_img.imread(fname)
 
-        lon  = np.linspace(extent[0], extent[1], data.shape[0])
-        lat  = np.linspace(extent[2], extent[3], data.shape[1])
+        lon  = np.linspace(extent[0], extent[1], data.shape[1])
+        lat  = np.linspace(extent[2], extent[3], data.shape[0])
 
         fname = fname.replace('.png', '.h5')
 
