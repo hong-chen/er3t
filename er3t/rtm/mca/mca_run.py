@@ -3,6 +3,7 @@ import sys
 import datetime
 import multiprocessing as mp
 import numpy as np
+import er3t.common
 
 try:
     from tqdm import tqdm
