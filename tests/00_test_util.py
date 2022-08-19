@@ -122,7 +122,9 @@ if __name__ == '__main__':
 
     # test_viirs()
 
-    # test_download_laads()
 
-    test_download_worldview()
+    # test_download_worldview() # passed on 2022-08-19
+
+    test_download_laads()
+
     # main()

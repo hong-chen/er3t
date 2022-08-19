@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+import warnings
 
 
 
@@ -111,7 +112,7 @@ def send_email(
         server.sendmail(sender_email, [receiver], msg.as_string())
         server.quit()
     except:
-        exit("Error   [send_email]: Failed to send the email.")
+        raise OSError("Error   [send_email]: Failed to send the email.")
 
 
 
@@ -128,7 +129,7 @@ def nice_array_str(array1d, numPerLine=6):
     """
 
     if array1d.ndim > 1:
-        sys.exit('Error   [nice_array_str]: Only support 1-D array.')
+        raise ValueError('Error   [nice_array_str]: Only support 1-D array.')
 
     niceString = ''
     numLine    = array1d.size // numPerLine
@@ -377,14 +378,15 @@ def download_laads_https(
     except KeyError:
         token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
         if verbose:
-            print('Warning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.bash_profile\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n')
+            msg = 'Warning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.bash_profile\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+            warnings.warn(msg)
 
     if shutil.which('curl'):
         command_line_tool = 'curl'
     elif shutil.which('wget'):
         command_line_tool = 'wget'
     else:
-        sys.exit('Error [download_laads_https]: \'download_laads_https\' needs \'curl\' or \'wget\' to be installed.')
+        raise OSError('Error [download_laads_https]: \'download_laads_https\' needs \'curl\' or \'wget\' to be installed.')
 
     year_str = str(date.timetuple().tm_year).zfill(4)
     if day_interval == 1:
@@ -438,7 +440,7 @@ def download_laads_https(
                 try:
                     from pyhdf.SD import SD, SDC
                 except ImportError:
-                    msg = 'Warning [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
+                    msg = 'Error   [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
                     raise ImportError(msg)
 
                 f = SD(fname_local, SDC.READ)
@@ -447,7 +449,8 @@ def download_laads_https(
 
             else:
 
-                print('Warning [download_laads_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
+                msg = 'Warning [download_laads_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
+                warnings.warn(msg)
 
     return fnames_local
 
@@ -545,11 +548,13 @@ def combine_alt(atm_z, cld_z):
 
     z1 = atm_z[atm_z < cld_z.min()]
     if z1.size == 0:
-        print('Warning [combine_alt]: cloud locates below the bottom of the atmosphere.')
+        msg = 'Warning [combine_alt]: cloud locates below the bottom of the atmosphere.'
+        warnings.warn(msg)
 
     z2 = atm_z[atm_z > cld_z.max()]
     if z2.size == 0:
-        print('Warning [combine_alt]: cloud locates above the top of the atmosphere.')
+        msg = 'Warning [combine_alt]: cloud locates above the top of the atmosphere.'
+        warnings.warn(msg)
 
     z = np.concatenate(z1, cld_z, z2)
 
@@ -582,7 +587,7 @@ def get_lay_index(lay, lay_ref):
         dd = np.abs(z-lay_ref[index])
         if dd > threshold:
             print(z, lay_ref[index])
-            sys.exit("Error   [get_layer_index]: Mismatch between layer and reference layer: "+str(dd))
+            raise ValueError("Error   [get_layer_index]: Mismatch between layer and reference layer: "+str(dd))
 
         layer_index = np.append(layer_index, index)
 
@@ -670,7 +675,7 @@ def cal_rho_air(p, T, vmr):
     Td = T.shape
     vd = vmr.shape
     if ((pd != Td) | (vd != Td)):
-        sys.exit("Error [cal_rho_air]: input variables have different dimensions.")
+        raise ValueError("Error [cal_rho_air]: input variables have different dimensions.")
 
     R   = 8.31447     # ideal gas constant     [J /(mol K)]
     Md  = 0.0289644   # molar mass of dry air  [kg/mol]
