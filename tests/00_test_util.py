@@ -6,7 +6,6 @@ Purpose:
 import er3t
 import datetime
 import xarray as xr
-from er3t.util import download_laads_https
 from er3t.util.viirs import *
 
 import matplotlib as mpl
@@ -17,6 +16,7 @@ from matplotlib import rcParams
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 # import cartopy.crs as ccrs
+
 
 
 def test_modis():
@@ -81,6 +81,14 @@ def test_viirs():
 
     pass
 
+
+
+def test_download_laads():
+
+    from er3t.util import download_laads_https
+
+    pass
+
 def test_download_worldview():
 
     from er3t.util import download_worldview_rgb
@@ -92,10 +100,14 @@ def test_download_worldview():
     download_worldview_rgb(date, extent, instrument='modis', satellite='aqua')
     download_worldview_rgb(date, extent, instrument='modis', satellite='terra')
 
+
+
 if __name__ == '__main__':
 
     # test_modis()
 
     # test_viirs()
 
-    test_download_worldview()
+    # test_download_laads()
+
+    # test_download_worldview()

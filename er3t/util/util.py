@@ -5,7 +5,8 @@ import numpy as np
 
 
 __all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
-           'h5dset_to_pydict', 'grid_by_extent', 'grid_by_lonlat', \
+           'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
+           'grid_by_extent', 'grid_by_lonlat', \
            'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
@@ -175,6 +176,22 @@ def h5dset_to_pydict(dset):
     data['data']  = dset[...]
 
     return data
+
+
+
+def dtime_to_jday(dtime):
+
+    jday = (dtime - datetime.datetime(1, 1, 1)).total_seconds()/86400.0 + 1.0
+
+    return jday
+
+
+
+def jday_to_dtime(jday):
+
+    dtime = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds=np.round(((jday-1)*86400.0), decimals=0))
+
+    return dtime
 
 
 
@@ -648,6 +665,61 @@ def cal_sol_fac(dtime):
     solfac = 1.0/(rsun**2)
 
     return solfac
+
+
+
+def cal_sol_ang(julian_day, longitude, latitude, altitude):
+
+    """
+    Calculate solar angles - solar zenith angle and solar azimuth angle
+
+    Input:
+        julian_day: julian data (day count starting from 0001-01-01)
+        longitude: longitude in degree
+        latitude: latitude in degree
+        altitude: altitude in meter
+
+    Output:
+        sza: solar zenith angle
+        saa: solar azimuth angle
+
+    """
+
+    dateRef = datetime.datetime(1, 1, 1)
+    jdayRef = 1.0
+
+    sza = np.zeros_like(julian_day)
+    saa = np.zeros_like(julian_day)
+
+    for i in range(julian_day.size):
+
+        jday = julian_day[i]
+
+        dtime_i = (dateRef + datetime.timedelta(days=jday-jdayRef)).replace(tzinfo=datetime.timezone.utc)
+
+        sza_i = 90.0 - pysolar.solar.get_altitude(latitude[i], longitude[i], dtime_i, elevation=altitude[i])
+        if sza_i < 0.0 or sza_i > 90.0:
+            sza_i = np.nan
+        sza[i] = sza_i
+
+        saa_i = pysolar.solar.get_azimuth(latitude[i], longitude[i], dtime_i, elevation=altitude[i])
+        if saa_i >= 0.0:
+            if 0.0<=saa_i<=180.0:
+                saa_i = 180.0 - saa_i
+            elif 180.0<saa_i<=360.0:
+                saa_i = 540.0 - saa_i
+            else:
+                saa_i = np.nan
+        elif saa_i < 0.0:
+            if -180.0<=saa_i<0.0:
+                saa_i = -saa_i + 180.0
+            elif -360.0<=saa_i<-180.0:
+                saa_i = -saa_i - 180.0
+            else:
+                saa_i = np.nan
+        saa[i] = saa_i
+
+    return sza, saa
 
 
 
