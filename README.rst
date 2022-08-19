@@ -48,10 +48,11 @@ Dependencies
     ::
 
         conda install -c conda-forge gdown
-        conda install -c conda-forge cartopy=0.17
+        conda install -c conda-forge cartopy
         conda install -c conda-forge pyhdf
         conda install -c anaconda netcdf4
         conda install -c anaconda beautifulsoup4
+        conda install -c anaconda xarray
 
 |
 

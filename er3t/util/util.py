@@ -6,7 +6,7 @@ import numpy as np
 
 __all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
            'h5dset_to_pydict', 'grid_by_extent', 'grid_by_lonlat', \
-           'download_laads_https'] + \
+           'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_dist', 'cal_cth_hist']
@@ -413,6 +413,73 @@ def download_laads_https(
                 print('Warning [download_laads_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
 
     return fnames_local
+
+
+
+def download_worldview_rgb(
+        date,
+        extent,
+        instrument='modis',
+        satellite='aqua',
+        wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi',
+        fdir='.',
+        proj=None,
+        coastline=False,
+        run=True
+        ):
+
+    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
+        instrument = instrument.upper()
+        satellite  = satellite.lower().title()
+    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper()
+    else:
+        sys.exit('Error   [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite))
+
+    date_s = date.strftime('%Y-%m-%d')
+    fname  = '%s/%s-%s_rgb_%s_%s.png' % (fdir, satellite, instrument, date_s, '-'.join(['%.2f' % extent0 for extent0 in extent]))
+
+    if run:
+
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            msg = 'Error   [download_worldview_rgb]: To use \'download_worldview_rgb\', \'matplotlib\' needs to be installed.'
+            raise ImportError(msg)
+
+        try:
+            from owslib.wmts import WebMapTileService
+        except ImportError:
+            msg = 'Error   [download_worldview_rgb]: To use \'download_worldview_rgb\', \'owslib\' needs to be installed.'
+            raise ImportError(msg)
+
+        try:
+            import cartopy.crs as ccrs
+        except ImportError:
+            msg = 'Error   [download_worldview_rgb]: To use \'download_worldview_rgb\', \'cartopy\' needs to be installed.'
+            raise ImportError(msg)
+
+
+        layer_name = '%s_%s_CorrectedReflectance_TrueColor' % (instrument, satellite)
+
+        if proj is None:
+            proj=ccrs.PlateCarree()
+
+        wmts = WebMapTileService(wmts_cgi)
+
+        fig = plt.figure(figsize=(12, 6))
+        ax1 = fig.add_subplot(111, projection=proj)
+        ax1.add_wmts(wmts, layer_name, wmts_kwargs={'time': date_s})
+        if coastline:
+            ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
+        ax1.set_extent(extent, crs=ccrs.PlateCarree())
+        ax1.outline_patch.set_visible(False)
+        ax1.axis('off')
+        plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
+        plt.close(fig)
+
+    return fname
 
 #\---------------------------------------------------------------------------/
 

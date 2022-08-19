@@ -263,7 +263,46 @@ class viirs_03:
         if not er3t.common.has_netcdf4:
             msg = 'Error   [viirs_03]: To use \'viirs_03\', \'netCDF4\' needs to be installed.'
 
-        from netCDF4 import Dataset
+        if er3t.common.has_xarray:
+
+            import xarray as xr
+
+            with xr.open_dataset(fname, group='geolocation_data') as f:
+
+                lon0 = f.longitude
+                lat0 = f.latitude
+
+                sza0 = f.solar_zenith
+                saa0 = f.solar_azimuth
+                vza0 = f.sensor_zenith
+                vaa0 = f.sensor_azimuth
+
+
+            # if self.extent is None:
+
+            #     if 'actual_range' in lon0.attributes().keys():
+            #         lon_range = lon0.attributes()['actual_range']
+            #         lat_range = lat0.attributes()['actual_range']
+            #     elif 'valid_range' in lon0.attributes().keys():
+            #         lon_range = lon0.attributes()['valid_range']
+            #         lat_range = lat0.attributes()['valid_range']
+            #     else:
+            #         lon_range = [-180.0, 180.0]
+            #         lat_range = [-90.0 , 90.0]
+
+            # else:
+
+            #     lon_range = [self.extent[0], self.extent[1]]
+            #     lat_range = [self.extent[2], self.extent[3]]
+
+            # logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+            # lon       = lon[logic]
+            # lat       = lat[logic]
+
+
+        else:
+            from netCDF4 import Dataset
+
 
         f     = Dataset(fname, 'r')
 
@@ -376,6 +415,66 @@ class viirs_03:
 
 # VIIRS downloader
 #/---------------------------------------------------------------------------\
+
+def download_viirs_rgb(
+        date,
+        extent,
+        which='snpp',
+        wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi',
+        fdir='.',
+        proj=None,
+        coastline=False,
+        run=True
+        ):
+
+    which  = which.lower()
+    date_s = date.strftime('%Y-%m-%d')
+    fname  = '%s/%s_rgb_%s_%s.png' % (fdir, which, date_s, '-'.join(['%.2f' % extent0 for extent0 in extent]))
+
+    if run:
+
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            msg = 'Error   [download_viirs_rgb]: To use \'download_viirs_rgb\', \'matplotlib\' needs to be installed.'
+            raise ImportError(msg)
+
+        try:
+            from owslib.wmts import WebMapTileService
+        except ImportError:
+            msg = 'Error   [download_viirs_rgb]: To use \'download_viirs_rgb\', \'owslib\' needs to be installed.'
+            raise ImportError(msg)
+
+        try:
+            import cartopy.crs as ccrs
+        except ImportError:
+            msg = 'Error   [download_viirs_rgb]: To use \'download_viirs_rgb\', \'cartopy\' needs to be installed.'
+            raise ImportError(msg)
+
+        if which == 'snpp':
+            layer_name = 'VIIRS_SNPP_CorrectedReflectance_TrueColor'
+        elif which == 'noaa':
+            layer_name = 'VIIRS_NOAA20_CorrectedReflectance_TrueColor'
+        else:
+            sys.exit('Error   [download_viirs_rgb]: Only support \'which="aqua"\' or \'which="terra"\'.')
+
+        if proj is None:
+            proj=ccrs.PlateCarree()
+
+        wmts = WebMapTileService(wmts_cgi)
+
+        fig = plt.figure(figsize=(12, 6))
+        ax1 = fig.add_subplot(111, projection=proj)
+        ax1.add_wmts(wmts, layer_name, wmts_kwargs={'time': date_s})
+        if coastline:
+            ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
+        ax1.set_extent(extent, crs=ccrs.PlateCarree())
+        ax1.outline_patch.set_visible(False)
+        ax1.axis('off')
+        plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
+        plt.close(fig)
+
+    return fname
 
 
 #\---------------------------------------------------------------------------/
