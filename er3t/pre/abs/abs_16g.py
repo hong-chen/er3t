@@ -69,7 +69,7 @@ class abs_16g:
         self.nwl       = 1
 
         if self.reference not in er3t.common.references:
-            er3t.common.references.append(reference)
+            er3t.common.references.append(self.reference)
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
