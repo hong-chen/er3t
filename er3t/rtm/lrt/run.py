@@ -38,7 +38,7 @@ def lrt_run(init, verbose=False):
 
 
 
-def lrt_run_mp(inits, ncpu=6):
+def lrt_run_mp(inits, Ncpu=6):
 
     """
     Use multiprocessing to run lrt_run with multiple CPUs
@@ -47,7 +47,7 @@ def lrt_run_mp(inits, ncpu=6):
         Python list of lrt_init objects
     """
 
-    pool = mp.Pool(processes=ncpu)
+    pool = mp.Pool(processes=Ncpu)
     pool.outputs = pool.map(lrt_run, inits)
     pool.close()
     pool.join()

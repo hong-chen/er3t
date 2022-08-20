@@ -103,7 +103,7 @@ def test_flux_03_clear_sky():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, ncpu=6)
+    lrt.lrt_run_mp(inits, Ncpu=6)
 
     data = lrt.lrt_read_uvspec(inits)
 
@@ -152,7 +152,7 @@ def test_flux_04_cloud():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, ncpu=6)
+    lrt.lrt_run_mp(inits, Ncpu=6)
 
     data = lrt.lrt_read_uvspec(inits)
 
@@ -209,7 +209,7 @@ def test_flux_05_cloud_and_aerosol():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, ncpu=6)
+    lrt.lrt_run_mp(inits, Ncpu=6)
 
     data = lrt.lrt_read_uvspec(inits)
 
@@ -311,7 +311,7 @@ def test_rad_03_clear_sky():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, ncpu=6)
+    lrt.lrt_run_mp(inits, Ncpu=6)
 
     data = lrt.lrt_read_uvspec_rad(inits)
 
@@ -360,7 +360,7 @@ def test_rad_04_cloud():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, ncpu=6)
+    lrt.lrt_run_mp(inits, Ncpu=6)
 
     data = lrt.lrt_read_uvspec_rad(inits)
 
@@ -417,7 +417,7 @@ def test_rad_05_cloud_and_aerosol():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, ncpu=6)
+    lrt.lrt_run_mp(inits, Ncpu=6)
 
     data = lrt.lrt_read_uvspec_rad(inits)
 
