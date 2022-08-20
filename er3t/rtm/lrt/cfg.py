@@ -13,7 +13,7 @@ __all__ = ['get_lrt_cfg', 'get_cld_cfg', 'get_aer_cfg']
 def get_lrt_cfg(
         lrt_fdir   = None,
         ssfr_fdir  = er3t.common.fdir_data_ssfr,
-        spectral_resolution=0.1
+        spectral_resolution=0.1,
         ):
 
     if lrt_fdir is None:
@@ -34,6 +34,17 @@ def get_lrt_cfg(
             'slit_function_file_vis' : '%s/vis_%.1fnm_s.dat' % (ssfr_fdir, spectral_resolution),
             'slit_function_file_nir' : '%s/nir_%.1fnm_s.dat' % (ssfr_fdir, spectral_resolution)
             }
+
+    # add reference
+    #/-----------------------------------------------------------------------------\
+    reference = [
+            'Emde, C., Buras-Schnell, R., Kylling, A., Mayer, B., Gasteiger, J., Hamann, U., Kylling, J., Richter, B., Pause, C., Dowling, T., and Bugliaro, L.: The libRadtran software package for radiative transfer calculations (version 2.0.1), Geosci. Model Dev., 9, 1647–1672, doi:10.5194/gmd-9-1647-2016, 2016.',
+            'Mayer, B. and Kylling, A.: Technical note: The libRadtran software package for radiative transfer calculations - description and examples of use, Atmos. Chem. Phys., 5, 1855–1877, doi:10.5194/acp-5-1855-2005, 2005.'
+            ]
+    for reference0 in reference:
+        if reference0 not in er3t.common.references:
+            er3t.common.references.append(reference0)
+    #\-----------------------------------------------------------------------------/
 
     return lrt_cfg
 
