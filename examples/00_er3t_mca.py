@@ -30,7 +30,7 @@ import er3t.common
 
 # global variables
 #/-----------------------------------------------------------------------------\
-photons = 1e7
+photons = 1e8
 Ncpu    = 8
 #\-----------------------------------------------------------------------------/
 
@@ -1308,13 +1308,20 @@ def test_06_rad_cld_gen_hem(
 
 if __name__ == '__main__':
 
+    # irradiance simulation
+    # the following examples should run out-of-box after the installation
+    #/-----------------------------------------------------------------------------\
     # test_01_flux_clear_sky()
     # test_02_flux_les_cloud_3d()
     # test_03_flux_les_cloud_3d_aerosol_1d()
     # test_04_flux_les_cloud_3d_aerosol_3d()
+    #\-----------------------------------------------------------------------------/
 
-    # the following examples rely on libRadtran
+    # radiance simulation
+    # the following examples use Mie but require libRadtran
+    #/-----------------------------------------------------------------------------\
     # test_05_rad_les_cloud_3d_aerosol_3d()
     # test_06_rad_cld_gen_hem()
+    #\-----------------------------------------------------------------------------/
 
     pass

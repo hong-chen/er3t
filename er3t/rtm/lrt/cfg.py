@@ -20,8 +20,8 @@ def get_lrt_cfg(
         if er3t.common.has_libradtran:
             lrt_fdir = os.environ['LIBRADTRAN_V2_DIR']
         else:
-            print('Error   [get_lrt_cfg]: Cannot locate libRadtran. Please make sure libRadtran is installed and specified at enviroment variable <LIBRADTRAN_V2_DIR>.')
-            raise EnvironmentError
+            msg = 'Error [get_lrt_cfg]: Cannot locate libRadtran. Please make sure libRadtran is installed and specified at enviroment variable <LIBRADTRAN_V2_DIR>.'
+            raise OSError(msg)
 
     lrt_cfg = {
             'executable_file'    : '%s/bin/uvspec' % lrt_fdir,

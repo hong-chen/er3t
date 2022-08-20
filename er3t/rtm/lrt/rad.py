@@ -30,7 +30,7 @@ class lrt_init_mono_rad:
               'cld_cfg' for 1D cloud layer specification
               'aer_cfg' for 1D aerosol layer specification
 
-    See eg01_monochromatic.py for detailed usage.
+    See <examples/00_er3t_lrt.py> for detailed usage.
     """
 
     def __init__(self, \
@@ -256,7 +256,7 @@ class lrt_init_spec_rad:
     Limitations: so far, can only deal with wavelengths all smaller than 950nm or wavelengths all greater than 950nm
                  since different wavelength ranges use different slit functions
 
-    See eg02_multichromatic.py for detailed usage.
+    See <examples/00_er3t_lrt.py> for detailed usage.
     """
 
     def __init__(self, \
