@@ -259,6 +259,19 @@ class viirs_03:
         self.logic
         """
 
+        # placeholder for xarray
+        #/-----------------------------------------------------------------------------\
+        # if er3t.common.has_xarray:
+        #     import xarray as xr
+        #     with xr.open_dataset(fname, group='geolocation_data') as f:
+        #         lon0 = f.longitude
+        #         lat0 = f.latitude
+        #         sza0 = f.solar_zenith
+        #         saa0 = f.solar_azimuth
+        #         vza0 = f.sensor_zenith
+        #         vaa0 = f.sensor_azimuth
+        #\-----------------------------------------------------------------------------/
+
         if not er3t.common.has_netcdf4:
             msg = 'Error   [viirs_03]: Please install <netCDF4> to proceed.'
             raise OSError(msg)
@@ -299,22 +312,6 @@ class viirs_03:
         lat   = lat[logic]
         #\-----------------------------------------------------------------------------/
 
-        # if er3t.common.has_xarray:
-
-        #     import xarray as xr
-
-        #     with xr.open_dataset(fname, group='geolocation_data') as f:
-
-        #         lon0 = f.longitude
-        #         lat0 = f.latitude
-
-        #         sza0 = f.solar_zenith
-        #         saa0 = f.solar_azimuth
-        #         vza0 = f.sensor_zenith
-        #         vaa0 = f.sensor_azimuth
-
-
-
         # solar geometries
         #/-----------------------------------------------------------------------------\
         sza0       = f.groups['geolocation_data'].variables['solar_zenith']
@@ -328,7 +325,7 @@ class viirs_03:
         #\-----------------------------------------------------------------------------/
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/-----------------------------------------------------------------------------\
         sza0_data = get_data_nc(sza0)
         saa0_data = get_data_nc(saa0)
         vza0_data = get_data_nc(vza0)
@@ -340,30 +337,30 @@ class viirs_03:
         vaa = vaa0_data[logic]
 
         f.close()
-        # -------------------------------------------------------------------------------------------------
+        #\-----------------------------------------------------------------------------/
 
         if hasattr(self, 'data'):
 
             self.logic[fname] = {'mask':logic}
 
-            self.data['lon']   = dict(name='Longitude'                 , data=np.hstack((self.data['lon']['data'], lon    )), units='degrees')
-            self.data['lat']   = dict(name='Latitude'                  , data=np.hstack((self.data['lat']['data'], lat    )), units='degrees')
-            self.data['sza']   = dict(name='Solar Zenith Angle'        , data=np.hstack((self.data['sza']['data'], sza    )), units='degrees')
-            self.data['saa']   = dict(name='Solar Azimuth Angle'       , data=np.hstack((self.data['saa']['data'], saa    )), units='degrees')
-            self.data['vza']   = dict(name='Sensor Zenith Angle'       , data=np.hstack((self.data['vza']['data'], vza    )), units='degrees')
-            self.data['vaa']   = dict(name='Sensor Azimuth Angle'      , data=np.hstack((self.data['vaa']['data'], vaa    )), units='degrees')
+            self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            self.data['sza'] = dict(name='Solar Zenith Angle'  , data=np.hstack((self.data['sza']['data'], sza)), units='degrees')
+            self.data['saa'] = dict(name='Solar Azimuth Angle' , data=np.hstack((self.data['saa']['data'], saa)), units='degrees')
+            self.data['vza'] = dict(name='Sensor Zenith Angle' , data=np.hstack((self.data['vza']['data'], vza)), units='degrees')
+            self.data['vaa'] = dict(name='Sensor Azimuth Angle', data=np.hstack((self.data['vaa']['data'], vaa)), units='degrees')
 
         else:
             self.logic = {}
             self.logic[fname] = {'mask':logic}
 
             self.data  = {}
-            self.data['lon']   = dict(name='Longitude'                 , data=lon    , units='degrees')
-            self.data['lat']   = dict(name='Latitude'                  , data=lat    , units='degrees')
-            self.data['sza']   = dict(name='Solar Zenith Angle'        , data=sza    , units='degrees')
-            self.data['saa']   = dict(name='Solar Azimuth Angle'       , data=saa    , units='degrees')
-            self.data['vza']   = dict(name='Sensor Zenith Angle'       , data=vza    , units='degrees')
-            self.data['vaa']   = dict(name='Sensor Azimuth Angle'      , data=vaa    , units='degrees')
+            self.data['lon'] = dict(name='Longitude'           , data=lon, units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=lat, units='degrees')
+            self.data['sza'] = dict(name='Solar Zenith Angle'  , data=sza, units='degrees')
+            self.data['saa'] = dict(name='Solar Azimuth Angle' , data=saa, units='degrees')
+            self.data['vza'] = dict(name='Sensor Zenith Angle' , data=vza, units='degrees')
+            self.data['vaa'] = dict(name='Sensor Azimuth Angle', data=vaa, units='degrees')
 
 
     def read_vars(self, fname, vnames=[]):
@@ -387,7 +384,7 @@ class viirs_03:
             else:
                 self.data[vname.lower()] = dict(name=vname.lower().title(), data=data, units=data0.getncattr('units'))
 
-        f.end()
+        f.close()
 
 #\---------------------------------------------------------------------------/
 
