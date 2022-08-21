@@ -7,7 +7,7 @@ import warnings
 
 __all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
            'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
-           'grid_by_extent', 'grid_by_lonlat', \
+           'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
            'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
@@ -338,6 +338,31 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest'):
         logic = np.isnan(data_2d0)
         data_2d0[logic] = 0.0
         return lon_2d, lat_2d, data_2d0
+
+
+
+def get_doy_tag(date, day_interval=8):
+
+    """
+    Get day of year tag, e.g., 078, for a given day
+
+    Input:
+        date: datetime/date object, e.g., datetime.datetime(2000, 1, 1)
+
+    Output:
+        doy_tag: string, closest day of the year, e.g. '097'
+
+    """
+
+    doy = date.timetuple().tm_yday
+
+    day_total = datetime.datetime(date.year, 12, 31).timetuple().tm_yday
+
+    doys = np.arange(1, day_total+1, day_interval)
+
+    doy_tag = '%3.3d' % doys[np.argmin(np.abs(doys-doy))]
+
+    return doy_tag
 
 
 

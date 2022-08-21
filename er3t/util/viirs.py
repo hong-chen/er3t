@@ -198,7 +198,6 @@ class viirs_l1b:
             print('Message [viirs_l1b]: File \'%s\' is created.' % fname)
 
 
-
 class viirs_03:
 
     """
@@ -232,7 +231,7 @@ class viirs_03:
                  overwrite = False, \
                  verbose   = False):
 
-        self.fnames     = fnames      # file name of the pickle file
+        self.fnames     = fnames      # file name of the raw netCDF files
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
 
@@ -261,64 +260,23 @@ class viirs_03:
         """
 
         if not er3t.common.has_netcdf4:
-            msg = 'Error   [viirs_03]: To use \'viirs_03\', \'netCDF4\' needs to be installed.'
-
-        if er3t.common.has_xarray:
-
-            import xarray as xr
-
-            with xr.open_dataset(fname, group='geolocation_data') as f:
-
-                lon0 = f.longitude
-                lat0 = f.latitude
-
-                sza0 = f.solar_zenith
-                saa0 = f.solar_azimuth
-                vza0 = f.sensor_zenith
-                vaa0 = f.sensor_azimuth
-
-
-            # if self.extent is None:
-
-            #     if 'actual_range' in lon0.attributes().keys():
-            #         lon_range = lon0.attributes()['actual_range']
-            #         lat_range = lat0.attributes()['actual_range']
-            #     elif 'valid_range' in lon0.attributes().keys():
-            #         lon_range = lon0.attributes()['valid_range']
-            #         lat_range = lat0.attributes()['valid_range']
-            #     else:
-            #         lon_range = [-180.0, 180.0]
-            #         lat_range = [-90.0 , 90.0]
-
-            # else:
-
-            #     lon_range = [self.extent[0], self.extent[1]]
-            #     lat_range = [self.extent[2], self.extent[3]]
-
-            # logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
-            # lon       = lon[logic]
-            # lat       = lat[logic]
-
-
+            msg = 'Error   [viirs_03]: Please install <netCDF4> to proceed.'
+            raise OSError(msg)
         else:
             from netCDF4 import Dataset
 
-
         f     = Dataset(fname, 'r')
 
-        # lon lat
+        # geolocation
+        #/-----------------------------------------------------------------------------\
         lat0       = f.groups['geolocation_data'].variables['latitude']
         lon0       = f.groups['geolocation_data'].variables['longitude']
+        #\-----------------------------------------------------------------------------/
 
-        sza0       = f.groups['geolocation_data'].variables['solar_zenith']
-        saa0       = f.groups['geolocation_data'].variables['solar_azimuth']
-        vza0       = f.groups['geolocation_data'].variables['sensor_zenith']
-        vaa0       = f.groups['geolocation_data'].variables['sensor_azimuth']
-
-
+        # only crop necessary data
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        #/---------------------------------------------------------------------------\
+        #/-----------------------------------------------------------------------------\
         lon = lon0[:]
         lat = lat0[:]
 
@@ -342,7 +300,37 @@ class viirs_03:
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]
         lat       = lat[logic]
-        #\---------------------------------------------------------------------------/
+        #\-----------------------------------------------------------------------------/
+
+        # if er3t.common.has_xarray:
+
+        #     import xarray as xr
+
+        #     with xr.open_dataset(fname, group='geolocation_data') as f:
+
+        #         lon0 = f.longitude
+        #         lat0 = f.latitude
+
+        #         sza0 = f.solar_zenith
+        #         saa0 = f.solar_azimuth
+        #         vza0 = f.sensor_zenith
+        #         vaa0 = f.sensor_azimuth
+
+
+
+        # solar geometries
+        #/-----------------------------------------------------------------------------\
+        sza0       = f.groups['geolocation_data'].variables['solar_zenith']
+        saa0       = f.groups['geolocation_data'].variables['solar_azimuth']
+        #\-----------------------------------------------------------------------------/
+
+        # sensor geometries
+        #/-----------------------------------------------------------------------------\
+        vza0       = f.groups['geolocation_data'].variables['sensor_zenith']
+        vaa0       = f.groups['geolocation_data'].variables['sensor_azimuth']
+        #\-----------------------------------------------------------------------------/
+
+
 
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa

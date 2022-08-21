@@ -36,7 +36,11 @@ def test_download_worldview():
 def test_download_laads():
 
     from er3t.util import download_laads_https
+    from er3t.util import get_doy_tag
 
+    date = datetime.datetime(2022, 5, 18)
+    doy_tag = get_doy_tag(date, day_interval=1)
+    print(doy_tag)
 
 
     pass
@@ -64,23 +68,14 @@ def test_modis():
 
 def test_viirs():
 
-    data_tag = '5200/VNP02IMG'
+    import er3t.util.viirs
 
-    fname_03 = 'data/VNP03IMG.A2020140.1400.002.2021125145414.nc'
-    with xr.open_dataset(fname_03, group='geolocation_data') as f_03:
-        lon = f_03.longitude
-        lat = f_03.latitude
+    # data_tag = '5200/VNP02IMG'
+    # data_tag = '5200/VNP03IMG'
 
-        if lon.valid_min == -180.0:
-            lon[lon<0.0] += 360.0
+    fname_03  = 'tmp-data/VNP03IMG.A2022138.1912.002.2022139022209.nc'
 
-        print(lon)
-    exit()
-
-    fname_l1b = 'data/VNP02IMG.A2020140.1400.002.2021127041009.nc'
-    with xr.open_dataset(fname_l1b, group='observation_data') as f_l1b:
-        rad = f_l1b.I01
-
+    fname_l1b = 'tmp-data/VNP02IMG.A2022138.1912.002.2022139023833.nc'
 
     #/---------------------------------------------------------------------------\
     fig = plt.figure(figsize=(8, 6))
@@ -126,11 +121,10 @@ if __name__ == '__main__':
 
     # test_modis()
 
-    # test_viirs()
-
-
-    test_download_worldview() # passed test on 2022-08-19
+    # test_download_worldview() # passed test on 2022-08-19
 
     # test_download_laads()
+
+    test_viirs()
 
     # main()

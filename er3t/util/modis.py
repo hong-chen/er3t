@@ -9,12 +9,12 @@ import shutil
 from http.cookiejar import CookieJar
 import urllib.request
 import requests
-from er3t.util import check_equal
+from er3t.util import check_equal, get_doy_tag
 
 
 
 __all__ = ['get_data', 'modis_l1b', 'modis_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'upscale_modis_lonlat', \
-           'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag', 'get_doy_tag']
+           'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag']
 
 
 # reader for MODIS (Moderate Resolution Imaging Spectroradiometer)
@@ -1432,31 +1432,6 @@ def get_sinusoidal_grid_tag(lon, lat, verbose=False):
                 tile_tags.append(tile_tag)
 
     return tile_tags
-
-
-
-def get_doy_tag(date, day_interval=8):
-
-    """
-    Get day of year tag, e.g., 078, for a given day
-
-    Input:
-        date: datetime/date object, e.g., datetime.datetime(2000, 1, 1)
-
-    Output:
-        doy_tag: string, closest day of the year, e.g. '097'
-
-    """
-
-    doy = date.timetuple().tm_yday
-
-    day_total = datetime.datetime(date.year, 12, 31).timetuple().tm_yday
-
-    doys = np.arange(1, day_total+1, day_interval)
-
-    doy_tag = '%3.3d' % doys[np.argmin(np.abs(doys-doy))]
-
-    return doy_tag
 
 #\-----------------------------------------------------------------------------/
 
