@@ -214,7 +214,7 @@ class viirs_03:
 class viirs_l1b:
 
     """
-    Read VIIRS Level 1B file into an object `viirs_l1b`
+    Read VIIRS Level 1B file into an object <viirs_l1b>
 
     Input:
         fnames=     : keyword argument, default=None, Python list of the file path of the original netCDF files
@@ -249,18 +249,21 @@ class viirs_l1b:
         self.verbose    = verbose     # verbose tag
         self.quiet      = quiet       # quiet tag
 
-
         if resolution is None:
             filename = os.path.basename(fnames[0]).lower()
-            if 'qkm' in filename:
-                self.resolution = 0.25
-            elif 'hkm' in filename:
-                self.resolution = 0.5
-            elif '1km' in filename:
-                self.resolution = 1.0
+            if '02img' in filename:
+                self.resolution = 0.375
+            elif ('02mod' in filename) or ('02dnb' in filename):
+                self.resolution = 0.75
             else:
-                sys.exit('Error   [viirs_l1b]: Resolution (in km) is not defined.')
+                msg = 'Error [viirs_l1b]: Resolution (in km) is not defined.'
+                raise ValueError(msg)
         else:
+
+            if resolution not in [0.375, 0.75]:
+                msg = 'Error [viirs_l1b]: Resolution of %f km is invalid.' % resolution
+                raise ValueError(msg)
+
             self.resolution = resolution
 
         for fname in self.fnames:
@@ -282,99 +285,43 @@ class viirs_l1b:
         try:
             from netCDF4 import Dataset
         except ImportError:
-            msg = 'Warning [viirs_l1b]: To use \'viirs_l1b\', \'netCDF4\' needs to be installed.'
+            msg = 'Error [viirs_l1b]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
-        f     = SD(fname, SDC.READ)
+        f = Dataset(fname, 'r')
 
-        # lon lat
-        lat0       = f.select('Latitude')
-        lon0       = f.select('Longitude')
-
-        # when resolution equals to 250 m
-        if check_equal(self.resolution, 0.25):
-            lon, lat  = upscale_viirs_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
-            raw0      = f.select('EV_250_RefSB')
-            wvl       = np.array([650.0, 860.0])
-
-        # when resolution equals to 500 m
-        elif check_equal(self.resolution, 0.5):
-            lon, lat  = upscale_viirs_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
-            raw0      = f.select('EV_500_RefSB')
-            wvl       = np.array([470.0, 555.0, 1240.0, 1640.0, 2130.0])
-
-        # when resolution equals to 1000 m
-        elif check_equal(self.resolution, 1.0):
-            # lon, lat  = upscale_viirs_lonlat(lon0[:], lat0[:], scale=5, extra_grid=False)
-            sys.exit('Error   [viirs_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
-
-        else:
-            sys.exit('Error   [viirs_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
-
-
-        # 1. If region (extent=) is specified, filter data within the specified region
-        # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        if self.extent is None:
-
-            if 'actual_range' in lon0.attributes().keys():
-                lon_range = lon0.attributes()['actual_range']
-                lat_range = lat0.attributes()['actual_range']
-            elif 'valid_range' in lon0.attributes().keys():
-                lon_range = lon0.attributes()['valid_range']
-                lat_range = lat0.attributes()['valid_range']
-            else:
-                lon_range = [-180.0, 180.0]
-                lat_range = [-90.0 , 90.0]
-
-        else:
-
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
-
-        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
-        lon       = lon[logic]
-        lat       = lat[logic]
-        # -------------------------------------------------------------------------------------------------
+        raw0 = f.groups('observation_data').variables('I01')
 
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        raw = raw0[:][:, logic]
+        #/-----------------------------------------------------------------------------\
+        raw = raw0[:][logic]
         rad = np.zeros(raw.shape, dtype=np.float64)
         ref = np.zeros(raw.shape, dtype=np.float64)
-        cnt = np.zeros(raw.shape, dtype=np.float64)
 
         for i in range(raw.shape[0]):
 
-            rad[i, ...]  = raw[i, ...]*raw0.attributes()['radiance_scales'][i]         + raw0.attributes()['radiance_offsets'][i]
-            rad[i, ...] /= 1000.0 # convert to W/m^2/nm/sr
-            ref[i, ...]  = raw[i, ...]*raw0.attributes()['reflectance_scales'][i]      + raw0.attributes()['reflectance_offsets'][i]
-            cnt[i, ...]  = raw[i, ...]*raw0.attributes()['corrected_counts_scales'][i] + raw0.attributes()['corrected_counts_offsets'][i]
+            rad = raw*raw0.getncattr('radiance_scale_factor') + raw0.getncattr('radiance_add_offset')
+            ref = raw*raw0.getncattr('scale_factor') + raw0.getncattr('add_offset')
 
         f.close()
-        # -------------------------------------------------------------------------------------------------
-
-
+        #\-----------------------------------------------------------------------------/
 
         if hasattr(self, 'data'):
 
-            self.data['lon'] = dict(name='Longitude'        , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
-            self.data['lat'] = dict(name='Latitude'         , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
-            self.data['rad'] = dict(name='Radiance'         , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance'      , data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
-            self.data['cnt'] = dict(name='Corrected Counts' , data=np.hstack((self.data['cnt']['data'], cnt)), units='N/A')
-
+            self.data['lon'] = dict(name='Longitude'  , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+            self.data['lat'] = dict(name='Latitude'   , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            self.data['rad'] = dict(name='Radiance'   , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
 
         else:
 
             self.data = {}
-            self.data['lon'] = dict(name='Longitude'        , data=lon, units='degrees')
-            self.data['lat'] = dict(name='Latitude'         , data=lat, units='degrees')
-            self.data['wvl'] = dict(name='Wavelength'       , data=wvl, units='nm')
-            self.data['rad'] = dict(name='Radiance'         , data=rad, units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance'      , data=ref, units='N/A')
-            self.data['cnt'] = dict(name='Corrected Counts' , data=cnt, units='N/A')
+            self.data['lon'] = dict(name='Longitude'  , data=lon, units='degrees')
+            self.data['lat'] = dict(name='Latitude'   , data=lat, units='degrees')
+            self.data['wvl'] = dict(name='Wavelength' , data=wvl, units='nm')
+            self.data['rad'] = dict(name='Radiance'   , data=rad, units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance', data=ref, units='N/A')
 
 
     def save_h5(self, fname):
@@ -385,7 +332,7 @@ class viirs_l1b:
         f.close()
 
         if not self.quiet:
-            print('Message [viirs_l1b]: File \'%s\' is created.' % fname)
+            print('Message [viirs_l1b]: File <%s> is created.' % fname)
 
 #\---------------------------------------------------------------------------/
 
