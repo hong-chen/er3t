@@ -7,6 +7,7 @@ import warnings
 
 __all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
            'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
+           'get_data_nc', 'get_data_h4',
            'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
            'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'mmr2vmr', \
@@ -213,6 +214,40 @@ def jday_to_dtime(jday):
     dtime = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds=np.round(((jday-1)*86400.0), decimals=0))
 
     return dtime
+
+
+
+def get_data_nc(nc_dset, mask=True):
+
+    attrs = nc_dset.ncattrs()
+    data  = nc_dset[:]
+
+    if 'scale_factor' in attrs:
+        data = data * nc_dset.getncattr('scale_factor')
+
+    if 'add_offset' in attrs:
+        data = data + nc_dset.getncattr('add_offset')
+
+    if mask:
+        if '_FillValue' in attrs:
+            data[data==nc_dset.getncattr('_FillValue')] = np.nan
+
+    return data
+
+
+
+def get_data_h4(hdf_dset):
+
+    attrs = hdf_dset.attributes()
+    data  = hdf_dset[:]
+
+    if 'scale_factor' in attrs:
+        data = data * attrs['scale_factor']
+
+    if 'add_offset' in attrs:
+        data = data + attrs['add_offset']
+
+    return data
 
 
 

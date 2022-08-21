@@ -9,11 +9,11 @@ import shutil
 from http.cookiejar import CookieJar
 import urllib.request
 import requests
-from er3t.util import check_equal, get_doy_tag
+from er3t.util import check_equal, get_doy_tag, get_data_h4
 
 
 
-__all__ = ['get_data', 'modis_l1b', 'modis_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'upscale_modis_lonlat', \
+__all__ = ['modis_l1b', 'modis_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'upscale_modis_lonlat', \
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag']
 
 
@@ -330,13 +330,13 @@ class modis_l2:
 
         # Calculate 1. cot, 2. cer, 3. ctp
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        ctp0_data     = get_data(ctp0)
-        cot0_data     = get_data(cot0)
-        cer0_data     = get_data(cer0)
-        cot1_data     = get_data(cot1)
-        cer1_data     = get_data(cer1)
-        cot_err0_data = get_data(cot_err0)
-        cer_err0_data = get_data(cer_err0)
+        ctp0_data     = get_data_h4(ctp0)
+        cot0_data     = get_data_h4(cot0)
+        cer0_data     = get_data_h4(cer0)
+        cot1_data     = get_data_h4(cot1)
+        cer1_data     = get_data_h4(cer1)
+        cot_err0_data = get_data_h4(cot_err0)
+        cer_err0_data = get_data_h4(cer_err0)
 
         ctp     = ctp0_data.copy()
         cot     = cot0_data.copy()
@@ -417,7 +417,7 @@ class modis_l2:
         for vname in vnames:
 
             data0 = f.select(vname)
-            data  = get_data(data0)[logic]
+            data  = get_data_h4(data0)[logic]
             if vname.lower() in self.data.keys():
                 self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.attributes()['units'])
             else:
@@ -537,10 +537,10 @@ class modis_03:
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        sza0_data = get_data(sza0)
-        saa0_data = get_data(saa0)
-        vza0_data = get_data(vza0)
-        vaa0_data = get_data(vaa0)
+        sza0_data = get_data_h4(sza0)
+        saa0_data = get_data_h4(saa0)
+        vza0_data = get_data_h4(vza0)
+        vaa0_data = get_data_h4(vaa0)
 
         sza = sza0_data[logic]
         saa = saa0_data[logic]
@@ -589,7 +589,7 @@ class modis_03:
         for vname in vnames:
 
             data0 = f.select(vname)
-            data  = get_data(data0)[logic]
+            data  = get_data_h4(data0)[logic]
             if vname.lower() in self.data.keys():
                 self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.attributes()['units'])
             else:
@@ -702,7 +702,7 @@ class modis_09a1:
         ref = np.zeros((Nchan, logic.sum()), dtype=np.float64)
         for ichan in range(Nchan):
             data0 = f.select('sur_refl_b%2.2d' % (ichan+1))
-            data  = get_data(data0)[logic]
+            data  = get_data_h4(data0)[logic]
             ref[ichan, :] = data
 
         ref[ref>1.0] = 0.0
@@ -832,11 +832,11 @@ class modis_43a3:
 
         for ichan in range(Nchan):
             data0 = f.select('Albedo_BSA_Band%d' % (ichan+1))
-            data  = get_data(data0)[logic]
+            data  = get_data_h4(data0)[logic]
             bsky_alb[ichan, :] = data
 
             data0 = f.select('Albedo_WSA_Band%d' % (ichan+1))
-            data  = get_data(data0)[logic]
+            data  = get_data_h4(data0)[logic]
             wsky_alb[ichan, :] = data
 
         bsky_alb[bsky_alb>1.0] = -1.0
@@ -950,21 +950,6 @@ class modis_tiff:
 
 # Useful functions
 #/-----------------------------------------------------------------------------\
-
-def get_data(hdf_dset):
-
-    attrs = hdf_dset.attributes()
-    data  = hdf_dset[:]
-
-    if 'scale_factor' in attrs:
-        data = data * attrs['scale_factor']
-
-    if 'add_offset' in attrs:
-        data = data + attrs['add_offset']
-
-    return data
-
-
 
 def upscale_modis_lonlat(lon_in, lat_in, scale=5, extra_grid=True):
 

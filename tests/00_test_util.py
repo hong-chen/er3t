@@ -74,13 +74,16 @@ def test_viirs():
     # data_tag = '5200/VNP03IMG'
 
     fname_03  = 'tmp-data/VNP03IMG.A2022138.1912.002.2022139022209.nc'
+    extent = [-94.2607, -87.2079, 31.8594, 38.9122]
+    # f03 = er3t.util.viirs.viirs_03(fnames=[fname_03], extent=extent)
+    f03 = er3t.util.viirs.viirs_03(fnames=[fname_03], extent=None)
 
-    fname_l1b = 'tmp-data/VNP02IMG.A2022138.1912.002.2022139023833.nc'
+    # fname_l1b = 'tmp-data/VNP02IMG.A2022138.1912.002.2022139023833.nc'
 
     #/---------------------------------------------------------------------------\
     fig = plt.figure(figsize=(8, 6))
     ax1 = fig.add_subplot(111)
-    ax1.scatter(lon, lat, c=rad, lw=0.0, cmap='Greys_r', vmin=0.0, vmax=1.0, s=3)
+    ax1.scatter(f03.data['lon']['data'], f03.data['lat']['data'], c=f03.data['vaa']['data'], lw=0.0, cmap='jet', s=3)
     # ax1.imshow(.T, extent=extent, origin='lower', cmap='jet', zorder=0)
     # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
     # ax1.set_xlim(())

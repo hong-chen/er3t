@@ -11,7 +11,7 @@ import urllib.request
 import requests
 
 import er3t.common
-from er3t.util import check_equal
+from er3t.util import check_equal, get_data_nc
 
 
 
@@ -277,17 +277,11 @@ class viirs_03:
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
         #/-----------------------------------------------------------------------------\
-        lon = lon0[:]
-        lat = lat0[:]
-
         if self.extent is None:
 
-            if 'actual_range' in lon0.attributes().keys():
-                lon_range = lon0.attributes()['actual_range']
-                lat_range = lat0.attributes()['actual_range']
-            elif 'valid_range' in lon0.attributes().keys():
-                lon_range = lon0.attributes()['valid_range']
-                lat_range = lat0.attributes()['valid_range']
+            if 'valid_min' in lon0.ncattrs():
+                lon_range = [lon0.getncattr('valid_min'), lon0.getncattr('valid_max')]
+                lat_range = [lon0.getncattr('valid_min'), lon0.getncattr('valid_max')]
             else:
                 lon_range = [-180.0, 180.0]
                 lat_range = [-90.0 , 90.0]
@@ -297,9 +291,12 @@ class viirs_03:
             lon_range = [self.extent[0], self.extent[1]]
             lat_range = [self.extent[2], self.extent[3]]
 
-        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
-        lon       = lon[logic]
-        lat       = lat[logic]
+        lon = lon0[:]
+        lat = lat0[:]
+
+        logic = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+        lon   = lon[logic]
+        lat   = lat[logic]
         #\-----------------------------------------------------------------------------/
 
         # if er3t.common.has_xarray:
@@ -330,27 +327,24 @@ class viirs_03:
         vaa0       = f.groups['geolocation_data'].variables['sensor_azimuth']
         #\-----------------------------------------------------------------------------/
 
-
-
-
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        sza0_data = get_data(sza0)
-        saa0_data = get_data(saa0)
-        vza0_data = get_data(vza0)
-        vaa0_data = get_data(vaa0)
+        sza0_data = get_data_nc(sza0)
+        saa0_data = get_data_nc(saa0)
+        vza0_data = get_data_nc(vza0)
+        vaa0_data = get_data_nc(vaa0)
 
         sza = sza0_data[logic]
         saa = saa0_data[logic]
         vza = vza0_data[logic]
         vaa = vaa0_data[logic]
 
-        f.end()
+        f.close()
         # -------------------------------------------------------------------------------------------------
 
         if hasattr(self, 'data'):
 
-            self.logic[fname] = {'1km':logic}
+            self.logic[fname] = {'mask':logic}
 
             self.data['lon']   = dict(name='Longitude'                 , data=np.hstack((self.data['lon']['data'], lon    )), units='degrees')
             self.data['lat']   = dict(name='Latitude'                  , data=np.hstack((self.data['lat']['data'], lat    )), units='degrees')
@@ -361,7 +355,7 @@ class viirs_03:
 
         else:
             self.logic = {}
-            self.logic[fname] = {'1km':logic}
+            self.logic[fname] = {'mask':logic}
 
             self.data  = {}
             self.data['lon']   = dict(name='Longitude'                 , data=lon    , units='degrees')
@@ -377,21 +371,21 @@ class viirs_03:
         try:
             from netCDF4 import Dataset
         except ImportError:
-            msg = 'Warning [viirs_03]: To use \'viirs_03\', \'netCDF4\' needs to be installed.'
+            msg = 'Error [viirs_03]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
-        logic = self.logic[fname]['1km']
+        logic = self.logic[fname]['mask']
 
-        f     = SD(fname, SDC.READ)
+        f = Dataset(fname, 'r')
 
         for vname in vnames:
 
-            data0 = f.select(vname)
-            data  = get_data(data0)[logic]
+            data0 = f.groups['geolocation_data'].variables[vname]
+            data  = get_data_nc(data0)[logic]
             if vname.lower() in self.data.keys():
-                self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.attributes()['units'])
+                self.data[vname.lower()] = dict(name=vname.lower().title(), data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.getncattr('units'))
             else:
-                self.data[vname.lower()] = dict(name=vname, data=data, units=data0.attributes()['units'])
+                self.data[vname.lower()] = dict(name=vname.lower().title(), data=data, units=data0.getncattr('units'))
 
         f.end()
 
@@ -403,67 +397,6 @@ class viirs_03:
 
 # VIIRS downloader
 #/---------------------------------------------------------------------------\
-
-def download_viirs_rgb(
-        date,
-        extent,
-        which='snpp',
-        wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi',
-        fdir='.',
-        proj=None,
-        coastline=False,
-        run=True
-        ):
-
-    which  = which.lower()
-    date_s = date.strftime('%Y-%m-%d')
-    fname  = '%s/%s_rgb_%s_%s.png' % (fdir, which, date_s, '-'.join(['%.2f' % extent0 for extent0 in extent]))
-
-    if run:
-
-        try:
-            import matplotlib.pyplot as plt
-        except ImportError:
-            msg = 'Error   [download_viirs_rgb]: To use \'download_viirs_rgb\', \'matplotlib\' needs to be installed.'
-            raise ImportError(msg)
-
-        try:
-            from owslib.wmts import WebMapTileService
-        except ImportError:
-            msg = 'Error   [download_viirs_rgb]: To use \'download_viirs_rgb\', \'owslib\' needs to be installed.'
-            raise ImportError(msg)
-
-        try:
-            import cartopy.crs as ccrs
-        except ImportError:
-            msg = 'Error   [download_viirs_rgb]: To use \'download_viirs_rgb\', \'cartopy\' needs to be installed.'
-            raise ImportError(msg)
-
-        if which == 'snpp':
-            layer_name = 'VIIRS_SNPP_CorrectedReflectance_TrueColor'
-        elif which == 'noaa':
-            layer_name = 'VIIRS_NOAA20_CorrectedReflectance_TrueColor'
-        else:
-            sys.exit('Error   [download_viirs_rgb]: Only support \'which="aqua"\' or \'which="terra"\'.')
-
-        if proj is None:
-            proj=ccrs.PlateCarree()
-
-        wmts = WebMapTileService(wmts_cgi)
-
-        fig = plt.figure(figsize=(12, 6))
-        ax1 = fig.add_subplot(111, projection=proj)
-        ax1.add_wmts(wmts, layer_name, wmts_kwargs={'time': date_s})
-        if coastline:
-            ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
-        ax1.set_extent(extent, crs=ccrs.PlateCarree())
-        ax1.outline_patch.set_visible(False)
-        ax1.axis('off')
-        plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
-        plt.close(fig)
-
-    return fname
-
 
 #\---------------------------------------------------------------------------/
 
