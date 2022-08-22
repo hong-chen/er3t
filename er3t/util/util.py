@@ -222,6 +222,10 @@ def get_data_nc(nc_dset, mask=True):
     attrs = nc_dset.ncattrs()
     data  = nc_dset[:]
 
+    if mask:
+        if '_FillValue' in attrs:
+            data[data==nc_dset.getncattr('_FillValue')] = np.nan
+
     if 'scale_factor' in attrs:
         data = data * nc_dset.getncattr('scale_factor')
 
