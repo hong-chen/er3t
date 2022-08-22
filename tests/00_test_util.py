@@ -79,12 +79,13 @@ def test_viirs():
 
     import er3t.util.viirs
 
-    fname_03  = 'tmp-data/VNP03IMG.A2022138.1912.002.2022139022209.nc'
+    # fname_03  = 'tmp-data/VNP03IMG.A2022138.1912.002.2022139022209.nc'
+    fname_03  = 'tmp-data/VNP03MOD.A2022138.1912.002.2022139022209.nc'
     extent = [-94.2607, -87.2079, 31.8594, 38.9122]
     f03 = er3t.util.viirs.viirs_03(fnames=[fname_03], extent=extent, vnames=['height'])
 
-    fname_l1b = 'tmp-data/VNP02IMG.A2022138.1912.002.2022139023833.nc'
-    f02 = er3t.util.viirs.viirs_l1b(fnames=[fname_l1b], f03=f03)
+    fname_l1b = 'tmp-data/VNP02MOD.A2022138.1912.002.2022139023833.nc'
+    f02 = er3t.util.viirs.viirs_l1b(fnames=[fname_l1b], f03=f03, band='M04')
 
     lon_2d, lat_2d, rad_2d = grid_by_extent(f02.data['lon']['data'], f02.data['lat']['data'], f02.data['rad']['data'].filled(fill_value=np.nan), extent=extent)
     lon_2d, lat_2d, ref_2d = grid_by_extent(f02.data['lon']['data'], f02.data['lat']['data'], f02.data['ref']['data'].filled(fill_value=np.nan), extent=extent)
@@ -99,12 +100,15 @@ def test_viirs():
     ax1.set_xlabel('Longitude [$^\circ$]')
     ax1.set_ylabel('Latitude [$^\circ$]')
     ax1.set_title('VIIRS (Suomi NPP) RGB')
+    divider = make_axes_locatable(ax1)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cax.axis('off')
 
     ax2 = fig.add_subplot(132)
     cs  = ax2.imshow(rad_2d.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=0.4)
     ax2.set_xlabel('Longitude [$^\circ$]')
     ax2.set_ylabel('Latitude [$^\circ$]')
-    ax2.set_title('VIIRS Radiance (Band I01, 650 nm)')
+    ax2.set_title('VIIRS Radiance (Band M4, 555 nm)')
     divider = make_axes_locatable(ax2)
     cax = divider.append_axes('right', '5%', pad='3%')
     fig.colorbar(cs, cax=cax)
@@ -113,7 +117,7 @@ def test_viirs():
     cs = ax3.imshow(ref_2d.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=1.0)
     ax3.set_xlabel('Longitude [$^\circ$]')
     ax3.set_ylabel('Latitude [$^\circ$]')
-    ax3.set_title('VIIRS Reflectance (Band I01, 650 nm)')
+    ax3.set_title('VIIRS Reflectance (Band M4, 555 nm)')
     divider = make_axes_locatable(ax3)
     cax = divider.append_axes('right', '5%', pad='3%')
     fig.colorbar(cs, cax=cax)

@@ -238,7 +238,7 @@ class viirs_l1b:
     def __init__(self, \
                  fnames    = None,  \
                  f03       = None,  \
-                 band      = 'I01', \
+                 band      = 'M04', \
                  resolution= None,  \
                  overwrite = False, \
                  quiet     = True,  \
@@ -254,8 +254,7 @@ class viirs_l1b:
                 'I01': 640,
                 'I02': 860,
                 'I03': 1620,
-                'I04': 3750,
-                'I05': 11500,
+                'M04': 555,
                 }
         self.wvl = wvls[self.band]
 
@@ -361,7 +360,7 @@ class viirs_l1b:
 # VIIRS tools
 #/---------------------------------------------------------------------------\
 
-def get_fname_pattern(fname, index_s=1, index_e=2):
+def get_fname_pattern(fname, index_s=1, index_e=3):
 
     filename = os.path.basename(fname)
     pattern  = '.'.join(filename.split('.')[index_s:index_e+1])
