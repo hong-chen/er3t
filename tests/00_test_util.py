@@ -3,12 +3,19 @@ Purpose:
     testing code under er3t/util
 """
 
-import er3t
+import os
+import sys
+import glob
 import datetime
-import xarray as xr
-from er3t.util.viirs import *
+import multiprocessing as mp
+
+import numpy as np
+from scipy import interpolate
+
 
 import matplotlib as mpl
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.image as mpl_img
 # mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator
@@ -17,6 +24,8 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 # import cartopy.crs as ccrs
 
+import er3t
+from er3t.util import grid_by_extent
 
 
 def test_download_worldview():
@@ -70,34 +79,50 @@ def test_viirs():
 
     import er3t.util.viirs
 
-    # data_tag = '5200/VNP02IMG'
-    # data_tag = '5200/VNP03IMG'
-
     fname_03  = 'tmp-data/VNP03IMG.A2022138.1912.002.2022139022209.nc'
     extent = [-94.2607, -87.2079, 31.8594, 38.9122]
     f03 = er3t.util.viirs.viirs_03(fnames=[fname_03], extent=extent, vnames=['height'])
-    print(f03.logic.keys())
-    exit()
 
-    # fname_l1b = 'tmp-data/VNP02IMG.A2022138.1912.002.2022139023833.nc'
+    fname_l1b = 'tmp-data/VNP02IMG.A2022138.1912.002.2022139023833.nc'
+    f02 = er3t.util.viirs.viirs_l1b(fnames=[fname_l1b], f03=f03)
+
+    lon_2d, lat_2d, rad_2d = grid_by_extent(f02.data['lon']['data'], f02.data['lat']['data'], f02.data['rad']['data'].filled(fill_value=np.nan), extent=extent)
+    lon_2d, lat_2d, ref_2d = grid_by_extent(f02.data['lon']['data'], f02.data['lat']['data'], f02.data['ref']['data'].filled(fill_value=np.nan), extent=extent)
 
     #/---------------------------------------------------------------------------\
-    fig = plt.figure(figsize=(8, 6))
-    ax1 = fig.add_subplot(111)
-    ax1.scatter(f03.data['lon']['data'], f03.data['lat']['data'], c=f03.data['vaa']['data'], lw=0.0, cmap='jet', s=3)
-    # ax1.imshow(.T, extent=extent, origin='lower', cmap='jet', zorder=0)
-    # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-    # ax1.set_xlim(())
-    # ax1.set_ylim(())
-    # ax1.set_xlabel('')
-    # ax1.set_ylabel('')
-    # ax1.set_title('')
-    # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-    # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-    #
-    # _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-    #
+    fig = plt.figure(figsize=(16, 5.5))
+
+    ax1 = fig.add_subplot(131)
+
+    img = mpl_img.imread('tmp-data/VIIRS-SNPP_rgb_2022-05-18_(-94.26,-87.21,31.86,38.91).png')
+    ax1.imshow(img, extent=extent)
+    ax1.set_xlabel('Longitude [$^\circ$]')
+    ax1.set_ylabel('Latitude [$^\circ$]')
+    ax1.set_title('VIIRS (Suomi NPP) RGB')
+
+    ax2 = fig.add_subplot(132)
+    cs  = ax2.imshow(rad_2d.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=0.4)
+    ax2.set_xlabel('Longitude [$^\circ$]')
+    ax2.set_ylabel('Latitude [$^\circ$]')
+    ax2.set_title('VIIRS Radiance (Band I01, 650 nm)')
+    divider = make_axes_locatable(ax2)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    fig.colorbar(cs, cax=cax)
+
+    ax3 = fig.add_subplot(133)
+    cs = ax3.imshow(ref_2d.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=1.0)
+    ax3.set_xlabel('Longitude [$^\circ$]')
+    ax3.set_ylabel('Latitude [$^\circ$]')
+    ax3.set_title('VIIRS Reflectance (Band I01, 650 nm)')
+    divider = make_axes_locatable(ax3)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    fig.colorbar(cs, cax=cax)
+
+    plt.subplots_adjust(hspace=0.3, wspace=0.3)
+
+    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+
     plt.show()
     exit()
     #\---------------------------------------------------------------------------/

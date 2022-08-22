@@ -104,8 +104,8 @@ class viirs_03:
 
         # geolocation
         #/-----------------------------------------------------------------------------\
-        lat0       = f.groups['geolocation_data'].variables['latitude']
-        lon0       = f.groups['geolocation_data'].variables['longitude']
+        lat0 = f.groups['geolocation_data'].variables['latitude']
+        lon0 = f.groups['geolocation_data'].variables['longitude']
         #\-----------------------------------------------------------------------------/
 
         # only crop necessary data
@@ -126,8 +126,8 @@ class viirs_03:
             lon_range = [self.extent[0], self.extent[1]]
             lat_range = [self.extent[2], self.extent[3]]
 
-        lon = lon0[:]
-        lat = lat0[:]
+        lon = get_data_nc(lon0)
+        lat = get_data_nc(lat0)
 
         logic = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon   = lon[logic]
@@ -136,14 +136,14 @@ class viirs_03:
 
         # solar geometries
         #/-----------------------------------------------------------------------------\
-        sza0       = f.groups['geolocation_data'].variables['solar_zenith']
-        saa0       = f.groups['geolocation_data'].variables['solar_azimuth']
+        sza0 = f.groups['geolocation_data'].variables['solar_zenith']
+        saa0 = f.groups['geolocation_data'].variables['solar_azimuth']
         #\-----------------------------------------------------------------------------/
 
         # sensor geometries
         #/-----------------------------------------------------------------------------\
-        vza0       = f.groups['geolocation_data'].variables['sensor_zenith']
-        vaa0       = f.groups['geolocation_data'].variables['sensor_azimuth']
+        vza0 = f.groups['geolocation_data'].variables['sensor_zenith']
+        vaa0 = f.groups['geolocation_data'].variables['sensor_azimuth']
         #\-----------------------------------------------------------------------------/
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
@@ -199,7 +199,7 @@ class viirs_03:
         for vname in vnames:
 
             data0 = f.groups['geolocation_data'].variables[vname]
-            data  = get_data_nc(data0)[logic]
+            data  = get_data_nc(data0)
             if vname.lower() in self.data.keys():
                 self.data[vname.lower()] = dict(name=vname.lower().title(), data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.getncattr('units'))
             else:
@@ -236,19 +236,28 @@ class viirs_l1b:
 
 
     def __init__(self, \
-                 fnames    = None, \
-                 f03       = None, \
-                 extent    = None, \
-                 resolution= None, \
-                 overwrite = False,\
-                 quiet     = True, \
+                 fnames    = None,  \
+                 f03       = None,  \
+                 band      = 'I01', \
+                 resolution= None,  \
+                 overwrite = False, \
+                 quiet     = True,  \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the netCDF files
         self.f03        = f03         # geolocation file
-        self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
+        self.band       = band.upper()# band
         self.verbose    = verbose     # verbose tag
         self.quiet      = quiet       # quiet tag
+
+        wvls = {
+                'I01': 640,
+                'I02': 860,
+                'I03': 1620,
+                'I04': 3750,
+                'I05': 11500,
+                }
+        self.wvl = wvls[self.band]
 
         if resolution is None:
             filename = os.path.basename(fnames[0]).lower()
@@ -268,10 +277,10 @@ class viirs_l1b:
             self.resolution = resolution
 
         for fname in self.fnames:
-            self.read(fname)
+            self.read(fname, self.band)
 
 
-    def read(self, fname):
+    def read(self, fname, band):
 
         """
         Read radiance/reflectance/corrected counts from the VIIRS L1B data
@@ -291,37 +300,46 @@ class viirs_l1b:
 
         f = Dataset(fname, 'r')
 
-        raw0 = f.groups('observation_data').variables('I01')
+        raw0 = f.groups['observation_data'].variables[band]
+        raw0.set_auto_scale(False)
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
         #/-----------------------------------------------------------------------------\
-        raw = raw0[:][logic]
+        if self.f03 is not None:
+            raw = raw0[:][self.f03.logic[get_fname_pattern(fname)]['mask']]
+        else:
+            raw = raw0[:]
+
         rad = np.zeros(raw.shape, dtype=np.float64)
         ref = np.zeros(raw.shape, dtype=np.float64)
 
-        for i in range(raw.shape[0]):
-
-            rad = raw*raw0.getncattr('radiance_scale_factor') + raw0.getncattr('radiance_add_offset')
-            ref = raw*raw0.getncattr('scale_factor') + raw0.getncattr('add_offset')
+        rad = raw*raw0.getncattr('radiance_scale_factor') + raw0.getncattr('radiance_add_offset')
+        rad /= 1000.0 # from <per micron> to <per nm>
+        rad.filled(fill_value=np.nan)
+        ref = raw*raw0.getncattr('scale_factor') + raw0.getncattr('add_offset')
 
         f.close()
         #\-----------------------------------------------------------------------------/
 
         if hasattr(self, 'data'):
 
-            self.data['lon'] = dict(name='Longitude'  , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
-            self.data['lat'] = dict(name='Latitude'   , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
             self.data['rad'] = dict(name='Radiance'   , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
+
+            if self.f03 is not None:
+                for vname in self.f03.data.keys():
+                    self.data[vname] = self.f03.data[vname]
 
         else:
 
             self.data = {}
-            self.data['lon'] = dict(name='Longitude'  , data=lon, units='degrees')
-            self.data['lat'] = dict(name='Latitude'   , data=lat, units='degrees')
-            self.data['wvl'] = dict(name='Wavelength' , data=wvl, units='nm')
-            self.data['rad'] = dict(name='Radiance'   , data=rad, units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance', data=ref, units='N/A')
+            self.data['wvl'] = dict(name='Wavelength' , data=self.wvl, units='nm')
+            self.data['rad'] = dict(name='Radiance'   , data=rad     , units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance', data=ref     , units='N/A')
+
+            if self.f03 is not None:
+                for vname in self.f03.data.keys():
+                    self.data[vname] = self.f03.data[vname]
 
 
     def save_h5(self, fname):

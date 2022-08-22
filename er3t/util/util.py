@@ -1,7 +1,9 @@
 import os
 import sys
 import numpy as np
+from scipy import interpolate
 import warnings
+
 
 
 
@@ -217,24 +219,13 @@ def jday_to_dtime(jday):
 
 
 
-def get_data_nc(nc_dset, mask=True):
+def get_data_nc(nc_dset, nan=True):
 
-    attrs = nc_dset.ncattrs()
+    nc_dset.set_auto_maskandscale(True)
     data  = nc_dset[:]
 
-    if mask:
-        if '_FillValue' in attrs:
-            data[data==nc_dset.getncattr('_FillValue')] = np.nan
-
-    if 'scale_factor' in attrs:
-        data = data * nc_dset.getncattr('scale_factor')
-
-    if 'add_offset' in attrs:
-        data = data + nc_dset.getncattr('add_offset')
-
-    if mask:
-        if '_FillValue' in attrs:
-            data[data==nc_dset.getncattr('_FillValue')] = np.nan
+    if nan == True:
+        data.filled(fill_value=np.nan)
 
     return data
 
