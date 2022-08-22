@@ -50,15 +50,13 @@ Dependencies
         conda install -c conda-forge gdown==4.5.1
         conda install -c conda-forge cartopy==0.19.0
         conda install -c conda-forge netcdf4==1.6.0
-        conda install -c anaconda beautifulsoup4
-        conda install -c anaconda xarray
 
     Additionally, for a complete functionality, e.g., downloading satellite imagery from NASA
     WorldView or satellite data from LAADS DAAC,
 
     ::
 
-        conda install -c conda-forge owslib==0.26
+        conda install -c anaconda beautifulsoup4
 
 
 |
