@@ -76,6 +76,8 @@ def test_viirs():
     fname_03  = 'tmp-data/VNP03IMG.A2022138.1912.002.2022139022209.nc'
     extent = [-94.2607, -87.2079, 31.8594, 38.9122]
     f03 = er3t.util.viirs.viirs_03(fnames=[fname_03], extent=extent, vnames=['height'])
+    print(f03.logic.keys())
+    exit()
 
     # fname_l1b = 'tmp-data/VNP02IMG.A2022138.1912.002.2022139023833.nc'
 

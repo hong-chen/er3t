@@ -65,7 +65,6 @@ class viirs_03:
             if len(vnames) > 0:
                 self.read_vars(fname, vnames=vnames)
 
-
     def read(self, fname):
 
         """
@@ -164,7 +163,7 @@ class viirs_03:
 
         if hasattr(self, 'data'):
 
-            self.logic[fname] = {'mask':logic}
+            self.logic[get_fname_pattern(fname)] = {'mask':logic}
 
             self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
             self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
@@ -175,7 +174,7 @@ class viirs_03:
 
         else:
             self.logic = {}
-            self.logic[fname] = {'mask':logic}
+            self.logic[get_fname_pattern(fname)] = {'mask':logic}
 
             self.data  = {}
             self.data['lon'] = dict(name='Longitude'           , data=lon, units='degrees')
@@ -185,7 +184,6 @@ class viirs_03:
             self.data['vza'] = dict(name='Sensor Zenith Angle' , data=vza, units='degrees')
             self.data['vaa'] = dict(name='Sensor Azimuth Angle', data=vaa, units='degrees')
 
-
     def read_vars(self, fname, vnames=[]):
 
         try:
@@ -194,7 +192,7 @@ class viirs_03:
             msg = 'Error [viirs_03]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
-        logic = self.logic[fname]['mask']
+        logic = self.logic[get_fname_pattern(fname)]['mask']
 
         f = Dataset(fname, 'r')
 
@@ -208,6 +206,7 @@ class viirs_03:
                 self.data[vname.lower()] = dict(name=vname.lower().title(), data=data, units=data0.getncattr('units'))
 
         f.close()
+
 
 
 
@@ -238,6 +237,7 @@ class viirs_l1b:
 
     def __init__(self, \
                  fnames    = None, \
+                 f03       = None, \
                  extent    = None, \
                  resolution= None, \
                  overwrite = False,\
@@ -245,6 +245,7 @@ class viirs_l1b:
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the netCDF files
+        self.f03        = f03         # geolocation file
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
         self.quiet      = quiet       # quiet tag
@@ -291,7 +292,6 @@ class viirs_l1b:
         f = Dataset(fname, 'r')
 
         raw0 = f.groups('observation_data').variables('I01')
-
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
         #/-----------------------------------------------------------------------------\
@@ -340,8 +340,15 @@ class viirs_l1b:
 
 
 
-# VIIRS downloader
+# VIIRS tools
 #/---------------------------------------------------------------------------\
+
+def get_fname_pattern(fname, index_s=1, index_e=2):
+
+    filename = os.path.basename(fname)
+    pattern  = '.'.join(filename.split('.')[index_s:index_e+1])
+
+    return pattern
 
 #\---------------------------------------------------------------------------/
 
