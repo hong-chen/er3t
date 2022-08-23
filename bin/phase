@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+
+"""
+This is a Python version of libRadtran/src/phase.c
+
+!!!!!!!!!!!!!!!!!!!!!
+! Incomplete        !
+! Under development !
+!!!!!!!!!!!!!!!!!!!!!
+
+by Hong Chen (hong.chen.cu@gmail.com)
+"""
