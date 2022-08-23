@@ -10,3 +10,32 @@ This is a Python version of libRadtran/src/phase.c
 
 by Hong Chen (hong.chen.cu@gmail.com)
 """
+
+
+import er3t.common
+
+
+
+def get_phase(
+        fname_pha='%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha
+        ):
+
+    try:
+        from netCDF4 import Dataset
+    except ImportError:
+        msg = 'Error [phase]: Please install <netCDF4> to proceed.'
+        raise ImportError(msg)
+
+    f = Dataset(fname_pha, 'r')
+
+    f.close()
+
+    pass
+
+
+
+
+
+if __name__ == '__main__':
+
+    get_phase()
