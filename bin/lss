@@ -20,6 +20,7 @@ from collections import OrderedDict
 
 
 
+
 parser = argparse.ArgumentParser(description='List dataset information contained in a hierarchical data file.')
 parser.add_argument('fname', metavar='file_path', type=str, nargs=1,
                     help='file name including path, e.g., /some/path/sample.h5')
@@ -28,6 +29,7 @@ parser.add_argument('format', metavar='data_type', type=str, nargs='?',
 parser.add_argument('mode', metavar='mode', type=str, nargs='?', default='file_info',
                     help='mode, e.g., \'file_info\' or \'dataset_info\', default is \'file_info\'.')
 args = parser.parse_args()
+
 
 
 
@@ -85,6 +87,7 @@ def get_data_brief(args):
     else:
         msg = 'Error [lss]: do NOT support the data type of file \'{filename}\'.'.format(filename=filename)
         raise ValueError(msg)
+
 
 
 
@@ -271,6 +274,7 @@ def get_data_info_idl(fname, dataType='IDL'):
 
 
 
+
 def get_data_info(fname, dataType):
 
     if dataType in ['netCDF']:
@@ -283,6 +287,7 @@ def get_data_info(fname, dataType):
         data_info = get_data_info_idl(fname)
 
     return data_info
+
 
 
 
@@ -300,6 +305,7 @@ def process_data_info(data_dict):
             data_dict_new[vname] = 'Data     1'
 
     return data_dict_new
+
 
 
 
@@ -326,6 +332,7 @@ def generate_message(data_dict, dataType, dash_extra=2):
 
 
 
+
 def main(args):
 
     fname, dataType = get_data_brief(args)
@@ -333,6 +340,7 @@ def main(args):
     data_info  = process_data_info(data_info0)
     message    = generate_message(data_info, dataType)
     print(message)
+
 
 
 
