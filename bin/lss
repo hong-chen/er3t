@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 
 """
-incomplete
+A tool to display general data info of a hierarchical data file.
+
+Currently, the following data formats are supported:
+    1) netCDF (supported by <netCDF4>)
+    2) HDF5 (supported by <h5py>)
+    3) HDF4 (supported by <pyhdf>)
+    4) IDL save (supported by <scipy>)
+
+by Hong Chen (hong.chen.cu@gmail.com)
 """
 
 import os
@@ -10,14 +18,6 @@ import argparse
 from collections import OrderedDict
 
 
-
-
-
-
-# from datainfo.file_hdf5   import FILE_SCAN as GET_DATA_DICT_H5
-# from datainfo.file_hdf4   import FILE_SCAN as GET_DATA_DICT_H4
-# from datainfo.file_idl    import FILE_SCAN as GET_DATA_DICT_IDL
-# from datainfo.file_netcdf import FILE_SCAN as GET_DATA_DICT_NC
 
 
 parser = argparse.ArgumentParser(description='List variable information from a data file.')
@@ -87,34 +87,53 @@ def get_data_brief(args):
         raise ValueError(msg)
 
 
-def get_variable_names(obj, prefix=''):
-
-    keys = list(obj.variables.keys()) + list(obj.groups.keys())
-
-    for key in keys:
-        try:
-            item = obj.groups[key]
-            path = '{prefix}.groups[\'{key}\']'.format(prefix=prefix, key=key)
-            yield from get_variable_names(item, prefix=path)
-        except KeyError:
-            item = obj.variables[key]
-            path = '{prefix}.variables[\'{key}\']'.format(prefix=prefix, key=key)
-            yield path, item
 
 
-def get_data_info_nc(fname):
+def get_data_info_nc(fname, dataType='netCDF4'):
+
+    def get_variable_names(obj, prefix=''):
+
+        """
+        Purpose: Walk through the file and extract information of data groups and data variables
+
+        Input: netCDF file object <f>, e.g., f = netCDF4.Dataset('file.nc', 'r')
+
+        Outputs:
+            data variable path in the format of <grp['group1'].var['variable1']> to
+            mimic the style of accessing netCDF data variables using netCDF4, e.g.,
+            f.groups['group1'].variables['variable1']>
+        """
+
+        keys = list(obj.variables.keys()) + list(obj.groups.keys())
+
+        for key in keys:
+            try:
+                item = obj.groups[key]
+                path = '.grp[\'{prefix}/{key}\']'.format(prefix=prefix, key=key)
+                yield from get_variable_names(item, prefix=path)
+            except KeyError:
+                item = obj.variables[key]
+                path = '{prefix}.var[\'{key}\']'.format(prefix=prefix, key=key)
+                yield path, item
 
     try:
         from netCDF4 import Dataset
     except ImportError:
-        msg = 'Error [lss]: cannot import netCDF4.'
+        msg = 'Error [lss]: cannot import <netCDF4>.'
         raise ImportError(msg)
 
     try:
         f = Dataset(fname, 'r')
     except:
-        msg = 'Error [lss]: cannot access \'{fname}\'.'.format(fname=fname)
+        msg = 'Error [lss]: cannot access <{fname}>.'.format(fname=fname)
         raise OSError(msg)
+
+    if dataType.upper() == 'HDF4':
+        try:
+            import pyhdf
+        except ImportError:
+            msg = 'Error [lss]: require a HDF4 library (e.g., <pyhdf>).'
+            raise ImportError(msg)
 
     vnames = []
     objs   = []
@@ -122,23 +141,150 @@ def get_data_info_nc(fname):
         vnames.append(vname[1:])
         objs.append(obj)
 
-    data_dict = {}
+    data_info = {}
     for i, vname in enumerate(vnames):
-        data_dict[vname] = str(objs[i].shape)
+        data_info[vname] = str(objs[i].shape)
 
     f.close()
 
-    return data_dict
+    return data_info
+
+def get_data_info_h5(fname, dataType='HDF5'):
+
+    def get_variable_names(obj, prefix=''):
+
+        """
+        Purpose: Walk through the file and extract information of data groups and data variables
+
+        Input: h5py file object <f>, e.g., f = h5py.File('file.h5', 'r')
+
+        Outputs:
+            data variable path in the format of <['group1/variable1']> to
+            mimic the style of accessing HDF5 data variables using h5py, e.g.,
+            <f['group1/variable1']>
+        """
+
+        for key in obj.keys():
+
+            item = obj[key]
+            path = '{prefix}/{key}'.format(prefix=prefix, key=key)
+            if isinstance(item, h5py.Dataset):
+                yield path
+            elif isinstance(item, h5py.Group):
+                yield from get_variable_names(item, prefix=path)
+
+    try:
+        import h5py
+    except ImportError:
+        msg = 'Error [lss]: cannot import <h5py>.'
+        raise ImportError(msg)
+
+    try:
+        f = h5py.File(fname, 'r')
+    except:
+        msg = 'Error [lss]: cannot access <{fname}>.'.format(fname=fname)
+        raise OSError(msg)
+
+    vnames = []
+    for vname in get_variable_names(f):
+        vnames.append(vname[1:])
+
+    data_info = {}
+    for vname in vnames:
+        obj = f[vname]
+        data_info[vname] = str(obj.shape)
+
+    f.close()
+
+    return data_info
+
+def get_data_info_h4(fname, dataType='HDF4'):
+
+    try:
+        from pyhdf.SD import SD, SDC
+    except ImportError:
+        msg = 'Error [lss]: cannot import <pyhdf>.'
+        raise ImportError(msg)
+
+    try:
+        f = SD(fname, SDC.READ)
+    except:
+        msg = 'Error [lss]: cannot access <{fname}>.'.format(fname=fname)
+        raise OSError(msg)
+
+    vnames = f.datasets().keys()
+
+    data_info = {}
+    for vname in vnames:
+        obj = f.select(vname)
+        info = obj.info()
+        if info[1] == 1:
+            data_info[vname] = str((info[2],))
+        elif info[1] > 1:
+            data_info[vname] = str(tuple(info[2]))
+
+    f.end()
+
+    return data_info
+
+def get_data_info_idl(fname, dataType='IDL'):
+
+    try:
+        import numpy, scipy.io
+    except ImportError:
+        msg = 'Error [lss]: cannot import <numpy> and <scipy>.'
+        raise ImportError(msg)
+
+    try:
+        f = scipy.io.readsav(fname)
+    except:
+        msg = 'Error [lss]: cannot access <{fname}>.'.format(fname=fname)
+        raise OSError(msg)
+
+    vnames0 = f.keys()
+    data_info = {}
+    for vname0 in vnames0:
+        obj = f[vname0]
+        if isinstance(obj, numpy.recarray):
+            vnames1 = obj.dtype.names
+            for vname1 in vnames1:
+                vname = '{vname0}.{vname1}[0]'.format(vname0=vname0, vname1=vname1)
+                obj_new   = obj[vname1][0]
+                if isinstance(obj_new, numpy.ndarray):
+                    data_info[vname] = str(obj_new.shape)
+                elif isinstance(obj_new, bytes):
+                    data_info[vname] = obj_new.decode('utf-8')
+                else:
+                    data_info[vname] = str(obj_new)
+        elif isinstance(obj, numpy.ndarray):
+            vname = vname0
+            data_info[vname] = str(obj.shape)
+        elif isinstance(obj, bytes):
+            vname = vname0
+            data_info[vname] = obj.decode('utf-8')
+        else:
+            vname = vname0
+            data_info[vname] = str(obj)
+
+    return data_info
+
+
 
 
 def get_data_info(fname, dataType):
 
-    if dataType in ['HDF4', 'HDF5', 'netCDF']:
-        data_dict = get_data_info_nc(fname)
-    # elif dataType == 'IDL':
-    #     data_dict = get_data_info_idl(fname)
+    if dataType in ['netCDF']:
+        data_info = get_data_info_nc(fname)
+    elif dataType in ['HDF5']:
+        data_info = get_data_info_h5(fname)
+    elif dataType in ['HDF4']:
+        data_info = get_data_info_h4(fname)
+    elif dataType == 'IDL':
+        data_info = get_data_info_idl(fname)
 
-    return data_dict
+    return data_info
+
+
 
 
 def process_data_info(data_dict):
@@ -148,12 +294,14 @@ def process_data_info(data_dict):
 
     for vname in vnames:
 
-        if '(' in data_dict[vname] and ')' in data_dict[vname]:
+        if '(' in data_dict[vname] and ')' in data_dict[vname] and len(data_dict[vname])>2 and (data_dict[vname].replace(' ', '')!='(1,)'):
             data_dict_new[vname] = 'Dataset  {shape}'.format(shape=data_dict[vname])
         else:
-            data_dict_new[vname] = 'Data     {value}'.format(value=data_dict[vname])
+            data_dict_new[vname] = 'Data     1'
 
     return data_dict_new
+
+
 
 
 def generate_message(data_dict, dataType, dash_extra=2):
@@ -174,7 +322,6 @@ def generate_message(data_dict, dataType, dash_extra=2):
     message = header + body + footer
 
     return message
-
 
 
 
