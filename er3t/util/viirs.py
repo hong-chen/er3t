@@ -12,10 +12,11 @@ import requests
 
 import er3t.common
 from er3t.util import check_equal, get_data_nc
+from er3t.util.modis import cal_sinusoidal_grid
 
 
 
-__all__ = ['viirs_03', 'viirs_l1b']
+__all__ = ['viirs_03', 'viirs_l1b', 'viirs_09a1']
 
 
 # reader for VIIRS (Visible Infrared Imaging Radiometer Suite)
@@ -213,7 +214,7 @@ class viirs_03:
 class viirs_l1b:
 
     """
-    Read VIIRS Level 1B file into an object <viirs_l1b>
+    Read VIIRS Level 1B file, e.g., VNP02MOD, into an object <viirs_l1b>
 
     Input:
         fnames=     : keyword argument, default=None, Python list of the file path of the original netCDF files
@@ -358,6 +359,128 @@ class viirs_l1b:
 
         if not self.quiet:
             print('Message [viirs_l1b]: File <%s> is created.' % fname)
+
+
+
+
+class viirs_09a1:
+
+    """
+    Read VIIRS surface reflectance product (8 day of surface reflectance in sinusoidal projection), e.g., VNP09A1
+
+    Input:
+        fnames=   : keyword argument, default=None, a Python list of the file path of the files
+        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        Nx=       : keyword argument, default=2400, number of points along x direction
+        Ny=       : keyword argument, default=2400, number of points along y direction
+        verbose=  : keyword argument, default=False, verbose tag
+
+    Output:
+        self.data
+                ['ref']: surface reflectance, all 7 channels
+                ['lon']: longitude
+                ['lat']: latitude
+                ['x']  : sinusoidal x
+                ['y']  : sinusoidal y
+    """
+
+
+    ID = 'VIIRS surface reflectance (1 km, 8 day)'
+
+
+    def __init__(self,
+                 fnames=None,
+                 extent=None,
+                 band='M4',
+                 Nx=1200,
+                 Ny=1200,
+                 verbose=False):
+
+        self.fnames = fnames
+        self.extent = extent
+        self.band = band.upper().replace('M0', 'M')
+        self.Nx = Nx
+        self.Ny = Ny
+
+        for fname in self.fnames:
+            self.read(fname, self.band)
+
+
+    def read(self, fname, band):
+
+        filename     = os.path.basename(fname)
+        index_str    = filename.split('.')[2]
+        index_h = int(index_str[1:3])
+        index_v = int(index_str[4:])
+
+        try:
+            import cartopy.crs as ccrs
+        except ImportError:
+            msg = 'Error [viirs_09a1]: Please install <cartopy> to proceed.'
+            raise ImportError(msg)
+
+        # grid boxes
+        proj_xy     = ccrs.Sinusoidal.MODIS
+        proj_lonlat = ccrs.PlateCarree()
+
+        x0, y0 = cal_sinusoidal_grid()
+
+        box = [x0[index_h], x0[index_h+1], y0[index_v], y0[index_v+1]]
+
+        # Lon, Lat for the tile
+        x_tmp = np.linspace(box[0], box[1], self.Nx+1)
+        y_tmp = np.linspace(box[2], box[3], self.Ny+1)
+        x_mid = (x_tmp[1:]+x_tmp[:-1])/2.0
+        y_mid = (y_tmp[1:]+y_tmp[:-1])/2.0
+        XX, YY = np.meshgrid(x_mid, y_mid)
+
+        LonLat = proj_lonlat.transform_points(proj_xy, XX, YY)
+
+        if self.extent is None:
+            lon_range = [-180.0, 180.0]
+            lat_range = [-90.0 , 90.0]
+        else:
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
+
+        lon   = LonLat[..., 0]
+        lat   = LonLat[..., 1]
+
+        logic = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+
+        lon = lon[logic]
+        lat = lat[logic]
+        x   = XX[logic]
+        y   = YY[logic]
+
+        if self.extent is None:
+            self.extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+
+        try:
+            from netCDF4 import Dataset
+        except ImportError:
+            msg = 'Error [viirs_09a1]: Please install <netCDF4> to proceed.'
+            raise ImportError(msg)
+
+        f = Dataset(fname, 'r')
+        dset = f.groups['HDFEOS'].groups['GRIDS'].groups['VNP_Grid_1km_L3_2d'].groups['Data Fields'].variables['SurfReflect_%s' % band]
+        dset.set_auto_maskandscale(True)
+        ref = dset[:][logic]
+        f.close()
+
+        if hasattr(self, 'data'):
+            self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            self.data['x']   = dict(name='X of sinusoidal grid', data=np.hstack((self.data['x']['data'], x))    , units='m')
+            self.data['y']   = dict(name='Y of sinusoidal grid', data=np.hstack((self.data['y']['data'], y))    , units='m')
+            self.data['ref'] = dict(name='Surface reflectance' , data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
+        else:
+            self.data = {}
+            self.data['lon'] = dict(name='Longitude'           , data=lon, units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=lat, units='degrees')
+            self.data['x']   = dict(name='X of sinusoidal grid', data=x  , units='m')
+            self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
+            self.data['ref'] = dict(name='Surface reflectance' , data=ref, units='N/A')
 
 #\---------------------------------------------------------------------------/
 

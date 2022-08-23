@@ -77,22 +77,35 @@ def test_modis():
 def test_viirs():
 
     import er3t.util.viirs
+    import er3t.util.modis
 
-    # fname_03  = 'tmp-data/VNP03IMG.A2022138.1912.002.2022139022209.nc'
     fname_03  = 'tmp-data/VNP03MOD.A2022138.1912.002.2022139022209.nc'
     extent = [-94.2607, -87.2079, 31.8594, 38.9122]
+
     f03 = er3t.util.viirs.viirs_03(fnames=[fname_03], extent=extent, vnames=['height'])
 
     fname_l1b = 'tmp-data/VNP02MOD.A2022138.1912.002.2022139023833.nc'
     f02 = er3t.util.viirs.viirs_l1b(fnames=[fname_l1b], f03=f03, band='M04')
 
+    # VIIRS 09A1
+    #/-----------------------------------------------------------------------------/
+    # tags = er3t.util.modis.get_sinusoidal_grid_tag(f02.data['lon']['data'], f02.data['lat']['data'])
+    fnames_09 = [
+            'tmp-data/VNP09A1.A2022137.h09v05.001.2022145073923.h5',
+            'tmp-data/VNP09A1.A2022137.h10v05.001.2022145074734.h5',
+            'tmp-data/VNP09A1.A2022137.h11v05.001.2022145074322.h5'
+            ]
+    f09 = er3t.util.viirs.viirs_09a1(fnames=fnames_09, extent=extent)
+    #\-----------------------------------------------------------------------------\
+
     lon_2d, lat_2d, rad_2d = grid_by_extent(f02.data['lon']['data'], f02.data['lat']['data'], f02.data['rad']['data'].filled(fill_value=np.nan), extent=extent)
     lon_2d, lat_2d, ref_2d = grid_by_extent(f02.data['lon']['data'], f02.data['lat']['data'], f02.data['ref']['data'].filled(fill_value=np.nan), extent=extent)
+    lon_2d, lat_2d, sfc_2d = grid_by_extent(f09.data['lon']['data'], f09.data['lat']['data'], f09.data['ref']['data'].filled(fill_value=np.nan), extent=extent, NxNy=lon_2d.shape)
 
     #/---------------------------------------------------------------------------\
-    fig = plt.figure(figsize=(16, 5.5))
+    fig = plt.figure(figsize=(12, 12))
 
-    ax1 = fig.add_subplot(131)
+    ax1 = fig.add_subplot(221)
 
     img = mpl_img.imread('tmp-data/VIIRS-SNPP_rgb_2022-05-18_(-94.26,-87.21,31.86,38.91).png')
     ax1.imshow(img, extent=extent)
@@ -103,21 +116,30 @@ def test_viirs():
     cax = divider.append_axes('right', '5%', pad='3%')
     cax.axis('off')
 
-    ax2 = fig.add_subplot(132)
-    cs  = ax2.imshow(rad_2d.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=0.4)
+    ax2 = fig.add_subplot(222)
+    cs  = ax2.imshow(sfc_2d.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=0.5)
     ax2.set_xlabel('Longitude [$^\circ$]')
     ax2.set_ylabel('Latitude [$^\circ$]')
-    ax2.set_title('VIIRS Radiance (Band M4, 555 nm)')
+    ax2.set_title('09A1 Surface Ref. (Band M4, 555 nm)')
     divider = make_axes_locatable(ax2)
     cax = divider.append_axes('right', '5%', pad='3%')
     fig.colorbar(cs, cax=cax)
 
-    ax3 = fig.add_subplot(133)
+    ax3 = fig.add_subplot(223)
     cs = ax3.imshow(ref_2d.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=1.0)
     ax3.set_xlabel('Longitude [$^\circ$]')
     ax3.set_ylabel('Latitude [$^\circ$]')
-    ax3.set_title('VIIRS Reflectance (Band M4, 555 nm)')
+    ax3.set_title('L1B Ref. (Band M4, 555 nm)')
     divider = make_axes_locatable(ax3)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    fig.colorbar(cs, cax=cax)
+
+    ax4 = fig.add_subplot(224)
+    cs = ax4.imshow((ref_2d-sfc_2d).T, origin='lower', extent=extent, cmap='bwr', vmin=-0.3, vmax=0.3)
+    ax4.set_xlabel('Longitude [$^\circ$]')
+    ax4.set_ylabel('Latitude [$^\circ$]')
+    ax4.set_title('Difference (L1B - 09A1)')
+    divider = make_axes_locatable(ax4)
     cax = divider.append_axes('right', '5%', pad='3%')
     fig.colorbar(cs, cax=cax)
 

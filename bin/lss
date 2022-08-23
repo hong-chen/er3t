@@ -109,11 +109,11 @@ def get_data_info_nc(fname, dataType='netCDF4'):
         for key in keys:
             try:
                 item = obj.groups[key]
-                path = '.grp[\'{prefix}/{key}\']'.format(prefix=prefix, key=key)
+                path = '{prefix}.groups[\'{key}\']'.format(prefix=prefix, key=key)
                 yield from get_variable_names(item, prefix=path)
             except KeyError:
                 item = obj.variables[key]
-                path = '{prefix}.var[\'{key}\']'.format(prefix=prefix, key=key)
+                path = '{prefix}.variables[\'{key}\']'.format(prefix=prefix, key=key)
                 yield path, item
 
     try:

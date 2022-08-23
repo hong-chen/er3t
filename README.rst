@@ -47,9 +47,11 @@ Dependencies
 
     ::
 
-        conda install -c conda-forge gdown==4.5.1
-        conda install -c conda-forge cartopy==0.19.0
-        conda install -c conda-forge netcdf4==1.6.0
+        conda install -c conda-forge gdown
+        conda install -c conda-forge pyhdf
+        conda install -c conda-forge h5py
+        conda install -c conda-forge netcdf4
+        conda install -c conda-forge cartopy
 
     Additionally, for a complete functionality, e.g., downloading satellite imagery from NASA
     WorldView or satellite data from LAADS DAAC,

@@ -1393,11 +1393,11 @@ def get_sinusoidal_grid_tag(lon, lat, verbose=False):
     try:
         import cartopy.crs as ccrs
     except ImportError:
-        msg = 'Error   [get_sinusoidal_grid_tag]: To use \'get_sinusoidal_grid_tag\', \'cartopy\' needs to be installed.'
+        msg = 'Error   [get_sinusoidal_grid_tag]: Please install <cartopy> to proceed.'
         raise ImportError(msg)
 
-    lon = lon.ravel()
-    lat = lat.ravel()
+    lon = np.array(lon).ravel()
+    lat = np.array(lat).ravel()
 
     proj_xy     = ccrs.Sinusoidal.MODIS
     proj_lonlat = ccrs.PlateCarree()
