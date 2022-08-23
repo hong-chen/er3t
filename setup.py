@@ -26,7 +26,7 @@ setup(
      packages = find_packages(),
      install_requires = ['nose', 'numpy', 'scipy', 'h5py'],
      python_requires = '~=3.7',
-     scripts = ['bin/lss'],
+     scripts = ['bin/lss', 'bin/lsa'],
      include_package_data = True,
      zip_safe = False
      )
