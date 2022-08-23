@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-A tool to display general data info of a hierarchical data file.
+A tool to display general dataset info of a hierarchical data file.
 
 Currently, the following data formats are supported:
     1) netCDF (supported by <netCDF4>)
@@ -20,7 +20,7 @@ from collections import OrderedDict
 
 
 
-parser = argparse.ArgumentParser(description='List variable information from a data file.')
+parser = argparse.ArgumentParser(description='List dataset information contained in a hierarchical data file.')
 parser.add_argument('fname', metavar='file_path', type=str, nargs=1,
                     help='file name including path, e.g., /some/path/sample.h5')
 parser.add_argument('format', metavar='data_type', type=str, nargs='?',
