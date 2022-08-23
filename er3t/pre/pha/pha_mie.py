@@ -80,11 +80,10 @@ class pha_mie_wc:
         pha0.data['ref']: effective radius
     """
 
-    fdir_pha_mie = '%s/mie/wc' % er3t.common.fdir_data_pha
     fname_coef = '%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha
 
     def __init__(self,
-                 wvl0=500.0,
+                 wvl0=555.0,
                  angles=np.concatenate((
                     np.arange(  0.0,   2.0, 0.01),
                     np.arange(  2.0,   5.0, 0.05),
@@ -93,6 +92,7 @@ class pha_mie_wc:
                     np.arange( 15.0, 176.0, 1.0),
                     np.arange(176.0, 180.1, 0.25),
                  )),
+                 fdir_pha_mie = '%s/mie' % er3t.common.fdir_data_pha,
                  interpolate=False,
                  reuse=True,
                  verbose=False):
@@ -102,13 +102,13 @@ class pha_mie_wc:
         self.reuse = reuse
         self.verbose = verbose
 
-        self.get_data(wvl0, angles)
+        self.get_data(wvl0, angles, fdir=fdir_pha_mie)
 
 
     def get_data(self,
             wvl0,
             angles,
-            fdir='%s/pha/mie' % er3t.common.fdir_data,
+            fdir='%s/mie' % er3t.common.fdir_data_pha,
             ):
 
         if not os.path.exists(fdir):
