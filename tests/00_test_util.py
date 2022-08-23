@@ -99,7 +99,9 @@ def test_viirs():
     #\-----------------------------------------------------------------------------\
 
     lon_2d, lat_2d, rad_2d = grid_by_extent(f02.data['lon']['data'], f02.data['lat']['data'], f02.data['rad']['data'].filled(fill_value=np.nan), extent=extent)
-    lon_2d, lat_2d, ref_2d = grid_by_extent(f02.data['lon']['data'], f02.data['lat']['data'], f02.data['ref']['data'].filled(fill_value=np.nan), extent=extent)
+    # lon_2d, lat_2d, ref_2d = grid_by_extent(f02.data['lon']['data'], f02.data['lat']['data'], f02.data['ref']['data'].filled(fill_value=np.nan), extent=extent, method='cubic')
+    logic = np.logical_not(np.isnan(f02.data['ref']['data'].filled(fill_value=np.nan)))
+    lon_2d, lat_2d, ref_2d = grid_by_extent(f02.data['lon']['data'][logic], f02.data['lat']['data'][logic], f02.data['ref']['data'][logic], extent=extent, method='linear')
     lon_2d, lat_2d, sfc_2d = grid_by_extent(f09.data['lon']['data'], f09.data['lat']['data'], f09.data['ref']['data'].filled(fill_value=np.nan), extent=extent, NxNy=lon_2d.shape)
 
     #/---------------------------------------------------------------------------\
