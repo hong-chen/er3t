@@ -39,10 +39,10 @@ def read_pmom(fname):
 
     f = Dataset(fname, 'r')
 
-    wvl  = f.variables['wavelen'][...]
-    ref  = f.variables['reff'][...]
-    ssa  = f.variables['ssa'][...].T
-    pmom = f.variables['pmom'][...].T
+    wvl  = f.variables['wavelen'][...].data
+    ref  = f.variables['reff'][...].data
+    ssa  = f.variables['ssa'][...].data.T
+    pmom = f.variables['pmom'][...].data.T
 
     f.close()
 
@@ -104,7 +104,6 @@ class pha_mie_wc:
 
         self.get_data(wvl0, angles, fdir=fdir_pha_mie)
 
-
     def get_data(self,
             wvl0,
             angles,
@@ -128,68 +127,47 @@ class pha_mie_wc:
             else:
                 self.run(fname, wvl0, angles)
 
-
     def run(self,
             fname,
             wvl0,
-            angles,
-            fdir_lrt=None
+            angles
             ):
-
-        if fdir_lrt is None:
-            if er3t.common.has_libradtran:
-                fdir_lrt = os.environ['LIBRADTRAN_V2_DIR']
-            else:
-                msg = 'Error [pha_mie_wc]: Currently, Mie phase function support relies on libRadtran. Please make sure libRadtran is installed and specified at enviroment variable <LIBRADTRAN_V2_DIR>.'
-                raise OSError(msg)
 
         Na = angles.size
         wvl, ref, ssa, asy, pmom = read_pmom(self.fname_coef)
-        Np, Nr, Nl = pmom.shape
+        Npoly, Nreff, Nwvl = pmom.shape
 
         if not self.interpolate:
-            index = np.argmin(np.abs(wvl-wvl0))
+            iwvl = np.argmin(np.abs(wvl-wvl0))
         else:
             msg = 'Error [pha_mie_wc]: has not implemented interpolation for phase function yet.'
             raise ValueError(msg)
 
-        print('Message [pha_mie_wc]: applying libRadtran/bin/phase to calculate phase functions for %.2fnm ...' % wvl0)
+        pha = np.zeros((Na, Nreff), dtype=np.float64)
+        mus = np.cos(np.deg2rad(angles))
 
-        pha = np.zeros((Na, Nr), dtype=np.float64)
+        for ireff in range(Nreff):
 
-        for ir in range(Nr):
+            pmom0 = pmom[:, ireff, iwvl]
 
-            pmom0 = pmom[:, ir, index]
-
-            if pmom0[-1] > 0.1:
+            if pmom0[-1] > 0.001:
                 if self.verbose:
-                    msg = 'Warning [pha_mie]: Ref=%.2f Legendre series did not converge.' % ref[ir]
+                    msg = 'Warning [pha_mie]: Ref=%.2f Legendre series did not converge.' % ref[ireff]
                     warnings.warn(msg)
 
-            fname_tmp_inp = os.path.abspath('tmp_pmom_inp.txt')
-            fname_tmp_out = os.path.abspath('tmp_pmom_out.txt')
+            pmom0 = pmom0/(2.0*np.arange(Npoly)+1.0)
 
-            np.savetxt(fname_tmp_inp, pmom0/(2.0*np.arange(Np)+1.0))
-
-
-            command = '%s/bin/phase -d -c -f %s > %s' % (fdir_lrt, fname_tmp_inp, fname_tmp_out)
-
-            os.system(command)
-            data0 = np.genfromtxt(fname_tmp_out)
-
-            pha[:, ir] = np.interp(angles, data0[:, 0], data0[:, 1])
-
-        os.system('rm -rf %s %s' % (fname_tmp_inp, fname_tmp_out))
+            pha[:, ireff] = legendre2phase(pmom0, angle=angles)
 
         data = {
-                'id'  : {'data':'Mie'     , 'name':'Mie'                , 'unit':'N/A'},
-                'wvl0': {'data':wvl0      , 'name':'Given wavelength'   , 'unit':'nm'},
-                'wvl' : {'data':wvl[index], 'name':'Actual wavelength'  , 'unit':'nm'},
-                'ang' : {'data':angles    , 'name':'Angle'              , 'unit':'degree'},
-                'pha' : {'data':pha       , 'name':'Phase function'     , 'unit':'N/A'},
-                'ssa' : {'data':ssa[:, index], 'name':'Single scattering albedo', 'unit':'N/A'},
-                'asy' : {'data':asy[:, index], 'name':'Asymmetry parameter'     , 'unit':'N/A'},
-                'ref' : {'data':ref          , 'name':'Effective radius'        , 'unit':'mm'}
+                'id'  : {'data':'Mie'       , 'name':'Mie'                , 'unit':'N/A'},
+                'wvl0': {'data':wvl0        , 'name':'Given wavelength'   , 'unit':'nm'},
+                'wvl' : {'data':wvl[iwvl]   , 'name':'Actual wavelength'  , 'unit':'nm'},
+                'ang' : {'data':angles      , 'name':'Angle'              , 'unit':'degree'},
+                'pha' : {'data':pha         , 'name':'Phase function'     , 'unit':'N/A'},
+                'ssa' : {'data':ssa[:, iwvl], 'name':'Single scattering albedo', 'unit':'N/A'},
+                'asy' : {'data':asy[:, iwvl], 'name':'Asymmetry parameter'     , 'unit':'N/A'},
+                'ref' : {'data':ref         , 'name':'Effective radius'        , 'unit':'mm'}
                 }
 
         with open(fname, 'wb') as f:
@@ -201,6 +179,115 @@ class pha_mie_wc:
 
 
 
+def legendre2phase(
+        poly_coef,
+        angle=None,
+        deltascaling=True,
+        normalize=False,
+        step=0.01,
+        lrt=False
+        ):
+
+    Npoly = poly_coef.size
+    if deltascaling:
+        poly_coef = (poly_coef-poly_coef[-1])/(1.0-poly_coef[-1])
+
+    poly_coef *= (2.0*np.arange(Npoly)+1.0)
+
+    if normalize:
+        factors = 1.0/poly_coef[0]
+        poly_coef *= factors
+
+    if angle is None:
+        angle = np.arange(0.0, 180.0+step, step)
+
+    mu    = np.cos(np.deg2rad(angle))
+
+    if lrt:
+        phase     = np.zeros_like(mu)
+        for i, mu0 in enumerate(mu):
+            phase[i]     = mom2phase(poly_coef, mu0)
+    else:
+        phase = np.polynomial.legendre.legval(mu, poly_coef)
+
+    return phase
+
+def mom2phase(polys, mu):
+
+    """
+    Purpose: calculate phase function from phase function moments.
+             Adapted from libRadtran/libsrc_c/miecalc.c:<mom2phase>
+             by Bernhard Mayer
+
+    Inputs:
+        polys: Legendre moment vector
+        mu: cosine angles
+
+    Output:
+        phase function
+
+    by Hong Chen (hong.chen.cu@gmail.com)
+    """
+
+    plm1 = mu
+    plm2 = 1.0
+
+    pha = plm2*polys[0] + plm1*polys[1]
+
+    Npoly = polys.size
+    for i in range(2, Npoly):
+        plm0 = ((2.0*i - 1.0)*mu*plm1 - (i-1)*plm2) / i
+
+        pha += polys[i] * plm0
+
+        plm2 = plm1
+        plm1 = plm0
+
+    return pha
+
+def mom2phaseint(polys, mu):
+
+    """
+    Purpose: Calculate integral of the phase function from -1 to x from the phase function moments
+             Adapted from libRadtran/src/phase.c:<mom2phaseint>
+
+    Inputs:
+        polys: Legendre moment vector
+        mu: cosine angles
+
+    Output:
+        pha_int: Integral of phase function
+
+    by Hong Chen (hong.chen.cu@gmail.com)
+    """
+
+    plm1 = mu
+    plm2 = 1.0
+
+    pldashm1 = 1.0
+    pldashm2 = 0.0
+
+    pha_int = (1.0 - mu)*polys[0] + 0.5*(1.0 - mu**2) * polys[1]
+
+    Npoly = polys.size
+    for i in range(2, Npoly):
+        plm0     = ((2.0*i - 1.0)*mu*plm1 - (i-1)*plm2) / i
+        pldashm0 = ((2.0*i - 1.0)*(plm1 + mu*pldashm1) - (i-1)*pldashm2) / i
+
+        pha_int += polys[i] * (1.0 - mu**2) / (i * (i+1))*pldashm0
+
+        plm2 = plm1
+        plm1 = plm0
+
+        pldashm2 = pldashm1
+        pldashm1 = pldashm0
+
+    return pha_int
+
+
+
+
 if __name__ == '__main__':
 
+    pha0 = pha_mie_wc(wvl0=555.0)
     pass
