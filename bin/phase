@@ -54,34 +54,26 @@ def get_phase(
         pmom0 = pmom[:, icer, iwvl]
         polys = pmom0/(2.0*np.arange(Npoly)+1.0)
 
-        pha[:, icer] = legendre2phase(deltascaling=True)
+        xx, yy, tmp = legendre2phase(polys, deltascaling=True)
+        pha[:, icer] = np.interp(angles, xx, yy)
+        print(icer)
 
-        print(pmom0)
-
-
-    print(Npoly, Ncer, Nwvl)
-    print(pmom.shape)
-    print(ssa.shape)
-    print(asy.shape)
-
-    """
-    bin/phase -d -c -f <input of Na pmom>
-
-    -d: use scattering angle in degrees instead of the cosine of the scattering angle mu
-    -c: 1-column input
-    -f: use delta scaling
-    """
-    # print(pmom[0, :])
     f.close()
 
-    pass
+    f = h5py.File('test_phase.h5', 'w')
+    f['pha'] = pha
+    f['cer'] = cer
+    f['ang'] = angles
+    # f['ssa'] = ssa[:, iwvl]
+    # f['asy'] =
+    f.close()
 
 
 def legendre2phase(
         polys,
         deltascaling=True,
         normalize=False,
-        step=0.001,
+        step=0.01,
         ):
 
     Npoly = polys.size
@@ -97,96 +89,90 @@ def legendre2phase(
     angle = np.arange(0.0, 180.0+step, step)
     mu    = np.cos(np.deg2rad(angle))
 
+    phase     = np.zeros_like(mu)
+    phase_int = np.zeros_like(mu)
+
+    for i, mu0 in enumerate(mu):
+        phase[i]     = mom2phase(polys, mu0)
+        phase_int[i] = mom2phaseint(polys, mu0)
+
     return angle, phase, phase_int
 
-    pass
 
 
-def mom2phase(mu, polys):
-    """
-
-        /** 
-         * mom2phase
-         *
-         * calculate phase function from phase function moments 
-         * 
-         * @param x cos(theta)
-         * @param f Legendre moment vector
-         * @param L length of f
-         * 
-         * @return phase function at x
-         *
-         * @author Bernhard Mayer
-         * @date   2009-06-29 Moved to miecalc.c from phase.c by Claudia Emde
-         */
-        double mom2phase (double x, double* f, int L) {
-
-          int l = 0;
-
-          double sum = 0;
-          double pl = 0, plm1 = 0, plm2 = 0;
-
-          plm2 = 1.0;
-          plm1 = x;
-
-          sum = plm2 * f[0] + plm1 * f[1];
-
-          for (l = 2; l < L; l++) {
-            pl = ((double)(2 * l - 1) * x * plm1 - (double)(l - 1) * plm2) / (double)l;
-
-            sum += f[l] * pl;
-
-            plm2 = plm1;
-            plm1 = pl;
-          }
-
-          return sum;
-        }
-
+def mom2phase(polys, mu):
 
     """
-    pass
+    Purpose: calculate phase function from phase function moments.
+             Adapted from libRadtran/libsrc_c/miecalc.c:<mom2phase>
+             by Bernhard Mayer
 
+    Inputs:
+        polys: Legendre moment vector
+        mu: cosine angles
 
-def mom2phaseint(mu, polys):
+    Output:
+        phase function
 
-    """
-        /* calculate integral of the phase function from -1 to x from the phase function moments */
-        static double mom2phaseint (double x, double* f, int L) {
-
-          int l = 0;
-
-          double sum = 0;
-          double pl = 0, plm1 = 0, plm2 = 0;
-          double pldash = 0, pldashm1 = 0, pldashm2 = 0;
-
-          plm2 = 1;
-          plm1 = x;
-
-          pldashm2 = 0;
-          pldashm1 = 1;
-
-          sum = (1.0 - x) * f[0] + 0.5 * (1.0 - x * x) * f[1];
-
-          for (l = 2; l < L; l++) {
-            pl     = ((double)(2 * l - 1) * x * plm1 - (double)(l - 1) * plm2) / (double)l;
-            pldash = ((double)(2 * l - 1) * (plm1 + x * pldashm1) - (double)(l - 1) * pldashm2) / (double)l;
-
-            sum += f[l] * (1.0 - x * x) / (double)(l * (l + 1)) * pldash;
-
-            plm2 = plm1;
-            plm1 = pl;
-
-            pldashm2 = pldashm1;
-            pldashm1 = pldash;
-          }
-
-          return (2.0 - sum); /* we want -1 to x, not x to 1 */
-        }
-
+    by Hong Chen (hong.chen.cu@gmail.com)
     """
 
-    pass
+    plm1 = mu
+    plm2 = 1.0
+
+    pha = plm2*polys[0] + plm1*polys[1]
+
+    Npoly = polys.size
+    for i in range(2, Npoly):
+        plm0 = ((2.0*i - 1.0)*mu*plm1 - (i-1)*plm2) / i
+
+        pha += polys[i] * plm0
+
+        plm2 = plm1
+        plm1 = plm0
+
+    return pha
+
+
+
+def mom2phaseint(polys, mu):
+
+    """
+    Purpose: Calculate integral of the phase function from -1 to x from the phase function moments
+             Adapted from libRadtran/src/phase.c:<mom2phaseint>
+
+    Inputs:
+        polys: Legendre moment vector
+        mu: cosine angles
+
+    Output:
+        pha_int: Integral of phase function
+
+    by Hong Chen (hong.chen.cu@gmail.com)
+    """
+
+    plm1 = mu
+    plm2 = 1.0
+
+    pldashm1 = 1.0
+    pldashm2 = 0.0
+
+    pha_int = (1.0 - mu)*polys[0] + 0.5*(1.0 - mu**2) * polys[1]
+
+    Npoly = polys.size
+    for i in range(2, Npoly):
+        plm0     = ((2.0*i - 1.0)*mu*plm1 - (i-1)*plm2) / i
+        pldashm0 = ((2.0*i - 1.0)*(plm1 + mu*pldashm1) - (i-1)*pldashm2) / i
+
+        pha_int += polys[i] * (1.0 - mu**2) / (i * (i+1))*pldashm0
+
+        plm2 = plm1
+        plm1 = plm0
+
+        pldashm2 = pldashm1
+        pldashm1 = pldashm0
+
+    return pha_int
 
 
 if __name__ == '__main__':
