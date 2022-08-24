@@ -82,6 +82,8 @@ class pha_mie_wc:
 
     fname_coef = '%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha
 
+    reference = 'Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, 1980.'
+
     def __init__(self,
                  wvl0=555.0,
                  angles=np.concatenate((
@@ -101,6 +103,9 @@ class pha_mie_wc:
         self.interpolate = interpolate
         self.reuse = reuse
         self.verbose = verbose
+
+        if self.reference not in er3t.common.references:
+            er3t.common.references.append(self.reference)
 
         self.get_data(wvl0, angles, fdir=fdir_pha_mie)
 
