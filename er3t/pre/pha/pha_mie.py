@@ -22,12 +22,11 @@ def read_pmom(fname):
         fname: file path of the file
 
     Output:
-        wvl, ref, ssa, asy, pmom = read_pmom(fname)
+        wvl, ref, ssa, pmom = read_pmom(fname)
 
         wvl: wavelength in nm
         ref: effective radius in mm
         ssa: single scattering albedo
-        asy: asymmetry parameter
         pmom: pmom coefficients
     """
 
@@ -40,17 +39,22 @@ def read_pmom(fname):
     f = Dataset(fname, 'r')
 
     wvl  = f.variables['wavelen'][...].data
+
+    # effective radius
     ref  = f.variables['reff'][...].data
+
+    # single scattering albedo
     ssa  = f.variables['ssa'][...].data.T
+
+    # legendre polynomial coefficients
     pmom = f.variables['pmom'][...].data.T
 
     f.close()
 
-    wvl = wvl * 1000.0
-    pmom = pmom[:, 0, :, :]
-    asy  = pmom[1, :, :]/3.0
+    wvl = wvl * 1000.0       # from micron to nm
+    pmom = pmom[:, 0, :, :]  # pick the first of 4 stokes
 
-    return wvl, ref, ssa, asy, pmom
+    return wvl, ref, ssa, pmom
 
 
 
@@ -131,6 +135,8 @@ class pha_mie_wc:
                     self.run(fname, wvl0, angles)
             else:
                 self.run(fname, wvl0, angles)
+        else:
+            self.run(fname, wvl0, angles)
 
     def run(self,
             fname,
@@ -139,7 +145,7 @@ class pha_mie_wc:
             ):
 
         Na = angles.size
-        wvl, ref, ssa, asy, pmom = read_pmom(self.fname_coef)
+        wvl, ref, ssa, pmom = read_pmom(self.fname_coef)
         Npoly, Nreff, Nwvl = pmom.shape
 
         if not self.interpolate:
@@ -150,6 +156,7 @@ class pha_mie_wc:
 
         pha = np.zeros((Na, Nreff), dtype=np.float64)
         mus = np.cos(np.deg2rad(angles))
+        asy = np.zeros(Nreff, dtype=np.float64)
 
         for ireff in range(Nreff):
 
@@ -162,7 +169,12 @@ class pha_mie_wc:
 
             pmom0 = pmom0/(2.0*np.arange(Npoly)+1.0)
 
-            pha[:, ireff] = legendre2phase(pmom0, angle=angles)
+            pha0 = legendre2phase(pmom0, angle=angles)
+            pha[:, ireff] = pha0
+
+            # asymmetry parameter
+            # half of the integral of: from cos(ang)=-1 to cos(ang)=1 for function pha(ang)*cos(ang)
+            asy[ireff] = np.trapz(pha0[::-1]*mus[::-1], x=mus[::-1])/2.0
 
         data = {
                 'id'  : {'data':'Mie'       , 'name':'Mie'                , 'unit':'N/A'},
@@ -171,7 +183,7 @@ class pha_mie_wc:
                 'ang' : {'data':angles      , 'name':'Angle'              , 'unit':'degree'},
                 'pha' : {'data':pha         , 'name':'Phase function'     , 'unit':'N/A'},
                 'ssa' : {'data':ssa[:, iwvl], 'name':'Single scattering albedo', 'unit':'N/A'},
-                'asy' : {'data':asy[:, iwvl], 'name':'Asymmetry parameter'     , 'unit':'N/A'},
+                'asy' : {'data':asy         , 'name':'Asymmetry parameter'     , 'unit':'N/A'},
                 'ref' : {'data':ref         , 'name':'Effective radius'        , 'unit':'mm'}
                 }
 
@@ -294,5 +306,4 @@ def mom2phaseint(polys, mu):
 
 if __name__ == '__main__':
 
-    pha0 = pha_mie_wc(wvl0=555.0)
     pass
