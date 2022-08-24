@@ -176,8 +176,9 @@ class mca_atm_3d:
                  atm_obj   = None, \
                  cld_obj   = None, \
                  pha_obj   = None, \
-                 fname     = None,
+                 fname     = None, \
                  overwrite = True, \
+                 force     = False,\
                  verbose   = False,\
                  quiet     = False \
                  ):
@@ -212,6 +213,8 @@ class mca_atm_3d:
             fname = 'mca_atm_3d.bin'
 
         if not self.overwrite:
+            if (not os.path.exists(fname)) and (not force):
+                self.gen_mca_3d_atm_file(fname)
             self.nml['Atm_inpfile'] = {'data':fname}
         else:
             self.gen_mca_3d_atm_file(fname)

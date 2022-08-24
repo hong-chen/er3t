@@ -38,8 +38,9 @@ class mca_sca:
 
     def __init__(self,\
                  pha_obj   = None, \
-                 fname     = None,
+                 fname     = None, \
                  overwrite = True, \
+                 force     = False,\
                  verbose   = False,\
                  quiet     = False \
                  ):
@@ -60,10 +61,13 @@ class mca_sca:
 
         if fname is None:
             fname = 'mca_sca.bin'
-        if self.overwrite:
-            self.gen_mca_sca_file(fname)
-        else:
+
+        if not self.overwrite:
+            if (not os.path.exists(fname)) and (not force):
+                self.gen_mca_sca_file(fname)
             self.nml['Sca_inpfile'] = {'data':fname}
+        else:
+            self.gen_mca_sca_file(fname)
 
         if not self.quiet:
             print('-')
