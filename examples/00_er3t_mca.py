@@ -208,6 +208,7 @@ def test_01_flux_clear_sky(
     for reference in er3t.common.references:
         print(reference)
         print('-'*80)
+    print()
     #\-----------------------------------------------------------------------------/
 
 
@@ -423,6 +424,7 @@ def test_02_flux_les_cloud_3d(
     for reference in er3t.common.references:
         print(reference)
         print('-'*80)
+    print()
     #\-----------------------------------------------------------------------------/
 
 
@@ -647,6 +649,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     for reference in er3t.common.references:
         print(reference)
         print('-'*80)
+    print()
     #\-----------------------------------------------------------------------------/
 
 
@@ -878,6 +881,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     for reference in er3t.common.references:
         print(reference)
         print('-'*80)
+    print()
     #\-----------------------------------------------------------------------------/
 
 
@@ -1113,6 +1117,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
     for reference in er3t.common.references:
         print(reference)
         print('-'*80)
+    print()
     #\-----------------------------------------------------------------------------/
 
 
@@ -1302,6 +1307,7 @@ def test_06_rad_cld_gen_hem(
     for reference in er3t.common.references:
         print(reference)
         print('-'*80)
+    print()
     #\-----------------------------------------------------------------------------/
 
 
@@ -1309,7 +1315,6 @@ def test_06_rad_cld_gen_hem(
 if __name__ == '__main__':
 
     # irradiance simulation
-    # the following examples should run out-of-box after the installation
     #/-----------------------------------------------------------------------------\
     # test_01_flux_clear_sky()
     # test_02_flux_les_cloud_3d()
@@ -1318,7 +1323,6 @@ if __name__ == '__main__':
     #\-----------------------------------------------------------------------------/
 
     # radiance simulation
-    # the following examples use Mie but require libRadtran
     #/-----------------------------------------------------------------------------\
     # test_05_rad_les_cloud_3d_aerosol_3d()
     # test_06_rad_cld_gen_hem()
