@@ -1,8 +1,9 @@
 import os
 import sys
 import h5py
-import numpy as np
+import warnings
 from collections import OrderedDict
+import numpy as np
 
 from er3t.util import cal_sol_fac, h5dset_to_pydict
 
@@ -28,11 +29,13 @@ class mca_out_raw:
     def __init__(self, fname_bin):
 
         if not os.path.isfile(fname_bin):
-            sys.exit('Error   [mca_out_raw]: Cannot find \'%s\'.' % fname_bin)
+            msg = 'Error [mca_out_raw]: Cannot find <%s>.' % fname_bin
+            raise OSError(msg)
 
         fname_ctl = fname_bin + '.ctl'
         if not os.path.isfile(fname_ctl):
-            sys.exit('Error   [mca_out_raw]: Cannot find \'%s\'.' % fname_ctl)
+            msg = 'Error [mca_out_raw]: Cannot find <%s>.' % fname_ctl
+            raise OSError(msg)
 
         self.fname_bin = fname_bin
         self.fname_ctl = fname_ctl
@@ -170,7 +173,8 @@ class mca_out_ng:
 
         else:
 
-            sys.exit('Error   [mca_out_ng]: Please provide both \'mca_obj\' and \'abs_obj\' to proceed.')
+            msg = 'Error [mca_out_ng]: Please provide both <mca_obj> and <abs_obj> to proceed.'
+            raise OSError(msg)
 
 
     def load(self):
@@ -392,7 +396,8 @@ def read_flux_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
 
     else:
 
-        sys.exit('Error   [read_flux_mca_out]: Do not support \'mode=%s\'.' % mode)
+        msg = 'Error [read_flux_mca_out]: Do not support <mode=%s>.' % mode
+        raise OSError(msg)
 
     return data_dict
     # -
@@ -489,7 +494,8 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
         data_dict['N_photon'] = {'data':mca_obj.photons     , 'name': 'Number of photons'      , 'units': 'N/A'}
         data_dict['N_run']    = {'data':mca_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
     else:
-        sys.exit('Error   [read_radiance_mca_out]: Do not support \'mode=%s\'.' % mode)
+        msg = 'Error [read_radiance_mca_out]: Do not support <mode=%s>.' % mode
+        raise OSError(msg)
 
     return data_dict
     # -

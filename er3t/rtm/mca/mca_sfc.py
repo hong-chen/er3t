@@ -1,8 +1,9 @@
 import os
 import sys
 import copy
-import h5py
 import struct
+import warnings
+import h5py
 import numpy as np
 
 
@@ -50,16 +51,15 @@ class mca_sfc_2d:
         self.verbose   = verbose
         self.quiet     = quiet
 
-        if not self.quiet:
-            print('+ <mca_sfc_2d>')
-
         if atm_obj is None:
-            sys.exit('Error   [mca_sfc_2d]: Please provide an \'atm\' object for \'atm_obj\'.')
+            msg = 'Error [mca_sfc_2d]: Please provide an \'atm\' object for <atm_obj>.'
+            raise OSError(msg)
         else:
             self.atm = atm_obj
 
         if sfc_obj is None:
-            sys.exit('Error   [mca_sfc_2d]: Please provide an \'sfc\' object for \'sfc_obj\'.')
+            msg = 'Error [mca_sfc_2d]: Please provide an \'sfc\' object for <sfc_obj>.'
+            raise OSError(msg)
         else:
             self.sfc = sfc_obj
 
@@ -69,9 +69,6 @@ class mca_sfc_2d:
             if fname is None:
                 fname = 'mca_sfc_2d.bin'
             self.gen_mca_2d_sfc_file(fname)
-
-        if not self.quiet:
-            print('-')
 
 
     def pre_mca_2d_sfc(self):

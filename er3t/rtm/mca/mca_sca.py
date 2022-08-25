@@ -1,8 +1,9 @@
 import os
 import sys
 import copy
-import h5py
 import struct
+import warnings
+import h5py
 import numpy as np
 
 
@@ -49,11 +50,9 @@ class mca_sca:
         self.verbose   = verbose
         self.quiet     = quiet
 
-        if not self.quiet:
-            print('+ <mca_sca>')
-
         if pha_obj is None:
-            sys.exit('Error   [mca_sca]: Please provide an \'pha\' object for \'pha_obj\'.')
+            msg = 'Error [mca_sca]: Please provide an \'pha\' object for <pha_obj>.'
+            raise OSError(msg)
         else:
             self.pha = pha_obj
 
@@ -68,9 +67,6 @@ class mca_sca:
             self.nml['Sca_inpfile'] = {'data':fname}
         else:
             self.gen_mca_sca_file(fname)
-
-        if not self.quiet:
-            print('-')
 
 
     def pre_mca_sca(self, nskip=0, nanci=0):

@@ -2,6 +2,7 @@ import os
 import sys
 import copy
 import datetime
+import warnings
 import multiprocessing as mp
 import numpy as np
 from tqdm import tqdm
@@ -97,9 +98,6 @@ class mcarats_ng:
 
         fdir = os.path.abspath(fdir)
 
-        if not quiet:
-            print('+ <mcarats_ng>')
-
         if not os.path.exists(fdir):
             os.makedirs(fdir)
             if not quiet:
@@ -166,7 +164,8 @@ class mcarats_ng:
             else:
                 self.Ncpu = Ncpu
         else:
-            exit('Error   [mcarats_ng]: Cannot understand \'Ncpu=%s\'.' % Ncpu)
+            msg = 'Error [mcarats_ng]: Cannot understand <Ncpu=%s>.' % Ncpu
+            raise OSError(msg)
 
         # in file names, 'r' indicates #run, 'g' indicates #g, index of 'r' and 'g' both start from 0
         # self.fnames_inp/self.fnames_out is a list embeded with lists
@@ -211,8 +210,6 @@ class mcarats_ng:
 
         self.run_check()
 
-        if not quiet:
-            print('-')
 
 
     def init_wld(self, tune=False, verbose=False, \
@@ -226,7 +223,8 @@ class mcarats_ng:
         elif self.target.lower() in ['radiance', 'rad']:
             self.target = 'radiance'
         else:
-            sys.exit('Error   [mcarats_ng]: Cannot understand \'target=%s\'.' % self.target)
+            msg = 'Error [mcarats_ng]: Cannot understand <target=%s>.' % self.target
+            raise OSError(msg)
 
         for ig in range(self.Ng):
 
@@ -283,7 +281,8 @@ class mcarats_ng:
                 self.nml[ig]['Rad_zloc']    = sensor_altitude
 
             else:
-                sys.exit('Error   [mcarats_ng]: Cannot understand \'target=%s\'.' % self.target)
+                msg = 'Error [mcarats_ng]: Cannot understand <target=%s>.' % self.target
+                raise OSError(msg)
 
 
     def init_sca(self, sca=None):
@@ -304,7 +303,8 @@ class mcarats_ng:
         for ig in range(self.Ng):
 
             if len(atm_1ds) == 0:
-                sys.exit('Error   [mcarats_ng]: need \'atm_1ds\' to proceed.')
+                msg = 'Error [mcarats_ng]: need <atm_1ds> to proceed.'
+                raise OSError(msg)
             else:
 
                 for i, atm_1d in enumerate(atm_1ds):
@@ -409,7 +409,8 @@ class mcarats_ng:
         elif solver in ['ipa', 'independent pixel approximation']:
             self.solver = 'IPA'
         else:
-            sys.exit('Error   [mcarats_ng]: Cannot understand \'solver=%s\'.' % self.solver)
+            msg = 'Error [mcarats_ng]: Cannot understand <solver=%s>.' % self.solver
+            raise OSError(msg)
 
         # solver:
         #   0: Full 3D radiative transfer
@@ -439,12 +440,12 @@ class mcarats_ng:
             for ig in range(self.Ng):
                 fname = self.fnames_out[ir][ig]
                 if not os.path.exists(fname):
-                    print('Error   [mcarats_ng]: Cannot find file \'%s\'.' % fname)
                     check.append(False)
                 else:
                     check.append(True)
         if not all(check):
-            sys.exit()
+            msg = 'Error [mcarats_ng]: Missing some output files.'
+            raise OSError(msg)
 
 
     def print_info(self):

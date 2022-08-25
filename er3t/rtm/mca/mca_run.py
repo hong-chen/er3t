@@ -1,6 +1,7 @@
 import os
 import sys
 import datetime
+import warnings
 import multiprocessing as mp
 import numpy as np
 import er3t.common
@@ -8,8 +9,8 @@ import er3t.common
 try:
     from tqdm import tqdm
 except ImportError:
-    msg = 'Warning [mca_run.py]: To use \'mca_run.py\', \'tqdm\' needs to be installed.'
-    print(msg)
+    msg = 'Warning [mca_run.py]: To use <mca_run.py>, <tqdm> needs to be installed.'
+    warnings.warn(msg)
 
 
 
@@ -44,7 +45,6 @@ class mca_run:
     def __init__(self,
                  fnames_inp, \
                  fnames_out, \
-
                  executable = None, \
                  photons    = 1.0e6,  \
                  solver     = 0,      \
@@ -59,11 +59,13 @@ class mca_run:
             if er3t.common.has_mcarats:
                 executable = os.environ['MCARATS_V010_EXE']
             else:
-                sys.exit('Error   [er3t.rtm.mca.mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>.')
+                msg = 'Error [mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>.'
+                raise OSError(msg)
 
         Nfile = len(fnames_inp)
         if len(fnames_out) != Nfile:
-            sys.exit('Error   [mca_run]: Inconsistent input and output files.')
+            msg = 'Error [mca_run]: Inconsistent input and output files.'
+            raise OSError(msg)
 
         self.Ncpu    = Ncpu
         self.quiet   = quiet
@@ -75,7 +77,8 @@ class mca_run:
             if photons.size == Nfile:
                 photons_dist = photons.copy()
             else:
-                sys.exit('Error   [mca_run]: Cannot distribute photon set of %d over %d runs.' % (photons.size, Nfile))
+                msg = 'Error [mca_run]: Cannot distribute photon set of %d over %d runs.' % (photons.size, Nfile)
+                raise ValueError(msg)
 
         mp_mode = mp_mode.lower()
         if mp_mode in ['mpi', 'openmpi']:
@@ -85,7 +88,8 @@ class mca_run:
         elif mp_mode in ['batch', 'shell', 'bash', 'hpc']:
             mp_mode = 'sh'
         else:
-            sys.exit('Error   [mca_run]: Cannot understand input \'mp_mode=\'%s\'\'' % mp_mode)
+            msg = 'Error [mca_run]: Cannot understand input <mp_mode=\'%s\'>.' % mp_mode
+            raise OSError(msg)
         self.mp_mode = mp_mode
 
         self.commands = []

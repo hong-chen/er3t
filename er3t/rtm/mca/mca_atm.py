@@ -1,10 +1,11 @@
 import os
 import sys
 import copy
-from scipy import interpolate
-import h5py
 import struct
+import warnings
+import h5py
 import numpy as np
+from scipy import interpolate
 
 from er3t.util import cal_mol_ext, cal_sol_fac, get_lay_index
 
@@ -47,12 +48,14 @@ class mca_atm_1d:
             ):
 
         if atm_obj is None:
-            sys.exit('Error   [mca_atm_1d]: please provide an \'atm\' object for \'atm_obj\'.')
+            msg = 'Error [mca_atm_1d]: please provide an \'atm\' object for <atm_obj>.'
+            raise OSError(msg)
         else:
             self.atm = atm_obj
 
         if abs_obj is None:
-            sys.exit('Error   [mca_atm_1d]: please provide an \'abs\' object for \'abs_obj\'.')
+            msg = 'Error [mca_atm_1d]: please provide an \'abs\' object for <abs_obj>.'
+            raise OSError(msg)
         else:
             self.abs = abs_obj
 
@@ -100,7 +103,8 @@ class mca_atm_1d:
     def add_mca_1d_atm(self, ext1d=None, omg1d=None, apf1d=None, z_bottom=None, z_top=None):
 
         if (ext1d is None) or (omg1d is None) or (apf1d is None):
-            sys.exit('Error   [mca_atm_1d.add_mca_1d_atm]: Please provide values of \'ext1d\', \'omg1d\', and \'apf1d\'.')
+            msg = 'Error [mca_atm_1d]: Please provide values of <ext1d>, <omg1d>, and <apf1d>.'
+            raise OSError(msg)
 
         for ig in range(self.Ng):
 
@@ -188,24 +192,28 @@ class mca_atm_3d:
         self.quiet     = quiet
 
         if atm_obj is None:
-            sys.exit('Error   [mca_atm_3d]: Please provide an \'atm\' object for \'atm_obj\'.')
+            msg = 'Error [mca_atm_3d]: Please provide an \'atm\' object for <atm_obj>.'
+            raise OSError(msg)
         else:
             self.atm = atm_obj
 
         if cld_obj is None:
-            sys.exit('Error   [mca_atm_3d]: Please provide an \'cld\' object for \'cld_obj\'.')
+            msg = 'Error [mca_atm_3d]: Please provide an \'cld\' object for <cld_obj>.'
+            raise OSError(msg)
         else:
             self.cld = cld_obj
 
         if pha_obj is None:
             if self.verbose:
-                print("Warning [mca_atm_3d]: No phase function set specified - ignore thermodynamic phase/effective radius with g=0.85 (Henyey-Greenstein).")
+                msg = 'Warning [mca_atm_3d]: No phase function set specified - ignore thermodynamic phase/effective radius with g=0.85 (Henyey-Greenstein).'
+                warnings.warn(msg)
         self.pha = pha_obj
 
         # Go through cloud layers and check whether atm is compatible
         # e.g., whether the sizes of the Altitude array (z) and Thickness array (dz) are the same
         if self.cld.lay['altitude']['data'].size != self.cld.lay['thickness']['data'].size: # layer number
-            sys.exit("Error   [mca_atm_3d]: Incorrect number of cloud layers (%d) vs layer thicknesses (%d)." % (self.cld.lay['altitude']['data'].size, self.cld.lay['thickness']['data'].size))
+            msg = 'Error [mca_atm_3d]: Incorrect number of cloud layers (%d) vs layer thicknesses (%d).' % (self.cld.lay['altitude']['data'].size, self.cld.lay['thickness']['data'].size)
+            raise ValueError(msg)
 
         self.pre_mca_3d_atm()
 
@@ -232,7 +240,8 @@ class mca_atm_3d:
         iz3l = int(lay_index[0] + 1)
 
         if (iz3l+nz3) > self.atm.lay['altitude']['data'].size:
-            sys.exit('Error   [mca_atm_3d]: Non-homogeneous layer top exceeds atmosphere top.')
+            msg = 'Error [mca_atm_3d]: Non-homogeneous layer top exceeds atmosphere top.'
+            raise ValueError(msg)
 
         atm_tmp = np.zeros((nx, ny, nz3)   , dtype=np.float32) # deviation from layer temperature (-)
         atm_abs = np.zeros((nx, ny, nz3, 1), dtype=np.float32) # deviation from atmospheric absorption (-)
@@ -315,20 +324,24 @@ class mca_atm_3d:
     def add_mca_3d_atm(self, ext3d=None, omg3d=None, apf3d=None):
 
         if (ext3d is None) or (omg3d is None) or (apf3d is None):
-            sys.exit('Error   [mca_atm_3d.add_mca_3d_atm]: Please provide an \'ext3d\', \'omg3d\', and \'apf3d\'.')
+            msg = 'Error [mca_atm_3d]: Please provide an <ext3d>, <omg3d>, and <apf3d>.'
+            raise OSError(msg)
         else:
 
             if isinstance(ext3d, np.ndarray):
                 if ext3d.ndim != 3:
-                    sys.exit('Error   [mca_atm_3d_manual]: \'ext3d\' should be in the dimension of (nx, ny, nz).')
+                    msg = 'Error [mca_atm_3d]: <ext3d> should be in the dimension of (nx, ny, nz).'
+                    raise ValueError(msg)
 
             if isinstance(omg3d, np.ndarray):
                 if omg3d.ndim != 3:
-                    sys.exit('Error   [mca_atm_3d_manual]: \'omg3d\' should be in the dimension of (nx, ny, nz).')
+                    msg = 'Error [mca_atm_3d]: <omg3d> should be in the dimension of (nx, ny, nz).'
+                    raise ValueError(msg)
 
             if isinstance(apf3d, np.ndarray):
                 if apf3d.ndim != 3:
-                    sys.exit('Error   [mca_atm_3d_manual]: \'apf3d\' should be in the dimension of (nx, ny, nz).')
+                    msg = 'Error [mca_atm_3d]: <apf3d> should be in the dimension of (nx, ny, nz).'
+                    raise ValueError(msg)
 
 
         atm_ext = np.concatenate((self.nml['Atm_extp3d']['data'], ext3d[..., np.newaxis]), axis=-1)

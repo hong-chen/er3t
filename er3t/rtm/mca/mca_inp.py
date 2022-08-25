@@ -1,7 +1,8 @@
 import os
 import sys
-import numpy as np
+import warnings
 from collections import OrderedDict
+import numpy as np
 
 from er3t.util import nice_array_str
 
@@ -616,7 +617,8 @@ def mca_inp_nml(input_dict, verbose=True, comment=True):
                 if comment:
                     mcarats_nml_all_info[key] = mcarats_nml_all_info[key_ori]
             else:
-                sys.exit('Error   [mca_inp_nml]: please check input variable \'%s\'.' % key)
+                msg = 'Error [mca_inp_nml]: please check input variable <%s>.' % key
+                raise OSError(msg)
         else:
             index   = nml_ordered_keys_full.index(key)
             mcarats_nml_all[nml_ordered_item_full[index]][key] = input_dict[key]
@@ -675,7 +677,8 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
                         f.write(' %-15s = %-g\n' % (var_key, var))
 
                 else:
-                    sys.exit('Error   [mca_inp_file]: only types of int, float, str, ndarray are supported.')
+                    msg = 'Error [mca_inp_file]: only types of int, float, str, ndarray are supported.'
+                    raise ValueError(msg)
 
                 if comment:
                     var_detail = mcarats_nml_all_info[var_key]
