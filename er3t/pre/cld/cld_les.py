@@ -1,8 +1,8 @@
 import os
 import sys
 import pickle
-import numpy as np
 import warnings
+import numpy as np
 
 from er3t.util import mmr2vmr, cal_rho_air, downscale
 
@@ -44,7 +44,7 @@ class cld_les:
     def __init__(self, \
                  fname_nc  = None, \
                  fname     = None, \
-                 altitude  = None,
+                 altitude  = None, \
                  coarsen   = [1, 1, 1, 1], \
                  overwrite = False, \
                  verbose   = False):
@@ -78,9 +78,14 @@ class cld_les:
 
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
-            if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
+            try:
+                file_correct = (obj.ID == 'LES Cloud 3D')
+            except:
+                file_correct = False
+
+            if file_correct:
                 if self.verbose:
-                    print('Message [cld_les]: Loading %s ...' % fname)
+                    print('Message [cld_les]: Loading <%s> ...' % fname)
                 self.fname = obj.fname
                 self.lay   = obj.lay
                 self.lev   = obj.lev
@@ -92,7 +97,7 @@ class cld_les:
     def run(self, fname_nc):
 
         if self.verbose:
-            print("Message [cld_les]: Processing %s ..." % fname_nc)
+            print('Message [cld_les]: Processing <%s> ...' % fname_nc)
 
         # pre process
         self.pre_les(fname_nc, altitude=self.altitude)
@@ -110,7 +115,7 @@ class cld_les:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_les]: Saving object into %s ...' % fname)
+                print('Message [cld_les]: Saving object into <%s> ...' % fname)
             pickle.dump(self, f)
 
 

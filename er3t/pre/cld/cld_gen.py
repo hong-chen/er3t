@@ -1,6 +1,7 @@
 import os
 import sys
 import pickle
+import warnings
 import numpy as np
 from er3t.pre.atm import atm_atmmod
 from er3t.util import downscale
@@ -129,16 +130,23 @@ class cld_gen_hem:
         # if pickle file doesn't get specified
         else:
 
-            sys.exit('Error   [cld_gen_hem]: Please specify file name for pickle file. For example,\ncld0 = cld_gen_hem(fname=\'tmp-data/cloud.pk\')')
+            msg = 'Error [cld_gen_hem]: Please specify file name of pickle file at <fname=>. For example,\ncld0 = cld_gen_hem(fname=\'tmp-data/cloud.pk\')'
+            raise OSError(msg)
         # =============================================================================
 
     def load(self, fname):
 
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
-            if hasattr(obj, 'lev') and hasattr(obj, 'lay') and hasattr(obj, 'clouds'):
+
+            try:
+                file_correct = (obj.ID == 'Hemispherical Cloud 3D')
+            except:
+                file_correct = False
+
+            if file_correct:
                 if self.verbose:
-                    print('Message [cld_gen_hem]: Loading %s ...' % fname)
+                    print('Message [cld_gen_hem]: Loading <%s> ...' % fname)
                 self.fname      = obj.fname
                 self.verbose    = obj.verbose
                 self.lay        = obj.lay
@@ -163,7 +171,8 @@ class cld_gen_hem:
                 self.min_dist   = obj.min_dist
                 self.w2h_ratio  = obj.w2h_ratio
             else:
-                sys.exit('Error   [cld_gen_hem]: %s is not the correct \'pickle\' file to load.' % fname)
+                msg = 'Error [cld_gen_hem]: <%s> is not the correct pickle file to load.' % fname
+                raise OSError(msg)
 
     def run(self):
 
@@ -172,7 +181,8 @@ class cld_gen_hem:
 
         dz = self.altitude[1:]-self.altitude[:-1]
         if dz.size > 1:
-            print('Warning [cld_gen_hem]: Only support equidistant altitude (z), as well as equidistant x and y.')
+            msg = 'Warning [cld_gen_hem]: Only support equidistant altitude (z), as well as equidistant x and y.'
+            warnings.warn(msg)
 
         self.x = np.arange(self.Nx) * self.dx
         self.y = np.arange(self.Ny) * self.dy
@@ -383,7 +393,8 @@ class cld_gen_hem:
             self.space_3d[index_x_s:index_x_e, index_y_s:index_y_e, :][logic_cloud0] = 1
 
             if w2h_ratio < cloud0['w2h_ratio'] and self.verbose:
-                print('Warning [cld_gen_hem]: Cloud %2.2d is taller than before, cloud top might be cutted.' % cloud0['ID'])
+                msg = 'Warning [cld_gen_hem]: Cloud %2.2d is taller than before, cloud top might be cutted.' % cloud0['ID']
+                warnings.warn(msg)
 
             cloud0['w2h_ratio'] = w2h_ratio
 
@@ -398,7 +409,8 @@ class cld_gen_hem:
         dnx, dny, dnz = coarsen
 
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or (self.Nz%dnz != 0):
-            sys.exit('Error   [cld_gen_hem]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz).' % (str(self.lay['temperature']['data'].shape), str(coarsen)))
+            msg = 'Error [cld_gen_hem]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz).' % (str(self.lay['temperature']['data'].shape), str(coarsen))
+            raise ValueError(msg)
         else:
             new_shape = (self.Nx//dnx, self.Ny//dny, self.Nz//dnz)
 
@@ -446,6 +458,8 @@ class cld_gen_hem:
                             operation = 'max'
                         self.lev[key]['data']  = downscale(self.lev[key]['data'], (new_shape[0], new_shape[1]), operation=operation)
             # =============================================================================
+
+
 
 
 if __name__ == '__main__':
