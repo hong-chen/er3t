@@ -48,7 +48,8 @@ def gen_aerosol_1d(aer_cfg):
     elif isinstance(data0, np.ndarray):
         data = data0
     else:
-        sys.exit('Error   [gen_aerosol_1d]: only support scalar or array for \'aerosol_optical_depth\'.')
+        msg = 'Error [gen_aerosol_1d]: Only support scalar or array for <aerosol_optical_depth>.'
+        raise OSError(msg)
 
     filename_aod = 'aer-aod_%s' % filename_aer
     fname_aod    = aer_cfg['aerosol_file'].replace(filename_aer, filename_aod)
@@ -73,7 +74,8 @@ def gen_aerosol_1d(aer_cfg):
     elif isinstance(data0, np.ndarray):
         data = data0
     else:
-        sys.exit('Error   [gen_aerosol_1d]: only support scalar or array for \'single_scattering_albedo\'.')
+        msg = 'Error [gen_aerosol_1d]: Only support scalar or array for <single_scattering_albedo>.'
+        raise OSError(msg)
 
     filename_ssa = 'aer-ssa_%s' % filename_aer
     fname_ssa    = aer_cfg['aerosol_file'].replace(filename_aer, filename_ssa)
@@ -98,7 +100,8 @@ def gen_aerosol_1d(aer_cfg):
     elif isinstance(data0, np.ndarray):
         data = data0
     else:
-        sys.exit('Error   [gen_aerosol_1d]: only support scalar or array for \'asymmetry_parameter\'.')
+        msg = 'Error [gen_aerosol_1d]: only support scalar or array for <asymmetry_parameter>.'
+        raise OSError(msg)
 
     filename_asy = 'aer-asy_%s' % filename_aer
     fname_asy    = aer_cfg['aerosol_file'].replace(filename_aer, filename_asy)

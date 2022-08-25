@@ -61,39 +61,39 @@ class lrt_init_mono:
             dtime_tmp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             input_file = 'lrt_input_%s.txt' % dtime_tmp
             if verbose:
-                print('Warning [lrt_init_mono]: <input_file> is missing, assigning input_file = %s.' % input_file)
+                print('Message [lrt_init_mono]: <input_file> is missing, assigning input_file = %s.' % input_file)
         self.input_file = input_file
 
         # output file
         if output_file is None:
             output_file = 'lrt_output_%s.txt' % dtime_tmp
             if verbose:
-                print('Warning [lrt_init_mono]: <output_file> is missing, assigning output_file = %s.' % output_file)
+                print('Message [lrt_init_mono]: <output_file> is missing, assigning output_file = %s.' % output_file)
         self.output_file = output_file
 
         # date
         if date is None:
             date = datetime.date.today()
             if verbose:
-                print('Warning [lrt_init_mono]: <date> is missing, assigning date = datetime.date.today().')
+                print('Message [lrt_init_mono]: <date> is missing, assigning date = datetime.date.today().')
 
         # surface albedo
         if surface_albedo is None:
             surface_albedo = 0.03
             if verbose:
-                print('Warning [lrt_init_mono]: <surface_albedo> is missing, assigning surface_albedo = 0.03.')
+                print('Message [lrt_init_mono]: <surface_albedo> is missing, assigning surface_albedo = 0.03.')
 
         # solar zenith angle
         if solar_zenith_angle is None:
             solar_zenith_angle = 0.0
             if verbose:
-                print('Warning [lrt_init_mono]: <solar_zenith_angle> is missing, assigning solar_zenith_angle = 0.0.')
+                print('Message [lrt_init_mono]: <solar_zenith_angle> is missing, assigning solar_zenith_angle = 0.0.')
 
         # wavelength
         if wavelength is None:
             wavelength = 500.0
             if verbose:
-                print('Warning [lrt_init_mono]: <wavelength> is missing, assigning wavelength = 500.0.')
+                print('Message [lrt_init_mono]: <wavelength> is missing, assigning wavelength = 500.0.')
         self.Nx = 1
 
         # slit function
@@ -104,13 +104,13 @@ class lrt_init_mono:
             slit_function_file    = lrt_cfg['slit_function_file_nir']
             wavelength_half_width = 16.0
         if verbose:
-            print('Warning [lrt_init_mono]: slit_function_file = \'%s\'.' % slit_function_file)
+            print('Message [lrt_init_mono]: slit_function_file = \'%s\'.' % slit_function_file)
 
         # output altitude
         if output_altitude is None:
             output_altitude = 'TOA'
             if verbose:
-                print('Warning [lrt_init_mono]: <output_altitude> is missing, assigning output_altitude = \'TOA\'.')
+                print('Message [lrt_init_mono]: <output_altitude> is missing, assigning output_altitude = \'TOA\'.')
 
         if not isinstance(output_altitude, str):
             if isinstance(output_altitude, (list, np.ndarray)):
@@ -247,28 +247,28 @@ class lrt_init_spec:
             dtime_tmp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             input_file = 'lrt_input_%s.txt' % dtime_tmp
             if verbose:
-                print('Warning [lrt_init_spec]: <input_file> is missing, assigning input_file = %s.' % input_file)
+                print('Message [lrt_init_spec]: <input_file> is missing, assigning input_file = %s.' % input_file)
         self.input_file = input_file
 
         # output file
         if output_file is None:
             output_file = 'lrt_output_%s.txt' % dtime_tmp
             if verbose:
-                print('Warning [lrt_init_spec]: <output_file> is missing, assigning output_file = %s.' % output_file)
+                print('Message [lrt_init_spec]: <output_file> is missing, assigning output_file = %s.' % output_file)
         self.output_file = output_file
 
         # date
         if date is None:
             date = datetime.date.today()
             if verbose:
-                print('Warning [lrt_init_spec]: <date> is missing, assigning date = datetime.date.today().')
+                print('Message [lrt_init_spec]: <date> is missing, assigning date = datetime.date.today().')
         day_of_year = date.timetuple().tm_yday
 
         # wavelength
         if wavelength_file is None:
             wavelength = np.arange(350.0, 951.0, 5.0)
             if verbose:
-                print('Warning [lrt_init_spec]: <wavelength_file> is missing, assigning wavelength = [350.0, 355.0, ..., 950.0].')
+                print('Message [lrt_init_spec]: <wavelength_file> is missing, assigning wavelength = [350.0, 355.0, ..., 950.0].')
             wavelength_file = 'lrt_wvl_%s.txt' % dtime_tmp
             gen_wavelength_file(wavelength_file, wavelength)
         else:
@@ -279,13 +279,13 @@ class lrt_init_spec:
         if surface_albedo_file is None and surface_albedo is None:
             surface_albedo = 0.03
             if verbose:
-                print('Warning [lrt_init_spec]: <surface_albedo_file> is missing, assigning surface_albedo = [0.03, 0.03, ..., 0.03].')
+                print('Message [lrt_init_spec]: <surface_albedo_file> is missing, assigning surface_albedo = [0.03, 0.03, ..., 0.03].')
 
         # solar zenith angle
         if solar_zenith_angle is None:
             solar_zenith_angle = 0.0
             if verbose:
-                print('Warning [lrt_init_spec]: <solar_zenith_angle> is missing, assigning solar_zenith_angle = 0.0.')
+                print('Message [lrt_init_spec]: <solar_zenith_angle> is missing, assigning solar_zenith_angle = 0.0.')
 
         # slit function
         wvl_min = wavelength.min()
@@ -302,14 +302,14 @@ class lrt_init_spec:
             raise ValueError(msg)
 
         if verbose:
-            print('Warning [lrt_init_spec]: slit_function_file = \'%s\'.' % slit_function_file)
+            print('Message [lrt_init_spec]: slit_function_file = \'%s\'.' % slit_function_file)
 
 
         # output altitude
         if output_altitude is None:
             output_altitude = 'TOA'
             if verbose:
-                print('Warning [lrt_init_spec]: <output_altitude> is missing, assigning output_altitude = \'TOA\'.')
+                print('Message [lrt_init_spec]: <output_altitude> is missing, assigning output_altitude = \'TOA\'.')
 
         if not isinstance(output_altitude, str):
             if isinstance(output_altitude, (list, np.ndarray)):
@@ -374,7 +374,7 @@ class lrt_init_spec:
 
             else:
                 msg = 'Error [lrt_init_spec]: <cld_cfg> is incomplete.'
-                raise ValueError(msg)
+                raise OSError(msg)
 
 
         if aer_cfg is not None:
@@ -404,7 +404,7 @@ class lrt_init_spec:
 
             else:
                 msg = 'Error [lrt_init_spec]: <aer_cfg> is incomplete.'
-                raise ValueError(msg)
+                raise OSError(msg)
 
 
 
