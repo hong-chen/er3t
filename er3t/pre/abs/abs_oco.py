@@ -92,6 +92,7 @@ class abs_oco:
                 self.wvl   = obj.wvl
                 self.nwl   = obj.nwl
                 self.coef  = obj.coef
+                self.Ng    = obj.Ng
             else:
                 sys.exit('Error   [abs_oco_idl]: \'%s\' is not the correct pickle file to load.' % fname)
 
@@ -140,6 +141,7 @@ class abs_oco:
             weight[:, i] = slit_func0[:, i] / (slit_func0[:, i].sum())
 
         self.Ng   = Ng
+        self.nwl  = wvl.size
         self.coef = {
                 'wvls'       : {'name':'Wavelengths (Nwl)'                    , 'data':wvls, 'units':'nm'},
                 'abso_coef'  : {'name':'Absorption Coefficient (Nwl, Nz, Ng)' , 'data':np.swapaxes(np.transpose(abso_coef), 0, 1)},
@@ -236,6 +238,7 @@ class abs_oco_idl:
                 self.wvl   = obj.wvl
                 self.nwl   = obj.nwl
                 self.coef  = obj.coef
+                self.Ng    = obj.Ng
             else:
                 sys.exit('Error   [abs_oco_idl]: \'%s\' is not the correct pickle file to load.' % fname)
 
@@ -288,6 +291,7 @@ class abs_oco_idl:
         weight    = slit_func0/slit_func0.sum()
 
         self.Ng   = Ng
+        self.nwl  = wvls.size
         self.coef = {
                 'wvl'       : {'name':'Wavelength'                     , 'data':self.wvl, 'units':'nm'},
                 'abso_coef' : {'name':'Absorption Coefficient (Nz, Ng)', 'data':np.transpose(abso_coef)},

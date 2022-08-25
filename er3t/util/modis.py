@@ -399,7 +399,7 @@ class modis_l2:
             self.data['lat_5km']   = dict(name='Latitude at 5km' , data=lat_5km, units='degrees')
 
 
-    def read_vars(self, fname, vnames=[], resolution='5km'):
+    def read_vars(self, fname, vnames=[]):
 
         try:
             from pyhdf.SD import SD, SDC
@@ -407,16 +407,22 @@ class modis_l2:
             msg = 'Warning [modis_03]: To use \'modis_03\', \'pyhdf\' needs to be installed.'
             raise ImportError(msg)
 
-        if resolution == '5km':
-            logic = self.logic[fname]['5km']
-        elif resolution == '1km':
-            logic = self.logic[fname]['1km']
-
         f     = SD(fname, SDC.READ)
+
+        dim_1km = f.select('Cloud_Optical_Thickness').info()[2]
+        dim_5km = f.select('Cloud_Top_Height').info()[2]
 
         for vname in vnames:
 
             data0 = f.select(vname)
+            dim0  = data0.info()[2]
+            if dim0 == dim_1km:
+                logic = self.logic[fname]['1km']
+            elif dim0 == dim_5km:
+                logic = self.logic[fname]['5km']
+            else:
+                msg = 'Error [modis_l2]: Unknow resolution for <%s>.' % vname
+                raise ValueError(msg)
             data  = get_data_h4(data0)[logic]
             if vname.lower() in self.data.keys():
                 self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.attributes()['units'])
