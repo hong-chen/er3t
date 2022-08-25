@@ -154,7 +154,8 @@ def get_data_info_nc(fname, dataType='netCDF4'):
             else:
                 attr0 = str(attr0)
             data_info['%s|%s' % (vname, attr)] = attr0
-
+        if hasattr(objs[i], 'dimensions'):
+            data_info['%s|dims' % (vname)] = str(objs[i].dimensions)
 
     f.close()
 
