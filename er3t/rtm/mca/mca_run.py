@@ -3,14 +3,9 @@ import sys
 import datetime
 import warnings
 import multiprocessing as mp
+from tqdm import tqdm
 import numpy as np
 import er3t.common
-
-try:
-    from tqdm import tqdm
-except ImportError:
-    msg = 'Warning [mca_run.py]: To use <mca_run.py>, <tqdm> needs to be installed.'
-    warnings.warn(msg)
 
 
 
