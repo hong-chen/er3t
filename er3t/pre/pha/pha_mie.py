@@ -98,7 +98,7 @@ class pha_mie_wc:
                     np.arange( 15.0, 176.0, 1.0),
                     np.arange(176.0, 180.1, 0.25),
                  )),
-                 fdir_pha_mie = '%s/mie' % er3t.common.fdir_data_pha,
+                 fdir_pha_mie = '%s/pha/mie' % er3t.common.fdir_data_tmp,
                  interpolate=False,
                  reuse=True,
                  verbose=False):
@@ -116,7 +116,7 @@ class pha_mie_wc:
     def get_data(self,
             wvl0,
             angles,
-            fdir='%s/mie' % er3t.common.fdir_data_pha,
+            fdir='%s/pha/mie' % er3t.common.fdir_data_tmp,
             ):
 
         if not os.path.exists(fdir):

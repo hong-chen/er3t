@@ -11,6 +11,7 @@ has_hdf5       = (importlib.util.find_spec('h5py') is not None)
 has_xarray     = (importlib.util.find_spec('xarray') is not None)
 
 fdir_data        = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
+fdir_data_tmp    = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'tmp-data')
 fdir_data_abs    = os.path.join(fdir_data, 'abs')
 fdir_data_pha    = os.path.join(fdir_data, 'pha')
 fdir_data_atmmod = os.path.join(fdir_data, 'atmmod')
