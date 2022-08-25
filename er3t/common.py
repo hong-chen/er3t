@@ -10,7 +10,7 @@ has_hdf4       = (importlib.util.find_spec('pyhdf') is not None)
 has_hdf5       = (importlib.util.find_spec('h5py') is not None)
 has_xarray     = (importlib.util.find_spec('xarray') is not None)
 
-fdir_er3t        = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
+fdir_er3t        = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
 
 fdir_data        = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
 fdir_data_abs    = os.path.join(fdir_data, 'abs')
