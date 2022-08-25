@@ -2,6 +2,7 @@ import os
 import sys
 import pickle
 import numpy as np
+import warnings
 
 from er3t.util import mmr2vmr, cal_rho_air, downscale
 
@@ -69,7 +70,8 @@ class cld_les:
 
         else:
 
-            sys.exit('Error   [cld_les]: Please check if \'%s\' exists or provide \'fname_nc\' to proceed.' % self.fname)
+            msg = 'Error [cld_les]: Please check if <%s> exists or provide <fname_nc> to proceed.' % self.fname
+            raise OSError(msg)
 
 
     def load(self, fname):
@@ -83,7 +85,8 @@ class cld_les:
                 self.lay   = obj.lay
                 self.lev   = obj.lev
             else:
-                sys.exit('Error   [cld_les]: %s is not the correct \'pickle\' file to load.' % fname)
+                msg = 'Error [cld_les]: <%s> is not the correct pickle file to load.' % fname
+                raise OSError(msg)
 
 
     def run(self, fname_nc):
@@ -119,7 +122,7 @@ class cld_les:
         try:
             from netCDF4 import Dataset
         except ImportError:
-            msg = 'Error [cld_les.py]: Please install <netCDF4> to proceed.'
+            msg = 'Error [cld_les]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
         f = Dataset(fname_nc, 'r')
@@ -184,7 +187,8 @@ class cld_les:
             dz0 = dz[0]
             diff = np.abs(dz-dz0)
             if any([i>0.001 for i in diff]):
-                print('Warning [cld_les]: Non-equidistant intervals found in \'dz\'.')
+                msg = 'Warning [cld_les]: Non-equidistant intervals found in <dz>.'
+                warnings.warn(msg)
             dz  = np.append(dz, dz0)
             alt = np.append(self.lay['altitude']['data']-dz0/2.0, self.lay['altitude']['data'][-1]+dz0/2.0)
             self.lev['altitude']    = {'data':alt, 'name':'Altitude'       , 'units':'km'}
@@ -198,7 +202,8 @@ class cld_les:
             altitude[altitude<0.0] = 0.0
 
             if altitude.max() < z_km.max():
-                sys.exit('Error [cld_les]: The highest level of LES is higher than the highest level of given altitude.')
+                msg = 'Error [cld_les]: The highest level of LES is higher than the highest level of given altitude.'
+                raise ValueError(msg)
 
             alt_min0 = altitude[altitude <= z_km.min()].max()
             alt_max0 = altitude[altitude >= z_km.max()].min()
@@ -217,7 +222,8 @@ class cld_les:
             dz0 = dz[0]
             diff = np.abs(dz-dz0)
             if any([i>0.001 for i in diff]):
-                print('Warning [cld_les]: Non-equidistant intervals found in \'dz\'.')
+                msg = 'Warning [cld_les]: Non-equidistant intervals found in <dz>.'
+                warnings.warn(msg)
             dz  = np.append(dz, dz0)
             alt = np.append(self.lay['altitude']['data']-dz0/2.0, self.lay['altitude']['data'][-1]+dz0/2.0)
             alt[alt<0.0] = 0.0
@@ -232,7 +238,8 @@ class cld_les:
             dz0_ = dz_[0]
             diff_ = np.abs(dz_-dz0_)
             if any([i>0.001 for i in diff_]):
-                print('Warning [cld_les]: Non-equidistant intervals found in \'dz_\'.')
+                msg = 'Warning [cld_les]: Non-equidistant intervals found in <dz_>.'
+                warnings.warn(msg)
             dz_  = np.append(dz_, dz0_)
             alt_ = np.append(z_km-dz0_/2.0, z_km[-1]+dz0_/2.0)
             alt_[alt_<0.0] = 0.0
@@ -269,7 +276,8 @@ class cld_les:
 
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or \
            (self.Nz%dnz != 0) or (self.Nt%dnt != 0):
-            sys.exit('Error   [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['temperature']['data'].shape), str(coarsen)))
+            msg = 'Error [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['temperature']['data'].shape), str(coarsen))
+            raise ValueError(msg)
         else:
             new_shape = (self.Nt//dnt, self.Nz//dnz, self.Ny//dny, self.Nx//dnx)
 
