@@ -30,7 +30,7 @@ import er3t.common
 
 # global variables
 #/-----------------------------------------------------------------------------\
-photons = 1e8
+photons = 1e7
 Ncpu    = 8
 #\-----------------------------------------------------------------------------/
 
@@ -991,7 +991,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
     #/-----------------------------------------------------------------------------\
     # inhomogeneous 3d mcarats "atmosphere"
-    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, overwrite=False)
+    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, overwrite=False, force=True)
 
     # 3d aerosol near surface (mixed with clouds)
     #/-----------------------------------------------------------------------------\
