@@ -47,7 +47,7 @@ from er3t.rtm.mca import mcarats_ng
 from er3t.rtm.mca import mca_out_ng
 from er3t.rtm.mca import mca_sca
 from er3t.util.ahi import ahi_l2
-from er3t.util.modis import grid_modis_by_extent
+from er3t.util import grid_by_extent
 
 
 
@@ -192,8 +192,8 @@ def cal_mca_flux(
 
     if overwrite:
         ahi0      = ahi_l2(fnames=[fname_sat], extent=extent, vnames=['cld_height_acha'])
-        lon_2d, lat_2d, cot_2d = grid_modis_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cot']['data'], extent=extent)
-        lon_2d, lat_2d, cer_2d = grid_modis_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cer']['data'], extent=extent)
+        lon_2d, lat_2d, cot_2d = grid_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cot']['data'], extent=extent)
+        lon_2d, lat_2d, cer_2d = grid_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cer']['data'], extent=extent)
         cot_2d[cot_2d>100.0] = 100.0
         cer_2d[cer_2d==0.0] = 1.0
         ahi0.data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=lon_2d)
@@ -202,7 +202,7 @@ def cal_mca_flux(
         ahi0.data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=cer_2d)
 
         if cloud_top_height is None:
-            lon_2d, lat_2d, cth_2d = grid_modis_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cld_height_acha']['data'], extent=extent)
+            lon_2d, lat_2d, cth_2d = grid_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cld_height_acha']['data'], extent=extent)
             cth_2d[cth_2d<0.0]  = 0.0; cth_2d /= 1000.0
             ahi0.data['cth_2d'] = dict(name='Gridded cloud top height', units='km', data=cth_2d)
             cloud_top_height = ahi0.data['cth_2d']['data']

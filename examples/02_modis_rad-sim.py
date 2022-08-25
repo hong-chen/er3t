@@ -52,8 +52,8 @@ from er3t.pre.abs import abs_16g
 from er3t.pre.cld import cld_sat
 from er3t.pre.sfc import sfc_sat
 from er3t.pre.pha import pha_mie_wc as pha_mie
-from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, grid_modis_by_extent, grid_modis_by_lonlat, download_modis_https, get_sinusoidal_grid_tag, get_filename_tag, download_modis_rgb
-from er3t.util import cal_r_twostream
+from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, download_modis_https, get_sinusoidal_grid_tag, get_filename_tag, download_modis_rgb
+from er3t.util import cal_r_twostream, grid_by_extent, grid_by_lonlat
 
 from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
 from er3t.rtm.mca import mcarats_ng
@@ -222,8 +222,8 @@ def pre_cld_modis(sat, wvl, scale_factor=1.0, solver='3D'):
     # Process MODIS radiance and reflectance at 650 nm (250m resolution)
     # ===================================================================================
     modl1b = modis_l1b(fnames=sat.fnames['mod_02'], extent=sat.extent)
-    lon_2d, lat_2d, ref_2d = grid_modis_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['ref']['data'][index[wvl], ...], extent=sat.extent)
-    lon_2d, lat_2d, rad_2d = grid_modis_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['rad']['data'][index[wvl], ...], extent=sat.extent)
+    lon_2d, lat_2d, ref_2d = grid_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['ref']['data'][index[wvl], ...], extent=sat.extent)
+    lon_2d, lat_2d, rad_2d = grid_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['rad']['data'][index[wvl], ...], extent=sat.extent)
     # ===================================================================================
 
 
@@ -277,7 +277,7 @@ def pre_cld_modis(sat, wvl, scale_factor=1.0, solver='3D'):
     # Upscale cloud effective radius from 1km (L2) to 250m resolution
     # =============================================================
     modl2 = modis_l2(fnames=sat.fnames['mod_l2'], extent=sat.extent)
-    lon_2d, lat_2d, cer_2d_l2 = grid_modis_by_lonlat(modl2.data['lon']['data'], modl2.data['lat']['data'], modl2.data['cer']['data'], lon_1d=lon_2d[:, 0], lat_1d=lat_2d[0, :], method='linear')
+    lon_2d, lat_2d, cer_2d_l2 = grid_by_lonlat(modl2.data['lon']['data'], modl2.data['lat']['data'], modl2.data['cer']['data'], lon_1d=lon_2d[:, 0], lat_1d=lat_2d[0, :], method='linear')
     cer_2d_l2[cer_2d_l2<1.0] = 1.0
     # =============================================================
 
@@ -385,7 +385,7 @@ def pre_sfc_modis(sat, wvl):
     #   band 7: 2105 - 2155 nm, index 6
     mod = modis_09a1(fnames=sat.fnames['mod_09'], extent=sat.extent)
     points = np.transpose(np.vstack((mod.data['lon']['data'], mod.data['lat']['data'])))
-    lon_2d, lat_2d, mod_sfc_alb_2d = grid_modis_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][index[wvl], :], extent=sat.extent)
+    lon_2d, lat_2d, mod_sfc_alb_2d = grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][index[wvl], :], extent=sat.extent)
 
     mod.data['alb_2d'] = dict(data=mod_sfc_alb_2d, name='Surface albedo', units='N/A')
     mod.data['lon_2d'] = dict(data=lon_2d        , name='Longitude'     , units='degrees')
