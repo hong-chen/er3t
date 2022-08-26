@@ -100,7 +100,7 @@ class cld_les:
             print('Message [cld_les]: Processing <%s> ...' % fname_nc)
 
         # pre process
-        self.pre_les(fname_nc, altitude=self.altitude)
+        self.pre_les(fname_nc)
 
         # downscale data if needed
         if any([i!=1 for i in self.coarsen]):
@@ -119,10 +119,7 @@ class cld_les:
             pickle.dump(self, f)
 
 
-    def pre_les(self, fname_nc, q_factor=2, altitude=None):
-
-        self.lay = {}
-        self.lev = {}
+    def pre_les(self, fname_nc, q_factor=2, index_t=0):
 
         try:
             from netCDF4 import Dataset
@@ -131,35 +128,49 @@ class cld_les:
             raise ImportError(msg)
 
         f = Dataset(fname_nc, 'r')
-        time   = f.variables['time'][...]
-        x      = f.variables['x'][...]
-        y      = f.variables['y'][...]
-        z      = f.variables['z'][...]
-        p      = f.variables['p'][...]
-        t_3d   = f.variables['TABS'][...]
-        qc_3d  = f.variables['QC'][...]
-        qr_3d  = f.variables['QR'][...]
-        qv_3d  = f.variables['QV'][...]
-        cer_3d = f.variables['REL'][...]   # cloud effective radius
-        Nc_3d  = f.variables['NC'][...]    # cloud droplet number concentration
+
+        x      = f.variables['x'][:]               # x direction
+        y      = f.variables['y'][:]               # y direction
+        z0     = f.variables['z'][:]               # z direction, altitude
+        qc_3d  = f.variables['QC'][index_t, ...]   # cloud water mixing ratio
+
+        # in vertical dimension, only select data where has clouds to shrink data size
+        # and accelerate calculation
+        #/-----------------------------------------------------------------------------/
+        Nz0 = z0.size
+
+        qc_z = np.sum(qc_3d, axis=(1, 2))
+        index_e = -1
+        while (qc_z[index_e-2] < 1e-8) and (Nz0+index_e>1):
+            index_e -= 1
+
+        if self.coarsen[2] > 1:
+            index_e = min(self.coarsen[2]*((Nz0+index_e)//self.coarsen[2]+1), Nz0)
+
+        z      = z0[:index_e]   # z direction, altitude
+        qc_3d  = qc_3d[:index_e, :, :]
+
+        p      = f.variables['p'][:index_e]                   # pressure
+        qr_3d  = f.variables['QR'][index_t, :index_e, :, :]   # rain water mixing ratio
+        qv_3d  = f.variables['QV'][index_t, :index_e, :, :]   # water vapor
+        cer_3d = f.variables['REL'][index_t, :index_e, :, :]  # cloud effective radius
+        Nc_3d  = f.variables['NC'][index_t, :index_e, :, :]   # cloud droplet number concentration
+        t_3d   = f.variables['TABS'][index_t, :index_e, :, :] # absolute temperature
+        #\-----------------------------------------------------------------------------\
+
         f.close()
 
-        self.lay['x']           = {'data':x/1000.0             , 'name':'X'          , 'units':'km'}
-        self.lay['y']           = {'data':y/1000.0             , 'name':'Y'          , 'units':'km'}
-        self.lay['nx']          = {'data':x.size               , 'name':'Nx'         , 'units':'N/A'}
-        self.lay['ny']          = {'data':y.size               , 'name':'Ny'         , 'units':'N/A'}
-        self.lay['dx']          = {'data':abs(x[1]-x[0])/1000.0, 'name':'dx'         , 'units':'km'}
-        self.lay['dy']          = {'data':abs(y[1]-y[0])/1000.0, 'name':'dy'         , 'units':'km'}
-
-        Nx = x.size
-        Ny = y.size
-        Nz = z.size
-        Nt = time.size
+        Nz, Ny, Nx = qc_3d.shape
 
         # 3d pressure field
-        p_3d      = np.empty((Nt, Nz, Ny, Nx), dtype=p.dtype)
-        p_3d[...] = p[None, :, None, None]
+        #/-----------------------------------------------------------------------------/
+        p_3d      = np.empty((Nz, Ny, Nx), dtype=p.dtype)
+        p_3d[...] = p[:, None, None]
+        #\-----------------------------------------------------------------------------\
 
+
+        # calculate cloud extinction
+        #/-----------------------------------------------------------------------------/
         # water vapor volume mixing ratio (from mass mixing ratio, kg/kg)
         vmr_3d = mmr2vmr(qv_3d * 0.001)
 
@@ -169,37 +180,66 @@ class cld_les:
         # liquid water content (kg/m3)
         lwc_3d = qc_3d * 0.001 * rho_3d
 
-        # extinction coefficients
-        logic         = (Nc_3d>=1) & (cer_3d>0.0)
-        ext_3d        = np.zeros_like(t_3d)
-        ext_3d[logic] = 0.75 * q_factor / (1000.0*cer_3d[logic]*1e-6) * lwc_3d[logic]
+        # grid cells that are cloudy
+        logic = (Nc_3d>=1) & (cer_3d>0.0)
         cer_3d[np.logical_not(logic)] = 0.0
 
-        if altitude is None:
-            self.lay['altitude']    = {'data':z/1000.0, 'name':'Altitude'   , 'units':'km'}
-            self.lay['pressure']    = {'data':p       , 'name':'Pressure'   , 'units':'mb'}
-            self.lay['temperature'] = {'data':t_3d    , 'name':'Temperature', 'units':'K'}
-            self.lay['extinction']  = {'data':ext_3d  , 'name':'Extinction coefficients', 'units':'m^-1'}
+        # extinction coefficients (m^-1)
+        const0        = 0.75*q_factor/(1000.0*1e-6)
+        ext_3d        = np.zeros_like(t_3d)
+        ext_3d[logic] = const0 / cer_3d[logic] * lwc_3d[logic]
+        cer_3d[np.logical_not(logic)] = 0.0
+        #\-----------------------------------------------------------------------------\
 
-            self.lay['cer']          = {'data':cer_3d  , 'name':'Effective radius', 'units':'mm'}
 
-            self.Nx = Nx
-            self.Ny = Ny
-            self.Nz = Nz
-            self.Nt = Nt
+        self.Nx = Nx
+        self.Ny = Ny
+        self.Nz = Nz
 
-            dz  = self.lay['altitude']['data'][1:]-self.lay['altitude']['data'][:-1]
-            dz0 = dz[0]
-            diff = np.abs(dz-dz0)
-            if any([i>0.001 for i in diff]):
-                msg = 'Warning [cld_les]: Non-equidistant intervals found in <dz>.'
-                warnings.warn(msg)
-            dz  = np.append(dz, dz0)
-            alt = np.append(self.lay['altitude']['data']-dz0/2.0, self.lay['altitude']['data'][-1]+dz0/2.0)
-            self.lev['altitude']    = {'data':alt, 'name':'Altitude'       , 'units':'km'}
-            self.lay['thickness']   = {'data':dz , 'name':'Layer thickness', 'units':'km'}
+        # layer property
+        #/-----------------------------------------------------------------------------/
+        self.lay = {}
 
-        else:
+        self.lay['x']           = {'data':x/1000.0             , 'name':'X'          , 'units':'km'}
+        self.lay['y']           = {'data':y/1000.0             , 'name':'Y'          , 'units':'km'}
+        self.lay['nx']          = {'data':x.size               , 'name':'Nx'         , 'units':'N/A'}
+        self.lay['ny']          = {'data':y.size               , 'name':'Ny'         , 'units':'N/A'}
+        self.lay['dx']          = {'data':abs(x[1]-x[0])/1000.0, 'name':'dx'         , 'units':'km'}
+        self.lay['dy']          = {'data':abs(y[1]-y[0])/1000.0, 'name':'dy'         , 'units':'km'}
+
+        self.lay['altitude']    = {'data':z/1000.0, 'name':'Altitude'   , 'units':'km'}
+        self.lay['pressure']    = {'data':p       , 'name':'Pressure'   , 'units':'mb'}
+
+        dz  = self.lay['altitude']['data'][1:]-self.lay['altitude']['data'][:-1]
+        diff = np.abs(dz-dz[0])
+        if any([i>1e-3 for i in diff]):
+            msg = 'Warning [cld_les]: Altitude is non-equidistant.'
+            warnings.warn(msg)
+        self.lay['thickness']   = {'data':dz , 'name':'Layer thickness', 'units':'km'}
+
+        self.lay['temperature'] = {'data':t_3d  , 'name':'Temperature', 'units':'K'}
+        self.lay['extinction']  = {'data':ext_3d, 'name':'Extinction coefficients', 'units':'m^-1'}
+        self.lay['cer']         = {'data':cer_3d, 'name':'Cloud effective radius', 'units':'mm'}
+        #\-----------------------------------------------------------------------------\
+
+
+        # level property
+        #/-----------------------------------------------------------------------------/
+        self.lev = {}
+
+        z_ = np.append(self.lay['altitude']['data']-dz/2.0, self.lay['altitude']['data'][-1]+dz[-1]/2.0)
+
+        if z_[0] < 0.0:
+            msg = 'Error [cld_les]: Surface below 0.'
+            raise ValueError(msg)
+
+        dz_ = z_[1:] - z_[:-1]
+        self.lev['altitude']  = {'data':z_ , 'name':'Altitude'       , 'units':'km'}
+        self.lay['thickness'] = {'data':dz_, 'name':'Layer thickness', 'units':'km'}
+        #\-----------------------------------------------------------------------------\
+
+
+        if False:
             z_km = z/1000.0
 
             while altitude.min() > z_km.min():
@@ -275,6 +315,21 @@ class cld_les:
             self.lay['cer']         = {'data':cer_3d_new  , 'name':'Cloud effective radius' , 'units':'mm'}
 
 
+    def post_les(self):
+
+        for key in self.lay.keys():
+
+            if isinstance(self.lay[key]['data'], np.ndarray):
+                if self.lay[key]['data'].ndim == 4:
+                    self.lay[key]['data']  = np.transpose(self.lay[key]['data'])[:, :, :, 0]
+
+        cot_3d = np.zeros_like(self.lay['extinction']['data'])
+        for i, dz in enumerate(self.lay['thickness']['data']):
+            cot_3d[:, :, i] = self.lay['extinction']['data'][:, :, i] * dz * 1000.0
+
+        self.lay['cot'] = {'data':cot_3d, 'name':'Cloud optical thickness'}
+
+
     def downscale(self, coarsen):
 
         dnx, dny, dnz, dnt = coarsen
@@ -304,22 +359,10 @@ class cld_les:
                         self.lay[key]['data']  = downscale(self.lay[key]['data'], new_shape, operation='mean')
 
 
-    def post_les(self):
-
-        for key in self.lay.keys():
-
-            if isinstance(self.lay[key]['data'], np.ndarray):
-                if self.lay[key]['data'].ndim == 4:
-                    self.lay[key]['data']  = np.transpose(self.lay[key]['data'])[:, :, :, 0]
-
-        cot_3d = np.zeros_like(self.lay['extinction']['data'])
-        for i, dz in enumerate(self.lay['thickness']['data']):
-            cot_3d[:, :, i] = self.lay['extinction']['data'][:, :, i] * dz * 1000.0
-
-        self.lay['cot'] = {'data':cot_3d, 'name':'Cloud optical thickness'}
-
-
 
 if __name__ == '__main__':
 
+    import er3t.common
+    fname_nc = os.path.abspath('%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples)
+    cld0 = cld_les(fname_nc=fname_nc, coarsen=[1, 1, 10, 1])
     pass

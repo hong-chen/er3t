@@ -206,6 +206,8 @@ def get_data_info_h5(fname, dataType='HDF5'):
         obj = f[vname]
         data_info[vname] = str(obj.shape)
         for attr in obj.attrs.keys():
+            if '_LIST' in attr:
+                return get_data_info_nc(fname)
             attr0 = obj.attrs[attr]
             if isinstance(attr0, (bytes, bytearray)):
                 attr0 = str(attr0, encoding='utf-8')
