@@ -5,7 +5,7 @@ import datetime
 import time
 from scipy.io import readsav
 import matplotlib as mpl
-# mpl.use('Agg')
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator
 from matplotlib import rcParams

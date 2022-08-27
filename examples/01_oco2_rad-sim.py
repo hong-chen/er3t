@@ -46,6 +46,7 @@ from scipy.io import readsav
 from scipy import interpolate
 from scipy.optimize import curve_fit
 import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.image as mpl_img
 from matplotlib.ticker import FixedLocator

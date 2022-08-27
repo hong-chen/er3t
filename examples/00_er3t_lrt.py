@@ -5,6 +5,7 @@ import datetime
 import er3t.rtm.lrt as lrt
 
 import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator
 from matplotlib import rcParams

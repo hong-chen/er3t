@@ -34,6 +34,7 @@ import datetime
 import pickle
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
