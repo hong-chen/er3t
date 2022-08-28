@@ -24,7 +24,7 @@ setup(
      author_email = 'hong.chen.cu@gmail.com, sebastian.schmidt@lasp.colorado.edu',
      license = 'GNU GPLv3',
      packages = find_packages(),
-     install_requires = ['nose', 'tqdm', 'gdown', 'numpy', 'scipy', 'h5py', 'netCDF4', 'pyhdf', 'cartopy==0.19.0'],
+     install_requires = ['nose', 'tqdm', 'gdown', 'numpy', 'scipy', 'h5py', 'netCDF4', 'pyhdf', 'cartopy'],
      python_requires = '~=3.9',
      scripts = ['bin/lss', 'bin/lsa'],
      include_package_data = True,
