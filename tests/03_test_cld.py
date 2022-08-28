@@ -21,7 +21,9 @@ def test_cld_les(fdir):
     fname_nc  = 'data/les.nc'
     fname_les = '%s/les.pk' % fdir
 
-    cld0 = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, 25, 1], overwrite=True)
+    dz = 0.2
+    dnz = dz//0.04
+    cld0 = cld_les(fname_nc=fname_nc, fname=fname_les, coarsing=[1, 1, dnz], overwrite=True)
 
 
 

@@ -47,7 +47,10 @@ def test_download_laads():
     from er3t.util import get_doy_tag
 
     date = datetime.datetime(2022, 5, 18)
+    extent = [-94.2607, -87.2079, 31.8594, 38.9122]
+
     doy_tag = get_doy_tag(date, day_interval=1)
+
     print(doy_tag)
 
 
@@ -59,7 +62,6 @@ def test_modis():
 
     download_modis_rgb(datetime.datetime(2015, 9, 6), [-2.0077, 2.9159, 48.5883, 53.4864], fdir='.', which='aqua', coastline=True)
     download_modis_rgb(datetime.datetime(2015, 9, 6), [-2.0077, 2.9159, 48.5883, 53.4864], fdir='.', which='terra', coastline=True)
-    sys.exit()
 
 
     lon = np.arange(10.0, 15.0)
@@ -179,8 +181,8 @@ if __name__ == '__main__':
 
     # test_download_worldview() # passed test on 2022-08-19
 
-    # test_download_laads()
+    test_download_laads()
 
-    test_viirs()
+    # test_viirs()
 
     # main()
