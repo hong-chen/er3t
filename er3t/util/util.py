@@ -13,7 +13,7 @@ __all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
            'get_data_nc', 'get_data_h4',
            'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
            'download_laads_https', 'download_worldview_rgb'] + \
-          ['combine_alt', 'get_lay_index', 'downscale', 'mmr2vmr', \
+          ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_dist', 'cal_cth_hist']
 
@@ -726,6 +726,20 @@ def downscale(ndarray, new_shape, operation='mean'):
         op = getattr(ndarray, operation)
         ndarray = op(-1*(i+1))
     return ndarray
+
+
+
+def upscale_2d(ndarray, scale_factors=(1, 1)):
+
+    Nx, Ny = ndarray.shape
+    scale_factor_x, scale_factor_y = scale_factors
+
+    data = np.zeros((Nx*scale_factor_x, Ny*scale_factor_y), dtype=ndarray.dtype)
+    for i in range(scale_factor_x):
+        for j in range(scale_factor_y):
+            data[i::scale_factor_x, j::scale_factor_y] = ndarray
+
+    return data
 
 
 
