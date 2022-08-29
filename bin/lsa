@@ -144,7 +144,7 @@ def get_data_info_nc(fname, dataType='netCDF4'):
         vnames.append(vname[1:])
         objs.append(obj)
 
-    data_info = {}
+    data_info = OrderedDict()
     for i, vname in enumerate(vnames):
         data_info[vname] = str(objs[i].shape)
         for attr in objs[i].ncattrs():
@@ -201,7 +201,7 @@ def get_data_info_h5(fname, dataType='HDF5'):
     for vname in get_variable_names(f):
         vnames.append(vname[1:])
 
-    data_info = {}
+    data_info = OrderedDict()
     for vname in vnames:
         obj = f[vname]
         data_info[vname] = str(obj.shape)
@@ -235,7 +235,7 @@ def get_data_info_h4(fname, dataType='HDF4'):
 
     vnames = f.datasets().keys()
 
-    data_info = {}
+    data_info = OrderedDict()
     for vname in vnames:
         obj = f.select(vname)
         info = obj.info()
@@ -271,7 +271,7 @@ def get_data_info_idl(fname, dataType='IDL'):
         raise OSError(msg)
 
     vnames0 = f.keys()
-    data_info = {}
+    data_info = OrderedDict()
     for vname0 in vnames0:
         obj = f[vname0]
         if isinstance(obj, numpy.recarray):
@@ -320,12 +320,11 @@ def get_data_info(fname, dataType):
 
 def process_data_info(data_info):
 
-    vnames = sorted(data_info.keys())
+    vnames = sorted(data_info.keys(), key=lambda x: x.split('|')[0])
     data_info_new = OrderedDict()
 
     i = 0
     for vname in vnames:
-
         if ('|' not in vname):
             i += 1
             if '(' in data_info[vname] and ')' in data_info[vname] and len(data_info[vname])>2 \
