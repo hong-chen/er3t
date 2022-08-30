@@ -1,3 +1,14 @@
+"""
+by Hong Chen (hong.chen.cu@gmail.com)
+
+This code has been tested under:
+    1) Linux on 2022-08-30 by Hong Chen
+      Operating System: Red Hat Enterprise Linux
+           CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
+                Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
+          Architecture: x86-64
+"""
+
 import os
 import h5py
 import numpy as np
@@ -1316,16 +1327,16 @@ if __name__ == '__main__':
 
     # irradiance simulation
     #/-----------------------------------------------------------------------------\
-    # test_01_flux_clear_sky()
-    # test_02_flux_les_cloud_3d()
-    # test_03_flux_les_cloud_3d_aerosol_1d()
-    # test_04_flux_les_cloud_3d_aerosol_3d()
+    test_01_flux_clear_sky()
+    test_02_flux_les_cloud_3d()
+    test_03_flux_les_cloud_3d_aerosol_1d()
+    test_04_flux_les_cloud_3d_aerosol_3d()
     #\-----------------------------------------------------------------------------/
 
     # radiance simulation
     #/-----------------------------------------------------------------------------\
-    # test_05_rad_les_cloud_3d_aerosol_3d()
-    # test_06_rad_cld_gen_hem()
+    test_05_rad_les_cloud_3d_aerosol_3d()
+    test_06_rad_cld_gen_hem()
     #\-----------------------------------------------------------------------------/
 
     pass
