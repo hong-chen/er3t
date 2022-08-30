@@ -47,7 +47,7 @@ Dependencies
 
     ::
 
-        # assume <requests>, <tqdm>, <numpy>, <scipy>, <matplotlib>
+        # assume <requests>, <tqdm>, <numpy>, <scipy>, <matplotlib>, <h5py>
         #     are preinstalled by Anaconda installer
 
         conda install -c conda-forge gdown      # >=4.5.1
