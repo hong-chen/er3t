@@ -47,11 +47,11 @@ class lrt_init_mono:
             ):
 
         if lrt_cfg is None:
-            self.lrt_cfg         = get_lrt_cfg()
-        else:
-            self.lrt_cfg         = lrt_cfg
+            lrt_cfg = get_lrt_cfg()
 
-        self.mute_list       = mute_list
+        self.lrt_cfg = lrt_cfg
+
+        self.mute_list = mute_list
 
         # executable file
         self.executable_file = lrt_cfg['executable_file']
@@ -235,9 +235,9 @@ class lrt_init_spec:
             ):
 
         if lrt_cfg is None:
-            self.lrt_cfg         = get_lrt_cfg()
-        else:
-            self.lrt_cfg         = lrt_cfg
+            lrt_cfg = get_lrt_cfg()
+
+        self.lrt_cfg = lrt_cfg
 
         # executable file
         self.executable_file = lrt_cfg['executable_file']
