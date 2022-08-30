@@ -6,7 +6,7 @@ This code serves as an example code to reproduce 3D MODIS radiance simulation fo
 The processes include:
     1) `main_pre()`: automatically download and pre-process satellite data products (~640MB data will be
        downloaded and stored under data/02_modis_rad-sim/download) from NASA data archive
-        a) aqua_rgb_2019-09-02_-109.60--106.50-35.90-39.00.png
+        a) MODIS-Aqua_rgb_2019-09-02_(-109.60,-106.50,35.90,39.00).png
         b) MYD021KM.A2019245.2025.061.2019246161115.hdf
         c) MYD02HKM.A2019245.2025.061.2019246161115.hdf
         d) MYD02QKM.A2019245.2025.061.2019246161115.hdf
@@ -23,12 +23,11 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2022-07-22 by Hong Chen
+    1) Linux on 2022-08-29 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
           Architecture: x86-64
-
 """
 
 import os
@@ -617,7 +616,7 @@ def main_sim(wvl=650):
 
     # run radiance simulations under both 3D mode
     # ===============================================================
-    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True, photons=1e7)
+    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True, photons=1e8)
     # ===============================================================
 
 def main_post(wvl=650, plot=False):
