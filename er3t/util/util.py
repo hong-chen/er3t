@@ -1,6 +1,11 @@
 import os
 import sys
+import csv
+import shutil
 import datetime
+import requests
+import urllib.request
+from io import StringIO
 import numpy as np
 from scipy import interpolate
 import warnings
@@ -10,12 +15,13 @@ import warnings
 
 __all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
            'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
-           'get_data_nc', 'get_data_h4',
+           'get_data_nc', 'get_data_h4', \
            'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
+           'get_satfile_tag', \
            'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_dist', 'cal_cth_hist']
+           'cal_r_twostream', 'cal_t_twostream', 'cal_dist', 'cal_cth_hist']
 
 
 # tools
@@ -397,6 +403,177 @@ def get_doy_tag(date, day_interval=8):
 
 
 
+def get_satfile_tag(
+             date,
+             lon,
+             lat,
+             satellite='aqua',
+             instrument='modis',
+             server='https://ladsweb.modaps.eosdis.nasa.gov',
+             verbose=False):
+
+    """
+    Input:
+        date: Python datetime.datetime object
+        lon : longitude of, e.g. flight track
+        lat : latitude of, e.g. flight track
+        satellite=: default "aqua", can also change to "terra", 'snpp', 'noaa20'
+        instrument=: default "modis", can also change to "viirs"
+        server=: string, data server
+        fdir_prefix=: string, data directory on NASA server
+        verbose=: Boolen type, verbose tag
+
+    output:
+        filename_tags: Python list of file name tags
+    """
+
+    # check cartopy and matplotlib
+    #/----------------------------------------------------------------------------\#
+    try:
+        import cartopy.crs as ccrs
+    except ImportError:
+        msg = '\nError [get_satfile_tag]: Please install <cartopy> to proceed.'
+        raise ImportError(msg)
+
+    try:
+        import matplotlib.path as mpl_path
+    except ImportError:
+        msg = '\nError [get_satfile_tag]: Please install <matplotlib> to proceed.'
+        raise ImportError(msg)
+    #\----------------------------------------------------------------------------/#
+
+
+    # check satellite and instrument
+    #/----------------------------------------------------------------------------\#
+    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
+        instrument = instrument.upper()
+        satellite  = satellite.lower().title()
+    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper()
+    else:
+        msg = 'Error [get_satfile_tag]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        raise NameError(msg)
+    #\----------------------------------------------------------------------------/#
+
+
+    # check login
+    #/----------------------------------------------------------------------------\#
+    try:
+        username = os.environ['EARTHDATA_USERNAME']
+        password = os.environ['EARTHDATA_PASSWORD']
+    except:
+        msg = '\nError [get_satfile_tag]: cannot find environment variables \'EARTHDATA_USERNAME\' and \'EARTHDATA_PASSWORD\'.'
+        raise OSError(msg)
+    #\----------------------------------------------------------------------------/#
+
+
+    # generate satellite filename on LAADS DAAC server
+    #/----------------------------------------------------------------------------\#
+    vname  = '%s|%s' % (satellite, instrument)
+    date_s = date.strftime('%Y-%m-%d')
+    fnames_server = {
+        'Aqua|MODIS'  : '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'           % (server, date.year, date_s),
+        'Terra|MODIS' : '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'          % (server, date.year, date_s),
+        'NOAA20|VIIRS': '%s/archive/geoMetaJPSS/5200/JPSS1/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
+        'SNPP|VIIRS'  : '%s/archive/geoMetaJPSS/5110/NPP/%4.4d/VNP03MOD_%s.txt'   % (server, date.year, date_s),
+        }
+    fname_server = fnames_server[vname]
+    #\----------------------------------------------------------------------------/#
+
+
+    # convert longitude in [-180, 180] range
+    # since the longitude in GeoMeta dataset is in the range of [-180, 180]
+    #/----------------------------------------------------------------------------\#
+    lon[lon>180.0] -= 360.0
+    logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
+    lon   = lon[logic]
+    lat   = lat[logic]
+    #\----------------------------------------------------------------------------/#
+
+
+    # try to access the server
+    #/----------------------------------------------------------------------------\#
+    try:
+        with requests.Session() as session:
+            session.auth = (username, password)
+            r1     = session.request('get', fname_server)
+            r      = session.get(r1.url, auth=(username, password))
+            if r.ok:
+                content = r.content.decode('utf-8')
+    except:
+        msg = '\nError [get_satfile_tag]: cannot access <%s>.' % fname_server
+        raise OSError(msg)
+    #\----------------------------------------------------------------------------/#
+
+
+    # extract granule information from <content>
+    # after the following session, granule information will be stored under <data>
+    # data['GranuleID'].decode('UTF-8') to get the file name of MODIS granule
+    # data['StartDateTime'].decode('UTF-8') to get the time stamp of MODIS granule
+    # variable names can be found through
+    # print(data.dtype.names)
+    #/----------------------------------------------------------------------------\#
+    if vname in ['Aqua|MODIS', 'Terra|MODIS']:
+        dtype = ['|S41', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
+    elif vname in ['NOAA20|VIIRS', 'SNPP|VIIRS']:
+        dtype = ['|S43', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
+    usecols = (0, 4, 9, 10, 11, 12, 13, 14, 15, 16)
+    data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
+    #\----------------------------------------------------------------------------/#
+
+
+    # loop through all the "MODIS granules" constructed through four corner points
+    # and find which granules contain the input data
+    #/----------------------------------------------------------------------------\#
+    Ndata = data.size
+    filename_tags = []
+    proj_ori = ccrs.PlateCarree()
+    for i in range(Ndata):
+
+        line = data[i]
+        xx0  = np.array([line['GRingLongitude1'], line['GRingLongitude2'], line['GRingLongitude3'], line['GRingLongitude4'], line['GRingLongitude1']])
+        yy0  = np.array([line['GRingLatitude1'] , line['GRingLatitude2'] , line['GRingLatitude3'] , line['GRingLatitude4'] , line['GRingLatitude1']])
+
+        if (abs(xx0[0]-xx0[1])>180.0) | (abs(xx0[0]-xx0[2])>180.0) | \
+           (abs(xx0[0]-xx0[3])>180.0) | (abs(xx0[1]-xx0[2])>180.0) | \
+           (abs(xx0[1]-xx0[3])>180.0) | (abs(xx0[2]-xx0[3])>180.0):
+
+            xx0[xx0<0.0] += 360.0
+
+        # roughly determine the center of granule
+        #/----------------------------------------------------------------------------\#
+        xx = xx0[:-1]
+        yy = yy0[:-1]
+        center_lon = xx.mean()
+        center_lat = yy.mean()
+        #\----------------------------------------------------------------------------/#
+
+        # find the precise center point of MODIS granule
+        #/----------------------------------------------------------------------------\#
+        proj_tmp   = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
+        LonLat_tmp = proj_tmp.transform_points(proj_ori, xx, yy)[:, [0, 1]]
+        center_xx  = LonLat_tmp[:, 0].mean(); center_yy = LonLat_tmp[:, 1].mean()
+        center_lon, center_lat = proj_ori.transform_point(center_xx, center_yy, proj_tmp)
+        #\----------------------------------------------------------------------------/#
+
+        proj_new = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
+        LonLat_in = proj_new.transform_points(proj_ori, lon, lat)[:, [0, 1]]
+        LonLat_modis  = proj_new.transform_points(proj_ori, xx0, yy0)[:, [0, 1]]
+
+        modis_granule  = mpl_path.Path(LonLat_modis, closed=True)
+        pointsIn       = modis_granule.contains_points(LonLat_in)
+        percentIn      = float(pointsIn.sum()) / float(pointsIn.size) * 100.0
+        if pointsIn.sum()>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
+            filename = data[i]['GranuleID'].decode('UTF-8')
+            filename_tag = '.'.join(filename.split('.')[1:3])
+            filename_tags.append(filename_tag)
+    #\----------------------------------------------------------------------------/#
+
+    return filename_tags
+
+
+
 def download_laads_https(
              date,
              dataset_tag,
@@ -434,7 +611,7 @@ def download_laads_https(
     except KeyError:
         token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
         if verbose:
-            msg = 'Warning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.bash_profile\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+            msg = '\nWarning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
             warnings.warn(msg)
 
     if shutil.which('curl'):
@@ -442,7 +619,8 @@ def download_laads_https(
     elif shutil.which('wget'):
         command_line_tool = 'wget'
     else:
-        raise OSError('Error [download_laads_https]: \'download_laads_https\' needs \'curl\' or \'wget\' to be installed.')
+        msg = '\nError [download_laads_https]: <download_laads_https> needs <curl> or <wget> to be installed.'
+        raise OSError(msg)
 
     year_str = str(date.timetuple().tm_year).zfill(4)
     if day_interval == 1:
@@ -496,7 +674,7 @@ def download_laads_https(
                 try:
                     from pyhdf.SD import SD, SDC
                 except ImportError:
-                    msg = 'Error [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
+                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
                     raise ImportError(msg)
 
                 f = SD(fname_local, SDC.READ)
@@ -505,7 +683,7 @@ def download_laads_https(
 
             else:
 
-                msg = 'Warning [download_laads_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local)
+                msg = '\nWarning [download_laads_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local)
                 warnings.warn(msg)
 
     return fnames_local
@@ -939,7 +1117,7 @@ def cal_ext(cot, cer, dz=1.0, Qe=2.0):
 def cal_r_twostream(tau, a=0.0, g=0.85, mu=1.0):
 
     """
-    Two-stream approximation no absorption
+    Two-stream approximation of reflectance (no absorption)
 
     Input:
         a: surface albedo
@@ -954,6 +1132,27 @@ def cal_r_twostream(tau, a=0.0, g=0.85, mu=1.0):
     r = (tau + a*x) / (tau + x)
 
     return r
+
+
+
+def cal_t_twostream(tau, a=0.0, g=0.85, mu=1.0):
+
+    """
+    Two-stream approximation of transmittance (no absorption)
+
+    Input:
+        a: surface albedo
+        g: asymmetry parameter
+        mu: cosine of solar zenith angle
+
+    Output:
+        Transmittance
+    """
+
+    x = 2.0 * mu / (1.0-g) / (1.0-a)
+    t = x*(1.0-a) / (tau + x)
+
+    return t
 
 
 

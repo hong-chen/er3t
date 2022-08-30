@@ -6,7 +6,6 @@ import numpy as np
 import h5py
 from scipy import interpolate
 import shutil
-from http.cookiejar import CookieJar
 import urllib.request
 import requests
 from er3t.util import check_equal, get_doy_tag, get_data_h4

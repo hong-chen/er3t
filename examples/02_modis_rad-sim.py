@@ -53,8 +53,8 @@ from er3t.pre.abs import abs_16g
 from er3t.pre.cld import cld_sat
 from er3t.pre.sfc import sfc_sat
 from er3t.pre.pha import pha_mie_wc as pha_mie
-from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, download_modis_https, get_sinusoidal_grid_tag, get_filename_tag, download_modis_rgb
-from er3t.util import cal_r_twostream, grid_by_extent, grid_by_lonlat
+from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, get_sinusoidal_grid_tag
+from er3t.util import cal_r_twostream, grid_by_extent, grid_by_lonlat, download_laads_https, download_worldview_rgb, get_satfile_tag
 
 from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
 from er3t.rtm.mca import mcarats_ng
@@ -121,7 +121,7 @@ class satellite_download:
 
         self.fnames = {}
 
-        self.fnames['mod_rgb'] = [download_modis_rgb(self.date, self.extent, fdir=self.fdir_out, which='aqua', coastline=True)]
+        self.fnames['mod_rgb'] = [download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
@@ -129,13 +129,14 @@ class satellite_download:
         self.fnames['mod_02_hkm'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
-        filename_tags_03 = get_filename_tag(self.date, lon, lat, satID='aqua')
+        filename_tags_03 = get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
+
         for filename_tag in filename_tags_03:
-            fnames_l2 = download_modis_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02_1km = download_modis_https(self.date, '61/MYD021KM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02_hkm = download_modis_https(self.date, '61/MYD02HKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02 = download_modis_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_03 = download_modis_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02_1km = download_laads_https(self.date, '61/MYD021KM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02_hkm = download_laads_https(self.date, '61/MYD02HKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02_1km'] += fnames_02_1km
             self.fnames['mod_02'] += fnames_02
@@ -145,7 +146,7 @@ class satellite_download:
         self.fnames['mod_09'] = []
         filename_tags_09 = get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_09:
-            fnames_09 = download_modis_https(self.date, '6/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
+            fnames_09 = download_laads_https(self.date, '6/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_09'] += fnames_09
 
     def dump(self, fname):
@@ -404,7 +405,7 @@ class sat_tmp:
 
         self.data = data
 
-def cal_mca_rad(sat, wavelength, photons=1e8, fdir='tmp-data', solver='3D', overwrite=False):
+def cal_mca_rad(sat, wavelength, photons=1e7, fdir='tmp-data', solver='3D', overwrite=False):
 
     """
     Simulate MODIS radiance
@@ -523,7 +524,7 @@ def main_pre(wvl=650):
 
     # create data directory (for storing data) if the directory does not exist
     # ==================================================================================================
-    name_tag = __file__.replace('.py', '')
+    name_tag = os.path.relpath(__file__).replace('.py', '')
 
     fdir_data = os.path.abspath('data/%s/download' % name_tag)
     if not os.path.exists(fdir_data):
@@ -599,7 +600,7 @@ def main_sim(wvl=650):
 
     # create data directory (for storing data) if the directory does not exist
     # ==================================================================================================
-    name_tag = __file__.replace('.py', '')
+    name_tag = os.path.relpath(__file__).replace('.py', '')
     fdir_data = os.path.abspath('data/%s/download' % name_tag)
     fname_sat = '%s/sat.pk' % fdir_data
     sat0 = satellite_download(fname=fname_sat, overwrite=False)
@@ -623,7 +624,7 @@ def main_post(wvl=650, plot=False):
 
     # create data directory (for storing data) if the directory does not exist
     # ==================================================================================================
-    name_tag = __file__.replace('.py', '')
+    name_tag = os.path.relpath(__file__).replace('.py', '')
 
     fdir_data = os.path.abspath('data/%s' % name_tag)
     if not os.path.exists(fdir_data):
