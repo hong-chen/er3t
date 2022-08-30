@@ -17,12 +17,11 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2022-07-26 by Hong Chen
+    1) Linux on 2022-08-30 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
           Architecture: x86-64
-
 """
 
 import os
@@ -443,18 +442,18 @@ def main_run(
 
 
     # create data directory (for storing data) if the directory does not exist
-    # ==================================================================================================
+    #/--------------------------------------------------------------\#
     date_s   = date.strftime('%Y%m%d')
-    name_tag = __file__.replace('.py', '')
+    name_tag = os.path.relpath(__file__).replace('.py', '')
 
     fdir = os.path.abspath('tmp-data/%s/%s/%09.4fnm' % (name_tag, date_s, wavelength))
     if not os.path.exists(fdir):
         os.makedirs(fdir)
-    # ==================================================================================================
+    #\--------------------------------------------------------------/#
 
 
     # pre-process the aircraft and satellite data
-    # ==================================================================================================
+    #/--------------------------------------------------------------\#
     # get the avaiable satellite data (AHI) and calculate the time in hour for each file
     fnames_ahi = sorted(glob.glob('%s/*.nc' % (fdir_sat)))
     jday_ahi   = get_jday_ahi(fnames_ahi)
@@ -503,11 +502,11 @@ def main_run(
         sat_img['extent'] = flt_trks[i]['extent']
 
         sat_imgs.append(sat_img)
-    # ==================================================================================================
+    #\--------------------------------------------------------------/#
 
 
     # EaR3T simulation setup for the flight track
-    # ==================================================================================================
+    #/--------------------------------------------------------------\#
     sim0 = flt_sim(
             date=date,
             wavelength=wavelength,
@@ -518,7 +517,7 @@ def main_run(
             overwrite=True,
             overwrite_rtm=run_rtm
             )
-    # ==================================================================================================
+    #\--------------------------------------------------------------/#
 
 def main_post(
         date=datetime.datetime(2019, 9, 20),
@@ -533,7 +532,7 @@ def main_post(
         ):
 
     # data post-processing
-    # ==================================================================================================
+    #/--------------------------------------------------------------\#
     date_s = date.strftime('%Y%m%d')
 
     # aircraft measurements and simulations
@@ -574,7 +573,7 @@ def main_post(
         f[vname] = data0
 
     f.close()
-    # ==================================================================================================
+    #\--------------------------------------------------------------/#
 
     if plot:
 
@@ -587,7 +586,7 @@ def main_post(
         f_down_sim_ipa= f['f-down_mca-ipa'][...][logic]
         f.close()
 
-        # =============================================================================
+        #/--------------------------------------------------------------\#
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
         ax1.scatter(lon, f_down_spns   , color='k', s=4, lw=0.0)
@@ -611,7 +610,7 @@ def main_post(
         ax1.set_ylabel('Irradiance [$\mathrm{W m^{-2} nm^{-1}}$]')
         plt.savefig('03_spns_flux-sim.png', bbox_inches='tight')
         plt.close(fig)
-        # =============================================================================
+        #\--------------------------------------------------------------/#
 
 
 
@@ -622,15 +621,15 @@ if __name__ == '__main__':
     #   a. partition flight track into mini flight track segments: stored in `flt_trks`
     #   b. for each mini flight track segment, crop satellite imageries: stored in `sat_imgs`
     #   c. setup simulation runs for the flight track segments
-    # =============================================================================
+    #/--------------------------------------------------------------\#
     # main_run(run_rtm=True)
-    # =============================================================================
+    #\--------------------------------------------------------------/#
 
     # Step 2. Post-process radiance observations and simulations for SPN-S, after run
     #   a. <post-data.h5> will be created under data/03_spns_flux-sim
     #   b. <03_spns_flux-sim.png> will be created under current directory
-    # =============================================================================
+    #/--------------------------------------------------------------\#
     # main_post(plot=True)
-    # =============================================================================
+    #\--------------------------------------------------------------/#
 
     pass
