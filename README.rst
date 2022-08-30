@@ -50,11 +50,11 @@ Dependencies
         # assume <requests>, <tqdm>, <numpy>, <scipy>, <matplotlib>
         #     are preinstalled by Anaconda installer
 
-        conda install -c conda-forge gdown   # >=4.5.1
-        conda install -c conda-forge pyhdf   # >=0.10.2
-        conda install -c conda-forge netcdf4 # >=1.5.7
-        conda install -c conda-forge owslib  # >=0.27.2
-        conda install -c conda-forge cartopy # >=0.18
+        conda install -c conda-forge gdown      # >=4.5.1
+        conda install -c conda-forge pyhdf      # >=0.10.2
+        conda install -c conda-forge netcdf4    # >=1.5.7
+        conda install -c conda-forge owslib     # >=0.27.2
+        conda install -c conda-forge cartopy    # >=0.18
 
 |
 
