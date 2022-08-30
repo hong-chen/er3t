@@ -43,7 +43,7 @@ Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <
 Dependencies
 ============
 
-**1. Python packages** (we recommend using `Anaconda <https://www.anaconda.com/>`_ Python, `here <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_ is a tested Python package version reference list for Mac and Linux users)
+**1. Python packages** (we recommend using `Anaconda <https://www.anaconda.com/>`_ Python, `here <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_ is a version reference list of Python packages [passed tests] for Mac and Linux users)
 
 
     ::
