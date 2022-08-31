@@ -43,7 +43,7 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 Dependencies
 ============
 
-**1. Python packages** (we recommend using `Anaconda <https://www.anaconda.com/>`_ Python, a `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_ is provided for Mac and Linux users)
+**1. Python packages** (we recommend using `Anaconda <https://www.anaconda.com/>`_ Python)
 
 
     ::
@@ -51,11 +51,14 @@ Dependencies
         # assume <requests>, <tqdm>, <numpy>, <scipy>, <matplotlib>, <h5py>
         #     are preinstalled by Anaconda installer
 
-        conda install -c conda-forge gdown      # >=4.5.1
-        conda install -c conda-forge pyhdf      # >=0.10.2
-        conda install -c conda-forge netcdf4    # >=1.5.7
-        conda install -c conda-forge owslib     # >=0.27.2
-        conda install -c conda-forge cartopy    # >=0.18
+        conda install -c conda-forge gdown
+        conda install -c conda-forge pyhdf
+        conda install -c conda-forge netcdf4
+        conda install -c conda-forge owslib
+        conda install -c conda-forge cartopy
+
+    A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
+    (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
 
 |
 
