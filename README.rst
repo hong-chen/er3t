@@ -57,8 +57,8 @@ Dependencies
         conda install -c conda-forge owslib
         conda install -c conda-forge cartopy
 
-    A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
-    (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
+    * A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
+      (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
 
 |
 
