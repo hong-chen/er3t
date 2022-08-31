@@ -33,7 +33,7 @@ Applicable area:
 
 |
 
-Please contact `Hong Chen <hong.chen.cu@gmail.com>`_ and/or `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ for the most recent information.
+Please `join Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information.
 
 |
 |
