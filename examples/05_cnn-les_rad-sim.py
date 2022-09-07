@@ -17,12 +17,11 @@ The processes include:
        data at different cloud fractions and cloud inhomogeneities to avoid biasing CNN model.
 
 This code has been tested under:
-    1) Linux on 2022-07-27 by Hong Chen
+    1) Linux on 2022-09-07 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
           Architecture: x86-64
-
 """
 
 import os
@@ -54,6 +53,13 @@ from er3t.util import cal_r_twostream, cal_ext
 from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
 from er3t.rtm.mca import mcarats_ng
 from er3t.rtm.mca import mca_out_ng
+
+
+# global variables
+#/----------------------------------------------------------------------------\#
+wvl0      = 600.0
+fname_les = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
+#\----------------------------------------------------------------------------/#
 
 
 
@@ -254,20 +260,12 @@ def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, fdir_out='tmp-data/0
 
     f.close()
 
-def run(fdir, fname_nc, coarsen_factor=2):
-
-    for wvl in [600.0]:
-        f_mca =  func_cot_vs_rad('tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl, wvl, run=False)
-        run_mca_coarse_case(f_mca, wvl, fname_nc, fdir, coarsen_factor=coarsen_factor, overwrite=True)
-
 def main_les(coarsen_factor=2):
 
-    fnames_nc = [
-            'data/00_er3t_mca/aux/les.nc',
-            ]
+    f_mca =  func_cot_vs_rad('tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl, wvl, run=False)
 
-    for fname_nc in fnames_nc:
-        run('tmp-data/05_cnn-les_rad-sim/02_sim-raw/les_coa-fac-%d' % (coarsen_factor), fname_nc, coarsen_factor=coarsen_factor)
+    fdir = 'tmp-data/05_cnn-les_rad-sim/02_sim-raw/les_coa-fac-%d' % (coarsen_factor)
+    run_mca_coarse_case(f_mca, wvl0, fname_les, fdir, coarsen_factor=coarsen_factor, overwrite=True)
 
 
 
