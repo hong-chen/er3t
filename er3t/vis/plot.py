@@ -2,12 +2,7 @@ import os
 import sys
 import glob
 import datetime
-import multiprocessing as mp
-import h5py
-from pyhdf.SD import SD, SDC
 import numpy as np
-from scipy import interpolate
-from scipy.io import readsav
 import matplotlib as mpl
 # mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -16,6 +11,23 @@ from matplotlib import rcParams
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 # import cartopy.crs as ccrs
+
+import er3t.common
+
+class figure_pre_process(object):
+
+    """
+    Purpose: plotting the results involved in the pre-processes
+    """
+
+    ID = 'Figure Pre-Process'
+
+    def __init__(self):
+
+        pass
+
+
+
 
 
 def plot_atm(atm_obj):
