@@ -99,7 +99,7 @@ class mca_sfc_2d:
         f.close()
 
         if not self.quiet:
-            print('Message [mca_sfc_2d]: File \'%s\' is created.' % fname)
+            print('Message [mca_sfc_2d]: File <%s> is created.' % fname)
 
 
     def save_h5(self, fname):
@@ -114,7 +114,7 @@ class mca_sfc_2d:
         f.close()
 
         if not self.quiet:
-            print('Message [mca_sfc_2d]: File \'%s\' is created.' % fname)
+            print('Message [mca_sfc_2d]: File <%s> is created.' % fname)
 
 
 

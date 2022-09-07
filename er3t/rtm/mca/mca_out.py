@@ -180,7 +180,7 @@ class mca_out_ng:
     def load(self):
 
         if self.verbose:
-            print('Message [mca_out_ng]: Reading \'%s\' from \'%s\' ...' % (self.mca.target.lower(), self.fname))
+            print('Message [mca_out_ng]: Reading <%s> from <%s> ...' % (self.mca.target.lower(), self.fname))
 
         self.data = {}
 
@@ -197,7 +197,7 @@ class mca_out_ng:
     def run(self):
 
         if self.verbose:
-            print('Message [mca_out_ng]: Reading \'%s\' ...' % self.mca.target.lower())
+            print('Message [mca_out_ng]: Reading <%s> ...' % self.mca.target.lower())
 
         if self.mca.target == 'flux': # ['f', 'flux', 'irradiance', 'heating rate', 'hr']:
             self.data = read_flux_mca_out(self.mca, self.abs, mode=self.mode, squeeze=self.squeeze)
@@ -209,7 +209,7 @@ class mca_out_ng:
     def dump(self):
 
         if not self.quiet:
-            print('Message [mca_out_ng]: Saving \'%s\' into \'%s\' ...' % (self.mca.target.lower(), self.fname))
+            print('Message [mca_out_ng]: Saving <%s> into <%s> ...' % (self.mca.target.lower(), self.fname))
 
         mode = self.mode.lower()
 

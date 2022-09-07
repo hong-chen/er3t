@@ -132,7 +132,7 @@ class mca_run:
             fname = 'mca_batch_script_%s.sh' % str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
         if not self.quiet:
-            print('Message [mca_run]: Creating batch script \'%s\' ...' % fname)
+            print('Message [mca_run]: Creating batch script <%s> ...' % fname)
 
         with open(fname, 'w') as f:
 
@@ -146,7 +146,7 @@ class mca_run:
 def execute_command(command, verbose=False):
 
     if verbose:
-        print('Message [mca_run]: Executing \'%s\' ...' % command)
+        print('Message [mca_run]: Executing <%s> ...' % command)
     os.system(command)
 
 

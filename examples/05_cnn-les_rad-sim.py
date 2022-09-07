@@ -54,6 +54,8 @@ from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
 from er3t.rtm.mca import mcarats_ng
 from er3t.rtm.mca import mca_out_ng
 
+import er3t.common
+
 
 # global variables
 #/----------------------------------------------------------------------------\#
@@ -116,9 +118,8 @@ class func_cot_vs_rad:
         cer_2d    = np.zeros((2, 2), dtype=np.float64); cer_2d[...] = 12.0
         ext_3d    = np.zeros((2, 2, 2), dtype=np.float64)
 
-        fname_nc  = 'data/00_er3t_mca/aux/les.nc'
-        fname_les = '%s/les.pk' % self.fdir
-        cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=False)
+        fname_les_pk  = '%s/les.pk' % self.fdir
+        cld0          = cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 25, 1], overwrite=False)
 
         cld0.lev['altitude']['data']    = cld0.lay['altitude']['data'][2:5]
 
@@ -183,7 +184,7 @@ class func_cot_vs_rad:
 
 
 
-def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, fdir_out='tmp-data/05_cnn-les_rad-sim/03_sim-ori', coarsen_factor=2, overwrite=True):
+def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/05_cnn-les_rad-sim/03_sim-ori', coarsen_factor=2, overwrite=True):
 
     fdir = '%s/%dnm' % (fdir0, wavelength)
 
@@ -197,8 +198,8 @@ def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, fdir_out='tmp-data/0
     fname_abs = '%s/abs.pk' % fdir
     abs0      = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
 
-    fname_les = '%s/les.pk' % fdir
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, altitude=atm0.lay['altitude']['data'], coarsen=[1, 1, 1, 1], overwrite=overwrite)
+    fname_les_pk = '%s/les.pk' % fdir
+    cld0      = cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 25], overwrite=overwrite)
 
     # radiance 3d
     # =======================================================================================================
@@ -260,12 +261,8 @@ def run_mca_coarse_case(f_mca, wavelength, fname_nc, fdir0, fdir_out='tmp-data/0
 
     f.close()
 
-def main_les(coarsen_factor=2):
 
-    f_mca =  func_cot_vs_rad('tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl, wvl, run=False)
 
-    fdir = 'tmp-data/05_cnn-les_rad-sim/02_sim-raw/les_coa-fac-%d' % (coarsen_factor)
-    run_mca_coarse_case(f_mca, wvl0, fname_les, fdir, coarsen_factor=coarsen_factor, overwrite=True)
 
 
 
@@ -526,12 +523,13 @@ def crop_select_cloud_scene():
 
 if __name__ == '__main__':
 
+
     # step 1
     # derive relationship of COT vs Radiance at a given wavelength
     # data stored under <tmp-data/05_cnn-les_rad-sim/01_ret>
     # =============================================================================
-    # wvl = 600.0
-    # f_mca =  func_cot_vs_rad('tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl, wvl, run=True)
+    # fdir1 = 'tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl0
+    # f_mca =  func_cot_vs_rad(fdir1, wvl0, run=True)
     # =============================================================================
 
 
@@ -541,8 +539,11 @@ if __name__ == '__main__':
     # raw processing data is stored under <tmp-data/05_cnn-les_rad-sim/02_sim-raw>
     # simulation output data is stored under <tmp-data/05_cnn-les_rad-sim/03_sim-ori>
     # =============================================================================
+    # fdir1 = 'tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl0
+    # f_mca =  func_cot_vs_rad(fdir1, wvl0, run=False)
     # for coarsen_factor in [1, 2, 4]:
-    #     main_les(coarsen_factor=coarsen_factor)
+    #     fdir2 = 'tmp-data/05_cnn-les_rad-sim/02_sim-raw/les_coa-fac-%d' % (coarsen_factor)
+    #     run_mca_coarse_case(f_mca, wvl0, fname_les, fdir2, coarsen_factor=coarsen_factor, overwrite=True)
     # =============================================================================
 
 

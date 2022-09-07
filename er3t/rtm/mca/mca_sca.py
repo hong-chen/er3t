@@ -92,7 +92,7 @@ class mca_sca:
         f.close()
 
         if not self.quiet:
-            print('Message [mca_sca]: File \'%s\' is created.' % fname)
+            print('Message [mca_sca]: File <%s> is created.' % fname)
 
 
     def save_h5(self, fname):
@@ -111,7 +111,7 @@ class mca_sca:
         f.close()
 
         if not self.quiet:
-            print('Message [mca_sca]: File \'%s\' is created.' % fname)
+            print('Message [mca_sca]: File <%s> is created.' % fname)
 
 
 

@@ -101,10 +101,10 @@ class mcarats_ng:
         if not os.path.exists(fdir):
             os.makedirs(fdir)
             if not quiet:
-                print('Message [mcarats_ng]: Directory \'%s\' is created.' % fdir)
+                print('Message [mcarats_ng]: Directory <%s> is created.' % fdir)
         else:
             if verbose:
-                print('Message [mcarats_ng]: Directory \'%s\' already exists.' % fdir)
+                print('Message [mcarats_ng]: Directory <%s> already exists.' % fdir)
 
         if self.reference not in er3t.common.references:
             er3t.common.references.append(self.reference)
@@ -391,7 +391,7 @@ class mcarats_ng:
                 mca_inp_file(self.fnames_inp[ir][ig], self.nml[ig], comment=comment)
 
         if not self.quiet:
-            print('Message [mcarats_ng]: Created MCARaTS input files under \'%s\'.' % self.fdir)
+            print('Message [mcarats_ng]: Created MCARaTS input files under <%s>.' % self.fdir)
 
 
     def gen_mca_out(self):
@@ -425,7 +425,7 @@ class mcarats_ng:
             fnames_out += self.fnames_out[ir]
 
         if not self.quiet:
-            print('Message [mcarats_ng]: Running MCARaTS to get output files under \'%s\' ...' % self.fdir)
+            print('Message [mcarats_ng]: Running MCARaTS to get output files under <%s> ...' % self.fdir)
 
         if not self.quiet:
             self.print_info()
