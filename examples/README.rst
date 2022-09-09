@@ -1,7 +1,7 @@
 Examples
 ~~~~~~~~
 
-The code under this directory is under active development.
+The code in this directory is under active development.
 Please check `here <https://discord.com/channels/681619528945500252/1004090233412923544/1017575066139103293>`_
 for the latest code status.
 
