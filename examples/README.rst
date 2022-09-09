@@ -1,7 +1,7 @@
 Examples (`code status <https://discord.com/channels/681619528945500252/1004090233412923544/1017575066139103293>`_)
 ~~~~~~~~
 
-The code in this directory is under active development. Please check for the latest code status before use.
+**The code in this directory is under active development. Please check for the latest code status before use.**
 
 Additionally, these example codes require auxiliary data to run.
 To download the required data, under current directory (``examples``) where it contains ``install-examples.sh``,
