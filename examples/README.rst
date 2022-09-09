@@ -1,8 +1,11 @@
 Examples
 ~~~~~~~~
 
-The example codes under this directory require auxiliary data to run.
+The code under this directory is under active development.
+Please check `here <https://discord.com/channels/681619528945500252/1004090233412923544/1017575066139103293>`_
+for the latest code status.
 
+Additionally, these example codes require auxiliary data to run.
 To download the required data, under current directory (``examples``) where it contains ``install-examples.sh``,
 type in the following
 
