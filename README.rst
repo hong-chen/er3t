@@ -221,12 +221,11 @@ So far, the following publications have used EaR³T
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
    Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.
 
-#. `Nataraja et al., 2022 <https://doi.org/10.5194/amt-2022-45>`_
+#. `Nataraja et al., 2022 <https://doi.org/10.5194/amt-15-5181-2022>`_
 
    Nataraja, V., Schmidt, S., Chen, H., Yamaguchi, T., Kazil, J., Feingold, G., Wolf, K., and
    Iwabuchi, H.: Segmentation-Based Multi-Pixel Cloud Optical Thickness Retrieval Using a Convolutional
-   Neural Network, Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-45,
-   in review, 2022.
+   Neural Network, Atmos. Meas. Tech., 15, 5181–5205, doi:10.5194/amt-15-5181-2022, 2022.
 
 
 #. `Gristey et al., 2022 <https://doi.org/10.1029/2022JD036822>`_
