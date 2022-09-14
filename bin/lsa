@@ -73,6 +73,7 @@ def get_data_brief(args):
             'hdf4': 'HDF4',
 
             'h5'  : 'HDF5',
+            'he5' : 'HDF5',
             'hdf5': 'HDF5',
 
             'nc'     : 'netCDF',
