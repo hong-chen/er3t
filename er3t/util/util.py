@@ -1120,6 +1120,7 @@ def cal_r_twostream(tau, a=0.0, g=0.85, mu=1.0):
     Two-stream approximation of reflectance (no absorption)
 
     Input:
+        tau: optical thickness
         a: surface albedo
         g: asymmetry parameter
         mu: cosine of solar zenith angle
