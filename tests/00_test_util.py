@@ -51,6 +51,10 @@ def test_download_laads():
 
     doy_tag = get_doy_tag(date, day_interval=1)
 
+    """
+    https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/5111/AERDB_L2_VIIRS_SNPP/2020/022/
+    """
+
     print(doy_tag)
 
 
