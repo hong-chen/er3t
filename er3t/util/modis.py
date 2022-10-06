@@ -155,10 +155,10 @@ class modis_l1b:
 
         for i in range(raw.shape[0]):
 
-            rad[i, ...]  = raw[i, ...]*raw0.attributes()['radiance_scales'][i]         + raw0.attributes()['radiance_offsets'][i]
+            rad[i, ...]  = (raw[i, ...] - raw0.attributes()['radiance_offsets'][i])         * raw0.attributes()['radiance_scales'][i]
             rad[i, ...] /= 1000.0 # convert to W/m^2/nm/sr
-            ref[i, ...]  = raw[i, ...]*raw0.attributes()['reflectance_scales'][i]      + raw0.attributes()['reflectance_offsets'][i]
-            cnt[i, ...]  = raw[i, ...]*raw0.attributes()['corrected_counts_scales'][i] + raw0.attributes()['corrected_counts_offsets'][i]
+            ref[i, ...]  = (raw[i, ...] - raw0.attributes()['reflectance_offsets'][i])      * raw0.attributes()['reflectance_scales'][i]
+            cnt[i, ...]  = (raw[i, ...] - raw0.attributes()['corrected_counts_offsets'][i]) * raw0.attributes()['corrected_counts_scales'][i]
 
         f.end()
         # -------------------------------------------------------------------------------------------------
@@ -167,22 +167,22 @@ class modis_l1b:
 
         if hasattr(self, 'data'):
 
-            self.data['lon'] = dict(name='Longitude'        , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
-            self.data['lat'] = dict(name='Latitude'         , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
-            self.data['rad'] = dict(name='Radiance'         , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance'      , data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
-            self.data['cnt'] = dict(name='Corrected Counts' , data=np.hstack((self.data['cnt']['data'], cnt)), units='N/A')
+            self.data['lon'] = dict(name='Longitude'               , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+            self.data['lat'] = dict(name='Latitude'                , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            self.data['rad'] = dict(name='Radiance'                , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
+            self.data['cnt'] = dict(name='Corrected Counts'        , data=np.hstack((self.data['cnt']['data'], cnt)), units='N/A')
 
 
         else:
 
             self.data = {}
-            self.data['lon'] = dict(name='Longitude'        , data=lon, units='degrees')
-            self.data['lat'] = dict(name='Latitude'         , data=lat, units='degrees')
-            self.data['wvl'] = dict(name='Wavelength'       , data=wvl, units='nm')
-            self.data['rad'] = dict(name='Radiance'         , data=rad, units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance'      , data=ref, units='N/A')
-            self.data['cnt'] = dict(name='Corrected Counts' , data=cnt, units='N/A')
+            self.data['lon'] = dict(name='Longitude'               , data=lon, units='degrees')
+            self.data['lat'] = dict(name='Latitude'                , data=lat, units='degrees')
+            self.data['wvl'] = dict(name='Wavelength'              , data=wvl, units='nm')
+            self.data['rad'] = dict(name='Radiance'                , data=rad, units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=ref, units='N/A')
+            self.data['cnt'] = dict(name='Corrected Counts'        , data=cnt, units='N/A')
 
 
     def save_h5(self, fname):
