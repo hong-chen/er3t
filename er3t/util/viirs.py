@@ -16,7 +16,7 @@ from er3t.util.modis import cal_sinusoidal_grid
 
 
 
-__all__ = ['viirs_03', 'viirs_l1b', 'viirs_09a1']
+__all__ = ['viirs_03', 'viirs_l1b', 'viirs_09a1', 'viirs_43ma3', 'viirs_43ma4']
 
 
 # reader for VIIRS (Visible Infrared Imaging Radiometer Suite)
@@ -481,6 +481,279 @@ class viirs_09a1:
             self.data['x']   = dict(name='X of sinusoidal grid', data=x  , units='m')
             self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
             self.data['ref'] = dict(name='Surface reflectance' , data=ref, units='N/A')
+
+
+
+
+class viirs_43ma3:
+
+    """
+    Read VNP43MA3 product (surface albedo in sinusoidal projection)
+
+    Input:
+        fnames=   : keyword argument, default=None, a Python list of the file path of the files
+        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        Nx=       : keyword argument, default=1200, number of points along x direction
+        Ny=       : keyword argument, default=1200, number of points along y direction
+        verbose=  : keyword argument, default=False, verbose tag
+
+    Output:
+        self.data
+                ['bsa']: blue/black-sky surface albedo, all 7 channels
+                ['wsa']: white-sky surface albedo, all 7 channels
+                ['lon']: longitude
+                ['lat']: latitude
+                ['x']  : sinusoidal x
+                ['y']  : sinusoidal y
+    """
+
+
+    ID = 'VIIRS surface albedo (1 km)'
+
+
+    def __init__(self,
+                 fnames=None,
+                 extent=None,
+                 channels=['M4'],
+                 Nx=1200,
+                 Ny=1200,
+                 verbose=False):
+
+        self.fnames = fnames
+        self.extent = extent
+        self.channels = channels
+        self.Nx = Nx
+        self.Ny = Ny
+
+        for fname in self.fnames:
+            self.read(fname, channels=channels)
+
+
+    def read(self, fname, channels=['M4']):
+
+        filename     = os.path.basename(fname)
+        index_str    = filename.split('.')[2]
+        index_h = int(index_str[1:3])
+        index_v = int(index_str[4:])
+
+        try:
+            import cartopy.crs as ccrs
+        except ImportError:
+            msg = 'Error [viirs_43ma3]: To use <viirs_43ma3>, <cartopy> needs to be installed.'
+            raise ImportError(msg)
+
+        # grid boxes
+        proj_xy     = ccrs.Sinusoidal.MODIS
+        proj_lonlat = ccrs.PlateCarree()
+
+        x0, y0 = cal_sinusoidal_grid()
+
+        box = [x0[index_h], x0[index_h+1], y0[index_v], y0[index_v+1]]
+
+        # Lon, Lat for the tile
+        x_tmp = np.linspace(box[0], box[1], self.Nx+1)
+        y_tmp = np.linspace(box[2], box[3], self.Ny+1)
+        x_mid = (x_tmp[1:]+x_tmp[:-1])/2.0
+        y_mid = (y_tmp[1:]+y_tmp[:-1])/2.0
+        XX, YY = np.meshgrid(x_mid, y_mid)
+
+        LonLat = proj_lonlat.transform_points(proj_xy, XX, YY)
+
+        if self.extent is None:
+            lon_range = [-180.0, 180.0]
+            lat_range = [-90.0 , 90.0]
+        else:
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
+
+        lon   = LonLat[..., 0]
+        lat   = LonLat[..., 1]
+
+        logic = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+
+        lon = lon[logic]
+        lat = lat[logic]
+        x   = XX[logic]
+        y   = YY[logic]
+
+        if self.extent is None:
+            self.extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+
+        try:
+            from netCDF4 import Dataset
+        except ImportError:
+            msg = 'Error [viirs_43ma3]: To use <viirs_43ma3>, <netCDF4> needs to be installed.'
+            raise ImportError(msg)
+
+        f     = Dataset(fname, 'r')
+
+        Nchan = len(channels)
+        bsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        wsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+
+        for ichan in range(Nchan):
+            data0 = f.groups['HDFEOS'].groups['GRIDS'].groups['VIIRS_Grid_BRDF'].groups['Data Fields'].variables['Albedo_BSA_%s' % channels[ichan]]
+            data = get_data_nc(data0)
+            bsky_alb[ichan, :] = data[logic]
+
+            data0 = f.groups['HDFEOS'].groups['GRIDS'].groups['VIIRS_Grid_BRDF'].groups['Data Fields'].variables['Albedo_WSA_%s' % channels[ichan]]
+            data = get_data_nc(data0)
+            wsky_alb[ichan, :] = data[logic]
+
+        bsky_alb[bsky_alb>1.0] = -1.0
+        bsky_alb[bsky_alb<0.0] = -1.0
+
+        wsky_alb[wsky_alb>1.0] = -1.0
+        wsky_alb[wsky_alb<0.0] = -1.0
+
+        f.close()
+
+        if hasattr(self, 'data'):
+            self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            self.data['x']   = dict(name='X of sinusoidal grid', data=np.hstack((self.data['x']['data'], x))    , units='m')
+            self.data['y']   = dict(name='Y of sinusoidal grid', data=np.hstack((self.data['y']['data'], y))    , units='m')
+            self.data['bsa'] = dict(name='Blue/Black-Sky surface albedo', data=np.hstack((self.data['bsa']['data'], bsky_alb)), units='N/A')
+            self.data['wsa'] = dict(name='White-Sky surface albedo'     , data=np.hstack((self.data['wsa']['data'], wsky_alb)), units='N/A')
+        else:
+            self.data = {}
+            self.data['lon'] = dict(name='Longitude'           , data=lon, units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=lat, units='degrees')
+            self.data['x']   = dict(name='X of sinusoidal grid', data=x  , units='m')
+            self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
+            self.data['bsa'] = dict(name='Blue/Black-Sky surface albedo', data=bsky_alb, units='N/A')
+            self.data['wsa'] = dict(name='White-Sky surface albedo'     , data=wsky_alb, units='N/A')
+
+
+
+
+class viirs_43ma4:
+
+    """
+    Read VNP43MA4 product (surface reflectance at nadir in sinusoidal projection)
+
+    Input:
+        fnames=   : keyword argument, default=None, a Python list of the file path of the files
+        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        Nx=       : keyword argument, default=1200, number of points along x direction
+        Ny=       : keyword argument, default=1200, number of points along y direction
+        verbose=  : keyword argument, default=False, verbose tag
+
+    Output:
+        self.data
+                ['ref']: surface reflectance at nadir
+                ['lon']: longitude
+                ['lat']: latitude
+                ['x']  : sinusoidal x
+                ['y']  : sinusoidal y
+    """
+
+
+    ID = 'VIIRS surface reflectance (1 km)'
+
+
+    def __init__(self,
+                 fnames=None,
+                 extent=None,
+                 channels=['M4'],
+                 Nx=1200,
+                 Ny=1200,
+                 verbose=False):
+
+        self.fnames = fnames
+        self.extent = extent
+        self.channels = channels
+        self.Nx = Nx
+        self.Ny = Ny
+
+        for fname in self.fnames:
+            self.read(fname, channels=channels)
+
+
+    def read(self, fname, channels=['M4']):
+
+        filename     = os.path.basename(fname)
+        index_str    = filename.split('.')[2]
+        index_h = int(index_str[1:3])
+        index_v = int(index_str[4:])
+
+        try:
+            import cartopy.crs as ccrs
+        except ImportError:
+            msg = 'Error [viirs_43ma4]: To use <viirs_43ma4>, <cartopy> needs to be installed.'
+            raise ImportError(msg)
+
+        # grid boxes
+        proj_xy     = ccrs.Sinusoidal.MODIS
+        proj_lonlat = ccrs.PlateCarree()
+
+        x0, y0 = cal_sinusoidal_grid()
+
+        box = [x0[index_h], x0[index_h+1], y0[index_v], y0[index_v+1]]
+
+        # Lon, Lat for the tile
+        x_tmp = np.linspace(box[0], box[1], self.Nx+1)
+        y_tmp = np.linspace(box[2], box[3], self.Ny+1)
+        x_mid = (x_tmp[1:]+x_tmp[:-1])/2.0
+        y_mid = (y_tmp[1:]+y_tmp[:-1])/2.0
+        XX, YY = np.meshgrid(x_mid, y_mid)
+
+        LonLat = proj_lonlat.transform_points(proj_xy, XX, YY)
+
+        if self.extent is None:
+            lon_range = [-180.0, 180.0]
+            lat_range = [-90.0 , 90.0]
+        else:
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
+
+        lon   = LonLat[..., 0]
+        lat   = LonLat[..., 1]
+
+        logic = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+
+        lon = lon[logic]
+        lat = lat[logic]
+        x   = XX[logic]
+        y   = YY[logic]
+
+        if self.extent is None:
+            self.extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+
+        try:
+            from netCDF4 import Dataset
+        except ImportError:
+            msg = 'Error [viirs_43ma4]: To use <viirs_43ma4>, <netCDF4> needs to be installed.'
+            raise ImportError(msg)
+
+        f     = Dataset(fname, 'r')
+
+        Nchan = len(channels)
+        sfc_ref = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+
+        for ichan in range(Nchan):
+            data0 = f.groups['HDFEOS'].groups['GRIDS'].groups['VIIRS_Grid_BRDF'].groups['Data Fields'].variables['Nadir_Reflectance_%s' % channels[ichan]]
+            data = get_data_nc(data0)
+            sfc_ref[ichan, :] = data[logic]
+
+        sfc_ref[sfc_ref>1.0] = -1.0
+        sfc_ref[sfc_ref<0.0] = -1.0
+
+        f.close()
+
+        if hasattr(self, 'data'):
+            self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            self.data['x']   = dict(name='X of sinusoidal grid', data=np.hstack((self.data['x']['data'], x))    , units='m')
+            self.data['y']   = dict(name='Y of sinusoidal grid', data=np.hstack((self.data['y']['data'], y))    , units='m')
+            self.data['ref'] = dict(name='Surface reflectance at nadir', data=np.hstack((self.data['ref']['data'], sfc_ref)), units='N/A')
+        else:
+            self.data = {}
+            self.data['lon'] = dict(name='Longitude'           , data=lon, units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=lat, units='degrees')
+            self.data['x']   = dict(name='X of sinusoidal grid', data=x  , units='m')
+            self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
+            self.data['ref'] = dict(name='Surface reflectance at nadir', data=sfc_ref, units='N/A')
 
 #\---------------------------------------------------------------------------/
 
