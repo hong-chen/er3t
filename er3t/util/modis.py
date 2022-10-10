@@ -783,7 +783,7 @@ class modis_43a3:
         try:
             import cartopy.crs as ccrs
         except ImportError:
-            msg = 'Error   [modis_09a1]: To use \'modis_09a1\', \'cartopy\' needs to be installed.'
+            msg = 'Error [modis_43a3]: To use <modis_43a3>, <cartopy> needs to be installed.'
             raise ImportError(msg)
 
         # grid boxes
@@ -826,7 +826,7 @@ class modis_43a3:
         try:
             from pyhdf.SD import SD, SDC
         except ImportError:
-            msg = 'Warning [modis_l1b]: To use \'modis_l1b\', \'pyhdf\' needs to be installed.'
+            msg = 'Error [modis_43a3]: To use <modis_43a3>, <pyhdf> needs to be installed.'
             raise ImportError(msg)
 
         f     = SD(fname, SDC.READ)
