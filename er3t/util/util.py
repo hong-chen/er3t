@@ -522,7 +522,7 @@ def get_satfile_tag(
             content = r.content.decode('utf-8')
         else:
             msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
-        raise OSError(msg)
+            raise OSError(msg)
         #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
