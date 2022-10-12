@@ -465,8 +465,9 @@ class viirs_09a1:
         f = Dataset(fname, 'r')
         dset = f.groups['HDFEOS'].groups['GRIDS'].groups['VNP_Grid_1km_L3_2d'].groups['Data Fields'].variables['SurfReflect_%s' % band]
         dset.set_auto_maskandscale(True)
-        ref = dset[:][logic]
+        ref = np.ma.getdata(dset[:])[logic]
         f.close()
+        #\-----------------------------------------------------------------------------/
 
         if hasattr(self, 'data'):
             self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')

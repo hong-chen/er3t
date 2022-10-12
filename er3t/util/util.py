@@ -500,7 +500,6 @@ def get_satfile_tag(
     #/--------------------------------------------------------------\#
     fname_local = os.path.abspath('%s/%s' % (local, fname_server.split('/')[-1]))
     if os.path.exists(fname_local):
-
         with open(fname_local, 'r') as f_:
             content = f_.read()
     #\--------------------------------------------------------------/#
@@ -663,7 +662,7 @@ def download_laads_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
             if command_line_tool == 'curl':
-                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\'' % (fdir_out, token, fname_server, fname_local)
+                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
             elif command_line_tool == 'wget':
                 command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
             commands.append(command)
@@ -698,6 +697,30 @@ def download_laads_https(
 
                 f = SD(fname_local, SDC.READ)
                 f.end()
+                print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+
+            elif data_format == 'nc':
+
+                try:
+                    from netCDF4 import Dataset
+                except ImportError:
+                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'netCDF4\' needs to be installed.'
+                    raise ImportError(msg)
+
+                f = Dataset(fname_local, 'r')
+                f.close()
+                print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+
+            elif data_format == 'h5':
+
+                try:
+                    import h5py
+                except ImportError:
+                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'h5py\' needs to be installed.'
+                    raise ImportError(msg)
+
+                f = h5py.File(fname_local, 'r')
+                f.close()
                 print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
 
             else:
