@@ -410,6 +410,7 @@ def get_satfile_tag(
              satellite='aqua',
              instrument='modis',
              server='https://ladsweb.modaps.eosdis.nasa.gov',
+             local='./',
              verbose=False):
 
     """
@@ -494,18 +495,36 @@ def get_satfile_tag(
 
     # try to access the server
     #/----------------------------------------------------------------------------\#
-    try:
-        with requests.Session() as session:
-            session.auth = (username, password)
-            r1     = session.request('get', fname_server)
-            r      = session.get(r1.url, auth=(username, password))
-            if r.ok:
-                content = r.content.decode('utf-8')
-    except:
-        msg = '\nError [get_satfile_tag]: cannot access <%s>.' % fname_server
-        raise OSError(msg)
-    #\----------------------------------------------------------------------------/#
 
+    # try to get information from local
+    #/--------------------------------------------------------------\#
+    fname_local = os.path.abspath('%s/%s' % (local, fname_server.split('/')[-1]))
+    if os.path.exists(fname_local):
+
+        with open(fname_local, 'r') as f_:
+            content = f_.read()
+    #\--------------------------------------------------------------/#
+
+    else:
+
+        # get information from server
+        #/--------------------------------------------------------------\#
+        try:
+            with requests.Session() as session:
+                session.auth = (username, password)
+                r1     = session.request('get', fname_server)
+                r      = session.get(r1.url, auth=(username, password))
+        except:
+            msg = '\nError [get_satfile_tag]: cannot access <%s>.' % fname_server
+            raise OSError(msg)
+
+        if r.ok:
+            content = r.content.decode('utf-8')
+        else:
+            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
+        raise OSError(msg)
+        #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
 
     # extract granule information from <content>
     # after the following session, granule information will be stored under <data>
