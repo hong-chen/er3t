@@ -3,6 +3,7 @@ import sys
 import csv
 import shutil
 import datetime
+import importlib
 import requests
 import urllib.request
 from io import StringIO
@@ -696,41 +697,40 @@ def download_laads_https(
 
                 try:
                     from pyhdf.SD import SD, SDC
-                except ImportError:
-                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
-                    raise ImportError(msg)
+                    f = SD(fname_local, SDC.READ)
+                    f.end()
+                    print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
+                except:
+                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
+                    warnings.warn(msg)
 
-                f = SD(fname_local, SDC.READ)
-                f.end()
-                print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
 
             elif data_format == 'nc':
 
                 try:
                     from netCDF4 import Dataset
-                except ImportError:
-                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'netCDF4\' needs to be installed.'
-                    raise ImportError(msg)
+                    f = Dataset(fname_local, 'r')
+                    f.close()
+                    print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
+                except:
+                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
+                    warnings.warn(msg)
 
-                f = Dataset(fname_local, 'r')
-                f.close()
-                print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
 
             elif data_format == 'h5':
 
                 try:
                     import h5py
-                except ImportError:
-                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'h5py\' needs to be installed.'
-                    raise ImportError(msg)
-
-                f = h5py.File(fname_local, 'r')
-                f.close()
-                print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+                    f = h5py.File(fname_local, 'r')
+                    f.close()
+                    print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
+                except:
+                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
+                    warnings.warn(msg)
 
             else:
 
-                msg = '\nWarning [download_laads_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local)
+                msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
                 warnings.warn(msg)
 
     return fnames_local
