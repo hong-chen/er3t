@@ -649,9 +649,14 @@ def download_laads_https(
     fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
 
     fdir_server = server + fdir_data
-    webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-    content  = webpage.read().decode('utf-8')
-    lines    = content.split('\n')
+    try:
+        webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
+        content  = webpage.read().decode('utf-8')
+        lines    = content.split('\n')
+    except:
+        msg = '\nError [download_laads_https]: cannot access <%s>.' % fname_server
+        raise OSError(msg)
+
 
     commands = []
     fnames_local = []
