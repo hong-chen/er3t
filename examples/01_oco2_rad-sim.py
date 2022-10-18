@@ -27,7 +27,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2022-07-22 by Hong Chen
+    1) Linux on 2022-10-18 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -58,9 +58,9 @@ from er3t.pre.abs import abs_oco_idl
 from er3t.pre.cld import cld_sat
 from er3t.pre.sfc import sfc_sat
 from er3t.pre.pha import pha_mie_wc as pha_mie
-from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, download_modis_https, get_sinusoidal_grid_tag, get_filename_tag, download_modis_rgb
+from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, get_sinusoidal_grid_tag, get_filename_tag
 from er3t.util.oco2 import oco2_rad_nadir, oco2_std, download_oco2_https
-from er3t.util import cal_r_twostream, grid_by_extent, grid_by_lonlat
+from er3t.util import cal_r_twostream, grid_by_extent, grid_by_lonlat, download_laads_https, download_worldview_rgb, get_satfile_tag
 
 from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
 from er3t.rtm.mca import mcarats_ng
@@ -122,36 +122,36 @@ class satellite_download:
 
     def run(self, run=True):
 
-        lon = np.array(self.extent[:2])
-        lat = np.array(self.extent[2:])
+        lon0 = np.linspace(self.extent[0], self.extent[1], 100)
+        lat0 = np.linspace(self.extent[2], self.extent[3], 100)
+        lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
 
         self.fnames = {}
 
-        self.fnames['mod_rgb'] = [download_modis_rgb(self.date, self.extent, fdir=self.fdir_out, which='aqua', coastline=True)]
+        self.fnames['mod_rgb'] = [download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
-        self.fnames['mod_l2'] = []
-        self.fnames['mod_02_1km'] = []
-        self.fnames['mod_02_hkm'] = []
-        self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
-        filename_tags_03 = get_filename_tag(self.date, lon, lat, satID='aqua')
+        self.fnames['mod_l2'] = []
+        self.fnames['mod_02'] = []
+        self.fnames['mod_02_1km'] = []
+        filename_tags_03 = get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
         for filename_tag in filename_tags_03:
-            fnames_l2 = download_modis_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02_1km = download_modis_https(self.date, '61/MYD021KM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02_hkm = download_modis_https(self.date, '61/MYD02HKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02 = download_modis_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_03 = download_modis_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            self.fnames['mod_l2'] += fnames_l2
-            self.fnames['mod_02_1km'] += fnames_02_1km
-            self.fnames['mod_02'] += fnames_02
+            fnames_03     = download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02_1km = download_laads_https(self.date, '61/MYD021KM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+
             self.fnames['mod_03'] += fnames_03
+            self.fnames['mod_l2'] += fnames_l2
+            self.fnames['mod_02'] += fnames_02
+            self.fnames['mod_02_1km'] += fnames_02_1km
 
         # MOD09A1 surface reflectance product
         self.fnames['mod_09'] = []
         filename_tags_09 = get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_09:
-            fnames_09 = download_modis_https(self.date, '6/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
+            fnames_09 = download_laads_https(self.date, '6/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_09'] += fnames_09
 
         # OCO2 std and met file
@@ -655,7 +655,7 @@ def main_pre():
 
     # create data directory (for storing data) if the directory does not exist
     # ==================================================================================================
-    name_tag = __file__.replace('.py', '')
+    name_tag = os.path.relpath(__file__).replace('.py', '')
 
     fdir_data = os.path.abspath('data/%s/download' % name_tag)
     if not os.path.exists(fdir_data):
@@ -923,7 +923,7 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
     # =============================================================================
-    # main_pre()
+    main_pre()
     # =============================================================================
 
     # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
