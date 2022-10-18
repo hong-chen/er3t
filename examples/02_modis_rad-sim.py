@@ -23,7 +23,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2022-08-29 by Hong Chen
+    1) Linux on 2022-10-18 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -115,8 +115,9 @@ class satellite_download:
 
     def run(self, run=True):
 
-        lon = np.array(self.extent[:2])
-        lat = np.array(self.extent[2:])
+        lon0 = np.linspace(self.extent[0], self.extent[1], 100)
+        lat0 = np.linspace(self.extent[2], self.extent[3], 100)
+        lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
 
         self.fnames = {}
 
