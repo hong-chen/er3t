@@ -202,7 +202,7 @@ class viirs_03:
             data0 = f.groups['geolocation_data'].variables[vname]
             data  = get_data_nc(data0)
             if vname.lower() in self.data.keys():
-                self.data[vname.lower()] = dict(name=vname.lower().title(), data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.getncattr('units'))
+                self.data[vname.lower()] = dict(name=vname.lower().title(), data=np.vstack((self.data[vname.lower()]['data'], data)), units=data0.getncattr('units'))
             else:
                 self.data[vname.lower()] = dict(name=vname.lower().title(), data=data, units=data0.getncattr('units'))
 
