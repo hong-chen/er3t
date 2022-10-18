@@ -123,6 +123,8 @@ class cld_les:
             msg = 'Error [cld_les]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
+        # read data
+        #/----------------------------------------------------------------------------\#
         f = Dataset(fname_nc, 'r')
 
         x      = f.variables['x'][:]               # x direction
@@ -130,9 +132,9 @@ class cld_les:
         z0     = f.variables['z'][:]               # z direction, altitude
         qc_3d  = f.variables['QC'][index_t, ...]   # cloud water mixing ratio
 
-        # in vertical dimension, only select data where has clouds to shrink data size
+        # in vertical dimension, only select data where clouds exist to shrink data size
         # and accelerate calculation
-        #/-----------------------------------------------------------------------------/
+        #/--------------------------------------------------------------\#
         Nz0 = z0.size
 
         qc_z = np.sum(qc_3d, axis=(1, 2))
@@ -152,21 +154,22 @@ class cld_les:
         cer_3d = f.variables['REL'][index_t, :index_e, :, :]  # cloud effective radius
         Nc_3d  = f.variables['NC'][index_t, :index_e, :, :]   # cloud droplet number concentration
         t_3d   = f.variables['TABS'][index_t, :index_e, :, :] # absolute temperature
-        #\-----------------------------------------------------------------------------\
+        #\--------------------------------------------------------------/#
 
         f.close()
+        #\----------------------------------------------------------------------------/#
 
         Nz, Ny, Nx = qc_3d.shape
 
         # 3d pressure field
-        #/-----------------------------------------------------------------------------/
+        #/--------------------------------------------------------------\#
         p_3d      = np.empty((Nz, Ny, Nx), dtype=p.dtype)
         p_3d[...] = p[:, None, None]
-        #\-----------------------------------------------------------------------------\
+        #\--------------------------------------------------------------/#
 
 
         # calculate cloud extinction
-        #/-----------------------------------------------------------------------------/
+        #/--------------------------------------------------------------\#
         # water vapor volume mixing ratio (from mass mixing ratio, kg/kg)
         vmr_3d = mmr2vmr(qv_3d * 0.001)
 
@@ -185,14 +188,14 @@ class cld_les:
         ext_3d        = np.zeros_like(t_3d)
         ext_3d[logic] = const0 / cer_3d[logic] * lwc_3d[logic]
         cer_3d[np.logical_not(logic)] = 0.0
-        #\-----------------------------------------------------------------------------\
+        #\--------------------------------------------------------------/#
 
         self.Nx = Nx
         self.Ny = Ny
         self.Nz = Nz
 
         # layer property
-        #/-----------------------------------------------------------------------------/
+        #/--------------------------------------------------------------\#
         self.lay = {}
 
         self.lay['x']           = {'data':x/1000.0             , 'name':'X' , 'units':'km'}
@@ -216,11 +219,11 @@ class cld_les:
         self.lay['temperature'] = {'data':t_3d  , 'name':'Temperature (3D)'            , 'units':'K'}
         self.lay['extinction']  = {'data':ext_3d, 'name':'Extinction coefficients (3D)', 'units':'m^-1'}
         self.lay['cer']         = {'data':cer_3d, 'name':'Cloud effective radius (3D)' , 'units':'mm'}
-        #\-----------------------------------------------------------------------------\
+        #\--------------------------------------------------------------/#
 
 
         # level property
-        #/-----------------------------------------------------------------------------/
+        #/--------------------------------------------------------------\#
         self.lev = {}
 
         z_ = np.append(self.lay['altitude']['data']-dz/2.0, self.lay['altitude']['data'][-1]+dz[-1]/2.0)
@@ -233,7 +236,7 @@ class cld_les:
         dz_ = np.append(dz_, dz_[-1])
         self.lev['altitude']  = {'data':z_ , 'name':'Altitude'       , 'units':'km'}
         self.lev['thickness'] = {'data':dz_, 'name':'Layer thickness', 'units':'km'}
-        #\-----------------------------------------------------------------------------\
+        #\--------------------------------------------------------------/#
 
 
     def post_les(self, altitude):
