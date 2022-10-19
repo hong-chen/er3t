@@ -25,13 +25,20 @@ import matplotlib.patches as mpatches
 
 
 
+# global variables
+#/--------------------------------------------------------------\#
+name_tag = os.path.relpath(__file__).replace('.py', '')
+#\--------------------------------------------------------------/#
+
+
+
 def test_flux_01_clear_sky():
 
     """
     This following is an example for clear-sky calculation with default parameterization.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_01_clear_sky'
+    fdir_tmp = 'tmp-data/%s/test_flux_01_clear_sky' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -58,7 +65,7 @@ def test_flux_02_clear_sky():
     wavelength etc.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_02_clear_sky'
+    fdir_tmp = 'tmp-data/%s/test_flux_02_clear_sky' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -91,7 +98,7 @@ def test_flux_03_clear_sky():
     The following example is similar to Example 2 but for multiple calculations at different solar zenith angles.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_03_clear_sky'
+    fdir_tmp = 'tmp-data/%s/test_flux_03_clear_sky' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -132,7 +139,7 @@ def test_flux_04_cloud():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_04_cloud'
+    fdir_tmp = 'tmp-data/%s/test_flux_04_cloud' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -181,7 +188,7 @@ def test_flux_05_cloud_and_aerosol():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_flux_05_cloud_and_aerosol'
+    fdir_tmp = 'tmp-data/%s/test_flux_05_cloud_and_aerosol' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -240,7 +247,7 @@ def test_rad_01_clear_sky():
     This following is an example for clear-sky calculation with default parameterization.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_01_clear_sky'
+    fdir_tmp = 'tmp-data/%s/test_rad_01_clear_sky' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -263,7 +270,7 @@ def test_rad_02_clear_sky():
     wavelength etc.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_02_clear_sky'
+    fdir_tmp = 'tmp-data/%s/test_rad_02_clear_sky' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -296,7 +303,7 @@ def test_rad_03_clear_sky():
     The following example is similar to Example 2 but for multiple calculations at different solar zenith angles.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_03_clear_sky'
+    fdir_tmp = 'tmp-data/%s/test_rad_03_clear_sky' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -337,7 +344,7 @@ def test_rad_04_cloud():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_04_cloud'
+    fdir_tmp = 'tmp-data/%s/test_rad_04_cloud' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -386,7 +393,7 @@ def test_rad_05_cloud_and_aerosol():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/test_rad_05_cloud_and_aerosol'
+    fdir_tmp = 'tmp-data/%s/test_rad_05_cloud_and_aerosol' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -447,7 +454,7 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/example_rad_01_sun_glint'
+    fdir_tmp = 'tmp-data/%s/example_rad_01_sun_glint' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -498,7 +505,7 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     ax1.set_theta_zero_location('N')
     ax1.set_theta_direction(-1)
 
-    plt.savefig('00_er3t_lrt-example_rad_01.png', bbox_inches='tight')
+    plt.savefig('%s-example_rad_01.png' % name_tag, bbox_inches='tight')
     plt.close(fig)
     # =============================================================================
 
@@ -509,7 +516,7 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/00_er3t_lrt/example_rad_02_anisotropy'
+    fdir_tmp = 'tmp-data/%s/example_rad_02_anisotropy' % name_tag
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -605,7 +612,7 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     ax1.set_theta_zero_location('N')
     ax1.set_theta_direction(-1)
 
-    plt.savefig('00_er3t_lrt-example_rad_02.png', bbox_inches='tight')
+    plt.savefig('%s-example_rad_02.png' % name_tag, bbox_inches='tight')
     plt.close(fig)
     # =============================================================================
 

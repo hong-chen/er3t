@@ -39,16 +39,19 @@ from er3t.util import cal_r_twostream
 import er3t.common
 
 
+
 # global variables
 #/-----------------------------------------------------------------------------\
+name_tag = os.path.relpath(__file__).replace('.py', '')
 photons = 1e7
 Ncpu    = 8
 #\-----------------------------------------------------------------------------/
 
 
 
+
 def test_01_flux_clear_sky(
-        fdir='tmp-data/00_er3t_mca/test_01_flux_clear_sky',
+        fdir='tmp-data/%s/test_01_flux_clear_sky' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -186,7 +189,7 @@ def test_01_flux_clear_sky(
     # plot
     #/-----------------------------------------------------------------------------\
     if plot:
-        fname_png = '00_er3t_mca-test_01_flux_%s.png' % solver.lower()
+        fname_png = '%s-test_01_flux_%s.png' % (name_tag, solver.lower())
 
         fig = plt.figure(figsize=(4, 8))
         ax1 = fig.add_subplot(111)
@@ -225,7 +228,7 @@ def test_01_flux_clear_sky(
 
 
 def test_02_flux_les_cloud_3d(
-        fdir='tmp-data/00_er3t_mca/test_02_flux_les_cloud_3d',
+        fdir='tmp-data/%s/test_02_flux_les_cloud_3d' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -293,7 +296,7 @@ def test_02_flux_les_cloud_3d(
     # define an cloud object
     #/-----------------------------------------------------------------------------\
     # file name of the netcdf file
-    fname_nc  = 'data/00_er3t_mca/aux/les.nc'
+    fname_nc  = 'data/%s/aux/les.nc' % name_tag
 
     # file name of the pickle file for cloud
     fname_les = '%s/les.pk' % fdir
@@ -408,7 +411,7 @@ def test_02_flux_les_cloud_3d(
     #/-----------------------------------------------------------------------------\
     if plot:
         z_index = 4
-        fname_png = '00_er3t_mca-test_02_flux_%s.png' % solver.lower()
+        fname_png = '%s-test_02_flux_%s.png' % (name_tag, solver.lower())
 
         fig = plt.figure(figsize=(12, 6))
 
@@ -441,7 +444,7 @@ def test_02_flux_les_cloud_3d(
 
 
 def test_03_flux_les_cloud_3d_aerosol_1d(
-        fdir='tmp-data/00_er3t_mca/test_03_flux_les_cloud_3d_aerosol_1d',
+        fdir='tmp-data/%s/test_03_flux_les_cloud_3d_aerosol_1d' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -509,7 +512,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     # define an cloud object
     #/-----------------------------------------------------------------------------\
     # file name of the netcdf file
-    fname_nc  = 'data/00_er3t_mca/aux/les.nc'
+    fname_nc  = 'data/%s/aux/les.nc' % name_tag
 
     # file name of the pickle file for cloud
     fname_les = '%s/les.pk' % fdir
@@ -633,7 +636,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     #/-----------------------------------------------------------------------------\
     if plot:
         z_index = 4
-        fname_png = '00_er3t_mca-test_03_flux_%s.png' % solver.lower()
+        fname_png = '%s-test_03_flux_%s.png' % (name_tag, solver.lower())
 
         fig = plt.figure(figsize=(12, 6))
 
@@ -666,7 +669,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
 
 
 def test_04_flux_les_cloud_3d_aerosol_3d(
-        fdir='tmp-data/00_er3t_mca/test_04_flux_les_cloud_3d_aerosol_3d',
+        fdir='tmp-data/%s/test_04_flux_les_cloud_3d_aerosol_3d' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -734,7 +737,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     # define an cloud object
     #/-----------------------------------------------------------------------------\
     # file name of the netcdf file
-    fname_nc  = 'data/00_er3t_mca/aux/les.nc'
+    fname_nc  = 'data/%s/aux/les.nc' % name_tag
 
     # file name of the pickle file for cloud
     fname_les = '%s/les.pk' % fdir
@@ -865,7 +868,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     #/-----------------------------------------------------------------------------\
     if plot:
         z_index = 4
-        fname_png = '00_er3t_mca-test_04_flux_%s.png' % solver.lower()
+        fname_png = '%s-test_04_flux_%s.png' % (name_tag, solver.lower())
 
         fig = plt.figure(figsize=(12, 6))
 
@@ -898,7 +901,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
 
 
 def test_05_rad_les_cloud_3d_aerosol_3d(
-        fdir='tmp-data/00_er3t_mca/test_05_rad_les_cloud_3d_aerosol_3d',
+        fdir='tmp-data/%s/test_05_rad_les_cloud_3d_aerosol_3d' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -969,7 +972,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
     # define an cloud object
     #/-----------------------------------------------------------------------------\
     # file name of the netcdf file
-    fname_nc  = 'data/00_er3t_mca/aux/les.nc'
+    fname_nc  = 'data/%s/aux/les.nc' % name_tag
 
     # file name of the pickle file for cloud
     fname_les = '%s/les.pk' % fdir
@@ -1109,7 +1112,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
     # plot
     #/-----------------------------------------------------------------------------\
     if plot:
-        fname_png = '00_er3t_mca-test_05_rad_%s.png' % solver.lower()
+        fname_png = '%s-test_05_rad_%s.png' % (name_tag, solver.lower())
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
@@ -1134,7 +1137,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
 
 
 def test_06_rad_cld_gen_hem(
-        fdir='tmp-data/00_er3t_mca/test_06_rad_cld_gen_hem',
+        fdir='tmp-data/%s/test_06_rad_cld_gen_hem' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -1281,7 +1284,7 @@ def test_06_rad_cld_gen_hem(
     # plot
     #/-----------------------------------------------------------------------------\
     if plot:
-        fname_png = '00_er3t_mca-test_06_rad_%s.png' % solver.lower()
+        fname_png = '%s-test_06_rad_%s.png' % (name_tag, solver.lower())
 
         fig = plt.figure(figsize=(16, 5.0))
 
