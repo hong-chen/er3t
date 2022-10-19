@@ -62,6 +62,12 @@ from er3t.rtm.mca import mca_sca
 
 
 
+# global variables
+#/--------------------------------------------------------------\#
+name_tag = os.path.relpath(__file__).replace('.py', '')
+#\--------------------------------------------------------------/#
+
+
 
 class satellite_download:
 
@@ -430,7 +436,7 @@ def cal_mca_rad(sat, wavelength, photons=1e7, fdir='tmp-data', solver='3D', over
     # sfc object
     # =================================================================================
     data = {}
-    f = h5py.File('data/02_modis_rad-sim/pre-data.h5', 'r')
+    f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
     data['alb_2d'] = dict(data=f['mod/sfc/alb_%4.4d' % wavelength][...], name='Surface albedo', units='N/A')
     data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
     data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
@@ -446,7 +452,7 @@ def cal_mca_rad(sat, wavelength, photons=1e7, fdir='tmp-data', solver='3D', over
     # cld object
     # =================================================================================
     data = {}
-    f = h5py.File('data/02_modis_rad-sim/pre-data.h5', 'r')
+    f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
     data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['mod/rad/lon'][...])
     data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['mod/rad/lat'][...])
     data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_2s'][...])
@@ -480,7 +486,7 @@ def cal_mca_rad(sat, wavelength, photons=1e7, fdir='tmp-data', solver='3D', over
 
     # solar zenith/azimuth angles and sensor zenith/azimuth angles
     # =================================================================================
-    f = h5py.File('data/02_modis_rad-sim/pre-data.h5', 'r')
+    f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
     sza = f['mod/rad/sza'][...].mean()
     saa = f['mod/rad/saa'][...].mean()
     vza = f['mod/rad/vza'][...].mean()
@@ -524,8 +530,6 @@ def main_pre(wvl=650):
 
     # create data directory (for storing data) if the directory does not exist
     #/----------------------------------------------------------------------------\#
-    name_tag = os.path.relpath(__file__).replace('.py', '')
-
     fdir_data = os.path.abspath('data/%s/download' % name_tag)
     if not os.path.exists(fdir_data):
         os.makedirs(fdir_data)
@@ -599,7 +603,6 @@ def main_sim(wvl=650):
 
     # create data directory (for storing data) if the directory does not exist
     #/----------------------------------------------------------------------------\#
-    name_tag = os.path.relpath(__file__).replace('.py', '')
     fdir_data = os.path.abspath('data/%s/download' % name_tag)
     fname_sat = '%s/sat.pk' % fdir_data
     sat0 = satellite_download(fname=fname_sat, overwrite=False)
@@ -623,8 +626,6 @@ def main_post(wvl=650, plot=False):
 
     # create data directory (for storing data) if the directory does not exist
     #/----------------------------------------------------------------------------\#
-    name_tag = os.path.relpath(__file__).replace('.py', '')
-
     fdir_data = os.path.abspath('data/%s' % name_tag)
     if not os.path.exists(fdir_data):
         os.makedirs(fdir_data)
@@ -710,7 +711,7 @@ def main_post(wvl=650, plot=False):
 
         plt.subplots_adjust(hspace=0.4, wspace=0.4)
 
-        plt.savefig('02_modis_rad-sim.png', bbox_inches='tight')
+        plt.savefig('%s.png' % name_tag, bbox_inches='tight')
         plt.close(fig)
         #\----------------------------------------------------------------------------/#
 

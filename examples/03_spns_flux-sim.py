@@ -50,6 +50,11 @@ from er3t.util.ahi import ahi_l2
 from er3t.util import grid_by_extent
 
 
+# global variables
+#/--------------------------------------------------------------\#
+name_tag = os.path.relpath(__file__).replace('.py', '')
+#\--------------------------------------------------------------/#
+
 
 def get_jday_ahi(fnames):
 
@@ -306,7 +311,7 @@ class flt_sim:
             date=datetime.datetime.now(),
             photons=2e6,
             Ncpu=16,
-            fdir='tmp-data/03_spns_rad-sim',
+            fdir='tmp-data/%s' % name_tag,
             wavelength=None,
             flt_trks=None,
             sat_imgs=None,
@@ -437,8 +442,8 @@ def main_run(
         wavelength=745.0,
         spns=True,
         run_rtm=True,
-        fdir_sat='data/03_spns_flux-sim/aux/ahi',
-        fdir_flt='data/03_spns_flux-sim/aux'):
+        fdir_sat='data/%s/aux/ahi' % name_tag,
+        fdir_flt='data/%s/aux' % name_tag):
 
 
     # create data directory (for storing data) if the directory does not exist
@@ -512,7 +517,7 @@ def main_run(
             wavelength=wavelength,
             flt_trks=flt_trks,
             sat_imgs=sat_imgs,
-            fname='data/03_spns_flux-sim/flt_sim_%s_%09.4fnm.pk' % (date_s, wavelength),
+            fname='data/%s/flt_sim_%s_%09.4fnm.pk' % (name_tag, date_s, wavelength),
             fdir=fdir,
             overwrite=True,
             overwrite_rtm=run_rtm
@@ -536,11 +541,11 @@ def main_post(
     date_s = date.strftime('%Y%m%d')
 
     # aircraft measurements and simulations
-    fname      = 'data/03_spns_flux-sim/flt_sim_%s_%09.4fnm.pk' % (date_s, wavelength)
+    fname      = 'data/%s/flt_sim_%s_%09.4fnm.pk' % (name_tag, date_s, wavelength)
     flt_sim0   = flt_sim(fname=fname)
 
     # create hdf5 file to store data
-    fname_h5   = 'data/03_spns_flux-sim/post-data.h5'
+    fname_h5   = 'data/%s/post-data.h5' % name_tag
     f = h5py.File(fname_h5, 'w')
 
     for vname in vnames:
@@ -608,7 +613,7 @@ def main_post(
 
         ax1.set_xlabel('Longitude [$^\circ$]')
         ax1.set_ylabel('Irradiance [$\mathrm{W m^{-2} nm^{-1}}$]')
-        plt.savefig('03_spns_flux-sim.png', bbox_inches='tight')
+        plt.savefig('%s.png' % name_tag, bbox_inches='tight')
         plt.close(fig)
         #\--------------------------------------------------------------/#
 
