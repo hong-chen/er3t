@@ -62,6 +62,8 @@ import er3t.common
 wvl0      = 600.0
 name_tag  = os.path.relpath(__file__).replace('.py', '')
 fname_les = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
+photon_ret = 1e6
+photon_sim = 1e8
 #\----------------------------------------------------------------------------/#
 
 
@@ -162,7 +164,7 @@ class func_cot_vs_rad:
                 sensor_azimuth_angle=0.0,
                 fdir='%s/%.2f/les_rad_3d' % (self.fdir, cot),
                 Nrun=1,
-                photons=1e6,
+                photons=photon_ret,
                 solver='3D',
                 Ncpu=24,
                 mp_mode='py',
@@ -229,7 +231,7 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
             sensor_azimuth_angle=0.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
-            photons=1e8,
+            photons=photon_sim,
             weights=abs0.coef['weight']['data'],
             solver=solver,
             Ncpu=24,
