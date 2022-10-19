@@ -53,6 +53,7 @@ from er3t.rtm.mca import mca_out_ng
 # global variables
 #/--------------------------------------------------------------\#
 name_tag = os.path.relpath(__file__).replace('.py', '')
+photon_sim = 1e7
 #\--------------------------------------------------------------/#
 
 
@@ -352,8 +353,8 @@ def main_sim():
 
     # run simulations using EaR3T
     date = datetime.datetime(2019, 10, 5)
-    cal_mca_rad(date, geometry, cloud_ipa, wavelength=600.0, cth=2.0, photons=1e7, fdir='tmp-data/%s/ipa' % name_tag, solver='3D', overwrite=True)
-    cal_mca_rad(date, geometry, cloud_cnn, wavelength=600.0, cth=2.0, photons=1e7, fdir='tmp-data/%s/cnn' % name_tag, solver='3D', overwrite=True)
+    cal_mca_rad(date, geometry, cloud_ipa, wavelength=600.0, cth=2.0, photons=photon_sim, fdir='tmp-data/%s/ipa' % name_tag, solver='3D', overwrite=True)
+    cal_mca_rad(date, geometry, cloud_cnn, wavelength=600.0, cth=2.0, photons=photon_sim, fdir='tmp-data/%s/cnn' % name_tag, solver='3D', overwrite=True)
 
 def main_post(plot=True):
 
@@ -467,7 +468,7 @@ if __name__ == '__main__':
     #    b. estimate cloud optical thickness (cot) based on reflectance through two-stream approximation
     #    c. store data in <pre-data.h5> under data/04_cam_nadir_rad-sim
     #/--------------------------------------------------------------\#
-    # main_pre_ipa()
+    main_pre_ipa()
     #\--------------------------------------------------------------/#
 
     # Step 2. Use CNN to predict cloud optical thickness from camera red channel radiance
@@ -483,7 +484,7 @@ if __name__ == '__main__':
     #    a. 3D radiance simulation using cot_ipa
     #    b. 3D radiance simulation using cot_cnn
     #/--------------------------------------------------------------\#
-    # main_sim()
+    main_sim()
     #\--------------------------------------------------------------/#
 
     # Step 4. Post-process and plot
@@ -493,7 +494,7 @@ if __name__ == '__main__':
     #        3) radiance simulation based on cot_cnn
     #    b. plot
     #/--------------------------------------------------------------\#
-    # main_post()
+    main_post()
     #\--------------------------------------------------------------/#
 
     pass

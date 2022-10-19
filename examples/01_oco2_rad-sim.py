@@ -69,6 +69,7 @@ from er3t.rtm.mca import mca_sca
 # global variables
 #/--------------------------------------------------------------\#
 name_tag = os.path.relpath(__file__).replace('.py', '')
+photon_sim = 1e8
 #\--------------------------------------------------------------/#
 
 
@@ -534,7 +535,7 @@ class sat_tmp:
 
         self.data = data
 
-def cal_mca_rad(sat, wavelength, fname_idl, photons=1e8, fdir='tmp-data', solver='3D', overwrite=False):
+def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwrite=False):
 
     """
     Simulate OCO-2 radiance
@@ -636,7 +637,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, photons=1e8, fdir='tmp-data', solver
             fdir='%s/%.4fnm/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             weights=abs0.coef['weight']['data'],
-            photons=photons,
+            photons=photon_sim,
             solver=solver,
             Ncpu=8,
             mp_mode='py',
@@ -783,7 +784,7 @@ def main_sim():
     index = np.argmin(np.abs(wvls-770.0))
     wavelength = wvls[index]
     for solver in ['3D', 'IPA']:
-        cal_mca_rad(sat0, wavelength, fname_idl, fdir=fdir_tmp, solver=solver, overwrite=True, photons=1e7)
+        cal_mca_rad(sat0, wavelength, fname_idl, fdir=fdir_tmp, solver=solver, overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(plot=False):
@@ -922,21 +923,21 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
     #/----------------------------------------------------------------------------\#
-    # main_pre()
+    main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
     #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim
     #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim
     #/----------------------------------------------------------------------------\#
-    # main_sim()
+    main_sim()
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for OCO-2, after run
     #   a. <post-data.h5> will be created under data/01_oco2_rad-sim
     #   b. <01_oco2_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    # main_post(plot=True)
+    main_post(plot=True)
     #\----------------------------------------------------------------------------/#
 
     pass

@@ -53,6 +53,7 @@ from er3t.util import grid_by_extent
 # global variables
 #/--------------------------------------------------------------\#
 name_tag = os.path.relpath(__file__).replace('.py', '')
+photon_sim = 1e7
 #\--------------------------------------------------------------/#
 
 
@@ -168,7 +169,7 @@ def cal_mca_flux(
         date=datetime.datetime.now(),
         target='flux',
         solver='3D',
-        photons=5e6,
+        photons=photon_sim,
         Ncpu=14,
         overwrite=True,
         quiet=False
@@ -309,7 +310,7 @@ class flt_sim:
     def __init__(
             self,
             date=datetime.datetime.now(),
-            photons=2e6,
+            photons=photon_sim,
             Ncpu=16,
             fdir='tmp-data/%s' % name_tag,
             wavelength=None,
@@ -627,14 +628,14 @@ if __name__ == '__main__':
     #   b. for each mini flight track segment, crop satellite imageries: stored in `sat_imgs`
     #   c. setup simulation runs for the flight track segments
     #/--------------------------------------------------------------\#
-    # main_run(run_rtm=True)
+    main_run(run_rtm=True)
     #\--------------------------------------------------------------/#
 
     # Step 2. Post-process radiance observations and simulations for SPN-S, after run
     #   a. <post-data.h5> will be created under data/03_spns_flux-sim
     #   b. <03_spns_flux-sim.png> will be created under current directory
     #/--------------------------------------------------------------\#
-    # main_post(plot=True)
+    main_post(plot=True)
     #\--------------------------------------------------------------/#
 
     pass
