@@ -7,12 +7,10 @@ The processes include:
     1) `main_pre()`: automatically download and pre-process satellite data products (~640MB data will be
        downloaded and stored under data/02_modis_rad-sim/download) from NASA data archive
         a) MODIS-Aqua_rgb_2019-09-02_(-109.60,-106.50,35.90,39.00).png
-        b) MYD021KM.A2019245.2025.061.2019246161115.hdf
-        c) MYD02HKM.A2019245.2025.061.2019246161115.hdf
-        d) MYD02QKM.A2019245.2025.061.2019246161115.hdf
-        e) MYD03.A2019245.2025.061.2019246155053.hdf
-        f) MYD06_L2.A2019245.2025.061.2019246164334.hdf
-        g) MYD09A1.A2019241.h09v05.006.2019250044127.hdf
+        b) MYD02QKM.A2019245.2025.061.2019246161115.hdf
+        c) MYD03.A2019245.2025.061.2019246155053.hdf
+        d) MYD06_L2.A2019245.2025.061.2019246164334.hdf
+        e) MYD09A1.A2019241.h09v05.006.2019250044127.hdf
 
     2) `main_sim()`: run simulation
         a) 3D mode
@@ -132,8 +130,6 @@ class satellite_download:
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
-        self.fnames['mod_02_1km'] = []
-        self.fnames['mod_02_hkm'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
         filename_tags_03 = get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
@@ -141,11 +137,8 @@ class satellite_download:
         for filename_tag in filename_tags_03:
             fnames_03     = download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             fnames_l2     = download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02_1km = download_laads_https(self.date, '61/MYD021KM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02_hkm = download_laads_https(self.date, '61/MYD02HKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             fnames_02     = download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_l2'] += fnames_l2
-            self.fnames['mod_02_1km'] += fnames_02_1km
             self.fnames['mod_02'] += fnames_02
             self.fnames['mod_03'] += fnames_03
 
