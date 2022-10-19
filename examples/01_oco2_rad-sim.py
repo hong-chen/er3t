@@ -7,15 +7,13 @@ The processes include:
     1) automatically download and pre-process satellite data products (~2.2 GB data will be downloaded and
        stored under data/01_oco2_rad-sim/download) from NASA data archive
         a) aqua_rgb_2019-09-02_-109.60--106.50-35.90-39.00.png
-        b) MYD021KM.A2019245.2025.061.2019246161115.hdf
-        c) MYD02HKM.A2019245.2025.061.2019246161115.hdf
-        d) MYD02QKM.A2019245.2025.061.2019246161115.hdf
-        e) MYD03.A2019245.2025.061.2019246155053.hdf
-        f) MYD06_L2.A2019245.2025.061.2019246164334.hdf
-        g) MYD09A1.A2019241.h09v05.006.2019250044127.hdf
-        h) oco2_L1bScND_27502a_190902_B10003r_200220035234.h5
-        i) oco2_L2MetND_27502a_190902_B10003r_200124030754.h5
-        j) oco2_L2StdND_27502a_190902_B10004r_200226231039.h5
+        b) MYD02QKM.A2019245.2025.061.2019246161115.hdf
+        c) MYD03.A2019245.2025.061.2019246155053.hdf
+        d) MYD06_L2.A2019245.2025.061.2019246164334.hdf
+        e) MYD09A1.A2019241.h09v05.006.2019250044127.hdf
+        f) oco2_L1bScND_27502a_190902_B10003r_200220035234.h5
+        g) oco2_L2MetND_27502a_190902_B10003r_200124030754.h5
+        h) oco2_L2StdND_27502a_190902_B10004r_200226231039.h5
 
     2) run simulation
         a) 3D mode
@@ -27,7 +25,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2022-10-18 by Hong Chen
+    1) Linux on 2022-10-19 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -138,18 +136,15 @@ class satellite_download:
         self.fnames['mod_03'] = []
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
-        self.fnames['mod_02_1km'] = []
         filename_tags_03 = get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
         for filename_tag in filename_tags_03:
             fnames_03     = download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             fnames_l2     = download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             fnames_02     = download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02_1km = download_laads_https(self.date, '61/MYD021KM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
 
             self.fnames['mod_03'] += fnames_03
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02
-            self.fnames['mod_02_1km'] += fnames_02_1km
 
         # MOD09A1 surface reflectance product
         self.fnames['mod_09'] = []

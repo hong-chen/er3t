@@ -17,7 +17,7 @@ The processes include:
        data at different cloud fractions and cloud inhomogeneities to avoid biasing CNN model.
 
 This code has been tested under:
-    1) Linux on 2022-09-07 by Hong Chen
+    1) Linux on 2022-10-19 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -60,6 +60,7 @@ import er3t.common
 # global variables
 #/----------------------------------------------------------------------------\#
 wvl0      = 600.0
+name_tag  = os.path.relpath(__file__).replace('.py', '')
 fname_les = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
 #\----------------------------------------------------------------------------/#
 
@@ -184,7 +185,7 @@ class func_cot_vs_rad:
 
 
 
-def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/05_cnn-les_rad-sim/03_sim-ori', coarsen_factor=2, overwrite=True):
+def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/%s/03_sim-ori' % name_tag, coarsen_factor=2, overwrite=True):
 
     fdir = '%s/%dnm' % (fdir0, wavelength)
 
@@ -202,7 +203,7 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
     cld0      = cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 25], overwrite=overwrite)
 
     # radiance 3d
-    # =======================================================================================================
+    #/----------------------------------------------------------------------------\#
     target    = 'radiance'
     solver    = '3D'
     atm1d0    = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
@@ -247,7 +248,7 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
     cot_1d      = f_mca.interp_from_rad(rad_3d)
     cot_1d[np.isnan(cot_1d)] = 0.0
     cot_1d[cot_1d<0.0] = 0.0
-    # =======================================================================================================
+    #\----------------------------------------------------------------------------/#
 
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
@@ -267,7 +268,7 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
 
 
 
-def split_data_native_resolution(fname, coarsen_factor=2, fdir_out='tmp-data/05_cnn-les_rad-sim/04_sim-native'):
+def split_data_native_resolution(fname, coarsen_factor=2, fdir_out='tmp-data/%s/04_sim-native' % name_tag):
 
     with h5py.File(fname, 'r+') as f:
 
@@ -357,7 +358,7 @@ def crop_select_cloud_scene():
 
         return ref_std.ravel(), ref_mean.ravel(), x.ravel(), y.ravel()
 
-    def get_ref_std_ref_mean(coarsen_factor=2, Np=64, Dp=32, sza=29.162360459281544, fdir='tmp-data/05_cnn-les_rad-sim/04_sim-native'):
+    def get_ref_std_ref_mean(coarsen_factor=2, Np=64, Dp=32, sza=29.162360459281544, fdir='tmp-data/%s/04_sim-native' % name_tag):
 
         fnames = sorted(glob.glob('%s/*coa-fac-%d*600nm*.h5' % (fdir, coarsen_factor)))
 
@@ -419,7 +420,7 @@ def crop_select_cloud_scene():
 
     # even out the selection probability so coarsened data won't have higher
     # possibility to be selected simply because it has larger data volum
-    # =======================================================================
+    #/----------------------------------------------------------------------------\#
     prob1 = np.zeros_like(data1['ref_mean'])
     prob1[...] = 0.33333/ prob1.size
 
@@ -431,12 +432,12 @@ def crop_select_cloud_scene():
 
     prob = np.concatenate((prob1, prob2, prob4))
     data['prob'] = prob
-    # =======================================================================
+    #\----------------------------------------------------------------------------/#
 
 
     # random selection
     # maximum of 100 tiles in one ref-mean vs ref-std grid set by variable <Nselect>
-    # =======================================================================
+    #/----------------------------------------------------------------------------\#
     xedges = np.arange(0.0, 1.01, 0.02)
     yedges = np.arange(0.0, 0.45, 0.02)
     heatmap, xedges, yedges = np.histogram2d(ref_mean.ravel(), ref_std.ravel(), bins=(xedges, yedges))
@@ -460,12 +461,12 @@ def crop_select_cloud_scene():
     fnames = []
     for index_select in indices_select:
         fnames.append(data['fnames'][index_select])
-    # =======================================================================
+    #\----------------------------------------------------------------------------/#
 
     # sort data by LES file name
     # why: this way the LES file will only be opened once to select mini tiles that come from the
     #      same LES file to save time
-    # =======================================================================
+    #/----------------------------------------------------------------------------\#
     indices_sorted = np.array(sorted(range(len(fnames)), key=fnames.__getitem__))
 
     fnames_sorted = []
@@ -477,12 +478,12 @@ def crop_select_cloud_scene():
     for key in data.keys():
         if key != 'fnames':
             data_sorted[key] = data[key][indices_select][indices_sorted]
-    # =======================================================================
+    #\----------------------------------------------------------------------------/#
 
 
     # create mini tiles
-    # =======================================================================
-    fdir_out = 'tmp-data/05_cnn-les_rad-sim/05_sim-select'
+    #/----------------------------------------------------------------------------\#
+    fdir_out = 'tmp-data/%s/05_sim-select' % name_tag
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
 
@@ -516,7 +517,7 @@ def crop_select_cloud_scene():
         f['cot_1d']   = cot_1d_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
         f['rad_3d']   = rad_3d_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
         f.close()
-    # =======================================================================
+    #\----------------------------------------------------------------------------/#
 
 
 
@@ -527,10 +528,10 @@ if __name__ == '__main__':
     # step 1
     # derive relationship of COT vs Radiance at a given wavelength
     # data stored under <tmp-data/05_cnn-les_rad-sim/01_ret>
-    # =============================================================================
-    # fdir1 = 'tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl0
+    #/----------------------------------------------------------------------------\#
+    # fdir1 = 'tmp-data/%s/01_ret/%3.3d' % (name_tag, wvl0)
     # f_mca =  func_cot_vs_rad(fdir1, wvl0, run=True)
-    # =============================================================================
+    #\----------------------------------------------------------------------------/#
 
 
     # step 2
@@ -538,34 +539,33 @@ if __name__ == '__main__':
     # (spatial resolution depends on coarsening factor)
     # raw processing data is stored under <tmp-data/05_cnn-les_rad-sim/02_sim-raw>
     # simulation output data is stored under <tmp-data/05_cnn-les_rad-sim/03_sim-ori>
-    # =============================================================================
-    # fdir1 = 'tmp-data/05_cnn-les_rad-sim/01_ret/%3.3d' % wvl0
+    #/----------------------------------------------------------------------------\#
+    # fdir1 = 'tmp-data/%s/01_ret/%3.3d' % (name_tag, wvl0)
     # f_mca =  func_cot_vs_rad(fdir1, wvl0, run=False)
     # for coarsen_factor in [1, 2, 4]:
-    #     fdir2 = 'tmp-data/05_cnn-les_rad-sim/02_sim-raw/les_coa-fac-%d' % (coarsen_factor)
+    #     fdir2 = 'tmp-data/%s/02_sim-raw/les_coa-fac-%d' % (name_tag, coarsen_factor)
     #     run_mca_coarse_case(f_mca, wvl0, fname_les, fdir2, coarsen_factor=coarsen_factor, overwrite=True)
-    # =============================================================================
+    #\----------------------------------------------------------------------------/#
 
 
     # step 3
     # split/upsample the calculation so the spatial resolution is 100 m
     # data stored under <tmp-data/05_cnn-les_rad-sim/04_sim-native>
-    # =============================================================================
-    # for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-1_600nm.h5')):
+    #/----------------------------------------------------------------------------\#
+    # for fname in sorted(glob.glob('tmp-data/%s/03_sim-ori/*coa-fac-1_600nm.h5' % name_tag)):
     #     split_data_native_resolution(fname, coarsen_factor=1)
-    # for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-2_600nm.h5')):
+    # for fname in sorted(glob.glob('tmp-data/%s/03_sim-ori/*coa-fac-2_600nm.h5' % name_tag)):
     #     split_data_native_resolution(fname, coarsen_factor=2)
-    # for fname in sorted(glob.glob('tmp-data/05_cnn-les_rad-sim/03_sim-ori/*coa-fac-4_600nm.h5')):
+    # for fname in sorted(glob.glob('tmp-data/%s/03_sim-ori/*coa-fac-4_600nm.h5' % name_tag)):
     #     split_data_native_resolution(fname, coarsen_factor=4)
-    # =============================================================================
-
+    #\----------------------------------------------------------------------------/#
 
     # step 4
     # split data into 64x64 mini tiles
     # perform random selection based on Mean vs STD grids
     # data stored under <tmp-data/05_cnn-les_rad-sim/05_sim-select>
-    # =============================================================================
+    #/----------------------------------------------------------------------------\#
     # crop_select_cloud_scene()
-    # =============================================================================
+    #\----------------------------------------------------------------------------/#
 
     pass
