@@ -2,7 +2,7 @@
 by Hong Chen (hong.chen.cu@gmail.com)
 
 This code has been tested under:
-    1) Linux on 2022-08-30 by Hong Chen
+    1) Linux on 2022-10-20 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -10,6 +10,7 @@ This code has been tested under:
 """
 
 import os
+import sys
 import h5py
 import numpy as np
 import datetime
@@ -51,7 +52,6 @@ Ncpu    = 8
 
 
 def test_01_flux_clear_sky(
-        fdir='tmp-data/%s/test_01_flux_clear_sky' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -61,6 +61,9 @@ def test_01_flux_clear_sky(
     """
     A test run for clear sky case
     """
+
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -143,7 +146,7 @@ def test_01_flux_clear_sky(
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             Ng=abs0.Ng,
-            fdir='%s/%4.4d/clear-sky/flux_%s' % (fdir, wavelength, solver.lower()),
+            fdir='%s/%4.4d/flux_%s' % (fdir, wavelength, solver.lower()),
             target='flux',
             Nrun=3,
             solar_zenith_angle=30.0,
@@ -175,7 +178,7 @@ def test_01_flux_clear_sky(
     # out0 = mca_out_ng(fname='mca-out-flux-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = mca_out_ng(fname='mca-out-flux-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/mca-out-flux-%s_clear-sky.h5' % (fdir, solver.lower())
+    fname_h5 = '%s/mca-out-flux-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
     out0 = mca_out_ng(fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
@@ -189,7 +192,7 @@ def test_01_flux_clear_sky(
     # plot
     #/-----------------------------------------------------------------------------\
     if plot:
-        fname_png = '%s-test_01_flux_%s.png' % (name_tag, solver.lower())
+        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(4, 8))
         ax1 = fig.add_subplot(111)
@@ -228,7 +231,6 @@ def test_01_flux_clear_sky(
 
 
 def test_02_flux_les_cloud_3d(
-        fdir='tmp-data/%s/test_02_flux_les_cloud_3d' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -240,6 +242,9 @@ def test_02_flux_les_cloud_3d(
 
     To run this test, we will need data/00_er3t_mca/aux/les.nc
     """
+
+    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -368,7 +373,7 @@ def test_02_flux_les_cloud_3d(
             surface_albedo=0.03,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=45.0,
-            fdir='%s/%4.4d/les_cld3d/flux_%s' % (fdir, wavelength, solver.lower()),
+            fdir='%s/%4.4d/flux_%s' % (fdir, wavelength, solver.lower()),
             photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
@@ -396,7 +401,7 @@ def test_02_flux_les_cloud_3d(
     # out0 = mca_out_ng(fname='mca-out-flux-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = mca_out_ng(fname='mca-out-flux-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/mca-out-flux-%s_les_cld3d.h5' % (fdir, solver.lower())
+    fname_h5 = '%s/mca-out-flux-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
     out0 = mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
@@ -411,7 +416,7 @@ def test_02_flux_les_cloud_3d(
     #/-----------------------------------------------------------------------------\
     if plot:
         z_index = 4
-        fname_png = '%s-test_02_flux_%s.png' % (name_tag, solver.lower())
+        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(12, 6))
 
@@ -444,7 +449,6 @@ def test_02_flux_les_cloud_3d(
 
 
 def test_03_flux_les_cloud_3d_aerosol_1d(
-        fdir='tmp-data/%s/test_03_flux_les_cloud_3d_aerosol_1d' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -456,6 +460,9 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
 
     To run this test, we will need data/00_er3t_mca/aux/les.nc
     """
+
+    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -593,7 +600,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
             Nrun=3,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=45.0,
-            fdir='%s/%4.4d/les_cld3d_aer1d/flux_%s' % (fdir, wavelength, solver.lower()),
+            fdir='%s/%4.4d/flux_%s' % (fdir, wavelength, solver.lower()),
             photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
@@ -621,7 +628,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     # out0 = mca_out_ng(fname='mca-out-flux-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = mca_out_ng(fname='mca-out-flux-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/mca-out-flux-%s_les_cld3d_aer1d.h5' % (fdir, solver.lower())
+    fname_h5 = '%s/mca-out-flux-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
     out0 = mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
@@ -636,7 +643,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     #/-----------------------------------------------------------------------------\
     if plot:
         z_index = 4
-        fname_png = '%s-test_03_flux_%s.png' % (name_tag, solver.lower())
+        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(12, 6))
 
@@ -669,7 +676,6 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
 
 
 def test_04_flux_les_cloud_3d_aerosol_3d(
-        fdir='tmp-data/%s/test_04_flux_les_cloud_3d_aerosol_3d' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -681,6 +687,9 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
 
     To run this test, we will need data/00_er3t_mca/aux/les.nc
     """
+
+    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -825,7 +834,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
             surface_albedo=0.03,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=45.0,
-            fdir='%s/%4.4d/les_cld3d_aer3d/flux_%s' % (fdir, wavelength, solver.lower()),
+            fdir='%s/%4.4d/flux_%s' % (fdir, wavelength, solver.lower()),
             photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
@@ -853,7 +862,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     # out0 = mca_out_ng(fname='mca-out-flux-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = mca_out_ng(fname='mca-out-flux-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/mca-out-flux-%s_les_cld3d_aer3d.h5' % (fdir, solver.lower())
+    fname_h5 = '%s/mca-out-flux-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
     out0 = mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
@@ -868,7 +877,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     #/-----------------------------------------------------------------------------\
     if plot:
         z_index = 4
-        fname_png = '%s-test_04_flux_%s.png' % (name_tag, solver.lower())
+        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(12, 6))
 
@@ -900,8 +909,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
 
 
 
-def test_05_rad_les_cloud_3d_aerosol_3d(
-        fdir='tmp-data/%s/test_05_rad_les_cloud_3d_aerosol_3d' % name_tag,
+def test_05_rad_les_cloud_3d(
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -909,13 +917,16 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
         ):
 
     """
-    Similar to test_04 but for calculating radiance fields using LES data (nadir radiance at
+    Similar to test_02 but for calculating radiance fields using LES data (nadir radiance at
     the satellite altitude of 705km)
 
     Additionally, Mie phase function is used instead of HG that was used in test_01 - test_04
 
     To run this test, we will need data/00_er3t_mca/aux/les.nc
     """
+
+    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -1005,23 +1016,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
     #/-----------------------------------------------------------------------------\
     # inhomogeneous 3d mcarats "atmosphere"
-    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, overwrite=False, force=True)
-
-    # 3d aerosol near surface (mixed with clouds)
-    #/-----------------------------------------------------------------------------\
-    ext3d = np.zeros_like(atm3d0.nml['Atm_extp3d']['data'][:, :, :, 0])
-    ext3d[:, :, 0] = 0.00012
-    ext3d[:, :, 1] = 0.00008
-
-    omg3d = np.zeros_like(atm3d0.nml['Atm_extp3d']['data'][:, :, :, 0])
-    omg3d[...] = 0.85
-
-    apf3d = np.zeros_like(atm3d0.nml['Atm_extp3d']['data'][:, :, :, 0])
-    apf3d[...] = 0.6
-    atm3d0.add_mca_3d_atm(ext3d=ext3d, omg3d=omg3d, apf3d=apf3d)
-    #\-----------------------------------------------------------------------------/
-
-    atm3d0.gen_mca_3d_atm_file(fname='%s/mca_atm_3d.bin' % fdir)
+    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
     # data can be accessed at
     #     atm3d0.nml['Atm_nx']['data']
     #     atm3d0.nml['Atm_ny']['data']
@@ -1072,7 +1067,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
             sensor_zenith_angle=0.0,
             sensor_azimuth_angle=0.0,
             sensor_altitude=705000.0,
-            fdir='%s/%4.4d/les_cld3d_aer3d/rad_%s' % (fdir, wavelength, solver.lower()),
+            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             photons=photons,
             weights=abs0.coef['weight']['data'],
@@ -1101,7 +1096,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
     # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/mca-out-rad-%s_les_cld3d_aer3d.h5' % (fdir, solver.lower())
+    fname_h5 = '%s/mca-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
     out0 = mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
@@ -1112,7 +1107,7 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
     # plot
     #/-----------------------------------------------------------------------------\
     if plot:
-        fname_png = '%s-test_05_rad_%s.png' % (name_tag, solver.lower())
+        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
@@ -1137,7 +1132,6 @@ def test_05_rad_les_cloud_3d_aerosol_3d(
 
 
 def test_06_rad_cld_gen_hem(
-        fdir='tmp-data/%s/test_06_rad_cld_gen_hem' % name_tag,
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -1150,6 +1144,9 @@ def test_06_rad_cld_gen_hem(
 
     Mie phase function is used instead of HG.
     """
+
+    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -1262,7 +1259,7 @@ def test_06_rad_cld_gen_hem(
             sensor_zenith_angle=0.0,
             sensor_azimuth_angle=0.0,
             sensor_altitude=705000.0,
-            fdir='%s/%4.4d/cld3d/rad_%s' % (fdir, wavelength, solver.lower()),
+            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             photons=photons,
             weights=abs0.coef['weight']['data'],
@@ -1276,7 +1273,7 @@ def test_06_rad_cld_gen_hem(
 
     # define mcarats output object
     #/-----------------------------------------------------------------------------\
-    fname_h5 = '%s/mca-out-rad-%s_cld3d.h5' % (fdir, solver.lower())
+    fname_h5 = '%s/mca-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
     out0 = mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
     #\-----------------------------------------------------------------------------/
 
@@ -1284,7 +1281,7 @@ def test_06_rad_cld_gen_hem(
     # plot
     #/-----------------------------------------------------------------------------\
     if plot:
-        fname_png = '%s-test_06_rad_%s.png' % (name_tag, solver.lower())
+        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(16, 5.0))
 
@@ -1338,7 +1335,7 @@ if __name__ == '__main__':
 
     # radiance simulation
     #/-----------------------------------------------------------------------------\
-    test_05_rad_les_cloud_3d_aerosol_3d()
+    test_05_rad_les_cloud_3d()
     test_06_rad_cld_gen_hem()
     #\-----------------------------------------------------------------------------/
 

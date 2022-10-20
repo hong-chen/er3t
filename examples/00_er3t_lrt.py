@@ -2,7 +2,7 @@
 by Hong Chen (hong.chen.cu@gmail.com)
 
 This code has been tested under:
-    1) Linux on 2022-08-30 by Hong Chen
+    1) Linux on 2022-10-20 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -38,7 +38,8 @@ def test_flux_01_clear_sky():
     This following is an example for clear-sky calculation with default parameterization.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_flux_01_clear_sky' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -53,10 +54,12 @@ def test_flux_01_clear_sky():
     data = lrt.lrt_read_uvspec([init])
 
     # the flux calculated can be accessed through
-    print(data.f_up)
-    print(data.f_down)
-    print(data.f_down_diffuse)
-    print(data.f_down_direct)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Upwelling flux: ', np.squeeze(data.f_up))
+    print('  Downwelling flux: ', np.squeeze(data.f_down))
+    print('  Down-diffuse flux: ', np.squeeze(data.f_down_diffuse))
+    print('  Down-direct flux: ', np.squeeze(data.f_down_direct))
+    print()
 
 def test_flux_02_clear_sky():
 
@@ -65,7 +68,8 @@ def test_flux_02_clear_sky():
     wavelength etc.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_flux_02_clear_sky' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -87,10 +91,12 @@ def test_flux_02_clear_sky():
     data = lrt.lrt_read_uvspec([init])
 
     # the flux calculated can be accessed through
-    print(data.f_up)
-    print(data.f_down)
-    print(data.f_down_diffuse)
-    print(data.f_down_direct)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Upwelling flux: ', np.squeeze(data.f_up))
+    print('  Downwelling flux: ', np.squeeze(data.f_down))
+    print('  Down-diffuse flux: ', np.squeeze(data.f_down_diffuse))
+    print('  Down-direct flux: ', np.squeeze(data.f_down_direct))
+    print()
 
 def test_flux_03_clear_sky():
 
@@ -98,7 +104,8 @@ def test_flux_03_clear_sky():
     The following example is similar to Example 2 but for multiple calculations at different solar zenith angles.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_flux_03_clear_sky' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -127,10 +134,12 @@ def test_flux_03_clear_sky():
     data = lrt.lrt_read_uvspec(inits)
 
     # the flux calculated can be accessed through
-    print(data.f_up)
-    print(data.f_down)
-    print(data.f_down_diffuse)
-    print(data.f_down_direct)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Upwelling flux: ', np.squeeze(data.f_up))
+    print('  Downwelling flux: ', np.squeeze(data.f_down))
+    print('  Down-diffuse flux: ', np.squeeze(data.f_down_diffuse))
+    print('  Down-direct flux: ', np.squeeze(data.f_down_direct))
+    print()
 
 def test_flux_04_cloud():
 
@@ -139,7 +148,8 @@ def test_flux_04_cloud():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_flux_04_cloud' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -176,10 +186,12 @@ def test_flux_04_cloud():
     data = lrt.lrt_read_uvspec(inits)
 
     # the flux calculated can be accessed through
-    print(data.f_up)
-    print(data.f_down)
-    print(data.f_down_diffuse)
-    print(data.f_down_direct)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Upwelling flux: ', np.squeeze(data.f_up))
+    print('  Downwelling flux: ', np.squeeze(data.f_down))
+    print('  Down-diffuse flux: ', np.squeeze(data.f_down_diffuse))
+    print('  Down-direct flux: ', np.squeeze(data.f_down_direct))
+    print()
 
 def test_flux_05_cloud_and_aerosol():
 
@@ -188,7 +200,8 @@ def test_flux_05_cloud_and_aerosol():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_flux_05_cloud_and_aerosol' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -233,10 +246,12 @@ def test_flux_05_cloud_and_aerosol():
     data = lrt.lrt_read_uvspec(inits)
 
     # the flux calculated can be accessed through
-    print(data.f_up)
-    print(data.f_down)
-    print(data.f_down_diffuse)
-    print(data.f_down_direct)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Upwelling flux: ', np.squeeze(data.f_up))
+    print('  Downwelling flux: ', np.squeeze(data.f_down))
+    print('  Down-diffuse flux: ', np.squeeze(data.f_down_diffuse))
+    print('  Down-direct flux: ', np.squeeze(data.f_down_direct))
+    print()
 
 
 
@@ -247,7 +262,8 @@ def test_rad_01_clear_sky():
     This following is an example for clear-sky calculation with default parameterization.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_rad_01_clear_sky' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -260,7 +276,9 @@ def test_rad_01_clear_sky():
     data = lrt.lrt_read_uvspec_rad([init])
 
     # the radiance calculated can be accessed through
-    print(data.rad)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Radiance: ', np.squeeze(data.rad))
+    print()
 
 def test_rad_02_clear_sky():
 
@@ -270,7 +288,8 @@ def test_rad_02_clear_sky():
     wavelength etc.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_rad_02_clear_sky' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -295,7 +314,9 @@ def test_rad_02_clear_sky():
     data = lrt.lrt_read_uvspec_rad([init])
 
     # the radiance calculated can be accessed through
-    print(data.rad)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Radiance: ', np.squeeze(data.rad))
+    print()
 
 def test_rad_03_clear_sky():
 
@@ -303,7 +324,8 @@ def test_rad_03_clear_sky():
     The following example is similar to Example 2 but for multiple calculations at different solar zenith angles.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_rad_03_clear_sky' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -335,7 +357,9 @@ def test_rad_03_clear_sky():
     data = lrt.lrt_read_uvspec_rad(inits)
 
     # the radiance calculated can be accessed through
-    print(data.rad)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Radiance: ', np.squeeze(data.rad))
+    print()
 
 def test_rad_04_cloud():
 
@@ -344,7 +368,8 @@ def test_rad_04_cloud():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_rad_04_cloud' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -384,7 +409,9 @@ def test_rad_04_cloud():
     data = lrt.lrt_read_uvspec_rad(inits)
 
     # the radiance calculated can be accessed through
-    print(data.rad)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Radiance: ', np.squeeze(data.rad))
+    print()
 
 def test_rad_05_cloud_and_aerosol():
 
@@ -393,7 +420,8 @@ def test_rad_05_cloud_and_aerosol():
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/%s/test_rad_05_cloud_and_aerosol' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -441,7 +469,9 @@ def test_rad_05_cloud_and_aerosol():
     data = lrt.lrt_read_uvspec_rad(inits)
 
     # the radiance calculated can be accessed through
-    print(data.rad)
+    print('Results for <%s>:' % _metadata['Function'])
+    print('  Radiance: ', np.squeeze(data.rad))
+    print()
 
 
 
@@ -454,7 +484,8 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/%s/example_rad_01_sun_glint' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -505,9 +536,12 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     ax1.set_theta_zero_location('N')
     ax1.set_theta_direction(-1)
 
-    plt.savefig('%s-example_rad_01.png' % name_tag, bbox_inches='tight')
+    fname_png = '%s-%s.png' % (name_tag, _metadata['Function'])
+    plt.savefig(fname_png, bbox_inches='tight')
     plt.close(fig)
     # =============================================================================
+
+    print('Results for <%s> is saved in <%s>.' % (_metadata['Function'], fname_png))
 
 def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
 
@@ -516,7 +550,8 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
     """
 
-    fdir_tmp = 'tmp-data/%s/example_rad_02_anisotropy' % name_tag
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -612,9 +647,12 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     ax1.set_theta_zero_location('N')
     ax1.set_theta_direction(-1)
 
-    plt.savefig('%s-example_rad_02.png' % name_tag, bbox_inches='tight')
+    fname_png = '%s-%s.png' % (name_tag, _metadata['Function'])
+    plt.savefig(fname_png, bbox_inches='tight')
     plt.close(fig)
     # =============================================================================
+
+    print('Results for <%s> is saved in <%s>.' % (_metadata['Function'], fname_png))
 
 
 
