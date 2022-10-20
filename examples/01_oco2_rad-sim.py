@@ -6,7 +6,7 @@ This code serves as an example code to reproduce 3D/IPA OCO-2 radiance simulatio
 The processes include:
     1) automatically download and pre-process satellite data products (~2.2 GB data will be downloaded and
        stored under data/01_oco2_rad-sim/download) from NASA data archive
-        a) aqua_rgb_2019-09-02_-109.60--106.50-35.90-39.00.png
+        a) MODIS-Aqua_rgb_2019-09-02_(-109.60,-106.50,35.90,39.00).png
         b) MYD02QKM.A2019245.2025.061.2019246161115.hdf
         c) MYD03.A2019245.2025.061.2019246155053.hdf
         d) MYD06_L2.A2019245.2025.061.2019246164334.hdf
