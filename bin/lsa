@@ -38,7 +38,7 @@ def get_data_brief(args):
 
     fname = os.path.abspath(args.fname[0])
     if not os.path.exists(fname):
-        msg = 'Error [lss]: cannot locate file <{fname}>.'.format(fname=fname)
+        msg = '\nError [lss]: cannot locate file <{fname}>.'.format(fname=fname)
         raise OSError(msg)
 
     if args.format != None:
@@ -53,14 +53,14 @@ def get_data_brief(args):
             words = filename.split('.')
 
             if len(words) == 1:
-                msg = 'Error [lss]: cannot determine the data type of file <{filename}>.'.format(filename=filename)
+                msg = '\nError [lss]: cannot determine the data type of file <{filename}>.'.format(filename=filename)
                 raise ValueError(msg)
             else:
                 dataType = words[-1].lower()
 
         except ValueError:
 
-            msg = 'Error [lss]: cannot determine the data type of file <{filename}>.'.format(filename=filename)
+            msg = '\nError [lss]: cannot determine the data type of file <{filename}>.'.format(filename=filename)
             raise ValueError(msg)
 
     dataTypeDict = {
@@ -86,7 +86,7 @@ def get_data_brief(args):
     if dataType in dataTypeDict.keys():
         return fname, dataTypeDict[dataType]
     else:
-        msg = 'Error [lss]: do NOT support the data type of file \'{filename}\'.'.format(filename=filename)
+        msg = '\nError [lss]: do NOT support the data type of file \'{filename}\'.'.format(filename=filename)
         raise ValueError(msg)
 
 
@@ -123,20 +123,20 @@ def get_data_info_nc(fname, dataType='netCDF4'):
     try:
         from netCDF4 import Dataset
     except ImportError:
-        msg = 'Error [lss]: cannot import <netCDF4>.'
+        msg = '\nError [lss]: cannot import <netCDF4>.'
         raise ImportError(msg)
 
     try:
         f = Dataset(fname, 'r')
     except:
-        msg = 'Error [lss]: cannot access <{fname}>.'.format(fname=fname)
+        msg = '\nError [lss]: cannot access <{fname}>.'.format(fname=fname)
         raise OSError(msg)
 
     if dataType.upper() == 'HDF4':
         try:
             import pyhdf
         except ImportError:
-            msg = 'Error [lss]: require a HDF4 library (e.g., <pyhdf>).'
+            msg = '\nError [lss]: require a HDF4 library (e.g., <pyhdf>).'
             raise ImportError(msg)
 
     vnames = []
@@ -189,13 +189,13 @@ def get_data_info_h5(fname, dataType='HDF5'):
     try:
         import h5py
     except ImportError:
-        msg = 'Error [lss]: cannot import <h5py>.'
+        msg = '\nError [lss]: cannot import <h5py>.'
         raise ImportError(msg)
 
     try:
         f = h5py.File(fname, 'r')
     except:
-        msg = 'Error [lss]: cannot access <{fname}>.'.format(fname=fname)
+        msg = '\nError [lss]: cannot access <{fname}>.'.format(fname=fname)
         raise OSError(msg)
 
     vnames = []
@@ -225,13 +225,13 @@ def get_data_info_h4(fname, dataType='HDF4'):
     try:
         from pyhdf.SD import SD, SDC
     except ImportError:
-        msg = 'Error [lss]: cannot import <pyhdf>.'
+        msg = '\nError [lss]: cannot import <pyhdf>.'
         raise ImportError(msg)
 
     try:
         f = SD(fname, SDC.READ)
     except:
-        msg = 'Error [lss]: cannot access <{fname}>.'.format(fname=fname)
+        msg = '\nError [lss]: cannot access <{fname}>.'.format(fname=fname)
         raise OSError(msg)
 
     vnames = f.datasets().keys()
@@ -262,13 +262,13 @@ def get_data_info_idl(fname, dataType='IDL'):
     try:
         import numpy, scipy.io
     except ImportError:
-        msg = 'Error [lss]: cannot import <numpy> and <scipy>.'
+        msg = '\nError [lss]: cannot import <numpy> and <scipy>.'
         raise ImportError(msg)
 
     try:
         f = scipy.io.readsav(fname)
     except:
-        msg = 'Error [lss]: cannot access <{fname}>.'.format(fname=fname)
+        msg = '\nError [lss]: cannot access <{fname}>.'.format(fname=fname)
         raise OSError(msg)
 
     vnames0 = f.keys()
