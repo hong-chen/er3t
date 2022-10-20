@@ -517,6 +517,7 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
             )
 
     # run with multi cores
+    print('Running calculations for <%s> ...' % (_metadata['Function']))
     lrt.lrt_run(init)
 
     data = lrt.lrt_read_uvspec_rad([init])
@@ -541,7 +542,8 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     plt.close(fig)
     # =============================================================================
 
-    print('Results for <%s> is saved in <%s>.' % (_metadata['Function'], fname_png))
+    print('Results for <%s> is saved at <%s>.' % (_metadata['Function'], fname_png))
+    print()
 
 def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
 
@@ -596,6 +598,7 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
             )
 
     # run with multi cores
+    print('Running calculations for <%s> ...' % (_metadata['Function']))
     lrt.lrt_run(init)
 
     data1 = lrt.lrt_read_uvspec_rad([init])
@@ -652,7 +655,8 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     plt.close(fig)
     # =============================================================================
 
-    print('Results for <%s> is saved in <%s>.' % (_metadata['Function'], fname_png))
+    print('Results for <%s> is saved at <%s>.' % (_metadata['Function'], fname_png))
+    print()
 
 
 
