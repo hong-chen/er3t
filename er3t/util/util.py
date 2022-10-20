@@ -655,7 +655,7 @@ def download_laads_https(
         content  = webpage.read().decode('utf-8')
         lines    = content.split('\n')
     except:
-        msg = '\nError [download_laads_https]: cannot access <%s>.' % fname_server
+        msg = '\nError [download_laads_https]: cannot access <%s>.' % fdir_server
         raise OSError(msg)
 
 
