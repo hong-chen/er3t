@@ -668,7 +668,7 @@ def download_laads_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
             if command_line_tool == 'curl':
-                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
+                command = 'mkdir -p %s && curl --connect-timeout 300 --max-time 3600 --keepalive-time 300 -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\'' % (fdir_out, token, fname_server, fname_local)
             elif command_line_tool == 'wget':
                 command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
             commands.append(command)
@@ -689,6 +689,10 @@ def download_laads_https(
             os.system(command)
 
             fname_local = fnames_local[i]
+
+            if not os.path.exists(fname_local):
+                msg = '\nError [download_laads_https]: fails to download <%s>.' % fname_local
+                raise OSError(msg)
 
             if data_format is None:
                 data_format = os.path.basename(fname_local).split('.')[-1]
