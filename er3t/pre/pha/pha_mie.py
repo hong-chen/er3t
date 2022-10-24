@@ -129,7 +129,7 @@ class pha_mie_wc:
                 with open(fname, 'rb') as f0:
                     data0 = pickle.load(f0)
                 if np.abs(angles-data0['ang']['data']).sum() < 0.00000001:
-                    print('Message [pha_mie_wc]: reuse phase function from "%s"' % fname)
+                    print('Message [pha_mie_wc]: Re-using phase function from <%s> ...' % fname)
                     self.data = copy.deepcopy(data0)
                 else:
                     self.run(fname, wvl0, angles)
