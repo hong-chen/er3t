@@ -44,8 +44,8 @@ import er3t.common
 # global variables
 #/-----------------------------------------------------------------------------\
 name_tag = os.path.relpath(__file__).replace('.py', '')
-photons = 1e7
-Ncpu    = 8
+photons = 1e8
+Ncpu    = 12
 #\-----------------------------------------------------------------------------/
 
 
@@ -307,7 +307,7 @@ def test_02_flux_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=overwrite)
+    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -525,7 +525,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=overwrite)
+    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -752,7 +752,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=overwrite)
+    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -989,7 +989,7 @@ def test_05_rad_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25, 1], overwrite=overwrite)
+    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -1327,16 +1327,16 @@ if __name__ == '__main__':
 
     # irradiance simulation
     #/-----------------------------------------------------------------------------\
-    test_01_flux_clear_sky()
-    test_02_flux_les_cloud_3d()
-    test_03_flux_les_cloud_3d_aerosol_1d()
-    test_04_flux_les_cloud_3d_aerosol_3d()
+    # test_01_flux_clear_sky()
+    # test_02_flux_les_cloud_3d()
+    # test_03_flux_les_cloud_3d_aerosol_1d()
+    # test_04_flux_les_cloud_3d_aerosol_3d()
     #\-----------------------------------------------------------------------------/
 
     # radiance simulation
     #/-----------------------------------------------------------------------------\
     test_05_rad_les_cloud_3d()
-    test_06_rad_cld_gen_hem()
+    # test_06_rad_cld_gen_hem()
     #\-----------------------------------------------------------------------------/
 
     pass
