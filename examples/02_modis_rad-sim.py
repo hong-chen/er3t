@@ -21,7 +21,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2022-10-18 by Hong Chen
+    1) Linux on 2022-10-23 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -62,8 +62,13 @@ from er3t.rtm.mca import mca_sca
 
 # global variables
 #/--------------------------------------------------------------\#
-name_tag = os.path.relpath(__file__).replace('.py', '')
-photon_sim = 1e8
+_name_tag = os.path.relpath(__file__).replace('.py', '')
+
+_date   = datetime.datetime(2019, 9, 2)
+_region = [-109.6, -106.5, 35.9, 39.0]
+
+_wavelength = 650.0
+_photon_sim = 1e8
 #\--------------------------------------------------------------/#
 
 
@@ -430,7 +435,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
     # sfc object
     # =================================================================================
     data = {}
-    f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
+    f = h5py.File('data/%s/pre-data.h5' % _name_tag, 'r')
     data['alb_2d'] = dict(data=f['mod/sfc/alb_%4.4d' % wavelength][...], name='Surface albedo', units='N/A')
     data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
     data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
@@ -446,7 +451,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
     # cld object
     # =================================================================================
     data = {}
-    f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
+    f = h5py.File('data/%s/pre-data.h5' % _name_tag, 'r')
     data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['mod/rad/lon'][...])
     data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['mod/rad/lat'][...])
     data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_2s'][...])
@@ -480,7 +485,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
 
     # solar zenith/azimuth angles and sensor zenith/azimuth angles
     # =================================================================================
-    f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
+    f = h5py.File('data/%s/pre-data.h5' % _name_tag, 'r')
     sza = f['mod/rad/sza'][...].mean()
     saa = f['mod/rad/saa'][...].mean()
     vza = f['mod/rad/vza'][...].mean()
@@ -506,7 +511,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
             fdir='%s/%.4fnm/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             weights=abs0.coef['weight']['data'],
-            photons=photon_sim,
+            photons=_photon_sim,
             solver=solver,
             Ncpu=8,
             mp_mode='py',
@@ -520,11 +525,11 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
 
 
 
-def main_pre(wvl=650):
+def main_pre(wvl=_wavelength):
 
     # create data directory (for storing data) if the directory does not exist
     #/----------------------------------------------------------------------------\#
-    fdir_data = os.path.abspath('data/%s/download' % name_tag)
+    fdir_data = os.path.abspath('data/%s/download' % _name_tag)
     if not os.path.exists(fdir_data):
         os.makedirs(fdir_data)
     #\----------------------------------------------------------------------------/#
@@ -532,17 +537,14 @@ def main_pre(wvl=650):
 
     # download satellite data based on given date and region
     #/----------------------------------------------------------------------------\#
-    date   = datetime.datetime(2019, 9, 2)
-    extent = [-109.6, -106.5, 35.9, 39.0]
-
     fname_sat = '%s/sat.pk' % fdir_data
-    sat0 = satellite_download(date=date, fdir_out=fdir_data, extent=extent, fname=fname_sat, overwrite=False)
+    sat0 = satellite_download(date=_date, fdir_out=fdir_data, extent=_region, fname=fname_sat, overwrite=False)
     #\----------------------------------------------------------------------------/#
 
 
     # pre-process downloaded data
     #/----------------------------------------------------------------------------\#
-    f0 = h5py.File('data/%s/pre-data.h5' % name_tag, 'w')
+    f0 = h5py.File('data/%s/pre-data.h5' % _name_tag, 'w')
     f0['extent'] = sat0.extent
 
     # MODIS data groups in the HDF file
@@ -593,11 +595,11 @@ def main_pre(wvl=650):
     f0.close()
     #/----------------------------------------------------------------------------\#
 
-def main_sim(wvl=650):
+def main_sim(wvl=_wavelength):
 
     # create data directory (for storing data) if the directory does not exist
     #/----------------------------------------------------------------------------\#
-    fdir_data = os.path.abspath('data/%s/download' % name_tag)
+    fdir_data = os.path.abspath('data/%s/download' % _name_tag)
     fname_sat = '%s/sat.pk' % fdir_data
     sat0 = satellite_download(fname=fname_sat, overwrite=False)
     #\----------------------------------------------------------------------------/#
@@ -605,7 +607,7 @@ def main_sim(wvl=650):
 
     # create tmp-data/02_modis_rad-sim directory if it does not exist
     #/----------------------------------------------------------------------------\#
-    fdir_tmp = os.path.abspath('tmp-data/%s' % (name_tag))
+    fdir_tmp = os.path.abspath('tmp-data/%s' % (_name_tag))
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
     #\----------------------------------------------------------------------------/#
@@ -616,18 +618,18 @@ def main_sim(wvl=650):
     cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
-def main_post(wvl=650, plot=False):
+def main_post(wvl=_wavelength, plot=False):
 
     # create data directory (for storing data) if the directory does not exist
     #/----------------------------------------------------------------------------\#
-    fdir_data = os.path.abspath('data/%s' % name_tag)
+    fdir_data = os.path.abspath('data/%s' % _name_tag)
     if not os.path.exists(fdir_data):
         os.makedirs(fdir_data)
     #\----------------------------------------------------------------------------/#
 
     # read in MODIS measured radiance
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
+    f = h5py.File('data/%s/pre-data.h5' % _name_tag, 'r')
     extent = f['extent'][...]
     lon_mod = f['mod/rad/lon'][...]
     lat_mod = f['mod/rad/lat'][...]
@@ -638,7 +640,7 @@ def main_post(wvl=650, plot=False):
 
     # read in EaR3T simulations (3D)
     #/----------------------------------------------------------------------------\#
-    fname = 'tmp-data/%s/mca-out-rad-modis-3d_%.4fnm.h5' % (name_tag, wvl)
+    fname = 'tmp-data/%s/mca-out-rad-modis-3d_%.4fnm.h5' % (_name_tag, wvl)
     f = h5py.File(fname, 'r')
     rad_rtm_3d     = f['mean/rad'][...]
     rad_rtm_3d_std = f['mean/rad_std'][...]
@@ -648,7 +650,7 @@ def main_post(wvl=650, plot=False):
 
     # save data
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/post-data.h5' % name_tag, 'w')
+    f = h5py.File('data/%s/post-data.h5' % _name_tag, 'w')
     f['wvl'] = wvl
     f['lon'] = lon_mod
     f['lat'] = lat_mod
@@ -705,7 +707,7 @@ def main_post(wvl=650, plot=False):
 
         plt.subplots_adjust(hspace=0.4, wspace=0.4)
 
-        plt.savefig('%s.png' % name_tag, bbox_inches='tight')
+        plt.savefig('%s.png' % _name_tag, bbox_inches='tight')
         plt.close(fig)
         #\----------------------------------------------------------------------------/#
 

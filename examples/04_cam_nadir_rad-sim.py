@@ -52,8 +52,10 @@ from er3t.rtm.mca import mca_out_ng
 
 # global variables
 #/--------------------------------------------------------------\#
-name_tag = os.path.relpath(__file__).replace('.py', '')
-photon_sim = 1e7
+_name_tag = os.path.relpath(__file__).replace('.py', '')
+_photon_sim = 1e7
+_wavelength = 600.0
+_cloud_top_height = 2.0
 #\--------------------------------------------------------------/#
 
 
@@ -176,7 +178,7 @@ class sat_tmp:
 
         self.data = data
 
-def cal_mca_rad(date, geometry, cloud, wavelength=600.0, cth=2.0, photons=1e7, fdir='tmp-data/%s' % name_tag, solver='3D', overwrite=True):
+def cal_mca_rad(date, geometry, cloud, wavelength=600.0, cth=2.0, photons=1e7, fdir='tmp-data/%s' % _name_tag, solver='3D', overwrite=True):
 
     """
     Simulate radiance for camera using IPA/CNN based cloud optical thickness
@@ -253,7 +255,7 @@ def cal_mca_rad(date, geometry, cloud, wavelength=600.0, cth=2.0, photons=1e7, f
 def main_pre_ipa():
 
     # read in raw all-sky camera imagery data
-    f = h5py.File('data/%s/aux/cam_nadir_imagery.h5' % name_tag, "r")
+    f = h5py.File('data/%s/aux/cam_nadir_imagery.h5' % _name_tag, "r")
     extent = f['gridded/ext'][...]
     red    = f['gridded/red'][...]
     lon    = f['gridded/lon'][...]
@@ -270,7 +272,7 @@ def main_pre_ipa():
     cot_ipa, cer_ipa = get_cld_rtv_ipa(ref, lon, lat, sza0)
 
     # save pre-processed data
-    f = h5py.File('data/%s/pre-data_ipa.h5' % name_tag, 'w')
+    f = h5py.File('data/%s/pre-data_ipa.h5' % _name_tag, 'w')
     f['rad'] = red
     f['ref'] = ref
     f['lon'] = lon
@@ -282,14 +284,14 @@ def main_pre_ipa():
     f.close()
 
 def main_pre_cnn(
-        fname='data/%s/pre-data_ipa.h5' % name_tag,
+        fname='data/%s/pre-data_ipa.h5' % _name_tag,
         model_path='/data/vikas/weights/chosen_uniform_fine_4x_16.h5'
         ):
 
     import tensorflow as tf
     from keras.models import load_model
 
-    f = h5py.File('data/%s/pre-data_cnn.h5' % name_tag, 'w')
+    f = h5py.File('data/%s/pre-data_cnn.h5' % _name_tag, 'w')
 
     f0 = h5py.File(fname, 'r')
     rad = f0['rad'][...]
@@ -319,7 +321,7 @@ def main_sim():
 
     # read in solar geometries
     geometry = {}
-    f = h5py.File('data/%s/aux/cam_nadir_imagery.h5' % name_tag, 'r')
+    f = h5py.File('data/%s/aux/cam_nadir_imagery.h5' % _name_tag, 'r')
     geometry['sza'] = dict(name='Solar Zenith Angle'              , units='degree'    , data=f['geometry/sza'][...])
     geometry['saa'] = dict(name='Solar Azimuth Angle'             , units='degree'    , data=f['geometry/saa'][...])
     geometry['alt'] = dict(name='Altitude'                        , units='meter'     , data=f['geometry/altitude'][...])
@@ -327,7 +329,7 @@ def main_sim():
 
     # read in IPA based cloud data
     cloud_ipa = {}
-    f = h5py.File('data/%s/pre-data_ipa.h5' % name_tag, 'r')
+    f = h5py.File('data/%s/pre-data_ipa.h5' % _name_tag, 'r')
     cot_2d = f['ipa/cot'][...]
     cer_2d = f['ipa/cer'][...]
     cloud_ipa['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['lon'][...])
@@ -338,10 +340,10 @@ def main_sim():
 
     # read in CNN based cloud data
     cloud_cnn = {}
-    if os.path.exists('data/%s/pre-data_cnn.h5' % name_tag):
-        fname = 'data/%s/pre-data_cnn.h5' % name_tag
+    if os.path.exists('data/%s/pre-data_cnn.h5' % _name_tag):
+        fname = 'data/%s/pre-data_cnn.h5' % _name_tag
     else:
-        fname = 'data/%s/aux/pre-data_cnn.h5' % name_tag
+        fname = 'data/%s/aux/pre-data_cnn.h5' % _name_tag
     f = h5py.File(fname, 'r')
     cot_2d = f['cnn/cot_wei'][...]
     cer_2d = np.zeros_like(cot_2d); cer_2d[...] = 12.0
@@ -353,29 +355,29 @@ def main_sim():
 
     # run simulations using EaR3T
     date = datetime.datetime(2019, 10, 5)
-    cal_mca_rad(date, geometry, cloud_ipa, wavelength=600.0, cth=2.0, photons=photon_sim, fdir='tmp-data/%s/ipa' % name_tag, solver='3D', overwrite=True)
-    cal_mca_rad(date, geometry, cloud_cnn, wavelength=600.0, cth=2.0, photons=photon_sim, fdir='tmp-data/%s/cnn' % name_tag, solver='3D', overwrite=True)
+    cal_mca_rad(date, geometry, cloud_ipa, wavelength=_wavelength, cth=_cloud_top_height, photons=_photon_sim, fdir='tmp-data/%s/ipa' % _name_tag, solver='3D', overwrite=True)
+    cal_mca_rad(date, geometry, cloud_cnn, wavelength=_wavelength, cth=_cloud_top_height, photons=_photon_sim, fdir='tmp-data/%s/cnn' % _name_tag, solver='3D', overwrite=True)
 
 def main_post(plot=True):
 
     # read in camera measured red channel radiance
-    f = h5py.File('data/%s/pre-data_ipa.h5' % name_tag, 'r')
+    f = h5py.File('data/%s/pre-data_ipa.h5' % _name_tag, 'r')
     extent = f['extent'][...]
     rad_cam = f['rad'][...]
     f.close()
 
     # read in simulated 3D radiance based on cot_ipa
-    f = h5py.File('tmp-data/%s/ipa/mca-out-rad-cam-3d_600.0000nm.h5' % name_tag, 'r')
+    f = h5py.File('tmp-data/%s/ipa/mca-out-rad-cam-3d_600.0000nm.h5' % _name_tag, 'r')
     rad_sim_ipa = f['mean/rad'][...]
     f.close()
 
     # read in simulated 3D radiance based on cot_cnn
-    f = h5py.File('tmp-data/%s/cnn/mca-out-rad-cam-3d_600.0000nm.h5' % name_tag, 'r')
+    f = h5py.File('tmp-data/%s/cnn/mca-out-rad-cam-3d_600.0000nm.h5' % _name_tag, 'r')
     rad_sim_cnn = f['mean/rad'][...]
     f.close()
 
     # save data into <post-data.h5> under data/04_cam_nadir_rad-sim
-    f = h5py.File('data/%s/post-data.h5' % name_tag, 'w')
+    f = h5py.File('data/%s/post-data.h5' % _name_tag, 'w')
     f['extent'] = extent
     f['rad_cam'] = rad_cam
     f['rad_sim-3d_cot-ipa'] = rad_sim_ipa
@@ -454,7 +456,7 @@ def main_post(plot=True):
 
         plt.subplots_adjust(hspace=0.45, wspace=0.45)
 
-        plt.savefig('%s.png' % name_tag, bbox_inches='tight')
+        plt.savefig('%s.png' % _name_tag, bbox_inches='tight')
         plt.close(fig)
         #\--------------------------------------------------------------/#
 
