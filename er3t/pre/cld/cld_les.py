@@ -127,9 +127,9 @@ class cld_les:
         #/----------------------------------------------------------------------------\#
         f = Dataset(fname_nc, 'r')
 
-        x      = f.variables['x'][:]               # x direction
-        y      = f.variables['y'][:]               # y direction
-        z0     = f.variables['z'][:]               # z direction, altitude
+        x      = f.variables['x'][:]/1000.0        # x direction (in km)
+        y      = f.variables['y'][:]/1000.0        # y direction (in km)
+        z0     = f.variables['z'][:]/1000.0        # z direction, altitude (in km)
         qc_3d  = f.variables['QC'][index_t, ...]   # cloud water mixing ratio
 
         # in vertical dimension, only select data where clouds exist to shrink data size
@@ -139,7 +139,7 @@ class cld_les:
 
         qc_z = np.sum(qc_3d, axis=(1, 2))
         index_e = -1
-        while (qc_z[index_e-2] < 1e-8) and (Nz0+index_e>1):
+        while (qc_z[index_e-2] < 1e-10) and (Nz0+index_e>1):
             index_e -= 1
 
         if self.coarsen[2] > 1:
@@ -159,6 +159,18 @@ class cld_les:
         f.close()
         #\----------------------------------------------------------------------------/#
 
+        # check whether the data is equidistant or non-equidistant
+        #/----------------------------------------------------------------------------\#
+        dz  = z[1:]-z[:-1]
+        diff = np.abs(dz-dz[0])
+        if any([i>1e-3 for i in diff]):
+            msg = '\nWarning [cld_les]: Altitude is non-equidistant.'
+            warnings.warn(msg)
+            self.logic_equidist = False
+        else:
+            self.logic_equidist = True
+        #\----------------------------------------------------------------------------/#
+
         Nz, Ny, Nx = qc_3d.shape
 
         # 3d pressure field
@@ -166,7 +178,6 @@ class cld_les:
         p_3d      = np.empty((Nz, Ny, Nx), dtype=p.dtype)
         p_3d[...] = p[:, None, None]
         #\--------------------------------------------------------------/#
-
 
         # calculate cloud extinction
         #/--------------------------------------------------------------\#
@@ -198,23 +209,18 @@ class cld_les:
         #/--------------------------------------------------------------\#
         self.lay = {}
 
-        self.lay['x']           = {'data':x/1000.0             , 'name':'X' , 'units':'km'}
-        self.lay['y']           = {'data':y/1000.0             , 'name':'Y' , 'units':'km'}
-        self.lay['nx']          = {'data':x.size               , 'name':'Nx', 'units':'N/A'}
-        self.lay['ny']          = {'data':y.size               , 'name':'Ny', 'units':'N/A'}
-        self.lay['dx']          = {'data':abs(x[1]-x[0])/1000.0, 'name':'dx', 'units':'km'}
-        self.lay['dy']          = {'data':abs(y[1]-y[0])/1000.0, 'name':'dy', 'units':'km'}
+        self.lay['x']           = {'data':x             , 'name':'X' , 'units':'km'}
+        self.lay['y']           = {'data':y             , 'name':'Y' , 'units':'km'}
+        self.lay['nx']          = {'data':x.size        , 'name':'Nx', 'units':'N/A'}
+        self.lay['ny']          = {'data':y.size        , 'name':'Ny', 'units':'N/A'}
+        self.lay['dx']          = {'data':abs(x[1]-x[0]), 'name':'dx', 'units':'km'}
+        self.lay['dy']          = {'data':abs(y[1]-y[0]), 'name':'dy', 'units':'km'}
 
-        self.lay['altitude']    = {'data':z/1000.0, 'name':'Altitude'   , 'units':'km'}
-        self.lay['pressure']    = {'data':p       , 'name':'Pressure'   , 'units':'mb'}
+        self.lay['altitude']    = {'data':z, 'name':'Altitude'   , 'units':'km'}
+        self.lay['pressure']    = {'data':p, 'name':'Pressure'   , 'units':'mb'}
 
-        dz  = self.lay['altitude']['data'][1:]-self.lay['altitude']['data'][:-1]
-        diff = np.abs(dz-dz[0])
-        if any([i>1e-3 for i in diff]):
-            msg = '\nWarning [cld_les]: Altitude is non-equidistant.'
-            warnings.warn(msg)
         dz = np.append(dz, dz[-1])
-        self.lay['thickness']   = {'data':dz , 'name':'Layer thickness', 'units':'km'}
+        self.lay['thickness']   = {'data':dz, 'name':'Layer thickness', 'units':'km'}
 
         self.lay['temperature'] = {'data':t_3d  , 'name':'Temperature (3D)'            , 'units':'K'}
         self.lay['extinction']  = {'data':ext_3d, 'name':'Extinction coefficients (3D)', 'units':'m^-1'}
@@ -226,11 +232,11 @@ class cld_les:
         #/--------------------------------------------------------------\#
         self.lev = {}
 
-        z_ = np.append(self.lay['altitude']['data']-dz/2.0, self.lay['altitude']['data'][-1]+dz[-1]/2.0)
-
-        if z_[0] < 0.0:
-            msg = 'Error [cld_les]: Surface below 0.'
-            raise ValueError(msg)
+        # in km
+        zs_ = max(self.lay['altitude']['data'][0]-self.lay['thickness']['data'][0]/2.0, 0.0)
+        zm_ = self.lay['altitude']['data'][1:-1] - self.lay['thickness']['data'][1:-1]/2.0
+        ze_ = self.lay['altitude']['data'][-1] + self.lay['thickness']['data'][-1]/2.0
+        z_ = np.append(np.append(zs_, zm_), ze_)
 
         dz_ = z_[1:] - z_[:-1]
         dz_ = np.append(dz_, dz_[-1])
@@ -262,7 +268,8 @@ class cld_les:
         # cloud optical thickness
         #/----------------------------------------------------------------------------\#
         cot_3d = np.zeros_like(self.lay['extinction']['data'])
-        for i, dz0 in enumerate(self.lay['thickness']['data']):
+        dz_    = self.lay['thickness']['data']
+        for i, dz0 in enumerate(dz_):
             cot_3d[:, :, i] = self.lay['extinction']['data'][:, :, i] * dz0 * 1000.0
         self.lay['cot'] = {'data':cot_3d, 'name':'Cloud optical thickness (3D)'}
 
