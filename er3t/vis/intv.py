@@ -55,24 +55,26 @@ def compare_data_2d(
     else:
         title = 'Compare Data-2D'
     #\----------------------------------------------------------------------------/#
+    print(title)
 
 
     # set html file name
     #/----------------------------------------------------------------------------\#
     if fname_html is None:
-        fname_html = '%s_%s-x_%s-y.html' % (_metadata['Function'], data_x['name'], data_y['name'])
+        fname_html = '%s_%s_vs_%s.html' % (_metadata['Function'], data_x['name'].lower().replace(' ', '-'), data_y['name'].lower().replace(' ', '-'))
     #\----------------------------------------------------------------------------/#
+    print(fname_html)
 
 
-    output_file(fname_html, title=title, mode='inline')
+    # output_file(fname_html, title=title, mode='inline')
 
-    layout0 = layout(
-              [[plt_spec, plt_geo],
-               [slider_spec],
-               [plt_time],
-               [slider_time]], sizing_mode='fixed')
+    # layout0 = layout(
+    #           [[plt_spec, plt_geo],
+    #            [slider_spec],
+    #            [plt_time],
+    #            [slider_time]], sizing_mode='fixed')
 
-    save(layout0)
+    # save(layout0)
 
 
 
