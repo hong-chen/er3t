@@ -41,8 +41,9 @@ class mca_sfc_2d:
     def __init__(self,\
                  atm_obj   = None, \
                  sfc_obj   = None, \
-                 fname     = None,
+                 fname     = None, \
                  overwrite = True, \
+                 force     = False,\
                  verbose   = False,\
                  quiet     = False \
                  ):
@@ -65,9 +66,14 @@ class mca_sfc_2d:
 
         self.pre_mca_2d_sfc()
 
-        if self.overwrite:
-            if fname is None:
-                fname = 'mca_sfc_2d.bin'
+        if fname is None:
+            fname = 'mca_sfc_2d.bin'
+
+        if not self.overwrite:
+            if (not os.path.exists(fname)) and (not force):
+                self.gen_mca_2d_sfc_file(fname)
+            self.nml['Sfc_inpfile'] = {'data':fname}
+        else:
             self.gen_mca_2d_sfc_file(fname)
 
 
