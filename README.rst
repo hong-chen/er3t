@@ -21,13 +21,13 @@ Applicable area:
 
 |
 
-|gif1| Demo |gif2|
-
 .. |gif1| image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/multi-angle.gif
    :width: 45%
+   :align: left
 
 .. |gif2| image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/sunrise-sunset.gif
    :width: 45%
+   :align: right
 
 |
 
