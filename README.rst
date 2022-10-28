@@ -21,7 +21,7 @@ Applicable area:
 
 |
 
-.. list-table:: **Demo**
+.. list-table:: **Simulation Demo**
 
     * - Multi-Angle Observations
 
