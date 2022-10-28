@@ -24,10 +24,8 @@ Applicable area:
 .. list-table::
 
     * - .. image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/multi-angle.gif
-           :width: 45%
 
       - .. image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/sunrise-sunset.gif
-           :width: 45%
 
 .. |gif1| image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/multi-angle.gif
    :width: 45%
