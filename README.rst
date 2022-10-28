@@ -4,6 +4,8 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 .. figure:: https://discordapp.com/api/guilds/681619528945500252/widget.png?style=shield
    :target: https://discord.gg/ntqsguwaWv
 
+|
+
 EaR³T provides high-level interfaces that can automate the process of performing IPA/3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
 publicly available IPA/3D radiative transfer models including MCARaTS (**implemented**),
@@ -21,11 +23,11 @@ Applicable area:
 
 |
 
-.. list-table:: **Simulation Demo**
+.. list-table:: **Demo**
 
-    * - Multi-Angle Observations
+    * - Multi-Angle Simulation
 
-      - Sunrise to Sunset
+      - Sunrise to Sunset Simulation
 
     * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle.gif
 
