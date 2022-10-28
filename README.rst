@@ -19,6 +19,7 @@ Applicable area:
 
 * Novel CNN-based cloud retrieval algorithms.
 
+.. image:: https://raw.githubusercontent.com/hong-chen/er3t/blob/dev/docs/assets/multi-angle.gif?sanitize=true
 
 |
 
