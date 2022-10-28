@@ -22,7 +22,6 @@ Applicable area:
 |
 
 .. list-table:: **Demo**
-   :align: center
 
     * - Multi-Angle Observations
 
