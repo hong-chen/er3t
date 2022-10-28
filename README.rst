@@ -21,19 +21,15 @@ Applicable area:
 
 |
 
-.. list-table::
+.. list-table:: Demo
+
+    * - Multi-Angle Observations
+
+      - Sunrise to Sunset
 
     * - .. image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/multi-angle.gif
 
       - .. image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/sunrise-sunset.gif
-
-.. |gif1| image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/multi-angle.gif
-   :width: 45%
-   :align: left
-
-.. |gif2| image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/sunrise-sunset.gif
-   :width: 45%
-   :align: right
 
 |
 
