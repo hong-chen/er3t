@@ -27,9 +27,9 @@ Applicable area:
 
       - Sunrise to Sunset
 
-    * - .. image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/multi-angle.gif
+    * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle.gif
 
-      - .. image:: https://github.com/hong-chen/er3t/blob/dev/docs/assets/sunrise-sunset.gif
+      - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/sunrise-sunset.gif
 
 |
 
