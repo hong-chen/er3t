@@ -25,13 +25,21 @@ Applicable area:
 
 .. list-table:: **Demo**
 
-    * - Multi-Angle Simulation
+    * - Multi-Angle Simulation (downward-looking from space)
 
-      - Sunrise to Sunset Simulation
+      - Sunrise to Sunset Simulation (downward-looking from space)
 
-    * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle.gif
+    * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle_space.gif
 
-      - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/sunrise-sunset.gif
+      - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/sunrise-sunset_space.gif
+
+    * - Multi-Angle Simulation (upward-looking from ground)
+
+      - Sunrise to Sunset Simulation (upward-looking from ground)
+
+    * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle_ground.gif
+
+      - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/sunrise-sunset_ground.gif
 
 |
 
