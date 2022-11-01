@@ -269,8 +269,8 @@ class oco2_std:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
         else:
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
+            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
 
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]
@@ -409,8 +409,8 @@ class oco2_met:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
         else:
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
+            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
 
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]

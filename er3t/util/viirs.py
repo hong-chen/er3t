@@ -124,8 +124,8 @@ class viirs_03:
 
         else:
 
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
+            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
 
         lon = get_data_nc(lon0)
         lat = get_data_nc(lat0)
@@ -440,8 +440,8 @@ class viirs_09a1:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
         else:
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
+            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
 
         lon   = LonLat[..., 0]
         lat   = LonLat[..., 1]
@@ -564,8 +564,8 @@ class viirs_43ma3:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
         else:
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
+            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
 
         lon   = LonLat[..., 0]
         lat   = LonLat[..., 1]
@@ -705,8 +705,8 @@ class viirs_43ma4:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
         else:
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
+            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
 
         lon   = LonLat[..., 0]
         lat   = LonLat[..., 1]
