@@ -204,7 +204,7 @@ Acknowledgements
     |
 
     Iwabuchi, H., and Okamura, R.: Multispectral Monte Carlo radiative transfer simulation by using the maximum
-    cross-section method, Journal of Quantitative Spectroscopy and Radiative Transfer, 193, 40–46,
+    cross-section method, Journal of Quantitative Spectroscopy and Radiative Transfer, 193, 40-46,
     doi:10.1016/j.jqsrt.2017.01.025, 2017.
 
 
