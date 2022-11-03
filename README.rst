@@ -195,10 +195,18 @@ Acknowledgements
 
 |
 
-* MCARaTS is a 3D radiative transfer solver developed by `Iwabuchi (2006) <https://doi.org/10.1175/JAS3755.1>`_.
+* MCARaTS is a 3D radiative transfer solver developed by `Iwabuchi (2006) <https://doi.org/10.1175/JAS3755.1>`_
+  and `Iwabuchi and Okamura (2017) <https://doi.org/10.1016/j.jqsrt.2017.01.025>`_.
 
     Iwabuchi, H.: Efficient Monte Carlo methods for radiative transfer modeling, J. Atmos. Sci., 63, 2324-2339,
     doi:10.1175/JAS3755.1, 2006.
+
+    |
+
+    Iwabuchi, H., and Okamura, R.: Multispectral Monte Carlo radiative transfer simulation by using the maximum
+    cross-section method, Journal of Quantitative Spectroscopy and Radiative Transfer, 193, 40–46,
+    doi:10.1016/j.jqsrt.2017.01.025, 2017.
+
 
 |
 
