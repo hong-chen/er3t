@@ -204,9 +204,9 @@ This program contains various test cases using LES data.
    A test case that calculates flux fields (Nx, Ny, Nz) using 3D LES cloud field and a user-defined 3D aerosol layer near surface.
 
 
-#. ``test_05_rad_les_cloud_3d_aerosol_3d``
+#. ``test_05_rad_les_cloud_3d``
 
-   A test case that calculates radiance field (Nx, Ny) using 3D LES cloud field and a user-defined 3D aerosol layer near surface.
+   A test case that calculates radiance field (Nx, Ny) using 3D LES cloud field.
 
 #. ``test_06_rad_cld_gen_hem``
 
