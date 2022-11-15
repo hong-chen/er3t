@@ -417,8 +417,9 @@ def test_rad_04_cloud():
 def test_rad_05_cloud_and_aerosol():
 
     """
-    The following example is similar to Example 3 but for cloud calculations.
-    Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
+    The following example is similar to Example 4 but for cloud and aerosol calculations.
+    Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km and
+                   a homogeneous aerosol layer (AOD=0.4, ASY=0.6, SSA=0.85) located at 3.0 to 6.0 km
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
