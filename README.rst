@@ -54,7 +54,7 @@ Applicable area:
 
 |
 
-Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information.
+Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
 
 |
 |
