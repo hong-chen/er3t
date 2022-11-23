@@ -68,7 +68,7 @@ _date   = datetime.datetime(2019, 9, 2)
 _region = [-109.6, -106.5, 35.9, 39.0]
 
 _wavelength = 650.0
-_photon_sim = 1e8
+_photon_sim = 1e9
 #\--------------------------------------------------------------/#
 
 
@@ -419,7 +419,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
 
     # atm object
     # =================================================================================
-    levels    = np.array([ 0. ,  0.5,  1. ,  1.5,  2. ,  2.5,  3. ,  3.5,  4. ,  4.5,  5. , 5.5,  6. ,  6.5,  7. ,  7.5,  8. ,  8.5,  9. ,  9.5, 10. , 11. , 12. , 13. , 14. , 20. , 25. , 30. , 35. , 40. ])
+    levels = np.arange(0.0, 20.1, 0.5)
     fname_atm = '%s/atm.pk' % fdir
     atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
     # =================================================================================
@@ -463,6 +463,8 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
     fname_cld = '%s/cld.pk' % fdir
 
     cth0 = modl1b.data['cth_2d']['data']
+    # cbh0 = 1.0
+    # cgt0 = cth0 - cbh0
     cld0      = cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
     # =================================================================================
 
@@ -574,6 +576,8 @@ def main_pre(wvl=_wavelength):
     g1['vaa'] = mod0.data['vaa']['data']
     g1['rad_%4.4d' % mod0.data['wvl']['data']] = mod0.data['rad_2d']['data']
 
+    g2['lon'] = mod0.data['lon_2d']['data']
+    g2['lat'] = mod0.data['lat_2d']['data']
     g2['cot_2s'] = mod0.data['cot_2d']['data']
     g2['cer_l2'] = mod0.data['cer_2d']['data']
     g2['cth_l2'] = mod0.data['cth_2d']['data']
@@ -627,6 +631,7 @@ def main_post(wvl=_wavelength, plot=False):
         os.makedirs(fdir_data)
     #\----------------------------------------------------------------------------/#
 
+
     # read in MODIS measured radiance
     #/----------------------------------------------------------------------------\#
     f = h5py.File('data/%s/pre-data.h5' % _name_tag, 'r')
@@ -665,8 +670,11 @@ def main_post(wvl=_wavelength, plot=False):
 
         #/----------------------------------------------------------------------------\#
         fig = plt.figure(figsize=(10, 10))
+
+        # 2D plot: rad_obs
+        #/--------------------------------------------------------------\#
         ax1 = fig.add_subplot(221)
-        ax1.imshow(rad_mod.T, cmap='Greys_r', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
+        ax1.imshow(rad_mod.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
         ax1.set_xlabel('Longititude [$^\circ$]')
         ax1.set_ylabel('Latitude [$^\circ$]')
         ax1.set_xlim((-109.0, -107.0))
@@ -674,7 +682,10 @@ def main_post(wvl=_wavelength, plot=False):
         ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
         ax1.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
         ax1.set_title('MODIS Measured Radiance')
+        #\--------------------------------------------------------------/#
 
+        # heatmap: rad_sim vs rad_obs
+        #/--------------------------------------------------------------\#
         logic = (lon_mod>=-109.0) & (lon_mod<=-107.0) & (lat_mod>=37.0) & (lat_mod<=39.0)
 
         xedges = np.arange(-0.01, 0.61, 0.005)
@@ -694,9 +705,12 @@ def main_post(wvl=_wavelength, plot=False):
         ax2.set_ylim(0.0, 0.6)
         ax2.set_xlabel('MODIS Measured Radiance')
         ax2.set_ylabel('Simulated 3D Radiance')
+        #\--------------------------------------------------------------/#
 
+        # 2D plot: rad_sim
+        #/--------------------------------------------------------------\#
         ax3 = fig.add_subplot(224)
-        ax3.imshow(rad_rtm_3d.T, cmap='Greys_r', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
+        ax3.imshow(rad_rtm_3d.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
         ax3.set_xlabel('Longititude [$^\circ$]')
         ax3.set_ylabel('Latitude [$^\circ$]')
         ax3.set_xlim((-109.0, -107.0))
@@ -704,6 +718,7 @@ def main_post(wvl=_wavelength, plot=False):
         ax3.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
         ax3.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
         ax3.set_title('EaR$^3$T Simulated 3D Radiance')
+        #\--------------------------------------------------------------/#
 
         plt.subplots_adjust(hspace=0.4, wspace=0.4)
 
@@ -719,13 +734,13 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
     #   a. <mca-out-rad-modis-3d_650.0000nm.h5> will be created under tmp-data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_sim()
+    # main_sim()
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
