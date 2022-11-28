@@ -298,7 +298,7 @@ def interpolate_3d_to_flight_track(flt_trk, data_3d):
 
     for key in data_3d.keys():
         if key not in ['tmhr', 'lon', 'lat', 'alt']:
-            f_interp     = RegularGridInterpolator((data_3d['lon'], data_3d['lat'], data_3d['alt']), data_3d[key])
+            f_interp     = RegularGridInterpolator((data_3d['lon'], data_3d['lat'], data_3d['alt']), data_3d[key], method='linear')
             flt_trk[key] = f_interp(points)
 
             flt_trk['%s-alt-all' % key] = data_3d[key][indices_lon, indices_lat, :]
