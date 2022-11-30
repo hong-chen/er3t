@@ -19,12 +19,14 @@ def lrt_run(init, verbose=False):
     f = open(init.input_file, 'w')
     for key in init.input_dict.keys():
         if key not in init.mute_list:
-            f.write('%-20s %s\n' % (key, init.input_dict[key]))
+            content = '%-20s %s\n' % (key, init.input_dict[key])
+            f.write(content)
 
     if init.input_dict_extra is not None:
         for key in init.input_dict_extra.keys():
             if key not in init.mute_list:
-                f.write('%-20s %s\n' % (key, init.input_dict_extra[key]))
+                content = '%-20s %s\n' % (key, init.input_dict_extra[key])
+                f.write(content)
 
     if verbose:
         f.write('verbose')
