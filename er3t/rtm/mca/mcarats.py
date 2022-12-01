@@ -88,7 +88,7 @@ class mcarats_ng:
                  sensor_xpos         = 0.5,                     \
                  sensor_ypos         = 0.5,                     \
 
-                 solver              = 0,                       \
+                 solver              = '3d',                       \
                  photons             = 1e6,                     \
                  weights             = None,                    \
 
