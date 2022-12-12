@@ -544,7 +544,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwr
 
     # atm object
     # =================================================================================
-    levels    = np.array([ 0. ,  0.5,  1. ,  1.5,  2. ,  2.5,  3. ,  3.5,  4. ,  4.5,  5. , 5.5,  6. ,  6.5,  7. ,  7.5,  8. ,  8.5,  9. ,  9.5, 10. , 11. , 12. , 13. , 14. , 20. , 25. , 30. , 35. , 40. ])
+    levels = np.arange(0.0, 20.1, 0.5)
     fname_atm = '%s/atm.pk' % fdir
     atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
     # =================================================================================
