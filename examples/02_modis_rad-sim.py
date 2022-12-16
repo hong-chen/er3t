@@ -675,8 +675,8 @@ def main_post(wvl=_wavelength, plot=False):
         ax1.imshow(rad_mod.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
         ax1.set_xlabel('Longititude [$^\circ$]')
         ax1.set_ylabel('Latitude [$^\circ$]')
-        ax1.set_xlim((-109.0, -107.0))
-        ax1.set_ylim((37.0, 39.0))
+        ax1.set_xlim(extent[:2])
+        ax1.set_ylim(extent[2:])
         ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
         ax1.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
         ax1.set_title('MODIS Measured Radiance')
@@ -684,7 +684,7 @@ def main_post(wvl=_wavelength, plot=False):
 
         # heatmap: rad_sim vs rad_obs
         #/--------------------------------------------------------------\#
-        logic = (lon_mod>=-109.0) & (lon_mod<=-107.0) & (lat_mod>=37.0) & (lat_mod<=39.0)
+        logic = (lon_mod>=extent[0]) & (lon_mod<=extent[1]) & (lat_mod>=extent[2]) & (lat_mod<=extent[3])
 
         xedges = np.arange(-0.01, 0.61, 0.005)
         yedges = np.arange(-0.01, 0.61, 0.005)
@@ -711,8 +711,8 @@ def main_post(wvl=_wavelength, plot=False):
         ax3.imshow(rad_rtm_3d.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
         ax3.set_xlabel('Longititude [$^\circ$]')
         ax3.set_ylabel('Latitude [$^\circ$]')
-        ax3.set_xlim((-109.0, -107.0))
-        ax3.set_ylim((37.0, 39.0))
+        ax3.set_xlim(extent[:2])
+        ax3.set_ylim(extent[2:])
         ax3.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
         ax3.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
         ax3.set_title('EaR$^3$T Simulated 3D Radiance')
