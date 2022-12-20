@@ -726,12 +726,31 @@ def download_laads_https(
 
                 try:
                     from pyhdf.SD import SD, SDC
+                    import pyhdf
+                except ImportError:
+                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
+                    raise ImportError(msg)
+
+                try:
+                    print('Message [download_laads_https]: Reading \'%s\' ...\n' % fname_local)
                     f = SD(fname_local, SDC.READ)
                     f.end()
-                    print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
+                    print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+
+                except pyhdf.error.HDF4Error:
+                    print('Message [download_laads_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
+                    try:
+                        os.remove(fname_local)
+                        time.sleep(10) # wait 10 seconds
+                        os.system(command) # re-download
+                        f = SD(fname_local, SDC.READ)
+                        f.end()
+                        print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+                    except pyhdf.error.HDF4Error:
+                        print('Message [download_laads_https]: WARNING: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local)
+                        fnames_local.remove(fname_local)
+                        os.remove(fname_local)
+                        continue
 
 
             elif data_format == 'nc':
