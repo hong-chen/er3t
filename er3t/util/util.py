@@ -3,6 +3,7 @@ import sys
 import csv
 import shutil
 import datetime
+import time
 import importlib
 import requests
 import urllib.request
@@ -533,15 +534,35 @@ def get_satfile_tag(
     # variable names can be found through
     # print(data.dtype.names)
     #/----------------------------------------------------------------------------\#
+
     if vname in ['Aqua|MODIS', 'Terra|MODIS']:
         dtype = ['|S41', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
     elif vname in ['NOAA20|VIIRS', 'SNPP|VIIRS']:
         dtype = ['|S43', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
     usecols = (0, 4, 9, 10, 11, 12, 13, 14, 15, 16)
-    data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
+
     #\----------------------------------------------------------------------------/#
+    # LAADS DAAC servers are known to cause some issues occasionally while
+    # accessing the metadata. We will attempt to read the txt file online directly
+    # on the server but as a backup, we will download the txt file locally and
+    # access the data there
+    #/----------------------------------------------------------------------------\#
+    try:
+        data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
+    except ValueError:
+        msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
+        print(msg)
+        try:
+            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, os.environ['EARTHDATA_TOKEN'], os.path.basename(fname_server))
+            os.system(command)
+            with open(os.path.basename(fname_server), 'r') as f_:
+                content = f_.read()
+            data = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
+        except ValueError:
+            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nThis is likely an issue with LAADS DAAC servers, please try downloading the files manually or try again later.\n' % fname_server
+            raise OSError(msg)
 
-
+    #\----------------------------------------------------------------------------/#
     # loop through all the "MODIS granules" constructed through four corner points
     # and find which granules contain the input data
     #/----------------------------------------------------------------------------\#
@@ -650,14 +671,23 @@ def download_laads_https(
     fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
 
     fdir_server = server + fdir_data
+
+    #\----------------------------------------------------------------------------/#
+    # Use error handling to overcome occasional issues with LAADS DAAC servers
+    #/----------------------------------------------------------------------------\#
     try:
         webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-        content  = webpage.read().decode('utf-8')
-        lines    = content.split('\n')
-    except:
-        msg = '\nError [download_laads_https]: cannot access <%s>.' % fdir_server
-        raise OSError(msg)
-
+    except urllib.error.HTTPError:
+        msg = "The LAADS DAAC servers appear to be down. Attempting again in 10 seconds..."
+        print(msg)
+        time.sleep(10)
+        try:
+            webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
+        except urllib.error.HTTPError:
+            msg = '\nError [download_laads_https]: cannot access <%s>.' % fname_server
+            raise OSError(msg)
+    content  = webpage.read().decode('utf-8')
+    lines    = content.split('\n')
 
     commands = []
     fnames_local = []
@@ -668,7 +698,7 @@ def download_laads_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
             if command_line_tool == 'curl':
-                command = 'mkdir -p %s && curl --connect-timeout 300 --max-time 3600 --keepalive-time 300 -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\'' % (fdir_out, token, fname_server, fname_local)
+                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
             elif command_line_tool == 'wget':
                 command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
             commands.append(command)
@@ -679,7 +709,6 @@ def download_laads_https(
             print('Message [download_laads_https]: The commands to run are:')
             for command in commands:
                 print(command)
-                print()
 
     else:
 
@@ -689,10 +718,6 @@ def download_laads_https(
             os.system(command)
 
             fname_local = fnames_local[i]
-
-            if not os.path.exists(fname_local):
-                msg = '\nError [download_laads_https]: fails to download <%s>.' % fname_local
-                raise OSError(msg)
 
             if data_format is None:
                 data_format = os.path.basename(fname_local).split('.')[-1]
