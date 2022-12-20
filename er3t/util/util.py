@@ -731,6 +731,11 @@ def download_laads_https(
                     msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
                     raise ImportError(msg)
 
+                #\----------------------------------------------------------------------------/#
+                # Attempt to download files. In case of an HDF4Error, attempt to re-download
+                # afer a time period as this could be caused by an internal timeout at
+                # the server side
+                #/----------------------------------------------------------------------------\#
                 try:
                     print('Message [download_laads_https]: Reading \'%s\' ...\n' % fname_local)
                     f = SD(fname_local, SDC.READ)
