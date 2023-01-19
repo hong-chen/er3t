@@ -12,6 +12,8 @@ import numpy as np
 from scipy import interpolate
 import warnings
 
+import er3t.common
+
 
 
 
@@ -499,10 +501,24 @@ def get_satfile_tag(
     #/----------------------------------------------------------------------------\#
 
     # try to get information from local
+    # check two locations:
+    #   1) <tmp-data/satfile> directory under er3t main directory
+    #   2) current directory;
     #/--------------------------------------------------------------\#
-    fname_local = os.path.abspath('%s/%s' % (local, fname_server.split('/')[-1]))
-    if os.path.exists(fname_local):
-        with open(fname_local, 'r') as f_:
+    fdir_satfile_tmp = '%s/satfile' % er3t.common.fdir_data_tmp
+    if not os.path.exists(fdir_satfile_tmp):
+        os.makedirs(fdir_satfile_tmp)
+
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_satfile_tmp, os.path.basename(fname_server)))
+    fname_local2 = os.path.abspath('%s/%s' % (local           , os.path.basename(fname_server)))
+
+    if os.path.exists(fname_local1):
+        with open(fname_local1, 'r') as f_:
+            content = f_.read()
+
+    elif os.path.exists(fname_local2):
+        os.system('cp %s %s' % (fname_local2, fname_local1))
+        with open(fname_local2, 'r') as f_:
             content = f_.read()
     #\--------------------------------------------------------------/#
 
@@ -564,9 +580,9 @@ def get_satfile_tag(
             warnings.warn(msg)
 
         try:
-            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, os.path.basename(fname_server))
+            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
             os.system(command)
-            with open(os.path.basename(fname_server), 'r') as f_:
+            with open(fname_local1, 'r') as f_:
                 content = f_.read()
             data = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
         except ValueError:
