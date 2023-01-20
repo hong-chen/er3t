@@ -236,9 +236,9 @@ Acknowledgements
 |
 
 
-===========
+============
 Publications
-===========
+============
 
 
 So far, the following publications have used EaR³T
