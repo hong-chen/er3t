@@ -284,6 +284,30 @@ So far, the following publications have used EaR³T
 |
 
 
+
+============
+Contributors
+============
+
+Current and past contributors are:
+
+#. `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (from Dec., 2022 - current)
+
+   - improved the automated process of satellite data download (functions in `er3t/util/util.py`)
+
+#. `Ken Hirata <Ken.Hirata@colorado.edu>`_ (Jan., 2023 - current)
+
+   - implementing the Mie scattering phase function support for aerosols (work in progress)
+
+If you are interested in making contributions to the package,
+please refer to `CONTRIBUTING <https://github.com/hong-chen/er3t/blob/dev/CONTRIBUTING.rst>`_
+doc for further information.
+
+|
+|
+
+
+
 =====
 F.A.Q
 =====
