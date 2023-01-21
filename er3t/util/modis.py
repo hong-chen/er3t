@@ -113,8 +113,10 @@ class modis_l1b:
 
         # when resolution equals to 1000 m
         elif check_equal(self.resolution, 1.0):
+            sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
             # lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=False)
-            sys.exit('Error   [modis_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
+            # raw0      = f.select('EV_250_Aggr1km_RefSB')
+            # wvl       = np.array([650.0, 860.0])
 
         else:
             sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
