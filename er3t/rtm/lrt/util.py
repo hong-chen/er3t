@@ -184,13 +184,13 @@ def gen_bispectral_lookup_table(
         sensor_zenith_angle=0.0,                               # sensor zenith angle (float)
         sensor_azimuth_angle=0.0,                              # sensor azimuth angle (float)
         cloud_type='water',                                    # water cloud or ice cloud
-        cloud_altitude=np.arange(0.9, 1.51, 0.1)               # vertical location of the clouds
+        cloud_altitude=np.arange(0.9, 1.51, 0.1),              # vertical location of the clouds
         cloud_optical_thickness_all=np.arange(0.0, 50.1, 2.0), # cloud optical thickness array (numpy.ndarray)
         cloud_effective_radius_all=np.arange(4.0, 25.1, 1.0),  # cloud effective radius (numpy.ndarray)
         aerosol_optical_depth=0.0,                             # aerosol optical depth
         aerosol_single_scattering_albedo=0.8,                  # aerosol single scattering albedo
         aerosol_asymmetry_parameter=0.7,                       # aerosol asymmetry parameter
-        aerosol_altitude=np.arange(2.9, 6.01, 0.1)             # vertical location of the aerosols
+        aerosol_altitude=np.arange(2.9, 6.01, 0.1),            # vertical location of the aerosols
         output_altitude=np.array([0.8, 2.0]),                  # output altitude for libRadtran calculations
         fdir_tmp='tmp-data',                                   # directory to store temporary data (string)
         fdir_lut='data/lut',                                   # directory to store lookup table data
@@ -328,7 +328,7 @@ def gen_bispectral_lookup_table(
                         wavelength=wvl_y,
                         solar_zenith_angle=sza,
                         lrt_cfg=lrt_cfg,
-                        cld_cfg=cld_cfg
+                        cld_cfg=cld_cfg,
                         aer_cfg=aer_cfg,
                         )
 
