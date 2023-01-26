@@ -17,7 +17,7 @@ Applicable area:
 
 * Airborne remote sensing;
 
-* 3D radiative effects (of clouds, aerosols, etc.);
+* 3D radiative effects (of clouds, aerosols, and trace gases etc.);
 
 * Novel retrieval algorithms (e.g., CNN).
 
