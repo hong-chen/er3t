@@ -171,10 +171,10 @@ b) Unzip or untar the file after download;
 How to Use
 ==========
 
-We provide various examples extend from simple demo to complicate research project under ``examples``.
+We provide various examples extend from simple demo to complex research project under `examples <https://github.com/hong-chen/er3t/tree/dev/examples>`_.
 ``examples/00_er3t_mca.py`` and ``examples/00_er3t_lrt.py`` can be used to perform test runs.
 
-Details can be found in ``examples/README.rst``.
+Details can be found in `here <https://github.com/hong-chen/er3t/tree/dev/examples#readme>`_.
 
 
 |
