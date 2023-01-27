@@ -143,10 +143,7 @@ class func_cot_vs_rad:
         atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
 
         fname_atm3d = '%s/mca_atm_3d.bin' % self.fdir
-        if os.path.exists(fname_atm3d):
-            atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=False)
-        else:
-            atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=True)
+        atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=True)
 
         atm_1ds   = [atm1d0]
         atm_3ds   = [atm3d0]
