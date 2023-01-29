@@ -3,7 +3,6 @@ import sys
 import datetime
 import warnings
 import multiprocessing as mp
-from tqdm import tqdm
 import numpy as np
 import er3t.common
 
@@ -114,16 +113,36 @@ class mca_run:
 
         if self.mp_mode == 'mpi':
 
-            with tqdm(total=len(self.commands)) as pbar:
+            try:
+                from tqdm import tqdm
+
+                with tqdm(total=len(self.commands)) as pbar:
+
+                    for command in self.commands:
+                        execute_command(command)
+                        pbar.update(1)
+
+            except ImportError:
 
                 for command in self.commands:
                     execute_command(command)
-                    pbar.update(1)
+
 
         elif self.mp_mode == 'py':
 
-            with mp.Pool(processes=self.Ncpu) as pool:
-                r = list(tqdm(pool.imap(execute_command, self.commands), total=len(self.commands)))
+            try:
+                from tqdm import tqdm
+
+                with mp.Pool(processes=self.Ncpu) as pool:
+                    r = list(tqdm(pool.imap(execute_command, self.commands), total=len(self.commands)))
+
+            except ImportError:
+
+                with mp.Pool(processes=self.Ncpu) as pool:
+                    pool.outputs = pool.map(execute_command, self.commands)
+                    pool.close()
+                    pool.join()
+
 
 
     def save(self, fname=None):
