@@ -35,172 +35,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 __all__ = ['abs_rep']
 
 
-class abs_rep:
-
-    fdir_data = '%s/reptran' % er3t.common.fdir_data_abs
-    reference = 'Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler,  S.A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014.'
-
-    def __init__(
-            self,
-            source='solar',
-            satellite='Aqua',
-            target='MODIS',
-            atm_obj=None,
-            # instrument='fine',
-            # instrument='medium',
-            # instrument='coarse',
-            band='B01',
-            ):
-
-        self.satellite  = satellite.lower()
-        self.target     = target.lower()
-        self.band       = band.lower()
-        self.source     = source.lower()
-        self.name_tag   = '%s_%s_%s' % (self.target, self.satellite, self.band)
-        self.atm_obj    = atm_obj
-
-        self.load_sat()
-
-        self.cal_coef()
-
-    def load_sat(self):
-
-        f0 = Dataset('%s/reptran_%s_%s.cdf' % (self.fdir_data, self.source, self.target), 'r')
-
-        # read out band names
-        #/----------------------------------------------------------------------------\#
-        band_bytes = f0.variables['band_name'][:]
-        Nband, Nchar = band_bytes.shape
-        bands = []
-        for i in range(Nband):
-            logic = (band_bytes[i, :] != band_bytes[0, -1])
-            band_name0 = ''.join([j.decode('utf-8') for j in band_bytes[i, logic]]).strip()
-            bands.append(band_name0)
-        #\----------------------------------------------------------------------------/#
-
-        # read out gases
-        #/----------------------------------------------------------------------------\#
-        gas_bytes = f0.variables['species_name'][:]
-        Ngas, Nchar = gas_bytes.shape
-        gases = []
-        for i in range(Ngas):
-            gas_name0 = ''.join([j.decode('utf-8') for j in gas_bytes[i, :]]).strip()
-            gases.append(gas_name0)
-        #\----------------------------------------------------------------------------/#
-
-        index_band = bands.index(self.name_tag)
-
-        # get band information
-        #/----------------------------------------------------------------------------\#
-        wvl_min0 = f0.variables['wvlmin'][:][index_band]
-        wvl_max0 = f0.variables['wvlmax'][:][index_band]
-        wvl_int0 = f0.variables['wvl_integral'][:][index_band]
-        avg_err0 = f0.variables['avg_error'][:][index_band]
-        nwvl0    = f0.variables['nwvl_in_band'][:][index_band]
-        #\----------------------------------------------------------------------------/#
-
-
-        # get correlated-k information
-        #/----------------------------------------------------------------------------\#
-        wvl_indices0 = f0.variables['iwvl'][:][:, index_band]
-        wvl_indices = wvl_indices0[wvl_indices0>0] - 1
-        wvl_weights0 = f0.variables['iwvl_weight'][:][:, index_band]
-        wvl_weights = wvl_weights0[wvl_weights0>0]
-
-        self.Ng = wvl_weights.size
-
-        wvl = f0.variables['wvl'][:][wvl_indices]
-        sol = f0.variables['extra'][:][wvl_indices]
-
-        gas_indices = np.unique(np.where(f0.variables['cross_section_source'][:][wvl_indices, :]>0)[0])
-
-        self.wvl   = wvl
-        self.sol   = sol
-        self.wgt   = wvl_weights
-        self.gases = [gases[index] for index in gas_indices]
-        #\----------------------------------------------------------------------------/#
-
-        f0.close()
-
-    def cal_coef(self):
-
-        self.coef = {}
-        Nz = self.atm_obj.lay['altitude']['data'].size
-        Ng = self.Ng
-        self.coef['wavelength'] = {'data': 0}
-        self.coef['abso_coef']  = {'data': np.zeros((Nz, Ng))}
-        self.coef['slit_func']  = {'data': np.zeros((Nz, Ng))}
-        self.coef['solar']  = {'data': self.sol}
-        self.coef['weight'] = {'data': self.wgt}
-
-        for gas0 in self.gases:
-
-            self.load_gas(gas0)
-
-    def load_gas(self, gas_type):
-
-        f0 = Dataset('%s/reptran_%s_%s.lookup.%s.cdf' % (self.fdir_data, self.source, self.target, gas_type), 'r')
-        xsec  = f0.variables['xsec'][:]
-        p     = f0.variables['pressure'][:]
-        t_ref = f0.variables['t_ref'][:]
-        dt    = f0.variables['t_pert'][:]
-        vmrs  = f0.variables['vmrs'][:]
-        wvl   = f0.variables['wvl'][:]
-        iwvl  = f0.variables['wvl_index'][:]
-        f0.close()
-
-        # rescale atmospheric profiles from [#/cm^3] to [#/cm^2]
-        # A 1e-20 factor was applied when calculating the ks to prevent overflow problems
-        # The 1e5 factor below is to convert the layer depth (in km) to cm
-        # factor = 1.0e-23 * 1.0e5 * self.atm_obj.lay['thickness']['data']
-        factor = 1.0 * 1.0e5 * self.atm_obj.lay['thickness']['data']
-
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(8, 6))
-        # fig.suptitle('Figure')
-        # plot
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        # cs = ax1.imshow(.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
-        # ax1.scatter(x, y, s=6, c='k', lw=0.0)
-        # ax1.plot(t_ref, p, color='k')
-        # ax1.plot(self.atm_obj.lay['temperature']['data'], self.atm_obj.lay['pressure']['data']*100, color='red')
-        print(vmrs)
-        ax1.plot(self.atm_obj.lay[gas_type.lower()]['data']*factor, self.atm_obj.lay['pressure']['data']*100, color='red')
-        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-        # ax1.set_xlim(())
-        # ax1.set_ylim(())
-        # ax1.set_xlabel('')
-        # ax1.set_ylabel('')
-        # ax1.set_title('')
-        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        #\--------------------------------------------------------------/#
-        # add colorbar
-        #/--------------------------------------------------------------\#
-        # divider = make_axes_locatable(ax1)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
-        # cbar.set_label('', rotation=270, labelpad=4.0)
-        # cbar.set_ticks([])
-        # cax.axis('off')
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        plt.show()
-        sys.exit()
-        #\----------------------------------------------------------------------------/#
-
-        pass
-
-
-
 
 
 class abs_rep_old:
@@ -873,6 +707,172 @@ class abs_rep_old:
 
         pass
 
+
+
+
+class abs_rep:
+
+    fdir_data = '%s/reptran' % er3t.common.fdir_data_abs
+    reference = 'Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler,  S.A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014.'
+
+    def __init__(
+            self,
+            source='solar',
+            satellite='Aqua',
+            target='MODIS',
+            atm_obj=None,
+            # instrument='fine',
+            # instrument='medium',
+            # instrument='coarse',
+            band='B01',
+            ):
+
+        self.satellite  = satellite.lower()
+        self.target     = target.lower()
+        self.band       = band.lower()
+        self.source     = source.lower()
+        self.name_tag   = '%s_%s_%s' % (self.target, self.satellite, self.band)
+        self.atm_obj    = atm_obj
+
+        self.load_sat()
+
+        self.cal_coef()
+
+    def load_sat(self):
+
+        f0 = Dataset('%s/reptran_%s_%s.cdf' % (self.fdir_data, self.source, self.target), 'r')
+
+        # read out band names
+        #/----------------------------------------------------------------------------\#
+        band_bytes = f0.variables['band_name'][:]
+        Nband, Nchar = band_bytes.shape
+        bands = []
+        for i in range(Nband):
+            logic = (band_bytes[i, :] != band_bytes[0, -1])
+            band_name0 = ''.join([j.decode('utf-8') for j in band_bytes[i, logic]]).strip()
+            bands.append(band_name0)
+        #\----------------------------------------------------------------------------/#
+
+        # read out gases
+        #/----------------------------------------------------------------------------\#
+        gas_bytes = f0.variables['species_name'][:]
+        Ngas, Nchar = gas_bytes.shape
+        gases = []
+        for i in range(Ngas):
+            gas_name0 = ''.join([j.decode('utf-8') for j in gas_bytes[i, :]]).strip()
+            gases.append(gas_name0)
+        #\----------------------------------------------------------------------------/#
+
+        index_band = bands.index(self.name_tag)
+
+        # get band information
+        #/----------------------------------------------------------------------------\#
+        wvl_min0 = f0.variables['wvlmin'][:][index_band]
+        wvl_max0 = f0.variables['wvlmax'][:][index_band]
+        wvl_int0 = f0.variables['wvl_integral'][:][index_band]
+        avg_err0 = f0.variables['avg_error'][:][index_band]
+        nwvl0    = f0.variables['nwvl_in_band'][:][index_band]
+        #\----------------------------------------------------------------------------/#
+
+
+        # get correlated-k information
+        #/----------------------------------------------------------------------------\#
+        wvl_indices0 = f0.variables['iwvl'][:][:, index_band]
+        wvl_indices = wvl_indices0[wvl_indices0>0] - 1
+        wvl_weights0 = f0.variables['iwvl_weight'][:][:, index_band]
+        wvl_weights = wvl_weights0[wvl_weights0>0]
+
+        self.Ng = wvl_weights.size
+
+        wvl = f0.variables['wvl'][:][wvl_indices]
+        sol = f0.variables['extra'][:][wvl_indices]
+
+        gas_indices = np.unique(np.where(f0.variables['cross_section_source'][:][wvl_indices, :]>0)[0])
+
+        self.wvl   = wvl
+        self.sol   = sol
+        self.wgt   = wvl_weights
+        self.gases = [gases[index] for index in gas_indices]
+        #\----------------------------------------------------------------------------/#
+
+        f0.close()
+
+    def cal_coef(self):
+
+        self.coef = {}
+        Nz = self.atm_obj.lay['altitude']['data'].size
+        Ng = self.Ng
+        self.coef['wavelength'] = {'data': 0}
+        self.coef['abso_coef']  = {'data': np.zeros((Nz, Ng))}
+        self.coef['slit_func']  = {'data': np.zeros((Nz, Ng))}
+        self.coef['solar']  = {'data': self.sol}
+        self.coef['weight'] = {'data': self.wgt}
+
+        for gas0 in self.gases:
+
+            self.load_gas(gas0)
+
+    def load_gas(self, gas_type):
+
+        f0 = Dataset('%s/reptran_%s_%s.lookup.%s.cdf' % (self.fdir_data, self.source, self.target, gas_type), 'r')
+        xsec  = f0.variables['xsec'][:]
+        p     = f0.variables['pressure'][:]
+        t_ref = f0.variables['t_ref'][:]
+        dt    = f0.variables['t_pert'][:]
+        vmrs  = f0.variables['vmrs'][:]
+        wvl   = f0.variables['wvl'][:]
+        iwvl  = f0.variables['wvl_index'][:]
+        f0.close()
+
+        # rescale atmospheric profiles from [#/cm^3] to [#/cm^2]
+        # A 1e-20 factor was applied when calculating the ks to prevent overflow problems
+        # The 1e5 factor below is to convert the layer depth (in km) to cm
+        # factor = 1.0e-23 * 1.0e5 * self.atm_obj.lay['thickness']['data']
+        factor = 1.0 * 1.0e5 * self.atm_obj.lay['thickness']['data']
+
+        # figure
+        #/----------------------------------------------------------------------------\#
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111)
+        # cs = ax1.imshow(.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        # ax1.scatter(x, y, s=6, c='k', lw=0.0)
+        # ax1.plot(t_ref, p, color='k')
+        # ax1.plot(self.atm_obj.lay['temperature']['data'], self.atm_obj.lay['pressure']['data']*100, color='red')
+        print(vmrs)
+        ax1.plot(self.atm_obj.lay[gas_type.lower()]['data']*factor, self.atm_obj.lay['pressure']['data']*100, color='red')
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # add colorbar
+        #/--------------------------------------------------------------\#
+        # divider = make_axes_locatable(ax1)
+        # cax = divider.append_axes('right', '5%', pad='3%')
+        # cbar = fig.colorbar(cs, cax=cax)
+        # cbar.set_label('', rotation=270, labelpad=4.0)
+        # cbar.set_ticks([])
+        # cax.axis('off')
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
+        #\----------------------------------------------------------------------------/#
+
+        pass
 
 
 
