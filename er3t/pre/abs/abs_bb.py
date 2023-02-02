@@ -103,11 +103,6 @@ class abs_rrtmg_sw:
                 key_spec_upp.append(key_spec_upp_name0)
         #\----------------------------------------------------------------------------/#
 
-        print(key_spec_low)
-        print(key_spec_upp)
-        sys.exit()
-
-
         # band
         #/----------------------------------------------------------------------------\#
         wvln_min = f0.variables['BandWavenumberLowerLimit'][:][iband]
@@ -120,6 +115,13 @@ class abs_rrtmg_sw:
         self.wavelength = 2.0e7/(wvln_min+wvln_max)
         self.band_range = band_range
         #\----------------------------------------------------------------------------/#
+        print('Band #%d' % (iband+1))
+        print('Center wavelength: %.4fnm' % self.wavelength)
+        print('Wavelength range: ', self.band_range)
+        print('Lower atm species: ', key_spec_low)
+        print('Upper atm species: ', key_spec_upp)
+        print('-'*40)
+
 
 
         # Gs
@@ -134,18 +136,18 @@ class abs_rrtmg_sw:
         p     = f0.variables['Pressure'][:]
         #\----------------------------------------------------------------------------/#
 
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(8, 6))
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        ax1.scatter(t_ref, p, s=6, c='k', lw=0.0)
-        #\--------------------------------------------------------------/#
-        plt.show()
-        sys.exit()
-        #\----------------------------------------------------------------------------/#
-        #\----------------------------------------------------------------------------/#
+        # # figure
+        # #/----------------------------------------------------------------------------\#
+        # plt.close('all')
+        # fig = plt.figure(figsize=(8, 6))
+        # #/--------------------------------------------------------------\#
+        # ax1 = fig.add_subplot(111)
+        # ax1.scatter(t_ref, p, s=6, c='k', lw=0.0)
+        # #\--------------------------------------------------------------/#
+        # plt.show()
+        # sys.exit()
+        # #\----------------------------------------------------------------------------/#
+        # #\----------------------------------------------------------------------------/#
 
         f0.close()
 
@@ -210,6 +212,7 @@ if __name__ == '__main__':
     levels = np.arange(0.0, 20.1, 0.5)
     atm0 = atm_atmmod(levels=levels, overwrite=True)
 
-    abs0 = abs_rrtmg_sw(atm_obj=atm0)
+    for iband in range(14):
+        abs0 = abs_rrtmg_sw(iband=iband, atm_obj=atm0)
 
     pass
