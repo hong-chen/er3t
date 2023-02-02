@@ -138,41 +138,13 @@ class abs_rrtmg_sw:
         #/----------------------------------------------------------------------------\#
         plt.close('all')
         fig = plt.figure(figsize=(8, 6))
-        # fig.suptitle('Figure')
-        # plot
         #/--------------------------------------------------------------\#
         ax1 = fig.add_subplot(111)
-        # cs = ax1.imshow(.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
         ax1.scatter(t_ref, p, s=6, c='k', lw=0.0)
-        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-        # ax1.set_xlim(())
-        # ax1.set_ylim(())
-        # ax1.set_xlabel('')
-        # ax1.set_ylabel('')
-        # ax1.set_title('')
-        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        #\--------------------------------------------------------------/#
-        # add colorbar
-        #/--------------------------------------------------------------\#
-        # divider = make_axes_locatable(ax1)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
-        # cbar.set_label('', rotation=270, labelpad=4.0)
-        # cbar.set_ticks([])
-        # cax.axis('off')
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
         #\--------------------------------------------------------------/#
         plt.show()
         sys.exit()
         #\----------------------------------------------------------------------------/#
-        print(p)
-        print(t_ref)
         #\----------------------------------------------------------------------------/#
 
         f0.close()
