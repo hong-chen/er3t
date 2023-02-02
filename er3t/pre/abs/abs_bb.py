@@ -57,6 +57,7 @@ class abs_rrtmg_sw:
 
     def __init__(self, \
                  iband = 0,
+                 ig    = 1,
                  wavelength = None,  \
                  fname      = None,  \
                  atm_obj    = None,  \
@@ -64,46 +65,18 @@ class abs_rrtmg_sw:
                  verbose    = False):
 
         self.iband   = iband
+        self.ig      = ig
         self.atm_obj = atm_obj
 
-        self.load_data(iband)
+        self.load_data(iband, ig)
 
-    def load_data(self, iband):
+    def load_data(self, iband, ig):
 
         f0 = Dataset(self.fname, 'r')
 
-        # Ngas  = 12
-        # Nband = 14
-        # variables['AbsorberNames'] ------------------------------- : Dataset  (12, 5)
-
-        # read out gas names <gases>
-        #/----------------------------------------------------------------------------\#
-        gas_bytes = f0.variables['AbsorberNames'][:]
-        Ngas, Nchar = gas_bytes.shape
-        gases = []
-        for i in range(Ngas):
-            gas_name0 = ''.join([j.decode('utf-8') for j in gas_bytes[i, :]]).strip()
-            if len(gas_name0) > 0:
-                gases.append(gas_name0)
-        #\----------------------------------------------------------------------------/#
-
-        # read out gas names <gases>
-        #/----------------------------------------------------------------------------\#
-        key_spec_low_bytes = f0.variables['KeySpeciesNamesLowerAtmos'][:][:, iband, :]
-        key_spec_upp_bytes = f0.variables['KeySpeciesNamesUpperAtmos'][:][:, iband, :]
-        Nkey, Nchar = key_spec_upp_bytes.shape
-        key_spec_low = []
-        key_spec_upp = []
-        for i in range(Nkey):
-            key_spec_low_name0 = ''.join([j.decode('utf-8') for j in key_spec_low_bytes[i, :]]).strip()
-            key_spec_upp_name0 = ''.join([j.decode('utf-8') for j in key_spec_upp_bytes[i, :]]).strip()
-            if len(key_spec_low_name0) > 0:
-                key_spec_low.append(key_spec_low_name0)
-            if len(key_spec_upp_name0) > 0:
-                key_spec_upp.append(key_spec_upp_name0)
-        #\----------------------------------------------------------------------------/#
-
-        # band
+        # band info
+        #   <self.wavelength>
+        #   <self.band_range>
         #/----------------------------------------------------------------------------\#
         wvln_min = f0.variables['BandWavenumberLowerLimit'][:][iband]
         wvln_max = f0.variables['BandWavenumberUpperLimit'][:][iband]
@@ -115,19 +88,90 @@ class abs_rrtmg_sw:
         self.wavelength = 2.0e7/(wvln_min+wvln_max)
         self.band_range = band_range
         #\----------------------------------------------------------------------------/#
-        print('Band #%d' % (iband+1))
-        print('Center wavelength: %.4fnm' % self.wavelength)
-        print('Wavelength range: ', self.band_range)
-        print('Lower atm species: ', key_spec_low)
-        print('Upper atm species: ', key_spec_upp)
-        print('-'*40)
 
+
+        # read out gas names
+        #   <gases>
+        #/----------------------------------------------------------------------------\#
+        gas_bytes = f0.variables['AbsorberNames'][:]
+        Ngas, Nchar = gas_bytes.shape
+        gases = []
+        for i in range(Ngas):
+            gas_name0 = ''.join([j.decode('utf-8') for j in gas_bytes[i, :]]).strip()
+            if len(gas_name0) > 0:
+                gases.append(gas_name0)
+        #\----------------------------------------------------------------------------/#
+
+
+        # read out key gas names
+        #   <key_gas_low>
+        #   <key_gas_upp>
+        #/----------------------------------------------------------------------------\#
+        key_gas_low_bytes = f0.variables['KeySpeciesNamesLowerAtmos'][:][:, iband, :]
+        key_gas_upp_bytes = f0.variables['KeySpeciesNamesUpperAtmos'][:][:, iband, :]
+        Nkey, Nchar = key_gas_upp_bytes.shape
+        ikey_gas_low = []
+        ikey_gas_upp = []
+        for i in range(Nkey):
+            key_gas_low_name0 = ''.join([j.decode('utf-8') for j in key_gas_low_bytes[i, :]]).strip()
+            key_gas_upp_name0 = ''.join([j.decode('utf-8') for j in key_gas_upp_bytes[i, :]]).strip()
+            if len(key_gas_low_name0) > 0:
+                ikey_gas_low.append(gases.index(key_gas_low_name0))
+            if len(key_gas_upp_name0) > 0:
+                ikey_gas_upp.append(gases.index(key_gas_upp_name0))
+
+        key_gas_low = [gases[i] for i in ikey_gas_low]
+        key_gas_upp = [gases[i] for i in ikey_gas_upp]
+        #\----------------------------------------------------------------------------/#
 
 
         # Gs
         #/----------------------------------------------------------------------------\#
-        Ng = f0.variables['NumGPoints'][:][:, iband]
+        Ng = f0.variables['NumGPoints'][:][ig, iband]
         #\----------------------------------------------------------------------------/#
+
+
+        # coef
+        #/----------------------------------------------------------------------------\#
+        dt = f0.variables['TemperatureDiffFromMLS'][:]
+
+        p_upp  = f0.variables['PressureUpperAtmos'][:]
+        mr_upp = f0.variables['KeySpeciesRatioUpperAtmos'][:]
+        coef_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][ig, iband, :Ng, :, :, :]
+
+        p_low  = f0.variables['PressureLowerAtmos'][:]
+        mr_low = f0.variables['KeySpeciesRatioLowerAtmos'][:]
+        coef_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][ig, iband, :Ng, :, :, :]
+        #\----------------------------------------------------------------------------/#
+
+        print('Delta Temperature')
+        print(dt)
+        print('Pressure [Upper]')
+        print(p_upp)
+        print('Ratio [Upper]')
+        print(mr_upp)
+        print()
+
+        print('Pressure [Lower]')
+        print(p_low)
+        print('Ratio [Lower]')
+        print(mr_low)
+        print()
+
+
+        print('Band #%d' % (iband+1))
+        print('Center wavelength: %.4fnm' % self.wavelength)
+        print('Wavelength range: %.4f - %.4fnm' % self.band_range)
+        print('Number of Gs: ', Ng)
+        print('Lower atm species: ', key_gas_low)
+        print('Upper atm species: ', key_gas_upp)
+        print('-'*40)
+
+        # Ngas  = 12
+        # Nband = 14
+        # variables['AbsorberNames'] ------------------------------- : Dataset  (12, 5)
+
+
 
 
         # profile
@@ -164,37 +208,38 @@ class abs_rrtmg_sw:
         # variables['TemperatureDiffFromMLS'] ---------------------- : Dataset  (5,)
         # variables['PressureH2OForeign'] -------------------------- : Dataset  (4,)
 
-        # variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'] -- : Dataset  (2, 14, 16, 13, 5, 9)
-        # variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'] -- : Dataset  (2, 14, 16, 47, 5, 5)
 
-        # variables['AbsorptionCoefficientsLowerAtmos'] ------------ : Dataset  (2, 14, 12, 16, 19, 9)
-        # variables['AbsorptionCoefficientsUpperAtmos'] ------------ : Dataset  (2, 14, 12, 16, 19, 5)
 
         # variables['ReferenceTemperature'] ------------------------ : Dataset  (59,)
         # variables['Pressure'] ------------------------------------ : Dataset  (59,)
         # variables['LogPressure'] --------------------------------- : Dataset  (59,)
 
-        # variables['KeySpeciesNamesLowerAtmos'] ------------------- : Dataset  (2, 14, 3)
-        # variables['KeySpeciesNamesUpperAtmos'] ------------------- : Dataset  (2, 14, 3)
-
-        # variables['KeySpeciesRatioUpperAtmos'] ------------------- : Dataset  (5,)
-        # variables['TemperatureH2OForeignUpperAtmos'] ------------- : Dataset  (2,)
-        # variables['PressureUpperAtmos'] -------------------------- : Dataset  (47,)
-        # variables['H2OForeignAbsorptionCoefficientsUpperAtmos'] -- : Dataset  (2, 14, 16, 2)
+        # variables['SolarSourceFunctionUpperAtmos'] --------------- : Dataset  (2, 14, 5, 16)
         # variables['NRLSSI2SSFFacularUpperAtmos'] ----------------- : Dataset  (2, 14, 5, 16)
         # variables['NRLSSI2SSFQuietSunUpperAtmos'] ---------------- : Dataset  (2, 14, 5, 16)
         # variables['NRLSSI2SSFSunspotUpperAtmos'] ----------------- : Dataset  (2, 14, 5, 16)
-        # variables['SolarSourceFunctionUpperAtmos'] --------------- : Dataset  (2, 14, 5, 16)
-        # variables['RayleighExtinctionCoefficientsUpperAtmos'] ---- : Dataset  (2, 14, 5, 16)
 
-        # variables['KeySpeciesRatioLowerAtmos'] ------------------- : Dataset  (9,)
-        # variables['TemperatureH2OForeignLowerAtmos'] ------------- : Dataset  (3,)
-        # variables['PressureLowerAtmos'] -------------------------- : Dataset  (13,)
-        # variables['H2OForeignAbsorptionCoefficientsLowerAtmos'] -- : Dataset  (2, 14, 16, 3)
+        # variables['SolarSourceFunctionLowerAtmos'] --------------- : Dataset  (2, 14, 9, 16)
         # variables['NRLSSI2SSFFacularLowerAtmos'] ----------------- : Dataset  (2, 14, 9, 16)
         # variables['NRLSSI2SSFQuietSunLowerAtmos'] ---------------- : Dataset  (2, 14, 9, 16)
         # variables['NRLSSI2SSFSunspotLowerAtmos'] ----------------- : Dataset  (2, 14, 9, 16)
-        # variables['SolarSourceFunctionLowerAtmos'] --------------- : Dataset  (2, 14, 9, 16)
+
+        # variables['KeySpeciesRatioUpperAtmos'] ------------------- : Dataset  (5,)
+        # variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'] -- : Dataset  (2, 14, 16, 47, 5, 5)
+        # variables['AbsorptionCoefficientsUpperAtmos'] ------------ : Dataset  (2, 14, 12, 16, 19, 5)
+        # variables['KeySpeciesNamesUpperAtmos'] ------------------- : Dataset  (2, 14, 3)
+        # variables['TemperatureH2OForeignUpperAtmos'] ------------- : Dataset  (2,)
+        # variables['PressureUpperAtmos'] -------------------------- : Dataset  (47,)
+        # variables['H2OForeignAbsorptionCoefficientsUpperAtmos'] -- : Dataset  (2, 14, 16, 2)
+        # variables['RayleighExtinctionCoefficientsUpperAtmos'] ---- : Dataset  (2, 14, 5, 16)
+
+        # variables['KeySpeciesRatioLowerAtmos'] ------------------- : Dataset  (9,)
+        # variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'] -- : Dataset  (2, 14, 16, 13, 5, 9)
+        # variables['AbsorptionCoefficientsLowerAtmos'] ------------ : Dataset  (2, 14, 12, 16, 19, 9)
+        # variables['KeySpeciesNamesLowerAtmos'] ------------------- : Dataset  (2, 14, 3)
+        # variables['TemperatureH2OForeignLowerAtmos'] ------------- : Dataset  (3,)
+        # variables['PressureLowerAtmos'] -------------------------- : Dataset  (13,)
+        # variables['H2OForeignAbsorptionCoefficientsLowerAtmos'] -- : Dataset  (2, 14, 16, 3)
         # variables['RayleighExtinctionCoefficientsLowerAtmos'] ---- : Dataset  (2, 14, 9, 16)
 
         # variables['TemperatureH2OSelf'] -------------------------- : Dataset  (10,)
@@ -214,5 +259,6 @@ if __name__ == '__main__':
 
     for iband in range(14):
         abs0 = abs_rrtmg_sw(iband=iband, atm_obj=atm0)
+        sys.exit()
 
     pass
