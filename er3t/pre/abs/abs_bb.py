@@ -130,32 +130,84 @@ class abs_rrtmg_sw:
         Ng = f0.variables['NumGPoints'][:][ig, iband]
         #\----------------------------------------------------------------------------/#
 
+        # weights
+        #/----------------------------------------------------------------------------\#
+        wgt =  np.array([ \
+              0.1527534276, 0.1491729617, 0.1420961469, \
+              0.1316886544, 0.1181945205, 0.1019300893, \
+              0.0832767040, 0.0626720116, 0.0424925000, \
+              0.0046269894, 0.0038279891, 0.0030260086, \
+              0.0022199750, 0.0014140010, 0.0005330000, \
+              0.0000750000])
+
+        """
+          igcsm = 0
+          do ibnd = 1,nbndsw
+             iprsm = 0
+             if (ngc(ibnd).lt.mg) then
+                do igc = 1,ngc(ibnd)
+                   igcsm = igcsm + 1
+                   wtsum = 0.
+                   do ipr = 1, ngn(igcsm)
+                      iprsm = iprsm + 1
+                      wtsum = wtsum + wt(iprsm)
+                   enddo
+                   wtsm(igc) = wtsum
+                enddo
+                do ig = 1, ng(ibnd+15)
+                   ind = (ibnd-1)*mg + ig
+                   rwgt(ind) = wt(ig)/wtsm(ngm(ind))
+                enddo
+             else
+                do ig = 1, ng(ibnd+15)
+                   igcsm = igcsm + 1
+                   ind = (ibnd-1)*mg + ig
+                   rwgt(ind) = 1.0_rb
+                enddo
+             endif
+          enddo
+        """
+
+        #\----------------------------------------------------------------------------/#
+
 
         # coef
         #/----------------------------------------------------------------------------\#
         dt = f0.variables['TemperatureDiffFromMLS'][:]
 
         p_upp  = f0.variables['PressureUpperAtmos'][:]
-        mr_upp = f0.variables['KeySpeciesRatioUpperAtmos'][:]
-        coef_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][ig, iband, :Ng, :, :, :]
+        mr_upp = f0.variables['KeySpeciesRatioUpperAtmos']
+        mr_upp.set_auto_maskandscale(False)
+        print(mr_upp[:])
+
+
+        coef_upp = f0.variables['AbsorptionCoefficientsUpperAtmos'][:][ig, iband, ikey_gas_upp, :Ng, :, :]
+        coef_key_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][ig, iband, :Ng, :, :, :]
 
         p_low  = f0.variables['PressureLowerAtmos'][:]
-        mr_low = f0.variables['KeySpeciesRatioLowerAtmos'][:]
-        coef_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][ig, iband, :Ng, :, :, :]
+        mr_low = f0.variables['KeySpeciesRatioLowerAtmos']
+        mr_low.set_auto_maskandscale(False)
+        print(mr_low[:])
+        coef_low = f0.variables['AbsorptionCoefficientsLowerAtmos'][:][ig, iband, ikey_gas_low, :Ng, :, :]
+        coef_key_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][ig, iband, :Ng, :, :, :]
         #\----------------------------------------------------------------------------/#
 
         print('Delta Temperature')
-        print(dt)
+        print(dt.shape)
         print('Pressure [Upper]')
-        print(p_upp)
+        print(p_upp.shape)
         print('Ratio [Upper]')
-        print(mr_upp)
+        print(mr_upp.shape)
+        print(coef_upp.shape)
+        print(coef_key_upp.shape)
         print()
 
         print('Pressure [Lower]')
-        print(p_low)
+        print(p_low.shape)
         print('Ratio [Lower]')
-        print(mr_low)
+        print(mr_low.shape)
+        print(coef_low.shape)
+        print(coef_key_low.shape)
         print()
 
 
