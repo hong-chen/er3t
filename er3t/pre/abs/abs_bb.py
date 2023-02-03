@@ -1,3 +1,11 @@
+"""
+This code contains functions/classes for providing gas absorption for broadband.
+
+Contains:
+    abs_rrtmg_sw: absorption coefficients for RRTMG shortwave bands
+    abs_rrtmg_lw: absorption coefficients for RRTMG longwave bands
+"""
+
 # import os
 # import sys
 # import pickle
