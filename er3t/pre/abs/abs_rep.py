@@ -717,28 +717,30 @@ class abs_rep:
 
     def __init__(
             self,
-            source='solar',
-            satellite='Aqua',
+            wavelength,
             target='MODIS',
             atm_obj=None,
-            # instrument='fine',
-            # instrument='medium',
-            # instrument='coarse',
+            band_name=None,
+            # target='fine',
+            # target='medium',
+            # target='coarse',
             band='B01',
             ):
 
-        self.satellite  = satellite.lower()
+        if wavelength < 5025.0:
+            source = 'solar'
+        else:
+            source = 'thermal'
+
         self.target     = target.lower()
-        self.band       = band.lower()
         self.source     = source.lower()
-        self.name_tag   = '%s_%s_%s' % (self.target, self.satellite, self.band)
         self.atm_obj    = atm_obj
 
-        self.load_sat()
+        self.load_main(wavelength, band_name=band_name)
 
         self.cal_coef()
 
-    def load_sat(self):
+    def load_main(self, wavelength, band_name=None):
 
         f0 = Dataset('%s/reptran_%s_%s.cdf' % (self.fdir_data, self.source, self.target), 'r')
 
@@ -752,6 +754,41 @@ class abs_rep:
             band_name0 = ''.join([j.decode('utf-8') for j in band_bytes[i, logic]]).strip()
             bands.append(band_name0)
         #\----------------------------------------------------------------------------/#
+
+        # select wavelength band
+        #/----------------------------------------------------------------------------\#
+        if band_name is not None:
+            if band_name not in bands:
+                bands_info = '\n'.join(bands)
+                msg = '\nError [abs_rep]: <band_name=\'%s\'> is invalid, please specify one from the following \n%s' % (band_name, bands_info)
+                raise OSError(msg)
+
+
+        wvl_min = f0.variables['wvlmin'][:]
+        wvl_max = f0.variables['wvlmax'][:]
+        print(wvl_min)
+        print(wvl_max)
+
+        logic = (wavelength>wvl_min) & (wavelength<wvl_max)
+        indices = np.where(logic)[0]
+        N_ = logic.sum()
+        if N_ == 0:
+            msg = '\nError [abs_rep]: %.4f nm is outside REPTRAN-supported wavelength range.' % wavelength
+            raise OSError(msg)
+        elif N_ > 1:
+            bands_ = [bands[i] for i in indices]
+            bands_info_ = '\n'.join(bands_)
+            msg = '\nError [abs_rep]: found more than one band matching the wavelength criteria, please specify one from the following at <band_name>\n%s\nfor example, <band_name=\'%s\'>' % (bands_info_, bands_[0])
+            raise OSError(msg)
+
+            print([bands[i] for i in indices])
+
+
+        print(logic.sum())
+        #\----------------------------------------------------------------------------/#
+
+        sys.exit()
+
 
         # read out gases
         #/----------------------------------------------------------------------------\#
@@ -810,6 +847,7 @@ class abs_rep:
 
         for gas0 in self.gases:
 
+            print(gas0)
             self.load_gas(gas0)
 
     def load_gas(self, gas_type):
@@ -824,55 +862,7 @@ class abs_rep:
         iwvl  = f0.variables['wvl_index'][:]
         f0.close()
 
-        # rescale atmospheric profiles from [#/cm^3] to [#/cm^2]
-        # A 1e-20 factor was applied when calculating the ks to prevent overflow problems
-        # The 1e5 factor below is to convert the layer depth (in km) to cm
-        # factor = 1.0e-23 * 1.0e5 * self.atm_obj.lay['thickness']['data']
-        factor = 1.0 * 1.0e5 * self.atm_obj.lay['thickness']['data']
-
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(8, 6))
-        # fig.suptitle('Figure')
-        # plot
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        # cs = ax1.imshow(.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
-        # ax1.scatter(x, y, s=6, c='k', lw=0.0)
-        # ax1.plot(t_ref, p, color='k')
-        # ax1.plot(self.atm_obj.lay['temperature']['data'], self.atm_obj.lay['pressure']['data']*100, color='red')
         print(vmrs)
-        ax1.plot(self.atm_obj.lay[gas_type.lower()]['data']*factor, self.atm_obj.lay['pressure']['data']*100, color='red')
-        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-        # ax1.set_xlim(())
-        # ax1.set_ylim(())
-        # ax1.set_xlabel('')
-        # ax1.set_ylabel('')
-        # ax1.set_title('')
-        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        #\--------------------------------------------------------------/#
-        # add colorbar
-        #/--------------------------------------------------------------\#
-        # divider = make_axes_locatable(ax1)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
-        # cbar.set_label('', rotation=270, labelpad=4.0)
-        # cbar.set_ticks([])
-        # cax.axis('off')
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        plt.show()
-        sys.exit()
-        #\----------------------------------------------------------------------------/#
-
-        pass
 
 
 
@@ -883,14 +873,23 @@ if __name__ == '__main__':
     levels = np.arange(0.0, 20.1, 0.5)
     atm0 = atm_atmmod(levels=levels, overwrite=True)
 
-    for band in range(1, 21):
-        mod_rep = abs_rep(band='B%2.2d' % band, atm_obj=atm0)
-        print(mod_rep.name_tag)
-        print('Solar      :', mod_rep.sol)
-        print('Wavelength :', mod_rep.wvl)
-        print('Gas species:', mod_rep.gases)
-        print('Ng         :', mod_rep.Ng)
-        print('-'*60)
-        sys.exit()
+    # abs0 = abs_rep(650.0, target='modis', band_name='aqua_modis_b01')
+    abs0 = abs_rep(650.0, target='modis', band_name='haha')
+
+    # for gas_type in atm0.gases:
+    #     vmrs_atm = atm0.lay[gas_type.lower()]['data']/atm0.lay['factor']['data']
+    #     print(gas_type)
+    #     print(vmrs_atm)
+    # sys.exit()
+
+    # for band in range(1, 21):
+    #     mod_rep = abs_rep(band='B%2.2d' % band, atm_obj=atm0)
+    #     print(mod_rep.name_tag)
+    #     print('Solar      :', mod_rep.sol)
+    #     print('Wavelength :', mod_rep.wvl)
+    #     print('Gas species:', mod_rep.gases)
+    #     print('Ng         :', mod_rep.Ng)
+    #     print('-'*60)
+        # sys.exit()
 
     pass
