@@ -57,12 +57,16 @@ class abs_rrtmg_sw:
 
     def __init__(self, \
                  iband = 0,
-                 ig    = 1,
+                 ig    = 0,
                  wavelength = None,  \
                  fname      = None,  \
                  atm_obj    = None,  \
                  overwrite  = False, \
                  verbose    = False):
+
+        if ig != 0:
+            msg = '\nError [abs_rrtmg_sw]: currently only <ig=0> is supported.'
+            raise OSError(msg)
 
         self.iband   = iband
         self.ig      = ig
@@ -130,6 +134,12 @@ class abs_rrtmg_sw:
         Ng = f0.variables['NumGPoints'][:][ig, iband]
         #\----------------------------------------------------------------------------/#
 
+        # solar
+        #/----------------------------------------------------------------------------\#
+        sol_upp = f0['SolarSourceFunctionUpperAtmos'][:][ig, iband, :, :Ng]
+        sol_low = f0['SolarSourceFunctionLowerAtmos'][:][ig, iband, :, :Ng]
+        #\----------------------------------------------------------------------------/#
+
         # weights
         #/----------------------------------------------------------------------------\#
         wgt =  np.array([ \
@@ -175,21 +185,25 @@ class abs_rrtmg_sw:
         #/----------------------------------------------------------------------------\#
         dt = f0.variables['TemperatureDiffFromMLS'][:]
 
-        p_upp  = f0.variables['PressureUpperAtmos'][:]
-        mr_upp = f0.variables['KeySpeciesRatioUpperAtmos']
-        mr_upp.set_auto_maskandscale(False)
-        print(mr_upp[:])
-
+        # upper atm
+        #/--------------------------------------------------------------\#
+        p_upp   = f0.variables['PressureUpperAtmos'][:]
+        mr_upp0 = f0.variables['KeySpeciesRatioUpperAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
+        mr_upp  = np.linspace(0.0, 1.0, mr_upp0.size)
 
         coef_upp = f0.variables['AbsorptionCoefficientsUpperAtmos'][:][ig, iband, ikey_gas_upp, :Ng, :, :]
         coef_key_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][ig, iband, :Ng, :, :, :]
+        #\--------------------------------------------------------------/#
 
-        p_low  = f0.variables['PressureLowerAtmos'][:]
-        mr_low = f0.variables['KeySpeciesRatioLowerAtmos']
-        mr_low.set_auto_maskandscale(False)
-        print(mr_low[:])
+        # lower atm
+        #/--------------------------------------------------------------\#
+        p_low   = f0.variables['PressureLowerAtmos'][:]
+        mr_low0 = f0.variables['KeySpeciesRatioLowerAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
+        mr_low  = np.linspace(0.0, 1.0, mr_low0.size)
+
         coef_low = f0.variables['AbsorptionCoefficientsLowerAtmos'][:][ig, iband, ikey_gas_low, :Ng, :, :]
         coef_key_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][ig, iband, :Ng, :, :, :]
+        #\--------------------------------------------------------------/#
         #\----------------------------------------------------------------------------/#
 
         print('Delta Temperature')
@@ -285,7 +299,7 @@ class abs_rrtmg_sw:
         # variables['H2OForeignAbsorptionCoefficientsUpperAtmos'] -- : Dataset  (2, 14, 16, 2)
         # variables['RayleighExtinctionCoefficientsUpperAtmos'] ---- : Dataset  (2, 14, 5, 16)
 
-        # variables['KeySpeciesRatioLowerAtmos'] ------------------- : Dataset  (9,)
+        # varibles['KeySpeciesRatioLowerAtmos'] ------------------- : Dataset  (9,)
         # variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'] -- : Dataset  (2, 14, 16, 13, 5, 9)
         # variables['AbsorptionCoefficientsLowerAtmos'] ------------ : Dataset  (2, 14, 12, 16, 19, 9)
         # variables['KeySpeciesNamesLowerAtmos'] ------------------- : Dataset  (2, 14, 3)
