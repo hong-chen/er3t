@@ -48,15 +48,16 @@ from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 # import cartopy.crs as ccrs
-# mpl.use('Agg')
+mpl.use('Agg')
 
+import er3t.common
 from er3t.pre.atm import atm_atmmod
 from er3t.pre.abs import abs_16g
-from er3t.pre.cld import cld_sat
+from er3t.pre.cld import cld_sat, cld_les
 from er3t.pre.sfc import sfc_sat
 from er3t.pre.pha import pha_mie_wc as pha_mie
 from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, modis_43a3, get_sinusoidal_grid_tag
-from er3t.util import cal_r_twostream, grid_by_extent, grid_by_lonlat, download_laads_https, download_worldview_rgb, get_satfile_tag
+from er3t.util import cal_r_twostream, cal_ext, grid_by_extent, grid_by_lonlat, download_laads_https, download_worldview_rgb, get_satfile_tag
 
 from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
 from er3t.rtm.mca import mcarats_ng
@@ -170,163 +171,6 @@ class satellite_download:
                 print('Message [satellite_download]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
 
-
-
-class func_cot_vs_rad:
-
-    def __init__(self,
-            fdir,
-            wavelength,
-            cot=np.concatenate((np.arange(0.0, 1.0, 0.1),
-                                np.arange(1.0, 10.0, 1.0),
-                                np.arange(10.0, 20.0, 2.0),
-                                np.arange(20.0, 50.0, 5.0),
-                                np.arange(50.0, 100.0, 10.0),
-                                np.arange(100.0, 200.0, 20.0),
-                                # np.arange(200.0, 401.0, 50.0),
-                                )),
-            run=False,
-            ):
-
-        if not os.path.exists(fdir):
-            os.makedirs(fdir)
-
-        self.fdir       = fdir
-        self.wavelength = wavelength
-        self.cot        = cot
-        self.rad        = np.array([])
-        self.rad_std    = np.array([])
-
-        if run:
-            self.run_all()
-
-        for i in range(self.cot.size):
-            cot0 = self.cot[i]
-            fname = '%s/mca-out-rad-3d_cot-%.2f.h5' % (self.fdir, cot0)
-            f0 = h5py.File(fname, 'r')
-            rad0     = f0['mean/rad'][...].mean()
-            rad_std0 = f0['mean/rad_std'][...].mean()
-            f0.close()
-            self.rad     = np.append(self.rad, rad0)
-            self.rad_std = np.append(self.rad_std, rad_std0)
-
-    def run_all(self):
-
-        for cot0 in self.cot:
-            print(cot0)
-            self.run_mca_one(cot0)
-
-    def run_mca_one(self, cot):
-
-        # atm object
-        #/----------------------------------------------------------------------------\#
-        levels = np.arange(0.0, 20.1, 1.0)
-        fname_atm = '%s/atm.pk' % fdir
-        atm0   = atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod = '%s/afglt.dat' % er3t.common.fdir_data_atmmod, overwrite=False)
-        #\----------------------------------------------------------------------------/#
-
-        # abs object
-        #/----------------------------------------------------------------------------\#
-        fname_abs = '%s/abs.pk' % fdir
-        abs0      = abs_16g(wavelength=self.wavelength, fname=fname_abs, atm_obj=atm0, overwrite=False)
-        #\----------------------------------------------------------------------------/#
-
-        # define cloud
-        #/----------------------------------------------------------------------------\#
-        # read in modis parameters
-        #/----------------------------------------------------------------------------\#
-        f = h5py.File('data/20190922/pre-data_1km.h5', 'r')
-        sza = f['mod/geo/sza'][...].mean()
-        saa = f['mod/geo/saa'][...].mean()
-        vza = f['mod/geo/vza'][...].mean()
-        vaa = f['mod/geo/vaa'][...].mean()
-        logic = (f['mod/cld/cot_l2'][...]>0.00001) & (f['lon'][...]>124.5)
-        cer   = f['mod/cld/cer_l2'][...][logic].mean()
-        f.close()
-        #\----------------------------------------------------------------------------/#
-
-        cot_2d    = np.zeros((2, 2), dtype=np.float64); cot_2d[...] = cot
-        cer_2d    = np.zeros((2, 2), dtype=np.float64); cer_2d[...] = cer
-        ext_3d    = np.zeros((2, 2, 2), dtype=np.float64)
-
-        fname_les_pk  = '%s/les.pk' % self.fdir
-        cld0          = cld_les(fname_nc=_fname_les, fname=fname_les_pk, coarsen=[1, 1, 25, 1], overwrite=False)
-
-        cld0.lev['altitude']['data']    = cld0.lay['altitude']['data'][1:4]
-
-        cld0.lay['x']['data']           = cld0.lay['x']['data'][:2]
-        cld0.lay['y']['data']           = cld0.lay['y']['data'][:2]
-        cld0.lay['nx']['data']          = 2
-        cld0.lay['ny']['data']          = 2
-        cld0.lay['altitude']['data']    = cld0.lay['altitude']['data'][1:3]
-        cld0.lay['pressure']['data']    = cld0.lay['pressure']['data'][1:3]
-        cld0.lay['temperature']['data'] = cld0.lay['temperature']['data'][:2, :2, 1:3]
-        cld0.lay['cot']['data']         = cot_2d
-        cld0.lay['thickness']['data']   = cld0.lay['thickness']['data'][1:3]
-
-        ext_3d[:, :, 0]  = cal_ext(cot_2d, cer_2d)/(cld0.lay['thickness']['data'].sum()*1000.0)
-        ext_3d[:, :, 1]  = cal_ext(cot_2d, cer_2d)/(cld0.lay['thickness']['data'].sum()*1000.0)
-        cld0.lay['extinction']['data']  = ext_3d
-        #\----------------------------------------------------------------------------/#
-
-        # mca_sca object
-        #/----------------------------------------------------------------------------\#
-        pha0 = pha_mie(wvl0=self.wavelength)
-        sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=False)
-        #\----------------------------------------------------------------------------/#
-
-        # mca_cld object
-        #/----------------------------------------------------------------------------\#
-        atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-
-        fname_atm3d = '%s/mca_atm_3d.bin' % self.fdir
-        atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=True)
-
-        atm_1ds   = [atm1d0]
-        atm_3ds   = [atm3d0]
-        #\----------------------------------------------------------------------------/#
-
-
-
-        # run mcarats
-        # =================================================================================
-        mca0 = mcarats_ng(
-                date=_date,
-                atm_1ds=atm_1ds,
-                atm_3ds=atm_3ds,
-                surface_albedo=0.03,
-                sca=sca,
-                Ng=abs0.Ng,
-                target='radiance',
-                solar_zenith_angle   = sza,
-                solar_azimuth_angle  = saa,
-                sensor_zenith_angle  = vza,
-                sensor_azimuth_angle = vaa,
-                fdir='%s/%.2f/rad' % (self.fdir, cot),
-                Nrun=3,
-                weights=abs0.coef['weight']['data'],
-                photons=_photon_sim,
-                solver='3D',
-                Ncpu=12,
-                mp_mode='py',
-                overwrite=True
-                )
-
-        # mcarats output
-        out0 = mca_out_ng(fname='%s/mca-out-rad-3d_cot-%.2f.h5' % (self.fdir, cot), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
-        # =================================================================================
-
-    def interp_from_rad(self, rad, method='cubic'):
-
-        f = interp1d(self.rad, self.cot, kind=method, bounds_error=False)
-
-        return f(rad)
-
-    def interp_from_cot(self, cot, method='cubic'):
-
-        f = interp1d(self.cot, self.rad, kind=method, bounds_error=False)
-
-        return f(cot)
 
 
 
@@ -980,7 +824,7 @@ class func_cot_vs_rad:
                                 np.arange(20.0, 50.0, 5.0),
                                 np.arange(50.0, 100.0, 10.0),
                                 np.arange(100.0, 200.0, 20.0),
-                                # np.arange(200.0, 401.0, 50.0),
+                                np.arange(200.0, 401.0, 50.0),
                                 )),
             run=False,
             ):
@@ -1018,13 +862,13 @@ class func_cot_vs_rad:
         # atm object
         #/----------------------------------------------------------------------------\#
         levels = np.arange(0.0, 20.1, 1.0)
-        fname_atm = '%s/atm.pk' % fdir
-        atm0   = atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod = '%s/afglt.dat' % er3t.common.fdir_data_atmmod, overwrite=False)
+        fname_atm = '%s/atm.pk' % self.fdir
+        atm0   = atm_atmmod(levels=levels, fname=fname_atm, overwrite=False)
         #\----------------------------------------------------------------------------/#
 
         # abs object
         #/----------------------------------------------------------------------------\#
-        fname_abs = '%s/abs.pk' % fdir
+        fname_abs = '%s/abs.pk' % self.fdir
         abs0      = abs_16g(wavelength=self.wavelength, fname=fname_abs, atm_obj=atm0, overwrite=False)
         #\----------------------------------------------------------------------------/#
 
@@ -1032,13 +876,13 @@ class func_cot_vs_rad:
         #/----------------------------------------------------------------------------\#
         # read in modis parameters
         #/----------------------------------------------------------------------------\#
-        f = h5py.File('data/20190922/pre-data_1km.h5', 'r')
+        f = h5py.File('data/%s/pre-data.h5' % _name_tag, 'r')
         sza = f['mod/geo/sza'][...].mean()
         saa = f['mod/geo/saa'][...].mean()
         vza = f['mod/geo/vza'][...].mean()
         vaa = f['mod/geo/vaa'][...].mean()
-        logic = (f['mod/cld/cot_l2'][...]>0.00001) & (f['lon'][...]>124.5)
-        cer   = f['mod/cld/cer_l2'][...][logic].mean()
+        cer = f['mod/cld/cer_l2'][...].mean()
+        alb = f['mod/sfc/alb_43'][...].mean()
         f.close()
         #\----------------------------------------------------------------------------/#
 
@@ -1046,8 +890,9 @@ class func_cot_vs_rad:
         cer_2d    = np.zeros((2, 2), dtype=np.float64); cer_2d[...] = cer
         ext_3d    = np.zeros((2, 2, 2), dtype=np.float64)
 
+        fname_les = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
         fname_les_pk  = '%s/les.pk' % self.fdir
-        cld0          = cld_les(fname_nc=_fname_les, fname=fname_les_pk, coarsen=[1, 1, 25, 1], overwrite=False)
+        cld0          = cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 25, 1], overwrite=False)
 
         cld0.lev['altitude']['data']    = cld0.lay['altitude']['data'][1:4]
 
@@ -1069,7 +914,7 @@ class func_cot_vs_rad:
         # mca_sca object
         #/----------------------------------------------------------------------------\#
         pha0 = pha_mie(wvl0=self.wavelength)
-        sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=False)
+        sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % self.fdir, overwrite=False)
         #\----------------------------------------------------------------------------/#
 
         # mca_cld object
@@ -1084,14 +929,13 @@ class func_cot_vs_rad:
         #\----------------------------------------------------------------------------/#
 
 
-
         # run mcarats
         # =================================================================================
         mca0 = mcarats_ng(
                 date=_date,
                 atm_1ds=atm_1ds,
                 atm_3ds=atm_3ds,
-                surface_albedo=0.03,
+                surface_albedo=alb,
                 sca=sca,
                 Ng=abs0.Ng,
                 target='radiance',
@@ -1102,7 +946,7 @@ class func_cot_vs_rad:
                 fdir='%s/%.2f/rad' % (self.fdir, cot),
                 Nrun=3,
                 weights=abs0.coef['weight']['data'],
-                photons=_photon_sim,
+                photons=1e7,
                 solver='3D',
                 Ncpu=12,
                 mp_mode='py',
@@ -1189,7 +1033,7 @@ def cdata_cot_ipa(wvl=_wavelength, plot=True):
 
     # cloud mask method based on rgb image and l2 data
     #/----------------------------------------------------------------------------\#
-    # first cloudy pixel selection (over-selection is expected)
+    # primary selection (over-selection of cloudy pixels is expected)
     #/--------------------------------------------------------------\#
     indices_x, indices_y = cloud_mask_rgb(rgb, extent, lon_2d, lat_2d, scale_factor=1.08)
 
@@ -1210,6 +1054,22 @@ def cdata_cot_ipa(wvl=_wavelength, plot=True):
     lat_cld = lat_cld0[logic]
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
+
+    # IPA
+    #/----------------------------------------------------------------------------\#
+    # theoretical relationship
+    #/--------------------------------------------------------------\#
+    fdir = 'tmp-data/ipa/%3.3d' % (_wavelength)
+    f_mca =  func_cot_vs_rad(fdir, _wavelength, run=True)
+
+    mu0        = np.cos(np.deg2rad(sza.mean()))
+    xx_mca = f_mca.cot.copy()
+    yy_mca = f_mca.rad*np.pi / (1.5718455223851924*mu0)
+
+    f = interp1d(yy_mca, xx_mca, kind='cubic', bounds_error=False)
+    #\--------------------------------------------------------------/#
+
+    sys.exit()
 
 
     # Parallax correction (for the cloudy pixels detected previously)
@@ -1271,19 +1131,6 @@ def cdata_cot_ipa(wvl=_wavelength, plot=True):
 
 
 
-    # two-stream
-    #/----------------------------------------------------------------------------\#
-    # theoretical relationship
-    #/--------------------------------------------------------------\#
-    fdir = 'tmp-data/mca_rad_vs_cot/%3.3d' % (_wavelength)
-    f_mca =  func_cot_vs_rad(fdir, _wavelength, run=False)
-
-    mu0        = np.cos(np.deg2rad(sza.mean()))
-    xx_mca = f_mca.cot.copy()
-    yy_mca = f_mca.rad*np.pi / (1.5718455223851924*mu0)
-
-    f = interp1d(yy_mca, xx_mca, kind='cubic', bounds_error=False)
-    #\--------------------------------------------------------------/#
 
     # assign COT for every cloudy pixel
     #/--------------------------------------------------------------\#
