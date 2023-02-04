@@ -113,6 +113,7 @@ class abs_rrtmg_sw:
             if len(gas_name0) > 0:
                 gases.append(gas_name0)
         #\----------------------------------------------------------------------------/#
+        print(gases)
 
 
         # read out key gas names
@@ -135,6 +136,8 @@ class abs_rrtmg_sw:
         key_gas_low = [gases[i] for i in ikey_gas_low]
         key_gas_upp = [gases[i] for i in ikey_gas_upp]
         #\----------------------------------------------------------------------------/#
+        print(key_gas_low)
+        print(key_gas_upp)
 
 
         # Gs
@@ -156,7 +159,8 @@ class abs_rrtmg_sw:
               0.0832767040, 0.0626720116, 0.0424925000, \
               0.0046269894, 0.0038279891, 0.0030260086, \
               0.0022199750, 0.0014140010, 0.0005330000, \
-              0.0000750000])
+              0.0000750000 \
+              ])
 
         """
           igcsm = 0
