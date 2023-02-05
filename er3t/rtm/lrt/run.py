@@ -49,10 +49,18 @@ def lrt_run_mp(inits, Ncpu=6):
         Python list of lrt_init objects
     """
 
-    pool = mp.Pool(processes=Ncpu)
-    pool.outputs = pool.map(lrt_run, inits)
-    pool.close()
-    pool.join()
+    try:
+        from tqdm import tqdm
+
+        with mp.Pool(processes=Ncpu) as pool:
+            r = list(tqdm(pool.imap(lrt_run, inits), total=len(inits)))
+
+    except ImportError:
+
+        pool = mp.Pool(processes=Ncpu)
+        pool.outputs = pool.map(lrt_run, inits)
+        pool.close()
+        pool.join()
 
 
 
