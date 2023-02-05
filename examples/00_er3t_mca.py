@@ -1008,7 +1008,7 @@ def test_05_rad_les_cloud_3d(
 
     # define mca_sca object
     #/-----------------------------------------------------------------------------\
-    pha0 = pha_mie(wvl0=wavelength)
+    pha0 = pha_mie(wavelength=wavelength)
     sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     #\-----------------------------------------------------------------------------/
 
@@ -1228,7 +1228,7 @@ def test_06_rad_cld_gen_hem(
 
     # define mca_sca object
     #/-----------------------------------------------------------------------------\
-    pha0 = pha_mie(wvl0=wavelength)
+    pha0 = pha_mie(wavelength=wavelength)
     sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     #\-----------------------------------------------------------------------------/
 

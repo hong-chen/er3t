@@ -358,7 +358,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
 
     # mca_sca object
     # =================================================================================
-    pha0 = pha_mie(wvl0=wavelength)
+    pha0 = pha_mie(wavelength=wavelength)
     sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     # =================================================================================
 
@@ -913,7 +913,7 @@ class func_cot_vs_rad:
 
         # mca_sca object
         #/----------------------------------------------------------------------------\#
-        pha0 = pha_mie(wvl0=self.wavelength)
+        pha0 = pha_mie(wavelength=self.wavelength)
         sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % self.fdir, overwrite=False)
         #\----------------------------------------------------------------------------/#
 

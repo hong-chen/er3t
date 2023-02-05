@@ -219,7 +219,7 @@ def cal_mca_flux(
 
     # mie scattering phase function setup
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    pha0 = pha_mie(wvl0=wavelength)
+    pha0 = pha_mie(wavelength=wavelength)
     sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

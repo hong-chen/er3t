@@ -64,7 +64,7 @@ class pha_mie_wc:
     Calculate Mie phase functions (water clouds) for a given wavelength and angles
 
     Input:
-        wvl0: wavelength in nm, float value, default is 500.0
+        wavelength: wavelength in nm, float value, default is 500.0
         angles: numpy array, angles to extract mie phase functions at
         *interpolate: boolen, whether to interpolate phase functions based on the wavelength, default is False
         reuse: boolen, whether to reuse the pre-existing phase functions stored at er3t/data/pha/mie, default is True
@@ -89,7 +89,7 @@ class pha_mie_wc:
     reference = 'Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, 1980.'
 
     def __init__(self,
-                 wvl0=555.0,
+                 wavelength=555.0,
                  angles=np.concatenate((
                     np.arange(  0.0,   2.0, 0.01),
                     np.arange(  2.0,   5.0, 0.05),
@@ -111,7 +111,7 @@ class pha_mie_wc:
         if self.reference not in er3t.common.references:
             er3t.common.references.append(self.reference)
 
-        self.get_data(wvl0, angles, fdir=fdir_pha_mie)
+        self.get_data(wavelength, angles, fdir=fdir_pha_mie)
 
     def get_data(self,
             wvl0,
