@@ -52,6 +52,7 @@ def lrt_run_mp(inits, Ncpu=6):
     try:
         from tqdm import tqdm
 
+        print('\nMessage [lrt_run_mp]: running libRadtran ...')
         with mp.Pool(processes=Ncpu) as pool:
             r = list(tqdm(pool.imap(lrt_run, inits), total=len(inits)))
 
