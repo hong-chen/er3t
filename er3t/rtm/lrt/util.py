@@ -473,7 +473,7 @@ def gen_bispectral_lookup_table(
     f['cot'].attrs['description'] = 'Cloud Optical Thickness'
 
     f['cer']    = cloud_effective_radius_all
-    f['cer'].attrs['description'] = 'Cloud Effective Radius'
+    f['cer'].attrs['description'] = 'Cloud Effective Radius [micron]'
     f.close()
     #\----------------------------------------------------------------------------/#
 
