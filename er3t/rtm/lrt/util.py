@@ -1,13 +1,30 @@
 import os
 import sys
+import glob
 import datetime
 import numpy as np
+import h5py
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import matplotlib.path as mpl_path
+import matplotlib.image as mpl_img
+import matplotlib.patches as mpatches
+import matplotlib.gridspec as gridspec
+from matplotlib import rcParams, ticker
+from matplotlib.ticker import FixedLocator
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+# import cartopy.crs as ccrs
+# mpl.use('Agg')
+
 
 import er3t.common
 import er3t.rtm.lrt as lrt
 
 
-__all__ = ['gen_cloud_1d', 'gen_aerosol_1d', 'gen_wavelength_file', 'gen_surface_albedo_file']
+__all__ = [
+        'gen_cloud_1d', 'gen_aerosol_1d', 'gen_wavelength_file', 'gen_surface_albedo_file', \
+        'gen_bispectral_lookup_table',
+        ]
 
 
 
@@ -192,12 +209,12 @@ def gen_bispectral_lookup_table(
         aerosol_asymmetry_parameter=0.7,                       # aerosol asymmetry parameter
         aerosol_altitude=np.arange(2.9, 6.01, 0.1),            # vertical location of the aerosols
         output_altitude=np.array([0.8, 2.0]),                  # output altitude for libRadtran calculations
+        fname=None,                                            # output file
         fdir_tmp='tmp-data',                                   # directory to store temporary data (string)
         fdir_lut='data/lut',                                   # directory to store lookup table data
         prop_tag='radiance',                                   # property tag, can be "radiance", "albedo-top", "albedo-bottom", "reflectance", "transmittance", "absorptance" (string)
         atmosphere_file='%s/afglus.dat' % er3t.common.fdir_data_atmmod, # atmosphere profile
         overwrite=True,
-        plot=True
         ):
 
     # create temporary data directory
@@ -303,7 +320,7 @@ def gen_bispectral_lookup_table(
                         aer_cfg=aer_cfg,
                         )
 
-            elif prop_tag.lower() in ['flux', 'iiradiance']:
+            elif prop_tag.lower() in ['transmittance', 'reflectance', 'absorptance', 'albedo-top', 'albedo-bottom', 'all']:
 
                 init_x = lrt.lrt_init_mono(
                         output_altitude=output_altitude,
@@ -370,7 +387,38 @@ def gen_bispectral_lookup_table(
         os.system('mkdir -p %s' % fdir_lut)
     #\--------------------------------------------------------------/#
 
+    if fname is None:
+        fname = 'lut_%4.4dnm-%4.4dnm.h5' % wavelength_pair
+
     f = h5py.File(fname, 'w')
+
+    g = f.create_group('params')
+    g['wvl_x'] = wvl_x
+    g['wvl_x'].attrs['description'] = 'Wavelength x [nm]'
+
+    g['wvl_y'] = wvl_y
+    g['wvl_y'].attrs['description'] = 'Wavelength y [nm]'
+
+    g['alb_x'] = alb_x
+    g['alb_x'].attrs['description'] = 'Surface albedo x'
+
+    g['alb_y'] = alb_y
+    g['alb_y'].attrs['description'] = 'Surface albedo y'
+
+    g['sza'] = sza
+    g['sza'].attrs['description'] = 'Solar zenith angle'
+
+    g['saa'] = saa
+    g['saa'].attrs['description'] = 'Solar azimuth angle'
+
+    g['vza'] = vza
+    g['vza'].attrs['description'] = 'Viewing zenith angle'
+
+    g['vaa'] = vaa
+    g['vaa'].attrs['description'] = 'Viewing azimuth angle'
+
+    g['atm_file'] = atmosphere_file
+    g['atm_file'].attrs['description'] = 'Atmospheric profile'
 
     f['prop_x'] = prop_x
     f['prop_x'].dims[0].label = 'Cloud Optical Thickness'
@@ -389,56 +437,6 @@ def gen_bispectral_lookup_table(
     f['cer'].attrs['description'] = 'Cloud Effective Radius'
     f.close()
     #\----------------------------------------------------------------------------/#
-
-
-    # plot lookup table
-    #/----------------------------------------------------------------------------\#
-    if plot:
-        plot_bispectral_lookup_table(fname)
-    #\----------------------------------------------------------------------------/#
-
-
-
-def plot_bispectral_lookup_table(fname, prop_x0=-1.0, prop_y0=-1.0, fdir_out='data'):
-
-    filename = fname.split('/')[-1][:-3]
-    words    = filename.split('_')
-    prop     = words[2].replace('-', ' ').title()
-    wvl_pair = []
-    for word in words:
-        if 'nm' in word:
-            wavelengths = word.split('-')
-            for wavelength in wavelengths:
-                if wavelength[0] == '0':
-                    wavelength = wavelength[1:]
-                wvl_pair.append(wavelength)
-
-    f = h5py.File(fname, 'r')
-    cer = f['cer'][...]
-    cot = f['cot'][...]
-    prop_x = f['prop_x'][...]
-    prop_y = f['prop_y'][...]
-    f.close()
-
-    rcParams['font.size'] = 15
-    fig = plt.figure(figsize=(6.5, 6.0))
-    ax1 = fig.add_subplot(111)
-
-    for i in range(cer.size):
-        ax1.plot(prop_x[:, i], prop_y[:, i], color='r', zorder=0, lw=0.5, alpha=0.2)
-        ax1.text(prop_x[-1, i]+0.008, prop_y[-1, i], '%.1f' % cer[i], fontsize=6, color='r', va='center', zorder=1, weight=0)
-
-    for i in range(cot.size):
-        ax1.plot(prop_x[i, :], prop_y[i, :], color='b', lw=0.5, zorder=1, alpha=0.2)
-        ax1.text(prop_x[i, -1], prop_y[i, -1]-0.02, '%.1f' % cot[i], fontsize=6, color='b', ha='center', zorder=1, weight=0)
-
-    ax1.scatter(prop_x0, prop_y0, c='k', s=1)
-    ax1.set_xlim([-0.05, 1.05])
-    ax1.set_ylim([-0.05, 1.05])
-    ax1.set_xlabel('%s [%s]' % (prop, wvl_pair[0]))
-    ax1.set_ylabel('%s [%s]' % (prop, wvl_pair[1]))
-    plt.savefig('%s/%s.svg' % (fdir_out, filename))
-    plt.close(fig)
 
 
 
