@@ -167,7 +167,7 @@ def cal_radiative_property(f_up, f_down, topN=-1, bottomN=0, scaleN=1.0, tag='al
 
     if tag.lower() == 'transmittance':
         return transmittance
-    elif tag.lower() == 'reflectance':
+    elif tag.lower() == 'reflectance-top':
         return reflectance
     elif tag.lower() == 'absorptance':
         return absorptance
@@ -397,10 +397,10 @@ def gen_bispectral_lookup_table(
 
             data_x0 = lrt.lrt_read_uvspec([init_x0])
             data_y0 = lrt.lrt_read_uvspec([init_y0])
-            prop_x = np.pi*prop_x/(np.squeeze(data_x0.f_down)*np.cos(np.deg2rad(sza)))
-            prop_y = np.pi*prop_y/(np.squeeze(data_y0.f_down)*np.cos(np.deg2rad(sza)))
+            prop_x = np.pi*prop_x/(np.squeeze(data_x0.f_down))
+            prop_y = np.pi*prop_y/(np.squeeze(data_y0.f_down))
 
-    elif prop_tag.lower() in ['transmittance', 'reflectance', 'absorptance', 'albedo-top', 'albedo-bottom', 'all']:
+    elif prop_tag.lower() in ['transmittance', 'reflectance-top', 'absorptance', 'albedo-top', 'albedo-bottom']:
 
         data_x = lrt.lrt_read_uvspec(inits_x)
         data_y = lrt.lrt_read_uvspec(inits_y)
