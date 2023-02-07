@@ -22,6 +22,12 @@ def convert_azimuth_angle(azimuth_angle):
 
 
 
+def convert_azimuth_angle_360(azimuth_angle):
+
+    return (azimuth_angle+360.0) % 360.0
+
+
+
 class lrt_init_mono_rad:
 
     """
@@ -116,6 +122,7 @@ class lrt_init_mono_rad:
             sensor_azimuth_angle = 0.0
             if verbose:
                 print('Message [lrt_init_mono]: <sensor_azimuth_angle> is missing, assigning sensor_azimuth_angle = 0.0.')
+        sensor_azimuth_angle = convert_azimuth_angle_360(sensor_azimuth_angle)
 
         if not isinstance(sensor_azimuth_angle, str):
             if isinstance(sensor_azimuth_angle, (list, np.ndarray)):
@@ -149,7 +156,6 @@ class lrt_init_mono_rad:
             output_altitude = 'TOA'
             if verbose:
                 print('Message [lrt_init_mono]: <output_altitude> is missing, assigning output_altitude = \'TOA\'.')
-
 
         if not isinstance(output_altitude, str):
             if isinstance(output_altitude, (list, np.ndarray)):

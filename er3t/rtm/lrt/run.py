@@ -40,7 +40,7 @@ def lrt_run(init, verbose=False):
 
 
 
-def lrt_run_mp(inits, Ncpu=6):
+def lrt_run_mp(inits, Ncpu=None):
 
     """
     Use multiprocessing to run lrt_run with multiple CPUs
@@ -48,6 +48,9 @@ def lrt_run_mp(inits, Ncpu=6):
     Input:
         Python list of lrt_init objects
     """
+
+    if Ncpu is None:
+        Ncpu = mp.cpu_count() - 1
 
     try:
         from tqdm import tqdm

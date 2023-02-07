@@ -4,18 +4,6 @@ import glob
 import datetime
 import numpy as np
 import h5py
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.path as mpl_path
-import matplotlib.image as mpl_img
-import matplotlib.patches as mpatches
-import matplotlib.gridspec as gridspec
-from matplotlib import rcParams, ticker
-from matplotlib.ticker import FixedLocator
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-# import cartopy.crs as ccrs
-# mpl.use('Agg')
-
 
 import er3t.common
 import er3t.rtm.lrt as lrt
@@ -201,7 +189,7 @@ def gen_bispectral_lookup_table(
         sensor_zenith_angle=0.0,                               # sensor zenith angle (float)
         sensor_azimuth_angle=0.0,                              # sensor azimuth angle (float)
         cloud_type='water',                                    # water cloud or ice cloud
-        cloud_altitude=np.arange(0.9, 1.51, 0.1),              # vertical location of the clouds
+        cloud_altitude=np.arange(0.4, 1.51, 0.1),              # vertical location of the clouds
         cloud_optical_thickness_all=np.arange(0.0, 50.1, 2.0), # cloud optical thickness array (numpy.ndarray)
         cloud_effective_radius_all=np.arange(4.0, 25.1, 1.0),  # cloud effective radius (numpy.ndarray)
         aerosol_optical_depth=0.0,                             # aerosol optical depth
@@ -248,19 +236,22 @@ def gen_bispectral_lookup_table(
     #/----------------------------------------------------------------------------\#
     # initialization
     #/--------------------------------------------------------------\#
-    inits_x = []
-    inits_y = []
 
     lrt_cfg = lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = atmosphere_file
 
+    # cloud setup
+    #/--------------------------------------------------------------\#
     cld_cfg = lrt.get_cld_cfg()
     if cloud_type.lower() == 'water':
         cld_cfg['wc_properties'] = 'mie'
     else:
         msg = '\nError [gen_bispectral_lookup_table]: currently we do not support <cloud_type="%s">' % (cloud_type)
         sys.exit(msg)
+    #\--------------------------------------------------------------/#
 
+    # aerosol setup
+    #/--------------------------------------------------------------\#
     if aerosol_optical_depth > 0.0:
         aer_cfg = lrt.get_aer_cfg()
         aer_cfg['aerosol']
@@ -271,6 +262,36 @@ def gen_bispectral_lookup_table(
         aer_cfg['aerosol_altitude']         = aerosol_altitude
     else:
         aer_cfg = None
+    #\--------------------------------------------------------------/#
+
+
+    # for toa downwelling
+    #/--------------------------------------------------------------\#
+    init_x0 = lrt.lrt_init_mono(
+            output_altitude='toa',
+            input_file='%s/lrt_inpfile_%4.4dnm_toa.txt' % (fdir_tmp, wvl_x),
+            output_file='%s/lrt_outfile_%4.4dnm_toa.txt' % (fdir_tmp, wvl_x),
+            date=date,
+            surface_albedo=alb_x,
+            wavelength=wvl_x,
+            solar_zenith_angle=sza,
+            lrt_cfg=lrt_cfg,
+            )
+
+    init_y0 = lrt.lrt_init_mono(
+            output_altitude='toa',
+            input_file='%s/lrt_inpfile_%4.4dnm_toa.txt' % (fdir_tmp, wvl_y),
+            output_file='%s/lrt_outfile_%4.4dnm_toa.txt' % (fdir_tmp, wvl_y),
+            date=date,
+            surface_albedo=alb_y,
+            wavelength=wvl_y,
+            solar_zenith_angle=sza,
+            lrt_cfg=lrt_cfg,
+            )
+    #\--------------------------------------------------------------/#
+
+    inits_x = []
+    inits_y = []
 
     for cot in cloud_optical_thickness_all:
         for cer in cloud_effective_radius_all:
@@ -280,13 +301,13 @@ def gen_bispectral_lookup_table(
             cld_cfg['cloud_optical_thickness'] = cot
             cld_cfg['cloud_effective_radius']  = cer
 
-            input_file_x  = '%s/lrt_inpfile_%4.4dnm_%04.1f_%04.1f_%04.1f_%04.2f.txt' % (fdir_tmp, wvl_x, cot, cer, sza, alb_x)
-            output_file_x = '%s/lrt_outfile_%4.4dnm_%04.1f_%04.1f_%04.1f_%04.2f.txt' % (fdir_tmp, wvl_x, cot, cer, sza, alb_x)
+            input_file_x  = '%s/lrt_inpfile_wvl-%4.4dnm_cot-%04.1f_cer-%04.1f_sza-%04.1f_alb-%04.2f.txt' % (fdir_tmp, wvl_x, cot, cer, sza, alb_x)
+            output_file_x = '%s/lrt_outfile_wvl-%4.4dnm_cot-%04.1f_cer-%04.1f_sza-%04.1f_alb-%04.2f.txt' % (fdir_tmp, wvl_x, cot, cer, sza, alb_x)
 
-            input_file_y  = '%s/lrt_inpfile_%4.4dnm_%04.1f_%04.1f_%04.1f_%04.1f.txt' % (fdir_tmp, wvl_y, cot, cer, sza, alb_y)
-            output_file_y = '%s/lrt_outfile_%4.4dnm_%04.1f_%04.1f_%04.1f_%04.1f.txt' % (fdir_tmp, wvl_y, cot, cer, sza, alb_y)
+            input_file_y  = '%s/lrt_inpfile_wvl-%4.4dnm_cot-%04.1f_cer-%04.1f_sza-%04.1f_alb-%04.1f.txt' % (fdir_tmp, wvl_y, cot, cer, sza, alb_y)
+            output_file_y = '%s/lrt_outfile_wvl-%4.4dnm_cot-%04.1f_cer-%04.1f_sza-%04.1f_alb-%04.1f.txt' % (fdir_tmp, wvl_y, cot, cer, sza, alb_y)
 
-            if prop_tag.lower() in ['radiance', 'rad']:
+            if prop_tag.lower() in ['radiance', 'rad', 'reflectance', 'ref']:
 
                 init_x = lrt.lrt_init_mono_rad(
                         output_altitude=output_altitude,
@@ -359,22 +380,40 @@ def gen_bispectral_lookup_table(
 
     # run
     #/--------------------------------------------------------------\#
-    lrt.lrt_run_mp(inits_x+inits_y)
+    lrt.lrt_run_mp(inits_x+inits_y+[init_x0, init_y0])
     #\--------------------------------------------------------------/#
 
     # read output
     #/--------------------------------------------------------------\#
-    data_x = lrt.lrt_read_uvspec(inits_x)
-    data_y = lrt.lrt_read_uvspec(inits_y)
+    if prop_tag.lower() in ['radiance', 'rad', 'reflectance', 'ref']:
+
+        data_x = lrt.lrt_read_uvspec_rad(inits_x)
+        data_y = lrt.lrt_read_uvspec_rad(inits_y)
+
+        prop_x = np.squeeze(data_x.rad).reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
+        prop_y = np.squeeze(data_y.rad).reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
+
+        if prop_tag.lower() in ['reflectance', 'ref']:
+
+            data_x0 = lrt.lrt_read_uvspec([init_x0])
+            data_y0 = lrt.lrt_read_uvspec([init_y0])
+            prop_x = np.pi*prop_x/(np.squeeze(data_x0.f_down)*np.cos(np.deg2rad(sza)))
+            prop_y = np.pi*prop_y/(np.squeeze(data_y0.f_down)*np.cos(np.deg2rad(sza)))
+
+    elif prop_tag.lower() in ['transmittance', 'reflectance', 'absorptance', 'albedo-top', 'albedo-bottom', 'all']:
+
+        data_x = lrt.lrt_read_uvspec(inits_x)
+        data_y = lrt.lrt_read_uvspec(inits_y)
+
+        # process calculations
+        #/--------------------------------------------------------------\#
+        prop_x = cal_radiative_property(data_x.f_up, data_x.f_down, tag=prop_tag).reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
+        prop_y = cal_radiative_property(data_y.f_up, data_y.f_down, tag=prop_tag).reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
+        #\--------------------------------------------------------------/#
+
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
-
-    # process calculations
-    #/----------------------------------------------------------------------------\#
-    prop_x = cal_radiative_property(data_x.f_up, data_x.f_down, tag=prop_tag).reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
-    prop_y = cal_radiative_property(data_y.f_up, data_y.f_down, tag=prop_tag).reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
-    #\----------------------------------------------------------------------------/#
 
 
     # save RT calculations
