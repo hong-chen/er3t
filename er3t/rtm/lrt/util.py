@@ -380,7 +380,7 @@ def gen_bispectral_lookup_table(
 
     # run
     #/--------------------------------------------------------------\#
-    lrt.lrt_run_mp(inits_x+inits_y+[init_x0, init_y0])
+    lrt.lrt_run_mp([init_x0, init_y0]+inits_x+inits_y)
     #\--------------------------------------------------------------/#
 
     # read output
