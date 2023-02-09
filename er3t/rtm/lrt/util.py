@@ -479,6 +479,127 @@ def gen_bispectral_lookup_table(
 
 
 
+def retrieve(prop1, prop2, cld_tau, cld_ref, prop1_data, prop2_data):
+
+    """
+    under development
+
+    inputs:
+        prop1: observed property (e.g., reflectance) of x;
+        prop2: observed property (e.g., reflectance) of y;
+        cld_tau(N_tau): array of cloud optical thickness;
+        cld_ref(N_ref): array of cloud effective radius;
+        prop1_data(N_tau, N_ref): modeled property (e.g., reflectance) of x;
+        prop2_data(N_tau, N_ref): modeled property (e.g., reflectance) of y;
+
+    Method:
+        1. Use matplotlib.path.contain_points to identify the LUT grid that the observational point falls into.
+        2. Apply bilinear interpolation to obtain the cloud optical thickness and effective radius for the
+        observed point from four adjacent modeled points.
+
+    Notes:
+        The cloud optical thickness and cloud effective radius will NOT be retrieved if the observed point is
+        outside the LUT.
+
+    Example:
+
+    import h5py
+    fname = 'data/0860nm_1620nm_00.h5'
+    f = h5py.File(fname, 'r')
+    prop1_data = f['wvl_0860'][...]
+    prop2_data = f['wvl_1620'][...]
+    cld_tau    = f['cld_tau'][...]
+    cld_ref    = f['cld_ref'][...]
+    f.close()
+
+    a1, a2 = retrieve(0.5, 0.4, cld_tau, cld_ref, prop1_data, prop2_data)
+    print(a1, a2)
+    a1, a2 = retrieve(0.0, 0.0, cld_tau, cld_ref, prop1_data, prop2_data)
+    print(a1, a2)
+    """
+
+    import numpy as np
+    import matplotlib.path as mpl_path
+    import multiprocessing as mp
+    from scipy import interpolate
+
+    # find the peripheral points of the whole LUT
+    points_x1 = prop1_data[0, :]        ; points_y1 = prop2_data[0, :]
+    points_x2 = prop1_data[:, -1]       ; points_y2 = prop2_data[:, -1]
+    points_x3 = prop1_data[-1, :][::-1] ; points_y3 = prop2_data[-1, :][::-1]
+    points_x4 = prop1_data[:, 0][::-1]  ; points_y4 = prop2_data[:, 0][::-1]
+
+    points_x  = np.hstack((points_x1, points_x2, points_x3, points_x4))
+    points_y  = np.hstack((points_y1, points_y2, points_y3, points_y4))
+    points_xy = np.transpose(np.vstack((points_x, points_y)))
+    grid_path_full = mpl_path.Path(points_xy, closed=True)
+
+    # do cloud retrievals if observed point is inside the LUT
+    if grid_path_full.contains_point((prop1, prop2)):
+
+        Nx = cld_tau.size
+        Ny = cld_ref.size
+
+        # loop to find index_x for cloud optical thickness
+        index_x   = 0
+        points_x  = np.append(prop1_data[index_x, :], prop1_data[index_x+1, :][::-1])
+        points_y  = np.append(prop2_data[index_x, :], prop2_data[index_x+1, :][::-1])
+        points_xy = np.transpose(np.vstack((points_x, points_y)))
+        grid_path = mpl_path.Path(points_xy, closed=True)
+
+        while (not grid_path.contains_point((prop1, prop2))) and (index_x<=Nx-3):
+
+            index_x  += 1
+            points_x  = np.append(prop1_data[index_x, :], prop1_data[index_x+1, :][::-1])
+            points_y  = np.append(prop2_data[index_x, :], prop2_data[index_x+1, :][::-1])
+            points_xy = np.transpose(np.vstack((points_x, points_y)))
+            grid_path = mpl_path.Path(points_xy, closed=True)
+
+        # loop to find index_y for cloud effective radius
+        index_y   = 0
+        points_x  = np.append(prop1_data[:, index_y], prop1_data[:, index_y+1][::-1])
+        points_y  = np.append(prop2_data[:, index_y], prop2_data[:, index_y+1][::-1])
+        points_xy = np.transpose(np.vstack((points_x, points_y)))
+        grid_path = mpl_path.Path(points_xy, closed=True)
+
+        while (not grid_path.contains_point((prop1, prop2))) and (index_y<=Ny-3):
+
+            index_y  += 1
+            points_x  = np.append(prop1_data[:, index_y], prop1_data[:, index_y+1][::-1])
+            points_y  = np.append(prop2_data[:, index_y], prop2_data[:, index_y+1][::-1])
+            points_xy = np.transpose(np.vstack((points_x, points_y)))
+            grid_path = mpl_path.Path(points_xy, closed=True)
+
+        points = np.zeros((4, 2))
+        points_tau = np.zeros(4)
+        points_ref = np.zeros(4)
+
+        points[0, :]  = np.array([prop1_data[index_x, index_y], prop2_data[index_x, index_y]])
+        points_tau[0] = cld_tau[index_x]
+        points_ref[0] = cld_ref[index_y]
+        points[1, :]  = np.array([prop1_data[index_x, index_y+1], prop2_data[index_x, index_y+1]])
+        points_tau[1] = cld_tau[index_x]
+        points_ref[1] = cld_ref[index_y+1]
+        points[2, :]  = np.array([prop1_data[index_x+1, index_y], prop2_data[index_x+1, index_y]])
+        points_tau[2] = cld_tau[index_x+1]
+        points_ref[2] = cld_ref[index_y]
+        points[3, :]  = np.array([prop1_data[index_x+1, index_y+1], prop2_data[index_x+1, index_y+1]])
+        points_tau[3] = cld_tau[index_x+1]
+        points_ref[3] = cld_ref[index_y+1]
+
+        tau = interpolate.griddata(points, points_tau, (prop1, prop2), method='linear')
+        ref = interpolate.griddata(points, points_ref, (prop1, prop2), method='linear')
+
+    else:
+
+        tau = -1.0
+        ref = -1.0
+
+    return tau, ref
+
+
+
+
 if __name__ == '__main__':
 
     pass
