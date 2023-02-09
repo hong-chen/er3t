@@ -167,7 +167,7 @@ def cal_radiative_property(f_up, f_down, topN=-1, bottomN=0, scaleN=1.0, tag='al
 
     if tag.lower() == 'transmittance':
         return transmittance
-    elif tag.lower() == 'reflectance-top':
+    elif tag.lower() == '_reflectance':
         return reflectance
     elif tag.lower() == 'absorptance':
         return absorptance
@@ -200,7 +200,7 @@ def gen_bispectral_lookup_table(
         fname=None,                                            # output file
         fdir_tmp='tmp-data',                                   # directory to store temporary data (string)
         fdir_lut='data/lut',                                   # directory to store lookup table data
-        prop_tag='radiance',                                   # property tag, can be "radiance", "albedo-top", "albedo-bottom", "reflectance", "transmittance", "absorptance" (string)
+        prop_tag='reflectance',                                # property tag, can be "radiance", "reflectance", "albedo-top", "albedo-bottom", "_reflectance", "transmittance", "absorptance" (string)
         atmosphere_file='%s/afglus.dat' % er3t.common.fdir_data_atmmod, # atmosphere profile
         overwrite=True,
         ):
@@ -246,8 +246,8 @@ def gen_bispectral_lookup_table(
     if cloud_type.lower() == 'water':
         cld_cfg['wc_properties'] = 'mie'
     else:
-        msg = '\nError [gen_bispectral_lookup_table]: currently we do not support <cloud_type="%s">' % (cloud_type)
-        sys.exit(msg)
+        msg = '\nError [gen_bispectral_lookup_table]: <cloud_type="%s"> is NOT supported.' % (cloud_type)
+        raise OSError(msg)
     #\--------------------------------------------------------------/#
 
     # aerosol setup
@@ -341,7 +341,7 @@ def gen_bispectral_lookup_table(
                         aer_cfg=aer_cfg,
                         )
 
-            elif prop_tag.lower() in ['transmittance', 'reflectance', 'absorptance', 'albedo-top', 'albedo-bottom', 'all']:
+            elif prop_tag.lower() in ['transmittance', '_reflectance', 'absorptance', 'albedo-top', 'albedo-bottom', 'all']:
 
                 init_x = lrt.lrt_init_mono(
                         output_altitude=output_altitude,
@@ -400,7 +400,7 @@ def gen_bispectral_lookup_table(
             prop_x = np.pi*prop_x/(np.squeeze(data_x0.f_down))
             prop_y = np.pi*prop_y/(np.squeeze(data_y0.f_down))
 
-    elif prop_tag.lower() in ['transmittance', 'reflectance-top', 'absorptance', 'albedo-top', 'albedo-bottom']:
+    elif prop_tag.lower() in ['transmittance', '_reflectance', 'absorptance', 'albedo-top', 'albedo-bottom']:
 
         data_x = lrt.lrt_read_uvspec(inits_x)
         data_y = lrt.lrt_read_uvspec(inits_y)
