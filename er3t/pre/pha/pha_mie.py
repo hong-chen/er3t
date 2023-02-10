@@ -194,7 +194,7 @@ class pha_mie_wc:
         with open(fname, 'wb') as f:
             pickle.dump(data, f)
 
-        print('Message [pha_mie_wc]: phase function for %.2fnm has been store in %s.' % (wvl0, fname))
+        print('Message [pha_mie_wc]: Phase function for %.2fnm has been stored at <%s>.' % (wvl0, fname))
 
         self.data = data
 
@@ -482,7 +482,7 @@ class pha_mie_wc_pmom:
         with open(fname, 'wb') as f:
             pickle.dump(data, f)
 
-        print('Message [pha_mie_wc]: phase function for %.2fnm has been store in %s.' % (wvl0, fname))
+        print('Message [pha_mie_wc]: Phase function for %.2fnm has been stored at <%s>.' % (wvl0, fname))
 
         self.data = data
 
