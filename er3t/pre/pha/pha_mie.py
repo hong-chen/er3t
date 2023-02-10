@@ -44,15 +44,15 @@ def read_pmom(fname):
     ref  = f.variables['reff'][...].data
 
     # single scattering albedo
-    ssa  = f.variables['ssa'][...].data.T
+    ssa  = f.variables['ssa'][...].data
 
     # legendre polynomial coefficients
-    pmom = f.variables['pmom'][...].data.T
+    pmom = f.variables['pmom'][...].data
 
     f.close()
 
     wvl = wvl * 1000.0       # from micron to nm
-    pmom = pmom[:, 0, :, :]  # pick the first of 4 stokes
+    pmom = pmom[:, :, 0, :]  # pick the first of 4 stokes
 
     return wvl, ref, ssa, pmom
 
@@ -146,12 +146,12 @@ class pha_mie_wc:
 
         Na = angles.size
         wvl, ref, ssa, pmom = read_pmom(self.fname_coef)
-        Npoly, Nreff, Nwvl = pmom.shape
+        Nwvl, Nreff, Npoly = pmom.shape
 
         if not self.interpolate:
             iwvl = np.argmin(np.abs(wvl-wvl0))
         else:
-            msg = 'Error [pha_mie_wc]: has not implemented interpolation for phase function yet.'
+            msg = 'Error [pha_mie_wc]: Interpolation has not been implemented.'
             raise ValueError(msg)
 
         pha = np.zeros((Na, Nreff), dtype=np.float64)
@@ -160,7 +160,7 @@ class pha_mie_wc:
 
         for ireff in range(Nreff):
 
-            pmom0 = pmom[:, ireff, iwvl]
+            pmom0 = pmom[iwvl, ireff, :]
 
             if pmom0[-1] > 0.001:
                 if self.verbose:
@@ -182,7 +182,7 @@ class pha_mie_wc:
                 'wvl' : {'data':wvl[iwvl]   , 'name':'Actual wavelength'  , 'unit':'nm'},
                 'ang' : {'data':angles      , 'name':'Angle'              , 'unit':'degree'},
                 'pha' : {'data':pha         , 'name':'Phase function'     , 'unit':'N/A'},
-                'ssa' : {'data':ssa[:, iwvl], 'name':'Single scattering albedo', 'unit':'N/A'},
+                'ssa' : {'data':ssa[iwvl, :], 'name':'Single scattering albedo', 'unit':'N/A'},
                 'asy' : {'data':asy         , 'name':'Asymmetry parameter'     , 'unit':'N/A'},
                 'ref' : {'data':ref         , 'name':'Effective radius'        , 'unit':'mm'}
                 }

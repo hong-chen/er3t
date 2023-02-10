@@ -1219,14 +1219,14 @@ def cal_ext(cot, cer, dz=1.0, Qe=2.0):
         cer: float or array, cloud effective radius in micro meter (10^-6 m)
     """
 
-    # liquid water path
+    # liquid water path [g/m^2]
     # from equation 7.86 in Petty's book
     #           3*lwp
     # cot = ---------------, where rho is the density of water
     #         2*rho*cer
     lwp  = 2.0/3000.0 * cot * cer
 
-    # liquid water content
+    # liquid water content [g/m^3]
     # assume vertically homogeneous distribution of cloud water
     lwc  = lwp / dz
 

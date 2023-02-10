@@ -331,9 +331,48 @@ def test_pha_mie_run(
     #\-----------------------------------------------------------------------------/
 
 
+def figure_asy(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
+
+    pha0 = pha_mie(wavelength=wavelength)
+
+    # figure
+    #/----------------------------------------------------------------------------\#
+    plt.close('all')
+    fig = plt.figure(figsize=(7.5, 7))
+    #/--------------------------------------------------------------\#
+
+    ax1 = fig.add_subplot(111)
+
+
+    ax1.plot(pha0.data['ref']['data'], pha0.data['asy']['data'], color='k', lw=2.0) #, extent=extent, vmin=0.0, vmax=0.5)
+
+    colors = mpl.cm.jet(np.linspace(0.0, 1.0, len(refs)))
+    patches_legend = []
+    for i, ref0 in enumerate(refs):
+        ax1.axvline(ref0, ls='--', color=colors[i, ...], lw=2.0, alpha=0.8)
+        patch0 = mpatches.Patch(color=colors[i, ...], label='CER=%d$\mu m$' % ref0)
+        patches_legend.append(patch0)
+
+    ax1.set_xlim((0, 25))
+    ax1.set_ylim((0.75, 0.9))
+    ax1.set_xlabel('Cloud Effective Radius [$\mu m$]')
+    ax1.set_ylabel('Asymmetry Parameter (g)')
+    #\--------------------------------------------------------------/#
+
+    ax1.legend(handles=patches_legend, loc='lower right', fontsize=16)
+
+    # save figure
+    #/--------------------------------------------------------------\#
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    plt.savefig('%s_wvl-%4.4dnm.png' % (_metadata['Function'], wavelength), bbox_inches='tight', metadata=_metadata)
+    #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
 
 
 if __name__ == '__main__':
 
-    test_pha_mie_run(cloud_effective_radius=5.0, overwrite=True)
-    test_pha_mie_run(cloud_effective_radius=20.0, overwrite=True)
+    figure_asy(wavelength=650.0, refs=[1, 5, 10, 15, 20])
+
+    # test_pha_mie_run(cloud_effective_radius=5.0, overwrite=True)
+    # test_pha_mie_run(cloud_effective_radius=20.0, overwrite=True)
