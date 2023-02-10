@@ -45,118 +45,6 @@ Ncpu    = 12
 
 
 
-
-def test_pha_mie(
-        wavelength=650.0,
-        cloud_effective_radius=5.0,
-        solver='3d',
-        overwrite=True,
-        plot=True,
-        ):
-
-    """
-    Test Mie phase function
-    """
-
-    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='tmp-data/%s/%s/wvl-%4.4dnm/cer-%04.1f' % (name_tag, _metadata['Function'], wavelength, cloud_effective_radius)
-
-    if not os.path.exists(fdir):
-        os.makedirs(fdir)
-
-    # define an atmosphere object
-    #/-----------------------------------------------------------------------------\
-    levels    = np.linspace(0.0, 20.0, 21)
-    fname_atm = '%s/atm.pk' % fdir
-    atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
-    #\-----------------------------------------------------------------------------/
-
-
-    # define an absorption object
-    #/-----------------------------------------------------------------------------\
-    fname_abs = '%s/abs.pk' % fdir
-    abs0      = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    #\-----------------------------------------------------------------------------/
-
-
-    # define an cloud object
-    #/-----------------------------------------------------------------------------\
-    fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
-    fname_les = '%s/les.pk' % fdir
-    cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
-    cld0.lay['cer']['data'][...] = cloud_effective_radius
-    #\-----------------------------------------------------------------------------/
-
-
-    # define mca_sca object
-    #/-----------------------------------------------------------------------------\
-    pha0 = pha_mie(wavelength=wavelength)
-
-    # for key in pha0.data.keys():
-    #     data0 = pha0.data[key]['data']
-    #     if isinstance(data0, np.ndarray):
-    #         print(key, data0.shape)
-
-
-    if False:
-
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(8, 6))
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(pha0.data['pha']['data'].T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
-        #\--------------------------------------------------------------/#
-        #/--------------------------------------------------------------\#
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        plt.savefig('%s_<pha_wvl-%4.4dnm_cer-%04.1fmm>.png' % (_metadata['Function'], wavelength, cloud_effective_radius), bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        #\----------------------------------------------------------------------------/#
-
-    sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-
-    if False:
-
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(8, 6))
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(pha0.data['pha']['data'].T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
-        #\--------------------------------------------------------------/#
-        #/--------------------------------------------------------------\#
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        cbar.set_label('', rotation=270, labelpad=4.0)
-        cbar.set_ticks([])
-        cax.axis('off')
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        plt.savefig('%s_<pha_wvl-%4.4dnm_cer-%04.1fmm>.png' % (_metadata['Function'], wavelength, cloud_effective_radius), bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        #\----------------------------------------------------------------------------/#
-    #\-----------------------------------------------------------------------------/
-
-
-    # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
-    #/-----------------------------------------------------------------------------\
-    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
-    atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-    atm_1ds   = [atm1d0]
-    atm_3ds   = [atm3d0]
-    #\-----------------------------------------------------------------------------/
-
 def test_pha_mie_run(
         wavelength=650.0,
         cloud_effective_radius=5.0,
@@ -197,73 +85,18 @@ def test_pha_mie_run(
     cld0      = cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
     cld0.lay['cer']['data'][...] = cloud_effective_radius
     #\-----------------------------------------------------------------------------/
-    print(cld0.lay['cer']['data'].mean())
 
 
     # define mca_sca object
     #/-----------------------------------------------------------------------------\
-    pha0 = pha_mie(wavelength=wavelength)
-
-    # for key in pha0.data.keys():
-    #     data0 = pha0.data[key]['data']
-    #     if isinstance(data0, np.ndarray):
-    #         print(key, data0.shape)
-
-
-    if False:
-
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(8, 6))
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(pha0.data['pha']['data'].T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
-        #\--------------------------------------------------------------/#
-        #/--------------------------------------------------------------\#
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        plt.savefig('%s_<pha_wvl-%4.4dnm_cer-%04.1fmm>.png' % (_metadata['Function'], wavelength, cloud_effective_radius), bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        #\----------------------------------------------------------------------------/#
-
-    sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-
-    if plot:
-
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(8, 6))
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(pha0.data['pha']['data'].T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
-        #\--------------------------------------------------------------/#
-        #/--------------------------------------------------------------\#
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        cbar.set_label('', rotation=270, labelpad=4.0)
-        cbar.set_ticks([])
-        cax.axis('off')
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        plt.savefig('%s_<pha_wvl-%4.4dnm_cer-%04.1fmm>.png' % (_metadata['Function'], wavelength, cloud_effective_radius), bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        #\----------------------------------------------------------------------------/#
+    pha0 = pha_mie(wavelength=wavelength, reuse=False)
+    sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=True)
     #\-----------------------------------------------------------------------------/
 
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
     #/-----------------------------------------------------------------------------\
-    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
+    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=True)
     atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm_1ds   = [atm1d0]
     atm_3ds   = [atm3d0]
@@ -331,9 +164,10 @@ def test_pha_mie_run(
     #\-----------------------------------------------------------------------------/
 
 
+
 def figure_pha(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
 
-    pha0 = pha_mie(wavelength=wavelength)
+    pha0 = pha_mie(wavelength=wavelength, reuse=False)
 
     # figure
     #/----------------------------------------------------------------------------\#
@@ -367,10 +201,9 @@ def figure_pha(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
-
 def figure_asy(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
 
-    pha0 = pha_mie(wavelength=wavelength)
+    pha0 = pha_mie(wavelength=wavelength, reuse=False)
 
     # figure
     #/----------------------------------------------------------------------------\#
@@ -406,10 +239,9 @@ def figure_asy(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
-
 def figure_ssa(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
 
-    pha0 = pha_mie(wavelength=wavelength)
+    pha0 = pha_mie(wavelength=wavelength, reuse=False)
 
     # figure
     #/----------------------------------------------------------------------------\#
@@ -441,6 +273,7 @@ def figure_ssa(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
     plt.savefig('%s_wvl-%4.4dnm.png' % (_metadata['Function'], wavelength), bbox_inches='tight', metadata=_metadata)
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
+
 
 
 if __name__ == '__main__':
