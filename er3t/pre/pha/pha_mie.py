@@ -443,7 +443,7 @@ class pha_mie_wc_pmom:
         if not self.interpolate:
             iwvl = np.argmin(np.abs(wvl-wvl0))
         else:
-            msg = 'Error [pha_mie_wc]: Interpolation has not been implemented.'
+            msg = '\nError [pha_mie_wc]: Interpolation has not been implemented.'
             raise ValueError(msg)
 
         pha = np.zeros((Na, Nreff), dtype=np.float64)
@@ -455,9 +455,8 @@ class pha_mie_wc_pmom:
             pmom0 = pmom[iwvl, ireff, :]
 
             if pmom0[-1] > 0.001:
-                if self.verbose:
-                    msg = 'Warning [pha_mie]: Ref=%.2f Legendre series did not converge.' % ref[ireff]
-                    warnings.warn(msg)
+                msg = '\nWarning [pha_mie]: Ref=%.2f Legendre series did not converge.' % ref[ireff]
+                warnings.warn(msg)
 
             pmom0 = pmom0/(2.0*np.arange(Npoly)+1.0)
 
@@ -491,6 +490,4 @@ class pha_mie_wc_pmom:
 
 if __name__ == '__main__':
 
-    pha0 = pha_mie_wc()
-    # read_pmom('%s/pha/wc.sol.mie.cdf' % er3t.common.fdir_data)
     pass

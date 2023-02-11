@@ -89,7 +89,7 @@ def test_pha_mie_run(
 
     # define mca_sca object
     #/-----------------------------------------------------------------------------\
-    pha0 = pha_mie(wavelength=wavelength, reuse=False)
+    pha0 = pha_mie(wavelength=wavelength, overwrite=True)
     sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=True)
     #\-----------------------------------------------------------------------------/
 
@@ -167,7 +167,7 @@ def test_pha_mie_run(
 
 def figure_pha(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
 
-    pha0 = pha_mie(wavelength=wavelength, reuse=False)
+    pha0 = pha_mie(wavelength=wavelength, overwrite=True)
 
     # figure
     #/----------------------------------------------------------------------------\#
@@ -203,7 +203,7 @@ def figure_pha(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
 
 def figure_asy(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
 
-    pha0 = pha_mie(wavelength=wavelength, reuse=False)
+    pha0 = pha_mie(wavelength=wavelength, overwrite=True)
 
     # figure
     #/----------------------------------------------------------------------------\#
@@ -241,7 +241,7 @@ def figure_asy(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
 
 def figure_ssa(wavelength=650.0, refs=[1, 5, 10, 15, 20]):
 
-    pha0 = pha_mie(wavelength=wavelength, reuse=False)
+    pha0 = pha_mie(wavelength=wavelength, overwrite=True)
 
     # figure
     #/----------------------------------------------------------------------------\#

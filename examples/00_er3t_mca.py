@@ -1327,16 +1327,16 @@ if __name__ == '__main__':
 
     # irradiance simulation
     #/-----------------------------------------------------------------------------\
-    # test_01_flux_clear_sky()
-    # test_02_flux_les_cloud_3d()
-    # test_03_flux_les_cloud_3d_aerosol_1d()
-    # test_04_flux_les_cloud_3d_aerosol_3d()
+    test_01_flux_clear_sky()
+    test_02_flux_les_cloud_3d()
+    test_03_flux_les_cloud_3d_aerosol_1d()
+    test_04_flux_les_cloud_3d_aerosol_3d()
     #\-----------------------------------------------------------------------------/
 
     # radiance simulation
     #/-----------------------------------------------------------------------------\
     test_05_rad_les_cloud_3d()
-    # test_06_rad_cld_gen_hem()
+    test_06_rad_cld_gen_hem()
     #\-----------------------------------------------------------------------------/
 
     pass
