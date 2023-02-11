@@ -71,7 +71,7 @@ class pha_mie_wc:
         wavelength: wavelength in nm, float value, default is 500.0
         angles: numpy array, angles to extract mie phase functions at
         *interpolate: boolen, whether to interpolate phase functions based on the wavelength, default is False
-        reuse: boolen, whether to reuse the pre-existing phase functions stored at er3t/data/pha/mie, default is True
+        overwrite: boolen, whether to overwrite the pre-existing phase functions stored at er3t/data/pha/mie, default is True
         verbose: boolen, whether to print all the messages, default is False
 
     Output:
@@ -104,13 +104,13 @@ class pha_mie_wc:
                  )),
                  fdir_pha_mie = '%s/pha/mie' % er3t.common.fdir_data_tmp,
                  interpolate=False,
-                 reuse=True,
+                 overwrite=True,
                  verbose=False):
 
 
         self.interpolate = interpolate
-        self.reuse = reuse
-        self.verbose = verbose
+        self.overwrite   = overwrite
+        self.verbose     = verbose
 
         if self.reference not in er3t.common.references:
             er3t.common.references.append(self.reference)
@@ -128,7 +128,7 @@ class pha_mie_wc:
 
         fname = '%s/pha_mie_wc_%09.4fnm.pk' % (fdir, wvl0)
 
-        if self.reuse:
+        if not self.overwrite:
             if os.path.exists(fname):
                 with open(fname, 'rb') as f0:
                     data0 = pickle.load(f0)
@@ -359,7 +359,7 @@ class pha_mie_wc_pmom:
         wavelength: wavelength in nm, float value, default is 500.0
         angles: numpy array, angles to extract mie phase functions at
         *interpolate: boolen, whether to interpolate phase functions based on the wavelength, default is False
-        reuse: boolen, whether to reuse the pre-existing phase functions stored at er3t/data/pha/mie, default is True
+        overwrite: boolen, whether to overwrite the pre-existing phase functions stored at er3t/data/pha/mie, default is True
         verbose: boolen, whether to print all the messages, default is False
 
     Output:
@@ -392,12 +392,12 @@ class pha_mie_wc_pmom:
                  )),
                  fdir_pha_mie = '%s/pha/mie' % er3t.common.fdir_data_tmp,
                  interpolate=False,
-                 reuse=True,
+                 overwrite=True,
                  verbose=False):
 
 
         self.interpolate = interpolate
-        self.reuse = reuse
+        self.overwrite= overwrite
         self.verbose = verbose
 
         if self.reference not in er3t.common.references:
@@ -416,7 +416,7 @@ class pha_mie_wc_pmom:
 
         fname = '%s/pha_mie_wc_%09.4fnm.pk' % (fdir, wvl0)
 
-        if self.reuse:
+        if not self.overwrite:
             if os.path.exists(fname):
                 with open(fname, 'rb') as f0:
                     data0 = pickle.load(f0)
