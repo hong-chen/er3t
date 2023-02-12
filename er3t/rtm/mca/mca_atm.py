@@ -157,8 +157,6 @@ class mca_atm_3d:
                 ['Atm_ny']
                 ['Atm_dx']
                 ['Atm_dy']
-                ['Atm_dy']
-                ['Atm_dy']
                 ['Atm_nz3']
                 ['Atm_iz3l']
                 ['Atm_tmpa3d']

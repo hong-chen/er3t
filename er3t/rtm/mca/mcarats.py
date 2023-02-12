@@ -138,6 +138,9 @@ class mcarats_ng:
         self.solver  = solver
         self.target  = target
 
+        self.Nx = 1
+        self.Ny = 1
+
 
         if weights is None:
             self.np_mode = 'evenly'
@@ -325,6 +328,11 @@ class mcarats_ng:
                                 atm_3d.nml['Atm_inpfile']['data'] = os.path.relpath(atm_3d.nml['Atm_inpfile']['data'], start=self.fdir)
                             self.nml[ig][key] = atm_3d.nml[key]['data']
 
+                self.Nx = atm_3d.nml['Atm_nx']['data']
+                self.Ny = atm_3d.nml['Atm_ny']['data']
+                self.dx = atm_3d.nml['Atm_dx']['data']
+                self.dy = atm_3d.nml['Atm_dy']['data']
+
                 if self.target == 'radiance':
                     if 'satellite' in self.sensor_type.lower():
                         if 'Atm_nx' in atm_3d.nml.keys() and 'Atm_ny' in atm_3d.nml.keys():
@@ -455,6 +463,7 @@ class mcarats_ng:
         print('                 General Information                      ')
         print('               Simulation : %s %s' % (self.solver, self.target.title()))
         print('               Wavelength : %s' % (self.wvl_info))
+
         print('               Date (DOY) : %s (%d)' % (self.date.strftime('%Y-%m-%d'), self.date.timetuple().tm_yday))
 
         print('       Solar Zenith Angle : %.4f° (0 at local zenith)' % self.solar_zenith_angle)
@@ -462,9 +471,9 @@ class mcarats_ng:
 
         if self.target == 'radiance':
             if self.sensor_zenith_angle < 90.0:
-                print('      Sensor Zenith Angle : %.4f° (Downward-looking)' % self.sensor_zenith_angle)
+                print('      Sensor Zenith Angle : %.4f° (downward-looking)' % self.sensor_zenith_angle)
             else:
-                print('      Sensor Zenith Angle : %.4f° (Upward-looking)' % self.sensor_zenith_angle)
+                print('      Sensor Zenith Angle : %.4f° (upward-looking)' % self.sensor_zenith_angle)
             print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
             print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
 
@@ -474,9 +483,13 @@ class mcarats_ng:
             print('           Surface Albedo : 2D domain')
 
         if self.sca is None:
-            print('           Phase Function : HG (g=0.85)')
+            print('           Phase Function : Henyey-Greenstein (g=0.85)')
         else:
             print('           Phase Function : Mie')
+
+        if (self.Nx > 1) | (self.Ny > 1):
+            print('     Domain Size (Nx, Ny) : (%d, %d)' % (self.Nx, self.Ny))
+            print('      Pixel Res. (dx, dy) : (%.2f km, %.2f km)' % (self.dx/1000.0, self.dy/1000.0))
 
         print('  Number of Photons / Set : %.1e (%s over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
         print('           Number of Runs : %s (g) * %d (set)' % (self.Ng, self.Nrun))

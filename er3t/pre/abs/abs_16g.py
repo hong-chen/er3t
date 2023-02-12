@@ -67,7 +67,7 @@ class abs_16g:
         self.verbose   = verbose
         self.wvl       = wavelength
         self.nwl       = 1
-        self.wvl_info  = '%.2f nm (applied with SSFR slit)' % wavelength
+        self.wvl_info  = '%.2f nm (applied SSFR slit)' % wavelength
 
         if self.reference not in er3t.common.references:
             er3t.common.references.append(self.reference)
