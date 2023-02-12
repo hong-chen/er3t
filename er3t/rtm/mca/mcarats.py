@@ -140,7 +140,7 @@ class mcarats_ng:
 
 
         if weights is None:
-            self.np_mode = 'even'
+            self.np_mode = 'evenly'
             weights = np.repeat(1.0/self.Ng, Ng)
         else:
             self.np_mode = 'weighted'
