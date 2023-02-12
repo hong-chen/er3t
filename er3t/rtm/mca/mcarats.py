@@ -452,8 +452,16 @@ class mcarats_ng:
         print('----------------------------------------------------------')
         print('                 General Information                      ')
         print('                     Date : %s' % self.date.strftime('%Y-%m-%d'))
-        print('       Solar Zenith Angle : %.2f' % self.solar_zenith_angle)
-        print('      Solar Azimuth Angle : %.2f' % self.solar_azimuth_angle)
+        print('       Solar Zenith Angle : %.2f° (0:Local Zenith)' % self.solar_zenith_angle)
+        print('      Solar Azimuth Angle : %.2f° (0:North-of; 90°:East-of)' % self.solar_azimuth_angle)
+
+        if self.target == 'radiance':
+            if self.sensor_zenith_angle < 90.0:
+                print('      Sensor Zenith Angle : %.2f° (Downward-Looking)' % self.sensor_zenith_angle)
+            else:
+                print('      Sensor Zenith Angle : %.2f° (Upward-Looking)' % self.sensor_zenith_angle)
+            print('     Sensor Azimuth Angle : %.2f° (0:North-of; 90°:East-of)' % self.sensor_azimuth_angle)
+            print('          Sensor Altitude : %d km' % (self.sensor_altitude/1000.0))
 
         if self.sfc_2d is None:
             print('           Surface Albedo : %.2f' % self.surface_albedo)
