@@ -60,6 +60,7 @@ class mca_atm_1d:
             self.abs = abs_obj
 
         self.Ng = self.abs.Ng
+        self.wvl_info = self.abs.wvl_info
 
         self.pre_mca_1d_atm()
 

@@ -207,6 +207,7 @@ class abs_oco_idl:
 
         self.verbose   = verbose
         self.wvl       = wavelength
+        self.wvl_info  = '%.4f nm (applied with OCO-2 slit)' % wavelength
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -239,6 +240,7 @@ class abs_oco_idl:
                 self.nwl   = obj.nwl
                 self.coef  = obj.coef
                 self.Ng    = obj.Ng
+                self.wvl_info   = obj.wvl_info
             else:
                 sys.exit('Error   [abs_oco_idl]: \'%s\' is not the correct pickle file to load.' % fname)
 

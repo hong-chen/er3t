@@ -67,6 +67,7 @@ class abs_16g:
         self.verbose   = verbose
         self.wvl       = wavelength
         self.nwl       = 1
+        self.wvl_info  = '%.2f nm (applied with SSFR slit)' % wavelength
 
         if self.reference not in er3t.common.references:
             er3t.common.references.append(self.reference)
@@ -101,6 +102,7 @@ class abs_16g:
                 self.wvl   = obj.wvl
                 self.nwl   = obj.nwl
                 self.coef  = obj.coef
+                self.wvl_info = obj.wvl_info
             else:
                 sys.exit('Error   [abs_16g]: \'%s\' is not the correct pickle file to load.' % fname)
 

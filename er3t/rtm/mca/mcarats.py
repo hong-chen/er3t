@@ -66,8 +66,10 @@ class mcarats_ng:
                  sca                 = None,                    \
 
                  Ng                  = 16,                      \
-                 fdir                = 'data/tmp/mca',          \
-                 Nrun                = 1,                       \
+                 weights             = None,                    \
+
+                 fdir                = 'tmp-data/sim',          \
+                 Nrun                = 3,                       \
                  Ncpu                = 'auto',                  \
                  mp_mode             = 'py',                    \
                  overwrite           = True,                    \
@@ -88,8 +90,7 @@ class mcarats_ng:
                  sensor_ypos         = 0.5,                     \
 
                  solver              = '3d',                       \
-                 photons             = 1e6,                     \
-                 weights             = None,                    \
+                 photons             = 1e7,                     \
 
                  verbose             = False,                   \
                  quiet               = False                    \
@@ -210,7 +211,6 @@ class mcarats_ng:
         self.run_check()
 
 
-
     def init_wld(self, tune=False, verbose=False, \
         sensor_zenith_angle=0.0, sensor_azimuth_angle=0.0, \
         sensor_type='satellite', sensor_altitude=705000.0, sensor_xpos=0.5, sensor_ypos=0.5):
@@ -311,6 +311,8 @@ class mcarats_ng:
                     for key in atm_1d.nml[ig].keys():
 
                         self.nml[ig][key] = atm_1d.nml[ig][key]['data']
+
+                self.wvl_info = atm_1d.wvl_info
 
             if len(atm_3ds) > 0:
 
@@ -451,17 +453,20 @@ class mcarats_ng:
 
         print('----------------------------------------------------------')
         print('                 General Information                      ')
-        print('                     Date : %s' % self.date.strftime('%Y-%m-%d'))
-        print('       Solar Zenith Angle : %.2f° (0:Local Zenith)' % self.solar_zenith_angle)
-        print('      Solar Azimuth Angle : %.2f° (0:North-of; 90°:East-of)' % self.solar_azimuth_angle)
+        print('               Simulation : %s %s' % (self.solver, self.target.title()))
+        print('               Wavelength : %s' % (self.wvl_info))
+        print('               Date (DOY) : %s (%d)' % (self.date.strftime('%Y-%m-%d'), self.date.timetuple().tm_yday))
+
+        print('       Solar Zenith Angle : %.4f° (0 at local zenith)' % self.solar_zenith_angle)
+        print('      Solar Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.solar_azimuth_angle)
 
         if self.target == 'radiance':
             if self.sensor_zenith_angle < 90.0:
-                print('      Sensor Zenith Angle : %.2f° (Downward-Looking)' % self.sensor_zenith_angle)
+                print('      Sensor Zenith Angle : %.4f° (Downward-looking)' % self.sensor_zenith_angle)
             else:
-                print('      Sensor Zenith Angle : %.2f° (Upward-Looking)' % self.sensor_zenith_angle)
-            print('     Sensor Azimuth Angle : %.2f° (0:North-of; 90°:East-of)' % self.sensor_azimuth_angle)
-            print('          Sensor Altitude : %d km' % (self.sensor_altitude/1000.0))
+                print('      Sensor Zenith Angle : %.4f° (Upward-looking)' % self.sensor_zenith_angle)
+            print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
+            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
 
         if self.sfc_2d is None:
             print('           Surface Albedo : %.2f' % self.surface_albedo)
@@ -473,11 +478,9 @@ class mcarats_ng:
         else:
             print('           Phase Function : Mie')
 
-        print('  Number of Photons / Set : %.1e (%s distribution over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
-        print('           Number of Runs : %s(g) * %d(set)' % (self.Ng, self.Nrun))
-        print('           Number of CPUs : %d(used) of %d(total)' % (self.Ncpu, self.Ncpu_total))
-        print('                   Target : %s' % self.target.title())
-        print('                   Solver : %s' % self.solver)
+        print('  Number of Photons / Set : %.1e (%s over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
+        print('           Number of Runs : %s (g) * %d (set)' % (self.Ng, self.Nrun))
+        print('           Number of CPUs : %d (used) of %d (total)' % (self.Ncpu, self.Ncpu_total))
         print('----------------------------------------------------------')
 
 
