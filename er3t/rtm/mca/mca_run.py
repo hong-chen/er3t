@@ -134,12 +134,12 @@ class mca_run:
                 from tqdm import tqdm
 
                 with mp.Pool(processes=self.Ncpu) as pool:
-                    r = list(tqdm(pool.imap(execute_command, self.commands), total=len(self.commands)))
+                    r = list(tqdm(pool.imap_unordered(execute_command, self.commands), total=len(self.commands)))
 
             except ImportError:
 
                 with mp.Pool(processes=self.Ncpu) as pool:
-                    pool.outputs = pool.map(execute_command, self.commands)
+                    pool.outputs = pool.map_async(execute_command, self.commands)
                     pool.close()
                     pool.join()
 

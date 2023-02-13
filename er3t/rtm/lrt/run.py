@@ -57,12 +57,12 @@ def lrt_run_mp(inits, Ncpu=None):
 
         print('\nMessage [lrt_run_mp]: running libRadtran ...')
         with mp.Pool(processes=Ncpu) as pool:
-            r = list(tqdm(pool.imap(lrt_run, inits), total=len(inits)))
+            r = list(tqdm(pool.imap_unordered(lrt_run, inits), total=len(inits)))
 
     except ImportError:
 
         pool = mp.Pool(processes=Ncpu)
-        pool.outputs = pool.map(lrt_run, inits)
+        pool.outputs = pool.map_async(lrt_run, inits)
         pool.close()
         pool.join()
 
