@@ -471,9 +471,9 @@ class mcarats_ng:
 
         if self.target == 'radiance':
             if self.sensor_zenith_angle < 90.0:
-                print('      Sensor Zenith Angle : %.4f° (downward-looking)' % self.sensor_zenith_angle)
+                print('      Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % self.sensor_zenith_angle)
             else:
-                print('      Sensor Zenith Angle : %.4f° (upward-looking)' % self.sensor_zenith_angle)
+                print('      Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % self.sensor_zenith_angle)
             print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
             print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
 
