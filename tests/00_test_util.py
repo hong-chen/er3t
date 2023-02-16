@@ -5,6 +5,7 @@ Purpose:
 
 import os
 import sys
+import time
 import glob
 import datetime
 import multiprocessing as mp
@@ -163,6 +164,23 @@ def test_viirs():
     pass
 
 
+def func_run(n):
+
+    time.sleep(n)
+
+    print(n)
+    return n
+
+def test_mp():
+
+
+    import multiprocessing as mp
+
+
+
+
+    pass
+
 
 
 def main():
@@ -185,8 +203,10 @@ if __name__ == '__main__':
 
     # test_download_worldview() # passed test on 2022-08-19
 
-    test_download_laads()
+    # test_download_laads()
 
     # test_viirs()
+    for i in range(5):
+        func_run(i)
 
     # main()
