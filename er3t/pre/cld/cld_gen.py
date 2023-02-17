@@ -4,7 +4,7 @@ import pickle
 import warnings
 import numpy as np
 from er3t.pre.atm import atm_atmmod
-from er3t.util import downscale
+from er3t.util import downscale, check_equidistant
 
 
 
@@ -179,10 +179,11 @@ class cld_gen_hem:
         if self.verbose:
             print('Message [cld_gen_hem]: Generating an artificial 3D cloud field filled with hemispherical clouds...')
 
-        dz = self.altitude[1:]-self.altitude[:-1]
-        if np.unique(dz).size > 1:
+        if not check_equidistant(self.altitude):
             msg = '\nWarning [cld_gen_hem]: Only support equidistant altitude (z), as well as equidistant x and y.'
             warnings.warn(msg)
+
+        dz = self.altitude[1:]-self.altitude[:-1]
 
         self.x = np.arange(self.Nx) * self.dx
         self.y = np.arange(self.Ny) * self.dy
@@ -526,6 +527,7 @@ class cld_gen_hom:
             dy=0.1,
             cot0=15.0,
             cer0=10.0,
+            atm_obj=None,
             overwrite=False,
             verbose=True
             ):
@@ -537,8 +539,6 @@ class cld_gen_hom:
         self.Ny = Ny
         self.dx = dx
         self.dy = dy
-        self.cot0 = cot0
-        self.cer0 = cer0
 
         self.verbose = verbose     # verbose tag
 
@@ -558,7 +558,7 @@ class cld_gen_hom:
         elif ((self.fname is not None) and (os.path.exists(self.fname)) and (overwrite)) or \
              ((self.fname is not None) and (not os.path.exists(self.fname))):
 
-            self.run()
+            self.run(cot0, cer0, atm_obj=atm_obj)
             self.dump(self.fname)
         #\--------------------------------------------------------------/#
 
@@ -604,40 +604,22 @@ class cld_gen_hom:
                 msg = 'Error [cld_gen_hom]: <%s> is not the correct pickle file to load.' % fname
                 raise OSError(msg)
 
-    def run(self):
+    def run(self, cot0, cer0, atm_obj=None):
 
         if self.verbose:
-            print('Message [cld_gen_hom]: Generating an artificial 3D cloud field filled with hemispherical clouds...')
+            print('Message [cld_gen_hom]: Generating an artificial homogeneous 3D cloud field ...')
 
-        dz = self.altitude[1:]-self.altitude[:-1]
-        if np.unique(dz).size > 1:
+        if not check_equidistant(self.altitude):
             msg = 'Warning [cld_gen_hom]: Only support equidistant altitude (z), as well as equidistant x and y.'
             warnings.warn(msg)
 
         self.x = np.arange(self.Nx) * self.dx
         self.y = np.arange(self.Ny) * self.dy
 
+        dz = self.altitude[1:]-self.altitude[:-1]
         self.dz = dz[0]
-        altitude_new  = np.arange(self.altitude[0], min([self.altitude[-1], max(self.radii)/self.w2h_ratio+self.altitude[0]])+self.dz, self.dz)
-        self.altitude = altitude_new
         self.z  = self.altitude-self.altitude[0]
         self.Nz = self.z.size
-
-        self.x_2d, self.y_2d = np.meshgrid(self.x, self.y, indexing='ij')
-        self.x_3d, self.y_3d, self.z_3d= np.meshgrid(self.x, self.y, self.z, indexing='ij')
-
-        self.clouds   = []
-        self.space_3d = np.zeros_like(self.x_3d)
-        self.where_2d = np.ones((self.Nx, self.Ny))
-        self.can_add_more = True
-        self.cloud_frac   = 0.0
-
-        radii = np.array(self.radii)
-        if self.weights is not None:
-            self.weights = np.array(self.weights)
-
-        while (self.cloud_frac<self.cloud_frac_tgt) and (self.can_add_more):
-            self.add_hem_cloud(np.random.choice(self.radii, p=self.weights), min_dist=self.min_dist, w2h_ratio=self.w2h_ratio, limit=1)
 
         self.lev = {}
         alt_lev = np.append(self.altitude-self.dz/2.0, self.altitude[-1]+self.dz/2.0)
@@ -658,13 +640,20 @@ class cld_gen_hom:
         thickness = self.lev['altitude']['data'][1:] - self.lev['altitude']['data'][:-1]
         self.lay['thickness'] = {'data':thickness, 'name':'Layer thickness', 'units':'km'}
 
-        atm  = atm_atmmod(levels=alt_lev)
-        t_1d = atm.lay['temperature']['data']
+        # get temperature profile
+        #/----------------------------------------------------------------------------\#
+        if atm_obj is None:
+            atm_obj = atm_atmmod(levels=alt_lev)
+            t_1d = atm_obj.lay['temperature']['data']
+        else:
+            t_1d = np.interp(self.lay['altitude'], atm_obj.lay['altitude']['data'], atm_obj.lay['temperature']['data'])
+        #\----------------------------------------------------------------------------/#
+
         t_3d = np.empty((self.Nx, self.Ny, self.Nz), dtype=t_1d.dtype)
         t_3d[...] = t_1d[None, None, :]
         self.lay['temperature'] = {'data':t_3d, 'name':'Temperature', 'units':'K'}
 
-        self.cal_cld_opt_prop()
+        self.cal_cld_opt_prop(cot0=cot0, cer0=cer0)
 
     def dump(self, fname):
 
@@ -674,7 +663,7 @@ class cld_gen_hom:
                 print('Message [cld_gen_hom]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
 
-    def cal_cld_opt_prop(self, ext0=0.03, cer0=12.0, cot_scale=1.0):
+    def cal_cld_opt_prop(self, cot0=0.03, cer0=12.0, cot_scale=1.0):
 
         """
         Assign cloud optical properties, e.g., cloud optical thickness, cloud effective radius
@@ -684,76 +673,36 @@ class cld_gen_hom:
         cot_scale=: keyword argument, default=1.0, scale factor for cloud optical thickness
         """
 
+        data0 = np.zeros((self.Nx, self.Ny, self.Nz), dtype=np.float64)
+
         # cloud effective radius (3D)
-        data = self.space_3d.copy()
-        data[data>0] = cer0
+        #/----------------------------------------------------------------------------\#
+        data = data0.copy()
+        data[...] = cer0
         self.lay['cer'] = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
+        #\----------------------------------------------------------------------------/#
 
         # extinction coefficients (3D)
-        data = ext0*cot_scale*self.space_3d
+        #/----------------------------------------------------------------------------\#
+        cot0_ = cot0*cot_scale/self.Nz
+        ext0 = cot0_/self.dz/1000.0
+        data = data0.copy()
+        data[...] = ext0
         self.lay['extinction'] = {'data':data, 'name':'Extinction coefficients', 'units':'m^-1'}
+        #\----------------------------------------------------------------------------/#
 
         # cloud optical thickness (3D)
-        data = data*self.dz*1000.0
+        #/----------------------------------------------------------------------------\#
+        data = data0.copy()
+        data[...] = cot0_
         self.lay['cot'] = {'data':data, 'name':'Cloud optical thickness', 'units':'N/A'}
+        #\----------------------------------------------------------------------------/#
 
         # column integrated cloud optical thickness
+        #/----------------------------------------------------------------------------\#
         self.lev['cot_2d'] = {'data':np.sum(data, axis=-1), 'name':'Cloud optical thickness', 'units':'N/A'}
+        #\----------------------------------------------------------------------------/#
 
-        # cloud top height
-        data = self.space_3d*self.dz
-        self.lev['cth_2d'] = {'data':np.sum(data, axis=-1)+self.lev['altitude']['data'][0], 'name':'Cloud top height', 'units':'km'}
-
-    def update_clouds(
-            self,
-            w2h_ratio=2.0,
-            cot_scale=1.0,
-            coarsen=[1, 1, 1]
-            ):
-
-        """
-        Purpose: update existing cloud field with new
-                 1) width-to-height ratio (w2h_ratio)
-                 2) scale factor for cloud optical thickness (cot_scale)
-                 3) coarsening factors in x, y, and z directions (coarsen)
-        """
-
-
-        self.space_3d = np.zeros_like(self.x_3d)
-
-        for cloud0 in self.clouds:
-
-            radius   = cloud0['radius']
-            index_x0 = cloud0['index_x']
-            index_y0 = cloud0['index_y']
-
-            loc_x = self.x[index_x0]
-            loc_y = self.y[index_y0]
-
-            ndx = int(radius//self.dx)
-            index_x_s = max((0, index_x0-ndx-1))
-            index_x_e = min((self.x.size-1, index_x0+ndx+1))
-
-            ndy = int(radius//self.dy)
-            index_y_s = max((0, index_y0-ndy-1))
-            index_y_e = min((self.y.size-1, index_y0+ndy+1))
-
-            logic_cloud0 = ((self.x_3d[index_x_s:index_x_e, index_y_s:index_y_e, :]-loc_x)**2 + \
-                            (self.y_3d[index_x_s:index_x_e, index_y_s:index_y_e, :]-loc_y)**2 + \
-                            (self.z_3d[index_x_s:index_x_e, index_y_s:index_y_e, :]*w2h_ratio)**2) <= radius**2
-            self.space_3d[index_x_s:index_x_e, index_y_s:index_y_e, :][logic_cloud0] = 1
-
-            if w2h_ratio < cloud0['w2h_ratio'] and self.verbose:
-                msg = 'Warning [cld_gen_hom]: Cloud %2.2d is taller than before, cloud top might be cutted.' % cloud0['ID']
-                warnings.warn(msg)
-
-            cloud0['w2h_ratio'] = w2h_ratio
-
-        self.cal_cld_opt_prop(cot_scale=cot_scale)
-
-        # downscale (coarsen) data if needed
-        if any([i!=1 for i in coarsen]):
-            self.downscale(coarsen)
 
     def downscale(self, coarsen):
 
