@@ -480,16 +480,6 @@ class cld_gen_hom:
     Output:
 
         self.fname     : absolute file path to the pickle file
-        self.clouds    : a list of Python dictionaries that represent all the hemispherical clouds
-        self.cloud_frac: cloud fraction of the created scene
-        self.x_3d
-        self.y_3d
-        self.z_3d      : x, y, z in 3D
-        self.space_3d  : 0 and 1 values in (x, y, z), 1 indicates cloudy
-        self.x_2d
-        self.y_2d      : x, y in 2D
-        self.min_dist  : minimum distance between clouds
-        self.w2h_ratio : width to height ration of the clouds
 
         self.lay
                 ['x']
@@ -511,7 +501,6 @@ class cld_gen_hom:
         self.lev
                 ['altitude']
                 ['cot_2d']        (x, y)
-                ['cth_2d']        (x, y)
 
     """
 
@@ -525,14 +514,18 @@ class cld_gen_hom:
             Ny=10,
             dx=0.1,
             dy=0.1,
-            cot0=15.0,
+            cot0=10.0,
             cer0=10.0,
             atm_obj=None,
             overwrite=False,
             verbose=True
             ):
 
-        self.fname    = os.path.abspath(fname) # file name of the pickle file
+        if fname is not None:
+            self.fname = os.path.abspath(fname) # file name of the pickle file
+        else:
+            self.fname = fname
+
         self.altitude = altitude               # in km
 
         self.Nx = Nx
@@ -566,8 +559,7 @@ class cld_gen_hom:
         #/--------------------------------------------------------------\#
         else:
 
-            msg = 'Error [cld_gen_hom]: Please specify file name of pickle file at <fname=>. For example,\ncld0 = cld_gen_hom(fname=\'tmp-data/cloud.pk\')'
-            raise OSError(msg)
+            self.run(cot0, cer0, atm_obj=atm_obj)
         #\--------------------------------------------------------------/#
 
         #\----------------------------------------------------------------------------/#
@@ -587,8 +579,6 @@ class cld_gen_hom:
                     print('Message [cld_gen_hom]: Loading <%s> ...' % fname)
                 self.fname      = obj.fname
                 self.verbose    = obj.verbose
-                self.cot0       = obj.cot0
-                self.cer0       = obj.cer0
                 self.lay        = obj.lay
                 self.lev        = obj.lev
                 self.x          = obj.x
@@ -663,7 +653,7 @@ class cld_gen_hom:
                 print('Message [cld_gen_hom]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
 
-    def cal_cld_opt_prop(self, cot0=0.03, cer0=12.0, cot_scale=1.0):
+    def cal_cld_opt_prop(self, cot0=10.0, cer0=10.0, cot_scale=1.0):
 
         """
         Assign cloud optical properties, e.g., cloud optical thickness, cloud effective radius
@@ -704,64 +694,18 @@ class cld_gen_hom:
         #\----------------------------------------------------------------------------/#
 
 
-    def downscale(self, coarsen):
-
-        dnx, dny, dnz = coarsen
-
-        if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or (self.Nz%dnz != 0):
-            msg = 'Error [cld_gen_hom]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz).' % (str(self.lay['temperature']['data'].shape), str(coarsen))
-            raise ValueError(msg)
-        else:
-            new_shape = (self.Nx//dnx, self.Ny//dny, self.Nz//dnz)
-
-            if self.verbose:
-                print('Message [cld_gen_hom]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
-
-            # self.lay
-            # =============================================================================
-            self.lay['x']['data']         = downscale(self.lay['x']['data']        , (new_shape[0], ), operation='mean')
-            self.lay['y']['data']         = downscale(self.lay['y']['data']        , (new_shape[1], ), operation='mean')
-            self.lay['z']['data']         = downscale(self.lay['z']['data']        , (new_shape[2], ), operation='mean')
-
-            self.lay['altitude']['data']  = downscale(self.lay['altitude']['data'] , (new_shape[2], ), operation='mean')
-            self.lay['thickness']['data'] = downscale(self.lay['thickness']['data'], (new_shape[2], ), operation='sum')
-
-            self.lay['dx']['data'] *= dnx
-            self.lay['dy']['data'] *= dny
-            self.lay['dz']['data'] *= dnz
-
-            self.lay['nx']['data'] = new_shape[0]
-            self.lay['ny']['data'] = new_shape[1]
-            self.lay['nz']['data'] = new_shape[2]
-
-            for key in self.lay.keys():
-                if isinstance(self.lay[key]['data'], np.ndarray):
-                    if self.lay[key]['data'].ndim == len(coarsen):
-                        if key in ['extinction', 'cot']:
-                            operation = 'mean'
-                        else:
-                            operation = 'max'
-                        self.lay[key]['data']  = downscale(self.lay[key]['data'], new_shape, operation=operation)
-            # =============================================================================
-
-            # self.lev
-            # =============================================================================
-            alt_lev = np.append(self.lay['altitude']['data']-self.lay['dz']['data']/2.0, self.lay['altitude']['data'][-1]+self.lay['dz']['data']/2.0)
-            self.lev['altitude']['data'] = alt_lev
-
-            for key in self.lev.keys():
-                if isinstance(self.lev[key]['data'], np.ndarray):
-                    if self.lev[key]['data'].ndim == 2:
-                        if key in ['cot_2d']:
-                            operation = 'mean'
-                        else:
-                            operation = 'max'
-                        self.lev[key]['data']  = downscale(self.lev[key]['data'], (new_shape[0], new_shape[1]), operation=operation)
-            # =============================================================================
-
-
 
 
 if __name__ == '__main__':
+    cld0 = cld_gen_hom(fname='test.pk', overwrite=False)
+    print('Lay')
+    for key in cld0.lay.keys():
+        print(key, cld0.lay[key]['data'])
+        print()
+
+    print('Lev')
+    for key in cld0.lev.keys():
+        print(key, cld0.lev[key]['data'])
+        print()
 
     pass
