@@ -17,8 +17,8 @@ import er3t.common
 
 
 
-__all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
-           'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
+__all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
+           'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
            'get_satfile_tag', \
@@ -66,6 +66,37 @@ def check_equal(a, b, threshold=1.0e-6):
     """
 
     if abs(a-b) >= threshold:
+        return False
+    else:
+        return True
+
+
+
+def check_equidistant(z, threshold=1.0e-6):
+
+    """
+    Check if an array is equidistant (or close to each other)
+
+    Input:
+        z: numpy array
+
+    Output:
+        boolen, true or false
+    """
+
+    if not isinstance(z, np.ndarray):
+        msg = '\nError [check_equidistant]: Only support numpy.ndarray.'
+        raise ValueError(msg)
+
+    if z.size < 2:
+        msg = '\nError [check_equidistant]: Too few data for checking.'
+        raise ValueError(msg)
+    else:
+        dz = z[1:] - z[:-1]
+
+    fac = dz/dz[0]
+
+    if np.abs(fac-1.0).sum() >= threshold:
         return False
     else:
         return True
