@@ -697,15 +697,5 @@ class cld_gen_hom:
 
 
 if __name__ == '__main__':
-    cld0 = cld_gen_hom(fname='test.pk', overwrite=False)
-    print('Lay')
-    for key in cld0.lay.keys():
-        print(key, cld0.lay[key]['data'])
-        print()
-
-    print('Lev')
-    for key in cld0.lev.keys():
-        print(key, cld0.lev[key]['data'])
-        print()
 
     pass
