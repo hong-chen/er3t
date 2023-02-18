@@ -23,6 +23,15 @@ fdir_data_tmp    = os.path.join(fdir_er3t, 'tmp-data')
 fdir_examples    = os.path.join(fdir_er3t, 'examples')
 fdir_tests       = os.path.join(fdir_er3t, 'tests')
 
+rt_params = {
+        'atmospheric_profile': '%s/afglus.dat' % fdir_atmmod,
+         'solar_zenith_angle': 0.0,
+        'solar_azimuth_angle': 0.0,
+        'sensor_zenith_angle': 0.0,
+       'sensor_azimuth_angle': 0.0,
+                'phase_cloud': 'mie',
+        }
+
 references = [
         'Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.'
         ]
