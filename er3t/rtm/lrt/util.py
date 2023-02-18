@@ -401,8 +401,8 @@ def gen_bispectral_lookup_table(
         data_x = lrt.lrt_read_uvspec_rad(inits_x)
         data_y = lrt.lrt_read_uvspec_rad(inits_y)
 
-        prop_x = np.squeeze(data_x.rad).reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
-        prop_y = np.squeeze(data_y.rad).reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
+        prop_x = data_x.rad[0, -1, :].reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
+        prop_y = data_y.rad[0, -1, :].reshape((cloud_optical_thickness_all.size, cloud_effective_radius_all.size))
 
         if prop_tag.lower() in ['reflectance', 'ref']:
 

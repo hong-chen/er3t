@@ -9,7 +9,7 @@ import multiprocessing as mp
 from collections import OrderedDict as OD
 
 from .lrt_cfg import *
-from .lrt_util import *
+from .util import *
 
 
 
