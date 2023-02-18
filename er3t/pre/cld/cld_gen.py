@@ -678,7 +678,6 @@ class cld_gen_hom:
         ext0 = cot0_/self.dz/1000.0
         data = data0.copy()
         data[...] = ext0
-        print(cot0, ext0)
         self.lay['extinction'] = {'data':data, 'name':'Extinction coefficients', 'units':'m^-1'}
         #\----------------------------------------------------------------------------/#
 

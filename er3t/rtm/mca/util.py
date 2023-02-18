@@ -26,7 +26,7 @@ class func_ref_vs_cot:
             fdir='tmp-data',
             wavelength=650.0,
             surface_albedo=0.03,
-            solar_zenith_angle=0.0,
+            solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
             sensor_zenith_angle=0.0,
             sensor_azimuth_angle=0.0,
@@ -64,9 +64,11 @@ class func_ref_vs_cot:
         for i in range(self.cot.size):
             cot0 = self.cot[i]
 
+            name_tag = 'cot-%04.1f_cer-%04.1f' % (cot0, self.cer)
+
             # read data
             #/----------------------------------------------------------------------------\#
-            fname = '%s/mca-out-rad-3d_cot-%05.1f.h5' % (self.fdir, cot0)
+            fname = '%s/mca-out-rad-3d_%s.h5' % (self.fdir, name_tag)
             f0 = h5py.File(fname, 'r')
             rad0     = f0['mean/rad'][...].mean()
             rad_std0 = f0['mean/rad_std'][...].mean()
@@ -91,6 +93,8 @@ class func_ref_vs_cot:
 
     def run_mca_one(self, cot0, cer0):
 
+        name_tag = 'cot-%04.1f_cer-%04.1f' % (cot0, cer0)
+
         # atm object
         #/----------------------------------------------------------------------------\#
         levels = np.arange(0.0, 20.1, 1.0)
@@ -106,7 +110,7 @@ class func_ref_vs_cot:
 
         # define cloud
         #/----------------------------------------------------------------------------\#
-        fname_cld = '%s/cld.pk' % self.fdir
+        fname_cld = '%s/cld_%s.pk' % (self.fdir, name_tag)
         cld0 = cld_.cld_gen_hom(fname=fname_cld, altitude=atm0.lay['altitude']['data'][1:3], atm_obj=atm0, Nx=4, Ny=4, cot0=cot0, cer0=cer0, overwrite=True)
         #\----------------------------------------------------------------------------/#
 
@@ -114,14 +118,18 @@ class func_ref_vs_cot:
         # mca_sca object
         #/----------------------------------------------------------------------------\#
         pha0 = pha_.pha_mie_wc(wavelength=self.wvl)
-        sca  = rtm_.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % self.fdir, overwrite=True)
+
+        fname_sca = '%s/mca_sca_%s.bin' % (self.fdir, name_tag)
+        sca  = rtm_.mca_sca(pha_obj=pha0, fname=fname_sca, overwrite=True)
         #\----------------------------------------------------------------------------/#
 
 
         # mca_cld object
         #/----------------------------------------------------------------------------\#
         atm1d0  = rtm_.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-        atm3d0  = rtm_.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=True)
+
+        fname_atm_3d = '%s/mca_atm_3d_%s.bin' % (self.fdir, name_tag)
+        atm3d0  = rtm_.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname=fname_atm_3d, overwrite=True)
 
         atm_1ds   = [atm1d0]
         atm_3ds   = [atm3d0]
@@ -156,7 +164,7 @@ class func_ref_vs_cot:
 
         # mcarats output
         #/----------------------------------------------------------------------------\#
-        out0 = rtm_.mca_out_ng(fname='%s/mca-out-rad-3d_cot-%05.1f.h5' % (self.fdir, cot0), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
+        out0 = rtm_.mca_out_ng(fname='%s/mca-out-rad-3d_%s.h5' % (self.fdir, name_tag), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
         #\----------------------------------------------------------------------------/#
 
     def cot_from_ref(self, ref, method='cubic', mode='rt'):
@@ -181,10 +189,12 @@ class func_ref_vs_cot:
 
 if __name__ == '__main__':
 
-    f0 = func_ref_vs_cot(run=True)
-    sys.exit()
+    cot = np.array([0.0, 1.0, 5.0, 10.0, 30.0, 50.0, 100.0])
 
-    # f0 = func_ref_vs_cot(run=False)
+    f0 = func_ref_vs_cot(cot=cot, run=True)
+    # sys.exit()
+
+    # f0 = func_ref_vs_cot(cot=cot, run=False)
     import matplotlib as mpl
     import matplotlib.pyplot as plt
     import matplotlib.path as mpl_path
