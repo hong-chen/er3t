@@ -88,7 +88,6 @@ class func_ref_vs_cot:
     def run_all(self):
 
         for cot0 in self.cot:
-            print(cot0)
             self.run_mca_one(cot0, self.cer)
 
     def run_mca_one(self, cot0, cer0):
@@ -245,6 +244,5 @@ if __name__ == '__main__':
     plt.show()
     sys.exit()
     #\----------------------------------------------------------------------------/#
-
 
     pass

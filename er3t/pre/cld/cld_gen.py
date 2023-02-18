@@ -597,7 +597,7 @@ class cld_gen_hom:
     def run(self, cot0, cer0, atm_obj=None):
 
         if self.verbose:
-            print('Message [cld_gen_hom]: Generating an artificial homogeneous 3D cloud field ...')
+            print('Message [cld_gen_hom]: Generating an artificial homogeneous 3D cloud field with <COT=%.1f> and <CER=%.1f μm> ...' % (cot0, cer0))
 
         if not check_equidistant(self.altitude):
             msg = 'Warning [cld_gen_hom]: Only support equidistant altitude (z), as well as equidistant x and y.'
