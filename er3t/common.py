@@ -1,5 +1,6 @@
 import os
 import sys
+import datetime
 import importlib.util
 
 has_mcarats    = ('MCARATS_V010_EXE' in dict(os.environ))
@@ -23,13 +24,22 @@ fdir_data_tmp    = os.path.join(fdir_er3t, 'tmp-data')
 fdir_examples    = os.path.join(fdir_er3t, 'examples')
 fdir_tests       = os.path.join(fdir_er3t, 'tests')
 
-rt_params = {
-        'atmospheric_profile': '%s/afglus.dat' % fdir_atmmod,
+params = {
+                 'wavelength': 650.0,
+                       'date': datetime.datetime.now(),
          'solar_zenith_angle': 0.0,
         'solar_azimuth_angle': 0.0,
         'sensor_zenith_angle': 0.0,
        'sensor_azimuth_angle': 0.0,
+            'sensor_altitude': 705000.0,
+                     'target': 'radiance',
+                     'solver': 'mcarats 3d',
+        'atmospheric_profile': '%s/afglus.dat' % fdir_atmmod,
+                 'absorption': 'abs_16g',
+             'surface_albedo': 0.03,
                 'phase_cloud': 'mie',
+                  'overwrite': True,
+                    'verbose': True,
         }
 
 references = [
