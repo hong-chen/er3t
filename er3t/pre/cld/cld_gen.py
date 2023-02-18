@@ -636,7 +636,7 @@ class cld_gen_hom:
             atm_obj = atm_atmmod(levels=alt_lev)
             t_1d = atm_obj.lay['temperature']['data']
         else:
-            t_1d = np.interp(self.lay['altitude'], atm_obj.lay['altitude']['data'], atm_obj.lay['temperature']['data'])
+            t_1d = np.interp(self.lay['altitude']['data'], atm_obj.lay['altitude']['data'], atm_obj.lay['temperature']['data'])
         #\----------------------------------------------------------------------------/#
 
         t_3d = np.empty((self.Nx, self.Ny, self.Nz), dtype=t_1d.dtype)
@@ -678,6 +678,7 @@ class cld_gen_hom:
         ext0 = cot0_/self.dz/1000.0
         data = data0.copy()
         data[...] = ext0
+        print(cot0, ext0)
         self.lay['extinction'] = {'data':data, 'name':'Extinction coefficients', 'units':'m^-1'}
         #\----------------------------------------------------------------------------/#
 
