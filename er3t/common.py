@@ -34,7 +34,7 @@ params = {
             'sensor_altitude': 705000.0,
                      'target': 'radiance',
                      'solver': 'mcarats 3d',
-        'atmospheric_profile': '%s/afglus.dat' % fdir_atmmod,
+        'atmospheric_profile': '%s/afglus.dat' % fdir_data_atmmod,
                  'absorption': 'abs_16g',
              'surface_albedo': 0.03,
                 'phase_cloud': 'mie',
