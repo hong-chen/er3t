@@ -141,7 +141,7 @@ def gen_surface_albedo_file(fname_alb, wvls, albs):
 
 
 
-def cal_radiative_property(f_up, f_down, topN=-1, bottomN=0, scaleN=1.0, tag='all'):
+def cal_radiative_property(f_up, f_down, topN=-1, bottomN=0, scaleN=1.0, tag='albedo-top'):
 
     """
     Calculate radiative properties such as tranmisttance, reflectance etc. based on
@@ -152,31 +152,42 @@ def cal_radiative_property(f_up, f_down, topN=-1, bottomN=0, scaleN=1.0, tag='al
         f_down: downwelling irradiance
 
     Outputs:
-        specified radiative property (by `tag`, by default is `tag='all'`)
+        specified radiative property (by `tag`)
     """
 
-    transmittance  = f_down[bottomN, ...]/f_down[topN, ...] * scaleN
-    albedo_bottom  = f_up[bottomN, ...]/f_down[bottomN, ...] * scaleN
-    albedo_top     = f_up[topN, ...]/f_down[topN, ...] * scaleN
-
-    f_net_top      = f_down[topN, ...] - f_up[topN, ...]
-    f_net_bottom   = f_down[bottomN, ...] - f_up[bottomN, ...]
-
-    absorptance    = (f_net_top-f_net_bottom)/f_down[topN, ...] * scaleN
-    reflectance    = (f_up[topN, ...] - f_up[bottomN, ...]) / f_down[topN, ...] * scaleN
+    # number of layer check
+    #/----------------------------------------------------------------------------\#
+    if (f_up.shape[1] < 2) and (tag.lower() not in ['albedo-top', 'albedo-bottom']):
+        msg = '\nError [cal_radiative_property]: Insufficient number of layers for calculating radiative property.'
+        raise ValueError(msg)
+    #\----------------------------------------------------------------------------/#
 
     if tag.lower() == 'transmittance':
+
+        transmittance = f_down[0, bottomN, :]/f_down[0, topN, :] * scaleN
         return transmittance
+
     elif tag.lower() == '_reflectance':
+
+        reflectance = (f_up[0, topN, :] - f_up[0, bottomN, :]) / f_down[0, topN, :] * scaleN
         return reflectance
+
     elif tag.lower() == 'absorptance':
+
+        f_net_top    = f_down[0, topN, :] - f_up[0, topN, :]
+        f_net_bottom = f_down[0, bottomN, :] - f_up[0, bottomN, :]
+        absorptance  = (f_net_top-f_net_bottom)/f_down[0, topN, :] * scaleN
         return absorptance
+
     elif tag.lower() == 'albedo-top':
+
+        albedo_top = f_up[0, topN, :]/f_down[0, topN, :] * scaleN
         return albedo_top
+
     elif tag.lower() == 'albedo-bottom':
+
+        albedo_bottom = f_up[0, bottomN, :]/f_down[0, bottomN, :] * scaleN
         return albedo_bottom
-    elif tag.lower() == 'all':
-        return [transmittance, reflectance, absorptance, albedo_top, albedo_bottom]
 
 
 
@@ -267,7 +278,7 @@ def gen_bispectral_lookup_table(
 
     # for toa downwelling
     #/--------------------------------------------------------------\#
-    init_x0 = lrt.lrt_init_mono(
+    init_x0 = lrt.lrt_init_mono_flx(
             output_altitude='toa',
             input_file='%s/lrt_inpfile_%4.4dnm_toa.txt' % (fdir_tmp, wvl_x),
             output_file='%s/lrt_outfile_%4.4dnm_toa.txt' % (fdir_tmp, wvl_x),
@@ -278,7 +289,7 @@ def gen_bispectral_lookup_table(
             lrt_cfg=lrt_cfg,
             )
 
-    init_y0 = lrt.lrt_init_mono(
+    init_y0 = lrt.lrt_init_mono_flx(
             output_altitude='toa',
             input_file='%s/lrt_inpfile_%4.4dnm_toa.txt' % (fdir_tmp, wvl_y),
             output_file='%s/lrt_outfile_%4.4dnm_toa.txt' % (fdir_tmp, wvl_y),
@@ -343,7 +354,7 @@ def gen_bispectral_lookup_table(
 
             elif prop_tag.lower() in ['transmittance', '_reflectance', 'absorptance', 'albedo-top', 'albedo-bottom', 'all']:
 
-                init_x = lrt.lrt_init_mono(
+                init_x = lrt.lrt_init_mono_flx(
                         output_altitude=output_altitude,
                         input_file=input_file_x,
                         output_file=output_file_x,
@@ -357,7 +368,7 @@ def gen_bispectral_lookup_table(
                         )
 
 
-                init_y = lrt.lrt_init_mono(
+                init_y = lrt.lrt_init_mono_flx(
                         output_altitude=output_altitude,
                         input_file=input_file_y,
                         output_file=output_file_y,
@@ -395,15 +406,15 @@ def gen_bispectral_lookup_table(
 
         if prop_tag.lower() in ['reflectance', 'ref']:
 
-            data_x0 = lrt.lrt_read_uvspec([init_x0])
-            data_y0 = lrt.lrt_read_uvspec([init_y0])
+            data_x0 = lrt.lrt_read_uvspec_flx([init_x0])
+            data_y0 = lrt.lrt_read_uvspec_flx([init_y0])
             prop_x = np.pi*prop_x/(np.squeeze(data_x0.f_down))
             prop_y = np.pi*prop_y/(np.squeeze(data_y0.f_down))
 
     elif prop_tag.lower() in ['transmittance', '_reflectance', 'absorptance', 'albedo-top', 'albedo-bottom']:
 
-        data_x = lrt.lrt_read_uvspec(inits_x)
-        data_y = lrt.lrt_read_uvspec(inits_y)
+        data_x = lrt.lrt_read_uvspec_flx(inits_x)
+        data_y = lrt.lrt_read_uvspec_flx(inits_y)
 
         # process calculations
         #/--------------------------------------------------------------\#

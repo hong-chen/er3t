@@ -44,14 +44,14 @@ def test_flux_01_clear_sky():
         os.makedirs(fdir_tmp)
 
 
-    init = lrt.lrt_init_mono(
+    init = lrt.lrt_init_mono_flx(
             input_file  = '%s/input.txt' % fdir_tmp,
             output_file = '%s/output.txt' % fdir_tmp
             )
 
     lrt.lrt_run(init)
 
-    data = lrt.lrt_read_uvspec([init])
+    data = lrt.lrt_read_uvspec_flx([init])
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -76,7 +76,7 @@ def test_flux_02_clear_sky():
     lrt_cfg = lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
-    init = lrt.lrt_init_mono(
+    init = lrt.lrt_init_mono_flx(
             input_file  = '%s/input.txt' % fdir_tmp,
             output_file = '%s/output.txt' % fdir_tmp,
             date        = datetime.datetime(2014, 9, 11),
@@ -88,7 +88,7 @@ def test_flux_02_clear_sky():
             )
     lrt.lrt_run(init)
 
-    data = lrt.lrt_read_uvspec([init])
+    data = lrt.lrt_read_uvspec_flx([init])
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -116,7 +116,7 @@ def test_flux_03_clear_sky():
 
     inits = []
     for i, sza0 in enumerate(sza):
-        init = lrt.lrt_init_mono(
+        init = lrt.lrt_init_mono_flx(
                 input_file  = '%s/input%2.2d.txt' % (fdir_tmp, i),
                 output_file = '%s/output%2.2d.txt' % (fdir_tmp, i),
                 date        = datetime.datetime(2014, 9, 11),
@@ -131,7 +131,7 @@ def test_flux_03_clear_sky():
     # run with multi cores
     lrt.lrt_run_mp(inits, Ncpu=6)
 
-    data = lrt.lrt_read_uvspec(inits)
+    data = lrt.lrt_read_uvspec_flx(inits)
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -167,7 +167,7 @@ def test_flux_04_cloud():
     inits = []
     for i, sza0 in enumerate(sza):
 
-        init = lrt.lrt_init_mono(
+        init = lrt.lrt_init_mono_flx(
                 input_file  = '%s/input%2.2d.txt'  % (fdir_tmp, i),
                 output_file = '%s/output%2.2d.txt' % (fdir_tmp, i),
                 date        = datetime.datetime(2014, 9, 11),
@@ -183,7 +183,7 @@ def test_flux_04_cloud():
     # run with multi cores
     lrt.lrt_run_mp(inits, Ncpu=6)
 
-    data = lrt.lrt_read_uvspec(inits)
+    data = lrt.lrt_read_uvspec_flx(inits)
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -227,7 +227,7 @@ def test_flux_05_cloud_and_aerosol():
     inits = []
     for i, sza0 in enumerate(sza):
 
-        init = lrt.lrt_init_mono(
+        init = lrt.lrt_init_mono_flx(
                 input_file  = '%s/input%2.2d.txt'  % (fdir_tmp, i),
                 output_file = '%s/output%2.2d.txt' % (fdir_tmp, i),
                 date        = datetime.datetime(2014, 9, 11),
@@ -244,7 +244,7 @@ def test_flux_05_cloud_and_aerosol():
     # run with multi cores
     lrt.lrt_run_mp(inits, Ncpu=6)
 
-    data = lrt.lrt_read_uvspec(inits)
+    data = lrt.lrt_read_uvspec_flx(inits)
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])

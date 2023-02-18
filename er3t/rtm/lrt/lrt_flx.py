@@ -8,16 +8,16 @@ import numpy as np
 import multiprocessing as mp
 from collections import OrderedDict as OD
 
-from .util import *
-from .cfg import *
+from .lrt_cfg import *
+from .lrt_util import *
 
 
 
-__all__ = ['lrt_init_mono', 'lrt_init_spec', 'lrt_read_uvspec']
+__all__ = ['lrt_init_mono_flx', 'lrt_init_spec_flx', 'lrt_read_uvspec_flx']
 
 
 
-class lrt_init_mono:
+class lrt_init_mono_flx:
 
     """
     Purpose: use libRadtran to calculation monochromatic irradiance for SSFR
@@ -203,7 +203,7 @@ class lrt_init_mono:
 
 
 
-class lrt_init_spec:
+class lrt_init_spec_flx:
 
     """
     Purpose: use libRadtran to calculation multichromatic irradiance for SSFR
@@ -408,7 +408,7 @@ class lrt_init_spec:
 
 
 
-class lrt_read_uvspec:
+class lrt_read_uvspec_flx:
 
     """
     Input:
