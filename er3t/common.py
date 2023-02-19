@@ -38,6 +38,8 @@ params = {
                  'absorption': 'abs_16g',
              'surface_albedo': 0.03,
                 'phase_cloud': 'mie',
+                   'fdir_tmp': 'tmp-data/%s' % datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'),
+                 'output_tag': 'rtm-out_rad-3d',
                   'overwrite': True,
                     'verbose': True,
         }
