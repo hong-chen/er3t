@@ -37,6 +37,7 @@ class func_ref_vs_cot:
                 np.arange(30.0, 51.0, 5.0),
                 )),
             cer=20.0,
+            output_tag='mca-out-rad-3d',
             run=False,
             ):
 
@@ -59,22 +60,27 @@ class func_ref_vs_cot:
         if run:
             self.run_all()
 
+        self.rad = np.array([])
+        self.rad_std = np.array([])
         self.ref = np.array([])
         self.ref_std = np.array([])
         for i in range(self.cot.size):
             cot0 = self.cot[i]
 
-            name_tag = 'cot-%04.1f_cer-%04.1f' % (cot0, self.cer)
+            name_tag = 'cot-%05.1f_cer-%04.1f' % (cot0, self.cer)
 
             # read data
             #/----------------------------------------------------------------------------\#
-            fname = '%s/mca-out-rad-3d_%s.h5' % (self.fdir, name_tag)
+            fname = '%s/%s_%s.h5' % (self.fdir, output_tag, name_tag)
             f0 = h5py.File(fname, 'r')
             rad0     = f0['mean/rad'][...].mean()
             rad_std0 = f0['mean/rad_std'][...].mean()
             toa0     = f0['mean/toa'][...]
             f0.close()
             #\----------------------------------------------------------------------------/#
+
+            self.rad     = np.append(self.rad, rad0)
+            self.rad_std = np.append(self.rad_std, rad_std0)
 
             # convert from rad to ref
             #/----------------------------------------------------------------------------\#
@@ -92,7 +98,7 @@ class func_ref_vs_cot:
 
     def run_mca_one(self, cot0, cer0):
 
-        name_tag = 'cot-%04.1f_cer-%04.1f' % (cot0, cer0)
+        name_tag = 'cot-%05.1f_cer-%04.1f' % (cot0, cer0)
 
         # atm object
         #/----------------------------------------------------------------------------\#
@@ -110,7 +116,7 @@ class func_ref_vs_cot:
         # define cloud
         #/----------------------------------------------------------------------------\#
         fname_cld = '%s/cld_%s.pk' % (self.fdir, name_tag)
-        cld0 = cld_.cld_gen_hom(fname=fname_cld, altitude=atm0.lay['altitude']['data'][1:3], atm_obj=atm0, Nx=4, Ny=4, cot0=cot0, cer0=cer0, overwrite=True)
+        cld0 = cld_.cld_gen_hom(fname=fname_cld, altitude=atm0.lay['altitude']['data'][1:3], atm_obj=atm0, Nx=10, Ny=10, cot0=cot0, cer0=cer0, overwrite=True)
         #\----------------------------------------------------------------------------/#
 
 
@@ -218,8 +224,8 @@ if __name__ == '__main__':
     ax1.errorbar(f0.cot, f0.ref, yerr=f0.ref_std, c='k', lw=1.0)
     ax1.plot(f0.cot, f0.ref_2s, c='r', lw=1.0)
     # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-    ax1.set_xlim((0.0, 100.0))
-    ax1.set_ylim((0.0, 1.0))
+    ax1.set_xlim((-20.0, 120.0))
+    ax1.set_ylim((-0.2, 1.2))
     # ax1.set_xlabel('')
     # ax1.set_ylabel('')
     # ax1.set_title('')
