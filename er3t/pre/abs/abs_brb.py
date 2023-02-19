@@ -61,25 +61,25 @@ class abs_rrtmg_sw:
     reference = 'Iacono, M.J., Delamere, J.S., Mlawer, E.J., Shephard, M.W., Clough, S.A., and Collins, W.D.: Radiative forcing by long-lived greenhouse gases: Calculations with the AER radiative transfer models, J. Geophys. Res., 113, D13103, https://doi.org/10.1029/2008JD009944, 2008.'
 
     def __init__(self, \
-                 iband = 0,
-                 ig    = 0,
+                 iband  = 0,
+                 g_mode = 0,
                  wavelength = None,  \
                  fname      = None,  \
                  atm_obj    = None,  \
                  overwrite  = False, \
                  verbose    = False):
 
-        if ig != 0:
-            msg = '\nError [abs_rrtmg_sw]: currently only <ig=0> is supported.'
+        if g_mode != 0:
+            msg = '\nError [abs_rrtmg_sw]: currently only <g_mode=0> is supported.'
             raise OSError(msg)
 
         self.iband   = iband
-        self.ig      = ig
+        self.g_mode  = g_mode
         self.atm_obj = atm_obj
 
-        self.load_data(iband, ig)
+        self.load_data(iband, g_mode)
 
-    def load_data(self, iband, ig):
+    def load_data(self, iband, g_mode):
 
         f0 = Dataset(self.fname, 'r')
 
@@ -139,13 +139,13 @@ class abs_rrtmg_sw:
 
         # Gs
         #/----------------------------------------------------------------------------\#
-        Ng = f0.variables['NumGPoints'][:][ig, iband]
+        Ng = f0.variables['NumGPoints'][:][g_mode, iband]
         #\----------------------------------------------------------------------------/#
 
         # solar
         #/----------------------------------------------------------------------------\#
-        sol_upp = f0['SolarSourceFunctionUpperAtmos'][:][ig, iband, :, :Ng]
-        sol_low = f0['SolarSourceFunctionLowerAtmos'][:][ig, iband, :, :Ng]
+        sol_upp = f0['SolarSourceFunctionUpperAtmos'][:][g_mode, iband, :, :Ng]
+        sol_low = f0['SolarSourceFunctionLowerAtmos'][:][g_mode, iband, :, :Ng]
         #\----------------------------------------------------------------------------/#
 
         # weights
@@ -200,8 +200,8 @@ class abs_rrtmg_sw:
         mr_upp0 = f0.variables['KeySpeciesRatioUpperAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
         mr_upp  = np.linspace(0.0, 1.0, mr_upp0.size)
 
-        coef_upp = f0.variables['AbsorptionCoefficientsUpperAtmos'][:][ig, iband, ikey_gas_upp, :Ng, :, :]
-        coef_key_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][ig, iband, :Ng, :, :, :]
+        coef_upp = f0.variables['AbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, ikey_gas_upp, :Ng, :, :]
+        coef_key_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :Ng, :, :, :]
         #\--------------------------------------------------------------/#
 
         # lower atm
@@ -210,8 +210,8 @@ class abs_rrtmg_sw:
         mr_low0 = f0.variables['KeySpeciesRatioLowerAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
         mr_low  = np.linspace(0.0, 1.0, mr_low0.size)
 
-        coef_low = f0.variables['AbsorptionCoefficientsLowerAtmos'][:][ig, iband, ikey_gas_low, :Ng, :, :]
-        coef_key_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][ig, iband, :Ng, :, :, :]
+        coef_low = f0.variables['AbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, ikey_gas_low, :Ng, :, :]
+        coef_key_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :Ng, :, :, :]
         #\--------------------------------------------------------------/#
         #\----------------------------------------------------------------------------/#
 
@@ -321,7 +321,6 @@ class abs_rrtmg_sw:
         # variables['H2OSelfAbsorptionCoefficients'] --------------- : Dataset  (2, 14, 16, 10)
         # -
         pass
-
 
 
 

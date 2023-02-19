@@ -41,6 +41,36 @@ def test_download_worldview():
     download_worldview_rgb(date, extent, fdir_out='tmp-data', instrument='viirs', satellite='noaa20', fmt='h5')
 
 
+def test_solar_spectra(fdir, date=datetime.datetime.now()):
+
+    levels = np.linspace(0.0, 20.0, 41)
+    atm0   = er3t.pre.atm.atm_atmmod(levels=levels)
+
+    wvls   = np.arange(300.0, 2301.0, 1.0)
+    sols   = np.zeros_like(wvls)
+
+    sol_fac = er3t.util.cal_sol_fac(date)
+
+    for i, wvl in enumerate(wvls):
+
+        abs0 = er3t.pre.abs.abs_16g(wavelength=wvl, atm_obj=atm0)
+        norm = sol_fac/(abs0.coef['weight']['data']*abs0.coef['slit_func']['data'][-1, :]).sum()
+        sols[i] = norm*(abs0.coef['solar']['data']*abs0.coef['weight']['data']*abs0.coef['slit_func']['data'][-1, :]).sum()
+
+    # figure
+    #/----------------------------------------------------------------------------\#
+    fig = plt.figure(figsize=(8, 6))
+    ax1 = fig.add_subplot(111)
+    ax1.scatter(wvls, sols, s=2)
+    ax1.set_xlim((200, 2400))
+    ax1.set_ylim((0.0, 2.4))
+    ax1.set_xlabel('Wavelength [nm]')
+    ax1.set_ylabel('Flux [$\mathrm{W m^{-2} nm^{-1}}$]')
+    ax1.set_title('Solar Spectra')
+    plt.savefig('solar_spectra.png')
+    plt.show()
+    #\----------------------------------------------------------------------------/#
+
 
 def test_download_laads():
 
@@ -204,6 +234,8 @@ if __name__ == '__main__':
     # test_download_worldview() # passed test on 2022-08-19
 
     # test_download_laads()
+
+    # test_solar_spectra('tmp-data/abs_16g')
 
     # test_viirs()
     for i in range(5):
