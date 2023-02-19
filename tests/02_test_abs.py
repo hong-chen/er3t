@@ -17,18 +17,19 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # mpl.use('Agg')
 
 
-from er3t.pre.atm import atm_atmmod
-from er3t.pre.abs import abs_16g, abs_oco_idl
-from er3t.util import cal_sol_fac
+import er3t
 
 
 
 def test_abs_16g(fdir):
 
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
     # create atm file
     levels = np.linspace(0.0, 20.0, 41)
     fname_atm  = '%s/atm.pk' % fdir
-    atm0 = atm_atmmod(levels=levels, fname=fname_atm, overwrite=True)
+    atm0 = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=True)
 
     # create abs file, but we will need to input the created atm file
     fname_abs  = '%s/abs.pk' % fdir
@@ -38,7 +39,7 @@ def test_abs_16g(fdir):
     """
     Calculation with 'wavelength' only without writing file.
     """
-    abs_obj = abs_16g(wavelength=wavelength, atm_obj=atm0, verbose=True)
+    abs_obj = er3t.pre.abs.abs_16g(wavelength=wavelength, atm_obj=atm0, verbose=True)
     print()
 
 
@@ -46,7 +47,7 @@ def test_abs_16g(fdir):
     """
     Run calculation with 'wavelength' and overwrite data into 'fname'
     """
-    abs_obj = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=True, verbose=True)
+    abs_obj = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=True, verbose=True)
     print()
 
 
@@ -57,7 +58,7 @@ def test_abs_16g(fdir):
     1. 'fname' not exsit, run with 'levels' and store data into 'fname'
     2. 'fname' exsit, restore data from 'fname'
     """
-    abs_obj = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, verbose=True)
+    abs_obj = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, verbose=True)
     print()
 
 
@@ -65,7 +66,7 @@ def test_abs_16g(fdir):
     """
     Restore data from 'fname'
     """
-    abs_obj = abs_16g(fname=fname_abs, atm_obj=atm0, verbose=True)
+    abs_obj = er3t.pre.abs.abs_16g(fname=fname_abs, atm_obj=atm0, verbose=True)
 
 
 
@@ -172,25 +173,34 @@ def test_abs_rrtmg(fdir='tmp-data'):
 
     # create atm file
     #/----------------------------------------------------------------------------\#
-    levels = np.linspace(0.0, 20.0, 41)
+    # levels = np.linspace(0.0, 20.0, 41)
+    levels = np.arange(0.5, 20.6, 1.0)
     fname_atm  = '%s/atm.pk' % fdir
-    atm0 = atm_atmmod(levels=levels, fname=fname_atm, overwrite=True)
+    atm0 = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=True)
     #\----------------------------------------------------------------------------/#
 
     # read out abs coef for USSA (US standard atmosphere), provided by Xiuhong Chen
     #/----------------------------------------------------------------------------\#
+    Nz = 39; Nb = 14; Ng = 16
     fname    = 'data/coef_sw_ussa.txt'
     data     = np.genfromtxt(fname)
-    altitude = data[:, 0]
-    Nz = altitude.size
-    Nb = 14
-    Ng = 16
-    coef_sw  = data[:, 1:].reshape((Nz, Nb, Ng))
+    alt_ref0  = data[:, 0]
+    coef_ref0 = data[:, 1:].reshape((Nz, Nb, Ng))
+
+    logic = (alt_ref0>=atm0.lay['altitude']['data'][0]) & (alt_ref0<=atm0.lay['altitude']['data'][-1])
+    alt_ref  = alt_ref0[logic]
+    coef_ref = coef_ref0[logic, ...]
     #\----------------------------------------------------------------------------/#
+
+    for iband in range(14):
+        abs0 = er3t.pre.abs.abs_rrtmg_sw(iband=iband, atm_obj=atm0)
+        sys.exit()
+
+
 
     # figures
     #/----------------------------------------------------------------------------\#
-    if True:
+    if False:
         for i in range(Nb):
 
             colors = mpl.cm.jet(np.linspace(0.0, 1.0, Ng))
@@ -204,10 +214,10 @@ def test_abs_rrtmg(fdir='tmp-data'):
             ax1 = fig.add_subplot(111)
 
             for j in range(Ng):
-                ax1.plot(coef_sw[:, i, j], altitude, color=colors[j, ...], lw=1.5, label='g %d' % (j+1))
+                ax1.plot(coef_ref[:, i, j], alt_ref, color=colors[j, ...], lw=1.5, label='g %d' % (j+1))
 
             # ax1.set_xlim((0, 0.08))
-            ax1.set_ylim((0, 70))
+            ax1.set_ylim((0, 20))
             ax1.set_xlabel('Absorption Coefficient [m$^{-1}$]')
             ax1.set_ylabel('Altitude [km]')
             ax1.set_title('Band %d' % (i+1))
@@ -234,5 +244,6 @@ def test_abs_rrtmg(fdir='tmp-data'):
 
 if __name__ == '__main__':
 
+    test_abs_16g('tmp-data/abs_16g')
 
     test_abs_rrtmg()

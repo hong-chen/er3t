@@ -6,9 +6,7 @@ import h5py
 import copy
 import numpy as np
 
-import er3t.common
-from er3t.pre.atm import atm_atmmod
-from er3t.util import all_files
+import er3t
 
 
 
@@ -58,7 +56,7 @@ class abs_16g:
     reference = 'Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R., Roman, M., Redemann, J., Russell, P. B., Liu, J., and Schaaf, C. C.: Aircraft measurements of spectral surface albedo and its consistency with ground based and space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089, 2008.'
 
     def __init__(self, \
-                 wavelength = None,  \
+                 wavelength = er3t.common.params['wavelength'],  \
                  fname      = None,  \
                  atm_obj    = None,  \
                  overwrite  = False, \
@@ -67,7 +65,6 @@ class abs_16g:
         self.verbose   = verbose
         self.wvl       = wavelength
         self.nwl       = 1
-        self.wvl_info  = '%.2f nm (applied SSFR slit)' % wavelength
 
         if self.reference not in er3t.common.references:
             er3t.common.references.append(self.reference)
@@ -108,6 +105,8 @@ class abs_16g:
 
 
     def run(self, atm_obj):
+
+        self.wvl_info  = '%.2f nm (applied SSFR slit)' % self.wvl
 
         if not os.path.exists(self.fname_h5):
             sys.exit('Error   [abs_16g]: Missing HDF5 database.')
@@ -1372,7 +1371,7 @@ def gen_h5_abs_16g(fname_h5):
 
             fdir = '%s/%s' % (fdir0, sub)
 
-            fnames = all_files(fdir)
+            fnames = er3t.util.all_files(fdir)
             print(len(fnames))
 
             for fname in fnames:
@@ -1394,7 +1393,7 @@ def gen_h5_abs_16g(fname_h5):
         f = h5py.File(fname_h5, 'r+')
 
         fdir = '%s/solar_v1.3' % fdir0
-        fnames = all_files(fdir)
+        fnames = er3t.util.all_files(fdir)
 
         for fname in fnames:
 

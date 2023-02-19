@@ -14,9 +14,7 @@ Contains:
 # import copy
 # import numpy as np
 
-import er3t.common
-from er3t.pre.atm import atm_atmmod
-from er3t.util import all_files
+import er3t
 
 import os
 import sys
@@ -41,7 +39,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 __all__ = ['abs_rrtmg_sw']
-
 
 
 
@@ -330,13 +327,5 @@ class abs_rrtmg_sw:
 
 if __name__ == '__main__':
 
-    from er3t.pre.atm import atm_atmmod
-
-    levels = np.arange(0.0, 20.1, 0.5)
-    atm0 = atm_atmmod(levels=levels, overwrite=True)
-
-    for iband in range(14):
-        abs0 = abs_rrtmg_sw(iband=iband, atm_obj=atm0)
-        sys.exit()
 
     pass
