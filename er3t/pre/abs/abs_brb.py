@@ -202,8 +202,8 @@ class abs_rrtmg_sw:
         # axes
         # mr_low  = f0.variables['KeySpeciesRatioLowerAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
         # mr_upp  = f0.variables['KeySpeciesRatioUpperAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
-        mr_low  = np.linspace(0.0, 1.0, coef_low.shape[-1])
-        mr_upp  = np.linspace(0.0, 1.0, coef_upp.shape[-1])
+        mr_low  = np.linspace(0.0, 1.0, coef_key_low.shape[-1])
+        mr_upp  = np.linspace(0.0, 1.0, coef_key_upp.shape[-1])
         p_upp   = f0.variables['PressureUpperAtmos'][:]
         p_low   = f0.variables['PressureLowerAtmos'][:]
         t       = f0.variables['Temperature'][:]
