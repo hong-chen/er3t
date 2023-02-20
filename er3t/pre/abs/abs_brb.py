@@ -184,6 +184,56 @@ class abs_rrtmg_sw:
         #\----------------------------------------------------------------------------/#
 
 
+        # coef
+        #/----------------------------------------------------------------------------\#
+        abso_coef = np.zeros((Nz, Ng), dtype=np.float64)
+
+        # read data from RRTMG SW
+        #/--------------------------------------------------------------\#
+        # coef
+        coef_low = f0.variables['AbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :, :Ng, :, :]
+        coef_upp = f0.variables['AbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :, :Ng, :, :]
+        coef_key_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :Ng, :, :, :]
+        coef_key_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :Ng, :, :, :]
+        coef_h2o_fore_low = f0.variables['H2OForeignAbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :Ng, :]
+        coef_h2o_fore_upp = f0.variables['H2OForeignAbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :Ng, :]
+        coef_h2o_self     = f0.variables['H2OSelfAbsorptionCoefficients'][:][g_mode, iband, :Ng, :]
+
+        # axes
+        # mr_low  = f0.variables['KeySpeciesRatioLowerAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
+        # mr_upp  = f0.variables['KeySpeciesRatioUpperAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
+        mr_low  = np.linspace(0.0, 1.0, coef_low.shape[-1])
+        mr_upp  = np.linspace(0.0, 1.0, coef_upp.shape[-1])
+        p_upp   = f0.variables['PressureUpperAtmos'][:]
+        p_low   = f0.variables['PressureLowerAtmos'][:]
+        t       = f0.variables['Temperature'][:]
+        dt      = f0.variables['TemperatureDiffFromMLS'][:]
+        #\--------------------------------------------------------------/#
+
+        for ig in range(Ng):
+            for gas0 in atm_obj.gases:
+                if gas0 != 'no2':
+                    igas = gases.index(gas0)
+                    coef0_low = coef_low[igas, ig, :, :]
+                    # coef0_upp = coef_upp[igas, ig, :, :]
+
+                    # coef0_key_low = coef_key_low[ig, :, :, :]
+                    # coef0_key_upp = coef_key_upp[ig, :, :, :]
+
+                    print(gas0, ig)
+                    print(coef0_low)
+
+
+
+        self.coef['abso_coef'] = {
+                'name': 'Absorption Coefficient (Nz, Ng)',
+                'data': abso_coef,
+                }
+        #\----------------------------------------------------------------------------/#
+        sys.exit()
+
+
+
         # profile
         #/----------------------------------------------------------------------------\#
         t_ref = f0.variables['ReferenceTemperature'][:]
@@ -191,32 +241,6 @@ class abs_rrtmg_sw:
         #\----------------------------------------------------------------------------/#
 
 
-        # coef
-        #/----------------------------------------------------------------------------\#
-        t  = f0.variables['Temperature'][:]
-        dt = f0.variables['TemperatureDiffFromMLS'][:]
-
-        # upper atm
-        #/--------------------------------------------------------------\#
-        p_upp   = f0.variables['PressureUpperAtmos'][:]
-        mr_upp0 = f0.variables['KeySpeciesRatioUpperAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
-        mr_upp  = np.linspace(0.0, 1.0, mr_upp0.size)
-
-        coef_upp = f0.variables['AbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :, :Ng, :, :]
-        coef_key_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :Ng, :, :, :]
-        #\--------------------------------------------------------------/#
-
-        # lower atm
-        #/--------------------------------------------------------------\#
-        p_low   = f0.variables['PressureLowerAtmos'][:]
-        mr_low0 = f0.variables['KeySpeciesRatioLowerAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
-        mr_low  = np.linspace(0.0, 1.0, mr_low0.size)
-
-        coef_low = f0.variables['AbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :, :Ng, :, :]
-        coef_key_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :Ng, :, :, :]
-        #\--------------------------------------------------------------/#
-
-        #\----------------------------------------------------------------------------/#
 
         # Coef    :  ('Absorber', 'GPoint', 'Temperature', 'KeySpeciesRatioLowerAtmos')
         # Coef Key:  ('GPoint', 'PressureLowerAtmos', 'TemperatureDiffFromMLS', 'KeySpeciesRatioLowerAtmos')
