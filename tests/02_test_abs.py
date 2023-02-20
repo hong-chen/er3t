@@ -98,11 +98,12 @@ def test_abs_rrtmg(fdir='tmp-data'):
 
     # compare
     #/----------------------------------------------------------------------------\#
-    iband = 0
+    # iband = 0
+    # coef_ref0 = coef_ref[:, iband, :]
+    # abs0 = er3t.pre.abs.abs_rrtmg_sw(iband=iband, atm_obj=atm0)
 
-    coef_ref0 = coef_ref[:, iband, :]
-
-    abs0 = er3t.pre.abs.abs_rrtmg_sw(iband=iband, atm_obj=atm0)
+    for iband in range(14):
+        abs0 = er3t.pre.abs.abs_rrtmg_sw(iband=iband, atm_obj=atm0)
     #\----------------------------------------------------------------------------/#
     sys.exit()
 

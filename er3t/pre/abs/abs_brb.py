@@ -77,9 +77,9 @@ class abs_rrtmg_sw:
         self.g_mode  = g_mode
         self.atm_obj = atm_obj
 
-        self.load_data(iband, g_mode)
+        self.get_coef(iband, g_mode, atm_obj)
 
-    def load_data(self, iband, g_mode):
+    def load_data(self, iband, g_mode, atm_obj):
 
         f0 = Dataset(self.fname, 'r')
 
@@ -185,6 +185,12 @@ class abs_rrtmg_sw:
 
         #\----------------------------------------------------------------------------/#
 
+        # profile
+        #/----------------------------------------------------------------------------\#
+        t_ref = f0.variables['ReferenceTemperature'][:]
+        p     = f0.variables['Pressure'][:]
+        #\----------------------------------------------------------------------------/#
+
 
         # coef
         #/----------------------------------------------------------------------------\#
@@ -239,57 +245,6 @@ class abs_rrtmg_sw:
         print('Coef. Key: %s\n' % str(coef_key_upp.shape))
         print('-'*80)
 
-        sys.exit()
-
-
-        print('Delta Temperature')
-        print(dt.shape)
-        print('Pressure [Upper]')
-        print(p_upp.shape)
-        print('Ratio [Upper]')
-        print(mr_upp.shape)
-        print(coef_upp.shape)
-        print(coef_key_upp.shape)
-        print()
-
-        print('Pressure [Lower]')
-        print(p_low.shape)
-        print('Ratio [Lower]')
-        print(mr_low.shape)
-        print(coef_low.shape)
-        print(coef_key_low.shape)
-        print()
-
-
-        # Ngas  = 12
-        # Nband = 14
-        # variables['AbsorberNames'] ------------------------------- : Dataset  (12, 5)
-
-
-
-
-        # profile
-        #/----------------------------------------------------------------------------\#
-        t_ref = f0.variables['ReferenceTemperature'][:]
-        p     = f0.variables['Pressure'][:]
-        #\----------------------------------------------------------------------------/#
-
-        # # figure
-        # #/----------------------------------------------------------------------------\#
-        # plt.close('all')
-        # fig = plt.figure(figsize=(8, 6))
-        # #/--------------------------------------------------------------\#
-        # ax1 = fig.add_subplot(111)
-        # ax1.scatter(t_ref, p, s=6, c='k', lw=0.0)
-        # #\--------------------------------------------------------------/#
-        # plt.show()
-        # sys.exit()
-        # #\----------------------------------------------------------------------------/#
-        # #\----------------------------------------------------------------------------/#
-
-        f0.close()
-
-
 
         # + netCDF
         # variables['BandWavenumberLowerLimit'] -------------------- : Dataset  (14,)
@@ -339,7 +294,8 @@ class abs_rrtmg_sw:
         # variables['TemperatureH2OSelf'] -------------------------- : Dataset  (10,)
         # variables['H2OSelfAbsorptionCoefficients'] --------------- : Dataset  (2, 14, 16, 10)
         # -
-        pass
+
+        f0.close()
 
 
 
