@@ -752,6 +752,7 @@ class abs_rep:
             bands.append(band_name0)
         #\----------------------------------------------------------------------------/#
 
+
         # select band
         # if <band_name=> is specified, use <band_name=>
         # if <band_name=> is not specified, fall back to <wavelength=>
@@ -788,6 +789,7 @@ class abs_rep:
                 # self.band_range = (wvl_min[index_band], wvl_max[index_band])
                 # self.wavelength = sum(self.band_range)/2.0
         #\----------------------------------------------------------------------------/#
+
 
         # read out gases
         #/----------------------------------------------------------------------------\#
