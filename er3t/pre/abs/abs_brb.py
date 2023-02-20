@@ -214,11 +214,11 @@ class abs_rrtmg_sw:
             for gas0 in atm_obj.gases:
                 if gas0 != 'no2':
                     igas = gases.index(gas0)
-                    coef0_low = coef_low[igas, ig, :, :]
+                    # coef0_low = coef_low[igas, ig, :, :]
                     # coef0_upp = coef_upp[igas, ig, :, :]
 
-                    # coef0_key_low = coef_key_low[ig, :, :, :]
-                    # coef0_key_upp = coef_key_upp[ig, :, :, :]
+                    coef0_key_low = coef_key_low[ig, :, :, :]
+                    coef0_key_upp = coef_key_upp[ig, :, :, :]
 
                     print(gas0, ig)
                     print(coef0_low)

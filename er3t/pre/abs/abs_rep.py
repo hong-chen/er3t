@@ -717,13 +717,10 @@ class abs_rep:
 
     def __init__(
             self,
-            wavelength,
+            wavelength=650.0,
             target='MODIS',
             atm_obj=None,
             band_name=None,
-            # target='fine',
-            # target='medium',
-            # target='coarse',
             band='B01',
             ):
 
@@ -755,40 +752,42 @@ class abs_rep:
             bands.append(band_name0)
         #\----------------------------------------------------------------------------/#
 
-        # select wavelength band
+        # select band
+        # if <band_name=> is specified, use <band_name=>
+        # if <band_name=> is not specified, fall back to <wavelength=>
         #/----------------------------------------------------------------------------\#
+        wvl_min = f0.variables['wvlmin'][:]
+        wvl_max = f0.variables['wvlmax'][:]
+
         if band_name is not None:
             if band_name not in bands:
                 bands_info = '\n'.join(bands)
                 msg = '\nError [abs_rep]: <band_name=\'%s\'> is invalid, please specify one from the following \n%s' % (band_name, bands_info)
                 raise OSError(msg)
+            else:
+                index_band = bands.index(band_name)
+                self.band_name  = band_name
+                # self.band_range = (wvl_min[index_band], wvl_max[index_band])
+                # self.wavelength = sum(self.band_range)/2.0
+        else:
 
-
-        wvl_min = f0.variables['wvlmin'][:]
-        wvl_max = f0.variables['wvlmax'][:]
-        print(wvl_min)
-        print(wvl_max)
-
-        logic = (wavelength>wvl_min) & (wavelength<wvl_max)
-        indices = np.where(logic)[0]
-        N_ = logic.sum()
-        if N_ == 0:
-            msg = '\nError [abs_rep]: %.4f nm is outside REPTRAN-supported wavelength range.' % wavelength
-            raise OSError(msg)
-        elif N_ > 1:
-            bands_ = [bands[i] for i in indices]
-            bands_info_ = '\n'.join(bands_)
-            msg = '\nError [abs_rep]: found more than one band matching the wavelength criteria, please specify one from the following at <band_name>\n%s\nfor example, <band_name=\'%s\'>' % (bands_info_, bands_[0])
-            raise OSError(msg)
-
-            print([bands[i] for i in indices])
-
-
-        print(logic.sum())
+            logic = (wavelength>wvl_min) & (wavelength<wvl_max)
+            indices = np.where(logic)[0]
+            N_ = logic.sum()
+            if N_ == 0:
+                msg = '\nError [abs_rep]: %.4f nm is outside REPTRAN-%s-%s supported wavelength range.' % (wavelength, self.source, self.target)
+                raise OSError(msg)
+            elif N_ > 1:
+                bands_ = [bands[i] for i in indices]
+                bands_info_ = '\n'.join(bands_)
+                msg = '\nError [abs_rep]: found more than one band matching the wavelength criteria, please specify one from the following at <band_name>\n%s\nfor example, <band_name=\'%s\'>' % (bands_info_, bands_[0])
+                raise OSError(msg)
+            elif N_ == 1:
+                index_band = indices[0]
+                self.band_name  = bands[index_band]
+                # self.band_range = (wvl_min[index_band], wvl_max[index_band])
+                # self.wavelength = sum(self.band_range)/2.0
         #\----------------------------------------------------------------------------/#
-
-        sys.exit()
-
 
         # read out gases
         #/----------------------------------------------------------------------------\#
@@ -800,7 +799,6 @@ class abs_rep:
             gases.append(gas_name0)
         #\----------------------------------------------------------------------------/#
 
-        index_band = bands.index(self.name_tag)
 
         # get band information
         #/----------------------------------------------------------------------------\#
@@ -836,19 +834,44 @@ class abs_rep:
 
     def cal_coef(self):
 
-        self.coef = {}
         Nz = self.atm_obj.lay['altitude']['data'].size
         Ng = self.Ng
-        self.coef['wavelength'] = {'data': 0}
-        self.coef['abso_coef']  = {'data': np.zeros((Nz, Ng))}
-        self.coef['slit_func']  = {'data': np.zeros((Nz, Ng))}
-        self.coef['solar']  = {'data': self.sol}
-        self.coef['weight'] = {'data': self.wgt}
 
-        for gas0 in self.gases:
+        self.coef = {}
 
-            print(gas0)
-            self.load_gas(gas0)
+        self.coef['wvl'] = {
+                'name': 'Wavelength',
+                'units': 'nm',
+                'data': self.wvl.data
+                }
+
+        self.coef['solar'] = {
+                'name': 'Solar Factor (Ng)',
+                'data': self.sol.data
+                }
+
+        self.coef['weight'] = {
+                'name': 'Weight (Ng)',
+                'data': self.wgt.data
+                }
+
+        self.coef['slit_func'] = {
+                'name': 'Slit Function (Nz, Ng)',
+                'data': np.ones((Nz, Ng), dtype=np.float64)
+                }
+
+        self.coef['abso_coef'] = {
+                'name':'Absorption Coefficient (Nz, Ng)',
+                # 'data':abso_coef
+                }
+
+        abso_coef = np.zeros((Nz, Ng), dtype=np.float64)
+
+        for ig in range(Ng):
+            for gas0 in self.gases:
+
+                self.load_gas(gas0)
+                # stopped here
 
     def load_gas(self, gas_type):
 
@@ -862,34 +885,10 @@ class abs_rep:
         iwvl  = f0.variables['wvl_index'][:]
         f0.close()
 
-        print(vmrs)
+        print(xsec.shape)
 
 
 
 if __name__ == '__main__':
-
-    from er3t.pre.atm import atm_atmmod
-
-    levels = np.arange(0.0, 20.1, 0.5)
-    atm0 = atm_atmmod(levels=levels, overwrite=True)
-
-    # abs0 = abs_rep(650.0, target='modis', band_name='aqua_modis_b01')
-    abs0 = abs_rep(650.0, target='modis', band_name='haha')
-
-    # for gas_type in atm0.gases:
-    #     vmrs_atm = atm0.lay[gas_type.lower()]['data']/atm0.lay['factor']['data']
-    #     print(gas_type)
-    #     print(vmrs_atm)
-    # sys.exit()
-
-    # for band in range(1, 21):
-    #     mod_rep = abs_rep(band='B%2.2d' % band, atm_obj=atm0)
-    #     print(mod_rep.name_tag)
-    #     print('Solar      :', mod_rep.sol)
-    #     print('Wavelength :', mod_rep.wvl)
-    #     print('Gas species:', mod_rep.gases)
-    #     print('Ng         :', mod_rep.Ng)
-    #     print('-'*60)
-        # sys.exit()
 
     pass
