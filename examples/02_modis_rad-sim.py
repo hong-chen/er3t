@@ -50,19 +50,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # import cartopy.crs as ccrs
 mpl.use('Agg')
 
-import er3t.common
-from er3t.pre.atm import atm_atmmod
-from er3t.pre.abs import abs_16g
-from er3t.pre.cld import cld_sat, cld_les
-from er3t.pre.sfc import sfc_sat
-from er3t.pre.pha import pha_mie_wc as pha_mie
-from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, modis_43a3, get_sinusoidal_grid_tag
-from er3t.util import cal_r_twostream, cal_ext, grid_by_extent, grid_by_lonlat, download_laads_https, download_worldview_rgb, get_satfile_tag
 
-from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
-from er3t.rtm.mca import mcarats_ng
-from er3t.rtm.mca import mca_out_ng
-from er3t.rtm.mca import mca_sca
+
+import er3t
 
 
 
@@ -137,18 +127,18 @@ class satellite_download:
 
         self.fnames = {}
 
-        self.fnames['mod_rgb'] = [download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.util.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
-        filename_tags_03 = get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
+        filename_tags_03 = er3t.util.get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
 
         for filename_tag in filename_tags_03:
-            fnames_03     = download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = er3t.util.download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = er3t.util.download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = er3t.util.download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02
             self.fnames['mod_03'] += fnames_03
@@ -156,10 +146,10 @@ class satellite_download:
         # MODIS surface product
         self.fnames['mod_09'] = []
         self.fnames['mod_43'] = []
-        filename_tags_09 = get_sinusoidal_grid_tag(lon, lat)
+        filename_tags_09 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_09:
-            fnames_09 = download_laads_https(self.date, '61/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
-            fnames_43 = download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_09 = er3t.util.download_laads_https(self.date, '61/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
+            fnames_43 = er3t.util.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_09'] += fnames_09
             self.fnames['mod_43'] += fnames_43
 
@@ -237,7 +227,7 @@ def pre_cld_modis(sat, wvl, scale_factor=1.0, solver='3D'):
     a0         = np.median(ref_2d)
     mu0        = np.cos(np.deg2rad(sza1.mean()))
     xx_2stream = np.linspace(0.0, 200.0, 10000)
-    yy_2stream = cal_r_twostream(xx_2stream, a=a0, mu=mu0)
+    yy_2stream = er3t.util.cal_r_twostream(xx_2stream, a=a0, mu=mu0)
 
     # lon/lat shift due to parallax and wind correction
     lon_1d = lon_2d[:, 0]
@@ -310,14 +300,14 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
     # =================================================================================
     levels = np.arange(0.0, 20.1, 0.5)
     fname_atm = '%s/atm.pk' % fdir
-    atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
     # =================================================================================
 
 
     # abs object
     # =================================================================================
     fname_abs = '%s/abs.pk' % fdir
-    abs0      = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
     # =================================================================================
 
 
@@ -332,8 +322,8 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
 
     fname_sfc = '%s/sfc.pk' % fdir
     mod09 = sat_tmp(data)
-    sfc0      = sfc_sat(sat_obj=mod09, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
-    sfc_2d    = mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
+    sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod09, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
+    sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     # =================================================================================
 
 
@@ -352,21 +342,21 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
     fname_cld = '%s/cld.pk' % fdir
 
     cth0 = modl1b.data['cth_2d']['data']
-    cld0      = cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
     # =================================================================================
 
 
     # mca_sca object
     # =================================================================================
-    pha0 = pha_mie(wavelength=wavelength)
-    sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     # =================================================================================
 
 
     # mca_cld object
     # =================================================================================
-    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
-    atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
+    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm_1ds = [atm1d0]
     atm_3ds = [atm3d0]
     # =================================================================================
@@ -385,7 +375,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
 
     # run mcarats
     # =================================================================================
-    mca0 = mcarats_ng(
+    mca0 = er3t.rtm.mca.mcarats_ng(
             date=sat.date,
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
@@ -408,7 +398,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
             )
 
     # mcarats output
-    out0 = mca_out_ng(fname='%s/mca-out-rad-modis-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-modis-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
     # =================================================================================
 
 
@@ -471,13 +461,13 @@ def cdata_modis_raw(wvl=_wavelength, plot=True):
 
     # MODIS radiance/reflectance at 650 nm
     #/--------------------------------------------------------------\#
-    modl1b = modis_l1b(fnames=sat0.fnames['mod_02'], extent=sat0.extent)
+    modl1b = er3t.util.modis_l1b(fnames=sat0.fnames['mod_02'], extent=sat0.extent)
     lon0  = modl1b.data['lon']['data']
     lat0  = modl1b.data['lat']['data']
     ref0  = modl1b.data['ref']['data'][index_wvl, ...]
     rad0  = modl1b.data['rad']['data'][index_wvl, ...]
-    lon_2d, lat_2d, ref_2d = grid_by_extent(lon0, lat0, ref0, extent=sat0.extent)
-    lon_2d, lat_2d, rad_2d = grid_by_extent(lon0, lat0, rad0, extent=sat0.extent)
+    lon_2d, lat_2d, ref_2d = er3t.util.grid_by_extent(lon0, lat0, ref0, extent=sat0.extent)
+    lon_2d, lat_2d, rad_2d = er3t.util.grid_by_extent(lon0, lat0, rad0, extent=sat0.extent)
 
     g1['rad_%4.4d' % wvl] = rad_2d
     g1['ref_%4.4d' % wvl] = ref_2d
@@ -494,7 +484,7 @@ def cdata_modis_raw(wvl=_wavelength, plot=True):
 
     # MODIS geo information - sza, saa, vza, vaa
     #/--------------------------------------------------------------\#
-    mod03 = modis_03(fnames=sat0.fnames['mod_03'], extent=sat0.extent, vnames=['Height'])
+    mod03 = er3t.util.modis_03(fnames=sat0.fnames['mod_03'], extent=sat0.extent, vnames=['Height'])
     lon0  = mod03.data['lon']['data']
     lat0  = mod03.data['lat']['data']
     sza0  = mod03.data['sza']['data']
@@ -504,11 +494,11 @@ def cdata_modis_raw(wvl=_wavelength, plot=True):
     sfh0  = mod03.data['height']['data']/1000.0 # units: km
     sfh0[sfh0<0.0] = np.nan
 
-    lon_2d, lat_2d, sza_2d = grid_by_lonlat(lon0, lat0, sza0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, saa_2d = grid_by_lonlat(lon0, lat0, saa0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, vza_2d = grid_by_lonlat(lon0, lat0, vza0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, vaa_2d = grid_by_lonlat(lon0, lat0, vaa0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, sfh_2d = grid_by_lonlat(lon0, lat0, sfh0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, sza_2d = er3t.util.grid_by_lonlat(lon0, lat0, sza0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, saa_2d = er3t.util.grid_by_lonlat(lon0, lat0, saa0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, vza_2d = er3t.util.grid_by_lonlat(lon0, lat0, vza0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, vaa_2d = er3t.util.grid_by_lonlat(lon0, lat0, vaa0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, sfh_2d = er3t.util.grid_by_lonlat(lon0, lat0, sfh0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
 
     g0['sza'] = sza_2d
     g0['saa'] = saa_2d
@@ -522,7 +512,7 @@ def cdata_modis_raw(wvl=_wavelength, plot=True):
 
     # cloud properties
     #/--------------------------------------------------------------\#
-    modl2 = modis_l2(fnames=sat0.fnames['mod_l2'], extent=sat0.extent, vnames=['cloud_top_height_1km'])
+    modl2 = er3t.util.modis_l2(fnames=sat0.fnames['mod_l2'], extent=sat0.extent, vnames=['cloud_top_height_1km'])
 
     lon0  = modl2.data['lon']['data']
     lat0  = modl2.data['lat']['data']
@@ -532,12 +522,12 @@ def cdata_modis_raw(wvl=_wavelength, plot=True):
     cth0  = modl2.data['cloud_top_height_1km']['data']/1000.0 # units: km
     cth0[cth0<0.0] = np.nan
 
-    lon_2d, lat_2d, cer_2d_l2 = grid_by_lonlat(lon0, lat0, cer0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
+    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cer0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
     cer_2d_l2[cer_2d_l2<1.0] = 1.0
 
-    lon_2d, lat_2d, cot_2d_l2 = grid_by_lonlat(lon0, lat0, cot0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
+    lon_2d, lat_2d, cot_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cot0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
 
-    lon_2d, lat_2d, cth_2d_l2 = grid_by_lonlat(lon0, lat0, cth0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, cth_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cth0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
 
     g2['cot_l2'] = cot_2d_l2
     g2['cer_l2'] = cer_2d_l2
@@ -557,11 +547,11 @@ def cdata_modis_raw(wvl=_wavelength, plot=True):
     #   band 5: 1230 - 1250 nm, index 4
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
-    mod09 = modis_09a1(fnames=sat0.fnames['mod_09'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_09 = grid_by_extent(mod09.data['lon']['data'], mod09.data['lat']['data'], mod09.data['ref']['data'][index_wvl, :], extent=sat0.extent)
+    mod09 = er3t.util.modis_09a1(fnames=sat0.fnames['mod_09'], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, sfc_09 = er3t.util.grid_by_extent(mod09.data['lon']['data'], mod09.data['lat']['data'], mod09.data['ref']['data'][index_wvl, :], extent=sat0.extent)
 
-    mod43 = modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_43 = grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent)
+    mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent)
 
     g3['lon'] = lon_2d_sfc
     g3['lat'] = lat_2d_sfc
@@ -863,13 +853,13 @@ class func_cot_vs_rad:
         #/----------------------------------------------------------------------------\#
         levels = np.arange(0.0, 20.1, 1.0)
         fname_atm = '%s/atm.pk' % self.fdir
-        atm0   = atm_atmmod(levels=levels, fname=fname_atm, overwrite=False)
+        atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=False)
         #\----------------------------------------------------------------------------/#
 
         # abs object
         #/----------------------------------------------------------------------------\#
         fname_abs = '%s/abs.pk' % self.fdir
-        abs0      = abs_16g(wavelength=self.wavelength, fname=fname_abs, atm_obj=atm0, overwrite=False)
+        abs0      = er3t.pre.abs.abs_16g(wavelength=self.wavelength, fname=fname_abs, atm_obj=atm0, overwrite=False)
         #\----------------------------------------------------------------------------/#
 
         # define cloud
@@ -892,7 +882,7 @@ class func_cot_vs_rad:
 
         fname_les = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
         fname_les_pk  = '%s/les.pk' % self.fdir
-        cld0          = cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 25, 1], overwrite=False)
+        cld0          = er3t.pre.cld.cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 25, 1], overwrite=False)
 
         cld0.lev['altitude']['data']    = cld0.lay['altitude']['data'][1:4]
 
@@ -906,23 +896,23 @@ class func_cot_vs_rad:
         cld0.lay['cot']['data']         = cot_2d
         cld0.lay['thickness']['data']   = cld0.lay['thickness']['data'][1:3]
 
-        ext_3d[:, :, 0]  = cal_ext(cot_2d, cer_2d)/(cld0.lay['thickness']['data'].sum()*1000.0)
-        ext_3d[:, :, 1]  = cal_ext(cot_2d, cer_2d)/(cld0.lay['thickness']['data'].sum()*1000.0)
+        ext_3d[:, :, 0]  = er3t.util.cal_ext(cot_2d, cer_2d)/(cld0.lay['thickness']['data'].sum()*1000.0)
+        ext_3d[:, :, 1]  = er3t.util.cal_ext(cot_2d, cer_2d)/(cld0.lay['thickness']['data'].sum()*1000.0)
         cld0.lay['extinction']['data']  = ext_3d
         #\----------------------------------------------------------------------------/#
 
         # mca_sca object
         #/----------------------------------------------------------------------------\#
-        pha0 = pha_mie(wavelength=self.wavelength)
-        sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % self.fdir, overwrite=False)
+        pha0 = er3t.pre.pha.pha_mie_wc(wavelength=self.wavelength)
+        sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % self.fdir, overwrite=False)
         #\----------------------------------------------------------------------------/#
 
         # mca_cld object
         #/----------------------------------------------------------------------------\#
-        atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+        atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
 
         fname_atm3d = '%s/mca_atm_3d.bin' % self.fdir
-        atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=True)
+        atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=True)
 
         atm_1ds   = [atm1d0]
         atm_3ds   = [atm3d0]
@@ -931,7 +921,7 @@ class func_cot_vs_rad:
 
         # run mcarats
         # =================================================================================
-        mca0 = mcarats_ng(
+        mca0 = er3t.rtm.mca.mcarats_ng(
                 date=_date,
                 atm_1ds=atm_1ds,
                 atm_3ds=atm_3ds,
@@ -954,7 +944,7 @@ class func_cot_vs_rad:
                 )
 
         # mcarats output
-        out0 = mca_out_ng(fname='%s/mca-out-rad-3d_cot-%.2f.h5' % (self.fdir, cot), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
+        out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-3d_cot-%.2f.h5' % (self.fdir, cot), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
         # =================================================================================
 
     def interp_from_rad(self, rad, method='cubic'):
