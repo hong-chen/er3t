@@ -79,7 +79,9 @@ class abs_rrtmg_sw:
 
         self.get_coef(iband, g_mode, atm_obj)
 
-    def load_data(self, iband, g_mode, atm_obj):
+    def get_coef(self, iband, g_mode, atm_obj):
+
+        self.coef = {}
 
         f0 = Dataset(self.fname, 'r')
 
@@ -133,20 +135,38 @@ class abs_rrtmg_sw:
         key_gas_upp = [gases[i] for i in ikey_gas_upp]
         #\----------------------------------------------------------------------------/#
 
-        # Gs
+
+        # Gs, Nz
         #/----------------------------------------------------------------------------\#
         Ng = f0.variables['NumGPoints'][:][g_mode, iband]
+        Nz = atm_obj.lay['pressure']['data'].size
         #\----------------------------------------------------------------------------/#
+
 
         # solar
         #/----------------------------------------------------------------------------\#
         sol_upp = f0['SolarSourceFunctionUpperAtmos'][:][g_mode, iband, :, :Ng]
         sol_low = f0['SolarSourceFunctionLowerAtmos'][:][g_mode, iband, :, :Ng]
+
+        self.coef['solar'] = {
+                'name': 'Solar Factor (Ng)',
+                'data': sol_upp[0, :],
+                }
         #\----------------------------------------------------------------------------/#
+
+
+        # slit function
+        #/----------------------------------------------------------------------------\#
+        self.coef['slit_func'] = {
+                'name': 'Slit Function (Nz, Ng)',
+                'data': np.ones((Nz, Ng), dtype=np.float64),
+                }
+        #\----------------------------------------------------------------------------/#
+
 
         # weights
         #/----------------------------------------------------------------------------\#
-        wgt =  np.array([ \
+        weight =  np.array([ \
               0.1527534276, 0.1491729617, 0.1420961469, \
               0.1316886544, 0.1181945205, 0.1019300893, \
               0.0832767040, 0.0626720116, 0.0424925000, \
@@ -155,35 +175,14 @@ class abs_rrtmg_sw:
               0.0000750000 \
               ])
 
-        """
-          igcsm = 0
-          do ibnd = 1,nbndsw
-             iprsm = 0
-             if (ngc(ibnd).lt.mg) then
-                do igc = 1,ngc(ibnd)
-                   igcsm = igcsm + 1
-                   wtsum = 0.
-                   do ipr = 1, ngn(igcsm)
-                      iprsm = iprsm + 1
-                      wtsum = wtsum + wt(iprsm)
-                   enddo
-                   wtsm(igc) = wtsum
-                enddo
-                do ig = 1, ng(ibnd+15)
-                   ind = (ibnd-1)*mg + ig
-                   rwgt(ind) = wt(ig)/wtsm(ngm(ind))
-                enddo
-             else
-                do ig = 1, ng(ibnd+15)
-                   igcsm = igcsm + 1
-                   ind = (ibnd-1)*mg + ig
-                   rwgt(ind) = 1.0_rb
-                enddo
-             endif
-          enddo
-        """
+        weight *= 1.0/weight.sum() # make sure weights can add up to 1.0
 
+        self.coef['weight'] = {
+                'name': 'Weight (Ng)',
+                'data': weight,
+                }
         #\----------------------------------------------------------------------------/#
+
 
         # profile
         #/----------------------------------------------------------------------------\#
