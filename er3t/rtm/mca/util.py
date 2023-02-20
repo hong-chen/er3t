@@ -21,12 +21,15 @@ class func_ref_vs_cot:
             cot,
             cer0=20.0,
             fdir=er3t.common.params['fdir_tmp'],
+            date=datetime.datetime.now(),
             wavelength=er3t.common.params['wavelength'],
             surface_albedo=er3t.common.params['surface_albedo'],
             solar_zenith_angle=er3t.common.params['solar_zenith_angle'],
             solar_azimuth_angle=er3t.common.params['solar_azimuth_angle'],
             sensor_zenith_angle=er3t.common.params['sensor_zenith_angle'],
             sensor_azimuth_angle=er3t.common.params['sensor_azimuth_angle'],
+            photon_number=er3t.common.params['photon_number'],
+            cpu_number=12,
             output_tag=er3t.common.params['output_tag'],
             overwrite=er3t.common.params['overwrite'],
             ):
@@ -42,6 +45,9 @@ class func_ref_vs_cot:
         self.alb0 = surface_albedo
         self.fdir = fdir
         self.output_tag = output_tag
+        self.photon0 = photon_number
+        self.cpu0 = cpu_number
+        self.date0 = date
 
         self.mu0  = np.cos(np.deg2rad(self.sza0))
         self.ref_2s = er3t.util.cal_r_twostream(cot, a=self.alb0, mu=self.mu0)
@@ -90,20 +96,20 @@ class func_ref_vs_cot:
         for cot0 in self.cot:
             self.run_one(cot0, self.cer0)
 
-    def run_one(self, cot0, cer0, Nx=10, Ny=10):
+    def run_one(self, cot0, cer0, Nx=8, Ny=8):
 
         name_tag = 'cot-%05.1f_cer-%04.1f' % (cot0, cer0)
 
         # atm object
         #/----------------------------------------------------------------------------\#
         levels = np.arange(0.0, 20.1, 1.0)
-        fname_atm = '%s/atm.pk' % self.fdir
+        fname_atm = '%s/atm_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
         atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=False)
         #\----------------------------------------------------------------------------/#
 
         # abs object
         #/----------------------------------------------------------------------------\#
-        fname_abs = '%s/abs.pk' % self.fdir
+        fname_abs = '%s/abs_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
         abs0      = er3t.pre.abs.abs_16g(wavelength=self.wvl0, fname=fname_abs, atm_obj=atm0, overwrite=False)
         #\----------------------------------------------------------------------------/#
 
@@ -138,7 +144,7 @@ class func_ref_vs_cot:
         # run mcarats
         #/----------------------------------------------------------------------------\#
         mca0 = er3t.rtm.mca.mcarats_ng(
-                date=datetime.datetime.now(),
+                date=self.date0,
                 atm_1ds=atm_1ds,
                 atm_3ds=atm_3ds,
                 sca=sca,
@@ -152,9 +158,9 @@ class func_ref_vs_cot:
                 Nrun=3,
                 Ng=abs0.Ng,
                 weights=abs0.coef['weight']['data'],
-                photons=1e7,
+                photons=self.photon0,
                 solver='3D',
-                Ncpu=12,
+                Ncpu=self.cpu0,
                 mp_mode='py',
                 overwrite=True
                 )
