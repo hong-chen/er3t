@@ -106,11 +106,10 @@ class abs_rrtmg_sw:
         Ngas, Nchar = gas_bytes.shape
         gases = []
         for i in range(Ngas):
-            gas_name0 = ''.join([j.decode('utf-8') for j in gas_bytes[i, :]]).strip()
+            gas_name0 = ''.join([j.decode('utf-8') for j in gas_bytes[i, :]]).strip().lower()
             if len(gas_name0) > 0:
                 gases.append(gas_name0)
         #\----------------------------------------------------------------------------/#
-        print(gases)
 
 
         # read out key gas names
@@ -123,8 +122,8 @@ class abs_rrtmg_sw:
         ikey_gas_low = []
         ikey_gas_upp = []
         for i in range(Nkey):
-            key_gas_low_name0 = ''.join([j.decode('utf-8') for j in key_gas_low_bytes[i, :]]).strip()
-            key_gas_upp_name0 = ''.join([j.decode('utf-8') for j in key_gas_upp_bytes[i, :]]).strip()
+            key_gas_low_name0 = ''.join([j.decode('utf-8') for j in key_gas_low_bytes[i, :]]).strip().lower()
+            key_gas_upp_name0 = ''.join([j.decode('utf-8') for j in key_gas_upp_bytes[i, :]]).strip().lower()
             if len(key_gas_low_name0) > 0:
                 ikey_gas_low.append(gases.index(key_gas_low_name0))
             if len(key_gas_upp_name0) > 0:
@@ -133,9 +132,6 @@ class abs_rrtmg_sw:
         key_gas_low = [gases[i] for i in ikey_gas_low]
         key_gas_upp = [gases[i] for i in ikey_gas_upp]
         #\----------------------------------------------------------------------------/#
-        print(key_gas_low)
-        print(key_gas_upp)
-
 
         # Gs
         #/----------------------------------------------------------------------------\#
@@ -192,6 +188,7 @@ class abs_rrtmg_sw:
 
         # coef
         #/----------------------------------------------------------------------------\#
+        t  = f0.variables['Temperature'][:]
         dt = f0.variables['TemperatureDiffFromMLS'][:]
 
         # upper atm
@@ -200,7 +197,7 @@ class abs_rrtmg_sw:
         mr_upp0 = f0.variables['KeySpeciesRatioUpperAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
         mr_upp  = np.linspace(0.0, 1.0, mr_upp0.size)
 
-        coef_upp = f0.variables['AbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, ikey_gas_upp, :Ng, :, :]
+        coef_upp = f0.variables['AbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :, :Ng, :, :]
         coef_key_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :Ng, :, :, :]
         #\--------------------------------------------------------------/#
 
@@ -210,10 +207,40 @@ class abs_rrtmg_sw:
         mr_low0 = f0.variables['KeySpeciesRatioLowerAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
         mr_low  = np.linspace(0.0, 1.0, mr_low0.size)
 
-        coef_low = f0.variables['AbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, ikey_gas_low, :Ng, :, :]
+        coef_low = f0.variables['AbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :, :Ng, :, :]
         coef_key_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :Ng, :, :, :]
         #\--------------------------------------------------------------/#
+
         #\----------------------------------------------------------------------------/#
+
+        # Coef    :  ('Absorber', 'GPoint', 'Temperature', 'KeySpeciesRatioLowerAtmos')
+        # Coef Key:  ('GPoint', 'PressureLowerAtmos', 'TemperatureDiffFromMLS', 'KeySpeciesRatioLowerAtmos')
+
+        print('-'*80)
+        print('Band #%d' % (iband+1))
+        print('Center wavelength: %.4fnm' % self.wavelength)
+        print('Wavelength range: %.4f - %.4fnm' % self.band_range)
+        print('Number of Gs: ', Ng)
+        print()
+        print('Lower Atmosphere:')
+        print('Key species: ', key_gas_low)
+        print('Pressure: %s\n%s' % (p_low.shape, er3t.util.nice_array_str(p_low)))
+        print('Mixing Ratio: %s\n%s' % (mr_low.shape, er3t.util.nice_array_str(mr_low)))
+        print('Temperature Diff.: %s\n%s' % (dt.shape, er3t.util.nice_array_str(dt)))
+        print('Coef.: %s\n' % str(coef_low.shape))
+        print('Coef. Key: %s\n' % str(coef_key_low.shape))
+        print()
+        print('Upper Atmosphere:')
+        print('Key species: ', key_gas_upp)
+        print('Pressure: %s\n%s' % (p_upp.shape, er3t.util.nice_array_str(p_upp)))
+        print('Mixing Ratio: %s\n%s' % (mr_upp.shape, er3t.util.nice_array_str(mr_upp)))
+        print('Temperature Diff.: %s\n%s' % (dt.shape, er3t.util.nice_array_str(dt)))
+        print('Coef.: %s\n' % str(coef_upp.shape))
+        print('Coef. Key: %s\n' % str(coef_key_upp.shape))
+        print('-'*80)
+
+        sys.exit()
+
 
         print('Delta Temperature')
         print(dt.shape)
@@ -233,14 +260,6 @@ class abs_rrtmg_sw:
         print(coef_key_low.shape)
         print()
 
-
-        print('Band #%d' % (iband+1))
-        print('Center wavelength: %.4fnm' % self.wavelength)
-        print('Wavelength range: %.4f - %.4fnm' % self.band_range)
-        print('Number of Gs: ', Ng)
-        print('Lower atm species: ', key_gas_low)
-        print('Upper atm species: ', key_gas_upp)
-        print('-'*40)
 
         # Ngas  = 12
         # Nband = 14
@@ -325,6 +344,5 @@ class abs_rrtmg_sw:
 
 
 if __name__ == '__main__':
-
 
     pass

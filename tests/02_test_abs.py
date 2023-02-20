@@ -71,6 +71,9 @@ def test_abs_16g(fdir):
 
 def test_abs_rrtmg(fdir='tmp-data'):
 
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
     # create atm file
     #/----------------------------------------------------------------------------\#
     levels = np.arange(0.5, 20.6, 1.0) # to match layer altitude with <alt_ref>
@@ -96,6 +99,8 @@ def test_abs_rrtmg(fdir='tmp-data'):
     # compare
     #/----------------------------------------------------------------------------\#
     iband = 0
+
+    coef_ref0 = coef_ref[:, iband, :]
 
     abs0 = er3t.pre.abs.abs_rrtmg_sw(iband=iband, atm_obj=atm0)
     #\----------------------------------------------------------------------------/#
