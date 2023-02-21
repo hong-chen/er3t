@@ -843,6 +843,10 @@ def cloud_mask_rgb(
 
     return indices[0], indices[1]
 
+def collocate_relocate(lon_new, lat_new, lon_ref, lat_ref, data_ref):
+
+    pass
+
 def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
 
     f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
@@ -886,92 +890,28 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
 
     lon_cld = lon_cld0[logic]
     lat_cld = lat_cld0[logic]
+    indices_x = indices_x[logic]
+    indices_y = indices_y[logic]
     #\--------------------------------------------------------------/#
 
     #\----------------------------------------------------------------------------/#
-
-    # IPA
-    #/----------------------------------------------------------------------------\#
-    # theoretical relationship
-    #/--------------------------------------------------------------\#
-    cot=np.concatenate((np.arange(0.0, 2.0, 0.5),
-                        np.arange(2.0, 30.0, 2.0),
-                        np.arange(30.0, 60.0, 5.0),
-                        np.arange(60.0, 100.0, 10.0),
-                        np.arange(100.0, 201.0, 50.0)))
-
-    fdir = 'tmp-data/%s/ipa-%06.1fnm' % (params['name_tag'], params['wavelength'])
-
-    f_mca =  er3t.rtm.mca.func_ref_vs_cot(
-            cot,
-            cer0=20.0,
-            fdir=fdir,
-            date=params['date'],
-            wavelength=params['wavelength'],
-            surface_albedo=alb.mean(),
-            solar_zenith_angle=sza.mean(),
-            solar_azimuth_angle=saa.mean(),
-            sensor_zenith_angle=vza.mean(),
-            sensor_azimuth_angle=vaa.mean(),
-            overwrite=False
-            )
-    #\--------------------------------------------------------------/#
-
-    # figure
-    #/----------------------------------------------------------------------------\#
-    plt.close('all')
-    fig = plt.figure(figsize=(8, 6))
-    # fig.suptitle('Figure')
-    # plot
-    #/--------------------------------------------------------------\#
-    ax1 = fig.add_subplot(111)
-    ax1.errorbar(f_mca.cot, f_mca.ref, yerr=f_mca.ref_std)
-    # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-    # ax1.set_xlim(())
-    # ax1.set_ylim(())
-    # ax1.set_xlabel('')
-    # ax1.set_ylabel('')
-    # ax1.set_title('')
-    # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-    # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-    #\--------------------------------------------------------------/#
-    # add colorbar
-    #/--------------------------------------------------------------\#
-    # divider = make_axes_locatable(ax1)
-    # cax = divider.append_axes('right', '5%', pad='3%')
-    # cbar = fig.colorbar(cs, cax=cax)
-    # cbar.set_label('', rotation=270, labelpad=4.0)
-    # cbar.set_ticks([])
-    # cax.axis('off')
-    #\--------------------------------------------------------------/#
-    # save figure
-    #/--------------------------------------------------------------\#
-    # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-    # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-    #\--------------------------------------------------------------/#
-    plt.show()
-    sys.exit()
-    #\----------------------------------------------------------------------------/#
-
-    sys.exit()
 
 
     # Parallax correction (for the cloudy pixels detected previously)
     #/----------------------------------------------------------------------------\#
-    vza_cld = vza[indices_x[logic], indices_y[logic]]
-    vaa_cld = vaa[indices_x[logic], indices_y[logic]]
-    sfh_cld = sfh[indices_x[logic], indices_y[logic]] * 1000.0  # convert to meter from km
+    vza_cld = vza[indices_x, indices_y]
+    vaa_cld = vaa[indices_x, indices_y]
+    sfh_cld = sfh[indices_x, indices_y] * 1000.0  # convert to meter from km
 
-    # get new cth (need more work)
+    # get cth for
+    # new cloud field obtained from radiance thresholding [indices_x[logic], indices_y[logic]]
+    # from cth from MODIS L2 cloud product
     #/--------------------------------------------------------------\#
-    cth_cld = cth[indices_x[logic], indices_y[logic]] * 1000.0  # convert to meter from km
+    cth_cld = cth[indices_x, indices_y] * 1000.0  # convert to meter from km
     #\--------------------------------------------------------------/#
 
     lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
     #\----------------------------------------------------------------------------/#
-
-
 
     # figure
     #/----------------------------------------------------------------------------\#
@@ -1014,8 +954,31 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     #\----------------------------------------------------------------------------/#
 
 
+    # IPA retrieval
+    #/----------------------------------------------------------------------------\#
 
-
+    # IPA relationship of reflectance vs cloud optical thickness
+    #/--------------------------------------------------------------\#
+    cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
+                          np.arange(2.0, 30.0, 2.0),
+                          np.arange(30.0, 60.0, 5.0),
+                          np.arange(60.0, 100.0, 10.0),
+                          np.arange(100.0, 201.0, 50.0)))
+    fdir  = 'tmp-data/%s/ipa-%06.1fnm' % (params['name_tag'], params['wavelength'])
+    f_mca = er3t.rtm.mca.func_ref_vs_cot(
+            cot,
+            cer0=20.0,
+            fdir=fdir,
+            date=params['date'],
+            wavelength=params['wavelength'],
+            surface_albedo=alb.mean(),
+            solar_zenith_angle=sza.mean(),
+            solar_azimuth_angle=saa.mean(),
+            sensor_zenith_angle=vza.mean(),
+            sensor_azimuth_angle=vaa.mean(),
+            overwrite=False
+            )
+    #\--------------------------------------------------------------/#
 
     # assign COT for every cloudy pixel
     #/--------------------------------------------------------------\#
@@ -1023,10 +986,10 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     cot_rt = np.zeros_like(ref_2d)
     for i in range(indices_x.size):
         if 0<=indices_x[i]<Nx and 0<=indices_y[i]<Ny:
-
             # mca-rt
             cot_rt[indices_x[i], indices_y[i]] = f(ref_2d[indices_x[i], indices_y[i]])
     #\--------------------------------------------------------------/#
+
     #\----------------------------------------------------------------------------/#
 
 
