@@ -981,14 +981,37 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     #/----------------------------------------------------------------------------\#
     # calculate new lon_corr, lat_corr based on cloud, surface and sensor geometries
     #/--------------------------------------------------------------\#
-    vza_cld = vza[indices_x, indices_y]
-    vaa_cld = vaa[indices_x, indices_y]
-    sfh_cld = sfh[indices_x, indices_y] * 1000.0  # convert to meter from km
-    cth_cld = cth_ipa0[indices_x, indices_y] * 1000.0 # convert to meter from km
-    lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
+    # vza_cld = vza[indices_x, indices_y]
+    # vaa_cld = vaa[indices_x, indices_y]
+    # sfh_cld = sfh[indices_x, indices_y] * 1000.0  # convert to meter from km
+    # cth_cld = cth_ipa0[indices_x, indices_y] * 1000.0 # convert to meter from km
+    # lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
     #\--------------------------------------------------------------/#
 
     # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
+    #/--------------------------------------------------------------\#
+    # Nx, Ny = ref_2d.shape
+    # cot_ipa = np.zeros_like(ref_2d)
+    # cer_ipa = np.zeros_like(ref_2d)
+    # cth_ipa = np.zeros_like(ref_2d)
+    # for i in range(indices_x.size):
+    #     ix = indices_x[i]
+    #     iy = indices_y[i]
+
+    #     lon_corr0 = lon_corr[i]
+    #     lat_corr0 = lat_corr[i]
+    #     ix_corr = int((lon_corr0-lon_2d[0, 0])//(lon_2d[1, 0]-lon_2d[0, 0]))
+    #     iy_corr = int((lat_corr0-lat_2d[0, 0])//(lat_2d[0, 1]-lat_2d[0, 0]))
+    #     if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
+    #         cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
+    #         cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
+    #         cth_ipa[ix_corr, iy_corr] = cth_ipa0[ix, iy]
+    #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
+
+    # Simple parallax correction (for the cloudy pixels detected previously)
+    #/----------------------------------------------------------------------------\#
     #/--------------------------------------------------------------\#
     Nx, Ny = ref_2d.shape
     cot_ipa = np.zeros_like(ref_2d)
@@ -998,10 +1021,8 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         ix = indices_x[i]
         iy = indices_y[i]
 
-        lon_corr0 = lon_corr[i]
-        lat_corr0 = lat_corr[i]
-        ix_corr = int((lon_corr0-lon_2d[0, 0])//(lon_2d[1, 0]-lon_2d[0, 0]))
-        iy_corr = int((lat_corr0-lat_2d[0, 0])//(lat_2d[0, 1]-lat_2d[0, 0]))
+        ix_corr = int(ix-offset_dx)
+        iy_corr = int(iy-offset_dy)
         if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
             cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
             cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
