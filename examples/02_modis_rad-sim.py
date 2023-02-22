@@ -36,7 +36,7 @@ from pyhdf.SD import SD, SDC
 import numpy as np
 import datetime
 from scipy.io import readsav
-from scipy import interpolate
+from scipy import interpolate, stats
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -520,14 +520,16 @@ def cdata_modis_raw(wvl=params['wavelength'], plot=True):
     cot0  = modl2.data['cot']['data']
 
     cth0  = modl2.data['cloud_top_height_1km']['data']/1000.0 # units: km
-    cth0[cth0<0.0] = np.nan
+    cth0[cth0<=0.0] = np.nan
 
     lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cer0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
-    cer_2d_l2[cer_2d_l2<1.0] = 1.0
+    cer_2d_l2[cer_2d_l2<=1.0] = np.nan
 
     lon_2d, lat_2d, cot_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cot0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
+    cot_2d_l2[cot_2d_l2<=0.0] = np.nan
 
     lon_2d, lat_2d, cth_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cth0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    cth_2d_l2[cth_2d_l2<=0.0] = np.nan
 
     g2['cot_l2'] = cot_2d_l2
     g2['cer_l2'] = cer_2d_l2
@@ -843,9 +845,42 @@ def cloud_mask_rgb(
 
     return indices[0], indices[1]
 
-def collocate_relocate(lon_new, lat_new, lon_ref, lat_ref, data_ref):
+def correlate_collocate(data0, data, Ndx=5, Ndy=5):
 
-    pass
+    Nx, Ny = data.shape
+    x = np.arange(Nx, dtype=np.int32)
+    y = np.arange(Ny, dtype=np.int32)
+    xx, yy = np.meshgrid(x, y, indexing='ij')
+
+    xx0 = xx.copy()
+    yy0 = yy.copy()
+    valid = np.ones((Nx, Ny), dtype=np.int32)
+
+    corr_coef = np.zeros((2*Ndx+1, 2*Ndy+1), dtype=np.float64)
+    dxx = np.arange(-Ndx, Ndx+1)
+    dyy = np.arange(-Ndy, Ndy+1)
+
+    for idx, dx in enumerate(dxx):
+        xx_ = xx + dx
+        valid[xx_< 0 ] = 0
+        valid[xx_>=Nx] = 0
+        for idy, dy in enumerate(dyy):
+            yy_ = yy + dy
+            valid[yy_< 0 ] = 0
+            valid[yy_>=Ny] = 0
+
+            logic = (valid == 1)
+            data0_ = data0[xx0[logic], yy0[logic]]
+            data_  = data[xx_[logic], yy_[logic]]
+
+            corr_coef[idx, idy] = stats.pearsonr(data0_, data_)[0]
+
+    indices = np.unravel_index(np.argmax(corr_coef, axis=None), corr_coef.shape)
+
+    offset_dx = -dxx[indices[0]]
+    offset_dy = -dyy[indices[1]]
+
+    return offset_dx, offset_dy
 
 def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
 
@@ -873,25 +908,28 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
 
     # primary selection (over-selection of cloudy pixels is expected)
     #/--------------------------------------------------------------\#
-    indices_x, indices_y = cloud_mask_rgb(rgb, extent, lon_2d, lat_2d, scale_factor=1.08)
+    indices_x0, indices_y0 = cloud_mask_rgb(rgb, extent, lon_2d, lat_2d, scale_factor=1.08)
 
-    lon_cld0 = lon_2d[indices_x, indices_y]
-    lat_cld0 = lat_2d[indices_x, indices_y]
+    lon_cld0 = lon_2d[indices_x0, indices_y0]
+    lat_cld0 = lat_2d[indices_x0, indices_y0]
     #\--------------------------------------------------------------/#
 
 
     # secondary filter (remove incorrect cloudy pixels)
     #/--------------------------------------------------------------\#
-    ref0    = ref_2d[indices_x, indices_y]
-    cot_l20 = cot_l2[indices_x, indices_y]
-
-    logic_bad = (ref0<np.median(ref0)) & (cot_l20<0.01)
+    ref0    = ref_2d[indices_x0, indices_y0]
+    logic_bad = (ref0<np.median(ref0)) & \
+               (np.isnan(cth[indices_x0, indices_y0]) & \
+                np.isnan(cot_l2[indices_x0, indices_y0]) & \
+                np.isnan(cer_l2[indices_x0, indices_y0]))
     logic = np.logical_not(logic_bad)
 
     lon_cld = lon_cld0[logic]
     lat_cld = lat_cld0[logic]
-    indices_x = indices_x[logic]
-    indices_y = indices_y[logic]
+
+    Nx, Ny = ref_2d.shape
+    indices_x = indices_x0[logic]
+    indices_y = indices_y0[logic]
     #\--------------------------------------------------------------/#
 
     #\----------------------------------------------------------------------------/#
@@ -907,7 +945,80 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     # new cloud field obtained from radiance thresholding [indices_x[logic], indices_y[logic]]
     # from cth from MODIS L2 cloud product
     #/--------------------------------------------------------------\#
-    cth_cld = cth[indices_x, indices_y] * 1000.0  # convert to meter from km
+    data0 = np.zeros(ref_2d.shape, dtype=np.int32)
+    data0[indices_x, indices_y] = 1
+
+    data = np.zeros(cth.shape, dtype=np.int32)
+    data[cth>0.0] = 1
+
+    # this is counter-intuitive but we need to account for the parallax
+    # correction (approximately) that has been applied to the MODIS L2 cloud
+    # product before assigning CTH to cloudy pixels we selected from reflectance
+    # field, where the clouds have not yet been parallax corrected
+    #/--------------------------------------------------------------\#
+    offset_dx, offset_dy = correlate_collocate(data0, data)
+    dlon = (lon_2d[1, 0]-lon_2d[0, 0]) * offset_dx
+    dlat = (lat_2d[0, 1]-lat_2d[0, 0]) * offset_dy
+
+    lon_2d_ = lon_2d + dlon
+    lat_2d_ = lat_2d + dlat
+    extent_ = [extent[0]+dlon, extent[1]+dlon, extent[2]+dlat, extent[3]+dlat]
+
+    cth_ = cth*1000.0
+    cth_[cth_==0.0] = np.nan
+
+    cth_cld = np.zeros_like(ref_2d); cth_cld[...] = np.nan
+    cth_cld[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cth_, lon_2d_, lat_2d_)
+    #\--------------------------------------------------------------/#
+
+    print(np.nanmin(cth_))
+    print(np.nanmax(cth_))
+
+    # figure
+    #/----------------------------------------------------------------------------\#
+    plt.close('all')
+    fig = plt.figure(figsize=(19, 6))
+    # fig.suptitle('Figure')
+    # plot
+    #/--------------------------------------------------------------\#
+    ax1 = fig.add_subplot(131)
+    cs = ax1.imshow(rgb, extent=extent, zorder=0)
+    cs = ax1.imshow(cth_.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
+    ax1.set_xlim(extent[:2])
+    ax1.set_ylim(extent[2:])
+
+    ax2 = fig.add_subplot(132)
+    cs = ax2.imshow(rgb, extent=extent, zorder=0)
+    cs = ax2.imshow(cth_.T, origin='lower', extent=extent_, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
+    ax2.set_xlim(extent[:2])
+    ax2.set_ylim(extent[2:])
+
+    ax3 = fig.add_subplot(133)
+    cs = ax3.imshow(rgb, extent=extent, zorder=0)
+    cs = ax3.imshow(cth_cld.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
+    ax3.set_xlim(extent[:2])
+    ax3.set_ylim(extent[2:])
+
+    #\--------------------------------------------------------------/#
+    # add colorbar
+    #/--------------------------------------------------------------\#
+    # divider = make_axes_locatable(ax1)
+    # cax = divider.append_axes('right', '5%', pad='3%')
+    # cbar = fig.colorbar(cs, cax=cax)
+    # cbar.set_label('', rotation=270, labelpad=4.0)
+    # cbar.set_ticks([])
+    # cax.axis('off')
+    #\--------------------------------------------------------------/#
+    # save figure
+    #/--------------------------------------------------------------\#
+    # plt.subplots_adjust(hspace=0.3, wspace=0.3)
+    # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+    #\--------------------------------------------------------------/#
+    plt.show()
+    sys.exit()
+    #\----------------------------------------------------------------------------/#
+
     #\--------------------------------------------------------------/#
 
     lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
