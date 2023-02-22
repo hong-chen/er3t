@@ -175,9 +175,9 @@ class func_ref_vs_cot:
     def get_cot_from_ref(self, ref, method='cubic', mode='rt'):
 
         if mode == '2s':
-            f = interp1d(self.ref_2s, self.cot, kind=method, bounds_error=False)
+            f = interp1d(self.ref_2s, self.cot, kind=method, bounds_error=False, fill_value='extrapolate')
         elif mode == 'rt':
-            f = interp1d(self.ref, self.cot, kind=method, bounds_error=False)
+            f = interp1d(self.ref, self.cot, kind=method, bounds_error=False, fill_value='extrapolate')
 
         return f(ref)
 
