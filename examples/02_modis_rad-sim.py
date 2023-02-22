@@ -48,7 +48,7 @@ from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 # import cartopy.crs as ccrs
-# mpl.use('Agg')
+mpl.use('Agg')
 
 
 
@@ -63,7 +63,7 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.6, -106.5, 35.9, 39.0],
-           'photon' : 1e9,
+           'photon' : 5e9,
         }
 #\--------------------------------------------------------------/#
 
@@ -257,123 +257,9 @@ def pre_cld_modis(sat, wvl, scale_factor=1.0, solver='3D'):
 
 
 
-class sat_tmp:
-
-    def __init__(self, data):
-
-        self.data = data
-
-def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
-
-    """
-    Simulate MODIS radiance
-    """
 
 
-    # atm object
-    # =================================================================================
-    levels = np.arange(0.0, 20.1, 0.5)
-    fname_atm = '%s/atm.pk' % fdir
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
-    # =================================================================================
 
-
-    # abs object
-    # =================================================================================
-    fname_abs = '%s/abs.pk' % fdir
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    # =================================================================================
-
-
-    # sfc object
-    # =================================================================================
-    data = {}
-    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    data['alb_2d'] = dict(data=f['mod/sfc/alb_%4.4d' % wavelength][...], name='Surface albedo', units='N/A')
-    data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
-    data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
-    f.close()
-
-    fname_sfc = '%s/sfc.pk' % fdir
-    mod09 = sat_tmp(data)
-    sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod09, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
-    sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
-    # =================================================================================
-
-
-    # cld object
-    # =================================================================================
-    data = {}
-    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['mod/rad/lon'][...])
-    data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['mod/rad/lat'][...])
-    data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_2s'][...])
-    data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_l2'][...])
-    data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_l2'][...])
-    f.close()
-
-    modl1b    =  sat_tmp(data)
-    fname_cld = '%s/cld.pk' % fdir
-
-    cth0 = modl1b.data['cth_2d']['data']
-    cld0      = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
-    # =================================================================================
-
-
-    # mca_sca object
-    # =================================================================================
-    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
-    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    # =================================================================================
-
-
-    # mca_cld object
-    # =================================================================================
-    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
-    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-    atm_1ds = [atm1d0]
-    atm_3ds = [atm3d0]
-    # =================================================================================
-
-
-    # solar zenith/azimuth angles and sensor zenith/azimuth angles
-    # =================================================================================
-    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    sza = f['mod/rad/sza'][...].mean()
-    saa = f['mod/rad/saa'][...].mean()
-    vza = f['mod/rad/vza'][...].mean()
-    vaa = f['mod/rad/vaa'][...].mean()
-    f.close()
-    # =================================================================================
-
-
-    # run mcarats
-    # =================================================================================
-    mca0 = er3t.rtm.mca.mcarats_ng(
-            date=sat.date,
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            sfc_2d=sfc_2d,
-            sca=sca,
-            Ng=abs0.Ng,
-            target='radiance',
-            solar_zenith_angle   = sza,
-            solar_azimuth_angle  = saa,
-            sensor_zenith_angle  = vza,
-            sensor_azimuth_angle = vaa,
-            fdir='%s/%.4fnm/rad_%s' % (fdir, wavelength, solver.lower()),
-            Nrun=3,
-            weights=abs0.coef['weight']['data'],
-            photons=params['photon'],
-            solver=solver,
-            Ncpu=8,
-            mp_mode='py',
-            overwrite=overwrite
-            )
-
-    # mcarats output
-    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-modis-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
-    # =================================================================================
 
 
 
@@ -525,9 +411,12 @@ def cdata_modis_raw(wvl=params['wavelength'], plot=True):
     #   band 7: 2105 - 2155 nm, index 6
     mod09 = er3t.util.modis_09a1(fnames=sat0.fnames['mod_09'], extent=sat0.extent)
     lon_2d_sfc, lat_2d_sfc, sfc_09 = er3t.util.grid_by_extent(mod09.data['lon']['data'], mod09.data['lat']['data'], mod09.data['ref']['data'][index_wvl, :], extent=sat0.extent)
+    sfc_09[sfc_09<0.0] = 0.0
 
     mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
     lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent)
+    sfc_43[sfc_43<0.0] = 0.0
+    sfc_43[sfc_43>1.0] = 1.0
 
     g3['lon'] = lon_2d_sfc
     g3['lat'] = lat_2d_sfc
@@ -775,8 +664,6 @@ def cdata_modis_raw(wvl=params['wavelength'], plot=True):
         plt.savefig('%s_<%s>.png' % (params['name_tag'], _metadata['Function']), bbox_inches='tight', metadata=_metadata)
         #\--------------------------------------------------------------/#
         #\----------------------------------------------------------------------------/#
-
-
 
 
 
@@ -1306,207 +1193,139 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         plt.subplots_adjust(hspace=0.4, wspace=0.4)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         plt.savefig('%s_<%s>.png' % (params['name_tag'], _metadata['Function']), bbox_inches='tight', metadata=_metadata)
-        plt.show()
         #\--------------------------------------------------------------/#
         #\----------------------------------------------------------------------------/#
 
-    sys.exit()
 
 
 
 
+class sat_tmp:
+
+    def __init__(self, data):
+
+        self.data = data
+
+def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
+
+    """
+    Simulate MODIS radiance
+    """
+
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
+    # atm object
+    #/----------------------------------------------------------------------------\#
+    levels = np.arange(0.0, 20.1, 0.5)
+    fname_atm = '%s/atm.pk' % fdir
+    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
 
 
-def plot():
+    # abs object
+    #/----------------------------------------------------------------------------\#
+    fname_abs = '%s/abs.pk' % fdir
+    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
 
-    if False:
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(13, 6))
-        # fig.suptitle('Figure')
-        # plot
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(121)
-        cs = ax1.imshow(rgb, zorder=0, extent=extent)
-        ax1.scatter(lon_2d[indices_x0, indices_y0], lat_2d[indices_x0, indices_y0], s=1, c='r', lw=0.0, alpha=0.2)
 
-        ax2 = fig.add_subplot(122)
-        cs = ax2.imshow(rgb, zorder=0, extent=extent)
-        ax2.scatter(lon_2d[indices_x, indices_y], lat_2d[indices_x, indices_y], s=1, c='b', lw=0.0, alpha=0.2)
-        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-        # ax1.set_xlim(())
-        # ax1.set_ylim(())
-        # ax1.set_xlabel('')
-        # ax1.set_ylabel('')
-        # ax1.set_title('')
-        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        #\--------------------------------------------------------------/#
-        # add colorbar
-        #/--------------------------------------------------------------\#
-        # divider = make_axes_locatable(ax1)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
-        # cbar.set_label('', rotation=270, labelpad=4.0)
-        # cbar.set_ticks([])
-        # cax.axis('off')
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        plt.show()
-        sys.exit()
-        #\----------------------------------------------------------------------------/#
+    # sfc object
+    #/----------------------------------------------------------------------------\#
+    data = {}
+    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
+    data['alb_2d'] = dict(data=f['mod/sfc/alb_43'][...], name='Surface albedo', units='N/A')
+    data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
+    data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
+    f.close()
 
-    if False:
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(19, 6))
-        # fig.suptitle('Figure')
-        # plot
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(131)
-        cs = ax1.imshow(rgb, extent=extent, zorder=0)
-        cs = ax1.imshow(cth_.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
-        ax1.set_xlim(extent[:2])
-        ax1.set_ylim(extent[2:])
+    fname_sfc = '%s/sfc.pk' % fdir
+    mod43     = sat_tmp(data)
+    sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod43, fname=fname_sfc, extent=sat.extent, overwrite=overwrite)
+    sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
 
-        ax2 = fig.add_subplot(132)
-        cs = ax2.imshow(rgb, extent=extent, zorder=0)
-        cs = ax2.imshow(cth_.T, origin='lower', extent=extent_, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
-        ax2.set_xlim(extent[:2])
-        ax2.set_ylim(extent[2:])
 
-        ax3 = fig.add_subplot(133)
-        cs = ax3.imshow(rgb, extent=extent, zorder=0)
-        # cs = ax3.imshow(cth_ipa0.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
-        cs = ax3.imshow(cer_ipa0.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=20.0, alpha=0.5)
-        ax3.set_xlim(extent[:2])
-        ax3.set_ylim(extent[2:])
+    # cld object
+    #/----------------------------------------------------------------------------\#
+    data = {}
+    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
+    data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['lon'][...])
+    data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['lat'][...])
+    data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_ipa'][...])
+    data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_ipa'][...])
+    data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_ipa'][...])
+    f.close()
 
-        #\--------------------------------------------------------------/#
-        # add colorbar
-        #/--------------------------------------------------------------\#
-        # divider = make_axes_locatable(ax1)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
-        # cbar.set_label('', rotation=270, labelpad=4.0)
-        # cbar.set_ticks([])
-        # cax.axis('off')
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        plt.show()
-        sys.exit()
-        #\----------------------------------------------------------------------------/#
+    modl1b    =  sat_tmp(data)
+    fname_cld = '%s/cld.pk' % fdir
 
-    if False:
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(12, 12))
-        # fig.suptitle('Figure')
-        # plot
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(rgb, zorder=0, extent=extent)
-        # ax1.scatter(lon_cld0, lat_cld0, s=1, c='b', lw=0.0)
-        ax1.scatter(lon_cld, lat_cld, s=1, c='r', lw=0.0)
-        ax1.scatter(lon_corr, lat_corr, s=1, c='b', lw=0.0)
-        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-        # ax1.set_xlim(())
-        # ax1.set_ylim(())
-        # ax1.set_xlabel('')
-        # ax1.set_ylabel('')
-        # ax1.set_title('')
-        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        #\--------------------------------------------------------------/#
-        # add colorbar
-        #/--------------------------------------------------------------\#
-        # divider = make_axes_locatable(ax1)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
-        # cbar.set_label('', rotation=270, labelpad=4.0)
-        # cbar.set_ticks([])
-        # cax.axis('off')
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        plt.show()
-        sys.exit()
-        #\----------------------------------------------------------------------------/#
+    cth0 = modl1b.data['cth_2d']['data']
+    cld0 = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
 
-    if True:
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        fig = plt.figure(figsize=(8, 6))
-        # plot
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111, aspect='equal')
 
-        # heatmap
-        #/--------------------------------------------------------------\#
-        logic = (lon_2d>124.5)
-        data_x = cot_l2[logic]
-        data_y = cot_rt[logic]
+    # mca_sca object
+    #/----------------------------------------------------------------------------\#
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
 
-        xedge = np.linspace(0.0, 30.0, 101)
-        yedge = np.linspace(0.0, 30.0, 101)
-        heatmap, xedge, yedge = np.histogram2d(data_x.ravel(), data_y.ravel(), bins=(xedge, yedge))
-        extent = [xedge[0], xedge[-1], yedge[0], yedge[-1]]
-        x = (xedge[:-1]+xedge[1:])/2.0
-        y = (yedge[:-1]+yedge[1:])/2.0
-        xx, yy = np.meshgrid(x, y, indexing='ij')
-        # levels = np.power(10, np.linspace(0.0, np.log10(heatmap.max()/100), 101))
-        levels = np.linspace(0, heatmap.max()/100, 101)
-        cmap = mpl.cm.get_cmap('jet').copy()
-        cmap.set_under('white')
-        cs = ax1.contourf(xx, yy, heatmap, levels, extent=extent, extend='both', cmap=cmap, zorder=0)
-        ax1.plot(extent[:2], extent[2:], color='gray', ls='--', lw=1.5)
-        ax1.set_xlim(extent[:2])
-        ax1.set_ylim(extent[2:])
-        ax1.set_title('Heatmap')
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\--------------------------------------------------------------/#
 
-        ax1.plot([0, 100], [0, 100], ls='--', color='gray')
-        ax1.set_xlim((0, 15))
-        ax1.set_ylim((0, 15))
-        ax1.set_xlabel('MODIS L2 COT')
-        ax1.set_ylabel('MCARaTS COT')
-        #\--------------------------------------------------------------/#
+    # mca_cld object
+    #/----------------------------------------------------------------------------\#
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
+    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+    atm_1ds = [atm1d0]
+    atm_3ds = [atm3d0]
+    #\----------------------------------------------------------------------------/#
 
-        # save figure
-        #/--------------------------------------------------------------\#
-        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        plt.savefig('%s_cot-rt.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        plt.show()
-        sys.exit()
-        #\----------------------------------------------------------------------------/#
+
+    # solar zenith/azimuth angles and sensor zenith/azimuth angles
+    #/----------------------------------------------------------------------------\#
+    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
+    sza = f['mod/geo/sza'][...].mean()
+    saa = f['mod/geo/saa'][...].mean()
+    vza = f['mod/geo/vza'][...].mean()
+    vaa = f['mod/geo/vaa'][...].mean()
+    f.close()
+    #\----------------------------------------------------------------------------/#
+
+
+    # run mcarats
+    #/----------------------------------------------------------------------------\#
+    mca0 = er3t.rtm.mca.mcarats_ng(
+            date=sat.date,
+            atm_1ds=atm_1ds,
+            atm_3ds=atm_3ds,
+            sfc_2d=sfc_2d,
+            sca=sca,
+            Ng=abs0.Ng,
+            target='radiance',
+            solar_zenith_angle   = sza,
+            solar_azimuth_angle  = saa,
+            sensor_zenith_angle  = vza,
+            sensor_azimuth_angle = vaa,
+            fdir='%s/%.4fnm/rad_%s' % (fdir, wavelength, solver.lower()),
+            Nrun=3,
+            weights=abs0.coef['weight']['data'],
+            photons=params['photon'],
+            solver=solver,
+            Ncpu=8,
+            mp_mode='py',
+            overwrite=overwrite
+            )
+    #\----------------------------------------------------------------------------/#
+
+
+    # mcarats output
+    #/----------------------------------------------------------------------------\#
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-modis-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
 
 
 
 def main_pre(wvl=params['wavelength']):
-
 
     # 1) Download and pre-process MODIS data products
     # MODIS data products will be downloaded at <data/02_modis_rad-sim/download>
@@ -1532,7 +1351,7 @@ def main_pre(wvl=params['wavelength']):
     #   mod/sfc/lon ------- : Dataset  (666, 666)
     #
     #/----------------------------------------------------------------------------\#
-    # cdata_modis_raw(wvl=wvl, plot=True)
+    cdata_modis_raw(wvl=wvl, plot=True)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1541,12 +1360,14 @@ def main_pre(wvl=params['wavelength']):
     # notes: the IPA method uses "reflectance vs cot" obtained from the same RT model
     #        used for 3D radiance self-consistency check to ensure their physical processes
     #        are consistent
+    # additional data will be saved at <data/02_modis_rad-sim/pre_data.h5>,
+    # which are
+    #   mod/cld/cer_ipa ---- : Dataset  (1196, 1196)
+    #   mod/cld/cot_ipa ---- : Dataset  (1196, 1196)
+    #   mod/cld/cth_ipa ---- : Dataset  (1196, 1196)
     #/----------------------------------------------------------------------------\#
     cdata_cld_ipa(wvl=wvl, plot=True)
     #\----------------------------------------------------------------------------/#
-
-    sys.exit()
-    #/----------------------------------------------------------------------------\#
 
 def main_sim(wvl=params['wavelength']):
 
@@ -1560,7 +1381,7 @@ def main_sim(wvl=params['wavelength']):
 
     # create tmp-data/02_modis_rad-sim directory if it does not exist
     #/----------------------------------------------------------------------------\#
-    fdir_tmp = os.path.abspath('tmp-data/%s' % (params['name_tag']))
+    fdir_tmp = os.path.abspath('tmp-data/%s/sim' % (params['name_tag']))
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
     #\----------------------------------------------------------------------------/#
@@ -1569,6 +1390,7 @@ def main_sim(wvl=params['wavelength']):
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
     cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True)
+    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(wvl=params['wavelength'], plot=False):
@@ -1689,7 +1511,7 @@ if __name__ == '__main__':
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
     #   a. <mca-out-rad-modis-3d_650.0000nm.h5> will be created under tmp-data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    # main_sim()
+    main_sim()
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
