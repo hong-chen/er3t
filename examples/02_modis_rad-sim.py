@@ -918,11 +918,21 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     # secondary filter (remove incorrect cloudy pixels)
     #/--------------------------------------------------------------\#
     ref0    = ref_2d[indices_x0, indices_y0]
+
+    logic_nan_cth = np.isnan(cth[indices_x0, indices_y0])
+    logic_nan_cot = np.isnan(cot_l2[indices_x0, indices_y0])
+    logic_nan_cer = np.isnan(cer_l2[indices_x0, indices_y0])
+
     logic_bad = (ref0<np.median(ref0)) & \
-               (np.isnan(cth[indices_x0, indices_y0]) & \
-                np.isnan(cot_l2[indices_x0, indices_y0]) & \
-                np.isnan(cer_l2[indices_x0, indices_y0]))
-    logic = np.logical_not(logic_bad)
+                (logic_nan_cth & \
+                 logic_nan_cot & \
+                 logic_nan_cer)
+
+    logic_good = (np.logical_not(logic_nan_cth) | \
+                  np.logical_not(logic_nan_cot) | \
+                  np.logical_not(logic_nan_cer))
+
+    logic = np.logical_not(logic_bad) | logic_good
 
     lon_cld = lon_cld0[logic]
     lat_cld = lat_cld0[logic]
@@ -931,6 +941,49 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     indices_x = indices_x0[logic]
     indices_y = indices_y0[logic]
     #\--------------------------------------------------------------/#
+
+    if False:
+        # figure
+        #/----------------------------------------------------------------------------\#
+        plt.close('all')
+        fig = plt.figure(figsize=(13, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(121)
+        cs = ax1.imshow(rgb, zorder=0, extent=extent)
+        ax1.scatter(lon_2d[indices_x0, indices_y0], lat_2d[indices_x0, indices_y0], s=1, c='r', lw=0.0, alpha=0.2)
+
+        ax2 = fig.add_subplot(122)
+        cs = ax2.imshow(rgb, zorder=0, extent=extent)
+        ax2.scatter(lon_2d[indices_x, indices_y], lat_2d[indices_x, indices_y], s=1, c='b', lw=0.0, alpha=0.2)
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # add colorbar
+        #/--------------------------------------------------------------\#
+        # divider = make_axes_locatable(ax1)
+        # cax = divider.append_axes('right', '5%', pad='3%')
+        # cbar = fig.colorbar(cs, cax=cax)
+        # cbar.set_label('', rotation=270, labelpad=4.0)
+        # cbar.set_ticks([])
+        # cax.axis('off')
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
+        #\----------------------------------------------------------------------------/#
 
     #\----------------------------------------------------------------------------/#
 
@@ -941,24 +994,26 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     vaa_cld = vaa[indices_x, indices_y]
     sfh_cld = sfh[indices_x, indices_y] * 1000.0  # convert to meter from km
 
-    # get cth for
+    # get cth, cer for
     # new cloud field obtained from radiance thresholding [indices_x[logic], indices_y[logic]]
-    # from cth from MODIS L2 cloud product
-    #/--------------------------------------------------------------\#
-    data0 = np.zeros(ref_2d.shape, dtype=np.int32)
-    data0[indices_x, indices_y] = 1
-
-    data = np.zeros(cth.shape, dtype=np.int32)
-    data[cth>0.0] = 1
-
+    # from cth, cer from MODIS L2 cloud product
     # this is counter-intuitive but we need to account for the parallax
     # correction (approximately) that has been applied to the MODIS L2 cloud
     # product before assigning CTH to cloudy pixels we selected from reflectance
     # field, where the clouds have not yet been parallax corrected
     #/--------------------------------------------------------------\#
+    data0 = np.zeros(ref_2d.shape, dtype=np.int32)
+    data0[indices_x, indices_y] = 1
+
+    # cth
+    #/--------------------------------------------------------------\#
+    data = np.zeros(cth.shape, dtype=np.int32)
+    data[cth>0.0] = 1
+
     offset_dx, offset_dy = correlate_collocate(data0, data)
     dlon = (lon_2d[1, 0]-lon_2d[0, 0]) * offset_dx
     dlat = (lat_2d[0, 1]-lat_2d[0, 0]) * offset_dy
+    print(offset_dx, offset_dy)
 
     lon_2d_ = lon_2d + dlon
     lat_2d_ = lat_2d + dlat
@@ -967,102 +1022,127 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     cth_ = cth*1000.0
     cth_[cth_==0.0] = np.nan
 
-    cth_cld = np.zeros_like(ref_2d); cth_cld[...] = np.nan
-    cth_cld[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cth_, lon_2d_, lat_2d_)
+    cth_ipa0 = np.zeros_like(ref_2d)
+    cth_ipa0[...] = np.nan
+    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cth_, lon_2d_, lat_2d_)
+
+    cth_cld = cth_ipa0[indices_x, indices_y]
     #\--------------------------------------------------------------/#
 
-    print(np.nanmin(cth_))
-    print(np.nanmax(cth_))
-
-    # figure
-    #/----------------------------------------------------------------------------\#
-    plt.close('all')
-    fig = plt.figure(figsize=(19, 6))
-    # fig.suptitle('Figure')
-    # plot
+    # cer
     #/--------------------------------------------------------------\#
-    ax1 = fig.add_subplot(131)
-    cs = ax1.imshow(rgb, extent=extent, zorder=0)
-    cs = ax1.imshow(cth_.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
-    ax1.set_xlim(extent[:2])
-    ax1.set_ylim(extent[2:])
+    data = np.zeros(cer_l2.shape, dtype=np.int32)
+    data[cer_l2>0.0] = 1
 
-    ax2 = fig.add_subplot(132)
-    cs = ax2.imshow(rgb, extent=extent, zorder=0)
-    cs = ax2.imshow(cth_.T, origin='lower', extent=extent_, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
-    ax2.set_xlim(extent[:2])
-    ax2.set_ylim(extent[2:])
+    offset_dx, offset_dy = correlate_collocate(data0, data)
+    dlon = (lon_2d[1, 0]-lon_2d[0, 0]) * offset_dx
+    dlat = (lat_2d[0, 1]-lat_2d[0, 0]) * offset_dy
+    print(offset_dx, offset_dy)
 
-    ax3 = fig.add_subplot(133)
-    cs = ax3.imshow(rgb, extent=extent, zorder=0)
-    cs = ax3.imshow(cth_cld.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
-    ax3.set_xlim(extent[:2])
-    ax3.set_ylim(extent[2:])
+    lon_2d_ = lon_2d + dlon
+    lat_2d_ = lat_2d + dlat
+    extent_ = [extent[0]+dlon, extent[1]+dlon, extent[2]+dlat, extent[3]+dlat]
+
+    cer_ipa0 = np.zeros_like(ref_2d)
+    cer_ipa0[...] = np.nan
+    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cer_l2, lon_2d_, lat_2d_)
+    #\--------------------------------------------------------------/#
+
 
     #\--------------------------------------------------------------/#
-    # add colorbar
-    #/--------------------------------------------------------------\#
-    # divider = make_axes_locatable(ax1)
-    # cax = divider.append_axes('right', '5%', pad='3%')
-    # cbar = fig.colorbar(cs, cax=cax)
-    # cbar.set_label('', rotation=270, labelpad=4.0)
-    # cbar.set_ticks([])
-    # cax.axis('off')
-    #\--------------------------------------------------------------/#
-    # save figure
-    #/--------------------------------------------------------------\#
-    # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-    # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-    #\--------------------------------------------------------------/#
-    plt.show()
-    sys.exit()
-    #\----------------------------------------------------------------------------/#
+
+    if False:
+        # figure
+        #/----------------------------------------------------------------------------\#
+        plt.close('all')
+        fig = plt.figure(figsize=(19, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(131)
+        cs = ax1.imshow(rgb, extent=extent, zorder=0)
+        cs = ax1.imshow(cth_.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
+        ax1.set_xlim(extent[:2])
+        ax1.set_ylim(extent[2:])
+
+        ax2 = fig.add_subplot(132)
+        cs = ax2.imshow(rgb, extent=extent, zorder=0)
+        cs = ax2.imshow(cth_.T, origin='lower', extent=extent_, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
+        ax2.set_xlim(extent[:2])
+        ax2.set_ylim(extent[2:])
+
+        ax3 = fig.add_subplot(133)
+        cs = ax3.imshow(rgb, extent=extent, zorder=0)
+        # cs = ax3.imshow(cth_ipa0.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=12000.0, alpha=0.5)
+        cs = ax3.imshow(cer_ipa0.T, origin='lower', extent=extent, cmap='jet', vmin=0.0, vmax=20.0, alpha=0.5)
+        ax3.set_xlim(extent[:2])
+        ax3.set_ylim(extent[2:])
+
+        #\--------------------------------------------------------------/#
+        # add colorbar
+        #/--------------------------------------------------------------\#
+        # divider = make_axes_locatable(ax1)
+        # cax = divider.append_axes('right', '5%', pad='3%')
+        # cbar = fig.colorbar(cs, cax=cax)
+        # cbar.set_label('', rotation=270, labelpad=4.0)
+        # cbar.set_ticks([])
+        # cax.axis('off')
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
+        #\----------------------------------------------------------------------------/#
 
     #\--------------------------------------------------------------/#
 
     lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
     #\----------------------------------------------------------------------------/#
 
-    # figure
-    #/----------------------------------------------------------------------------\#
-    plt.close('all')
-    fig = plt.figure(figsize=(12, 12))
-    # fig.suptitle('Figure')
-    # plot
-    #/--------------------------------------------------------------\#
-    ax1 = fig.add_subplot(111)
-    cs = ax1.imshow(rgb, zorder=0, extent=extent)
-    # ax1.scatter(lon_cld0, lat_cld0, s=1, c='b', lw=0.0)
-    ax1.scatter(lon_cld, lat_cld, s=1, c='r', lw=0.0)
-    ax1.scatter(lon_corr, lat_corr, s=1, c='b', lw=0.0)
-    # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-    # ax1.set_xlim(())
-    # ax1.set_ylim(())
-    # ax1.set_xlabel('')
-    # ax1.set_ylabel('')
-    # ax1.set_title('')
-    # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-    # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-    #\--------------------------------------------------------------/#
-    # add colorbar
-    #/--------------------------------------------------------------\#
-    # divider = make_axes_locatable(ax1)
-    # cax = divider.append_axes('right', '5%', pad='3%')
-    # cbar = fig.colorbar(cs, cax=cax)
-    # cbar.set_label('', rotation=270, labelpad=4.0)
-    # cbar.set_ticks([])
-    # cax.axis('off')
-    #\--------------------------------------------------------------/#
-    # save figure
-    #/--------------------------------------------------------------\#
-    # plt.subplots_adjust(hspace=0.3, wspace=0.3)
-    # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-    #\--------------------------------------------------------------/#
-    plt.show()
-    sys.exit()
-    #\----------------------------------------------------------------------------/#
+    if False:
+        # figure
+        #/----------------------------------------------------------------------------\#
+        plt.close('all')
+        fig = plt.figure(figsize=(12, 12))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111)
+        cs = ax1.imshow(rgb, zorder=0, extent=extent)
+        # ax1.scatter(lon_cld0, lat_cld0, s=1, c='b', lw=0.0)
+        ax1.scatter(lon_cld, lat_cld, s=1, c='r', lw=0.0)
+        ax1.scatter(lon_corr, lat_corr, s=1, c='b', lw=0.0)
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # add colorbar
+        #/--------------------------------------------------------------\#
+        # divider = make_axes_locatable(ax1)
+        # cax = divider.append_axes('right', '5%', pad='3%')
+        # cbar = fig.colorbar(cs, cax=cax)
+        # cbar.set_label('', rotation=270, labelpad=4.0)
+        # cbar.set_ticks([])
+        # cax.axis('off')
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # plt.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # plt.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
+        #\----------------------------------------------------------------------------/#
 
 
     # IPA retrieval
@@ -1094,17 +1174,19 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     # assign COT for every cloudy pixel
     #/--------------------------------------------------------------\#
     Nx, Ny = ref_2d.shape
-    cot_rt = np.zeros_like(ref_2d)
+    cot_ipa = np.zeros_like(ref_2d)
+    cer_ipa = np.zeros_like(ref_2d)
+    cth_ipa = np.zeros_like(ref_2d)
     for i in range(indices_x.size):
         if 0<=indices_x[i]<Nx and 0<=indices_y[i]<Ny:
-            # mca-rt
-            cot_rt[indices_x[i], indices_y[i]] = f(ref_2d[indices_x[i], indices_y[i]])
+            # mca-ipa
+            cot_ipa[indices_x[i], indices_y[i]] = f_mca.get_cot_from_ref(ref_2d[indices_x[i], indices_y[i]])
     #\--------------------------------------------------------------/#
 
     #\----------------------------------------------------------------------------/#
 
 
-    # write cot_rt into file
+    # write cot_ipa into file
     #/----------------------------------------------------------------------------\#
     f0 = h5py.File(fname, 'r+')
     try:
