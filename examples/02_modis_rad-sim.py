@@ -164,32 +164,6 @@ class satellite_download:
 
 
 
-def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, R_earth=6378000.0, verbose=True):
-
-    """
-    Parallax correction for the cloud positions
-
-    lon0: input longitude
-    lat0: input latitude
-    vza : sensor zenith angle [degree]
-    vaa : sensor azimuth angle [degree]
-    cld_h: cloud height [meter]
-    sfc_h: surface height [meter]
-    """
-
-    if verbose:
-        print('Message [para_corr]: Please make sure the units of \'cld_h\' and \'sfc_h\' are in \'meter\'.')
-
-    dist = (cld_h-sfc_h)*np.tan(np.deg2rad(vza))
-
-    delta_lon = dist*np.sin(np.deg2rad(vaa)) / (np.pi*R_earth) * 180.0
-    delta_lat = dist*np.cos(np.deg2rad(vaa)) / (np.pi*R_earth) * 180.0
-
-    lon = lon0 + delta_lon
-    lat = lat0 + delta_lat
-
-    return lon, lat
-
 
 
 
@@ -811,7 +785,8 @@ def cloud_mask_rgb(
         extent,
         lon_2d,
         lat_2d,
-        scale_factor=1.06
+        scale_factor=1.06,
+        logic_good=None
         ):
 
     # Find cloudy pixels based on MODIS RGB imagery and upscale/downscale to 250m resolution
@@ -830,6 +805,9 @@ def cloud_mask_rgb(
                      (_b<=(np.median(_b)*scale_factor))
     logic_rgb_nan = np.flipud(logic_rgb_nan0).T
 
+    if logic_good is not None:
+        logic_rgb_nan[logic_good] = False
+
     x0_rgb = lon_rgb[0]
     y0_rgb = lat_rgb[0]
     dx_rgb = lon_rgb[1] - x0_rgb
@@ -845,45 +823,36 @@ def cloud_mask_rgb(
 
     return indices[0], indices[1]
 
-def correlate_collocate(data0, data, Ndx=5, Ndy=5):
+def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, R_earth=6378000.0, verbose=True):
 
-    Nx, Ny = data.shape
-    x = np.arange(Nx, dtype=np.int32)
-    y = np.arange(Ny, dtype=np.int32)
-    xx, yy = np.meshgrid(x, y, indexing='ij')
+    """
+    Parallax correction for the cloud positions
 
-    xx0 = xx.copy()
-    yy0 = yy.copy()
-    valid = np.ones((Nx, Ny), dtype=np.int32)
+    lon0: input longitude
+    lat0: input latitude
+    vza : sensor zenith angle [degree]
+    vaa : sensor azimuth angle [degree]
+    cld_h: cloud height [meter]
+    sfc_h: surface height [meter]
+    """
 
-    corr_coef = np.zeros((2*Ndx+1, 2*Ndy+1), dtype=np.float64)
-    dxx = np.arange(-Ndx, Ndx+1)
-    dyy = np.arange(-Ndy, Ndy+1)
+    if verbose:
+        print('Message [para_corr]: Please make sure the units of \'cld_h\' and \'sfc_h\' are in \'meter\'.')
 
-    for idx, dx in enumerate(dxx):
-        xx_ = xx + dx
-        valid[xx_< 0 ] = 0
-        valid[xx_>=Nx] = 0
-        for idy, dy in enumerate(dyy):
-            yy_ = yy + dy
-            valid[yy_< 0 ] = 0
-            valid[yy_>=Ny] = 0
+    dist = (cld_h-sfc_h)*np.tan(np.deg2rad(vza))
 
-            logic = (valid == 1)
-            data0_ = data0[xx0[logic], yy0[logic]]
-            data_  = data[xx_[logic], yy_[logic]]
+    delta_lon = dist*np.sin(np.deg2rad(vaa)) / (np.pi*R_earth) * 180.0
+    delta_lat = dist*np.cos(np.deg2rad(vaa)) / (np.pi*R_earth) * 180.0
 
-            corr_coef[idx, idy] = stats.pearsonr(data0_, data_)[0]
+    lon = lon0 + delta_lon
+    lat = lat0 + delta_lat
 
-    indices = np.unravel_index(np.argmax(corr_coef, axis=None), corr_coef.shape)
+    return lon, lat
 
-    offset_dx = -dxx[indices[0]]
-    offset_dy = -dyy[indices[1]]
+def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
 
-    return offset_dx, offset_dy
-
-def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
-
+    # read in data
+    #/----------------------------------------------------------------------------\#
     f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
     extent = f0['extent'][...]
     ref_2d = f0['mod/rad/ref_%4.4d' % wvl][...]
@@ -901,11 +870,11 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     vaa = f0['mod/geo/vaa'][...]
     alb = f0['mod/sfc/alb_43'][...]
     f0.close()
+    #\----------------------------------------------------------------------------/#
 
 
     # cloud mask method based on rgb image and l2 data
     #/----------------------------------------------------------------------------\#
-
     # primary selection (over-selection of cloudy pixels is expected)
     #/--------------------------------------------------------------\#
     indices_x0, indices_y0 = cloud_mask_rgb(rgb, extent, lon_2d, lat_2d, scale_factor=1.08)
@@ -913,7 +882,6 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     lon_cld0 = lon_2d[indices_x0, indices_y0]
     lat_cld0 = lat_2d[indices_x0, indices_y0]
     #\--------------------------------------------------------------/#
-
 
     # secondary filter (remove incorrect cloudy pixels)
     #/--------------------------------------------------------------\#
@@ -928,11 +896,7 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
                  logic_nan_cot & \
                  logic_nan_cer)
 
-    logic_good = (np.logical_not(logic_nan_cth) | \
-                  np.logical_not(logic_nan_cot) | \
-                  np.logical_not(logic_nan_cer))
-
-    logic = np.logical_not(logic_bad) | logic_good
+    logic = np.logical_not(logic_bad)
 
     lon_cld = lon_cld0[logic]
     lat_cld = lat_cld0[logic]
@@ -941,6 +905,398 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
     indices_x = indices_x0[logic]
     indices_y = indices_y0[logic]
     #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
+
+    # ipa retrievals
+    #/----------------------------------------------------------------------------\#
+    # cth_ipa0
+    # get cth for new cloud field obtained from radiance thresholding
+    # [indices_x[logic], indices_y[logic]] from cth from MODIS L2 cloud product
+    # this is counter-intuitive but we need to account for the parallax
+    # correction (approximately) that has been applied to the MODIS L2 cloud
+    # product before assigning CTH to cloudy pixels we selected from reflectance
+    # field, where the clouds have not yet been parallax corrected
+    #/--------------------------------------------------------------\#
+    data0 = np.zeros(ref_2d.shape, dtype=np.int32)
+    data0[indices_x, indices_y] = 1
+
+    data = np.zeros(cth.shape, dtype=np.int32)
+    data[cth>0.0] = 1
+
+    offset_dx, offset_dy = er3t.util.move_correlate(data0, data)
+    dlon = (lon_2d[1, 0]-lon_2d[0, 0]) * offset_dx
+    dlat = (lat_2d[0, 1]-lat_2d[0, 0]) * offset_dy
+
+    lon_2d_ = lon_2d + dlon
+    lat_2d_ = lat_2d + dlat
+    extent_ = [extent[0]+dlon, extent[1]+dlon, extent[2]+dlat, extent[3]+dlat]
+
+    cth_ = cth.copy()
+    cth_[cth_==0.0] = np.nan
+
+    cth_ipa0 = np.zeros_like(ref_2d)
+    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cth_, lon_2d_, lat_2d_)
+    cth_ipa0[np.isnan(cth_ipa0)] = 0.0
+    #\--------------------------------------------------------------/#
+
+    # cer_ipa0
+    #/--------------------------------------------------------------\#
+    cer_ipa0 = np.zeros_like(ref_2d)
+    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cer_l2, lon_2d_, lat_2d_)
+    #\--------------------------------------------------------------/#
+
+    # cot_ipa0
+    # ipa relationship of reflectance vs cloud optical thickness
+    #/--------------------------------------------------------------\#
+    cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
+                          np.arange(2.0, 30.0, 2.0),
+                          np.arange(30.0, 60.0, 5.0),
+                          np.arange(60.0, 100.0, 10.0),
+                          np.arange(100.0, 201.0, 50.0)))
+    fdir  = 'tmp-data/%s/ipa-%06.1fnm' % (params['name_tag'], params['wavelength'])
+    f_mca = er3t.rtm.mca.func_ref_vs_cot(
+            cot,
+            cer0=20.0,
+            fdir=fdir,
+            date=params['date'],
+            wavelength=params['wavelength'],
+            surface_albedo=alb.mean(),
+            solar_zenith_angle=sza.mean(),
+            solar_azimuth_angle=saa.mean(),
+            sensor_zenith_angle=vza.mean(),
+            sensor_azimuth_angle=vaa.mean(),
+            overwrite=False
+            )
+    cot_ipa0 = np.zeros_like(ref_2d)
+    cot_ipa0[indices_x, indices_y] = f_mca.get_cot_from_ref(ref_2d[indices_x, indices_y])
+    cot_ipa0[cot_ipa0<0.0] = 0.0
+    cot_ipa0[cot_ipa0>f_mca.cot[-1]] = f_mca.cot[-1]
+    #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
+
+
+    # Parallax correction (for the cloudy pixels detected previously)
+    #/----------------------------------------------------------------------------\#
+    # calculate new lon_corr, lat_corr based on cloud, surface and sensor geometries
+    #/--------------------------------------------------------------\#
+    vza_cld = vza[indices_x, indices_y]
+    vaa_cld = vaa[indices_x, indices_y]
+    sfh_cld = sfh[indices_x, indices_y] * 1000.0  # convert to meter from km
+    cth_cld = cth_ipa0[indices_x, indices_y] * 1000.0 # convert to meter from km
+    lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
+    #\--------------------------------------------------------------/#
+
+    # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
+    #/--------------------------------------------------------------\#
+    Nx, Ny = ref_2d.shape
+    cot_ipa = np.zeros_like(ref_2d)
+    cer_ipa = np.zeros_like(ref_2d)
+    cth_ipa = np.zeros_like(ref_2d)
+    for i in range(indices_x.size):
+        ix = indices_x[i]
+        iy = indices_y[i]
+
+        lon_corr0 = lon_corr[i]
+        lat_corr0 = lat_corr[i]
+        ix_corr = int((lon_corr0-lon_2d[0, 0])//(lon_2d[1, 0]-lon_2d[0, 0]))
+        iy_corr = int((lat_corr0-lat_2d[0, 0])//(lat_2d[0, 1]-lat_2d[0, 0]))
+        if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
+            cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
+            cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
+            cth_ipa[ix_corr, iy_corr] = cth_ipa0[ix, iy]
+    #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
+
+    # write cot_ipa into file
+    #/----------------------------------------------------------------------------\#
+    f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r+')
+    try:
+        f0['mod/cld/cot_ipa'] = cot_ipa
+        f0['mod/cld/cer_ipa'] = cer_ipa
+        f0['mod/cld/cth_ipa'] = cth_ipa
+    except:
+        del(f0['mod/cld/cot_ipa'])
+        del(f0['mod/cld/cer_ipa'])
+        del(f0['mod/cld/cth_ipa'])
+        f0['mod/cld/cot_ipa'] = cot_ipa
+        f0['mod/cld/cer_ipa'] = cer_ipa
+        f0['mod/cld/cth_ipa'] = cth_ipa
+    f0.close()
+    #\----------------------------------------------------------------------------/#
+
+    if plot:
+
+        # figure
+        #/----------------------------------------------------------------------------\#
+        plt.close('all')
+        rcParams['font.size'] = 12
+        fig = plt.figure(figsize=(16, 16))
+
+        fig.suptitle('MODIS Cloud Re-Processing')
+
+        # RGB
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(441)
+        cs = ax1.imshow(rgb, zorder=0, extent=extent)
+        ax1.set_xlim((extent[:2]))
+        ax1.set_ylim((extent[2:]))
+        ax1.set_xlabel('Longitude [$^\circ$]')
+        ax1.set_ylabel('Latitude [$^\circ$]')
+        ax1.set_title('RGB Imagery')
+
+        divider = make_axes_locatable(ax1)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cax.axis('off')
+        #\--------------------------------------------------------------/#
+
+        # L1B reflectance
+        #/----------------------------------------------------------------------------\#
+        ax2 = fig.add_subplot(442)
+        cs = ax2.imshow(ref_2d.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=1.0)
+        ax2.set_xlim((extent[:2]))
+        ax2.set_ylim((extent[2:]))
+        ax2.set_xlabel('Longitude [$^\circ$]')
+        ax2.set_ylabel('Latitude [$^\circ$]')
+        ax2.set_title('L1B Reflectance (%d nm)' % wvl)
+
+        divider = make_axes_locatable(ax2)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # cloud mask (primary)
+        #/----------------------------------------------------------------------------\#
+        ax3 = fig.add_subplot(443)
+        cs = ax3.imshow(rgb, zorder=0, extent=extent)
+        ax3.scatter(lon_2d[indices_x0, indices_y0], lat_2d[indices_x0, indices_y0], s=0.1, c='r', alpha=0.1)
+        ax3.set_xlim((extent[:2]))
+        ax3.set_ylim((extent[2:]))
+        ax3.set_xlabel('Longitude [$^\circ$]')
+        ax3.set_ylabel('Latitude [$^\circ$]')
+        ax3.set_title('Primary Cloud Mask')
+
+        divider = make_axes_locatable(ax3)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cax.axis('off')
+        #\----------------------------------------------------------------------------/#
+
+        # cloud mask (final)
+        #/----------------------------------------------------------------------------\#
+        ax4 = fig.add_subplot(444)
+        cs = ax4.imshow(rgb, zorder=0, extent=extent)
+        ax4.scatter(lon_2d[indices_x, indices_y], lat_2d[indices_x, indices_y], s=0.1, c='r', alpha=0.1)
+        ax4.set_xlim((extent[:2]))
+        ax4.set_ylim((extent[2:]))
+        ax4.set_xlabel('Longitude [$^\circ$]')
+        ax4.set_ylabel('Latitude [$^\circ$]')
+        ax4.set_title('Secondary Cloud Mask (Final)')
+
+        divider = make_axes_locatable(ax4)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cax.axis('off')
+        #\----------------------------------------------------------------------------/#
+
+        # cot l2
+        #/----------------------------------------------------------------------------\#
+        ax5 = fig.add_subplot(445)
+        cs = ax5.imshow(cot_l2.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=50.0)
+        ax5.set_xlim((extent[:2]))
+        ax5.set_ylim((extent[2:]))
+        ax5.set_xlabel('Longitude [$^\circ$]')
+        ax5.set_ylabel('Latitude [$^\circ$]')
+        ax5.set_title('L2 COT')
+
+        divider = make_axes_locatable(ax5)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # cer l2
+        #/----------------------------------------------------------------------------\#
+        ax6 = fig.add_subplot(446)
+        cs = ax6.imshow(cer_l2.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=30.0)
+        ax6.set_xlim((extent[:2]))
+        ax6.set_ylim((extent[2:]))
+        ax6.set_xlabel('Longitude [$^\circ$]')
+        ax6.set_ylabel('Latitude [$^\circ$]')
+        ax6.set_title('L2 CER [$\mu m$]')
+
+        divider = make_axes_locatable(ax6)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # cth l2
+        #/----------------------------------------------------------------------------\#
+        ax7 = fig.add_subplot(447)
+        cs = ax7.imshow(cth.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=15.0)
+        ax7.set_xlim((extent[:2]))
+        ax7.set_ylim((extent[2:]))
+        ax7.set_xlabel('Longitude [$^\circ$]')
+        ax7.set_ylabel('Latitude [$^\circ$]')
+        ax7.set_title('L2 CTH [km]')
+
+        divider = make_axes_locatable(ax7)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # place holder
+        #/----------------------------------------------------------------------------\#
+        # ax8 = fig.add_subplot(448)
+        # cs = ax8.imshow(vaa.T, origin='lower', cmap='jet', zorder=0, extent=extent)
+        # ax8.set_xlim((extent[:2]))
+        # ax8.set_ylim((extent[2:]))
+        # ax8.set_xlabel('Longitude [$^\circ$]')
+        # ax8.set_ylabel('Latitude [$^\circ$]')
+        # ax8.set_title('Viewing Azimuth [$^\circ$]')
+
+        # divider = make_axes_locatable(ax8)
+        # cax = divider.append_axes('right', '5%', pad='3%')
+        # cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # cot ipa0
+        #/----------------------------------------------------------------------------\#
+        ax9 = fig.add_subplot(449)
+        cs = ax9.imshow(cot_ipa0.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=50.0)
+        ax9.set_xlim((extent[:2]))
+        ax9.set_ylim((extent[2:]))
+        ax9.set_xlabel('Longitude [$^\circ$]')
+        ax9.set_ylabel('Latitude [$^\circ$]')
+        ax9.set_title('New IPA COT')
+
+        divider = make_axes_locatable(ax9)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # cer ipa0
+        #/----------------------------------------------------------------------------\#
+        ax10 = fig.add_subplot(4, 4, 10)
+        cs = ax10.imshow(cer_ipa0.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=30.0)
+        ax10.set_xlim((extent[:2]))
+        ax10.set_ylim((extent[2:]))
+        ax10.set_xlabel('Longitude [$^\circ$]')
+        ax10.set_ylabel('Latitude [$^\circ$]')
+        ax10.set_title('New CER [$\mu m$]')
+
+        divider = make_axes_locatable(ax10)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # cth ipa0
+        #/----------------------------------------------------------------------------\#
+        ax11 = fig.add_subplot(4, 4, 11)
+        cs = ax11.imshow(cth_ipa0.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=15.0)
+        ax11.set_xlim((extent[:2]))
+        ax11.set_ylim((extent[2:]))
+        ax11.set_xlabel('Longitude [$^\circ$]')
+        ax11.set_ylabel('Latitude [$^\circ$]')
+        ax11.set_title('New CTH [km]')
+
+        divider = make_axes_locatable(ax11)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # place holder
+        #/----------------------------------------------------------------------------\#
+        # ax12 = fig.add_subplot(4, 4, 12)
+        # cs = ax12.imshow(sfh.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=5.0)
+        # ax12.set_xlim((extent[:2]))
+        # ax12.set_ylim((extent[2:]))
+        # ax12.set_xlabel('Longitude [$^\circ$]')
+        # ax12.set_ylabel('Latitude [$^\circ$]')
+        # ax12.set_title('Surface Height [km]')
+
+        # divider = make_axes_locatable(ax12)
+        # cax = divider.append_axes('right', '5%', pad='3%')
+        # cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # cot_ipa
+        #/----------------------------------------------------------------------------\#
+        ax13 = fig.add_subplot(4, 4, 13)
+        cs = ax13.imshow(cot_ipa.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=50.0)
+        ax13.set_xlim((extent[:2]))
+        ax13.set_ylim((extent[2:]))
+        ax13.set_xlabel('Longitude [$^\circ$]')
+        ax13.set_ylabel('Latitude [$^\circ$]')
+        ax13.set_title('New IPA COT (Para. Corr.)')
+
+        divider = make_axes_locatable(ax13)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # cer_ipa
+        #/----------------------------------------------------------------------------\#
+        ax14 = fig.add_subplot(4, 4, 14)
+        cs = ax14.imshow(cer_ipa.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=30.0)
+        ax14.set_xlim((extent[:2]))
+        ax14.set_ylim((extent[2:]))
+        ax14.set_xlabel('Longitude [$^\circ$]')
+        ax14.set_ylabel('Latitude [$^\circ$]')
+        ax14.set_title('New CER [$\mu m$] (Para. Corr.)')
+
+        divider = make_axes_locatable(ax14)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # cth_ipa
+        #/----------------------------------------------------------------------------\#
+        ax15 = fig.add_subplot(4, 4, 15)
+        cs = ax15.imshow(cth_ipa.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=15.0)
+        ax15.set_xlim((extent[:2]))
+        ax15.set_ylim((extent[2:]))
+        ax15.set_xlabel('Longitude [$^\circ$]')
+        ax15.set_ylabel('Latitude [$^\circ$]')
+        ax15.set_title('New CTH [km] (Para. Corr.)')
+
+        divider = make_axes_locatable(ax15)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+        # surface albedo (MYD43A3, white sky albedo)
+        #/----------------------------------------------------------------------------\#
+        ax16 = fig.add_subplot(4, 4, 16)
+        cs = ax16.imshow(alb.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
+        ax16.set_xlim((extent[:2]))
+        ax16.set_ylim((extent[2:]))
+        ax16.set_xlabel('Longitude [$^\circ$]')
+        ax16.set_ylabel('Latitude [$^\circ$]')
+        ax16.set_title('43A3 WSA')
+
+        divider = make_axes_locatable(ax16)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        #\----------------------------------------------------------------------------/#
+
+
+        # save figure
+        #/--------------------------------------------------------------\#
+        plt.subplots_adjust(hspace=0.4, wspace=0.4)
+        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        plt.savefig('%s_<%s>.png' % (params['name_tag'], _metadata['Function']), bbox_inches='tight', metadata=_metadata)
+        plt.show()
+        #\--------------------------------------------------------------/#
+        #\----------------------------------------------------------------------------/#
+
+    sys.exit()
+
+
+
+
+
+
+def plot():
 
     if False:
         # figure
@@ -984,72 +1340,6 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
         plt.show()
         sys.exit()
         #\----------------------------------------------------------------------------/#
-
-    #\----------------------------------------------------------------------------/#
-
-
-    # Parallax correction (for the cloudy pixels detected previously)
-    #/----------------------------------------------------------------------------\#
-    vza_cld = vza[indices_x, indices_y]
-    vaa_cld = vaa[indices_x, indices_y]
-    sfh_cld = sfh[indices_x, indices_y] * 1000.0  # convert to meter from km
-
-    # get cth, cer for
-    # new cloud field obtained from radiance thresholding [indices_x[logic], indices_y[logic]]
-    # from cth, cer from MODIS L2 cloud product
-    # this is counter-intuitive but we need to account for the parallax
-    # correction (approximately) that has been applied to the MODIS L2 cloud
-    # product before assigning CTH to cloudy pixels we selected from reflectance
-    # field, where the clouds have not yet been parallax corrected
-    #/--------------------------------------------------------------\#
-    data0 = np.zeros(ref_2d.shape, dtype=np.int32)
-    data0[indices_x, indices_y] = 1
-
-    # cth
-    #/--------------------------------------------------------------\#
-    data = np.zeros(cth.shape, dtype=np.int32)
-    data[cth>0.0] = 1
-
-    offset_dx, offset_dy = correlate_collocate(data0, data)
-    dlon = (lon_2d[1, 0]-lon_2d[0, 0]) * offset_dx
-    dlat = (lat_2d[0, 1]-lat_2d[0, 0]) * offset_dy
-    print(offset_dx, offset_dy)
-
-    lon_2d_ = lon_2d + dlon
-    lat_2d_ = lat_2d + dlat
-    extent_ = [extent[0]+dlon, extent[1]+dlon, extent[2]+dlat, extent[3]+dlat]
-
-    cth_ = cth*1000.0
-    cth_[cth_==0.0] = np.nan
-
-    cth_ipa0 = np.zeros_like(ref_2d)
-    cth_ipa0[...] = np.nan
-    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cth_, lon_2d_, lat_2d_)
-
-    cth_cld = cth_ipa0[indices_x, indices_y]
-    #\--------------------------------------------------------------/#
-
-    # cer
-    #/--------------------------------------------------------------\#
-    data = np.zeros(cer_l2.shape, dtype=np.int32)
-    data[cer_l2>0.0] = 1
-
-    offset_dx, offset_dy = correlate_collocate(data0, data)
-    dlon = (lon_2d[1, 0]-lon_2d[0, 0]) * offset_dx
-    dlat = (lat_2d[0, 1]-lat_2d[0, 0]) * offset_dy
-    print(offset_dx, offset_dy)
-
-    lon_2d_ = lon_2d + dlon
-    lat_2d_ = lat_2d + dlat
-    extent_ = [extent[0]+dlon, extent[1]+dlon, extent[2]+dlat, extent[3]+dlat]
-
-    cer_ipa0 = np.zeros_like(ref_2d)
-    cer_ipa0[...] = np.nan
-    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cer_l2, lon_2d_, lat_2d_)
-    #\--------------------------------------------------------------/#
-
-
-    #\--------------------------------------------------------------/#
 
     if False:
         # figure
@@ -1098,11 +1388,6 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
         sys.exit()
         #\----------------------------------------------------------------------------/#
 
-    #\--------------------------------------------------------------/#
-
-    lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
-    #\----------------------------------------------------------------------------/#
-
     if False:
         # figure
         #/----------------------------------------------------------------------------\#
@@ -1143,60 +1428,6 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
         plt.show()
         sys.exit()
         #\----------------------------------------------------------------------------/#
-
-
-    # IPA retrieval
-    #/----------------------------------------------------------------------------\#
-
-    # IPA relationship of reflectance vs cloud optical thickness
-    #/--------------------------------------------------------------\#
-    cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
-                          np.arange(2.0, 30.0, 2.0),
-                          np.arange(30.0, 60.0, 5.0),
-                          np.arange(60.0, 100.0, 10.0),
-                          np.arange(100.0, 201.0, 50.0)))
-    fdir  = 'tmp-data/%s/ipa-%06.1fnm' % (params['name_tag'], params['wavelength'])
-    f_mca = er3t.rtm.mca.func_ref_vs_cot(
-            cot,
-            cer0=20.0,
-            fdir=fdir,
-            date=params['date'],
-            wavelength=params['wavelength'],
-            surface_albedo=alb.mean(),
-            solar_zenith_angle=sza.mean(),
-            solar_azimuth_angle=saa.mean(),
-            sensor_zenith_angle=vza.mean(),
-            sensor_azimuth_angle=vaa.mean(),
-            overwrite=False
-            )
-    #\--------------------------------------------------------------/#
-
-    # assign COT for every cloudy pixel
-    #/--------------------------------------------------------------\#
-    Nx, Ny = ref_2d.shape
-    cot_ipa = np.zeros_like(ref_2d)
-    cer_ipa = np.zeros_like(ref_2d)
-    cth_ipa = np.zeros_like(ref_2d)
-    for i in range(indices_x.size):
-        if 0<=indices_x[i]<Nx and 0<=indices_y[i]<Ny:
-            # mca-ipa
-            cot_ipa[indices_x[i], indices_y[i]] = f_mca.get_cot_from_ref(ref_2d[indices_x[i], indices_y[i]])
-    #\--------------------------------------------------------------/#
-
-    #\----------------------------------------------------------------------------/#
-
-
-    # write cot_ipa into file
-    #/----------------------------------------------------------------------------\#
-    f0 = h5py.File(fname, 'r+')
-    try:
-        f0['mod/cld/cot_ipa'] = cot_ipa
-    except:
-        del(f0['mod/cld/cot_ipa'])
-        f0['mod/cld/cot_ipa'] = cot_ipa
-    f0.close()
-    #\----------------------------------------------------------------------------/#
-
 
     if True:
         # figure
@@ -1253,8 +1484,6 @@ def cdata_cot_ipa(wvl=params['wavelength'], plot=True):
 
 
 
-
-
 def main_pre(wvl=params['wavelength']):
 
 
@@ -1292,7 +1521,7 @@ def main_pre(wvl=params['wavelength']):
     #        used for 3D radiance self-consistency check to ensure their physical processes
     #        are consistent
     #/----------------------------------------------------------------------------\#
-    cdata_cot_ipa()
+    cdata_cld_ipa(wvl=wvl, plot=True)
     #\----------------------------------------------------------------------------/#
 
     sys.exit()
