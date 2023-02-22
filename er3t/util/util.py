@@ -9,7 +9,7 @@ import requests
 import urllib.request
 from io import StringIO
 import numpy as np
-from scipy import interpolate
+from scipy import interpolate, stats
 import warnings
 
 import er3t.common
@@ -20,8 +20,8 @@ import er3t.common
 __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
-           'find_nearest', 'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
-           'get_satfile_tag', \
+           'find_nearest', 'move_correlate', 'grid_by_extent', 'grid_by_lonlat', \
+           'get_doy_tag', 'get_satfile_tag', \
            'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
@@ -325,6 +325,45 @@ def find_nearest(x, y, data_2d, x_2d, y_2d, fill_nan=True):
     #\----------------------------------------------------------------------------/#
 
     return nearest
+
+
+
+def move_correlate(data0, data, Ndx=5, Ndy=5):
+
+    Nx, Ny = data.shape
+    x = np.arange(Nx, dtype=np.int32)
+    y = np.arange(Ny, dtype=np.int32)
+    xx, yy = np.meshgrid(x, y, indexing='ij')
+
+    xx0 = xx.copy()
+    yy0 = yy.copy()
+    valid = np.ones((Nx, Ny), dtype=np.int32)
+
+    corr_coef = np.zeros((2*Ndx+1, 2*Ndy+1), dtype=np.float64)
+    dxx = np.arange(-Ndx, Ndx+1)
+    dyy = np.arange(-Ndy, Ndy+1)
+
+    for idx, dx in enumerate(dxx):
+        xx_ = xx + dx
+        valid[xx_< 0 ] = 0
+        valid[xx_>=Nx] = 0
+        for idy, dy in enumerate(dyy):
+            yy_ = yy + dy
+            valid[yy_< 0 ] = 0
+            valid[yy_>=Ny] = 0
+
+            logic = (valid == 1)
+            data0_ = data0[xx0[logic], yy0[logic]]
+            data_  = data[xx_[logic], yy_[logic]]
+
+            corr_coef[idx, idy] = stats.pearsonr(data0_, data_)[0]
+
+    indices = np.unravel_index(np.argmax(corr_coef, axis=None), corr_coef.shape)
+
+    offset_dx = -dxx[indices[0]]
+    offset_dy = -dyy[indices[1]]
+
+    return offset_dx, offset_dy
 
 
 
