@@ -20,7 +20,7 @@ import er3t.common
 __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
-           'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
+           'find_nearest', 'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
            'get_satfile_tag', \
            'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
@@ -285,6 +285,46 @@ def get_data_h4(hdf_dset):
         data = data + attrs['add_offset']
 
     return data
+
+
+
+def find_nearest(x, y, data_2d, x_2d, y_2d, fill_nan=True):
+
+    x = x.ravel()
+    y = y.ravel()
+
+    dx = x_2d[1, 0] - x_2d[0, 0]
+    dy = y_2d[0, 1] - y_2d[0, 0]
+
+    logic_in  = (x>=x_2d[0, 0]) & (x<=x_2d[-1, 0]) & (y>=y_2d[0, 0]) & (y<=y_2d[0, -1])
+    logic_out = np.logical_not(logic_in)
+
+    indices_x = np.int_((x-x_2d[0, 0])//dx)
+    indices_y = np.int_((y-y_2d[0, 0])//dy)
+
+    nearest = np.zeros(x.size, dtype=np.float64)
+    nearest[logic_in] = data_2d[indices_x[logic_in], indices_y[logic_in]]
+
+    # deal with nan data
+    #/----------------------------------------------------------------------------\#
+    logic_nan  = np.isnan(data_2d)
+    logic_good = np.logical_not(logic_nan)
+    if np.isnan(nearest).sum()>0 and fill_nan:
+        data_2d_ = data_2d[logic_good]
+        x_2d_    = x_2d[logic_good]
+        y_2d_    = y_2d[logic_good]
+
+        indices_nan = np.where(np.isnan(nearest))[0]
+        for index in indices_nan:
+            x_ = x[index]
+            y_ = y[index]
+            index_closest = np.argmin(np.abs((x_2d_-x_)**2+(y_2d_-y_)**2))
+            nearest[index] = data_2d_[index_closest]
+
+    nearest[logic_out] = np.nan
+    #\----------------------------------------------------------------------------/#
+
+    return nearest
 
 
 
