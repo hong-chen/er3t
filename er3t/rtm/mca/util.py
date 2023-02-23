@@ -96,7 +96,7 @@ class func_ref_vs_cot:
         for cot0 in self.cot:
             self.run_one(cot0, self.cer0)
 
-    def run_one(self, cot0, cer0, Nx=8, Ny=8):
+    def run_one(self, cot0, cer0, Nx=2, Ny=2):
 
         name_tag = 'cot-%05.1f_cer-%04.1f' % (cot0, cer0)
 
