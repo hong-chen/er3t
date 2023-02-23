@@ -63,9 +63,10 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.6, -106.5, 35.9, 39.0],
-           'photon' : 5e9,
+           'photon' : 5e8,
         }
 #\--------------------------------------------------------------/#
+
 
 
 
@@ -160,108 +161,6 @@ class satellite_download:
             if self.verbose:
                 print('Message [satellite_download]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
-
-
-
-
-
-
-
-
-
-def pre_cld_modis(sat, wvl, scale_factor=1.0, solver='3D'):
-
-
-    # Parallax correction (for the cloudy pixels detected previously)
-    # ====================================================================================================
-    points     = np.transpose(np.vstack((lon1[logic_sfh], lat1[logic_sfh])))
-    sfh        = interpolate.griddata(points, sfh1[logic_sfh], (lon, lat), method='cubic')
-
-    points     = np.transpose(np.vstack((lon1, lat1)))
-    vza        = interpolate.griddata(points, vza1, (lon, lat), method='cubic')
-    vaa        = interpolate.griddata(points, vaa1, (lon, lat), method='cubic')
-    vza[...] = np.nanmean(vza)
-    vaa[...] = np.nanmean(vaa)
-
-    if solver == '3D':
-        lon_corr, lat_corr  = para_corr(lon, lat, vza, vaa, cth*1000.0, sfh*1000.0)
-    elif solver == 'IPA':
-        lon_corr, lat_corr  = para_corr(lon, lat, vza, vaa, sfh, sfh)
-    # ====================================================================================================
-
-
-    # Cloud optical property
-    #  1) cloud optical thickness: MODIS 650 reflectance -> two-stream approximation -> cloud optical thickness
-    #  2) cloud effective radius: from MODIS L2 cloud product (upscaled to 250m resolution from raw 1km resolution)
-    #  3) cloud top height: from MODIS L2 cloud product
-    #
-    #   special note: for this particular case, saturation was found on MODIS 860 nm reflectance
-    # ===================================================================================
-    # two-stream
-    a0         = np.median(ref_2d)
-    mu0        = np.cos(np.deg2rad(sza1.mean()))
-    xx_2stream = np.linspace(0.0, 200.0, 10000)
-    yy_2stream = er3t.util.cal_r_twostream(xx_2stream, a=a0, mu=mu0)
-
-    # lon/lat shift due to parallax and wind correction
-    lon_1d = lon_2d[:, 0]
-    indices_x_new = np.int_(np.round((lon_corr-lon_1d[0])/(((lon_1d[1:]-lon_1d[:-1])).mean()), decimals=0))
-    lat_1d = lat_2d[0, :]
-    indices_y_new = np.int_(np.round((lat_corr-lat_1d[0])/(((lat_1d[1:]-lat_1d[:-1])).mean()), decimals=0))
-
-    # assign COT, CER, CTH for every cloudy pixel (after parallax and wind correction)
-    Nx, Ny = ref_2d.shape
-    cot_2d_l1b = np.zeros_like(ref_2d)
-    cer_2d_l1b = np.zeros_like(ref_2d); cer_2d_l1b[...] = 1.0
-    cth_2d_l1b = np.zeros_like(ref_2d)
-    for i in range(indices_x.size):
-        if 0<=indices_x_new[i]<Nx and 0<=indices_y_new[i]<Ny:
-            # COT from two-stream
-            cot_2d_l1b[indices_x_new[i], indices_y_new[i]] = xx_2stream[np.argmin(np.abs(yy_2stream-ref_2d[indices_x[i], indices_y[i]]))]
-            # CER from closest CER from MODIS L2 cloud product
-            cer_2d_l1b[indices_x_new[i], indices_y_new[i]] = cer_2d_l2[indices_x[i], indices_y[i]]
-            # CTH from closest CTH from MODIS L2 cloud product
-            cth_2d_l1b[indices_x_new[i], indices_y_new[i]] = cth_2d_l2[indices_x[i], indices_y[i]]
-
-    # special note: secondary cloud/clear-sky filter that is hard-coded for this particular case
-    # ===================================================================================
-    cot_2d_l1b[(cer_2d_l1b<1.5)&(lat_2d>38.0)] = 0.0
-    cot_2d_l1b[(cer_2d_l1b<1.5)&(lon_2d<-108.5)] = 0.0
-    cer_2d_l1b[(cer_2d_l1b<1.5)&(lat_2d>38.0)] = 1.0
-    cer_2d_l1b[(cer_2d_l1b<1.5)&(lon_2d<-108.5)] = 1.0
-    cth_2d_l1b[(cer_2d_l1b<1.5)&(lat_2d>38.0)] = 0.0
-    cth_2d_l1b[(cer_2d_l1b<1.5)&(lon_2d<-108.5)] = 0.0
-    # ===================================================================================
-
-    # store data for return
-    # ===================================================================================
-    modl1b.data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=lon_2d)
-    modl1b.data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=lat_2d)
-    modl1b.data['ref_2d'] = dict(name='Gridded reflectance'             , units='N/A'        , data=ref_2d)
-    modl1b.data['rad_2d'] = dict(name='Gridded radiance'                , units='W/m2/nm/sr' , data=rad_2d)
-    modl1b.data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=cot_2d_l1b*scale_factor)
-    modl1b.data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micron'     , data=cer_2d_l1b)
-    modl1b.data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=cth_2d_l1b)
-    modl1b.data['wvl']    = dict(name='Wavelength'                      , units='nm'         , data=wvl)
-    modl1b.data['sza']    = dict(name='Solar Zenith Angle'              , units='degree'     , data=np.nanmean(sza1))
-    modl1b.data['saa']    = dict(name='Solar Azimuth Angle'             , units='degree'     , data=np.nanmean(saa1))
-    modl1b.data['vza']    = dict(name='Sensor Zenith Angle'             , units='degree'     , data=np.nanmean(vza1))
-    modl1b.data['vaa']    = dict(name='Sensor Azimuth Angle'            , units='degree'     , data=np.nanmean(vaa1))
-    # ===================================================================================
-
-    return modl1b
-
-
-
-
-
-
-
-
-
-
-
-
 
 def cdata_modis_raw(wvl=params['wavelength'], plot=True):
 
@@ -667,6 +566,7 @@ def cdata_modis_raw(wvl=params['wavelength'], plot=True):
 
 
 
+
 def cloud_mask_rgb(
         rgb,
         extent,
@@ -772,13 +672,13 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
 
     # secondary filter (remove incorrect cloudy pixels)
     #/--------------------------------------------------------------\#
-    ref0    = ref_2d[indices_x0, indices_y0]
+    ref_cld0    = ref_2d[indices_x0, indices_y0]
 
     logic_nan_cth = np.isnan(cth[indices_x0, indices_y0])
     logic_nan_cot = np.isnan(cot_l2[indices_x0, indices_y0])
     logic_nan_cer = np.isnan(cer_l2[indices_x0, indices_y0])
 
-    logic_bad = (ref0<np.median(ref0)) & \
+    logic_bad = (ref_cld0<np.median(ref_cld0)) & \
                 (logic_nan_cth & \
                  logic_nan_cot & \
                  logic_nan_cer)
@@ -853,10 +753,12 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             solar_azimuth_angle=saa.mean(),
             sensor_zenith_angle=vza.mean(),
             sensor_azimuth_angle=vaa.mean(),
+            photon_number=1e8,
             overwrite=False
             )
     cot_ipa0 = np.zeros_like(ref_2d)
-    cot_ipa0[indices_x, indices_y] = f_mca.get_cot_from_ref(ref_2d[indices_x, indices_y])
+    ref_cld_norm = ref_2d[indices_x, indices_y]/np.cos(np.deg2rad(sza.mean()))
+    cot_ipa0[indices_x, indices_y] = f_mca.get_cot_from_ref(ref_cld_norm)
     cot_ipa0[cot_ipa0<0.0] = 0.0
     cot_ipa0[cot_ipa0>f_mca.cot[-1]] = f_mca.cot[-1]
     #\--------------------------------------------------------------/#
@@ -932,6 +834,37 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         f0['mod/cld/cot_ipa'] = cot_ipa
         f0['mod/cld/cer_ipa'] = cer_ipa
         f0['mod/cld/cth_ipa'] = cth_ipa
+    try:
+        g0 = f0.create_group('cld_msk')
+        g0['indices_x0'] = indices_x0
+        g0['indices_y0'] = indices_y0
+        g0['indices_x']  = indices_x
+        g0['indices_y']  = indices_y
+    except:
+        del(f0['cld_msk/indices_x0'])
+        del(f0['cld_msk/indices_y0'])
+        del(f0['cld_msk/indices_x'])
+        del(f0['cld_msk/indices_y'])
+        del(f0['cld_msk'])
+        g0 = f0.create_group('cld_msk')
+        g0['indices_x0'] = indices_x0
+        g0['indices_y0'] = indices_y0
+        g0['indices_x']  = indices_x
+        g0['indices_y']  = indices_y
+    try:
+        g0 = f0.create_group('mca_ipa')
+        g0['cot'] = f_mca.cot
+        g0['ref'] = f_mca.ref
+        g0['ref_std'] = f_mca.ref_std
+    except:
+        del(f0['mca_ipa/cot'])
+        del(f0['mca_ipa/ref'])
+        del(f0['mca_ipa/ref_std'])
+        del(f0['mca_ipa'])
+        g0 = f0.create_group('mca_ipa')
+        g0['cot'] = f_mca.cot
+        g0['ref'] = f_mca.ref
+        g0['ref_std'] = f_mca.ref_std
     f0.close()
     #\----------------------------------------------------------------------------/#
 
@@ -1090,7 +1023,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         ax10.set_ylim((extent[2:]))
         ax10.set_xlabel('Longitude [$^\circ$]')
         ax10.set_ylabel('Latitude [$^\circ$]')
-        ax10.set_title('New CER [$\mu m$]')
+        ax10.set_title('New L2 CER [$\mu m$]')
 
         divider = make_axes_locatable(ax10)
         cax = divider.append_axes('right', '5%', pad='3%')
@@ -1105,7 +1038,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         ax11.set_ylim((extent[2:]))
         ax11.set_xlabel('Longitude [$^\circ$]')
         ax11.set_ylabel('Latitude [$^\circ$]')
-        ax11.set_title('New CTH [km]')
+        ax11.set_title('New L2 CTH [km]')
 
         divider = make_axes_locatable(ax11)
         cax = divider.append_axes('right', '5%', pad='3%')
@@ -1150,7 +1083,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         ax14.set_ylim((extent[2:]))
         ax14.set_xlabel('Longitude [$^\circ$]')
         ax14.set_ylabel('Latitude [$^\circ$]')
-        ax14.set_title('New CER [$\mu m$] (Para. Corr.)')
+        ax14.set_title('New L2 CER [$\mu m$] (Para. Corr.)')
 
         divider = make_axes_locatable(ax14)
         cax = divider.append_axes('right', '5%', pad='3%')
@@ -1165,7 +1098,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         ax15.set_ylim((extent[2:]))
         ax15.set_xlabel('Longitude [$^\circ$]')
         ax15.set_ylabel('Latitude [$^\circ$]')
-        ax15.set_title('New CTH [km] (Para. Corr.)')
+        ax15.set_title('New L2 CTH [km] (Para. Corr.)')
 
         divider = make_axes_locatable(ax15)
         cax = divider.append_axes('right', '5%', pad='3%')
@@ -1325,6 +1258,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
 
 
 
+
 def main_pre(wvl=params['wavelength']):
 
     # 1) Download and pre-process MODIS data products
@@ -1381,7 +1315,7 @@ def main_sim(wvl=params['wavelength']):
 
     # create tmp-data/02_modis_rad-sim directory if it does not exist
     #/----------------------------------------------------------------------------\#
-    fdir_tmp = os.path.abspath('tmp-data/%s/sim' % (params['name_tag']))
+    fdir_tmp  = 'tmp-data/%s/sim-%06.1fnm' % (params['name_tag'], params['wavelength'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
     #\----------------------------------------------------------------------------/#
@@ -1389,8 +1323,8 @@ def main_sim(wvl=params['wavelength']):
 
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
-    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True)
     cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='IPA', overwrite=True)
+    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(wvl=params['wavelength'], plot=False):
@@ -1505,7 +1439,7 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
