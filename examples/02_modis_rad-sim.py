@@ -62,8 +62,8 @@ params = {
          'name_tag' : os.path.relpath(__file__).replace('.py', ''),
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
-           'region' : [-109.6, -106.5, 35.9, 39.0],
-           'photon' : 5e8,
+           'region' : [-109.1, -106.9, 36.9, 39.1],
+           'photon' : 5e9,
         }
 #\--------------------------------------------------------------/#
 
@@ -1323,7 +1323,7 @@ def main_sim(wvl=params['wavelength']):
 
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
-    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='IPA', overwrite=True)
+    # cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='IPA', overwrite=True)
     cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
