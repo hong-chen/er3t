@@ -28,7 +28,12 @@ class func_ref_vs_cot:
             solar_azimuth_angle=er3t.common.params['solar_azimuth_angle'],
             sensor_zenith_angle=er3t.common.params['sensor_zenith_angle'],
             sensor_azimuth_angle=er3t.common.params['sensor_azimuth_angle'],
+            sensor_altitude=er3t.common.params['sensor_altitude'],
             photon_number=er3t.common.params['photon_number'],
+            Nx=2,
+            Ny=2,
+            dx=0.1,
+            dy=0.1,
             cpu_number=12,
             output_tag=er3t.common.params['output_tag'],
             overwrite=er3t.common.params['overwrite'],
@@ -42,12 +47,17 @@ class func_ref_vs_cot:
         self.saa0 = solar_azimuth_angle
         self.vza0 = sensor_zenith_angle
         self.vaa0 = sensor_azimuth_angle
+        self.alt0 = sensor_altitude
         self.alb0 = surface_albedo
         self.fdir = fdir
         self.output_tag = output_tag
         self.photon0 = photon_number
         self.cpu0 = cpu_number
         self.date0 = date
+        self.Nx = Nx
+        self.Ny = Ny
+        self.dx = dx
+        self.dy = dy
 
         self.mu0  = np.cos(np.deg2rad(self.sza0))
         self.ref_2s = er3t.util.cal_r_twostream(cot, a=self.alb0, mu=self.mu0)
@@ -84,6 +94,7 @@ class func_ref_vs_cot:
 
         # convert from rad to ref
         #/----------------------------------------------------------------------------\#
+        self.toa0    = toa0
         self.ref     = np.pi*self.rad      / (toa0*self.mu0)
         self.ref_std = np.pi*self.rad_std  / (toa0*self.mu0)
         #\----------------------------------------------------------------------------/#
@@ -94,9 +105,9 @@ class func_ref_vs_cot:
         os.makedirs(self.fdir)
 
         for cot0 in self.cot:
-            self.run_one(cot0, self.cer0)
+            self.run_one(cot0, self.cer0, Nx=self.Nx, Ny=self.Ny, dx=self.dx, dy=self.dy)
 
-    def run_one(self, cot0, cer0, Nx=2, Ny=2):
+    def run_one(self, cot0, cer0, Nx=2, Ny=2, dx=0.1, dy=0.1):
 
         name_tag = 'cot-%05.1f_cer-%04.1f' % (cot0, cer0)
 
@@ -116,7 +127,7 @@ class func_ref_vs_cot:
         # cloud object
         #/----------------------------------------------------------------------------\#
         fname_cld = '%s/cld_%s.pk' % (self.fdir, name_tag)
-        cld0 = er3t.pre.cld.cld_gen_hom(fname=fname_cld, altitude=atm0.lay['altitude']['data'][1:3], atm_obj=atm0, Nx=Nx, Ny=Ny, cot0=cot0, cer0=cer0, overwrite=True)
+        cld0 = er3t.pre.cld.cld_gen_hom(fname=fname_cld, altitude=atm0.lay['altitude']['data'][1:3], atm_obj=atm0, Nx=Nx, Ny=Ny, dx=dx, dy=dy, cot0=cot0, cer0=cer0, overwrite=True)
         #\----------------------------------------------------------------------------/#
 
         # phase function
@@ -154,6 +165,7 @@ class func_ref_vs_cot:
                 solar_azimuth_angle  = self.saa0,
                 sensor_zenith_angle  = self.vza0,
                 sensor_azimuth_angle = self.vaa0,
+                sensor_altitude      = self.alt0,
                 fdir='%s/%s_%s/rad' % (self.fdir, self.output_tag, name_tag),
                 Nrun=3,
                 Ng=abs0.Ng,
