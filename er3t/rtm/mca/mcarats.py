@@ -135,14 +135,24 @@ class mcarats_ng:
         self.Nrun    = Nrun
 
 
-        self.solver  = solver
+        solver = solver.lower()
+        if solver in ['3d', '3 d', 'three d']:
+            self.solver = '3D'
+        elif solver in ['p3d', 'p-3d', 'partial 3d', 'partial-3d']:
+            self.solver = 'Partial 3D'
+        elif solver in ['ipa', 'independent pixel approximation']:
+            self.solver = 'IPA'
+        else:
+            msg = 'Error [mcarats_ng]: Cannot understand <solver=%s>.' % self.solver
+            raise OSError(msg)
+
         self.target  = target
 
         self.Nx = 1
         self.Ny = 1
 
 
-        if weights is None:
+        if weights is None or self.solver=='IPA':
             self.np_mode = 'evenly'
             weights = np.repeat(1.0/self.Ng, Ng)
         else:
@@ -410,16 +420,6 @@ class mcarats_ng:
         """
 
 
-        solver = self.solver.lower()
-        if solver in ['3d', '3 d', 'three d']:
-            self.solver = '3D'
-        elif solver in ['p3d', 'p-3d', 'partial 3d', 'partial-3d']:
-            self.solver = 'Partial 3D'
-        elif solver in ['ipa', 'independent pixel approximation']:
-            self.solver = 'IPA'
-        else:
-            msg = 'Error [mcarats_ng]: Cannot understand <solver=%s>.' % self.solver
-            raise OSError(msg)
 
         # solver:
         #   0: Full 3D radiative transfer
