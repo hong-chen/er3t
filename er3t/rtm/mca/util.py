@@ -171,7 +171,7 @@ class func_ref_vs_cot:
                 Ng=abs0.Ng,
                 weights=abs0.coef['weight']['data'],
                 photons=self.photon0,
-                solver='3D',
+                solver='ipa',
                 Ncpu=self.cpu0,
                 mp_mode='py',
                 overwrite=True
