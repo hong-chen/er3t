@@ -744,7 +744,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
                           np.arange(100.0, 201.0, 50.0)))
 
     dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
-    dy = np.pi*6378.1*(lat_2d[1, 0]-lat_2d[0, 0])/180.0
+    dy = np.pi*6378.1*(lat_2d[0, 1]-lat_2d[0, 0])/180.0
 
     fdir  = 'tmp-data/%s/ipa-%06.1fnm_thick' % (params['name_tag'], params['wavelength'])
 
