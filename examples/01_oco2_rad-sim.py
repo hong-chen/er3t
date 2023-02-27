@@ -51,19 +51,7 @@ from matplotlib.ticker import FixedLocator
 import matplotlib.patches as mpatches
 
 
-from er3t.pre.atm import atm_atmmod
-from er3t.pre.abs import abs_oco_idl
-from er3t.pre.cld import cld_sat
-from er3t.pre.sfc import sfc_sat
-from er3t.pre.pha import pha_mie_wc as pha_mie
-from er3t.util.modis import modis_l1b, modis_l2, modis_03, modis_09a1, get_sinusoidal_grid_tag, get_filename_tag
-from er3t.util.oco2 import oco2_rad_nadir, oco2_std, download_oco2_https
-from er3t.util import cal_r_twostream, grid_by_extent, grid_by_lonlat, download_laads_https, download_worldview_rgb, get_satfile_tag
-
-from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
-from er3t.rtm.mca import mcarats_ng
-from er3t.rtm.mca import mca_out_ng
-from er3t.rtm.mca import mca_sca
+import er3t
 
 
 # global variables
@@ -131,17 +119,17 @@ class satellite_download:
 
         self.fnames = {}
 
-        self.fnames['mod_rgb'] = [download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.util.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_03'] = []
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
-        filename_tags_03 = get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
+        filename_tags_03 = er3t.util.get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
         for filename_tag in filename_tags_03:
-            fnames_03     = download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = er3t.util.download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = er3t.util.download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = er3t.util.download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
 
             self.fnames['mod_03'] += fnames_03
             self.fnames['mod_l2'] += fnames_l2
@@ -149,9 +137,9 @@ class satellite_download:
 
         # MOD09A1 surface reflectance product
         self.fnames['mod_09'] = []
-        filename_tags_09 = get_sinusoidal_grid_tag(lon, lat)
+        filename_tags_09 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_09:
-            fnames_09 = download_laads_https(self.date, '6/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
+            fnames_09 = er3t.util.download_laads_https(self.date, '6/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_09'] += fnames_09
 
         # OCO2 std and met file
@@ -160,9 +148,9 @@ class satellite_download:
         self.fnames['oco_l1b'] = []
         for filename_tag in filename_tags_03:
             dtime = datetime.datetime.strptime(filename_tag, 'A%Y%j.%H%M') + datetime.timedelta(minutes=7.0)
-            fnames_std = download_oco2_https(dtime, 'OCO2_L2_Standard.10r', fdir_out=self.fdir_out, run=run)
-            fnames_met = download_oco2_https(dtime, 'OCO2_L2_Met.10r'     , fdir_out=self.fdir_out, run=run)
-            fnames_l1b = download_oco2_https(dtime, 'OCO2_L1B_Science.10r', fdir_out=self.fdir_out, run=run)
+            fnames_std = er3t.util.download_oco2_https(dtime, 'OCO2_L2_Standard.10r', fdir_out=self.fdir_out, run=run)
+            fnames_met = er3t.util.download_oco2_https(dtime, 'OCO2_L2_Met.10r'     , fdir_out=self.fdir_out, run=run)
+            fnames_l1b = er3t.util.download_oco2_https(dtime, 'OCO2_L1B_Science.10r', fdir_out=self.fdir_out, run=run)
             self.fnames['oco_std'] += fnames_std
             self.fnames['oco_met'] += fnames_met
             self.fnames['oco_l1b'] += fnames_l1b
@@ -235,13 +223,13 @@ def pre_cld_oco2(sat, scale_factor=1.0, solver='3D'):
     #   3. sensor zenith and azimuth angles (vza and vaa, 1km resolution);
     #   4. surface height (sfc, 1km resolution)
     # ===================================================================================
-    modl2      = modis_l2(fnames=sat.fnames['mod_l2'], extent=sat.extent, vnames=['Sensor_Zenith', 'Sensor_Azimuth', 'Cloud_Top_Height'])
+    modl2      = er3t.util.modis_l2(fnames=sat.fnames['mod_l2'], extent=sat.extent, vnames=['Sensor_Zenith', 'Sensor_Azimuth', 'Cloud_Top_Height'])
     logic_cth  = (modl2.data['cloud_top_height']['data']>0.0)
     lon0       = modl2.data['lon_5km']['data']
     lat0       = modl2.data['lat_5km']['data']
     cth0       = modl2.data['cloud_top_height']['data']/1000.0 # units: km
 
-    mod03      = modis_03(fnames=sat.fnames['mod_03'], extent=sat.extent, vnames=['Height'])
+    mod03      = er3t.util.modis_03(fnames=sat.fnames['mod_03'], extent=sat.extent, vnames=['Height'])
     logic_sfh  = (mod03.data['height']['data']>0.0)
     lon1       = mod03.data['lon']['data']
     lat1       = mod03.data['lat']['data']
@@ -255,8 +243,8 @@ def pre_cld_oco2(sat, scale_factor=1.0, solver='3D'):
 
     # Process MODIS reflectance at 650 nm (250m resolution)
     # ===================================================================================
-    modl1b = modis_l1b(fnames=sat.fnames['mod_02'], extent=sat.extent)
-    lon_2d, lat_2d, ref_2d = grid_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['ref']['data'][0, ...], extent=sat.extent)
+    modl1b = er3t.util.modis_l1b(fnames=sat.fnames['mod_02'], extent=sat.extent)
+    lon_2d, lat_2d, ref_2d = er3t.util.grid_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['ref']['data'][0, ...], extent=sat.extent)
     # ===================================================================================
 
 
@@ -309,8 +297,8 @@ def pre_cld_oco2(sat, scale_factor=1.0, solver='3D'):
 
     # Upscale cloud effective radius from 1km (L2) to 250m resolution
     # =============================================================
-    modl2 = modis_l2(fnames=sat.fnames['mod_l2'], extent=sat.extent)
-    lon_2d, lat_2d, cer_2d_l2 = grid_by_lonlat(modl2.data['lon']['data'], modl2.data['lat']['data'], modl2.data['cer']['data'], lon_1d=lon_2d[:, 0], lat_1d=lat_2d[0, :], method='linear')
+    modl2 = er3t.util.modis_l2(fnames=sat.fnames['mod_l2'], extent=sat.extent)
+    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_lonlat(modl2.data['lon']['data'], modl2.data['lat']['data'], modl2.data['cer']['data'], lon_1d=lon_2d[:, 0], lat_1d=lat_2d[0, :], method='linear')
     cer_2d_l2[cer_2d_l2<1.0] = 1.0
     # =============================================================
 
@@ -472,7 +460,7 @@ def pre_sfc_oco2(sat, tag, version='10r', scale=True, replace=True):
     else:
         exit('Error   [pre_sfc_oco2]: Cannot recognize version \'%s\'.' % version)
 
-    oco = oco2_std(fnames=sat.fnames['oco_std'], vnames=vnames, extent=sat.extent)
+    oco = er3t.util.oco2_std(fnames=sat.fnames['oco_std'], vnames=vnames, extent=sat.extent)
 
     # BRDF reflectance as surface albedo
     if version == '10' or version == '10r':
@@ -503,16 +491,16 @@ def pre_sfc_oco2(sat, tag, version='10r', scale=True, replace=True):
     #   band 5: 1230 - 1250 nm, index 4
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
-    mod = modis_09a1(fnames=sat.fnames['mod_09'], extent=sat.extent)
+    mod = er3t.util.modis_09a1(fnames=sat.fnames['mod_09'], extent=sat.extent)
     points = np.transpose(np.vstack((mod.data['lon']['data'], mod.data['lat']['data'])))
     if tag.lower() == 'o2a':
-        lon_2d, lat_2d, mod_sfc_alb_2d = grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][1, :], extent=sat.extent)
+        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][1, :], extent=sat.extent)
         wvl = 770
     elif tag.lower() == 'wco2':
-        lon_2d, lat_2d, mod_sfc_alb_2d = grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][5, :], extent=sat.extent)
+        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][5, :], extent=sat.extent)
         wvl = 1615
     elif tag.lower() == 'sco2':
-        lon_2d, lat_2d, mod_sfc_alb_2d = grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][6, :], extent=sat.extent)
+        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][6, :], extent=sat.extent)
         wvl = 2060
 
     # Scale all MODIS reflectance based on the relationship between collocated MODIS surface reflectance and OCO-2 BRDF reflectance
@@ -546,7 +534,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwr
     # =================================================================================
     levels = np.arange(0.0, 20.1, 0.5)
     fname_atm = '%s/atm.pk' % fdir
-    atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
     # =================================================================================
 
 
@@ -554,7 +542,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwr
     # special note: in the future, we will implement OCO2 MET file for this
     # =================================================================================
     fname_abs = '%s/abs.pk' % fdir
-    abs0      = abs_oco_idl(wavelength=wavelength, fname=fname_abs, fname_idl=fname_idl, atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_oco_idl(wavelength=wavelength, fname=fname_abs, fname_idl=fname_idl, atm_obj=atm0, overwrite=overwrite)
     # =================================================================================
 
 
@@ -569,8 +557,8 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwr
 
     fname_sfc = '%s/sfc.pk' % fdir
     mod09 = sat_tmp(data)
-    sfc0      = sfc_sat(sat_obj=mod09, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
-    sfc_2d    = mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
+    sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod09, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
+    sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     # =================================================================================
 
 
@@ -589,21 +577,21 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwr
     fname_cld = '%s/cld.pk' % fdir
 
     cth0 = modl1b.data['cth_2d']['data']
-    cld0      = cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
     # =================================================================================
 
 
     # mca_sca object
     # =================================================================================
-    pha0 = pha_mie(wavelength=wavelength)
-    sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     # =================================================================================
 
 
     # mca_cld object
     # =================================================================================
-    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
-    atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
+    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm_1ds = [atm1d0]
     atm_3ds = [atm3d0]
     # =================================================================================
@@ -622,7 +610,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwr
 
     # run mcarats
     # =================================================================================
-    mca0 = mcarats_ng(
+    mca0 = er3t.rtm.mca.mcarats_ng(
             date=sat.date,
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
@@ -645,7 +633,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwr
             )
 
     # mcarats output
-    out0 = mca_out_ng(fname='%s/mca-out-rad-oco2-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-oco2-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
     # =================================================================================
 
 
@@ -726,7 +714,7 @@ def main_pre():
 
     # Read OCO-2 radiance and wavelength data
     #/--------------------------------------------------------------\#
-    oco = oco2_rad_nadir(sat0)
+    oco = er3t.util.oco2_rad_nadir(sat0)
 
     wvl_o2a  = np.zeros_like(oco.rad_o2_a, dtype=np.float64)
     for i in range(oco.rad_o2_a.shape[0]):
