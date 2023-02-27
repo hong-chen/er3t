@@ -56,7 +56,6 @@ params = {
                       'photon' : 1e8,
             'cloud_top_height' : 2.0,
  'cloud_geometrical_thickness' : 1.0
-
         }
 #\--------------------------------------------------------------/#
 
@@ -265,7 +264,7 @@ def main_pre_ipa():
     fdir  = 'tmp-data/%s/ipa-%06.1fnm' % (params['name_tag'], params['wavelength'])
     f_mca = er3t.rtm.mca.func_ref_vs_cot(
             cot,
-            cer0=20.0,
+            cer0=10.0,
             fdir=fdir,
             date=params['date'],
             wavelength=params['wavelength'],
@@ -283,7 +282,6 @@ def main_pre_ipa():
             overwrite=False
             )
     #\--------------------------------------------------------------/#
-    sys.exit()
 
     # estimate reflectance based on red-channel radiance (isotropic assumption)
     #/--------------------------------------------------------------\#

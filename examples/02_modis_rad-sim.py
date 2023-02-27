@@ -744,7 +744,9 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     fdir  = 'tmp-data/%s/ipa-%06.1fnm' % (params['name_tag'], params['wavelength'])
     f_mca = er3t.rtm.mca.func_ref_vs_cot(
             cot,
-            cer0=20.0,
+            cer0=10.0,
+            dx=0.29,
+            dy=0.29,
             fdir=fdir,
             date=params['date'],
             wavelength=params['wavelength'],
@@ -756,6 +758,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             photon_number=1e8,
             overwrite=False
             )
+    sys.exit()
     cot_ipa0 = np.zeros_like(ref_2d)
     ref_cld_norm = ref_2d[indices_x, indices_y]/np.cos(np.deg2rad(sza.mean()))
     cot_ipa0[indices_x, indices_y] = f_mca.get_cot_from_ref(ref_cld_norm)
@@ -1194,7 +1197,10 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
     fname_cld = '%s/cld.pk' % fdir
 
     cth0 = modl1b.data['cth_2d']['data']
-    cld0 = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    cgt0 = np.zeros_like(cth0)
+    cgt0[cth0>0.0] = 1.0
+    cgt0[cth0>4.0] = cth0[cth0>4.0]-3.0
+    cld0 = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=cgt0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1285,7 +1291,7 @@ def main_pre(wvl=params['wavelength']):
     #   mod/sfc/lon ------- : Dataset  (666, 666)
     #
     #/----------------------------------------------------------------------------\#
-    cdata_modis_raw(wvl=wvl, plot=True)
+    # cdata_modis_raw(wvl=wvl, plot=True)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1439,13 +1445,13 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    # main_pre()
+    main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
     #   a. <mca-out-rad-modis-3d_650.0000nm.h5> will be created under tmp-data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_sim()
+    # main_sim()
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
