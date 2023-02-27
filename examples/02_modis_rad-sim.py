@@ -734,6 +734,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     #\--------------------------------------------------------------/#
 
     # cot_ipa0
+    # two relationships: one for geometrically thick clouds, one for geometrically thin clouds
     # ipa relationship of reflectance vs cloud optical thickness
     #/--------------------------------------------------------------\#
     cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
@@ -741,12 +742,17 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
                           np.arange(30.0, 60.0, 5.0),
                           np.arange(60.0, 100.0, 10.0),
                           np.arange(100.0, 201.0, 50.0)))
-    fdir  = 'tmp-data/%s/ipa-%06.1fnm' % (params['name_tag'], params['wavelength'])
-    f_mca = er3t.rtm.mca.func_ref_vs_cot(
+
+    dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
+    dy = np.pi*6378.1*(lat_2d[1, 0]-lat_2d[0, 0])/180.0
+
+    fdir  = 'tmp-data/%s/ipa-%06.1fnm_thick' % (params['name_tag'], params['wavelength'])
+
+    f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             cot,
-            cer0=10.0,
-            dx=0.29,
-            dy=0.29,
+            cer0=20.0,
+            dx=dx,
+            dy=dy,
             fdir=fdir,
             date=params['date'],
             wavelength=params['wavelength'],
@@ -755,10 +761,32 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             solar_azimuth_angle=saa.mean(),
             sensor_zenith_angle=vza.mean(),
             sensor_azimuth_angle=vaa.mean(),
+            cloud_top_height=10.0,
+            cloud_geometrical_thickness=7.0,
             photon_number=1e8,
             overwrite=False
             )
-    sys.exit()
+
+    fdir  = 'tmp-data/%s/ipa-%06.1fnm_thin' % (params['name_tag'], params['wavelength'])
+    f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
+            cot,
+            cer0=10.0,
+            dx=dx,
+            dy=dy,
+            fdir=fdir,
+            date=params['date'],
+            wavelength=params['wavelength'],
+            surface_albedo=alb.mean(),
+            solar_zenith_angle=sza.mean(),
+            solar_azimuth_angle=saa.mean(),
+            sensor_zenith_angle=vza.mean(),
+            sensor_azimuth_angle=vaa.mean(),
+            cloud_top_height=3.0,
+            cloud_geometrical_thickness=1.0,
+            photon_number=1e8,
+            overwrite=False
+            )
+
     cot_ipa0 = np.zeros_like(ref_2d)
     ref_cld_norm = ref_2d[indices_x, indices_y]/np.cos(np.deg2rad(sza.mean()))
     cot_ipa0[indices_x, indices_y] = f_mca.get_cot_from_ref(ref_cld_norm)
@@ -1198,8 +1226,8 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
 
     cth0 = modl1b.data['cth_2d']['data']
     cgt0 = np.zeros_like(cth0)
-    cgt0[cth0>0.0] = 1.0
-    cgt0[cth0>4.0] = cth0[cth0>4.0]-3.0
+    cgt0[cth0>0.0] = 1.0                  # all clouds have geometrical thickness of 1 km
+    cgt0[cth0>4.0] = cth0[cth0>4.0]-3.0   # high clouds (cth>4km) has cloud base at 3 km
     cld0 = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=cgt0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 

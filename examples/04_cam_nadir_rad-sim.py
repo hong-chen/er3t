@@ -6,7 +6,7 @@ This code serves as an example code to reproduce 3D radiance simulations for App
 The processes include:
     1) `main_pre_ipa()`: pre-process all-sky camera data
         a) read in camera radiance observations at red channel
-        b) convert radiance into reflectance and perform IPA method (two-stream approximation) to retrieve
+        b) convert radiance into reflectance and perform IPA method to retrieve
            cloud optical thickness (cot_ipa)
 
     2) `main_pre_cnn()`: use CNN model to predict cloud optical thickness (cot_cnn) based on camera measured radiance
@@ -25,7 +25,7 @@ The processes include:
         b) plot
 
 This code has been tested under:
-    1) Linux on 2022-11-16 by Hong Chen
+    1) Linux on 2023-02-27 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -247,12 +247,11 @@ def main_pre_ipa():
     saa0   = f['geometry/saa'][...]
     alt0   = f['geometry/altitude'][...]
     f.close()
-
     #\----------------------------------------------------------------------------/#
 
 
-    # use two-stream approximation to estimate cloud optical thickness from reflectance
-    # special note: cloud effective radius is constantly set to 12 micron
+    # use IPA reflectance vs COT mapping to estimate cloud optical thickness from cloud reflectance
+    # special note: cloud effective radius is constantly set to 10 micron
     #/----------------------------------------------------------------------------\#
     # ipa relationship of reflectance vs cloud optical thickness
     #/--------------------------------------------------------------\#
@@ -261,10 +260,11 @@ def main_pre_ipa():
                           np.arange(30.0, 60.0, 5.0),
                           np.arange(60.0, 100.0, 10.0),
                           np.arange(100.0, 201.0, 50.0)))
+    cer0  = 10.0
     fdir  = 'tmp-data/%s/ipa-%06.1fnm' % (params['name_tag'], params['wavelength'])
     f_mca = er3t.rtm.mca.func_ref_vs_cot(
             cot,
-            cer0=10.0,
+            cer0=cer0,
             fdir=fdir,
             date=params['date'],
             wavelength=params['wavelength'],
@@ -274,6 +274,8 @@ def main_pre_ipa():
             sensor_altitude=alt0,
             sensor_zenith_angle=0.0,
             sensor_azimuth_angle=0.0,
+            cloud_top_height=2.0,
+            cloud_geometrical_thickness=1.0,
             Nx=2,
             Ny=2,
             dx=0.1,
@@ -288,18 +290,17 @@ def main_pre_ipa():
     ref_norm = np.pi*red/(f_mca.toa0*np.cos(np.deg2rad(sza0)))
     #\--------------------------------------------------------------/#
 
+    # retrieve COT
     #/--------------------------------------------------------------\#
     cot_ipa = f_mca.get_cot_from_ref(ref_norm)
     cot_ipa[cot_ipa<0.0] = 0.0
     cot_ipa[cot_ipa>f_mca.cot[-1]] = f_mca.cot[-1]
     #\--------------------------------------------------------------/#
 
-    #
+    # assign 10 micron to cloud effective radius
     #/----------------------------------------------------------------------------\#
     cer_ipa = np.zeros_like(cot_ipa)
-    cer_ipa[cot_ipa>0.0] = 20.0
-    #\----------------------------------------------------------------------------/#
-
+    cer_ipa[cot_ipa>0.0] = cer0
     #\----------------------------------------------------------------------------/#
 
     # save pre-processed data
@@ -624,7 +625,8 @@ if __name__ == '__main__':
 
     # Step 1. Pre-process all-sky camera data
     #    a. convert red channel radiance into reflectance
-    #    b. estimate cloud optical thickness (cot) based on reflectance through two-stream approximation
+    #    b. estimate cloud optical thickness (cot) based on reflectance through IPA
+    #       reflectance vs cot mapping
     #    c. store data in <pre-data.h5> under data/04_cam_nadir_rad-sim
     #/--------------------------------------------------------------\#
     main_pre_ipa()
@@ -643,7 +645,7 @@ if __name__ == '__main__':
     #    a. 3D radiance simulation using cot_ipa
     #    b. 3D radiance simulation using cot_cnn
     #/--------------------------------------------------------------\#
-    # main_sim()
+    main_sim()
     #\--------------------------------------------------------------/#
 
     # Step 4. Post-process and plot
@@ -653,7 +655,7 @@ if __name__ == '__main__':
     #        3) radiance simulation based on cot_cnn
     #    b. plot
     #/--------------------------------------------------------------\#
-    # main_post()
+    main_post()
     #\--------------------------------------------------------------/#
 
     pass

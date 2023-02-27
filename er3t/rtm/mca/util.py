@@ -31,7 +31,7 @@ class func_ref_vs_cot:
             sensor_altitude=er3t.common.params['sensor_altitude'],
             photon_number=er3t.common.params['photon_number'],
             cloud_top_height=2.0,
-            cloud_bottom_height=1.0,
+            cloud_geometrical_thickness=1.0,
             solver='ipa',
             Nx=2,
             Ny=2,
@@ -52,7 +52,7 @@ class func_ref_vs_cot:
         self.vaa0 = sensor_azimuth_angle
         self.alt0 = sensor_altitude
         self.cth0 = cloud_top_height
-        self.cbh0 = cloud_bottom_height
+        self.cbh0 = cloud_top_height-cloud_geometrical_thickness
         self.alb0 = surface_albedo
         self.fdir = fdir
         self.output_tag = output_tag
