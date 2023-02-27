@@ -30,6 +30,9 @@ class func_ref_vs_cot:
             sensor_azimuth_angle=er3t.common.params['sensor_azimuth_angle'],
             sensor_altitude=er3t.common.params['sensor_altitude'],
             photon_number=er3t.common.params['photon_number'],
+            cloud_top_height=2.0,
+            cloud_bottom_height=1.0,
+            solver='ipa',
             Nx=2,
             Ny=2,
             dx=0.1,
@@ -48,10 +51,13 @@ class func_ref_vs_cot:
         self.vza0 = sensor_zenith_angle
         self.vaa0 = sensor_azimuth_angle
         self.alt0 = sensor_altitude
+        self.cth0 = cloud_top_height
+        self.cbh0 = cloud_bottom_height
         self.alb0 = surface_albedo
         self.fdir = fdir
         self.output_tag = output_tag
         self.photon0 = photon_number
+        self.solver0 = solver
         self.cpu0 = cpu_number
         self.date0 = date
         self.Nx = Nx
@@ -105,15 +111,15 @@ class func_ref_vs_cot:
         os.makedirs(self.fdir)
 
         for cot0 in self.cot:
-            self.run_one(cot0, self.cer0, Nx=self.Nx, Ny=self.Ny, dx=self.dx, dy=self.dy)
+            self.run_one(cot0, self.cer0, Nx=self.Nx, Ny=self.Ny, dx=self.dx, dy=self.dy, cbh0=self.cbh0, cth0=self.cth0)
 
-    def run_one(self, cot0, cer0, Nx=2, Ny=2, dx=0.1, dy=0.1):
+    def run_one(self, cot0, cer0, Nx=2, Ny=2, dx=0.1, dy=0.1, cbh0=1.0, cth0=2.0):
 
         name_tag = 'cot-%05.1f_cer-%04.1f' % (cot0, cer0)
 
         # atm object
         #/----------------------------------------------------------------------------\#
-        levels = np.arange(0.0, 20.1, 1.0)
+        levels = np.arange(0.0, 20.1, 0.1)
         fname_atm = '%s/atm_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
         atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=False)
         #\----------------------------------------------------------------------------/#
@@ -127,7 +133,8 @@ class func_ref_vs_cot:
         # cloud object
         #/----------------------------------------------------------------------------\#
         fname_cld = '%s/cld_%s.pk' % (self.fdir, name_tag)
-        cld0 = er3t.pre.cld.cld_gen_hom(fname=fname_cld, altitude=atm0.lay['altitude']['data'][1:3], atm_obj=atm0, Nx=Nx, Ny=Ny, dx=dx, dy=dy, cot0=cot0, cer0=cer0, overwrite=True)
+        altitude0 = atm0.lay['altitude']['data'][(atm0.lay['altitude']['data']>=cbh0) & (atm0.lay['altitude']['data']<=cth0)]
+        cld0 = er3t.pre.cld.cld_gen_hom(fname=fname_cld, altitude=altitude0, atm_obj=atm0, Nx=Nx, Ny=Ny, dx=dx, dy=dy, cot0=cot0, cer0=cer0, overwrite=True)
         #\----------------------------------------------------------------------------/#
 
         # phase function
@@ -171,7 +178,7 @@ class func_ref_vs_cot:
                 Ng=abs0.Ng,
                 weights=abs0.coef['weight']['data'],
                 photons=self.photon0,
-                solver='ipa',
+                solver=self.solver0,
                 Ncpu=self.cpu0,
                 mp_mode='py',
                 overwrite=True
