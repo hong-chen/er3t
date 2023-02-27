@@ -637,9 +637,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwr
     # =================================================================================
 
 
-
-
-def main_pre():
+def main_pre_old():
 
     # create data directory (for storing data) if the directory does not exist
     #/----------------------------------------------------------------------------\#
@@ -738,6 +736,50 @@ def main_pre():
     #\--------------------------------------------------------------/#
 
     f0.close()
+    #\----------------------------------------------------------------------------/#
+
+def main_pre(wvl=params['wavelength']):
+
+    # 1) Download and pre-process MODIS data products
+    # MODIS data products will be downloaded at <data/02_modis_rad-sim/download>
+    # pre-processed data will be saved at <data/02_modis_rad-sim/pre_data.h5>,
+    # which will contain
+    #   extent ------------ : Dataset  (4,)
+    #   lat --------------- : Dataset  (1196, 1196)
+    #   lon --------------- : Dataset  (1196, 1196)
+    #   mod/cld/cer_l2 ---- : Dataset  (1196, 1196)
+    #   mod/cld/cot_l2 ---- : Dataset  (1196, 1196)
+    #   mod/cld/cth_l2 ---- : Dataset  (1196, 1196)
+    #   mod/geo/saa ------- : Dataset  (1196, 1196)
+    #   mod/geo/sfh ------- : Dataset  (1196, 1196)
+    #   mod/geo/sza ------- : Dataset  (1196, 1196)
+    #   mod/geo/vaa ------- : Dataset  (1196, 1196)
+    #   mod/geo/vza ------- : Dataset  (1196, 1196)
+    #   mod/rad/rad_0650 -- : Dataset  (1196, 1196)
+    #   mod/rad/ref_0650 -- : Dataset  (1196, 1196)
+    #   mod/rgb ----------- : Dataset  (1386, 1386, 4)
+    #   mod/sfc/alb_09 ---- : Dataset  (666, 666)
+    #   mod/sfc/alb_43 ---- : Dataset  (666, 666)
+    #   mod/sfc/lat ------- : Dataset  (666, 666)
+    #   mod/sfc/lon ------- : Dataset  (666, 666)
+    #
+    #/----------------------------------------------------------------------------\#
+    # cdata_sat_raw(wvl=wvl, plot=True)
+    #\----------------------------------------------------------------------------/#
+
+
+    # apply IPA method to retrieve cloud optical thickness (COT) from MODIS radiance
+    # so new COT has higher spatial resolution (250m) than COT from MODIS L2 cloud product
+    # notes: the IPA method uses "reflectance vs cot" obtained from the same RT model
+    #        used for 3D radiance self-consistency check to ensure their physical processes
+    #        are consistent
+    # additional data will be saved at <data/02_modis_rad-sim/pre_data.h5>,
+    # which are
+    #   mod/cld/cer_ipa ---- : Dataset  (1196, 1196)
+    #   mod/cld/cot_ipa ---- : Dataset  (1196, 1196)
+    #   mod/cld/cth_ipa ---- : Dataset  (1196, 1196)
+    #/----------------------------------------------------------------------------\#
+    cdata_cld_ipa(wvl=wvl, plot=True)
     #\----------------------------------------------------------------------------/#
 
 def main_sim():
@@ -918,14 +960,14 @@ if __name__ == '__main__':
     #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim
     #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_sim()
+    # main_sim()
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for OCO-2, after run
     #   a. <post-data.h5> will be created under data/01_oco2_rad-sim
     #   b. <01_oco2_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    main_post(plot=True)
+    # main_post(plot=True)
     #\----------------------------------------------------------------------------/#
 
     pass

@@ -162,7 +162,7 @@ class satellite_download:
                 print('Message [satellite_download]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
 
-def cdata_modis_raw(wvl=params['wavelength'], plot=True):
+def cdata_sat_raw(wvl=params['wavelength'], plot=True):
 
     # process wavelength
     #/----------------------------------------------------------------------------\#
@@ -173,7 +173,7 @@ def cdata_modis_raw(wvl=params['wavelength'], plot=True):
     elif (wvl>=841) & (wvl<=876):
         wvl = 860
     else:
-        sys.exit('Error [cdata_modis_raw]: do not support wavelength of %d nm.' % wvl)
+        sys.exit('Error [cdata_sat_raw]: do not support wavelength of %d nm.' % wvl)
 
     index_wvl = index[wvl]
     #\----------------------------------------------------------------------------/#
@@ -1338,7 +1338,7 @@ def main_pre(wvl=params['wavelength']):
     #   mod/sfc/lon ------- : Dataset  (666, 666)
     #
     #/----------------------------------------------------------------------------\#
-    # cdata_modis_raw(wvl=wvl, plot=True)
+    # cdata_sat_raw(wvl=wvl, plot=True)
     #\----------------------------------------------------------------------------/#
 
 
