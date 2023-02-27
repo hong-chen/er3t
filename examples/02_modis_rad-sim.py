@@ -788,10 +788,17 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             )
 
     cot_ipa0 = np.zeros_like(ref_2d)
+
     ref_cld_norm = ref_2d[indices_x, indices_y]/np.cos(np.deg2rad(sza.mean()))
-    cot_ipa0[indices_x, indices_y] = f_mca.get_cot_from_ref(ref_cld_norm)
+
+    logic_thick = (cth_ipa0[indices_x, indices_y] > 4.0)
+    logic_thin  = (cth_ipa0[indices_x, indices_y] < 4.0)
+
+    cot_ipa0[indices_x, indices_y][logic_thick] = f_mca_thick.get_cot_from_ref(ref_cld_norm[logic_thick])
+    cot_ipa0[indices_x, indices_y][logic_thin]  = f_mca_thin.get_cot_from_ref(ref_cld_norm[logic_thin])
+
     cot_ipa0[cot_ipa0<0.0] = 0.0
-    cot_ipa0[cot_ipa0>f_mca.cot[-1]] = f_mca.cot[-1]
+    cot_ipa0[cot_ipa0>cot[-1]] = cot[-1]
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -883,19 +890,31 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         g0['indices_x']  = indices_x
         g0['indices_y']  = indices_y
     try:
-        g0 = f0.create_group('mca_ipa')
-        g0['cot'] = f_mca.cot
-        g0['ref'] = f_mca.ref
-        g0['ref_std'] = f_mca.ref_std
+        g0 = f0.create_group('mca_ipa_thick')
+        g0['cot'] = f_mca_thick.cot
+        g0['ref'] = f_mca_thick.ref
+        g0['ref_std'] = f_mca_thick.ref_std
+        g0 = f0.create_group('mca_ipa_thin')
+        g0['cot'] = f_mca_thin.cot
+        g0['ref'] = f_mca_thin.ref
+        g0['ref_std'] = f_mca_thin.ref_std
     except:
-        del(f0['mca_ipa/cot'])
-        del(f0['mca_ipa/ref'])
-        del(f0['mca_ipa/ref_std'])
-        del(f0['mca_ipa'])
-        g0 = f0.create_group('mca_ipa')
-        g0['cot'] = f_mca.cot
-        g0['ref'] = f_mca.ref
-        g0['ref_std'] = f_mca.ref_std
+        del(f0['mca_ipa_thick/cot'])
+        del(f0['mca_ipa_thick/ref'])
+        del(f0['mca_ipa_thick/ref_std'])
+        del(f0['mca_ipa_thick'])
+        del(f0['mca_ipa_thin/cot'])
+        del(f0['mca_ipa_thin/ref'])
+        del(f0['mca_ipa_thin/ref_std'])
+        del(f0['mca_ipa_thin'])
+        g0 = f0.create_group('mca_ipa_thick')
+        g0['cot'] = f_mca_thick.cot
+        g0['ref'] = f_mca_thick.ref
+        g0['ref_std'] = f_mca_thick.ref_std
+        g0 = f0.create_group('mca_ipa_thin')
+        g0['cot'] = f_mca_thin.cot
+        g0['ref'] = f_mca_thin.ref
+        g0['ref_std'] = f_mca_thin.ref_std
     f0.close()
     #\----------------------------------------------------------------------------/#
 
