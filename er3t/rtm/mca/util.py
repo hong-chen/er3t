@@ -19,7 +19,7 @@ class func_ref_vs_cot:
 
     def __init__(self,
             cot,
-            cer0=20.0,
+            cer0=10.0,
             fdir=er3t.common.params['fdir_tmp'],
             date=datetime.datetime.now(),
             wavelength=er3t.common.params['wavelength'],
