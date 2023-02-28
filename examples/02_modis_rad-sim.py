@@ -763,7 +763,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             sensor_azimuth_angle=vaa.mean(),
             cloud_top_height=10.0,
             cloud_geometrical_thickness=7.0,
-            photon_number=1e8,
+            photon_number=2e8,
             overwrite=False
             )
 
@@ -787,17 +787,18 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             overwrite=False
             )
 
-    cot_ipa0 = np.zeros_like(ref_2d)
 
     ref_cld_norm = ref_2d[indices_x, indices_y]/np.cos(np.deg2rad(sza.mean()))
 
     logic_thick = (cth_ipa0[indices_x, indices_y] > 4.0)
     logic_thin  = (cth_ipa0[indices_x, indices_y] < 4.0)
 
-    cot_ipa0[indices_x, indices_y][logic_thick] = f_mca_thick.get_cot_from_ref(ref_cld_norm[logic_thick])
-    cot_ipa0[indices_x, indices_y][logic_thin]  = f_mca_thin.get_cot_from_ref(ref_cld_norm[logic_thin])
+    cot_ipa0 = np.zeros_like(ref_2d)
 
-    cot_ipa0[cot_ipa0<0.0] = 0.0
+    cot_ipa0[indices_x[logic_thick], indices_y[logic_thick]] = f_mca_thick.get_cot_from_ref(ref_cld_norm[logic_thick])
+    cot_ipa0[indices_x[logic_thin] , indices_y[logic_thin]]  = f_mca_thin.get_cot_from_ref(ref_cld_norm[logic_thin])
+
+    cot_ipa0[cot_ipa0<cot[0]]  = cot[0]
     cot_ipa0[cot_ipa0>cot[-1]] = cot[-1]
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
@@ -1377,7 +1378,7 @@ def main_sim(wvl=params['wavelength']):
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
     cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='IPA', overwrite=True)
-    # cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True)
+    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(wvl=params['wavelength'], plot=False):
@@ -1492,13 +1493,13 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
     #   a. <mca-out-rad-modis-3d_650.0000nm.h5> will be created under tmp-data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    # main_sim()
+    main_sim()
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
