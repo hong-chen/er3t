@@ -53,7 +53,7 @@ params = {
                     'name_tag' : os.path.relpath(__file__).replace('.py', ''),
                   'wavelength' : 600.0,
                         'date' : datetime.datetime(2019, 10, 5),
-                      'photon' : 1e8,
+                      'photon' : 1e9,
             'cloud_top_height' : 2.0,
  'cloud_geometrical_thickness' : 1.0
         }
@@ -458,6 +458,7 @@ def main_post(plot=True):
     f = h5py.File('data/%s/post-data.h5' % params['name_tag'], 'w')
     f['extent'] = extent
     f['rad_cam'] = rad_cam
+    f['rad_sim-ipa_cot-ipa'] = rad_sim_iipa
     f['rad_sim-3d_cot-ipa'] = rad_sim_ipa
     f['rad_sim-3d_cot-cnn'] = rad_sim_cnn
     f.close()
@@ -477,10 +478,10 @@ def main_post(plot=True):
         rad_cam0[:, -7:] = np.nan
         rad_cam0[:7, :] = np.nan
         rad_cam0[:, :7] = np.nan
-        ax1.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='viridis', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax1.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
         ax1.set_xlabel('X [km]')
         ax1.set_ylabel('Y [km]')
-        ax1.set_title('Radiance Observation (Red)')
+        ax1.set_title('Rad. Obs.')
         #\--------------------------------------------------------------/#
 
         # 2D plot: rad_cot_ipa
@@ -492,10 +493,10 @@ def main_post(plot=True):
         rad_sim_iipa0[:, -7:] = np.nan
         rad_sim_iipa0[:7, :] = np.nan
         rad_sim_iipa0[:, :7] = np.nan
-        ax2.imshow(rad_sim_iipa0.T, extent=extent, origin='lower', cmap='viridis', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax2.imshow(rad_sim_iipa0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
         ax2.set_xlabel('X [km]')
         ax2.set_ylabel('Y [km]')
-        ax2.set_title('IPA Radiance Simulation (COT$\mathrm{_{IPA}}$)')
+        ax2.set_title('IPA Rad. Sim. (COT$\mathrm{_{IPA}}$)')
         #\--------------------------------------------------------------/#
 
         # heatmap: rad_cot_ipa vs rad_obs
@@ -512,8 +513,8 @@ def main_post(plot=True):
         ax3.plot([0.0, 1.0], [0.0, 1.0], lw=1.5, color='gray', ls='--', zorder=2)
         ax3.set_xlim([0.0, 0.6])
         ax3.set_ylim([0.0, 0.6])
-        ax3.set_xlabel('Radiance Observation')
-        ax3.set_ylabel('Radiance Simulation (COT$\mathrm{_{IPA}}$)')
+        ax3.set_xlabel('Rad. Obs.')
+        ax3.set_ylabel('IPA Rad. Sim. (COT$\mathrm{_{IPA}}$)')
         #\--------------------------------------------------------------/#
 
         # 2D plot: rad_obs
@@ -525,10 +526,10 @@ def main_post(plot=True):
         rad_cam0[:, -7:] = np.nan
         rad_cam0[:7, :] = np.nan
         rad_cam0[:, :7] = np.nan
-        ax4.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='viridis', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax4.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
         ax4.set_xlabel('X [km]')
         ax4.set_ylabel('Y [km]')
-        ax4.set_title('Radiance Observation (Red)')
+        ax4.set_title('Rad. Obs.')
         #\--------------------------------------------------------------/#
 
         # 2D plot: rad_cot_ipa
@@ -540,10 +541,10 @@ def main_post(plot=True):
         rad_sim_ipa0[:, -7:] = np.nan
         rad_sim_ipa0[:7, :] = np.nan
         rad_sim_ipa0[:, :7] = np.nan
-        ax5.imshow(rad_sim_ipa0.T, extent=extent, origin='lower', cmap='viridis', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax5.imshow(rad_sim_ipa0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
         ax5.set_xlabel('X [km]')
         ax5.set_ylabel('Y [km]')
-        ax5.set_title('3D Radiance Simulation (COT$\mathrm{_{IPA}}$)')
+        ax5.set_title('3D Rad. Sim. (COT$\mathrm{_{IPA}}$)')
         #\--------------------------------------------------------------/#
 
         # heatmap: rad_cot_ipa vs rad_obs
@@ -560,8 +561,8 @@ def main_post(plot=True):
         ax6.plot([0.0, 1.0], [0.0, 1.0], lw=1.5, color='gray', ls='--', zorder=2)
         ax6.set_xlim([0.0, 0.6])
         ax6.set_ylim([0.0, 0.6])
-        ax6.set_xlabel('Radiance Observation')
-        ax6.set_ylabel('Radiance Simulation (COT$\mathrm{_{IPA}}$)')
+        ax6.set_xlabel('Rad. Obs.')
+        ax6.set_ylabel('3D Rad. Sim. (COT$\mathrm{_{IPA}}$)')
         #\--------------------------------------------------------------/#
 
         # 2D plot: rad_obs
@@ -573,10 +574,10 @@ def main_post(plot=True):
         rad_cam0[:, -7:] = np.nan
         rad_cam0[:7, :] = np.nan
         rad_cam0[:, :7] = np.nan
-        ax7.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='viridis', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax7.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
         ax7.set_xlabel('X [km]')
         ax7.set_ylabel('Y [km]')
-        ax7.set_title('Radiance Observation (Red)')
+        ax7.set_title('Rad. Obs.')
         #\--------------------------------------------------------------/#
 
         # 2D plot: rad_cot_cnn
@@ -588,10 +589,10 @@ def main_post(plot=True):
         rad_sim_cnn0[:, -7:] = np.nan
         rad_sim_cnn0[:7, :] = np.nan
         rad_sim_cnn0[:, :7] = np.nan
-        ax8.imshow(rad_sim_cnn0.T, extent=extent, origin='lower', cmap='viridis', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax8.imshow(rad_sim_cnn0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
         ax8.set_xlabel('X [km]')
         ax8.set_ylabel('Y [km]')
-        ax8.set_title('3D Radiance Simulation (COT$\mathrm{_{CNN}}$)')
+        ax8.set_title('3D Rad. Sim. (COT$\mathrm{_{CNN}}$)')
         #\--------------------------------------------------------------/#
 
         # heatmap: rad_cot_cnn vs rad_obs
@@ -608,8 +609,8 @@ def main_post(plot=True):
         ax9.plot([0.0, 1.0], [0.0, 1.0], lw=1.5, color='gray', ls='--', zorder=2)
         ax9.set_xlim([0.0, 0.6])
         ax9.set_ylim([0.0, 0.6])
-        ax9.set_xlabel('Radiance Observation')
-        ax9.set_ylabel('Radiance Simulation (COT$\mathrm{_{CNN}}$)')
+        ax9.set_xlabel('Rad. Obs.')
+        ax9.set_ylabel('3D Rad. Sim. (COT$\mathrm{_{CNN}}$)')
         #\--------------------------------------------------------------/#
 
         plt.subplots_adjust(hspace=0.45, wspace=0.45)
@@ -629,7 +630,7 @@ if __name__ == '__main__':
     #       reflectance vs cot mapping
     #    c. store data in <pre-data.h5> under data/04_cam_nadir_rad-sim
     #/--------------------------------------------------------------\#
-    main_pre_ipa()
+    # main_pre_ipa()
     #\--------------------------------------------------------------/#
 
     # Step 2. Use CNN to predict cloud optical thickness from camera red channel radiance
@@ -642,17 +643,19 @@ if __name__ == '__main__':
     #\--------------------------------------------------------------/#
 
     # Step 3. Use EaR3T to run radiance simulations for both cot_ipa and cot_cnn
-    #    a. 3D radiance simulation using cot_ipa
-    #    b. 3D radiance simulation using cot_cnn
+    #    a. IPA radiance simulation using cot_ipa
+    #    b. 3D radiance simulation using cot_ipa
+    #    c. 3D radiance simulation using cot_cnn
     #/--------------------------------------------------------------\#
-    main_sim()
+    # main_sim()
     #\--------------------------------------------------------------/#
 
     # Step 4. Post-process and plot
     #    a. save data in <post-data.h5> under data/04_cam_nadir_rad-sim
     #        1) raw camera radiance measurements
-    #        2) radiance simulation based on cot_ipa
-    #        3) radiance simulation based on cot_cnn
+    #        2) IPA radiance simulation based on cot_ipa
+    #        3) 3D radiance simulation based on cot_ipa
+    #        4) 3D radiance simulation based on cot_cnn
     #    b. plot
     #/--------------------------------------------------------------\#
     main_post()
