@@ -13,19 +13,21 @@ The processes include:
         a) load CNN model
         b) predict cot_cnn
 
-    3) `main_sim()`: use EaR3T to run 3D radiance simulations based on
-        a) cot_ipa
-        b) cot_cnn
+    3) `main_sim()`: use EaR3T to run IPA/3D radiance simulations based on
+        a) IPA radiance simulation using cot_ipa
+        b) 3D radiance simulation using cot_ipa
+        c) 3D radiance simulation using cot_cnn
 
     4) `main_post()`: post-process data and plot
         a) read in
             i) camera observed radiance
-            j) 3D radiance simulation based on cot_ipa
-            k) 3D radiance simulation based on cot_cnn
+            j) IPA radiance simulation based on cot_ipa
+            k) 3D radiance simulation based on cot_ipa
+            l) 3D radiance simulation based on cot_cnn
         b) plot
 
 This code has been tested under:
-    1) Linux on 2023-02-27 by Hong Chen
+    1) Linux on 2023-02-28 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -179,7 +181,7 @@ def cal_mca_rad(date, geometry, cloud, wavelength=params['wavelength'], cth=para
 
     # mca_sca object (enable/disable mie scattering)
     #/----------------------------------------------------------------------------\#
-    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
@@ -229,6 +231,83 @@ def cal_mca_rad(date, geometry, cloud, wavelength=params['wavelength'], cth=para
     # mcarats output
     #/----------------------------------------------------------------------------\#
     out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-cam-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+def cal_mca_flux(date, geometry, cloud, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], fdir='tmp-data/%s' % params['name_tag'], photons=params['photon'], solver='3D', overwrite=True):
+
+    """
+    Simulate irradiance for camera using IPA/CNN based cloud optical thickness
+    """
+
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
+    # atm object
+    #/----------------------------------------------------------------------------\#
+    levels    = np.arange(0.0, 20.1, 0.5)
+    fname_atm = '%s/atm.pk' % fdir
+    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # abs object
+    #/----------------------------------------------------------------------------\#
+    fname_abs = '%s/abs.pk' % fdir
+    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # mca_sca object (enable/disable mie scattering)
+    #/----------------------------------------------------------------------------\#
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # cld object
+    #/----------------------------------------------------------------------------\#
+    sat0 =  sat_tmp(cloud)
+    fname_cld = '%s/cld.pk' % fdir
+    cld0      = er3t.pre.cld.cld_sat(sat_obj=sat0, fname=fname_cld, cth=cth, cgt=cgt, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # mca_cld object
+    #/----------------------------------------------------------------------------\#
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
+    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+    atm_1ds = [atm1d0]
+    atm_3ds = [atm3d0]
+    #\----------------------------------------------------------------------------/#
+
+
+    # run mcarats
+    #/----------------------------------------------------------------------------\#
+    mca0 = er3t.rtm.mca.mcarats_ng(
+            date=date,
+            atm_1ds=atm_1ds,
+            atm_3ds=atm_3ds,
+            surface_albedo=0.03,
+            sca=sca,
+            Ng=abs0.Ng,
+            target='flux',
+            solar_zenith_angle   = geometry['sza']['data'],
+            solar_azimuth_angle  = geometry['saa']['data'],
+            fdir='%s/%.4fnm/cam/flux_%s' % (fdir, wavelength, solver.lower()),
+            Nrun=3,
+            weights=abs0.coef['weight']['data'],
+            photons=photons,
+            solver=solver,
+            Ncpu=12,
+            mp_mode='py',
+            overwrite=overwrite
+            )
+    #\----------------------------------------------------------------------------/#
+
+
+    # mcarats output
+    #/----------------------------------------------------------------------------\#
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-flux-cam-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
@@ -420,6 +499,14 @@ def main_sim():
     cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=1e9, fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
     cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
     cal_mca_rad(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
+    #\----------------------------------------------------------------------------/#
+
+    # irradiance simulation (reserved)
+    #/----------------------------------------------------------------------------\#
+    # cal_mca_flux(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
+    # cal_mca_flux(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
+    # cal_mca_flux(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
+    # cal_mca_flux(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(plot=True):
@@ -630,7 +717,7 @@ if __name__ == '__main__':
     #       reflectance vs cot mapping
     #    c. store data in <pre-data.h5> under data/04_cam_nadir_rad-sim
     #/--------------------------------------------------------------\#
-    # main_pre_ipa()
+    main_pre_ipa()
     #\--------------------------------------------------------------/#
 
     # Step 2. Use CNN to predict cloud optical thickness from camera red channel radiance
@@ -639,7 +726,7 @@ if __name__ == '__main__':
     #               use <pre-data_cnn.h5> provided under data/04_cam_nadir_rad-sim/aux instead.
     #               CNN model credit: Nataraja et al. 2022 (https://doi.org/10.5194/amt-2022-45)
     #/--------------------------------------------------------------\#
-    # main_pre_cnn()
+    main_pre_cnn()
     #\--------------------------------------------------------------/#
 
     # Step 3. Use EaR3T to run radiance simulations for both cot_ipa and cot_cnn
@@ -647,7 +734,7 @@ if __name__ == '__main__':
     #    b. 3D radiance simulation using cot_ipa
     #    c. 3D radiance simulation using cot_cnn
     #/--------------------------------------------------------------\#
-    # main_sim()
+    main_sim()
     #\--------------------------------------------------------------/#
 
     # Step 4. Post-process and plot
