@@ -63,7 +63,7 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 1e9,
+           'photon' : 2e8,
         }
 #\--------------------------------------------------------------/#
 
@@ -847,13 +847,22 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         f0['mod/cld/cot_ipa'] = cot_ipa
         f0['mod/cld/cer_ipa'] = cer_ipa
         f0['mod/cld/cth_ipa'] = cth_ipa
+        f0['mod/cld/cot_ipa0'] = cot_ipa0
+        f0['mod/cld/cer_ipa0'] = cer_ipa0
+        f0['mod/cld/cth_ipa0'] = cth_ipa0
     except:
         del(f0['mod/cld/cot_ipa'])
         del(f0['mod/cld/cer_ipa'])
         del(f0['mod/cld/cth_ipa'])
+        del(f0['mod/cld/cot_ipa0'])
+        del(f0['mod/cld/cer_ipa0'])
+        del(f0['mod/cld/cth_ipa0'])
         f0['mod/cld/cot_ipa'] = cot_ipa
         f0['mod/cld/cer_ipa'] = cer_ipa
         f0['mod/cld/cth_ipa'] = cth_ipa
+        f0['mod/cld/cot_ipa0'] = cot_ipa0
+        f0['mod/cld/cer_ipa0'] = cer_ipa0
+        f0['mod/cld/cth_ipa0'] = cth_ipa0
     try:
         g0 = f0.create_group('cld_msk')
         g0['indices_x0'] = indices_x0
@@ -1217,9 +1226,14 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
     data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['lon'][...])
     data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['lat'][...])
-    data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_ipa'][...])
-    data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_ipa'][...])
-    data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_ipa'][...])
+    if solver.lower() == 'ipa':
+        data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_ipa0'][...])
+        data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_ipa0'][...])
+        data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_ipa0'][...])
+    elif solver.lower() == '3d':
+        data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_ipa'][...])
+        data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_ipa'][...])
+        data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_ipa'][...])
     f.close()
 
     modl1b    =  sat_tmp(data)
@@ -1299,7 +1313,7 @@ def main_pre(wvl=params['wavelength']):
     # 1) Download and pre-process MODIS data products
     # MODIS data products will be downloaded at <data/02_modis_rad-sim/download>
     # pre-processed data will be saved at <data/02_modis_rad-sim/pre_data.h5>,
-    # which will contain
+    # which will contain (data dimension might vary)
     #   extent ------------ : Dataset  (4,)
     #   lat --------------- : Dataset  (1196, 1196)
     #   lon --------------- : Dataset  (1196, 1196)
@@ -1376,8 +1390,8 @@ def main_post(wvl=params['wavelength'], plot=False):
     #/----------------------------------------------------------------------------\#
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
     extent = f['extent'][...]
-    lon_mod = f['mod/rad/lon'][...]
-    lat_mod = f['mod/rad/lat'][...]
+    lon_mod = f['lon'][...]
+    lat_mod = f['lat'][...]
     rad_mod = f['mod/rad/rad_%4.4d' % wvl][...]
     f.close()
     #\----------------------------------------------------------------------------/#
@@ -1385,7 +1399,7 @@ def main_post(wvl=params['wavelength'], plot=False):
 
     # read in EaR3T simulations (3D)
     #/----------------------------------------------------------------------------\#
-    fname = 'tmp-data/%s/mca-out-rad-modis-3d_%.4fnm.h5' % (params['name_tag'], wvl)
+    fname = 'tmp-data/%s/sim-%06.1fnm/mca-out-rad-modis-3d_%.4fnm.h5' % (params['name_tag'], wvl, wvl)
     f = h5py.File(fname, 'r')
     rad_rtm_3d     = f['mean/rad'][...]
     rad_rtm_3d_std = f['mean/rad_std'][...]
