@@ -148,11 +148,22 @@ class mcarats_ng:
 
         self.target  = target
 
-        self.Nx = 1
-        self.Ny = 1
+        # Nx, Ny
+        #/----------------------------------------------------------------------------\#
+        if len(atm_3ds) > 0:
+            self.Nx = atm_3ds[0].nml['Atm_nx']['data']
+            self.Ny = atm_3ds[0].nml['Atm_ny']['data']
+        else:
+            self.Nx = 1
+            self.Ny = 1
+        #\----------------------------------------------------------------------------/#
 
+        # photon distribution over gs of correlated-k
+        #/----------------------------------------------------------------------------\#
+        photons_min_ipa0 = int(self.Nx*self.Ny*100)
+        photons_min_3d0  = min(int(1e6), int(self.Nx*self.Ny*100))
 
-        if weights is None or self.solver=='IPA':
+        if weights is None:
             self.np_mode = 'evenly'
             weights = np.repeat(1.0/self.Ng, Ng)
         else:
@@ -163,8 +174,14 @@ class mcarats_ng:
         index        = np.argmax(photons_dist)
         photons_dist[index] = photons_dist[index] - Ndiff
 
+        if ((photons_dist<photons_min_ipa0).sum() > 0) and (self.solver=='IPA'):
+            photons_dist += photons_min_ipa0
+        elif ((photons_dist<photons_min_3d0).sum() > 0) and (self.solver=='3D'):
+            photons_dist += photons_min_3d0
+
         self.photons = np.tile(photons_dist, Nrun)
-        self.photons_per_set = photons
+        self.photons_per_set = photons_dist.sum()
+        #\----------------------------------------------------------------------------/#
 
         # Determine how many CPUs to utilize
         Ncpu_total = mp.cpu_count()
