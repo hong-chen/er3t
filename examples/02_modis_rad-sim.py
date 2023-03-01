@@ -1359,7 +1359,7 @@ def main_sim(wvl=params['wavelength']):
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
     cal_mca_rad(sat0, wvl, params['photon'], fdir=fdir_tmp, solver='3D', overwrite=True)
-    # cal_mca_rad(sat0, wvl, 1e9, fdir=fdir_tmp, solver='IPA', overwrite=True)
+    # cal_mca_rad(sat0, wvl, params['photon'], fdir=fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(wvl=params['wavelength'], plot=False):

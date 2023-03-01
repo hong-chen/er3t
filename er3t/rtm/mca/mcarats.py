@@ -161,7 +161,7 @@ class mcarats_ng:
         # photon distribution over gs of correlated-k
         #/----------------------------------------------------------------------------\#
         photons_min_ipa0 = int(self.Nx*self.Ny*100)
-        photons_min_3d0  = min(int(1e6), int(self.Nx*self.Ny*100))
+        photons_min_3d0  = min(int(1e7), photons_min_ipa0)
 
         if weights is None:
             self.np_mode = 'evenly'
@@ -175,9 +175,9 @@ class mcarats_ng:
         photons_dist[index] = photons_dist[index] - Ndiff
 
         if ((photons_dist<photons_min_ipa0).sum() > 0) and (self.solver=='IPA'):
-            photons_dist += photons_min_ipa0
+            photons_dist += (abs(photons_min_ipa0-photons_dist.min()))
         elif ((photons_dist<photons_min_3d0).sum() > 0) and (self.solver=='3D'):
-            photons_dist += photons_min_3d0
+            photons_dist += (abs(photons_min_3d0-photons_dist.min()))
 
         self.photons = np.tile(photons_dist, Nrun)
         self.photons_per_set = photons_dist.sum()
