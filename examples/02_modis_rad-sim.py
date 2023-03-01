@@ -63,7 +63,7 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 5e9,
+           'photon' : 1e9,
         }
 #\--------------------------------------------------------------/#
 
@@ -807,42 +807,18 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     #\----------------------------------------------------------------------------/#
 
 
-
     # Parallax correction (for the cloudy pixels detected previously)
     #/----------------------------------------------------------------------------\#
     # calculate new lon_corr, lat_corr based on cloud, surface and sensor geometries
     #/--------------------------------------------------------------\#
-    # vza_cld = vza[indices_x, indices_y]
-    # vaa_cld = vaa[indices_x, indices_y]
-    # sfh_cld = sfh[indices_x, indices_y] * 1000.0  # convert to meter from km
-    # cth_cld = cth_ipa0[indices_x, indices_y] * 1000.0 # convert to meter from km
-    # lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
+    vza_cld = vza[indices_x, indices_y]
+    vaa_cld = vaa[indices_x, indices_y]
+    sfh_cld = sfh[indices_x, indices_y] * 1000.0  # convert to meter from km
+    cth_cld = cth_ipa0[indices_x, indices_y] * 1000.0 # convert to meter from km
+    lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
     #\--------------------------------------------------------------/#
 
     # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
-    #/--------------------------------------------------------------\#
-    # Nx, Ny = ref_2d.shape
-    # cot_ipa = np.zeros_like(ref_2d)
-    # cer_ipa = np.zeros_like(ref_2d)
-    # cth_ipa = np.zeros_like(ref_2d)
-    # for i in range(indices_x.size):
-    #     ix = indices_x[i]
-    #     iy = indices_y[i]
-
-    #     lon_corr0 = lon_corr[i]
-    #     lat_corr0 = lat_corr[i]
-    #     ix_corr = int((lon_corr0-lon_2d[0, 0])//(lon_2d[1, 0]-lon_2d[0, 0]))
-    #     iy_corr = int((lat_corr0-lat_2d[0, 0])//(lat_2d[0, 1]-lat_2d[0, 0]))
-    #     if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
-    #         cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
-    #         cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
-    #         cth_ipa[ix_corr, iy_corr] = cth_ipa0[ix, iy]
-    #\--------------------------------------------------------------/#
-    #\----------------------------------------------------------------------------/#
-
-
-    # Simple parallax correction (for the cloudy pixels detected previously)
-    #/----------------------------------------------------------------------------\#
     #/--------------------------------------------------------------\#
     Nx, Ny = ref_2d.shape
     cot_ipa = np.zeros_like(ref_2d)
@@ -852,8 +828,10 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         ix = indices_x[i]
         iy = indices_y[i]
 
-        ix_corr = int(ix-offset_dx)
-        iy_corr = int(iy-offset_dy)
+        lon_corr0 = lon_corr[i]
+        lat_corr0 = lat_corr[i]
+        ix_corr = int((lon_corr0-lon_2d[0, 0])//(lon_2d[1, 0]-lon_2d[0, 0]))
+        iy_corr = int((lat_corr0-lat_2d[0, 0])//(lat_2d[0, 1]-lat_2d[0, 0]))
         if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
             cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
             cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
@@ -1193,7 +1171,7 @@ class sat_tmp:
 
         self.data = data
 
-def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
+def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite=False):
 
     """
     Simulate MODIS radiance
@@ -1299,7 +1277,7 @@ def cal_mca_rad(sat, wavelength, fdir='tmp-data', solver='3D', overwrite=False):
             fdir='%s/%.4fnm/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             weights=abs0.coef['weight']['data'],
-            photons=params['photon'],
+            photons=photon,
             solver=solver,
             Ncpu=8,
             mp_mode='py',
@@ -1342,7 +1320,7 @@ def main_pre(wvl=params['wavelength']):
     #   mod/sfc/lon ------- : Dataset  (666, 666)
     #
     #/----------------------------------------------------------------------------\#
-    # cdata_sat_raw(wvl=wvl, plot=True)
+    cdata_sat_raw(wvl=wvl, plot=True)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1380,8 +1358,8 @@ def main_sim(wvl=params['wavelength']):
 
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
-    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='IPA', overwrite=True)
-    cal_mca_rad(sat0, wvl, fdir=fdir_tmp, solver='3D', overwrite=True)
+    cal_mca_rad(sat0, wvl, params['photon'], fdir=fdir_tmp, solver='3D', overwrite=True)
+    # cal_mca_rad(sat0, wvl, 1e9, fdir=fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(wvl=params['wavelength'], plot=False):
@@ -1496,7 +1474,7 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    # main_pre()
+    main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
@@ -1509,7 +1487,7 @@ if __name__ == '__main__':
     #   a. <post-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    # main_post(plot=True)
+    main_post(plot=True)
     #\----------------------------------------------------------------------------/#
 
     pass
