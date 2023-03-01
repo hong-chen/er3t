@@ -50,7 +50,7 @@ def gen_aerosol_1d(aer_cfg):
 
     # aod
     # =====================================================================================
-    data0 = aer_cfg['aerosol_optical_depth']
+    data0 = aer_cfg['aerosol_optical_depth']/(alt.size-1)
     if np.isscalar(data0):
         data = np.zeros_like(alt)
         data[1:] = data0
