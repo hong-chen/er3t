@@ -14,6 +14,7 @@ The processes include:
 
     2) `main_sim()`: run simulation
         a) 3D mode
+        b) IPA mode
 
     3) `main_post()`: post-process data
         a) extract radiance observations from pre-processed data
