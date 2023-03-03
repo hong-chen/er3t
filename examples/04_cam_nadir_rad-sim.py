@@ -27,7 +27,7 @@ The processes include:
         b) plot
 
 This code has been tested under:
-    1) Linux on 2023-02-28 by Hong Chen
+    1) Linux on 2023-03-03 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -45,6 +45,7 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 
+
 import er3t
 
 
@@ -56,11 +57,13 @@ params = {
                     'name_tag' : os.path.relpath(__file__).replace('.py', ''),
                   'wavelength' : 600.0,
                         'date' : datetime.datetime(2019, 10, 5),
-                      'photon' : 1e9,
+                      'photon' : 1e8,
+                  'photon_ipa' : 1e7,
             'cloud_top_height' : 2.0,
  'cloud_geometrical_thickness' : 1.0
         }
 #\--------------------------------------------------------------/#
+
 
 
 
@@ -360,7 +363,7 @@ def main_pre_ipa():
             Ny=2,
             dx=0.1,
             dy=0.1,
-            photon_number=1e8,
+            photon_number=params['photon_ipa'],
             overwrite=False
             )
     #\--------------------------------------------------------------/#
@@ -497,9 +500,9 @@ def main_sim():
 
     # run simulations using EaR3T
     #/----------------------------------------------------------------------------\#
-    # cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=1e9, fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
-    # cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
-    # cal_mca_rad(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
+    cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=1e9, fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
+    cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
+    cal_mca_rad(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
     # irradiance simulation (reserved)
@@ -509,10 +512,10 @@ def main_sim():
     # cal_mca_flux(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
     # cal_mca_flux(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
 
-    cloud_free = copy.deepcopy(cloud_cnn)
-    cloud_free['cot_2d']['data'][...] = 0.0
-    cal_mca_flux(params['date'], geometry, cloud_free, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/clear' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
-    cal_mca_flux(params['date'], geometry, cloud_free, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/clear' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
+    # cloud_free = copy.deepcopy(cloud_cnn)
+    # cloud_free['cot_2d']['data'][...] = 0.0
+    # cal_mca_flux(params['date'], geometry, cloud_free, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/clear' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
+    # cal_mca_flux(params['date'], geometry, cloud_free, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/clear' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(plot=True):
@@ -723,11 +726,11 @@ if __name__ == '__main__':
     #       reflectance vs cot mapping
     #    c. store data in <pre-data.h5> under data/04_cam_nadir_rad-sim
     #/--------------------------------------------------------------\#
-    # main_pre_ipa()
+    main_pre_ipa()
     #\--------------------------------------------------------------/#
 
-    # Step 2. Use CNN to predict cloud optical thickness from camera red channel radiance
-    # Special note: to run the following function, tensorflow needs to be installed.
+    # Step 2*. Use CNN to predict cloud optical thickness from camera red channel radiance
+    # *Special note: to run the following function, tensorflow needs to be installed.
     #               If you have problems in setting up tensorflow enviroment, you can skip this step and
     #               use <pre-data_cnn.h5> provided under data/04_cam_nadir_rad-sim/aux instead.
     #               CNN model credit: Nataraja et al. 2022 (https://doi.org/10.5194/amt-2022-45)
@@ -751,7 +754,7 @@ if __name__ == '__main__':
     #        4) 3D radiance simulation based on cot_cnn
     #    b. plot
     #/--------------------------------------------------------------\#
-    # main_post()
+    main_post()
     #\--------------------------------------------------------------/#
 
     pass
