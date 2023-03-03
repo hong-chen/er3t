@@ -134,7 +134,7 @@ class func_ref_vs_cot:
         #/----------------------------------------------------------------------------\#
         fname_cld = '%s/cld_%s.pk' % (self.fdir, name_tag)
         altitude0 = atm0.lay['altitude']['data'][(atm0.lay['altitude']['data']>=cbh0) & (atm0.lay['altitude']['data']<=cth0)]
-        cld0 = er3t.pre.cld.cld_gen_hom(fname=fname_cld, altitude=altitude0, atm_obj=atm0, Nx=Nx, Ny=Ny, dx=dx, dy=dy, cot0=cot0, cer0=cer0, overwrite=True)
+        cld0 = er3t.pre.cld.cld_gen_hom(cot0=cot0, cer0=cer0, fname=fname_cld, altitude=altitude0, atm_obj=atm0, Nx=Nx, Ny=Ny, dx=dx, dy=dy, overwrite=True)
         #\----------------------------------------------------------------------------/#
 
         # phase function
