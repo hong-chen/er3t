@@ -216,7 +216,7 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     mod_rgb = mpl_img.imread(sat0.fnames['mod_rgb'][0])
     g['rgb'] = mod_rgb
 
-    print('Message [pre_data]: the processing of MODIS RGB imagery is complete.')
+    print('Message [cdata_sat_raw]: the processing of MODIS RGB imagery is complete.')
     #\--------------------------------------------------------------/#
 
 
@@ -233,7 +233,7 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     g1['rad_%4.4d' % wvl] = rad_2d
     g1['ref_%4.4d' % wvl] = ref_2d
 
-    print('Message [pre_data]: the processing of MODIS L1B radiance/reflectance at %d nm is complete.' % wvl)
+    print('Message [cdata_saw_raw]: the processing of MODIS L1B radiance/reflectance at %d nm is complete.' % wvl)
 
     f0['lon'] = lon_2d
     f0['lat'] = lat_2d
@@ -267,7 +267,7 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     g0['vaa'] = vaa_2d
     g0['sfh'] = sfh_2d
 
-    print('Message [pre_data]: the processing of MODIS geo-info is complete.')
+    print('Message [cdata_sat_raw]: the processing of MODIS geo-info is complete.')
     #\--------------------------------------------------------------/#
 
 
@@ -296,7 +296,7 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     g2['cer_l2'] = cer_2d_l2
     g2['cth_l2'] = cth_2d_l2
 
-    print('Message [pre_data]: the processing of MODIS cloud properties is complete.')
+    print('Message [cdata_sat_raw]: the processing of MODIS cloud properties is complete.')
     #\--------------------------------------------------------------/#
 
 
@@ -325,7 +325,7 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     g3['alb_09'] = sfc_09
     g3['alb_43'] = sfc_43
 
-    print('Message [pre_data]: the processing of MODIS surface properties is complete.')
+    print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
     #\--------------------------------------------------------------/#
 
     f0.close()
@@ -751,7 +751,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
     dy = np.pi*6378.1*(lat_2d[0, 1]-lat_2d[0, 0])/180.0
 
-    fdir  = 'tmp-data/%s/ipa-%06.1fnm_thick' % (params['name_tag'], params['wavelength'])
+    fdir  = 'tmp-data/ipa-%06.1fnm_thick' % (params['wavelength'])
 
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             cot,
@@ -773,7 +773,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             overwrite=False
             )
 
-    fdir  = 'tmp-data/%s/ipa-%06.1fnm_thin' % (params['name_tag'], params['wavelength'])
+    fdir  = 'tmp-data/ipa-%06.1fnm_thin' % (params['wavelength'])
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             cot,
             cer0=25.0,

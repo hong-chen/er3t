@@ -344,7 +344,7 @@ def main_pre_ipa():
                           np.arange(60.0, 100.0, 10.0),
                           np.arange(100.0, 201.0, 50.0)))
     cer0  = 10.0
-    fdir  = 'tmp-data/%s/ipa-%06.1fnm' % (params['name_tag'], params['wavelength'])
+    fdir  = 'tmp-data/ipa-%06.1fnm' % (params['wavelength'])
     f_mca = er3t.rtm.mca.func_ref_vs_cot(
             cot,
             cer0=cer0,
