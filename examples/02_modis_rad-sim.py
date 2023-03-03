@@ -322,8 +322,8 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     g3['lon'] = lon_2d_sfc
     g3['lat'] = lat_2d_sfc
 
-    g3['alb_09'] = sfc_09
-    g3['alb_43'] = sfc_43
+    g3['alb_09_%4.4d' % wvl] = sfc_09
+    g3['alb_43_%4.4d' % wvl] = sfc_43
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
     #\--------------------------------------------------------------/#
@@ -350,8 +350,8 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
         cth = f0['mod/cld/cth_l2'][...]
         sfh = f0['mod/geo/sfh'][...]
 
-        alb09 = f0['mod/sfc/alb_09'][...]
-        alb43 = f0['mod/sfc/alb_43'][...]
+        alb09 = f0['mod/sfc/alb_09_%4.4d' % wvl][...]
+        alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
 
         f0.close()
 
@@ -659,7 +659,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     saa = f0['mod/geo/saa'][...]
     vza = f0['mod/geo/vza'][...]
     vaa = f0['mod/geo/vaa'][...]
-    alb = f0['mod/sfc/alb_43'][...]
+    alb = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
     f0.close()
     #\----------------------------------------------------------------------------/#
 
@@ -1210,7 +1210,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     #/----------------------------------------------------------------------------\#
     data = {}
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    data['alb_2d'] = dict(data=f['mod/sfc/alb_43'][...], name='Surface albedo', units='N/A')
+    data['alb_2d'] = dict(data=f['mod/sfc/alb_43_%4.4d' % wavelength][...], name='Surface albedo', units='N/A')
     data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
     data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
     f.close()

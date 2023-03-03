@@ -62,317 +62,14 @@ import er3t
 #/--------------------------------------------------------------\#
 params = {
          'name_tag' : os.path.relpath(__file__).replace('.py', ''),
-       'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
            'photon' : 2e8,
        'photon_ipa' : 1e8,
+   'wavelength_ipa' : 650.0,
         }
 #\--------------------------------------------------------------/#
 
-
-
-
-
-def pre_cld_oco2(sat, scale_factor=1.0, solver='3D'):
-
-    # Extract
-    #   1. cloud top height (cth, 5km resolution);
-    #   2. solar zenith and azimuth angles (sza and saa, 1km resolution);
-    #   3. sensor zenith and azimuth angles (vza and vaa, 1km resolution);
-    #   4. surface height (sfc, 1km resolution)
-    # ===================================================================================
-    modl2      = er3t.util.modis_l2(fnames=sat.fnames['mod_l2'], extent=sat.extent, vnames=['Sensor_Zenith', 'Sensor_Azimuth', 'Cloud_Top_Height'])
-    logic_cth  = (modl2.data['cloud_top_height']['data']>0.0)
-    lon0       = modl2.data['lon_5km']['data']
-    lat0       = modl2.data['lat_5km']['data']
-    cth0       = modl2.data['cloud_top_height']['data']/1000.0 # units: km
-
-    mod03      = er3t.util.modis_03(fnames=sat.fnames['mod_03'], extent=sat.extent, vnames=['Height'])
-    logic_sfh  = (mod03.data['height']['data']>0.0)
-    lon1       = mod03.data['lon']['data']
-    lat1       = mod03.data['lat']['data']
-    sfh1       = mod03.data['height']['data']/1000.0 # units: km
-    sza1       = mod03.data['sza']['data']
-    saa1       = mod03.data['saa']['data']
-    vza1       = mod03.data['vza']['data']
-    vaa1       = mod03.data['vaa']['data']
-    # ===================================================================================
-
-
-    # Process MODIS reflectance at 650 nm (250m resolution)
-    # ===================================================================================
-    modl1b = er3t.util.modis_l1b(fnames=sat.fnames['mod_02'], extent=sat.extent)
-    lon_2d, lat_2d, ref_2d = er3t.util.grid_by_extent(modl1b.data['lon']['data'], modl1b.data['lat']['data'], modl1b.data['ref']['data'][0, ...], extent=sat.extent)
-    # ===================================================================================
-
-
-    # Find cloudy pixels based on MODIS RGB imagery and upscale/downscale to 250m resolution
-    # =============================================================================
-    mod_rgb = mpl_img.imread(sat.fnames['mod_rgb'][0])
-
-    lon_rgb0 = np.linspace(sat.extent[0], sat.extent[1], mod_rgb.shape[1]+1)
-    lat_rgb0 = np.linspace(sat.extent[2], sat.extent[3], mod_rgb.shape[0]+1)
-    lon_rgb = (lon_rgb0[1:]+lon_rgb0[:-1])/2.0
-    lat_rgb = (lat_rgb0[1:]+lat_rgb0[:-1])/2.0
-
-    mod_r = mod_rgb[:, :, 0]
-    mod_g = mod_rgb[:, :, 1]
-    mod_b = mod_rgb[:, :, 2]
-
-    # special note: threshold of 1.06 is hard-coded for this particular case;
-    #               improvement will be made by Yu-Wen Chen and/or Katey Dong
-    logic_rgb_nan0 = (mod_r<=(np.median(mod_r)*1.06)) |\
-                     (mod_g<=(np.median(mod_g)*1.06)) |\
-                     (mod_b<=(np.median(mod_b)*1.06))
-    logic_rgb_nan = np.flipud(logic_rgb_nan0).T
-
-    x0_rgb = lon_rgb[0]
-    y0_rgb = lat_rgb[0]
-    dx_rgb = lon_rgb[1] - x0_rgb
-    dy_rgb = lat_rgb[1] - y0_rgb
-
-    indices_x = np.int_(np.round((lon_2d-x0_rgb)/dx_rgb, decimals=0))
-    indices_y = np.int_(np.round((lat_2d-y0_rgb)/dy_rgb, decimals=0))
-
-    logic_ref_nan = logic_rgb_nan[indices_x, indices_y]
-
-    indices    = np.where(logic_ref_nan!=1)
-    indices_x  = indices[0]
-    indices_y  = indices[1]
-    lon        = lon_2d[indices_x, indices_y]
-    lat        = lat_2d[indices_x, indices_y]
-    # =============================================================================
-
-
-    # Upscale CTH from 5km (L2) to 250m resolution
-    # ===================================================================================
-    points     = np.transpose(np.vstack((lon0[logic_cth], lat0[logic_cth])))
-    cth = interpolate.griddata(points, cth0[logic_cth], (lon, lat), method='cubic')
-    cth_2d_l2 = np.zeros_like(lon_2d)
-    cth_2d_l2[indices_x, indices_y] = cth
-    # ===================================================================================
-
-
-    # Upscale cloud effective radius from 1km (L2) to 250m resolution
-    # =============================================================
-    modl2 = er3t.util.modis_l2(fnames=sat.fnames['mod_l2'], extent=sat.extent)
-    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_lonlat(modl2.data['lon']['data'], modl2.data['lat']['data'], modl2.data['cer']['data'], lon_1d=lon_2d[:, 0], lat_1d=lat_2d[0, :], method='linear')
-    cer_2d_l2[cer_2d_l2<1.0] = 1.0
-    # =============================================================
-
-
-    # Parallax correction (for the cloudy pixels detected previously)
-    # ====================================================================================================
-    points     = np.transpose(np.vstack((lon1[logic_sfh], lat1[logic_sfh])))
-    sfh        = interpolate.griddata(points, sfh1[logic_sfh], (lon, lat), method='cubic')
-
-    points     = np.transpose(np.vstack((lon1, lat1)))
-    vza        = interpolate.griddata(points, vza1, (lon, lat), method='cubic')
-    vaa        = interpolate.griddata(points, vaa1, (lon, lat), method='cubic')
-    vza[...] = np.nanmean(vza)
-    vaa[...] = np.nanmean(vaa)
-
-    if solver == '3D':
-        lon_corr_p, lat_corr_p  = para_corr(lon, lat, vza, vaa, cth*1000.0, sfh*1000.0)
-    elif solver == 'IPA':
-        lon_corr_p, lat_corr_p  = para_corr(lon, lat, vza, vaa, sfh, sfh)
-    # ====================================================================================================
-
-
-    # Wind correction (for the cloudy pixels detected previously)
-    # ====================================================================================================
-    # estimate average OCO-2 passing time for the scene
-    f = h5py.File(sat.fnames['oco_l1b'][0], 'r')
-    lon_oco_l1b = f['SoundingGeometry/sounding_longitude'][...]
-    lat_oco_l1b = f['SoundingGeometry/sounding_latitude'][...]
-    logic = (lon_oco_l1b>=sat.extent[0]) & (lon_oco_l1b<=sat.extent[1]) & (lat_oco_l1b>=sat.extent[2]) & (lat_oco_l1b<=sat.extent[3])
-    utc_oco_byte = f['SoundingGeometry/sounding_time_string'][...][logic]
-    f.close()
-    utc_oco = np.zeros(utc_oco_byte.size, dtype=np.float64)
-    for i, utc_oco_byte0 in enumerate(utc_oco_byte):
-        utc_oco_str0 = utc_oco_byte0.decode('utf-8').split('.')[0]
-        utc_oco[i] = (datetime.datetime.strptime(utc_oco_str0, '%Y-%m-%dT%H:%M:%S')-datetime.datetime(1993, 1, 1)).total_seconds()
-
-    # estimate average MODIS passing time for the scene
-    f = SD(sat.fnames['mod_03'][0], SDC.READ)
-    lon_mod = f.select('Longitude')[:][::10, :]
-    lat_mod = f.select('Latitude')[:][::10, :]
-    utc_mod = f.select('SD start time')[:]
-    f.end()
-    logic = (lon_mod>=sat.extent[0]) & (lon_mod<=sat.extent[1]) & (lat_mod>=sat.extent[2]) & (lat_mod<=sat.extent[3])
-    logic = (np.sum(logic, axis=1)>0)
-    utc_mod = utc_mod[logic]
-
-    # extract wind speed (10m wind)
-    f = h5py.File(sat.fnames['oco_met'][0], 'r')
-    lon_oco_met = f['SoundingGeometry/sounding_longitude'][...]
-    lat_oco_met = f['SoundingGeometry/sounding_latitude'][...]
-    logic = (lon_oco_met>=sat.extent[0]) & (lon_oco_met<=sat.extent[1]) & (lat_oco_met>=sat.extent[2]) & (lat_oco_met<=sat.extent[3])
-    u_oco = f['Meteorology/windspeed_u_met'][...][logic]
-    v_oco = f['Meteorology/windspeed_v_met'][...][logic]
-    f.close()
-
-    # wind correction based on the different time between OCO-2 and MODIS
-    lon_corr, lat_corr  = wind_corr(lon_corr_p, lat_corr_p, np.median(u_oco), np.median(v_oco), utc_oco.mean()-utc_mod.mean())
-    # ====================================================================================================
-
-
-
-    # Cloud optical property
-    #  1) cloud optical thickness: MODIS 650 reflectance -> two-stream approximation -> cloud optical thickness
-    #  2) cloud effective radius: from MODIS L2 cloud product (upscaled to 250m resolution from raw 1km resolution)
-    #  3) cloud top height: from MODIS L2 cloud product
-    #
-    #   special note: for this particular case, saturation was found on MODIS 860 nm reflectance
-    # ===================================================================================
-    # two-stream
-    a0         = np.median(ref_2d)
-    mu0        = np.cos(np.deg2rad(sza1.mean()))
-    xx_2stream = np.linspace(0.0, 200.0, 10000)
-    yy_2stream = cal_r_twostream(xx_2stream, a=a0, mu=mu0)
-
-    # lon/lat shift due to parallax and wind correction
-    lon_1d = lon_2d[:, 0]
-    indices_x_new = np.int_(np.round((lon_corr-lon_1d[0])/(((lon_1d[1:]-lon_1d[:-1])).mean()), decimals=0))
-    lat_1d = lat_2d[0, :]
-    indices_y_new = np.int_(np.round((lat_corr-lat_1d[0])/(((lat_1d[1:]-lat_1d[:-1])).mean()), decimals=0))
-
-    # assign COT, CER, CTH for every cloudy pixel (after parallax and wind correction)
-    Nx, Ny = ref_2d.shape
-    cot_2d_l1b = np.zeros_like(ref_2d)
-    cer_2d_l1b = np.zeros_like(ref_2d); cer_2d_l1b[...] = 1.0
-    cth_2d_l1b = np.zeros_like(ref_2d)
-    for i in range(indices_x.size):
-        if 0<=indices_x_new[i]<Nx and 0<=indices_y_new[i]<Ny:
-            # COT from two-stream
-            cot_2d_l1b[indices_x_new[i], indices_y_new[i]] = xx_2stream[np.argmin(np.abs(yy_2stream-ref_2d[indices_x[i], indices_y[i]]))]
-            # CER from closest CER from MODIS L2 cloud product
-            cer_2d_l1b[indices_x_new[i], indices_y_new[i]] = cer_2d_l2[indices_x[i], indices_y[i]]
-            # CTH from closest CTH from MODIS L2 cloud product
-            cth_2d_l1b[indices_x_new[i], indices_y_new[i]] = cth_2d_l2[indices_x[i], indices_y[i]]
-
-    # special note: secondary cloud/clear-sky filter that is hard-coded for this particular case
-    # ===================================================================================
-    cot_2d_l1b[(cer_2d_l1b<1.5)&(lat_2d>38.0)] = 0.0
-    cot_2d_l1b[(cer_2d_l1b<1.5)&(lon_2d<-108.5)] = 0.0
-    cer_2d_l1b[(cer_2d_l1b<1.5)&(lat_2d>38.0)] = 1.0
-    cer_2d_l1b[(cer_2d_l1b<1.5)&(lon_2d<-108.5)] = 1.0
-    cth_2d_l1b[(cer_2d_l1b<1.5)&(lat_2d>38.0)] = 0.0
-    cth_2d_l1b[(cer_2d_l1b<1.5)&(lon_2d<-108.5)] = 0.0
-    # ===================================================================================
-
-    # store data for return
-    # ===================================================================================
-    modl1b.data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=lon_2d)
-    modl1b.data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=lat_2d)
-    modl1b.data['ref_2d'] = dict(name='Gridded reflectance'             , units='N/A'        , data=ref_2d)
-    modl1b.data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=cot_2d_l1b*scale_factor)
-    modl1b.data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micron'     , data=cer_2d_l1b)
-    modl1b.data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=cth_2d_l1b)
-    # ===================================================================================
-
-    return modl1b
-
-
-
-
-def func(x, a):
-
-    return a*x
-
-def create_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, scale=True, replace=True):
-
-    points = np.transpose(np.vstack((x_bkg_2d.ravel(), y_bkg_2d.ravel())))
-    data_bkg = interpolate.griddata(points, data_bkg_2d.ravel(), (x_ref, y_ref), method='nearest')
-
-    if scale:
-        popt, pcov = curve_fit(func, data_bkg, data_ref)
-        slope = popt[0]
-    else:
-        slope = 1.0
-
-    print('slope:', slope)
-    data_2d = data_bkg_2d*slope
-
-    dx = x_bkg_2d[1, 0] - x_bkg_2d[0, 0]
-    dy = y_bkg_2d[0, 1] - y_bkg_2d[0, 0]
-
-    if replace:
-        indices_x = np.int_(np.round((x_ref-x_bkg_2d[0, 0])/dx, decimals=0))
-        indices_y = np.int_(np.round((y_ref-y_bkg_2d[0, 0])/dy, decimals=0))
-        data_2d[indices_x, indices_y] = data_ref
-
-    return data_2d
-
-def pre_sfc_oco2(sat, tag, version='10r', scale=True, replace=True):
-
-    # Read in OCO-2 BRDF data
-    if version == '10' or version == '10r':
-        vnames = [
-                'BRDFResults/brdf_reflectance_o2',              # 0.77 microns
-                'BRDFResults/brdf_reflectance_slope_o2',
-                'BRDFResults/brdf_reflectance_strong_co2',      # 2.06 microns
-                'BRDFResults/brdf_reflectance_slope_strong_co2',
-                'BRDFResults/brdf_reflectance_weak_co2',        # 1.615 microns
-                'BRDFResults/brdf_reflectance_slope_weak_co2'
-                  ]
-    else:
-        exit('Error   [pre_sfc_oco2]: Cannot recognize version \'%s\'.' % version)
-
-    oco = er3t.util.oco2_std(fnames=sat.fnames['oco_std'], vnames=vnames, extent=sat.extent)
-
-    # BRDF reflectance as surface albedo
-    if version == '10' or version == '10r':
-        if tag.lower() == 'o2a':
-            oco_sfc_alb = oco.data['brdf_reflectance_o2']['data']
-        elif tag.lower() == 'wco2':
-            oco_sfc_alb = oco.data['brdf_reflectance_weak_co2']['data']
-        elif tag.lower() == 'sco2':
-            oco_sfc_alb = oco.data['brdf_reflectance_strong_co2']['data']
-    else:
-        exit('Error   [cdata_sfc_alb]: Cannot recognize version \'%s\'.' % version)
-
-    # Longitude and latitude
-    oco_lon = oco.data['lon']['data']
-    oco_lat = oco.data['lat']['data']
-
-    # Select data within the specified region defined by <sat.extent>
-    logic = (oco_sfc_alb>0.0) & (oco_lon>=sat.extent[0]) & (oco_lon<=sat.extent[1]) & (oco_lat>=sat.extent[2]) & (oco_lat<=sat.extent[3])
-    oco_lon = oco_lon[logic]
-    oco_lat = oco_lat[logic]
-    oco_sfc_alb = oco_sfc_alb[logic]
-
-    # Extract and grid MODIS surface reflectance
-    #   band 1: 620  - 670  nm, index 0
-    #   band 2: 841  - 876  nm, index 1
-    #   band 3: 459  - 479  nm, index 2
-    #   band 4: 545  - 565  nm, index 3
-    #   band 5: 1230 - 1250 nm, index 4
-    #   band 6: 1628 - 1652 nm, index 5
-    #   band 7: 2105 - 2155 nm, index 6
-    mod = er3t.util.modis_09a1(fnames=sat.fnames['mod_09'], extent=sat.extent)
-    points = np.transpose(np.vstack((mod.data['lon']['data'], mod.data['lat']['data'])))
-    if tag.lower() == 'o2a':
-        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][1, :], extent=sat.extent)
-        wvl = 770
-    elif tag.lower() == 'wco2':
-        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][5, :], extent=sat.extent)
-        wvl = 1615
-    elif tag.lower() == 'sco2':
-        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][6, :], extent=sat.extent)
-        wvl = 2060
-
-    # Scale all MODIS reflectance based on the relationship between collocated MODIS surface reflectance and OCO-2 BRDF reflectance
-    # Replace MODIS surface reflectance with OCO-2 BRDF reflectance at OCO-2 measurement locations
-    oco_sfc_alb_2d = create_sfc_alb_2d(oco_lon, oco_lat, oco_sfc_alb, lon_2d, lat_2d, mod_sfc_alb_2d, scale=scale, replace=replace)
-
-    mod.data['alb_2d'] = dict(data=oco_sfc_alb_2d, name='Surface albedo', units='N/A')
-    mod.data['lon_2d'] = dict(data=lon_2d        , name='Longitude'     , units='degrees')
-    mod.data['lat_2d'] = dict(data=lat_2d        , name='Latitude'      , units='degrees')
-    mod.data['wvl']    = dict(data=wvl           , name='Wavelength'    , units='nm')
-
-    return mod
 
 
 
@@ -495,110 +192,6 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwr
     # mcarats output
     out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-oco2-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
     # =================================================================================
-
-
-def main_pre_old():
-
-    # create data directory (for storing data) if the directory does not exist
-    #/----------------------------------------------------------------------------\#
-    fdir_data = os.path.abspath('data/%s/download' % name_tag)
-    if not os.path.exists(fdir_data):
-        os.makedirs(fdir_data)
-    #\----------------------------------------------------------------------------/#
-
-
-
-    # download satellite data based on given date and region
-    #/----------------------------------------------------------------------------\#
-    fname_sat = '%s/sat.pk' % fdir_data
-    sat0 = satellite_download(date=date, fdir_out=fdir_data, extent=extent, fname=fname_sat, overwrite=False)
-    #\----------------------------------------------------------------------------/#
-
-
-
-    # pre-process downloaded data
-    #/----------------------------------------------------------------------------\#
-    f0 = h5py.File('data/%s/pre-data.h5' % name_tag, 'w')
-    f0['extent'] = sat0.extent
-
-    # MODIS data groups in the HDF file
-    #/--------------------------------------------------------------\#
-    g = f0.create_group('mod')
-    g1 = g.create_group('rad')
-    g2 = g.create_group('cld')
-    g3 = g.create_group('sfc')
-    #\--------------------------------------------------------------/#
-
-    # MODIS RGB
-    #/--------------------------------------------------------------\#
-    mod_rgb = mpl_img.imread(sat0.fnames['mod_rgb'][0])
-    g['rgb'] = mod_rgb
-
-    print('Message [pre_data]: the processing of MODIS RGB imagery is complete.')
-    #\--------------------------------------------------------------/#
-
-    # cloud optical properties
-    #/--------------------------------------------------------------\#
-    mod0 = pre_cld_oco2(sat0)
-    g1['lon'] = mod0.data['lon_2d']['data']
-    g1['lat'] = mod0.data['lat_2d']['data']
-    g2['cot_2s'] = mod0.data['cot_2d']['data']
-    g2['cer_l2'] = mod0.data['cer_2d']['data']
-    g2['cth_l2'] = mod0.data['cth_2d']['data']
-
-    print('Message [pre_data]: the processing of cloud optical properties is complete.')
-    #\--------------------------------------------------------------/#
-
-    # surface albedo
-    #/--------------------------------------------------------------\#
-    mod_sfc = pre_sfc_oco2(sat0, 'o2a', scale=True, replace=True)
-
-    g3['lon'] = mod_sfc.data['lon_2d']['data']
-    g3['lat'] = mod_sfc.data['lat_2d']['data']
-    g3['alb_%4.4d' % mod_sfc.data['wvl']['data']] = mod_sfc.data['alb_2d']['data']
-
-    print('Message [pre_data]: the processing of surface albedo is complete.')
-    #\--------------------------------------------------------------/#
-
-
-    # OCO-2 data groups in the HDF file
-    #/--------------------------------------------------------------\#
-    gg = f0.create_group('oco')
-    gg1 = gg.create_group('o2a')
-    #\--------------------------------------------------------------/#
-
-    # Read OCO-2 radiance and wavelength data
-    #/--------------------------------------------------------------\#
-    oco = er3t.util.oco2_rad_nadir(sat0)
-
-    wvl_o2a  = np.zeros_like(oco.rad_o2_a, dtype=np.float64)
-    for i in range(oco.rad_o2_a.shape[0]):
-        for j in range(oco.rad_o2_a.shape[1]):
-            wvl_o2a[i, j, :]  = oco.get_wvl_o2_a(j)
-    #\--------------------------------------------------------------/#
-
-    # OCO L1B
-    #/--------------------------------------------------------------\#
-    gg['lon'] = oco.lon_l1b
-    gg['lat'] = oco.lat_l1b
-    gg['sza'] = oco.sza
-    gg['saa'] = oco.saa
-    gg['vza'] = oco.vza
-    gg['vaa'] = oco.vaa
-    gg['logic']  = oco.logic_l1b
-    gg['snd_id'] = oco.snd_id
-    gg1['rad']   = oco.rad_o2_a
-    gg1['wvl']   = wvl_o2a
-    print('Message [pre_data]: the processing of OCO-2 radiance is complete.')
-    #\--------------------------------------------------------------/#
-
-    f0.close()
-    #\----------------------------------------------------------------------------/#
-
-
-
-
-
 
 
 
@@ -881,19 +474,26 @@ def cdata_sat_raw(plot=True):
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
     mod09 = er3t.util.modis_09a1(fnames=sat0.fnames['mod_09'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_09 = er3t.util.grid_by_extent(mod09.data['lon']['data'], mod09.data['lat']['data'], mod09.data['ref']['data'][index_wvl_sfc, :], extent=sat0.extent)
-    sfc_09[sfc_09<0.0] = 0.0
+    lon_2d_sfc, lat_2d_sfc, sfc_09_0 = er3t.util.grid_by_extent(mod09.data['lon']['data'], mod09.data['lat']['data'], mod09.data['ref']['data'][index_wvl, :], extent=sat0.extent)
+    sfc_09_0[sfc_09_0<0.0] = 0.0
+    lon_2d_sfc, lat_2d_sfc, sfc_09_1 = er3t.util.grid_by_extent(mod09.data['lon']['data'], mod09.data['lat']['data'], mod09.data['ref']['data'][index_wvl_sfc, :], extent=sat0.extent)
+    sfc_09_1[sfc_09_1<0.0] = 0.0
 
     mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl_sfc, :], extent=sat0.extent)
-    sfc_43[sfc_43<0.0] = 0.0
-    sfc_43[sfc_43>1.0] = 1.0
+    lon_2d_sfc, lat_2d_sfc, sfc_43_0 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent)
+    sfc_43_0[sfc_43_0<0.0] = 0.0
+    sfc_43_0[sfc_43_0>1.0] = 1.0
+    lon_2d_sfc, lat_2d_sfc, sfc_43_1 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl_sfc, :], extent=sat0.extent)
+    sfc_43_1[sfc_43_1<0.0] = 0.0
+    sfc_43_1[sfc_43_1>1.0] = 1.0
 
     g3['lon'] = lon_2d_sfc
     g3['lat'] = lat_2d_sfc
 
-    g3['alb_09'] = sfc_09
-    g3['alb_43'] = sfc_43
+    g3['alb_09_%4.4d' % wvl] = sfc_09_0
+    g3['alb_43_%4.4d' % wvl] = sfc_43_0
+    g3['alb_09_%4.4d' % wvl_sfc] = sfc_09_1
+    g3['alb_43_%4.4d' % wvl_sfc] = sfc_43_1
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
     #\--------------------------------------------------------------/#
@@ -971,8 +571,8 @@ def cdata_sat_raw(plot=True):
         cth = f0['mod/cld/cth_l2'][...]
         sfh = f0['mod/geo/sfh'][...]
 
-        alb09 = f0['mod/sfc/alb_09'][...]
-        alb43 = f0['mod/sfc/alb_43'][...]
+        alb09 = f0['mod/sfc/alb_09_%4.4d' % wvl][...]
+        alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
 
         f0.close()
 
@@ -1285,14 +885,14 @@ def wind_corr(lon0, lat0, u, v, dt, R_earth=6378000.0, verbose=True):
 
     return lon, lat
 
-def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
+def cdata_cld_ipa(plot=True):
 
     # read in data
     #/----------------------------------------------------------------------------\#
     f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
     extent = f0['extent'][...]
-    ref_2d = f0['mod/rad/ref_%4.4d' % wvl][...]
-    rad_2d = f0['mod/rad/rad_%4.4d' % wvl][...]
+    ref_2d = f0['mod/rad/ref_%4.4d' % params['wavelength_ipa']][...]
+    rad_2d = f0['mod/rad/rad_%4.4d' % params['wavelength_ipa']][...]
     rgb    = f0['mod/rgb'][...]
     cot_l2 = f0['mod/cld/cot_l2'][...]
     cer_l2 = f0['mod/cld/cer_l2'][...]
@@ -1304,13 +904,13 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     saa = f0['mod/geo/saa'][...]
     vza = f0['mod/geo/vza'][...]
     vaa = f0['mod/geo/vaa'][...]
-    alb = f0['mod/sfc/alb_43'][...]
-
+    alb = f0['mod/sfc/alb_43_%4.4d' % params['wavelength_ipa']][...]
     u_10m = f0['oco/met/u_10m'][...]
     v_10m = f0['oco/met/v_10m'][...]
     delta_t = f0['oco/met/delta_t'][...]
     f0.close()
     #\----------------------------------------------------------------------------/#
+    sys.exit('haha')
 
 
     # cloud mask method based on rgb image and l2 data
@@ -1400,7 +1000,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
     dy = np.pi*6378.1*(lat_2d[0, 1]-lat_2d[0, 0])/180.0
 
-    fdir  = 'tmp-data/ipa-%06.1fnm_thick' % (params['wavelength'])
+    fdir  = 'tmp-data/ipa-%06.1fnm_thick' % (params['wavelength_ipa'])
 
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             cot,
@@ -1409,7 +1009,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             dy=dy,
             fdir=fdir,
             date=params['date'],
-            wavelength=params['wavelength'],
+            wavelength=params['wavelength_ipa'],
             surface_albedo=alb.mean(),
             solar_zenith_angle=sza.mean(),
             solar_azimuth_angle=saa.mean(),
@@ -1422,7 +1022,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             overwrite=False
             )
 
-    fdir  = 'tmp-data/ipa-%06.1fnm_thin' % (params['wavelength'])
+    fdir  = 'tmp-data/ipa-%06.1fnm_thin' % (params['wavelength_ipa'])
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             cot,
             cer0=25.0,
@@ -1430,7 +1030,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             dy=dy,
             fdir=fdir,
             date=params['date'],
-            wavelength=params['wavelength'],
+            wavelength=params['wavelength_ipa'],
             surface_albedo=alb.mean(),
             solar_zenith_angle=sza.mean(),
             solar_azimuth_angle=saa.mean(),
@@ -1829,6 +1429,108 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         plt.savefig('%s_<%s>.png' % (params['name_tag'], _metadata['Function']), bbox_inches='tight', metadata=_metadata)
         #\--------------------------------------------------------------/#
         #\----------------------------------------------------------------------------/#
+
+
+
+
+
+def func(x, a):
+
+    return a*x
+
+def create_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, scale=True, replace=True):
+
+    points = np.transpose(np.vstack((x_bkg_2d.ravel(), y_bkg_2d.ravel())))
+    data_bkg = interpolate.griddata(points, data_bkg_2d.ravel(), (x_ref, y_ref), method='nearest')
+
+    if scale:
+        popt, pcov = curve_fit(func, data_bkg, data_ref)
+        slope = popt[0]
+    else:
+        slope = 1.0
+
+    print('slope:', slope)
+    data_2d = data_bkg_2d*slope
+
+    dx = x_bkg_2d[1, 0] - x_bkg_2d[0, 0]
+    dy = y_bkg_2d[0, 1] - y_bkg_2d[0, 0]
+
+    if replace:
+        indices_x = np.int_(np.round((x_ref-x_bkg_2d[0, 0])/dx, decimals=0))
+        indices_y = np.int_(np.round((y_ref-y_bkg_2d[0, 0])/dy, decimals=0))
+        data_2d[indices_x, indices_y] = data_ref
+
+    return data_2d
+
+def cdata_sfc_oco(version='10r', scale=True, replace=True):
+
+    # Read in OCO-2 BRDF data
+    if version == '10' or version == '10r':
+        vnames = [
+                'BRDFResults/brdf_reflectance_o2',              # 0.77 microns
+                'BRDFResults/brdf_reflectance_slope_o2',
+                'BRDFResults/brdf_reflectance_strong_co2',      # 2.06 microns
+                'BRDFResults/brdf_reflectance_slope_strong_co2',
+                'BRDFResults/brdf_reflectance_weak_co2',        # 1.615 microns
+                'BRDFResults/brdf_reflectance_slope_weak_co2'
+                  ]
+    else:
+        exit('Error   [pre_sfc_oco2]: Cannot recognize version \'%s\'.' % version)
+
+    oco = er3t.util.oco2_std(fnames=sat.fnames['oco_std'], vnames=vnames, extent=sat.extent)
+
+    # BRDF reflectance as surface albedo
+    if version == '10' or version == '10r':
+        if tag.lower() == 'o2a':
+            oco_sfc_alb = oco.data['brdf_reflectance_o2']['data']
+        elif tag.lower() == 'wco2':
+            oco_sfc_alb = oco.data['brdf_reflectance_weak_co2']['data']
+        elif tag.lower() == 'sco2':
+            oco_sfc_alb = oco.data['brdf_reflectance_strong_co2']['data']
+    else:
+        exit('Error   [cdata_sfc_alb]: Cannot recognize version \'%s\'.' % version)
+
+    # Longitude and latitude
+    oco_lon = oco.data['lon']['data']
+    oco_lat = oco.data['lat']['data']
+
+    # Select data within the specified region defined by <sat.extent>
+    logic = (oco_sfc_alb>0.0) & (oco_lon>=sat.extent[0]) & (oco_lon<=sat.extent[1]) & (oco_lat>=sat.extent[2]) & (oco_lat<=sat.extent[3])
+    oco_lon = oco_lon[logic]
+    oco_lat = oco_lat[logic]
+    oco_sfc_alb = oco_sfc_alb[logic]
+
+    # Extract and grid MODIS surface reflectance
+    #   band 1: 620  - 670  nm, index 0
+    #   band 2: 841  - 876  nm, index 1
+    #   band 3: 459  - 479  nm, index 2
+    #   band 4: 545  - 565  nm, index 3
+    #   band 5: 1230 - 1250 nm, index 4
+    #   band 6: 1628 - 1652 nm, index 5
+    #   band 7: 2105 - 2155 nm, index 6
+    mod = er3t.util.modis_09a1(fnames=sat.fnames['mod_09'], extent=sat.extent)
+    points = np.transpose(np.vstack((mod.data['lon']['data'], mod.data['lat']['data'])))
+    if tag.lower() == 'o2a':
+        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][1, :], extent=sat.extent)
+        wvl = 770
+    elif tag.lower() == 'wco2':
+        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][5, :], extent=sat.extent)
+        wvl = 1615
+    elif tag.lower() == 'sco2':
+        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][6, :], extent=sat.extent)
+        wvl = 2060
+
+    # Scale all MODIS reflectance based on the relationship between collocated MODIS surface reflectance and OCO-2 BRDF reflectance
+    # Replace MODIS surface reflectance with OCO-2 BRDF reflectance at OCO-2 measurement locations
+    oco_sfc_alb_2d = create_sfc_alb_2d(oco_lon, oco_lat, oco_sfc_alb, lon_2d, lat_2d, mod_sfc_alb_2d, scale=scale, replace=replace)
+
+    mod.data['alb_2d'] = dict(data=oco_sfc_alb_2d, name='Surface albedo', units='N/A')
+    mod.data['lon_2d'] = dict(data=lon_2d        , name='Longitude'     , units='degrees')
+    mod.data['lat_2d'] = dict(data=lat_2d        , name='Latitude'      , units='degrees')
+    mod.data['wvl']    = dict(data=wvl           , name='Wavelength'    , units='nm')
+
+    return mod
+
 
 
 
