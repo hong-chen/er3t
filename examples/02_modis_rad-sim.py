@@ -14,7 +14,7 @@ The processes include:
 
     2) `main_sim()`: run simulation
         a) 3D mode
-        b) IPA mode
+        b) IPA mode (turned off by default)
 
     3) `main_post()`: post-process data
         a) extract radiance observations from pre-processed data
@@ -22,7 +22,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2023-02-27 by Hong Chen
+    1) Linux on 2023-03-03 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -65,6 +65,7 @@ params = {
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
            'photon' : 2e8,
+       'photon_ipa' : 1e8,
         }
 #\--------------------------------------------------------------/#
 
@@ -754,7 +755,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
 
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             cot,
-            cer0=20.0,
+            cer0=25.0,
             dx=dx,
             dy=dy,
             fdir=fdir,
@@ -767,14 +768,15 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             sensor_azimuth_angle=vaa.mean(),
             cloud_top_height=10.0,
             cloud_geometrical_thickness=7.0,
-            photon_number=2e8,
+            photon_number=params['photon_ipa'],
+            solver='3d',
             overwrite=False
             )
 
     fdir  = 'tmp-data/%s/ipa-%06.1fnm_thin' % (params['name_tag'], params['wavelength'])
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             cot,
-            cer0=10.0,
+            cer0=25.0,
             dx=dx,
             dy=dy,
             fdir=fdir,
@@ -787,10 +789,10 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             sensor_azimuth_angle=vaa.mean(),
             cloud_top_height=3.0,
             cloud_geometrical_thickness=1.0,
-            photon_number=1e8,
+            photon_number=params['photon_ipa'],
+            solver='3d',
             overwrite=False
             )
-
 
     ref_cld_norm = ref_2d[indices_x, indices_y]/np.cos(np.deg2rad(sza.mean()))
 
@@ -1174,7 +1176,6 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
 
 
 
-
 class sat_tmp:
 
     def __init__(self, data):
@@ -1269,8 +1270,12 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
     sza = f['mod/geo/sza'][...].mean()
     saa = f['mod/geo/saa'][...].mean()
-    vza = f['mod/geo/vza'][...].mean()
-    vaa = f['mod/geo/vaa'][...].mean()
+    if solver.lower() == 'ipa':
+        vaa = 0.0
+        vza = 0.0
+    elif solver.lower() == '3d':
+        vaa = f['mod/geo/vaa'][...].mean()
+        vza = f['mod/geo/vza'][...].mean()
     f.close()
     #\----------------------------------------------------------------------------/#
 
@@ -1373,8 +1378,8 @@ def main_sim(wvl=params['wavelength']):
 
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
-    cal_mca_rad(sat0, wvl, params['photon'], fdir=fdir_tmp, solver='3D', overwrite=True)
-    # cal_mca_rad(sat0, wvl, params['photon'], fdir=fdir_tmp, solver='IPA', overwrite=True)
+    cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
+    # cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(wvl=params['wavelength'], plot=False):
@@ -1400,7 +1405,7 @@ def main_post(wvl=params['wavelength'], plot=False):
 
     # read in EaR3T simulations (3D)
     #/----------------------------------------------------------------------------\#
-    fname = 'tmp-data/%s/sim-%06.1fnm/mca-out-rad-modis-3d_%.4fnm.h5' % (params['name_tag'], wvl, wvl)
+    fname = 'tmp-data/%s/sim-%06.1fnm/3d/mca-out-rad-modis-3d_%.4fnm.h5' % (params['name_tag'], wvl, wvl)
     f = h5py.File(fname, 'r')
     rad_rtm_3d     = f['mean/rad'][...]
     rad_rtm_3d_std = f['mean/rad_std'][...]
