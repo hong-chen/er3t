@@ -63,6 +63,7 @@ import er3t
 params = {
          'name_tag' : os.path.relpath(__file__).replace('.py', ''),
              'date' : datetime.datetime(2019, 9, 2),
+       'wavelength' : 768.5151,
            'region' : [-109.1, -106.9, 36.9, 39.1],
            'photon' : 2e8,
        'photon_ipa' : 1e8,
@@ -1615,19 +1616,19 @@ def main_sim():
 
 def main_post(plot=False):
 
-    wvl0 = 768.5151
+    wvl0 = params['wavelength']
 
     # read in OCO-2 measured radiance
     #/----------------------------------------------------------------------------\#
     f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
     extent = f['extent'][...]
-    wvl_oco = f['oco/o2a/wvl'][...]
+    lon_2d = f['lon'][...]
+    lat_2d = f['lat'][...]
     lon_oco = f['oco/lon'][...]
     lat_oco = f['oco/lat'][...]
+    wvl_oco = f['oco/o2a/wvl'][...]
     rad_oco = f['oco/o2a/rad'][...][:, :, np.argmin(np.abs(wvl_oco[0, 0, :]-wvl0))]
     logic_oco = f['oco/logic'][...]
-    lon_2d = f['mod/rad/lon'][...]
-    lat_2d = f['mod/rad/lat'][...]
     f.close()
     #\----------------------------------------------------------------------------/#
 
@@ -1686,7 +1687,6 @@ def main_post(plot=False):
     #\----------------------------------------------------------------------------/#
 
 
-
     if plot:
 
         # average over latitude grid (0.01 degree)
@@ -1725,7 +1725,7 @@ def main_post(plot=False):
         ax1.plot(lat, oco_rad, color='k', lw=1.5, alpha=0.8)
         ax1.fill_between(lat, mca_rad_3d-mca_rad_3d_std, mca_rad_3d+mca_rad_3d_std, color='r', alpha=0.5, lw=0.0)
         ax1.plot(lat, mca_rad_3d, color='r', lw=1.5, alpha=0.8)
-        ax1.set_xlim((37.0, 39.0))
+        ax1.set_xlim(extent[2:])
         ax1.set_ylim((0.0, 0.4))
         ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
         ax1.set_xlabel('Latitude [$^\circ$]')
