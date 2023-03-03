@@ -13,13 +13,13 @@ libRadtran (**implemented**, IPA only), and SHDOM (under development).
 
 Applicable area:
 
-* Spaceborne remote sensing;
-
-* Airborne remote sensing;
+* Spaceborne and airborne remote sensing;
 
 * 3D radiative effects (of clouds, aerosols, and trace gases etc.);
 
-* Novel retrieval algorithms (e.g., CNN).
+* Synthetic data generation (for CNN training);
+
+* Novel retrieval algorithm development (e.g., CNN-based).
 
 |
 
@@ -47,7 +47,7 @@ Applicable area:
 
 * `Chen et al., 2022 <https://doi.org/10.5194/amt-2022-143>`_
 
-   Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
+   Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
    Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.
