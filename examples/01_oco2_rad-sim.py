@@ -460,7 +460,6 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
     print('Message [cdata_sat_raw]: the processing of OCO-2 surface reflectance is complete.')
     #\--------------------------------------------------------------/#
 
-
     f0.close()
     #/----------------------------------------------------------------------------\#
 
@@ -974,8 +973,11 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     cot_ipa0[indices_x[logic_thick], indices_y[logic_thick]] = f_mca_thick.get_cot_from_ref(ref_cld_norm[logic_thick])
     cot_ipa0[indices_x[logic_thin] , indices_y[logic_thin]]  = f_mca_thin.get_cot_from_ref(ref_cld_norm[logic_thin])
 
-    cot_ipa0[cot_ipa0<cot[0]]  = cot[0]
-    cot_ipa0[cot_ipa0>cot[-1]] = cot[-1]
+    logic_out = (cot_ipa0<cot[0]) | (cot_ipa0>cot[-1])
+    logic_low = (logic_out) & (ref_2d<np.median(ref_2d[indices_x, indices_y]))
+    logic_high = logic_out & np.logical_not(logic_low)
+    cot_ipa0[logic_low]  = cot[0]
+    cot_ipa0[logic_high] = cot[-1]
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -1367,6 +1369,12 @@ def cal_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, scal
     points = np.transpose(np.vstack((x_bkg_2d.ravel(), y_bkg_2d.ravel())))
     data_bkg = interpolate.griddata(points, data_bkg_2d.ravel(), (x_ref, y_ref), method='nearest')
 
+    logic_valid = (data_bkg>0.0) & (data_ref>0.0)
+    x_ref = x_ref[logic_valid]
+    y_ref = y_ref[logic_valid]
+    data_bkg = data_bkg[logic_valid]
+    data_ref = data_ref[logic_valid]
+
     if scale:
         popt, pcov = curve_fit(func, data_bkg, data_ref)
         slope = popt[0]
@@ -1558,7 +1566,7 @@ def main_pre(oco_band='o2a'):
     #   mod/sfc/lon ------- : Dataset  (666, 666)
     #
     #/----------------------------------------------------------------------------\#
-    cdata_sat_raw(oco_band=oco_band, plot=True)
+    # cdata_sat_raw(oco_band=oco_band, plot=True)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1747,7 +1755,7 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
     #/----------------------------------------------------------------------------\#
-    # main_pre()
+    main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run

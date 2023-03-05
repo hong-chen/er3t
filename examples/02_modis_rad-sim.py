@@ -805,8 +805,11 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     cot_ipa0[indices_x[logic_thick], indices_y[logic_thick]] = f_mca_thick.get_cot_from_ref(ref_cld_norm[logic_thick])
     cot_ipa0[indices_x[logic_thin] , indices_y[logic_thin]]  = f_mca_thin.get_cot_from_ref(ref_cld_norm[logic_thin])
 
-    cot_ipa0[cot_ipa0<cot[0]]  = cot[0]
-    cot_ipa0[cot_ipa0>cot[-1]] = cot[-1]
+    logic_out = (cot_ipa0<cot[0]) | (cot_ipa0>cot[-1])
+    logic_low = (logic_out) & (ref_2d<np.median(ref_2d[indices_x, indices_y]))
+    logic_high = logic_out & np.logical_not(logic_low)
+    cot_ipa0[logic_low]  = cot[0]
+    cot_ipa0[logic_high] = cot[-1]
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -1565,7 +1568,7 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    # main_pre()
+    main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
@@ -1575,7 +1578,7 @@ if __name__ == '__main__':
     #   require a lot of photons (thus long computational time) to achieve relatively
     #   high accuracy
     #/----------------------------------------------------------------------------\#
-    main_sim(run_ipa=False)
+    main_sim(run_ipa=True)
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
