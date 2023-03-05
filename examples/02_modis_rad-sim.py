@@ -65,7 +65,8 @@ params = {
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
            'photon' : 2e8,
-       'photon_ipa' : 1e8,
+             'Ncpu' : 12,
+       'photon_ipa' : 1e7,
         }
 #\--------------------------------------------------------------/#
 
@@ -1299,7 +1300,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
             weights=abs0.coef['weight']['data'],
             photons=photon,
             solver=solver,
-            Ncpu=8,
+            Ncpu=params['Ncpu'],
             mp_mode='py',
             overwrite=overwrite
             )
