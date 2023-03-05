@@ -25,7 +25,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2022-10-19 by Hong Chen
+    1) Linux on 2023-03-04 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -64,136 +64,14 @@ params = {
          'name_tag' : os.path.relpath(__file__).replace('.py', ''),
              'date' : datetime.datetime(2019, 9, 2),
        'wavelength' : 768.5151,
+         'oco_band' : 'o2a',
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 2e8,
+           'photon' : 1e9,
+             'Ncpu' : 12,
        'photon_ipa' : 1e8,
    'wavelength_ipa' : 650.0,
         }
 #\--------------------------------------------------------------/#
-
-
-
-
-
-class sat_tmp:
-
-    def __init__(self, data):
-
-        self.data = data
-
-def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', overwrite=False):
-
-    """
-    Simulate OCO-2 radiance
-    """
-
-
-    # atm object
-    # =================================================================================
-    levels = np.arange(0.0, 20.1, 0.5)
-    fname_atm = '%s/atm.pk' % fdir
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
-    # =================================================================================
-
-
-    # abs object
-    # special note: in the future, we will implement OCO2 MET file for this
-    # =================================================================================
-    fname_abs = '%s/abs.pk' % fdir
-    abs0      = er3t.pre.abs.abs_oco_idl(wavelength=wavelength, fname=fname_abs, fname_idl=fname_idl, atm_obj=atm0, overwrite=overwrite)
-    # =================================================================================
-
-
-    # sfc object
-    # =================================================================================
-    data = {}
-    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
-    data['alb_2d'] = dict(data=f['mod/sfc/alb_0770'][...], name='Surface albedo', units='N/A')
-    data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
-    data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
-    f.close()
-
-    fname_sfc = '%s/sfc.pk' % fdir
-    mod09 = sat_tmp(data)
-    sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod09, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
-    sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
-    # =================================================================================
-
-
-    # cld object
-    # =================================================================================
-    data = {}
-    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
-    data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['mod/rad/lon'][...])
-    data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['mod/rad/lat'][...])
-    data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_2s'][...])
-    data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_l2'][...])
-    data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_l2'][...])
-    f.close()
-
-    modl1b    =  sat_tmp(data)
-    fname_cld = '%s/cld.pk' % fdir
-
-    cth0 = modl1b.data['cth_2d']['data']
-    cld0      = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
-    # =================================================================================
-
-
-    # mca_sca object
-    # =================================================================================
-    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
-    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    # =================================================================================
-
-
-    # mca_cld object
-    # =================================================================================
-    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
-    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-    atm_1ds = [atm1d0]
-    atm_3ds = [atm3d0]
-    # =================================================================================
-
-
-    # solar zenith/azimuth angles and sensor zenith/azimuth angles
-    # =================================================================================
-    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
-    sza = f['oco/sza'][...][f['oco/logic'][...]].mean()
-    saa = f['oco/saa'][...][f['oco/logic'][...]].mean()
-    vza = f['oco/vza'][...][f['oco/logic'][...]].mean()
-    vaa = f['oco/vaa'][...][f['oco/logic'][...]].mean()
-    f.close()
-    # =================================================================================
-
-
-    # run mcarats
-    # =================================================================================
-    mca0 = er3t.rtm.mca.mcarats_ng(
-            date=sat.date,
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            sfc_2d=sfc_2d,
-            sca=sca,
-            Ng=abs0.Ng,
-            target='radiance',
-            solar_zenith_angle   = sza,
-            solar_azimuth_angle  = saa,
-            sensor_zenith_angle  = vza,
-            sensor_azimuth_angle = vaa,
-            fdir='%s/%.4fnm/rad_%s' % (fdir, wavelength, solver.lower()),
-            Nrun=3,
-            weights=abs0.coef['weight']['data'],
-            photons=photon_sim,
-            solver=solver,
-            Ncpu=8,
-            mp_mode='py',
-            overwrite=overwrite
-            )
-
-    # mcarats output
-    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-oco2-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
-    # =================================================================================
-
 
 
 
@@ -333,15 +211,18 @@ def cal_sat_delta_t(sat):
 
     return utc_oco.mean()-utc_mod.mean()
 
-def cdata_sat_raw(plot=True):
+def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
 
     # process wavelength
     #/----------------------------------------------------------------------------\#
-    wvl = 650
-    index_wvl = 0      # select MODIS 650 nm band radiance/reflectance for IPA cloud retrieval
-
-    wvl_sfc = 860
-    index_wvl_sfc = 1  # select MODIS 860 nm band surface albedo for scaling
+    if oco_band.lower() == 'o2a':
+        wvl = 650
+        index_wvl = 0      # select MODIS 650 nm band radiance/reflectance for IPA cloud retrieval
+        wvl_sfc = 860
+        index_wvl_sfc = 1  # select MODIS 860 nm band surface albedo for scaling
+    else:
+        msg = '\nError [cdata_sat_raw]: Currently, only <oco_band=\'o2a\'> is supported.>'
+        sys.exit(msg)
     #\----------------------------------------------------------------------------/#
 
 
@@ -506,6 +387,7 @@ def cdata_sat_raw(plot=True):
     gg1 = gg.create_group('o2a')
     gg2 = gg.create_group('geo')
     gg3 = gg.create_group('met')
+    gg4 = gg.create_group('sfc')
     #\--------------------------------------------------------------/#
 
     # Read OCO-2 radiance and wavelength data
@@ -537,18 +419,47 @@ def cdata_sat_raw(plot=True):
     #/--------------------------------------------------------------\#
     # extract wind speed (10m wind)
     f = h5py.File(sat0.fnames['oco_met'][0], 'r')
-    lon_oco_met = f['SoundingGeometry/sounding_longitude'][...]
-    lat_oco_met = f['SoundingGeometry/sounding_latitude'][...]
-    logic = (lon_oco_met>=sat0.extent[0]) & (lon_oco_met<=sat0.extent[1]) & (lat_oco_met>=sat0.extent[2]) & (lat_oco_met<=sat0.extent[3])
-    u_10m = f['Meteorology/windspeed_u_met'][...][logic]
-    v_10m = f['Meteorology/windspeed_v_met'][...][logic]
+    lon_oco_met0 = f['SoundingGeometry/sounding_longitude'][...]
+    lat_oco_met0 = f['SoundingGeometry/sounding_latitude'][...]
+    u_10m0 = f['Meteorology/windspeed_u_met'][...]
+    v_10m0 = f['Meteorology/windspeed_v_met'][...]
+    logic = (np.abs(u_10m0)<50.0) & (np.abs(v_10m0)<50.0) & \
+            (lon_oco_met0>=sat0.extent[0]) & (lon_oco_met0<=sat0.extent[1]) & \
+            (lat_oco_met0>=sat0.extent[2]) & (lat_oco_met0<=sat0.extent[3])
     f.close()
 
-    gg3['u_10m'] = u_10m.mean()
-    gg3['v_10m'] = v_10m.mean()
+    gg3['lon'] = lon_oco_met0[logic]
+    gg3['lat'] = lat_oco_met0[logic]
+    gg3['u_10m'] = u_10m0[logic]
+    gg3['v_10m'] = v_10m0[logic]
     gg3['delta_t'] = cal_sat_delta_t(sat0)
     print('Message [cdata_sat_raw]: the processing of OCO-2 meteorological data is complete.')
     #\--------------------------------------------------------------/#
+
+
+    # OCO-2 surface reflectance
+    #/--------------------------------------------------------------\#
+    # process wavelength
+    if oco_band.lower() == 'o2a':
+        vname = 'brdf_reflectance_o2'
+    else:
+        msg = '\nError [cdata_sat_raw]: Currently, only <oco_band=\'o2a\'> is supported.>'
+        sys.exit(msg)
+
+    oco = er3t.util.oco2_std(fnames=sat0.fnames['oco_std'], vnames=['BRDFResults/%s' % vname], extent=sat0.extent)
+
+    oco_sfc_alb = oco.data[vname]['data']
+    oco_sfc_alb[oco_sfc_alb<0.0] = 0.0
+
+    gg4['lon'] = oco.data['lon']['data']
+    gg4['lat'] = oco.data['lat']['data']
+    gg4['alb_%s' % oco_band.lower()] = oco_sfc_alb
+
+    oco_sfc_alb_2d = cal_sfc_alb_2d(oco.data['lon']['data'], oco.data['lat']['data'], oco_sfc_alb, lon_2d_sfc, lat_2d_sfc, sfc_43_1, scale=True, replace=True)
+    gg4['alb_%s_2d' % oco_band.lower()] = oco_sfc_alb_2d
+    print('Message [cdata_sat_raw]: the processing of OCO-2 surface reflectance is complete.')
+    #\--------------------------------------------------------------/#
+
 
     f0.close()
     #/----------------------------------------------------------------------------\#
@@ -886,7 +797,16 @@ def wind_corr(lon0, lat0, u, v, dt, R_earth=6378000.0, verbose=True):
 
     return lon, lat
 
-def cdata_cld_ipa(plot=True):
+def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
+
+    # process wavelength
+    #/----------------------------------------------------------------------------\#
+    if oco_band.lower() == 'o2a':
+        wvl = 650
+    else:
+        msg = '\nError [cdata_sat_raw]: Currently, only <oco_band=\'o2a\'> is supported.>'
+        sys.exit(msg)
+    #\----------------------------------------------------------------------------/#
 
     # read in data
     #/----------------------------------------------------------------------------\#
@@ -906,12 +826,12 @@ def cdata_cld_ipa(plot=True):
     vza = f0['mod/geo/vza'][...]
     vaa = f0['mod/geo/vaa'][...]
     alb = f0['mod/sfc/alb_43_%4.4d' % params['wavelength_ipa']][...]
+    alb_oco = f0['oco/sfc/alb_%s_2d' % oco_band.lower()][...]
     u_10m = f0['oco/met/u_10m'][...]
     v_10m = f0['oco/met/v_10m'][...]
     delta_t = f0['oco/met/delta_t'][...]
     f0.close()
     #\----------------------------------------------------------------------------/#
-    sys.exit('haha')
 
 
     # cloud mask method based on rgb image and l2 data
@@ -1026,7 +946,7 @@ def cdata_cld_ipa(plot=True):
     fdir  = 'tmp-data/ipa-%06.1fnm_thin' % (params['wavelength_ipa'])
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             cot,
-            cer0=25.0,
+            cer0=10.0,
             dx=dx,
             dy=dy,
             fdir=fdir,
@@ -1076,7 +996,7 @@ def cdata_cld_ipa(plot=True):
     # wind correction
     # calculate new lon_corr, lat_corr based on wind speed
     #/--------------------------------------------------------------\#
-    lon_corr, lat_corr  = wind_corr(lon_corr_p, lat_corr_p, u_10m, v_10m, delta_t)
+    lon_corr, lat_corr  = wind_corr(lon_corr_p, lat_corr_p, np.nanmean(u_10m), np.nanmean(v_10m), delta_t)
     #\--------------------------------------------------------------/#
 
     # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
@@ -1085,6 +1005,7 @@ def cdata_cld_ipa(plot=True):
     cot_ipa = np.zeros_like(ref_2d)
     cer_ipa = np.zeros_like(ref_2d)
     cth_ipa = np.zeros_like(ref_2d)
+    cld_msk  = np.zeros(ref_2d.shape, dtype=np.int32)
     for i in range(indices_x.size):
         ix = indices_x[i]
         iy = indices_y[i]
@@ -1097,6 +1018,30 @@ def cdata_cld_ipa(plot=True):
             cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
             cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
             cth_ipa[ix_corr, iy_corr] = cth_ipa0[ix, iy]
+            cld_msk[ix_corr, iy_corr] = 1
+    #\--------------------------------------------------------------/#
+
+    # fill-in the empty cracks due to parallax and wind correction
+    #/--------------------------------------------------------------\#
+    # cld_msk_ = np.zeros(ref_2d.shape, dtype=np.int32)
+    # cld_msk_[indices_x, indices_y] = 1
+
+    # logic_crack = (cld_msk==0) & (cld_msk_==1)
+    # logic_cld   = (cld_msk==1)
+
+    # cot_ipa_ = cot_ipa.copy()
+    # cot_ipa_[np.logical_not(logic_cld)] = np.nan
+    # f_interp = interpolate.interp2d(lon_2d[:, 0], lat_2d[0, :], cot_ipa_, fill_value=np.nan)
+    # # f_interp = interpolate.griddata((lon_2d[logic_cld], lat_2d[logic_cld]), cot_ipa[logic_cld])
+    # # cot_ipa[logic_crack] = f_interp(lon_2d[logic_crack], lat_2d[logic_crack])
+
+    # f_interp = interpolate.RegularGridInterpolator((lon_2d[logic_cld], lat_2d[logic_cld]), cer_ipa[logic_cld])
+    # cer_ipa[logic_crack] = f_interp(lon_2d[logic_crack], lat_2d[logic_crack])
+
+    # f_interp = interpolate.RegularGridInterpolator((lon_2d[logic_cld], lat_2d[logic_cld]), cth_ipa[logic_cld])
+    # cth_ipa[logic_crack] = f_interp(lon_2d[logic_crack], lat_2d[logic_crack])
+
+    # cld_msk[logic_crack] = 1
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -1111,6 +1056,7 @@ def cdata_cld_ipa(plot=True):
         f0['mod/cld/cot_ipa0'] = cot_ipa0
         f0['mod/cld/cer_ipa0'] = cer_ipa0
         f0['mod/cld/cth_ipa0'] = cth_ipa0
+        f0['mod/cld/logic_cld'] = (cld_msk==1)
     except:
         del(f0['mod/cld/cot_ipa'])
         del(f0['mod/cld/cer_ipa'])
@@ -1118,12 +1064,14 @@ def cdata_cld_ipa(plot=True):
         del(f0['mod/cld/cot_ipa0'])
         del(f0['mod/cld/cer_ipa0'])
         del(f0['mod/cld/cth_ipa0'])
+        del(f0['mod/cld/logic_cld'])
         f0['mod/cld/cot_ipa'] = cot_ipa
         f0['mod/cld/cer_ipa'] = cer_ipa
         f0['mod/cld/cth_ipa'] = cth_ipa
         f0['mod/cld/cot_ipa0'] = cot_ipa0
         f0['mod/cld/cer_ipa0'] = cer_ipa0
         f0['mod/cld/cth_ipa0'] = cth_ipa0
+        f0['mod/cld/logic_cld'] = (cld_msk==1)
     try:
         g0 = f0.create_group('cld_msk')
         g0['indices_x0'] = indices_x0
@@ -1287,21 +1235,6 @@ def cdata_cld_ipa(plot=True):
         cbar = fig.colorbar(cs, cax=cax)
         #\----------------------------------------------------------------------------/#
 
-        # place holder
-        #/----------------------------------------------------------------------------\#
-        # ax8 = fig.add_subplot(448)
-        # cs = ax8.imshow(vaa.T, origin='lower', cmap='jet', zorder=0, extent=extent)
-        # ax8.set_xlim((extent[:2]))
-        # ax8.set_ylim((extent[2:]))
-        # ax8.set_xlabel('Longitude [$^\circ$]')
-        # ax8.set_ylabel('Latitude [$^\circ$]')
-        # ax8.set_title('Viewing Azimuth [$^\circ$]')
-
-        # divider = make_axes_locatable(ax8)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
         # cot ipa0
         #/----------------------------------------------------------------------------\#
         ax9 = fig.add_subplot(449)
@@ -1345,21 +1278,6 @@ def cdata_cld_ipa(plot=True):
         divider = make_axes_locatable(ax11)
         cax = divider.append_axes('right', '5%', pad='3%')
         cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # place holder
-        #/----------------------------------------------------------------------------\#
-        # ax12 = fig.add_subplot(4, 4, 12)
-        # cs = ax12.imshow(sfh.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=5.0)
-        # ax12.set_xlim((extent[:2]))
-        # ax12.set_ylim((extent[2:]))
-        # ax12.set_xlabel('Longitude [$^\circ$]')
-        # ax12.set_ylabel('Latitude [$^\circ$]')
-        # ax12.set_title('Surface Height [km]')
-
-        # divider = make_axes_locatable(ax12)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
         #\----------------------------------------------------------------------------/#
 
         # cot_ipa
@@ -1410,12 +1328,12 @@ def cdata_cld_ipa(plot=True):
         # surface albedo (MYD43A3, white sky albedo)
         #/----------------------------------------------------------------------------\#
         ax16 = fig.add_subplot(4, 4, 16)
-        cs = ax16.imshow(alb.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
+        cs = ax16.imshow(alb_oco.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
         ax16.set_xlim((extent[:2]))
         ax16.set_ylim((extent[2:]))
         ax16.set_xlabel('Longitude [$^\circ$]')
         ax16.set_ylabel('Latitude [$^\circ$]')
-        ax16.set_title('43A3 WSA')
+        ax16.set_title('43A3 WSA (filled and scaled)')
 
         divider = make_axes_locatable(ax16)
         cax = divider.append_axes('right', '5%', pad='3%')
@@ -1439,7 +1357,12 @@ def func(x, a):
 
     return a*x
 
-def create_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, scale=True, replace=True):
+def cal_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, scale=True, replace=True):
+
+    logic = (x_ref>=x_bkg_2d.min()) & (x_ref<=x_bkg_2d.max()) & (y_ref>=y_bkg_2d.min()) & (y_ref<=y_bkg_2d.max())
+    x_ref = x_ref[logic]
+    y_ref = y_ref[logic]
+    data_ref = data_ref[logic]
 
     points = np.transpose(np.vstack((x_bkg_2d.ravel(), y_bkg_2d.ravel())))
     data_bkg = interpolate.griddata(points, data_bkg_2d.ravel(), (x_ref, y_ref), method='nearest')
@@ -1450,7 +1373,7 @@ def create_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, s
     else:
         slope = 1.0
 
-    print('slope:', slope)
+    print('Message [cal_sfc_alb_2d]: slope:', slope)
     data_2d = data_bkg_2d*slope
 
     dx = x_bkg_2d[1, 0] - x_bkg_2d[0, 0]
@@ -1463,79 +1386,153 @@ def create_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, s
 
     return data_2d
 
-def cdata_sfc_oco(version='10r', scale=True, replace=True):
-
-    # Read in OCO-2 BRDF data
-    if version == '10' or version == '10r':
-        vnames = [
-                'BRDFResults/brdf_reflectance_o2',              # 0.77 microns
-                'BRDFResults/brdf_reflectance_slope_o2',
-                'BRDFResults/brdf_reflectance_strong_co2',      # 2.06 microns
-                'BRDFResults/brdf_reflectance_slope_strong_co2',
-                'BRDFResults/brdf_reflectance_weak_co2',        # 1.615 microns
-                'BRDFResults/brdf_reflectance_slope_weak_co2'
-                  ]
-    else:
-        exit('Error   [pre_sfc_oco2]: Cannot recognize version \'%s\'.' % version)
-
-    oco = er3t.util.oco2_std(fnames=sat.fnames['oco_std'], vnames=vnames, extent=sat.extent)
-
-    # BRDF reflectance as surface albedo
-    if version == '10' or version == '10r':
-        if tag.lower() == 'o2a':
-            oco_sfc_alb = oco.data['brdf_reflectance_o2']['data']
-        elif tag.lower() == 'wco2':
-            oco_sfc_alb = oco.data['brdf_reflectance_weak_co2']['data']
-        elif tag.lower() == 'sco2':
-            oco_sfc_alb = oco.data['brdf_reflectance_strong_co2']['data']
-    else:
-        exit('Error   [cdata_sfc_alb]: Cannot recognize version \'%s\'.' % version)
-
-    # Longitude and latitude
-    oco_lon = oco.data['lon']['data']
-    oco_lat = oco.data['lat']['data']
-
-    # Select data within the specified region defined by <sat.extent>
-    logic = (oco_sfc_alb>0.0) & (oco_lon>=sat.extent[0]) & (oco_lon<=sat.extent[1]) & (oco_lat>=sat.extent[2]) & (oco_lat<=sat.extent[3])
-    oco_lon = oco_lon[logic]
-    oco_lat = oco_lat[logic]
-    oco_sfc_alb = oco_sfc_alb[logic]
-
-    # Extract and grid MODIS surface reflectance
-    #   band 1: 620  - 670  nm, index 0
-    #   band 2: 841  - 876  nm, index 1
-    #   band 3: 459  - 479  nm, index 2
-    #   band 4: 545  - 565  nm, index 3
-    #   band 5: 1230 - 1250 nm, index 4
-    #   band 6: 1628 - 1652 nm, index 5
-    #   band 7: 2105 - 2155 nm, index 6
-    mod = er3t.util.modis_09a1(fnames=sat.fnames['mod_09'], extent=sat.extent)
-    points = np.transpose(np.vstack((mod.data['lon']['data'], mod.data['lat']['data'])))
-    if tag.lower() == 'o2a':
-        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][1, :], extent=sat.extent)
-        wvl = 770
-    elif tag.lower() == 'wco2':
-        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][5, :], extent=sat.extent)
-        wvl = 1615
-    elif tag.lower() == 'sco2':
-        lon_2d, lat_2d, mod_sfc_alb_2d = er3t.util.grid_by_extent(mod.data['lon']['data'], mod.data['lat']['data'], mod.data['ref']['data'][6, :], extent=sat.extent)
-        wvl = 2060
-
-    # Scale all MODIS reflectance based on the relationship between collocated MODIS surface reflectance and OCO-2 BRDF reflectance
-    # Replace MODIS surface reflectance with OCO-2 BRDF reflectance at OCO-2 measurement locations
-    oco_sfc_alb_2d = create_sfc_alb_2d(oco_lon, oco_lat, oco_sfc_alb, lon_2d, lat_2d, mod_sfc_alb_2d, scale=scale, replace=replace)
-
-    mod.data['alb_2d'] = dict(data=oco_sfc_alb_2d, name='Surface albedo', units='N/A')
-    mod.data['lon_2d'] = dict(data=lon_2d        , name='Longitude'     , units='degrees')
-    mod.data['lat_2d'] = dict(data=lat_2d        , name='Latitude'      , units='degrees')
-    mod.data['wvl']    = dict(data=wvl           , name='Wavelength'    , units='nm')
-
-    return mod
 
 
 
 
-def main_pre():
+class sat_tmp:
+
+    def __init__(self, data):
+
+        self.data = data
+
+def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', photon=params['photon'], overwrite=False):
+
+    """
+    Simulate OCO-2 radiance
+    """
+
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
+    # atm object
+    #/----------------------------------------------------------------------------\#
+    # f = readsav(fname_idl)
+    # levels = f['atm_zgrd'][...]/1000.0
+    levels = np.arange(0.0, 20.1, 0.5)
+    fname_atm = '%s/atm.pk' % fdir
+    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # abs object
+    # special note: in the future, we will implement OCO2 MET file for this
+    #/----------------------------------------------------------------------------\#
+    fname_abs = '%s/abs.pk' % fdir
+    abs0      = er3t.pre.abs.abs_oco_idl(wavelength=wavelength, fname=fname_abs, fname_idl=fname_idl, atm_obj=atm0, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # sfc object
+    #/----------------------------------------------------------------------------\#
+    data = {}
+    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
+    data['alb_2d'] = dict(data=f['oco/sfc/alb_%s_2d' % params['oco_band'].lower()][...], name='Surface albedo', units='N/A')
+    data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
+    data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
+    f.close()
+
+    fname_sfc = '%s/sfc.pk' % fdir
+    mod09 = sat_tmp(data)
+    sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod09, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
+    sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # cld object
+    #/----------------------------------------------------------------------------\#
+    data = {}
+    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
+    data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['lon'][...])
+    data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['lat'][...])
+    if solver.lower() == 'ipa':
+        data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_ipa0'][...])
+        data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_ipa0'][...])
+        data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_ipa0'][...])
+    elif solver.lower() == '3d':
+        data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_ipa'][...])
+        data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_ipa'][...])
+        data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_ipa'][...])
+    f.close()
+
+    modl1b = sat_tmp(data)
+    fname_cld = '%s/cld.pk' % fdir
+
+    cth0 = modl1b.data['cth_2d']['data']
+    cgt0 = np.zeros_like(cth0)
+    cgt0[cth0>0.0] = 1.0                  # all clouds have geometrical thickness of 1 km
+    cgt0[cth0>4.0] = cth0[cth0>4.0]-3.0   # high clouds (cth>4km) has cloud base at 3 km
+    cld0 = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=cgt0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # mca_sca object
+    #/----------------------------------------------------------------------------\#
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # mca_cld object
+    #/----------------------------------------------------------------------------\#
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
+    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+    atm_1ds = [atm1d0]
+    atm_3ds = [atm3d0]
+    #\----------------------------------------------------------------------------/#
+
+
+    # solar zenith/azimuth angles and sensor zenith/azimuth angles
+    #/----------------------------------------------------------------------------\#
+    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
+    sza = f['oco/geo/sza'][...][f['oco/logic'][...]].mean()
+    saa = f['oco/geo/saa'][...][f['oco/logic'][...]].mean()
+    if solver.lower() == '3d':
+        vza = f['oco/geo/vza'][...][f['oco/logic'][...]].mean()
+        vaa = f['oco/geo/vaa'][...][f['oco/logic'][...]].mean()
+    elif solver.lower() == 'ipa':
+        vza = 0.0
+        vaa = 0.0
+    f.close()
+    #\----------------------------------------------------------------------------/#
+
+
+    # run mcarats
+    #/----------------------------------------------------------------------------\#
+    mca0 = er3t.rtm.mca.mcarats_ng(
+            date=sat.date,
+            atm_1ds=atm_1ds,
+            atm_3ds=atm_3ds,
+            sfc_2d=sfc_2d,
+            sca=sca,
+            Ng=abs0.Ng,
+            target='radiance',
+            solar_zenith_angle   = sza,
+            solar_azimuth_angle  = saa,
+            sensor_zenith_angle  = vza,
+            sensor_azimuth_angle = vaa,
+            fdir='%s/%.4fnm/rad_%s' % (fdir, wavelength, solver.lower()),
+            Nrun=3,
+            weights=abs0.coef['weight']['data'],
+            photons=photon,
+            solver=solver,
+            Ncpu=params['Ncpu'],
+            mp_mode='py',
+            overwrite=overwrite
+            )
+    #\----------------------------------------------------------------------------/#
+
+
+    # mcarats output
+    #/----------------------------------------------------------------------------\#
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-oco2-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+
+
+
+def main_pre(oco_band='o2a'):
 
     # 1) Download and pre-process MODIS data products
     # MODIS data products will be downloaded at <data/02_modis_rad-sim/download>
@@ -1561,7 +1558,7 @@ def main_pre():
     #   mod/sfc/lon ------- : Dataset  (666, 666)
     #
     #/----------------------------------------------------------------------------\#
-    cdata_sat_raw(plot=True)
+    cdata_sat_raw(oco_band=oco_band, plot=True)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1576,15 +1573,14 @@ def main_pre():
     #   mod/cld/cot_ipa ---- : Dataset  (1196, 1196)
     #   mod/cld/cth_ipa ---- : Dataset  (1196, 1196)
     #/----------------------------------------------------------------------------\#
-    cdata_cld_ipa(plot=True)
+    cdata_cld_ipa(oco_band=oco_band, plot=True)
     #\----------------------------------------------------------------------------/#
 
-def main_sim():
+def main_sim(oco_band='o2a'):
 
     # create data directory (for storing data) if the directory does not exist
     #/----------------------------------------------------------------------------\#
-    name_tag = os.path.relpath(__file__).replace('.py', '')
-    fdir_data = os.path.abspath('data/%s/download' % name_tag)
+    fdir_data = os.path.abspath('data/%s/download' % params['name_tag'])
     fname_sat = '%s/sat.pk' % fdir_data
     sat0 = satellite_download(fname=fname_sat, overwrite=False)
     #\----------------------------------------------------------------------------/#
@@ -1592,7 +1588,7 @@ def main_sim():
 
     # create tmp-data/01_oco2_rad-sim directory if it does not exist
     #/----------------------------------------------------------------------------\#
-    fdir_tmp = os.path.abspath('tmp-data/%s' % (name_tag))
+    fdir_tmp = os.path.abspath('tmp-data/%s' % (params['name_tag']))
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
     #\----------------------------------------------------------------------------/#
@@ -1600,7 +1596,7 @@ def main_sim():
 
     # read out wavelength information from absorption file
     #/----------------------------------------------------------------------------\#
-    fname_idl = 'data/%s/aux/atm_abs_o2a_11.out' % (name_tag)
+    fname_idl = 'data/%s/aux/atm_abs_%s_11.out' % (params['name_tag'], oco_band.lower())
     f = readsav(fname_idl)
     wvls = f.lamx*1000.0
     #\----------------------------------------------------------------------------/#
@@ -1608,10 +1604,10 @@ def main_sim():
 
     # run radiance simulations under both 3D and IPA modes
     #/----------------------------------------------------------------------------\#
-    index = np.argmin(np.abs(wvls-770.0))
+    index = np.argmin(np.abs(wvls-params['wavelength']))
     wavelength = wvls[index]
-    for solver in ['3D', 'IPA']:
-        cal_mca_rad(sat0, wavelength, fname_idl, fdir=fdir_tmp, solver=solver, overwrite=True)
+    cal_mca_rad(sat0, wavelength, fname_idl, photon=params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D', overwrite=True)
+    cal_mca_rad(sat0, wavelength, fname_idl, photon=1e10            , fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(plot=False):
@@ -1635,13 +1631,13 @@ def main_post(plot=False):
 
     # read in EaR3T simulations (3D and IPA)
     #/----------------------------------------------------------------------------\#
-    fname = 'tmp-data/%s/mca-out-rad-oco2-3d_%.4fnm.h5' % (name_tag, wvl0)
+    fname = 'tmp-data/%s/3d/mca-out-rad-oco2-3d_%.4fnm.h5' % (name_tag, wvl0)
     f = h5py.File(fname, 'r')
     rad_3d     = f['mean/rad'][...]
     rad_3d_std = f['mean/rad_std'][...]
     f.close()
 
-    fname = 'tmp-data/%s/mca-out-rad-oco2-ipa_%.4fnm.h5' % (name_tag, wvl0)
+    fname = 'tmp-data/%s/ipa/mca-out-rad-oco2-ipa_%.4fnm.h5' % (name_tag, wvl0)
     f = h5py.File(fname, 'r')
     rad_ipa    = f['mean/rad'][...]
     rad_ipa_std = f['mean/rad_std'][...]
@@ -1744,17 +1740,19 @@ def main_post(plot=False):
 
 
 
+
+
 if __name__ == '__main__':
 
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
-    #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim
-    #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim
+    #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim/3d
+    #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim/ipa
     #/----------------------------------------------------------------------------\#
     # main_sim()
     #\----------------------------------------------------------------------------/#

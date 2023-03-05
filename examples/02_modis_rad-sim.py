@@ -776,7 +776,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     fdir  = 'tmp-data/ipa-%06.1fnm_thin' % (params['wavelength'])
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             cot,
-            cer0=25.0,
+            cer0=10.0,
             dx=dx,
             dy=dy,
             fdir=fdir,
@@ -1379,7 +1379,7 @@ def main_sim(wvl=params['wavelength']):
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
     cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
-    # cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
+    cal_mca_rad(sat0, wvl, 1e10, fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(wvl=params['wavelength'], plot=False):
@@ -1399,6 +1399,16 @@ def main_post(wvl=params['wavelength'], plot=False):
     lon_mod = f['lon'][...]
     lat_mod = f['lat'][...]
     rad_mod = f['mod/rad/rad_%4.4d' % wvl][...]
+    f.close()
+    #\----------------------------------------------------------------------------/#
+
+
+    # read in EaR3T simulations (IPA)
+    #/----------------------------------------------------------------------------\#
+    fname = 'tmp-data/%s/sim-%06.1fnm/ipa/mca-out-rad-modis-ipa_%.4fnm.h5' % (params['name_tag'], wvl, wvl)
+    f = h5py.File(fname, 'r')
+    rad_rtm_ipa     = f['mean/rad'][...]
+    rad_rtm_ipa_std = f['mean/rad_std'][...]
     f.close()
     #\----------------------------------------------------------------------------/#
 
@@ -1423,17 +1433,19 @@ def main_post(wvl=params['wavelength'], plot=False):
     f['rad_obs']        = rad_mod
     f['rad_sim_3d']     = rad_rtm_3d
     f['rad_sim_3d_std'] = rad_rtm_3d_std
+    f['rad_sim_ipa']     = rad_rtm_ipa
+    f['rad_sim_ipa_std'] = rad_rtm_ipa_std
     f.close()
     #\----------------------------------------------------------------------------/#
 
     if plot:
 
         #/----------------------------------------------------------------------------\#
-        fig = plt.figure(figsize=(10, 10))
+        fig = plt.figure(figsize=(13, 8))
 
         # 2D plot: rad_obs
         #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(221)
+        ax1 = fig.add_subplot(231)
         ax1.imshow(rad_mod.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
         ax1.set_xlabel('Longititude [$^\circ$]')
         ax1.set_ylabel('Latitude [$^\circ$]')
@@ -1441,15 +1453,80 @@ def main_post(wvl=params['wavelength'], plot=False):
         ax1.set_ylim(extent[2:])
         ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
         ax1.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
-        ax1.set_title('MODIS Measured Radiance')
+        ax1.set_title('Measured Radiance')
         #\--------------------------------------------------------------/#
 
-        # heatmap: rad_sim vs rad_obs
+        # 2D plot: rad_sim_ipa
+        #/--------------------------------------------------------------\#
+        ax2 = fig.add_subplot(232)
+        ax2.imshow(rad_rtm_ipa.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
+        ax2.set_xlabel('Longititude [$^\circ$]')
+        ax2.set_ylabel('Latitude [$^\circ$]')
+        ax2.set_xlim(extent[:2])
+        ax2.set_ylim(extent[2:])
+        ax2.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
+        ax2.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
+        ax2.set_title('Simulated IPA Radiance')
+        #\--------------------------------------------------------------/#
+
+        # heatmap: rad_sim_ipa vs rad_obs
         #/--------------------------------------------------------------\#
         logic = (lon_mod>=extent[0]) & (lon_mod<=extent[1]) & (lat_mod>=extent[2]) & (lat_mod<=extent[3])
 
-        xedges = np.arange(-0.01, 0.61, 0.005)
-        yedges = np.arange(-0.01, 0.61, 0.005)
+        xedges = np.arange(-0.01, 0.81, 0.005)
+        yedges = np.arange(-0.01, 0.81, 0.005)
+        heatmap, xedges, yedges = np.histogram2d(rad_mod[logic], rad_rtm_ipa[logic], bins=(xedges, yedges))
+        YY, XX = np.meshgrid((yedges[:-1]+yedges[1:])/2.0, (xedges[:-1]+xedges[1:])/2.0)
+
+        levels = np.concatenate((np.arange(1.0, 10.0, 1.0),
+                                 np.arange(10.0, 200.0, 10.0),
+                                 np.arange(200.0, 1000.0, 100.0),
+                                 np.arange(1000.0, 10001.0, 5000.0)))
+
+        ax3 = fig.add_subplot(233)
+        cs = ax3.contourf(XX, YY, heatmap, levels, extend='both', locator=ticker.LogLocator(), cmap='jet')
+        ax3.plot([0.0, 1.0], [0.0, 1.0], lw=1.0, ls='--', color='gray', zorder=3)
+        ax3.set_xlim(0.0, 0.6)
+        ax3.set_ylim(0.0, 0.6)
+        ax3.set_xlabel('Measured Radiance')
+        ax3.set_ylabel('Simulated IPA Radiance')
+        #\--------------------------------------------------------------/#
+
+
+        # 2D plot: rad_obs
+        #/--------------------------------------------------------------\#
+        ax4 = fig.add_subplot(234)
+        ax4.imshow(rad_mod.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
+        ax4.set_xlabel('Longititude [$^\circ$]')
+        ax4.set_ylabel('Latitude [$^\circ$]')
+        ax4.set_xlim(extent[:2])
+        ax4.set_ylim(extent[2:])
+        ax4.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
+        ax4.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
+        ax4.set_title('Measured Radiance')
+        #\--------------------------------------------------------------/#
+
+
+        # 2D plot: rad_sim_3d
+        #/--------------------------------------------------------------\#
+        ax5 = fig.add_subplot(235)
+        ax5.imshow(rad_rtm_3d.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
+        ax5.set_xlabel('Longititude [$^\circ$]')
+        ax5.set_ylabel('Latitude [$^\circ$]')
+        ax5.set_xlim(extent[:2])
+        ax5.set_ylim(extent[2:])
+        ax5.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
+        ax5.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
+        ax5.set_title('Simulated 3D Radiance')
+        #\--------------------------------------------------------------/#
+
+
+        # heatmap: rad_sim_3d vs rad_obs
+        #/--------------------------------------------------------------\#
+        logic = (lon_mod>=extent[0]) & (lon_mod<=extent[1]) & (lat_mod>=extent[2]) & (lat_mod<=extent[3])
+
+        xedges = np.arange(-0.01, 0.81, 0.005)
+        yedges = np.arange(-0.01, 0.81, 0.005)
         heatmap, xedges, yedges = np.histogram2d(rad_mod[logic], rad_rtm_3d[logic], bins=(xedges, yedges))
         YY, XX = np.meshgrid((yedges[:-1]+yedges[1:])/2.0, (xedges[:-1]+xedges[1:])/2.0)
 
@@ -1458,26 +1535,13 @@ def main_post(wvl=params['wavelength'], plot=False):
                                  np.arange(200.0, 1000.0, 100.0),
                                  np.arange(1000.0, 10001.0, 5000.0)))
 
-        ax2 = fig.add_subplot(223)
-        cs = ax2.contourf(XX, YY, heatmap, levels, extend='both', locator=ticker.LogLocator(), cmap='jet')
-        ax2.plot([0.0, 1.0], [0.0, 1.0], lw=1.0, ls='--', color='gray', zorder=3)
-        ax2.set_xlim(0.0, 0.6)
-        ax2.set_ylim(0.0, 0.6)
-        ax2.set_xlabel('MODIS Measured Radiance')
-        ax2.set_ylabel('Simulated 3D Radiance')
-        #\--------------------------------------------------------------/#
-
-        # 2D plot: rad_sim
-        #/--------------------------------------------------------------\#
-        ax3 = fig.add_subplot(224)
-        ax3.imshow(rad_rtm_3d.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
-        ax3.set_xlabel('Longititude [$^\circ$]')
-        ax3.set_ylabel('Latitude [$^\circ$]')
-        ax3.set_xlim(extent[:2])
-        ax3.set_ylim(extent[2:])
-        ax3.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
-        ax3.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
-        ax3.set_title('EaR$^3$T Simulated 3D Radiance')
+        ax6 = fig.add_subplot(236)
+        cs = ax6.contourf(XX, YY, heatmap, levels, extend='both', locator=ticker.LogLocator(), cmap='jet')
+        ax6.plot([0.0, 1.0], [0.0, 1.0], lw=1.0, ls='--', color='gray', zorder=3)
+        ax6.set_xlim(0.0, 0.6)
+        ax6.set_ylim(0.0, 0.6)
+        ax6.set_xlabel('Measured Radiance')
+        ax6.set_ylabel('Simulated 3D Radiance')
         #\--------------------------------------------------------------/#
 
         plt.subplots_adjust(hspace=0.4, wspace=0.4)
@@ -1494,7 +1558,7 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
