@@ -1025,25 +1025,27 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
 
     # fill-in the empty cracks due to parallax and wind correction
     #/--------------------------------------------------------------\#
-    # cld_msk_ = np.zeros(ref_2d.shape, dtype=np.int32)
-    # cld_msk_[indices_x, indices_y] = 1
+    Npixel = 2
+    for i in range(indices_x.size):
+        ix = indices_x[i]
+        iy = indices_y[i]
+        if (ix>=Npixel) and (ix<Nx-Npixel) and (iy>=Npixel) and (iy<Ny-Npixel) and \
+           (cot_ipa[ix, iy] == 0.0) and (cot_ipa0[ix, iy] > 0.0):
+               data_cot_ipa0 = cot_ipa0[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
 
-    # logic_crack = (cld_msk==0) & (cld_msk_==1)
-    # logic_cld   = (cld_msk==1)
+               data_cot_ipa  = cot_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
+               data_cer_ipa  = cer_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
+               data_cth_ipa  = cth_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
 
-    # cot_ipa_ = cot_ipa.copy()
-    # cot_ipa_[np.logical_not(logic_cld)] = np.nan
-    # f_interp = interpolate.interp2d(lon_2d[:, 0], lat_2d[0, :], cot_ipa_, fill_value=np.nan)
-    # # f_interp = interpolate.griddata((lon_2d[logic_cld], lat_2d[logic_cld]), cot_ipa[logic_cld])
-    # # cot_ipa[logic_crack] = f_interp(lon_2d[logic_crack], lat_2d[logic_crack])
+               logic_cld0 = (data_cot_ipa0>0.0)
+               logic_cld  = (data_cot_ipa>0.0)
 
-    # f_interp = interpolate.RegularGridInterpolator((lon_2d[logic_cld], lat_2d[logic_cld]), cer_ipa[logic_cld])
-    # cer_ipa[logic_crack] = f_interp(lon_2d[logic_crack], lat_2d[logic_crack])
-
-    # f_interp = interpolate.RegularGridInterpolator((lon_2d[logic_cld], lat_2d[logic_cld]), cth_ipa[logic_cld])
-    # cth_ipa[logic_crack] = f_interp(lon_2d[logic_crack], lat_2d[logic_crack])
-
-    # cld_msk[logic_crack] = 1
+               if (logic_cld0.sum() > int(0.7 * logic_cld0.size)) and \
+                  (logic_cld.sum()  > int(0.7 * logic_cld.size)):
+                   cot_ipa[ix, iy] = data_cot_ipa[logic_cld].mean()
+                   cer_ipa[ix, iy] = data_cer_ipa[logic_cld].mean()
+                   cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
+                   cld_msk[ix, iy] = 1
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 

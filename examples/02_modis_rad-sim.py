@@ -831,6 +831,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     cot_ipa = np.zeros_like(ref_2d)
     cer_ipa = np.zeros_like(ref_2d)
     cth_ipa = np.zeros_like(ref_2d)
+    cld_msk  = np.zeros(ref_2d.shape, dtype=np.int32)
     for i in range(indices_x.size):
         ix = indices_x[i]
         iy = indices_y[i]
@@ -843,6 +844,32 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
             cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
             cth_ipa[ix_corr, iy_corr] = cth_ipa0[ix, iy]
+            cld_msk[ix_corr, iy_corr] = 1
+    #\--------------------------------------------------------------/#
+
+    # fill-in the empty cracks due to parallax and wind correction
+    #/--------------------------------------------------------------\#
+    Npixel = 2
+    for i in range(indices_x.size):
+        ix = indices_x[i]
+        iy = indices_y[i]
+        if (ix>=Npixel) and (ix<Nx-Npixel) and (iy>=Npixel) and (iy<Ny-Npixel) and \
+           (cot_ipa[ix, iy] == 0.0) and (cot_ipa0[ix, iy] > 0.0):
+               data_cot_ipa0 = cot_ipa0[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
+
+               data_cot_ipa  = cot_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
+               data_cer_ipa  = cer_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
+               data_cth_ipa  = cth_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
+
+               logic_cld0 = (data_cot_ipa0>0.0)
+               logic_cld  = (data_cot_ipa>0.0)
+
+               if (logic_cld0.sum() > int(0.7 * logic_cld0.size)) and \
+                  (logic_cld.sum()  > int(0.7 * logic_cld.size)):
+                   cot_ipa[ix, iy] = data_cot_ipa[logic_cld].mean()
+                   cer_ipa[ix, iy] = data_cer_ipa[logic_cld].mean()
+                   cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
+                   cld_msk[ix, iy] = 1
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -857,6 +884,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         f0['mod/cld/cot_ipa0'] = cot_ipa0
         f0['mod/cld/cer_ipa0'] = cer_ipa0
         f0['mod/cld/cth_ipa0'] = cth_ipa0
+        f0['mod/cld/logic_cld'] = (cld_msk==1)
     except:
         del(f0['mod/cld/cot_ipa'])
         del(f0['mod/cld/cer_ipa'])
@@ -864,12 +892,14 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         del(f0['mod/cld/cot_ipa0'])
         del(f0['mod/cld/cer_ipa0'])
         del(f0['mod/cld/cth_ipa0'])
+        del(f0['mod/cld/logic_cld'])
         f0['mod/cld/cot_ipa'] = cot_ipa
         f0['mod/cld/cer_ipa'] = cer_ipa
         f0['mod/cld/cth_ipa'] = cth_ipa
         f0['mod/cld/cot_ipa0'] = cot_ipa0
         f0['mod/cld/cer_ipa0'] = cer_ipa0
         f0['mod/cld/cth_ipa0'] = cth_ipa0
+        f0['mod/cld/logic_cld'] = (cld_msk==1)
     try:
         g0 = f0.create_group('cld_msk')
         g0['indices_x0'] = indices_x0
@@ -1382,8 +1412,8 @@ def main_sim(wvl=params['wavelength'], run_ipa=False):
 
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
-    cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
-    if ipa_run:
+    # cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
+    if run_ipa:
         cal_mca_rad(sat0, wvl, 1e10, fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
