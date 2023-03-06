@@ -54,133 +54,22 @@ from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
 from er3t.rtm.mca import mcarats_ng
 from er3t.rtm.mca import mca_out_ng
 
-import er3t.common
+import er3t
 
 
 # global variables
-#/----------------------------------------------------------------------------\#
-wvl0      = 600.0
-name_tag  = os.path.relpath(__file__).replace('.py', '')
-fname_les = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
-photon_ret = 1e6
-photon_sim = 1e8
-#\----------------------------------------------------------------------------/#
-
-
-
-
-class func_cot_vs_rad:
-
-    def __init__(self,
-            fdir,
-            wavelength,
-            cot=np.concatenate((np.arange(0.0, 1.0, 0.1),
-                                np.arange(1.0, 10.0, 1.0),
-                                np.arange(10.0, 20.0, 2.0),
-                                np.arange(20.0, 50.0, 5.0),
-                                np.arange(50.0, 100.0, 10.0),
-                                np.arange(100.0, 200.0, 20.0),
-                                np.arange(200.0, 401.0, 50.0))),
-            run=False,
-            ):
-
-        if not os.path.exists(fdir):
-            os.makedirs(fdir)
-
-        self.fdir       = fdir
-        self.wavelength = wavelength
-        self.cot        = cot
-        self.rad        = np.array([])
-
-        if run:
-            self.run_all()
-
-        for i in range(self.cot.size):
-            cot0 = self.cot[i]
-            fname = '%s/mca-out-rad-3d_cot-%.2f.h5' % (self.fdir, cot0)
-            out0  = mca_out_ng(fname=fname, mode='all', squeeze=True)
-            self.rad = np.append(self.rad, out0.data['rad']['data'].mean())
-
-    def run_all(self):
-
-        for cot0 in self.cot:
-            print(cot0)
-            self.run_mca_one(cot0)
-
-    def run_mca_one(self, cot):
-
-        levels    = np.linspace(0.0, 20.0, 21)
-
-        fname_atm = '%s/atm.pk' % self.fdir
-        atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=False)
-
-        fname_abs = '%s/abs.pk' % self.fdir
-        abs0      = abs_16g(wavelength=self.wavelength, fname=fname_abs, atm_obj=atm0, overwrite=False)
-
-        cot_2d    = np.zeros((2, 2), dtype=np.float64); cot_2d[...] = cot
-        cer_2d    = np.zeros((2, 2), dtype=np.float64); cer_2d[...] = 12.0
-        ext_3d    = np.zeros((2, 2, 2), dtype=np.float64)
-
-        fname_les_pk  = '%s/les.pk' % self.fdir
-        cld0          = cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 25, 1], overwrite=False)
-
-        cld0.lev['altitude']['data']    = cld0.lay['altitude']['data'][2:5]
-
-        cld0.lay['x']['data']           = cld0.lay['x']['data'][:2]
-        cld0.lay['y']['data']           = cld0.lay['y']['data'][:2]
-        cld0.lay['nx']['data']          = 2
-        cld0.lay['ny']['data']          = 2
-        cld0.lay['altitude']['data']    = cld0.lay['altitude']['data'][2:4]
-        cld0.lay['pressure']['data']    = cld0.lay['pressure']['data'][2:4]
-        cld0.lay['temperature']['data'] = cld0.lay['temperature']['data'][:2, :2, 2:4]
-        cld0.lay['cot']['data']         = cot_2d
-        cld0.lay['thickness']['data']   = cld0.lay['thickness']['data'][2:4]
-
-        ext_3d[:, :, 0]  = cal_ext(cot_2d, cer_2d)/(cld0.lay['thickness']['data'].sum()*1000.0)
-        ext_3d[:, :, 1]  = cal_ext(cot_2d, cer_2d)/(cld0.lay['thickness']['data'].sum()*1000.0)
-        cld0.lay['extinction']['data']  = ext_3d
-
-        atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-
-        fname_atm3d = '%s/mca_atm_3d.bin' % self.fdir
-        atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % self.fdir, overwrite=True)
-
-        atm_1ds   = [atm1d0]
-        atm_3ds   = [atm3d0]
-
-        mca0 = mcarats_ng(
-                date=datetime.datetime(2016, 8, 29),
-                atm_1ds=atm_1ds,
-                atm_3ds=atm_3ds,
-                Ng=abs0.Ng,
-                target='radiance',
-                surface_albedo=0.0,
-                solar_zenith_angle=29.162360459281544,
-                solar_azimuth_angle=-63.16777636586792,
-                sensor_zenith_angle=0.0,
-                sensor_azimuth_angle=0.0,
-                fdir='%s/%.2f/les_rad_3d' % (self.fdir, cot),
-                Nrun=1,
-                photons=photon_ret,
-                solver='3D',
-                Ncpu=24,
-                mp_mode='py',
-                overwrite=True)
-
-        out0 = mca_out_ng(fname='%s/mca-out-rad-3d_cot-%.2f.h5' % (self.fdir, cot), mca_obj=mca0, abs_obj=abs0, mode='all', squeeze=True, verbose=True)
-
-    def interp_from_rad(self, rad, method='cubic'):
-
-        f = interp1d(self.rad, self.cot, kind=method, bounds_error=False)
-
-        return f(rad)
-
-    def interp_from_cot(self, cot, method='cubic'):
-
-        f = interp1d(self.cot, self.rad, kind=method, bounds_error=False)
-
-        return f(cot)
-
+#/--------------------------------------------------------------\#
+params = {
+                    'name_tag' : os.path.relpath(__file__).replace('.py', ''),
+                  'wavelength' : 600.0,
+                        'date' : datetime.datetime(2019, 10, 5),
+             'sensor_altitude' : 705000.0,
+                      'photon' : 1e9,
+                  'photon_ipa' : 1e7,
+            'cloud_top_height' : 3.0,
+ 'cloud_geometrical_thickness' : 1.0
+        }
+#\--------------------------------------------------------------/#
 
 
 
@@ -528,13 +417,40 @@ if __name__ == '__main__':
     # derive relationship of COT vs Radiance at a given wavelength
     # data stored under <tmp-data/05_cnn-les_rad-sim/01_ret>
     #/----------------------------------------------------------------------------\#
-    # fdir1 = 'tmp-data/%s/01_ret/%3.3d' % (name_tag, wvl0)
-    # f_mca =  func_cot_vs_rad(fdir1, wvl0, run=True)
+    fdir1 = 'tmp-data/%s/01_ret/%3.3d' % (name_tag, wvl0)
+
+    cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
+                          np.arange(2.0, 30.0, 2.0),
+                          np.arange(30.0, 60.0, 5.0),
+                          np.arange(60.0, 100.0, 10.0),
+                          np.arange(100.0, 201.0, 50.0)))
+    cer0  = 10.0
+    f_mca = er3t.rtm.mca.func_ref_vs_cot(
+            cot,
+            cer0=cer0,
+            fdir=fdir1,
+            date=params['date'],
+            wavelength=params['wavelength'],
+            surface_albedo=0.03,
+            solar_zenith_angle=params['solar_zenith_angle'],
+            solar_azimuth_angle=params['solar_azimuth_angle'],
+            sensor_altitude=params['sensor_altitude'],
+            sensor_zenith_angle=0.0,
+            sensor_azimuth_angle=0.0,
+            cloud_top_height=params['cloud_top_height'],
+            cloud_geometrical_thickness=params['cloud_geometrical_thickness'],
+            Nx=2,
+            Ny=2,
+            dx=0.1,
+            dy=0.1,
+            photon_number=params['photon_ipa'],
+            overwrite=False
+            )
     #\----------------------------------------------------------------------------/#
 
 
     # step 2
-    # run ERT for LES scenes at specified coarsening factor
+    # run EaR3T for LES scenes at specified coarsening factor
     # (spatial resolution depends on coarsening factor)
     # raw processing data is stored under <tmp-data/05_cnn-les_rad-sim/02_sim-raw>
     # simulation output data is stored under <tmp-data/05_cnn-les_rad-sim/03_sim-ori>
