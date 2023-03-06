@@ -1068,20 +1068,6 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         cbar = fig.colorbar(cs, cax=cax)
         #\----------------------------------------------------------------------------/#
 
-        # place holder
-        #/----------------------------------------------------------------------------\#
-        # ax8 = fig.add_subplot(448)
-        # cs = ax8.imshow(vaa.T, origin='lower', cmap='jet', zorder=0, extent=extent)
-        # ax8.set_xlim((extent[:2]))
-        # ax8.set_ylim((extent[2:]))
-        # ax8.set_xlabel('Longitude [$^\circ$]')
-        # ax8.set_ylabel('Latitude [$^\circ$]')
-        # ax8.set_title('Viewing Azimuth [$^\circ$]')
-
-        # divider = make_axes_locatable(ax8)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
 
         # cot ipa0
         #/----------------------------------------------------------------------------\#
@@ -1128,20 +1114,6 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         cbar = fig.colorbar(cs, cax=cax)
         #\----------------------------------------------------------------------------/#
 
-        # place holder
-        #/----------------------------------------------------------------------------\#
-        # ax12 = fig.add_subplot(4, 4, 12)
-        # cs = ax12.imshow(sfh.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=5.0)
-        # ax12.set_xlim((extent[:2]))
-        # ax12.set_ylim((extent[2:]))
-        # ax12.set_xlabel('Longitude [$^\circ$]')
-        # ax12.set_ylabel('Latitude [$^\circ$]')
-        # ax12.set_title('Surface Height [km]')
-
-        # divider = make_axes_locatable(ax12)
-        # cax = divider.append_axes('right', '5%', pad='3%')
-        # cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
 
         # cot_ipa
         #/----------------------------------------------------------------------------\#
