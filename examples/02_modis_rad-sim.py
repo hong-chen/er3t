@@ -64,7 +64,7 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 2e8,
+           'photon' : 1e9,
              'Ncpu' : 12,
        'photon_ipa' : 1e7,
           'cot_ipa' : np.concatenate((       \
@@ -806,11 +806,11 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     cot_ipa0[indices_x[logic_thick], indices_y[logic_thick]] = f_mca_thick.get_cot_from_ref(ref_cld_norm[logic_thick])
     cot_ipa0[indices_x[logic_thin] , indices_y[logic_thin]]  = f_mca_thin.get_cot_from_ref(ref_cld_norm[logic_thin])
 
-    logic_out = (cot_ipa0<cot[0]) | (cot_ipa0>cot[-1])
+    logic_out = (cot_ipa0<params['cot_ipa'][0]) | (cot_ipa0>params['cot_ipa'][-1])
     logic_low = (logic_out) & (ref_2d<np.median(ref_2d[indices_x, indices_y]))
     logic_high = logic_out & np.logical_not(logic_low)
-    cot_ipa0[logic_low]  = cot[0]
-    cot_ipa0[logic_high] = cot[-1]
+    cot_ipa0[logic_low]  = params['cot_ipa'][0]
+    cot_ipa0[logic_high] = params['cot_ipa'][-1]
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -1466,8 +1466,8 @@ def main_post(wvl=params['wavelength'], plot=False):
             ax1.imshow(rad_mod.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
             ax1.set_xlabel('Longititude [$^\circ$]')
             ax1.set_ylabel('Latitude [$^\circ$]')
-            ax1.set_xlim(extent[:2])
-            ax1.set_ylim(extent[2:])
+            ax1.set_xlim((extent[0]+0.1, extent[1]-0.1))
+            ax1.set_ylim((extent[2]+0.1, extent[3]-0.1))
             ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
             ax1.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
             ax1.set_title('Measured Radiance')
@@ -1479,8 +1479,8 @@ def main_post(wvl=params['wavelength'], plot=False):
             ax2.imshow(rad_rtm_ipa.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
             ax2.set_xlabel('Longititude [$^\circ$]')
             ax2.set_ylabel('Latitude [$^\circ$]')
-            ax2.set_xlim(extent[:2])
-            ax2.set_ylim(extent[2:])
+            ax2.set_xlim((extent[0]+0.1, extent[1]-0.1))
+            ax2.set_ylim((extent[2]+0.1, extent[3]-0.1))
             ax2.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
             ax2.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
             ax2.set_title('Simulated IPA Radiance')
@@ -1488,7 +1488,7 @@ def main_post(wvl=params['wavelength'], plot=False):
 
             # heatmap: rad_sim_ipa vs rad_obs
             #/--------------------------------------------------------------\#
-            logic = (lon_mod>=extent[0]) & (lon_mod<=extent[1]) & (lat_mod>=extent[2]) & (lat_mod<=extent[3])
+            logic = (lon_mod>=extent[0]+0.1) & (lon_mod<=extent[1]-0.1) & (lat_mod>=extent[2]+0.1) & (lat_mod<=extent[3]-0.1)
 
             xedges = np.arange(-0.01, 0.81, 0.005)
             yedges = np.arange(-0.01, 0.81, 0.005)
@@ -1516,8 +1516,8 @@ def main_post(wvl=params['wavelength'], plot=False):
         ax4.imshow(rad_mod.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
         ax4.set_xlabel('Longititude [$^\circ$]')
         ax4.set_ylabel('Latitude [$^\circ$]')
-        ax4.set_xlim(extent[:2])
-        ax4.set_ylim(extent[2:])
+        ax4.set_xlim((extent[0]+0.1, extent[1]-0.1))
+        ax4.set_ylim((extent[2]+0.1, extent[3]-0.1))
         ax4.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
         ax4.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
         ax4.set_title('Measured Radiance')
@@ -1530,8 +1530,8 @@ def main_post(wvl=params['wavelength'], plot=False):
         ax5.imshow(rad_rtm_3d.T, cmap='viridis', extent=extent, origin='lower', vmin=0.0, vmax=0.5)
         ax5.set_xlabel('Longititude [$^\circ$]')
         ax5.set_ylabel('Latitude [$^\circ$]')
-        ax5.set_xlim(extent[:2])
-        ax5.set_ylim(extent[2:])
+        ax5.set_xlim((extent[0]+0.1, extent[1]-0.1))
+        ax5.set_ylim((extent[2]+0.1, extent[3]-0.1))
         ax5.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
         ax5.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
         ax5.set_title('Simulated 3D Radiance')
@@ -1540,7 +1540,7 @@ def main_post(wvl=params['wavelength'], plot=False):
 
         # heatmap: rad_sim_3d vs rad_obs
         #/--------------------------------------------------------------\#
-        logic = (lon_mod>=extent[0]) & (lon_mod<=extent[1]) & (lat_mod>=extent[2]) & (lat_mod<=extent[3])
+        logic = (lon_mod>=extent[0]+0.1) & (lon_mod<=extent[1]-0.1) & (lat_mod>=extent[2]+0.1) & (lat_mod<=extent[3]-0.1)
 
         xedges = np.arange(-0.01, 0.81, 0.005)
         yedges = np.arange(-0.01, 0.81, 0.005)

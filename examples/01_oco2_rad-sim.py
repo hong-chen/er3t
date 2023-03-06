@@ -918,12 +918,6 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     # two relationships: one for geometrically thick clouds, one for geometrically thin clouds
     # ipa relationship of reflectance vs cloud optical thickness
     #/--------------------------------------------------------------\#
-    cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
-                          np.arange(2.0, 30.0, 2.0),
-                          np.arange(30.0, 60.0, 5.0),
-                          np.arange(60.0, 100.0, 10.0),
-                          np.arange(100.0, 201.0, 50.0)))
-
     dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
     dy = np.pi*6378.1*(lat_2d[0, 1]-lat_2d[0, 0])/180.0
 
@@ -980,11 +974,11 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     cot_ipa0[indices_x[logic_thick], indices_y[logic_thick]] = f_mca_thick.get_cot_from_ref(ref_cld_norm[logic_thick])
     cot_ipa0[indices_x[logic_thin] , indices_y[logic_thin]]  = f_mca_thin.get_cot_from_ref(ref_cld_norm[logic_thin])
 
-    logic_out = (cot_ipa0<cot[0]) | (cot_ipa0>cot[-1])
+    logic_out = (cot_ipa0<params['cot_ipa'][0]) | (cot_ipa0>params['cot_ipa'][-1])
     logic_low = (logic_out) & (ref_2d<np.median(ref_2d[indices_x, indices_y]))
     logic_high = logic_out & np.logical_not(logic_low)
-    cot_ipa0[logic_low]  = cot[0]
-    cot_ipa0[logic_high] = cot[-1]
+    cot_ipa0[logic_low]  = params['cot_ipa'][0]
+    cot_ipa0[logic_high] = params['cot_ipa'][-1]
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
