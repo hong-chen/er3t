@@ -1412,7 +1412,7 @@ def main_sim(wvl=params['wavelength'], run_ipa=False):
 
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
-    # cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
+    cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
     if run_ipa:
         cal_mca_rad(sat0, wvl, 1e10, fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#

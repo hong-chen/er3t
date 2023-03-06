@@ -982,9 +982,40 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     #\----------------------------------------------------------------------------/#
 
 
-    # Parallax and wind correction (for the cloudy pixels detected previously)
+    # for IPA calculation (only wind correction)
     #/----------------------------------------------------------------------------\#
+    # wind correction
+    # calculate new lon_corr, lat_corr based on wind speed
+    #/--------------------------------------------------------------\#
+    lon_corr, lat_corr  = wind_corr(lon_cld, lat_cld, np.nanmean(u_10m), np.nanmean(v_10m), delta_t)
+    #\--------------------------------------------------------------/#
 
+    # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
+    #/--------------------------------------------------------------\#
+    Nx, Ny = ref_2d.shape
+    cot_ipa_ = np.zeros_like(ref_2d)
+    cer_ipa_ = np.zeros_like(ref_2d)
+    cth_ipa_ = np.zeros_like(ref_2d)
+    cld_msk_  = np.zeros(ref_2d.shape, dtype=np.int32)
+    for i in range(indices_x.size):
+        ix = indices_x[i]
+        iy = indices_y[i]
+
+        lon_corr0 = lon_corr[i]
+        lat_corr0 = lat_corr[i]
+        ix_corr = int((lon_corr0-lon_2d[0, 0])//(lon_2d[1, 0]-lon_2d[0, 0]))
+        iy_corr = int((lat_corr0-lat_2d[0, 0])//(lat_2d[0, 1]-lat_2d[0, 0]))
+        if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
+            cot_ipa_[ix_corr, iy_corr] = cot_ipa0[ix, iy]
+            cer_ipa_[ix_corr, iy_corr] = cer_ipa0[ix, iy]
+            cth_ipa_[ix_corr, iy_corr] = cth_ipa0[ix, iy]
+            cld_msk_[ix_corr, iy_corr] = 1
+    #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
+
+    # for 3D calculation (parallax correction and wind correction)
+    #/----------------------------------------------------------------------------\#
     # parallax correction
     # calculate new lon_corr, lat_corr based on cloud, surface and sensor geometries
     #/--------------------------------------------------------------\#
@@ -1030,14 +1061,14 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
         ix = indices_x[i]
         iy = indices_y[i]
         if (ix>=Npixel) and (ix<Nx-Npixel) and (iy>=Npixel) and (iy<Ny-Npixel) and \
-           (cot_ipa[ix, iy] == 0.0) and (cot_ipa0[ix, iy] > 0.0):
-               data_cot_ipa0 = cot_ipa0[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
+           (cot_ipa[ix, iy] == 0.0) and (cot_ipa_[ix, iy] > 0.0):
+               data_cot_ipa_ = cot_ipa_[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
 
                data_cot_ipa  = cot_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
                data_cer_ipa  = cer_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
                data_cth_ipa  = cth_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
 
-               logic_cld0 = (data_cot_ipa0>0.0)
+               logic_cld0 = (data_cot_ipa_>0.0)
                logic_cld  = (data_cot_ipa>0.0)
 
                if (logic_cld0.sum() > int(0.7 * logic_cld0.size)) and \
@@ -1057,10 +1088,11 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
         f0['mod/cld/cot_ipa'] = cot_ipa
         f0['mod/cld/cer_ipa'] = cer_ipa
         f0['mod/cld/cth_ipa'] = cth_ipa
-        f0['mod/cld/cot_ipa0'] = cot_ipa0
-        f0['mod/cld/cer_ipa0'] = cer_ipa0
-        f0['mod/cld/cth_ipa0'] = cth_ipa0
+        f0['mod/cld/cot_ipa0'] = cot_ipa_
+        f0['mod/cld/cer_ipa0'] = cer_ipa_
+        f0['mod/cld/cth_ipa0'] = cth_ipa_
         f0['mod/cld/logic_cld'] = (cld_msk==1)
+        f0['mod/cld/logic_cld0'] = (cld_msk_==1)
     except:
         del(f0['mod/cld/cot_ipa'])
         del(f0['mod/cld/cer_ipa'])
@@ -1069,6 +1101,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
         del(f0['mod/cld/cer_ipa0'])
         del(f0['mod/cld/cth_ipa0'])
         del(f0['mod/cld/logic_cld'])
+        del(f0['mod/cld/logic_cld0'])
         f0['mod/cld/cot_ipa'] = cot_ipa
         f0['mod/cld/cer_ipa'] = cer_ipa
         f0['mod/cld/cth_ipa'] = cth_ipa
@@ -1076,6 +1109,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
         f0['mod/cld/cer_ipa0'] = cer_ipa0
         f0['mod/cld/cth_ipa0'] = cth_ipa0
         f0['mod/cld/logic_cld'] = (cld_msk==1)
+        f0['mod/cld/logic_cld0'] = (cld_msk_==1)
     try:
         g0 = f0.create_group('cld_msk')
         g0['indices_x0'] = indices_x0
@@ -1568,7 +1602,7 @@ def main_pre(oco_band='o2a'):
     #   mod/sfc/lon ------- : Dataset  (666, 666)
     #
     #/----------------------------------------------------------------------------\#
-    # cdata_sat_raw(oco_band=oco_band, plot=True)
+    cdata_sat_raw(oco_band=oco_band, plot=True)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1764,7 +1798,7 @@ if __name__ == '__main__':
     #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim/3d
     #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim/ipa
     #/----------------------------------------------------------------------------\#
-    # main_sim()
+    main_sim()
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for OCO-2, after run
