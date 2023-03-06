@@ -1153,6 +1153,29 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
         g0['cot'] = f_mca_thin.cot
         g0['ref'] = f_mca_thin.ref
         g0['ref_std'] = f_mca_thin.ref_std
+    try:
+        g0 = f0.create_group('cld_corr')
+        g0['lon_ori'] = lon_cld
+        g0['lat_ori'] = lat_cld
+        g0['lon_corr_p'] = lon_corr_p
+        g0['lat_corr_p'] = lat_corr_p
+        g0['lon_corr'] = lon_corr
+        g0['lat_corr'] = lat_corr
+    except:
+        del(f0['cld_corr/lon_ori'])
+        del(f0['cld_corr/lat_ori'])
+        del(f0['cld_corr/lon_corr_p'])
+        del(f0['cld_corr/lat_corr_p'])
+        del(f0['cld_corr/lon_corr'])
+        del(f0['cld_corr/lat_corr'])
+        del(f0['cld_corr'])
+        g0 = f0.create_group('cld_corr')
+        g0['lon_ori'] = lon_cld
+        g0['lat_ori'] = lat_cld
+        g0['lon_corr_p'] = lon_corr_p
+        g0['lat_corr_p'] = lat_corr_p
+        g0['lon_corr'] = lon_corr
+        g0['lat_corr'] = lat_corr
     f0.close()
     #\----------------------------------------------------------------------------/#
 
@@ -1798,7 +1821,7 @@ if __name__ == '__main__':
     #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim/3d
     #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim/ipa
     #/----------------------------------------------------------------------------\#
-    main_sim()
+    # main_sim()
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for OCO-2, after run
