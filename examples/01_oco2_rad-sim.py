@@ -1561,11 +1561,12 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', photon
     # solar zenith/azimuth angles and sensor zenith/azimuth angles
     #/----------------------------------------------------------------------------\#
     f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
-    sza = f['oco/geo/sza'][...][f['oco/logic'][...]].mean()
-    saa = f['oco/geo/saa'][...][f['oco/logic'][...]].mean()
+    logic_valid = f['oco/logic'][...]
+    sza = f['oco/geo/sza'][...][logic_valid].mean()
+    saa = f['oco/geo/saa'][...][logic_valid].mean()
     if solver.lower() == '3d':
-        vza = f['oco/geo/vza'][...][f['oco/logic'][...]].mean()
-        vaa = f['oco/geo/vaa'][...][f['oco/logic'][...]].mean()
+        vza = f['oco/geo/vza'][...][logic_valid].mean()
+        vaa = f['oco/geo/vaa'][...][logic_valid].mean()
     elif solver.lower() == 'ipa':
         vza = 0.0
         vaa = 0.0
