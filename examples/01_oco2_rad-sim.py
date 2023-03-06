@@ -70,6 +70,13 @@ params = {
              'Ncpu' : 12,
        'photon_ipa' : 1e8,
    'wavelength_ipa' : 650.0,
+          'cot_ipa' : np.concatenate((       \
+               np.arange(0.0, 2.0, 0.5),     \
+               np.arange(2.0, 30.0, 2.0),    \
+               np.arange(30.0, 60.0, 5.0),   \
+               np.arange(60.0, 100.0, 10.0), \
+               np.arange(100.0, 201.0, 50.0) \
+               )),
         }
 #\--------------------------------------------------------------/#
 
@@ -923,7 +930,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     fdir  = 'tmp-data/ipa-%06.1fnm_thick' % (params['wavelength_ipa'])
 
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
-            cot,
+            params['cot_ipa'],
             cer0=25.0,
             dx=dx,
             dy=dy,
@@ -944,7 +951,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
 
     fdir  = 'tmp-data/ipa-%06.1fnm_thin' % (params['wavelength_ipa'])
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
-            cot,
+            params['cot_ipa'],
             cer0=10.0,
             dx=dx,
             dy=dy,
@@ -1054,9 +1061,11 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
             cld_msk[ix_corr, iy_corr] = 1
     #\--------------------------------------------------------------/#
 
-    # fill-in the empty cracks due to parallax and wind correction
+    # fill-in the empty cracks originated from parallax and wind correction
     #/--------------------------------------------------------------\#
     Npixel = 2
+    percent_a = 0.7
+    percent_b = 0.7
     for i in range(indices_x.size):
         ix = indices_x[i]
         iy = indices_y[i]
@@ -1071,8 +1080,8 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
                logic_cld0 = (data_cot_ipa_>0.0)
                logic_cld  = (data_cot_ipa>0.0)
 
-               if (logic_cld0.sum() > int(0.7 * logic_cld0.size)) and \
-                  (logic_cld.sum()  > int(0.7 * logic_cld.size)):
+               if (logic_cld0.sum() > int(percent_a * logic_cld0.size)) and \
+                  (logic_cld.sum()  > int(percent_b * logic_cld.size)):
                    cot_ipa[ix, iy] = data_cot_ipa[logic_cld].mean()
                    cer_ipa[ix, iy] = data_cer_ipa[logic_cld].mean()
                    cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
