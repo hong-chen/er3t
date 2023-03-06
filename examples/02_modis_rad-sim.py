@@ -67,6 +67,13 @@ params = {
            'photon' : 2e8,
              'Ncpu' : 12,
        'photon_ipa' : 1e7,
+          'cot_ipa' : np.concatenate((       \
+               np.arange(0.0, 2.0, 0.5),     \
+               np.arange(2.0, 30.0, 2.0),    \
+               np.arange(30.0, 60.0, 5.0),   \
+               np.arange(60.0, 100.0, 10.0), \
+               np.arange(100.0, 201.0, 50.0) \
+               )),
         }
 #\--------------------------------------------------------------/#
 
@@ -743,19 +750,13 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     # two relationships: one for geometrically thick clouds, one for geometrically thin clouds
     # ipa relationship of reflectance vs cloud optical thickness
     #/--------------------------------------------------------------\#
-    cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
-                          np.arange(2.0, 30.0, 2.0),
-                          np.arange(30.0, 60.0, 5.0),
-                          np.arange(60.0, 100.0, 10.0),
-                          np.arange(100.0, 201.0, 50.0)))
-
     dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
     dy = np.pi*6378.1*(lat_2d[0, 1]-lat_2d[0, 0])/180.0
 
     fdir  = 'tmp-data/ipa-%06.1fnm_thick' % (params['wavelength'])
 
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
-            cot,
+            params['cot_ipa'],
             cer0=25.0,
             dx=dx,
             dy=dy,
@@ -776,7 +777,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
 
     fdir  = 'tmp-data/ipa-%06.1fnm_thin' % (params['wavelength'])
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
-            cot,
+            params['cot_ipa'],
             cer0=10.0,
             dx=dx,
             dy=dy,
@@ -825,6 +826,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
     #\--------------------------------------------------------------/#
 
+
     # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
     #/--------------------------------------------------------------\#
     Nx, Ny = ref_2d.shape
@@ -847,9 +849,12 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             cld_msk[ix_corr, iy_corr] = 1
     #\--------------------------------------------------------------/#
 
+
     # fill-in the empty cracks due to parallax and wind correction
     #/--------------------------------------------------------------\#
     Npixel = 2
+    percent_a = 0.7
+    percent_b = 0.7
     for i in range(indices_x.size):
         ix = indices_x[i]
         iy = indices_y[i]
@@ -864,8 +869,8 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
                logic_cld0 = (data_cot_ipa0>0.0)
                logic_cld  = (data_cot_ipa>0.0)
 
-               if (logic_cld0.sum() > int(0.7 * logic_cld0.size)) and \
-                  (logic_cld.sum()  > int(0.7 * logic_cld.size)):
+               if (logic_cld0.sum() > int(percent_a * logic_cld0.size)) and \
+                  (logic_cld.sum()  > int(percent_b * logic_cld.size)):
                    cot_ipa[ix, iy] = data_cot_ipa[logic_cld].mean()
                    cer_ipa[ix, iy] = data_cer_ipa[logic_cld].mean()
                    cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
