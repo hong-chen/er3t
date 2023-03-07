@@ -1609,6 +1609,8 @@ if __name__ == '__main__':
 
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
+    #   b. <02_modis_rad-sim_<cdata_sat_raw>.png> will be created under current directory
+    #   c. <02_modis_rad-sim_<cdata_cld_ipa>.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
     main_pre()
     #\----------------------------------------------------------------------------/#
@@ -1620,7 +1622,7 @@ if __name__ == '__main__':
     #   require a lot of photons (thus long computational time) to achieve relatively
     #   high accuracy
     #/----------------------------------------------------------------------------\#
-    main_sim(run_ipa=True)
+    main_sim(run_ipa=False)
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
