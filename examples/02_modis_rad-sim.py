@@ -64,7 +64,7 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 1e9,
+           'photon' : 5e9,
              'Ncpu' : 12,
        'photon_ipa' : 1e7,
           'cot_ipa' : np.concatenate((       \
@@ -584,9 +584,9 @@ def cloud_mask_rgb(
         lon_2d,
         lat_2d,
         frac=0.5,
-        a_r=1.06,
-        a_g=1.06,
-        a_b=1.06,
+        a_r=1.0,
+        a_g=1.0,
+        a_b=1.0,
         logic_good=None
         ):
 
@@ -679,8 +679,8 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     # primary selection (over-selection of cloudy pixels is expected)
     #/--------------------------------------------------------------\#
     cld_frac0 = (np.logical_not(np.isnan(cot_l2)) & (cot_l2>0.0)).sum() / cot_l2.size
-    frac0     = 1.0 - cld_frac0
-    scale_factor = 1.08
+    frac0     = max(0.0, 1.0-cld_frac0*1.2)
+    scale_factor = 1.0
     indices_x0, indices_y0 = cloud_mask_rgb(rgb, extent, lon_2d, lat_2d, frac=frac0, a_r=scale_factor, a_g=scale_factor, a_b=scale_factor)
 
     lon_cld0 = lon_2d[indices_x0, indices_y0]
@@ -708,7 +708,12 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     Nx, Ny = ref_2d.shape
     indices_x = indices_x0[logic]
     indices_y = indices_y0[logic]
+
     #\--------------------------------------------------------------/#
+    msg = '\nMessage [cdata_cld_ipa]: cloud fraction from MODIS L2 data is %.2f%%.' % (cld_frac0*100.0)
+    print(msg)
+    msg = 'Message [cdata_cld_ipa]: new cloud fraction is %.2f%%.' % (indices_x.size/lon_2d.size*100.0)
+    print(msg)
     #\----------------------------------------------------------------------------/#
 
 
@@ -742,12 +747,18 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     cth_ipa0 = np.zeros_like(ref_2d)
     cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cth_, lon_2d_, lat_2d_)
     cth_ipa0[np.isnan(cth_ipa0)] = 0.0
+
+    msg = 'Message [cdata_cld_ipa]: cloud top height is retrieved at <cth_ipa0>.'
+    print(msg)
     #\--------------------------------------------------------------/#
 
     # cer_ipa0
     #/--------------------------------------------------------------\#
     cer_ipa0 = np.zeros_like(ref_2d)
     cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cer_l2, lon_2d_, lat_2d_)
+
+    msg = 'Message [cdata_cld_ipa]: cloud effective radius is retrieved at <cer_ipa0>.'
+    print(msg)
     #\--------------------------------------------------------------/#
 
     # cot_ipa0
@@ -815,6 +826,9 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     logic_high = logic_out & np.logical_not(logic_low)
     cot_ipa0[logic_low]  = params['cot_ipa'][0]
     cot_ipa0[logic_high] = params['cot_ipa'][-1]
+
+    msg = 'Message [cdata_cld_ipa]: cloud optical thickness is retrieved at <cot_ipa0>.'
+    print(msg)
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -851,6 +865,9 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
             cth_ipa[ix_corr, iy_corr] = cth_ipa0[ix, iy]
             cld_msk[ix_corr, iy_corr] = 1
+
+    msg = 'Message [cdata_cld_ipa]: parallax correction is performed at <cot_ipa>, <cer_ipa>, and <cth_ipa>.'
+    print(msg)
     #\--------------------------------------------------------------/#
 
 
@@ -879,6 +896,9 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
                    cer_ipa[ix, iy] = data_cer_ipa[logic_cld].mean()
                    cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
                    cld_msk[ix, iy] = 1
+
+    msg = 'Message [cdata_cld_ipa]: artifacts of "cloud cracks" from parallax correction are fixed.'
+    print(msg)
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -956,6 +976,8 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     #\----------------------------------------------------------------------------/#
 
     if plot:
+
+        logic_nan1 = np.logical_not((cld_msk==1))
 
         # figure
         #/----------------------------------------------------------------------------\#
@@ -1122,6 +1144,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         # cot_ipa
         #/----------------------------------------------------------------------------\#
         ax13 = fig.add_subplot(4, 4, 13)
+        cot_ipa[logic_nan1] = np.nan
         cs = ax13.imshow(cot_ipa.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=50.0)
         ax13.set_xlim((extent[:2]))
         ax13.set_ylim((extent[2:]))
@@ -1137,6 +1160,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         # cer_ipa
         #/----------------------------------------------------------------------------\#
         ax14 = fig.add_subplot(4, 4, 14)
+        cer_ipa[logic_nan1] = np.nan
         cs = ax14.imshow(cer_ipa.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=30.0)
         ax14.set_xlim((extent[:2]))
         ax14.set_ylim((extent[2:]))
@@ -1152,6 +1176,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         # cth_ipa
         #/----------------------------------------------------------------------------\#
         ax15 = fig.add_subplot(4, 4, 15)
+        cth_ipa[logic_nan1] = np.nan
         cs = ax15.imshow(cth_ipa.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=15.0)
         ax15.set_xlim((extent[:2]))
         ax15.set_ylim((extent[2:]))
@@ -1355,7 +1380,7 @@ def main_pre(wvl=params['wavelength'], plot=True):
     #   mod/sfc/lon ------- : Dataset  (666, 666)
     #
     #/----------------------------------------------------------------------------\#
-    cdata_sat_raw(wvl=wvl, plot=plot)
+    # cdata_sat_raw(wvl=wvl, plot=plot)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1579,7 +1604,7 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
@@ -1589,7 +1614,7 @@ if __name__ == '__main__':
     #   require a lot of photons (thus long computational time) to achieve relatively
     #   high accuracy
     #/----------------------------------------------------------------------------\#
-    main_sim(run_ipa=False)
+    main_sim(run_ipa=True)
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
