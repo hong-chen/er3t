@@ -977,9 +977,9 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
 
     if plot:
 
-        cld_msk0 = np.zeros(ref_2d.shape, dtype=np.int32)
-        cld_msk0[indices_x, indices_y] = 1
-        logic_nan0 = (cld_msk0 == 0)
+        cld_msk0 = np.ones(ref_2d.shape, dtype=np.int32)
+        cld_msk0[indices_x, indices_y] = 0
+        logic_nan0 = (cld_msk0 == 1)
         logic_nan1 = np.logical_not((cld_msk==1))
 
         # figure

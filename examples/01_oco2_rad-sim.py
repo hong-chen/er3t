@@ -846,8 +846,8 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     # primary selection (over-selection of cloudy pixels is expected)
     #/--------------------------------------------------------------\#
     cld_frac0 = (np.logical_not(np.isnan(cot_l2)) & (cot_l2>0.0)).sum() / cot_l2.size
-    frac0     = 1.0 - cld_frac0
-    scale_factor = 1.08
+    frac0     = max(0.0, 1.0-cld_frac0*1.2)
+    scale_factor = 1.0
     indices_x0, indices_y0 = cloud_mask_rgb(rgb, extent, lon_2d, lat_2d, frac=frac0, a_r=scale_factor, a_g=scale_factor, a_b=scale_factor)
 
     lon_cld0 = lon_2d[indices_x0, indices_y0]
@@ -876,6 +876,10 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     indices_x = indices_x0[logic]
     indices_y = indices_y0[logic]
     #\--------------------------------------------------------------/#
+    msg = '\nMessage [cdata_cld_ipa]: cloud fraction from MODIS L2 data is %.2f%%.' % (cld_frac0*100.0)
+    print(msg)
+    msg = 'Message [cdata_cld_ipa]: new cloud fraction is %.2f%%.' % (indices_x.size/lon_2d.size*100.0)
+    print(msg)
     #\----------------------------------------------------------------------------/#
 
 
@@ -908,13 +912,20 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
 
     cth_ipa0 = np.zeros_like(ref_2d)
     cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cth_, lon_2d_, lat_2d_)
-    cth_ipa0[np.isnan(cth_ipa0)] = 0.0
+    cth_ipa0[np.isnan(cth_ipa0)] = np.nanmean(cth_ipa0[indices_x, indices_y])
+
+    msg = 'Message [cdata_cld_ipa]: cloud top height is retrieved at <cth_ipa0>.'
+    print(msg)
     #\--------------------------------------------------------------/#
 
     # cer_ipa0
     #/--------------------------------------------------------------\#
     cer_ipa0 = np.zeros_like(ref_2d)
     cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cer_l2, lon_2d_, lat_2d_)
+    cer_ipa0[np.isnan(cer_ipa0)] = np.nanmean(cer_ipa0[indices_x, indices_y])
+
+    msg = 'Message [cdata_cld_ipa]: cloud effective radius is retrieved at <cer_ipa0>.'
+    print(msg)
     #\--------------------------------------------------------------/#
 
     # cot_ipa0
@@ -982,6 +993,9 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     logic_high = logic_out & np.logical_not(logic_low)
     cot_ipa0[logic_low]  = params['cot_ipa'][0]
     cot_ipa0[logic_high] = params['cot_ipa'][-1]
+
+    msg = 'Message [cdata_cld_ipa]: cloud optical thickness is retrieved at <cot_ipa0>.'
+    print(msg)
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -991,8 +1005,6 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     # wind correction
     # calculate new lon_corr, lat_corr based on wind speed
     #/--------------------------------------------------------------\#
-    print(np.nanmedian(u_10m), np.nanmedian(v_10m))
-    print(np.nanmean(u_10m), np.nanmean(v_10m))
     lon_corr, lat_corr  = wind_corr(lon_cld, lat_cld, np.nanmedian(u_10m), np.nanmedian(v_10m), delta_t)
     #\--------------------------------------------------------------/#
 
@@ -1058,6 +1070,9 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
             cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
             cth_ipa[ix_corr, iy_corr] = cth_ipa0[ix, iy]
             cld_msk[ix_corr, iy_corr] = 1
+
+    msg = 'Message [cdata_cld_ipa]: parallax correction is performed at <cot_ipa>, <cer_ipa>, and <cth_ipa>.'
+    print(msg)
     #\--------------------------------------------------------------/#
 
     # fill-in the empty cracks originated from parallax and wind correction
@@ -1085,6 +1100,9 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
                    cer_ipa[ix, iy] = data_cer_ipa[logic_cld].mean()
                    cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
                    cld_msk[ix, iy] = 1
+
+    msg = 'Message [cdata_cld_ipa]: artifacts of "cloud cracks" from parallax correction are fixed.'
+    print(msg)
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
