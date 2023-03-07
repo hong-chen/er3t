@@ -577,11 +577,13 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
 
 
 
+
 def cloud_mask_rgb(
         rgb,
         extent,
         lon_2d,
         lat_2d,
+        frac=0.5,
         a_r=1.06,
         a_g=1.06,
         a_b=1.06,
@@ -599,9 +601,9 @@ def cloud_mask_rgb(
     _g = rgb[:, :, 1]
     _b = rgb[:, :, 2]
 
-    logic_rgb_nan0 = (_r<=(np.median(_r)*a_r)) |\
-                     (_g<=(np.median(_g)*a_g)) |\
-                     (_b<=(np.median(_b)*a_b))
+    logic_rgb_nan0 = (_r<=(np.quantile(_r, frac)*a_r)) |\
+                     (_g<=(np.quantile(_g, frac)*a_g)) |\
+                     (_b<=(np.quantile(_b, frac)*a_b))
     logic_rgb_nan = np.flipud(logic_rgb_nan0).T
 
     if logic_good is not None:
@@ -676,8 +678,10 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     #/----------------------------------------------------------------------------\#
     # primary selection (over-selection of cloudy pixels is expected)
     #/--------------------------------------------------------------\#
+    cld_frac0 = (np.logical_not(np.isnan(cot_l2)) & (cot_l2>0.0)).sum() / cot_l2.size
+    frac0     = 1.0 - cld_frac0
     scale_factor = 1.08
-    indices_x0, indices_y0 = cloud_mask_rgb(rgb, extent, lon_2d, lat_2d, a_r=scale_factor, a_g=scale_factor, a_b=scale_factor)
+    indices_x0, indices_y0 = cloud_mask_rgb(rgb, extent, lon_2d, lat_2d, frac=frac0, a_r=scale_factor, a_g=scale_factor, a_b=scale_factor)
 
     lon_cld0 = lon_2d[indices_x0, indices_y0]
     lat_cld0 = lat_2d[indices_x0, indices_y0]
