@@ -66,7 +66,7 @@ params = {
        'wavelength' : 768.5151,
          'oco_band' : 'o2a',
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 1e9,
+           'photon' : 5e9,
              'Ncpu' : 12,
        'photon_ipa' : 1e8,
    'wavelength_ipa' : 650.0,
@@ -988,7 +988,9 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     # wind correction
     # calculate new lon_corr, lat_corr based on wind speed
     #/--------------------------------------------------------------\#
-    lon_corr, lat_corr  = wind_corr(lon_cld, lat_cld, np.nanmean(u_10m), np.nanmean(v_10m), delta_t)
+    print(np.nanmedian(u_10m), np.nanmedian(v_10m))
+    print(np.nanmean(u_10m), np.nanmean(v_10m))
+    lon_corr, lat_corr  = wind_corr(lon_cld, lat_cld, np.nanmedian(u_10m), np.nanmedian(v_10m), delta_t)
     #\--------------------------------------------------------------/#
 
     # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
@@ -1030,7 +1032,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     # wind correction
     # calculate new lon_corr, lat_corr based on wind speed
     #/--------------------------------------------------------------\#
-    lon_corr, lat_corr  = wind_corr(lon_corr_p, lat_corr_p, np.nanmean(u_10m), np.nanmean(v_10m), delta_t)
+    lon_corr, lat_corr  = wind_corr(lon_corr_p, lat_corr_p, np.nanmedian(u_10m), np.nanmedian(v_10m), delta_t)
     #\--------------------------------------------------------------/#
 
     # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
@@ -1678,16 +1680,16 @@ def main_sim(oco_band='o2a'):
     index = np.argmin(np.abs(wvls-params['wavelength']))
     wavelength = wvls[index]
     cal_mca_rad(sat0, wavelength, fname_idl, photon=params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D', overwrite=True)
-    cal_mca_rad(sat0, wavelength, fname_idl, photon=1e10            , fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
+    cal_mca_rad(sat0, wavelength, fname_idl, photon=2e10            , fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
-def main_post(plot=False):
+def main_post(plot=True):
 
     wvl0 = params['wavelength']
 
     # read in OCO-2 measured radiance
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/pre-data.h5' % name_tag, 'r')
+    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
     extent = f['extent'][...]
     lon_2d = f['lon'][...]
     lat_2d = f['lat'][...]
@@ -1702,13 +1704,13 @@ def main_post(plot=False):
 
     # read in EaR3T simulations (3D and IPA)
     #/----------------------------------------------------------------------------\#
-    fname = 'tmp-data/%s/3d/mca-out-rad-oco2-3d_%.4fnm.h5' % (name_tag, wvl0)
+    fname = 'tmp-data/%s/3d/mca-out-rad-oco2-3d_%.4fnm.h5' % (params['name_tag'], wvl0)
     f = h5py.File(fname, 'r')
     rad_3d     = f['mean/rad'][...]
     rad_3d_std = f['mean/rad_std'][...]
     f.close()
 
-    fname = 'tmp-data/%s/ipa/mca-out-rad-oco2-ipa_%.4fnm.h5' % (name_tag, wvl0)
+    fname = 'tmp-data/%s/ipa/mca-out-rad-oco2-ipa_%.4fnm.h5' % (params['name_tag'], wvl0)
     f = h5py.File(fname, 'r')
     rad_ipa    = f['mean/rad'][...]
     rad_ipa_std = f['mean/rad_std'][...]
@@ -1741,7 +1743,7 @@ def main_post(plot=False):
 
     # save data
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/post-data.h5' % name_tag, 'w')
+    f = h5py.File('data/%s/post-data.h5' % params['name_tag'], 'w')
     f['wvl'] = wvl0
     f['lon'] = lon_oco
     f['lat'] = lat_oco
@@ -1787,12 +1789,13 @@ def main_post(plot=False):
         #/----------------------------------------------------------------------------\#
         fig = plt.figure(figsize=(10, 6.18))
         ax1 = fig.add_subplot(111)
-        ax1.plot(lat, mca_rad_ipa, color='b', lw=1.5, alpha=0.5)
-        ax1.fill_between(lat, oco_rad-oco_rad_std, oco_rad+oco_rad_std, color='k', alpha=0.5, lw=0.0)
-        ax1.plot(lat, oco_rad, color='k', lw=1.5, alpha=0.8)
-        ax1.fill_between(lat, mca_rad_3d-mca_rad_3d_std, mca_rad_3d+mca_rad_3d_std, color='r', alpha=0.5, lw=0.0)
-        ax1.plot(lat, mca_rad_3d, color='r', lw=1.5, alpha=0.8)
-        ax1.set_xlim(extent[2:])
+        ax1.fill_between(lat, mca_rad_ipa-mca_rad_ipa_std, mca_rad_ipa+mca_rad_ipa_std, color='b', alpha=0.5, lw=0.0, zorder=0)
+        ax1.fill_between(lat, oco_rad-oco_rad_std        , oco_rad+oco_rad_std        , color='k', alpha=0.5, lw=0.0, zorder=1)
+        ax1.fill_between(lat, mca_rad_3d-mca_rad_3d_std  , mca_rad_3d+mca_rad_3d_std  , color='r', alpha=0.5, lw=0.0, zorder=2)
+        ax1.plot(lat, mca_rad_ipa, color='b', lw=1.5, alpha=0.5, zorder=0)
+        ax1.plot(lat, oco_rad    , color='k', lw=1.5, alpha=0.8, zorder=1)
+        ax1.plot(lat, mca_rad_3d , color='r', lw=1.5, alpha=0.8, zorder=2)
+        ax1.set_xlim(extent[2]+0.1, extent[3]-0.1)
         ax1.set_ylim((0.0, 0.4))
         ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
         ax1.set_xlabel('Latitude [$^\circ$]')
@@ -1805,7 +1808,7 @@ def main_post(plot=False):
                     ]
         ax1.legend(handles=patches_legend, loc='upper right', fontsize=12)
 
-        plt.savefig('%s.png' % name_tag, bbox_inches='tight')
+        plt.savefig('%s.png' % params['name_tag'], bbox_inches='tight')
         plt.close(fig)
         #\----------------------------------------------------------------------------/#
 
@@ -1818,7 +1821,7 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
@@ -1832,7 +1835,7 @@ if __name__ == '__main__':
     #   a. <post-data.h5> will be created under data/01_oco2_rad-sim
     #   b. <01_oco2_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    # main_post(plot=True)
+    main_post(plot=True)
     #\----------------------------------------------------------------------------/#
 
     pass
