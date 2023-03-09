@@ -55,6 +55,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # import cartopy.crs as ccrs
 mpl.use('Agg')
 
+
 import er3t
 
 
@@ -1642,7 +1643,6 @@ def main_pre(oco_band='o2a'):
     # oco/sfc/lat ------------ : Dataset  (377,)
     # oco/sfc/lon ------------ : Dataset  (377,)
     # oco/snd_id ------------- : Dataset  (112, 8)
-    #
     #/----------------------------------------------------------------------------\#
     cdata_sat_raw(oco_band=oco_band, plot=True)
     #\----------------------------------------------------------------------------/#
