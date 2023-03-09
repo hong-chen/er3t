@@ -1,16 +1,16 @@
 """
-by Hong Chen (hong.chen.cu@gmail.com)
+by Hong Chen (hong.chen@lasp.colorado.edu)
 
 This code serves as an example code to reproduce 3D/IPA OCO-2 radiance simulation for App. 1 in Chen et al. (2022).
 
 The processes include:
-    1) automatically download and pre-process satellite data products (~2.2 GB data will be downloaded and
+    1) automatically download and pre-process satellite data products (~1.9 GB data will be downloaded and
        stored under data/01_oco2_rad-sim/download) from NASA data archive
-        a) MODIS-Aqua_rgb_2019-09-02_(-109.60,-106.50,35.90,39.00).png
+        a) MODIS-Aqua_rgb_2019-09-02_(-109.10,-106.90,36.90,39.10).png
         b) MYD02QKM.A2019245.2025.061.2019246161115.hdf
         c) MYD03.A2019245.2025.061.2019246155053.hdf
         d) MYD06_L2.A2019245.2025.061.2019246164334.hdf
-        e) MYD09A1.A2019241.h09v05.006.2019250044127.hdf
+        e) MCD43A3.A2019245.h09v05.061.2020311120758.hdf
         f) oco2_L1bScND_27502a_190902_B10003r_200220035234.h5
         g) oco2_L2MetND_27502a_190902_B10003r_200124030754.h5
         h) oco2_L2StdND_27502a_190902_B10004r_200226231039.h5
@@ -21,11 +21,11 @@ The processes include:
 
     3) `main_post()`: post-process data
         a) extract radiance observations from pre-processed data
-        b) extract radiance simulations of EaR3T
+        b) extract 3D and IPA radiance simulations of EaR3T
         c) plot
 
 This code has been tested under:
-    1) Linux on 2023-03-04 by Hong Chen
+    1) Linux on 2023-03-05 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -53,7 +53,7 @@ from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 # import cartopy.crs as ccrs
-# mpl.use('Agg')
+mpl.use('Agg')
 
 import er3t
 
@@ -66,9 +66,9 @@ params = {
        'wavelength' : 768.5151,
          'oco_band' : 'o2a',
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 5e9,
+           'photon' : 1e9,
              'Ncpu' : 12,
-       'photon_ipa' : 1e8,
+       'photon_ipa' : 1e7,
    'wavelength_ipa' : 650.0,
           'cot_ipa' : np.concatenate((       \
                np.arange(0.0, 2.0, 0.5),     \
@@ -158,13 +158,10 @@ class satellite_download:
             self.fnames['mod_03'] += fnames_03
 
         # MODIS surface product
-        self.fnames['mod_09'] = []
         self.fnames['mod_43'] = []
-        filename_tags_09 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
-        for filename_tag in filename_tags_09:
-            fnames_09 = er3t.util.download_laads_https(self.date, '61/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
+        filename_tags_43 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
+        for filename_tag in filename_tags_43:
             fnames_43 = er3t.util.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            self.fnames['mod_09'] += fnames_09
             self.fnames['mod_43'] += fnames_43
 
         # OCO2 std and met file
@@ -362,12 +359,6 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
     #   band 5: 1230 - 1250 nm, index 4
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
-    mod09 = er3t.util.modis_09a1(fnames=sat0.fnames['mod_09'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_09_0 = er3t.util.grid_by_extent(mod09.data['lon']['data'], mod09.data['lat']['data'], mod09.data['ref']['data'][index_wvl, :], extent=sat0.extent)
-    sfc_09_0[sfc_09_0<0.0] = 0.0
-    lon_2d_sfc, lat_2d_sfc, sfc_09_1 = er3t.util.grid_by_extent(mod09.data['lon']['data'], mod09.data['lat']['data'], mod09.data['ref']['data'][index_wvl_sfc, :], extent=sat0.extent)
-    sfc_09_1[sfc_09_1<0.0] = 0.0
-
     mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
     lon_2d_sfc, lat_2d_sfc, sfc_43_0 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent)
     sfc_43_0[sfc_43_0<0.0] = 0.0
@@ -379,9 +370,7 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
     g3['lon'] = lon_2d_sfc
     g3['lat'] = lat_2d_sfc
 
-    g3['alb_09_%4.4d' % wvl] = sfc_09_0
     g3['alb_43_%4.4d' % wvl] = sfc_43_0
-    g3['alb_09_%4.4d' % wvl_sfc] = sfc_09_1
     g3['alb_43_%4.4d' % wvl_sfc] = sfc_43_1
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
@@ -489,7 +478,6 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
         cth = f0['mod/cld/cth_l2'][...]
         sfh = f0['mod/geo/sfh'][...]
 
-        alb09 = f0['mod/sfc/alb_09_%4.4d' % wvl][...]
         alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
 
         f0.close()
@@ -667,32 +655,17 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
         cbar = fig.colorbar(cs, cax=cax)
         #\----------------------------------------------------------------------------/#
 
-        # surface albedo (MYD09A1, reflectance)
+        # surface albedo (MYD43A3, white sky albedo)
         #/----------------------------------------------------------------------------\#
         ax13 = fig.add_subplot(4, 4, 13)
-        cs = ax13.imshow(alb09.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
+        cs = ax13.imshow(alb43.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
         ax13.set_xlim((extent[:2]))
         ax13.set_ylim((extent[2:]))
         ax13.set_xlabel('Longitude [$^\circ$]')
         ax13.set_ylabel('Latitude [$^\circ$]')
-        ax13.set_title('09A1 Reflectance at %d nm' % wvl_sfc)
+        ax13.set_title('43A3 WSA at %d nm' % wvl_sfc)
 
         divider = make_axes_locatable(ax13)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # surface albedo (MYD43A3, white sky albedo)
-        #/----------------------------------------------------------------------------\#
-        ax14 = fig.add_subplot(4, 4, 14)
-        cs = ax14.imshow(alb43.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
-        ax14.set_xlim((extent[:2]))
-        ax14.set_ylim((extent[2:]))
-        ax14.set_xlabel('Longitude [$^\circ$]')
-        ax14.set_ylabel('Latitude [$^\circ$]')
-        ax14.set_title('43A3 WSA at %d nm' % wvl_sfc)
-
-        divider = make_axes_locatable(ax14)
         cax = divider.append_axes('right', '5%', pad='3%')
         cbar = fig.colorbar(cs, cax=cax)
         #\----------------------------------------------------------------------------/#
@@ -1526,8 +1499,8 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', photon
     f.close()
 
     fname_sfc = '%s/sfc.pk' % fdir
-    mod09 = sat_tmp(data)
-    sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod09, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
+    mod43 = sat_tmp(data)
+    sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod43, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
     sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
@@ -1646,7 +1619,6 @@ def main_pre(oco_band='o2a'):
     #   mod/rad/rad_0650 -- : Dataset  (1196, 1196)
     #   mod/rad/ref_0650 -- : Dataset  (1196, 1196)
     #   mod/rgb ----------- : Dataset  (1386, 1386, 4)
-    #   mod/sfc/alb_09 ---- : Dataset  (666, 666)
     #   mod/sfc/alb_43 ---- : Dataset  (666, 666)
     #   mod/sfc/lat ------- : Dataset  (666, 666)
     #   mod/sfc/lon ------- : Dataset  (666, 666)
@@ -1701,7 +1673,7 @@ def main_sim(oco_band='o2a'):
     index = np.argmin(np.abs(wvls-params['wavelength']))
     wavelength = wvls[index]
     cal_mca_rad(sat0, wavelength, fname_idl, photon=params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D', overwrite=True)
-    cal_mca_rad(sat0, wavelength, fname_idl, photon=2e10            , fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
+    cal_mca_rad(sat0, wavelength, fname_idl, photon=1e10            , fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(plot=True):
@@ -1842,14 +1814,14 @@ if __name__ == '__main__':
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
     #/----------------------------------------------------------------------------\#
-    # main_pre()
+    main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
     #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim/3d
     #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim/ipa
     #/----------------------------------------------------------------------------\#
-    # main_sim()
+    main_sim()
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for OCO-2, after run
