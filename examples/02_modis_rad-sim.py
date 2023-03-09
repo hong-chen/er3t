@@ -1,24 +1,27 @@
 """
-by Hong Chen (hong.chen.cu@gmail.com)
+by Hong Chen (hong.chen@lasp.colorado.edu)
 
 This code serves as an example code to reproduce 3D MODIS radiance simulation for App. 2 in Chen et al. (2022).
 
 The processes include:
-    1) `main_pre()`: automatically download and pre-process satellite data products (~640MB data will be
+    1) `main_pre()`: automatically download and pre-process satellite data products (~390MB data will be
        downloaded and stored under data/02_modis_rad-sim/download) from NASA data archive
-        a) MODIS-Aqua_rgb_2019-09-02_(-109.60,-106.50,35.90,39.00).png
+        a) MODIS-Aqua_rgb_2019-09-02_(-109.10,-106.90,36.90,39.10).png
         b) MYD02QKM.A2019245.2025.061.2019246161115.hdf
         c) MYD03.A2019245.2025.061.2019246155053.hdf
         d) MYD06_L2.A2019245.2025.061.2019246164334.hdf
-        e) MYD09A1.A2019241.h09v05.006.2019250044127.hdf
+        e) MCD43A3.A2019245.h09v05.061.2020311120758.hdf
 
     2) `main_sim()`: run simulation
         a) 3D mode
-        b) IPA mode (turned off by default)
+        b) IPA mode (turned off by default, this can be used
+             for sanity check of IPA radiance self-consistency,
+             but will require a lot of photons to reach decent
+             accuracy)
 
     3) `main_post()`: post-process data
         a) extract radiance observations from pre-processed data
-        b) extract 3D/IPA radiance simulations of EaR3T
+        b) extract 3D (IPA if available) radiance simulations of EaR3T
         c) plot
 
 This code has been tested under:
@@ -64,7 +67,7 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 5e9,
+           'photon' : 1e9,
              'Ncpu' : 12,
        'photon_ipa' : 1e7,
           'cot_ipa' : np.concatenate((       \
@@ -155,13 +158,10 @@ class satellite_download:
             self.fnames['mod_03'] += fnames_03
 
         # MODIS surface product
-        self.fnames['mod_09'] = []
         self.fnames['mod_43'] = []
-        filename_tags_09 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
-        for filename_tag in filename_tags_09:
-            fnames_09 = er3t.util.download_laads_https(self.date, '61/MYD09A1', filename_tag, day_interval=8, fdir_out=self.fdir_out, run=run)
+        filename_tags_43 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
+        for filename_tag in filename_tags_43:
             fnames_43 = er3t.util.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            self.fnames['mod_09'] += fnames_09
             self.fnames['mod_43'] += fnames_43
 
     def dump(self, fname):
@@ -318,10 +318,6 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     #   band 5: 1230 - 1250 nm, index 4
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
-    mod09 = er3t.util.modis_09a1(fnames=sat0.fnames['mod_09'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_09 = er3t.util.grid_by_extent(mod09.data['lon']['data'], mod09.data['lat']['data'], mod09.data['ref']['data'][index_wvl, :], extent=sat0.extent)
-    sfc_09[sfc_09<0.0] = 0.0
-
     mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
     lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent)
     sfc_43[sfc_43<0.0] = 0.0
@@ -330,7 +326,6 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     g3['lon'] = lon_2d_sfc
     g3['lat'] = lat_2d_sfc
 
-    g3['alb_09_%4.4d' % wvl] = sfc_09
     g3['alb_43_%4.4d' % wvl] = sfc_43
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
@@ -358,7 +353,6 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
         cth = f0['mod/cld/cth_l2'][...]
         sfh = f0['mod/geo/sfh'][...]
 
-        alb09 = f0['mod/sfc/alb_09_%4.4d' % wvl][...]
         alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
 
         f0.close()
@@ -536,32 +530,17 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
         cbar = fig.colorbar(cs, cax=cax)
         #\----------------------------------------------------------------------------/#
 
-        # surface albedo (MYD09A1, reflectance)
+        # surface albedo (MYD43A3, white sky albedo)
         #/----------------------------------------------------------------------------\#
         ax13 = fig.add_subplot(4, 4, 13)
-        cs = ax13.imshow(alb09.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
+        cs = ax13.imshow(alb43.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
         ax13.set_xlim((extent[:2]))
         ax13.set_ylim((extent[2:]))
         ax13.set_xlabel('Longitude [$^\circ$]')
         ax13.set_ylabel('Latitude [$^\circ$]')
-        ax13.set_title('09A1 Reflectance')
+        ax13.set_title('43A3 WSA')
 
         divider = make_axes_locatable(ax13)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # surface albedo (MYD43A3, white sky albedo)
-        #/----------------------------------------------------------------------------\#
-        ax14 = fig.add_subplot(4, 4, 14)
-        cs = ax14.imshow(alb43.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
-        ax14.set_xlim((extent[:2]))
-        ax14.set_ylim((extent[2:]))
-        ax14.set_xlabel('Longitude [$^\circ$]')
-        ax14.set_ylabel('Latitude [$^\circ$]')
-        ax14.set_title('43A3 WSA')
-
-        divider = make_axes_locatable(ax14)
         cax = divider.append_axes('right', '5%', pad='3%')
         cbar = fig.colorbar(cs, cax=cax)
         #\----------------------------------------------------------------------------/#
@@ -1024,7 +1003,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         #/----------------------------------------------------------------------------\#
         ax3 = fig.add_subplot(443)
         cs = ax3.imshow(rgb, zorder=0, extent=extent)
-        ax3.scatter(lon_2d[indices_x0, indices_y0], lat_2d[indices_x0, indices_y0], s=0.1, c='r', alpha=0.1)
+        ax3.scatter(lon_2d[indices_x0, indices_y0], lat_2d[indices_x0, indices_y0], s=0.01, c='r', alpha=0.1, lw=0.0)
         ax3.set_xlim((extent[:2]))
         ax3.set_ylim((extent[2:]))
         ax3.set_xlabel('Longitude [$^\circ$]')
@@ -1040,7 +1019,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         #/----------------------------------------------------------------------------\#
         ax4 = fig.add_subplot(444)
         cs = ax4.imshow(rgb, zorder=0, extent=extent)
-        ax4.scatter(lon_2d[indices_x, indices_y], lat_2d[indices_x, indices_y], s=0.1, c='r', alpha=0.1)
+        ax4.scatter(lon_2d[indices_x, indices_y], lat_2d[indices_x, indices_y], s=0.01, c='r', alpha=0.1, lw=0.0)
         ax4.set_xlim((extent[:2]))
         ax4.set_ylim((extent[2:]))
         ax4.set_xlabel('Longitude [$^\circ$]')
@@ -1366,25 +1345,23 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # MODIS data products will be downloaded at <data/02_modis_rad-sim/download>
     # pre-processed data will be saved at <data/02_modis_rad-sim/pre_data.h5>,
     # which will contain (data dimension might vary)
-    #   extent ------------ : Dataset  (4,)
-    #   lat --------------- : Dataset  (1196, 1196)
-    #   lon --------------- : Dataset  (1196, 1196)
-    #   mod/cld/cer_l2 ---- : Dataset  (1196, 1196)
-    #   mod/cld/cot_l2 ---- : Dataset  (1196, 1196)
-    #   mod/cld/cth_l2 ---- : Dataset  (1196, 1196)
-    #   mod/geo/saa ------- : Dataset  (1196, 1196)
-    #   mod/geo/sfh ------- : Dataset  (1196, 1196)
-    #   mod/geo/sza ------- : Dataset  (1196, 1196)
-    #   mod/geo/vaa ------- : Dataset  (1196, 1196)
-    #   mod/geo/vza ------- : Dataset  (1196, 1196)
-    #   mod/rad/rad_0650 -- : Dataset  (1196, 1196)
-    #   mod/rad/ref_0650 -- : Dataset  (1196, 1196)
-    #   mod/rgb ----------- : Dataset  (1386, 1386, 4)
-    #   mod/sfc/alb_09 ---- : Dataset  (666, 666)
-    #   mod/sfc/alb_43 ---- : Dataset  (666, 666)
-    #   mod/sfc/lat ------- : Dataset  (666, 666)
-    #   mod/sfc/lon ------- : Dataset  (666, 666)
-    #
+    # extent ----------------- : Dataset  (4,)
+    # lat -------------------- : Dataset  (846, 846)
+    # lon -------------------- : Dataset  (846, 846)
+    # mod/cld/cer_l2 --------- : Dataset  (846, 846)
+    # mod/cld/cot_l2 --------- : Dataset  (846, 846)
+    # mod/cld/cth_l2 --------- : Dataset  (846, 846)
+    # mod/geo/saa ------------ : Dataset  (846, 846)
+    # mod/geo/sfh ------------ : Dataset  (846, 846)
+    # mod/geo/sza ------------ : Dataset  (846, 846)
+    # mod/geo/vaa ------------ : Dataset  (846, 846)
+    # mod/geo/vza ------------ : Dataset  (846, 846)
+    # mod/rad/rad_0650 ------- : Dataset  (846, 846)
+    # mod/rad/ref_0650 ------- : Dataset  (846, 846)
+    # mod/rgb ---------------- : Dataset  (1386, 1386, 4)
+    # mod/sfc/alb_43_0650 ---- : Dataset  (472, 472)
+    # mod/sfc/lat ------------ : Dataset  (472, 472)
+    # mod/sfc/lon ------------ : Dataset  (472, 472)
     #/----------------------------------------------------------------------------\#
     cdata_sat_raw(wvl=wvl, plot=plot)
     #\----------------------------------------------------------------------------/#
@@ -1397,9 +1374,23 @@ def main_pre(wvl=params['wavelength'], plot=True):
     #        are consistent
     # additional data will be saved at <data/02_modis_rad-sim/pre_data.h5>,
     # which are
-    #   mod/cld/cer_ipa ---- : Dataset  (1196, 1196)
-    #   mod/cld/cot_ipa ---- : Dataset  (1196, 1196)
-    #   mod/cld/cth_ipa ---- : Dataset  (1196, 1196)
+    # cld_msk/indices_x ------ : Dataset  (156443,)
+    # cld_msk/indices_x0 ----- : Dataset  (188638,)
+    # cld_msk/indices_y ------ : Dataset  (156443,)
+    # cld_msk/indices_y0 ----- : Dataset  (188638,)
+    # mca_ipa_thick/cot ------ : Dataset  (31,)
+    # mca_ipa_thick/ref ------ : Dataset  (31,)
+    # mca_ipa_thick/ref_std -- : Dataset  (31,)
+    # mca_ipa_thin/cot ------- : Dataset  (31,)
+    # mca_ipa_thin/ref ------- : Dataset  (31,)
+    # mca_ipa_thin/ref_std --- : Dataset  (31,)
+    # mod/cld/cer_ipa -------- : Dataset  (846, 846)
+    # mod/cld/cer_ipa0 ------- : Dataset  (846, 846)
+    # mod/cld/cot_ipa -------- : Dataset  (846, 846)
+    # mod/cld/cot_ipa0 ------- : Dataset  (846, 846)
+    # mod/cld/cth_ipa -------- : Dataset  (846, 846)
+    # mod/cld/cth_ipa0 ------- : Dataset  (846, 846)
+    # mod/cld/logic_cld ------ : Dataset  (846, 846)
     #/----------------------------------------------------------------------------\#
     cdata_cld_ipa(wvl=wvl, plot=plot)
     #\----------------------------------------------------------------------------/#
