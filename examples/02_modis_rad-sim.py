@@ -1484,8 +1484,9 @@ def main_post(wvl=params['wavelength'], plot=False):
     f['rad_obs']        = rad_mod
     f['rad_sim_3d']     = rad_rtm_3d
     f['rad_sim_3d_std'] = rad_rtm_3d_std
-    f['rad_sim_ipa']     = rad_rtm_ipa
-    f['rad_sim_ipa_std'] = rad_rtm_ipa_std
+    if has_ipa:
+        f['rad_sim_ipa']     = rad_rtm_ipa
+        f['rad_sim_ipa_std'] = rad_rtm_ipa_std
     f.close()
     #\----------------------------------------------------------------------------/#
 
