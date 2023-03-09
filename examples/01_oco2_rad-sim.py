@@ -909,8 +909,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
     dy = np.pi*6378.1*(lat_2d[0, 1]-lat_2d[0, 0])/180.0
 
-    fdir  = 'tmp-data/ipa-%06.1fnm_thick' % (params['wavelength_ipa'])
-
+    fdir  = 'tmp-data/ipa-%06.1fnm_thick_alb-%04.2f' % (params['wavelength'], alb.mean())
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=25.0,
@@ -931,7 +930,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
             overwrite=False
             )
 
-    fdir  = 'tmp-data/ipa-%06.1fnm_thin' % (params['wavelength_ipa'])
+    fdir  = 'tmp-data/ipa-%06.1fnm_thin_alb-%04.2f' % (params['wavelength'], alb.mean())
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=10.0,
