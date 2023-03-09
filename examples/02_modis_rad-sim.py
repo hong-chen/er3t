@@ -1002,7 +1002,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         #/----------------------------------------------------------------------------\#
         ax3 = fig.add_subplot(443)
         cs = ax3.imshow(rgb, zorder=0, extent=extent)
-        ax3.scatter(lon_2d[indices_x0, indices_y0], lat_2d[indices_x0, indices_y0], s=0.01, c='r', alpha=0.1, lw=0.0)
+        ax3.scatter(lon_2d[indices_x0, indices_y0], lat_2d[indices_x0, indices_y0], s=0.1, c='r', alpha=0.1, lw=0.0)
         ax3.set_xlim((extent[:2]))
         ax3.set_ylim((extent[2:]))
         ax3.set_xlabel('Longitude [$^\circ$]')
@@ -1018,7 +1018,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
         #/----------------------------------------------------------------------------\#
         ax4 = fig.add_subplot(444)
         cs = ax4.imshow(rgb, zorder=0, extent=extent)
-        ax4.scatter(lon_2d[indices_x, indices_y], lat_2d[indices_x, indices_y], s=0.01, c='r', alpha=0.1, lw=0.0)
+        ax4.scatter(lon_2d[indices_x, indices_y], lat_2d[indices_x, indices_y], s=0.1, c='r', alpha=0.1, lw=0.0)
         ax4.set_xlim((extent[:2]))
         ax4.set_ylim((extent[2:]))
         ax4.set_xlabel('Longitude [$^\circ$]')
