@@ -25,7 +25,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2023-03-05 by Hong Chen
+    1) Linux on 2023-03-14 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -67,7 +67,7 @@ params = {
        'wavelength' : 768.5151,
          'oco_band' : 'o2a',
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 1e9,
+           'photon' : 1e8,
              'Ncpu' : 12,
        'photon_ipa' : 1e7,
    'wavelength_ipa' : 650.0,
@@ -909,7 +909,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
     dy = np.pi*6378.1*(lat_2d[0, 1]-lat_2d[0, 0])/180.0
 
-    fdir  = 'tmp-data/ipa-%06.1fnm_thick_alb-%04.2f' % (params['wavelength'], alb.mean())
+    fdir  = 'tmp-data/ipa-%06.1fnm_thick_alb-%04.2f' % (params['wavelength_ipa'], alb.mean())
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=25.0,
@@ -930,7 +930,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
             overwrite=False
             )
 
-    fdir  = 'tmp-data/ipa-%06.1fnm_thin_alb-%04.2f' % (params['wavelength'], alb.mean())
+    fdir  = 'tmp-data/ipa-%06.1fnm_thin_alb-%04.2f' % (params['wavelength_ipa'], alb.mean())
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=10.0,
@@ -1051,8 +1051,8 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     # fill-in the empty cracks originated from parallax and wind correction
     #/--------------------------------------------------------------\#
     Npixel = 2
-    percent_a = 0.7
-    percent_b = 0.7
+    frac_a = 0.7
+    frac_b = 0.7
     for i in range(indices_x.size):
         ix = indices_x[i]
         iy = indices_y[i]
@@ -1067,8 +1067,8 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
                logic_cld0 = (data_cot_ipa_>0.0)
                logic_cld  = (data_cot_ipa>0.0)
 
-               if (logic_cld0.sum() > int(percent_a * logic_cld0.size)) and \
-                  (logic_cld.sum()  > int(percent_b * logic_cld.size)):
+               if (logic_cld0.sum() > int(frac_a * logic_cld0.size)) and \
+                  (logic_cld.sum()  > int(frac_b * logic_cld.size)):
                    cot_ipa[ix, iy] = data_cot_ipa[logic_cld].mean()
                    cer_ipa[ix, iy] = data_cer_ipa[logic_cld].mean()
                    cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
@@ -1473,11 +1473,10 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', photon
 
     # atm object
     #/----------------------------------------------------------------------------\#
-    # f = readsav(fname_idl)
-    # levels = f['atm_zgrd'][...]/1000.0
     levels = np.arange(0.0, 20.1, 0.5)
-    fname_atm = '%s/atm.pk' % fdir
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    fname_atm  = '%s/atm.pk' % fdir
+    fname_prof = '%s/afglus.dat' % er3t.common.fdir_data_atmmod
+    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=fname_prof, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1499,7 +1498,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', photon
     f.close()
 
     fname_sfc = '%s/sfc.pk' % fdir
-    mod43 = sat_tmp(data)
+    mod43     = sat_tmp(data)
     sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod43, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
     sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
@@ -1703,7 +1702,7 @@ def main_sim(oco_band='o2a'):
     index = np.argmin(np.abs(wvls-params['wavelength']))
     wavelength = wvls[index]
     cal_mca_rad(sat0, wavelength, fname_idl, photon=params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D', overwrite=True)
-    cal_mca_rad(sat0, wavelength, fname_idl, photon=1e10            , fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
+    cal_mca_rad(sat0, wavelength, fname_idl, photon=1e9             , fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(plot=True):
@@ -1843,6 +1842,8 @@ if __name__ == '__main__':
 
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
+    #   b. <01_oco2_rad-sim_<cdata_sat_raw>.png> will be created under current directory
+    #   c. <01_oco2_rad-sim_<cdata_cld_ipa>.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
     main_pre()
     #\----------------------------------------------------------------------------/#
