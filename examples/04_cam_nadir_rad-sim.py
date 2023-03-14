@@ -1,5 +1,5 @@
 """
-by Hong Chen (hong.chen.cu@gmail.com)
+by Hong Chen (hong.chen@lasp.colorado.edu)
 
 This code serves as an example code to reproduce 3D radiance simulations for App. 4 in Chen et al. (2022).
 
@@ -27,7 +27,7 @@ The processes include:
         b) plot
 
 This code has been tested under:
-    1) Linux on 2023-03-03 by Hong Chen
+    1) Linux on 2023-03-14 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -57,7 +57,8 @@ params = {
                     'name_tag' : os.path.relpath(__file__).replace('.py', ''),
                   'wavelength' : 600.0,
                         'date' : datetime.datetime(2019, 10, 5),
-                      'photon' : 1e8,
+                      'photon' : 1e7,
+               'surface_albedo': 0.03,
                   'photon_ipa' : 1e7,
             'cloud_top_height' : 2.0,
  'cloud_geometrical_thickness' : 1.0
@@ -170,9 +171,10 @@ def cal_mca_rad(date, geometry, cloud, wavelength=params['wavelength'], cth=para
 
     # atm object
     #/----------------------------------------------------------------------------\#
-    levels    = np.arange(0.0, 20.1, 0.5)
-    fname_atm = '%s/atm.pk' % fdir
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    levels     = np.arange(0.0, 20.1, 0.5)
+    fname_atm  = '%s/atm.pk' % fdir
+    fname_prof = '%s/afglus.dat' % er3t.common.fdir_data_atmmod
+    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=fname_prof, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
@@ -213,7 +215,7 @@ def cal_mca_rad(date, geometry, cloud, wavelength=params['wavelength'], cth=para
             date=date,
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            surface_albedo=0.03,
+            surface_albedo=params['surface_albedo'],
             sca=sca,
             Ng=abs0.Ng,
             target='radiance',
@@ -248,9 +250,10 @@ def cal_mca_flux(date, geometry, cloud, wavelength=params['wavelength'], cth=par
 
     # atm object
     #/----------------------------------------------------------------------------\#
-    levels    = np.arange(0.0, 20.1, 0.5)
-    fname_atm = '%s/atm.pk' % fdir
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    levels     = np.arange(0.0, 20.1, 0.5)
+    fname_atm  = '%s/atm.pk' % fdir
+    fname_prof = '%s/afglus.dat' % er3t.common.fdir_data_atmmod
+    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=fname_prof, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
@@ -291,7 +294,7 @@ def cal_mca_flux(date, geometry, cloud, wavelength=params['wavelength'], cth=par
             date=date,
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            surface_albedo=0.03,
+            surface_albedo=params['surface_albedo'],
             sca=sca,
             Ng=abs0.Ng,
             target='flux',
@@ -344,14 +347,14 @@ def main_pre_ipa():
                           np.arange(60.0, 100.0, 10.0),
                           np.arange(100.0, 201.0, 50.0)))
     cer0  = 10.0
-    fdir  = 'tmp-data/ipa-%06.1fnm' % (params['wavelength'])
+    fdir  = 'tmp-data/ipa-%06.1fnm_alb-%04.2f' % (params['wavelength'], params['surface_albedo'])
     f_mca = er3t.rtm.mca.func_ref_vs_cot(
             cot,
             cer0=cer0,
             fdir=fdir,
             date=params['date'],
             wavelength=params['wavelength'],
-            surface_albedo=0.03,
+            surface_albedo=params['surface_albedo'],
             solar_zenith_angle=sza0,
             solar_azimuth_angle=saa0,
             sensor_altitude=alt0,
