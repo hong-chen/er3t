@@ -1,5 +1,5 @@
 """
-by Hong Chen (hong.chen.cu@gmail.com)
+by Hong Chen (hong.chen@lasp.colorado.edu)
 
 This code serves as an example code to produce training data for CNN described in Nataraja et al. (2022).
 
@@ -17,7 +17,7 @@ The processes include:
        data at different cloud fractions and cloud inhomogeneities to avoid biasing CNN model.
 
 This code has been tested under:
-    1) Linux on 2022-10-19 by Hong Chen
+    1) Linux on 2023-03-14 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -44,17 +44,12 @@ from matplotlib import rcParams, ticker
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 
-from er3t.pre.atm import atm_atmmod
-from er3t.pre.abs import abs_16g, abs_oco_idl
-from er3t.pre.cld import cld_sat, cld_les
-from er3t.pre.sfc import sfc_sat
-from er3t.util import cal_r_twostream, cal_ext
+from er3t.util import cal_r_twostream
 
-from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
-from er3t.rtm.mca import mcarats_ng
-from er3t.rtm.mca import mca_out_ng
+
 
 import er3t
+
 
 
 # global variables
@@ -63,10 +58,13 @@ params = {
                     'name_tag' : os.path.relpath(__file__).replace('.py', ''),
                   'wavelength' : 600.0,
                         'date' : datetime.datetime(2019, 10, 5),
+               'surface_albedo': 0.03,
+         'sensor_zenith_angle' : 0.0,
+        'sensor_azimuth_angle' : 0.0,
              'sensor_altitude' : 705000.0,
                       'photon' : 1e9,
                   'photon_ipa' : 1e7,
-            'cloud_top_height' : 3.0,
+            'cloud_top_height' : 2.0,
  'cloud_geometrical_thickness' : 1.0
         }
 #\--------------------------------------------------------------/#
@@ -80,51 +78,62 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
     if not os.path.exists(fdir):
         os.makedirs(fdir)
 
-    levels = np.arange(0.0, 20.1, 1.0)
-
+    levels = np.arange(0.0, 20.1, 0.4)
     fname_atm = '%s/atm.pk' % fdir
-    atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+
     fname_abs = '%s/abs.pk' % fdir
-    abs0      = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
 
-    fname_les_pk = '%s/les.pk' % fdir
-    cld0      = cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 25], overwrite=overwrite)
 
-    # radiance 3d
+    # read in LES cloud
     #/----------------------------------------------------------------------------\#
-    target    = 'radiance'
-    solver    = '3D'
-    atm1d0    = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-    atm3d0    = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % fdir)
+    fname_les_pk = '%s/les.pk' % fdir
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 10], overwrite=overwrite)
+    cld0['dx']['data'] *= coarsen_factor
+    cld0['dx']['data'] *= coarsen_factor
+    #\----------------------------------------------------------------------------/#
 
-    # coarsen
-    atm3d0.nml['Atm_dx']['data'] *= coarsen_factor
-    atm3d0.nml['Atm_dy']['data'] *= coarsen_factor
+
+    # mca_sca object (enable/disable mie scattering)
+    #/----------------------------------------------------------------------------\#
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # define atmosphere (clouds, aerosols, trace gases)
+    # coarsen if needed
+    #/----------------------------------------------------------------------------\#
+    atm1d0    = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+    atm3d0    = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
 
     atm_1ds   = [atm1d0]
     atm_3ds   = [atm3d0]
+    #\----------------------------------------------------------------------------/#
 
-    mca0 = mcarats_ng(
-            date=datetime.datetime(2016, 8, 29),
+    mca0 = er3t.rtm.mca.mcarats_ng(
+            date=params['date'],
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
+            sca=sca,
             Ng=abs0.Ng,
-            target=target,
-            surface_albedo=0.0,
-            solar_zenith_angle=29.162360459281544,
-            solar_azimuth_angle=-63.16777636586792,
-            sensor_zenith_angle=0.0,
-            sensor_azimuth_angle=0.0,
+            target='radiance',
+            surface_albedo=params['surface_albedo'],
+            solar_zenith_angle=params['solar_zenith_angle'],
+            solar_azimuth_angle=params['solar_azimuth_angle'],
+            sensor_zenith_angle=params['sensor_zenith_angle'],
+            sensor_azimuth_angle=params['sensor_azimuth_angle'],
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             photons=photon_sim,
             weights=abs0.coef['weight']['data'],
-            solver=solver,
+            solver='3D',
             Ncpu=24,
             mp_mode='py',
             overwrite=overwrite)
 
-    out0 = mca_out_ng(fname='%s/mca-out-rad-%s_%.2fnm.h5' % (fdir0, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-%s_%.2fnm.h5' % (fdir0, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
     rad_3d      = out0.data['rad']['data']
     rad_3d[np.isnan(rad_3d)] = 0.0
     rad_3d[rad_3d<0.0] = 0.0
@@ -133,7 +142,7 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
     cot_true[np.isnan(cot_true)] = 0.0
     cot_true[cot_true<0.0] = 0.0
 
-    cot_1d      = f_mca.interp_from_rad(rad_3d)
+    cot_1d      = f_mca.interp_cot_from_rad(rad_3d)
     cot_1d[np.isnan(cot_1d)] = 0.0
     cot_1d[cot_1d<0.0] = 0.0
     #\----------------------------------------------------------------------------/#
@@ -149,9 +158,6 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
     f['cot_1d']   = cot_1d
 
     f.close()
-
-
-
 
 
 
@@ -415,9 +421,9 @@ if __name__ == '__main__':
 
     # step 1
     # derive relationship of COT vs Radiance at a given wavelength
-    # data stored under <tmp-data/05_cnn-les_rad-sim/01_ret>
+    # data stored under <tmp-data/ipa-0600.0nm_alb-0.03>
     #/----------------------------------------------------------------------------\#
-    fdir1 = 'tmp-data/%s/01_ret/%3.3d' % (name_tag, wvl0)
+    fdir1 = 'tmp-data/ipa-%06.1fnm_alb-%04.2f' % (params['wavelength'], params['surface_albedo'])
 
     cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
                           np.arange(2.0, 30.0, 2.0),
@@ -431,12 +437,12 @@ if __name__ == '__main__':
             fdir=fdir1,
             date=params['date'],
             wavelength=params['wavelength'],
-            surface_albedo=0.03,
+            surface_albedo=params['surface_albedo'],
             solar_zenith_angle=params['solar_zenith_angle'],
             solar_azimuth_angle=params['solar_azimuth_angle'],
             sensor_altitude=params['sensor_altitude'],
-            sensor_zenith_angle=0.0,
-            sensor_azimuth_angle=0.0,
+            sensor_zenith_angle=params['sensor_zenith_angle'],
+            sensor_azimuth_angle=params['sensor_azimuth_angle'],
             cloud_top_height=params['cloud_top_height'],
             cloud_geometrical_thickness=params['cloud_geometrical_thickness'],
             Nx=2,
