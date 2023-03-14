@@ -158,7 +158,7 @@ b) Unzip or untar the file after download;
 |
 
     If ``install.sh`` fails to download the data from Google Drive for any reason, you can download the required data
-    manually from `here <https://drive.google.com/file/d/1o2yaGS-814Lka51X8ntnkJAxJS37GWls/view?usp=sharing>`_.
+    manually from `here <https://drive.google.com/file/d/1KKpLR7IyqJ4gS6xCxc7f1hwUfUMJksVL/view?usp=sharing>`_.
 
     After you download the file (``er3t-data.tar.gz``), put it under ``er3t`` directory where it contains ``install.sh``,
     then run the command ``bash install.sh`` through a terminal again.
