@@ -503,7 +503,7 @@ def main_sim():
 
     # run simulations using EaR3T
     #/----------------------------------------------------------------------------\#
-    cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=1e9, fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
+    cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=1e8, fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
     cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
     cal_mca_rad(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
     #\----------------------------------------------------------------------------/#
