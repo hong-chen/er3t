@@ -1276,7 +1276,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
 
     # mca_sca object
     #/----------------------------------------------------------------------------\#
-    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
