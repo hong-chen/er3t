@@ -9,7 +9,7 @@ with open(os.path.join(current_dir, 'README.rst'), encoding='utf-8') as f:
 
 setup(
      name = 'er3t',
-     version = '0.1.0',
+     version = '0.1.1',
      description = 'Education and Research 3D Radiative Transfer Toolbox',
      long_description = long_description,
      classifiers = [
