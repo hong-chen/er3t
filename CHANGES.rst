@@ -1,7 +1,5 @@
 Version 0.1.1
 -------------
-First official public release.
-
 Important updates from previous version (v0.1.0):
 
 * Fixes Mie phase function for water clouds (details see Discord);
