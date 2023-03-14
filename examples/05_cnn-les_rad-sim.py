@@ -44,8 +44,6 @@ from matplotlib import rcParams, ticker
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 
-from er3t.util import cal_r_twostream
-
 
 
 import er3t
@@ -59,19 +57,32 @@ params = {
                   'wavelength' : 600.0,
                         'date' : datetime.datetime(2019, 10, 5),
                'surface_albedo': 0.03,
+          'solar_zenith_angle' : 28.9,
+         'solar_azimuth_angle' : 296.83,
          'sensor_zenith_angle' : 0.0,
         'sensor_azimuth_angle' : 0.0,
              'sensor_altitude' : 705000.0,
-                      'photon' : 1e9,
-                  'photon_ipa' : 1e7,
+                      'photon' : 1e8,
             'cloud_top_height' : 2.0,
- 'cloud_geometrical_thickness' : 1.0
+ 'cloud_geometrical_thickness' : 1.0,
+         'atmospheric_profile' : '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
+                    'fname_les': '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples,
+                  'photon_ipa' : 1e7,
+                     'cer_ipa' : 10.0,
+                     'cot_ipa' : np.concatenate((       \
+               np.arange(0.0, 2.0, 0.5),     \
+               np.arange(2.0, 30.0, 2.0),    \
+               np.arange(30.0, 60.0, 5.0),   \
+               np.arange(60.0, 100.0, 10.0), \
+               np.arange(100.0, 201.0, 50.0) \
+               )),
         }
 #\--------------------------------------------------------------/#
 
 
 
-def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/%s/03_sim-ori' % name_tag, coarsen_factor=2, overwrite=True):
+
+def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/%s/03_sim-ori' % params['name_tag'], coarsen_factor=2, solver='3D', overwrite=True):
 
     fdir = '%s/%dnm' % (fdir0, wavelength)
 
@@ -80,7 +91,7 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
 
     levels = np.arange(0.0, 20.1, 0.4)
     fname_atm = '%s/atm.pk' % fdir
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=params['atmospheric_profile'], overwrite=overwrite)
 
     fname_abs = '%s/abs.pk' % fdir
     abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
@@ -89,9 +100,9 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
     # read in LES cloud
     #/----------------------------------------------------------------------------\#
     fname_les_pk = '%s/les.pk' % fdir
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 10], overwrite=overwrite)
-    cld0['dx']['data'] *= coarsen_factor
-    cld0['dx']['data'] *= coarsen_factor
+    cld0 = er3t.pre.cld.cld_les(fname_nc=fname_les, fname=fname_les_pk, coarsen=[1, 1, 10], overwrite=overwrite)
+    cld0.lay['dx']['data'] *= coarsen_factor
+    cld0.lay['dy']['data'] *= coarsen_factor
     #\----------------------------------------------------------------------------/#
 
 
@@ -124,9 +135,10 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
             solar_azimuth_angle=params['solar_azimuth_angle'],
             sensor_zenith_angle=params['sensor_zenith_angle'],
             sensor_azimuth_angle=params['sensor_azimuth_angle'],
+            sensor_altitude=params['sensor_altitude'],
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
-            photons=photon_sim,
+            photons=params['photon'],
             weights=abs0.coef['weight']['data'],
             solver='3D',
             Ncpu=24,
@@ -134,17 +146,22 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
             overwrite=overwrite)
 
     out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-%s_%.2fnm.h5' % (fdir0, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
-    rad_3d      = out0.data['rad']['data']
+    rad_3d = out0.data['rad']['data']
     rad_3d[np.isnan(rad_3d)] = 0.0
     rad_3d[rad_3d<0.0] = 0.0
+
+    ref_3d = np.pi*rad_3d/(out0.data['toa']['data']*np.cos(np.deg2rad(params['solar_zenith_angle'])))
 
     cot_true      = np.sum(cld0.lay['cot']['data'], axis=-1)
     cot_true[np.isnan(cot_true)] = 0.0
     cot_true[cot_true<0.0] = 0.0
 
-    cot_1d      = f_mca.interp_cot_from_rad(rad_3d)
-    cot_1d[np.isnan(cot_1d)] = 0.0
-    cot_1d[cot_1d<0.0] = 0.0
+    cot_1d      = f_mca.get_cot_from_ref(ref_3d)
+    logic_out = (cot_1d<f_mca.cot[0]) | (cot_1d>f_mca.cot[-1])
+    logic_low = (logic_out) & (ref_3d<np.median(ref_3d[cot_true>0.0]))
+    logic_high = logic_out & np.logical_not(logic_low)
+    cot_1d[logic_low]  = f_mca.cot[0]
+    cot_1d[logic_high] = f_mca.cot[-1]
     #\----------------------------------------------------------------------------/#
 
     if not os.path.exists(fdir_out):
@@ -155,6 +172,7 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
 
     f['cot_true'] = cot_true
     f['rad_3d']   = rad_3d
+    f['ref_3d']   = ref_3d
     f['cot_1d']   = cot_1d
 
     f.close()
@@ -162,7 +180,7 @@ def run_mca_coarse_case(f_mca, wavelength, fname_les, fdir0, fdir_out='tmp-data/
 
 
 
-def split_data_native_resolution(fname, coarsen_factor=2, fdir_out='tmp-data/%s/04_sim-native' % name_tag):
+def split_data_native_resolution(fname, coarsen_factor=2, fdir_out='tmp-data/%s/04_sim-native' % params['name_tag']):
 
     with h5py.File(fname, 'r+') as f:
 
@@ -252,7 +270,7 @@ def crop_select_cloud_scene():
 
         return ref_std.ravel(), ref_mean.ravel(), x.ravel(), y.ravel()
 
-    def get_ref_std_ref_mean(coarsen_factor=2, Np=64, Dp=32, sza=29.162360459281544, fdir='tmp-data/%s/04_sim-native' % name_tag):
+    def get_ref_std_ref_mean(coarsen_factor=2, Np=64, Dp=32, sza=29.162360459281544, fdir='tmp-data/%s/04_sim-native' % params['name_tag']):
 
         fnames = sorted(glob.glob('%s/*coa-fac-%d*600nm*.h5' % (fdir, coarsen_factor)))
 
@@ -260,6 +278,9 @@ def crop_select_cloud_scene():
         for fname in fnames:
             cot[fname] = coarsen(fname, 'cot_true', coarsen_factor)
 
+        ref = {}
+        for fname in fnames:
+            ref[fname] = coarsen(fname, 'ref_3d', coarsen_factor)
 
         fnames_all = []
         ref_std  = np.array([], dtype=np.float64)
@@ -271,8 +292,7 @@ def crop_select_cloud_scene():
 
             for key in cot[fname]:
 
-                ref = cal_r_twostream(cot[fname][key], a=0.0, g=0.85, mu=np.cos(np.deg2rad(sza)))
-                ref_std0, ref_mean0, x0, y0 = cal_std_mean(ref, Np=Np, Dp=Dp)
+                ref_std0, ref_mean0, x0, y0 = cal_std_mean(ref[fname][key], Np=Np, Dp=Dp)
 
                 ref_std  = np.append(ref_std, ref_std0)
                 ref_mean = np.append(ref_mean, ref_mean0)
@@ -377,7 +397,7 @@ def crop_select_cloud_scene():
 
     # create mini tiles
     #/----------------------------------------------------------------------------\#
-    fdir_out = 'tmp-data/%s/05_sim-select' % name_tag
+    fdir_out = 'tmp-data/%s/05_sim-select' % params['name_tag']
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
 
@@ -392,6 +412,7 @@ def crop_select_cloud_scene():
             cot_true_split = coarsen(data_sorted['fnames'][i], 'cot_true', data_sorted['factor'][i])
             cot_1d_split   = coarsen(data_sorted['fnames'][i], 'cot_1d', data_sorted['factor'][i])
             rad_3d_split   = coarsen(data_sorted['fnames'][i], 'rad_3d', data_sorted['factor'][i])
+            ref_3d_split   = coarsen(data_sorted['fnames'][i], 'ref_3d', data_sorted['factor'][i])
             fname0 = data_sorted['fnames'][i]
             f0 = h5py.File(fname0, 'r')
 
@@ -401,7 +422,7 @@ def crop_select_cloud_scene():
         index_y_e = data_sorted['index_y'][i] + 64
 
         cot0 = cot_true_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
-        ref0 = cal_r_twostream(cot0, a=0.0, g=0.85, mu=np.cos(np.deg2rad(29.162360459281544)))
+        ref0 = ref_3d_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
 
         index_str = '[%8.8d](%3.3d-%3.3d_%3.3d-%3.3d)' % (indices_select[index_sorted], index_x_s, index_x_e, index_y_s, index_y_e)
 
@@ -410,6 +431,7 @@ def crop_select_cloud_scene():
         f['cot_true'] = cot_true_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
         f['cot_1d']   = cot_1d_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
         f['rad_3d']   = rad_3d_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
+        f['ref_3d']   = ref_3d_split[data_sorted['index_var'][i]][index_x_s:index_x_e, index_y_s:index_y_e]
         f.close()
     #\----------------------------------------------------------------------------/#
 
@@ -423,35 +445,28 @@ if __name__ == '__main__':
     # derive relationship of COT vs Radiance at a given wavelength
     # data stored under <tmp-data/ipa-0600.0nm_alb-0.03>
     #/----------------------------------------------------------------------------\#
-    fdir1 = 'tmp-data/ipa-%06.1fnm_alb-%04.2f' % (params['wavelength'], params['surface_albedo'])
-
-    cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
-                          np.arange(2.0, 30.0, 2.0),
-                          np.arange(30.0, 60.0, 5.0),
-                          np.arange(60.0, 100.0, 10.0),
-                          np.arange(100.0, 201.0, 50.0)))
-    cer0  = 10.0
-    f_mca = er3t.rtm.mca.func_ref_vs_cot(
-            cot,
-            cer0=cer0,
-            fdir=fdir1,
-            date=params['date'],
-            wavelength=params['wavelength'],
-            surface_albedo=params['surface_albedo'],
-            solar_zenith_angle=params['solar_zenith_angle'],
-            solar_azimuth_angle=params['solar_azimuth_angle'],
-            sensor_altitude=params['sensor_altitude'],
-            sensor_zenith_angle=params['sensor_zenith_angle'],
-            sensor_azimuth_angle=params['sensor_azimuth_angle'],
-            cloud_top_height=params['cloud_top_height'],
-            cloud_geometrical_thickness=params['cloud_geometrical_thickness'],
-            Nx=2,
-            Ny=2,
-            dx=0.1,
-            dy=0.1,
-            photon_number=params['photon_ipa'],
-            overwrite=False
-            )
+    # fdir1 = 'tmp-data/ipa-%06.1fnm_alb-%04.2f' % (params['wavelength'], params['surface_albedo'])
+    # f_mca = er3t.rtm.mca.func_ref_vs_cot(
+    #         params['cot_ipa'],
+    #         cer0=params['cer_ipa'],
+    #         fdir=fdir1,
+    #         date=params['date'],
+    #         wavelength=params['wavelength'],
+    #         surface_albedo=params['surface_albedo'],
+    #         solar_zenith_angle=params['solar_zenith_angle'],
+    #         solar_azimuth_angle=params['solar_azimuth_angle'],
+    #         sensor_altitude=params['sensor_altitude'],
+    #         sensor_zenith_angle=params['sensor_zenith_angle'],
+    #         sensor_azimuth_angle=params['sensor_azimuth_angle'],
+    #         cloud_top_height=params['cloud_top_height'],
+    #         cloud_geometrical_thickness=params['cloud_geometrical_thickness'],
+    #         Nx=2,
+    #         Ny=2,
+    #         dx=0.1,
+    #         dy=0.1,
+    #         photon_number=params['photon_ipa'],
+    #         overwrite=False
+    #         )
     #\----------------------------------------------------------------------------/#
 
 
@@ -461,11 +476,11 @@ if __name__ == '__main__':
     # raw processing data is stored under <tmp-data/05_cnn-les_rad-sim/02_sim-raw>
     # simulation output data is stored under <tmp-data/05_cnn-les_rad-sim/03_sim-ori>
     #/----------------------------------------------------------------------------\#
-    # fdir1 = 'tmp-data/%s/01_ret/%3.3d' % (name_tag, wvl0)
-    # f_mca =  func_cot_vs_rad(fdir1, wvl0, run=False)
+    # fdir1 = 'tmp-data/ipa-%06.1fnm_alb-%04.2f' % (params['wavelength'], params['surface_albedo'])
+    # f_mca =  er3t.rtm.mca.func_ref_vs_cot(params['cot_ipa'], cer0=params['cer_ipa'], fdir=fdir1, wavelength=params['wavelength'], overwrite=False)
     # for coarsen_factor in [1, 2, 4]:
-    #     fdir2 = 'tmp-data/%s/02_sim-raw/les_coa-fac-%d' % (name_tag, coarsen_factor)
-    #     run_mca_coarse_case(f_mca, wvl0, fname_les, fdir2, coarsen_factor=coarsen_factor, overwrite=True)
+    #     fdir2 = 'tmp-data/%s/02_sim-raw/les_coa-fac-%d' % (params['name_tag'], coarsen_factor)
+    #     run_mca_coarse_case(f_mca, params['wavelength'], params['fname_les'], fdir2, coarsen_factor=coarsen_factor, overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 
@@ -473,11 +488,11 @@ if __name__ == '__main__':
     # split/upsample the calculation so the spatial resolution is 100 m
     # data stored under <tmp-data/05_cnn-les_rad-sim/04_sim-native>
     #/----------------------------------------------------------------------------\#
-    # for fname in sorted(glob.glob('tmp-data/%s/03_sim-ori/*coa-fac-1_600nm.h5' % name_tag)):
+    # for fname in sorted(glob.glob('tmp-data/%s/03_sim-ori/*coa-fac-1_600nm.h5' % params['name_tag'])):
     #     split_data_native_resolution(fname, coarsen_factor=1)
-    # for fname in sorted(glob.glob('tmp-data/%s/03_sim-ori/*coa-fac-2_600nm.h5' % name_tag)):
+    # for fname in sorted(glob.glob('tmp-data/%s/03_sim-ori/*coa-fac-2_600nm.h5' % params['name_tag'])):
     #     split_data_native_resolution(fname, coarsen_factor=2)
-    # for fname in sorted(glob.glob('tmp-data/%s/03_sim-ori/*coa-fac-4_600nm.h5' % name_tag)):
+    # for fname in sorted(glob.glob('tmp-data/%s/03_sim-ori/*coa-fac-4_600nm.h5' % params['name_tag'])):
     #     split_data_native_resolution(fname, coarsen_factor=4)
     #\----------------------------------------------------------------------------/#
 
