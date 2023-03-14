@@ -179,7 +179,8 @@ def cal_mca_flux(
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     levels    = np.linspace(0.0, 20.0, 21)
     fname_atm = '%s/atm_%3.3d.pk' % (fdir, index)
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    fname_prof = '%s/afglus.dat' % er3t.common.fdir_data_atmmod
+    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=fname_prof, overwrite=overwrite)
     # ------------------------------------------------------------------------------------------------------
 
     # define an absorption object
