@@ -308,7 +308,7 @@ class flt_sim:
             self,
             date=datetime.datetime.now(),
             photons=params['photon'],
-            Ncpu=16,
+            Ncpu=12,
             fdir='tmp-data/%s' % params['name_tag'],
             wavelength=None,
             flt_trks=None,
