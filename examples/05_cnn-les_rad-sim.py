@@ -496,6 +496,7 @@ if __name__ == '__main__':
     #     split_data_native_resolution(fname, coarsen_factor=4)
     #\----------------------------------------------------------------------------/#
 
+
     # step 4
     # split data into 64x64 mini tiles
     # perform random selection based on Mean vs STD grids
