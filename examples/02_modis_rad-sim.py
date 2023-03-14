@@ -1218,8 +1218,9 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     # atm object
     #/----------------------------------------------------------------------------\#
     levels = np.arange(0.0, 20.1, 0.5)
-    fname_atm = '%s/atm.pk' % fdir
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    fname_atm  = '%s/atm.pk' % fdir
+    fname_prof = '%s/afglus.dat' % er3t.common.fdir_data_atmmod
+    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=fname_prof, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1295,11 +1296,11 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     sza = f['mod/geo/sza'][...].mean()
     saa = f['mod/geo/saa'][...].mean()
     if solver.lower() == 'ipa':
-        vaa = 0.0
         vza = 0.0
+        vaa = 0.0
     elif solver.lower() == '3d':
-        vaa = f['mod/geo/vaa'][...].mean()
         vza = f['mod/geo/vza'][...].mean()
+        vaa = f['mod/geo/vaa'][...].mean()
     f.close()
     #\----------------------------------------------------------------------------/#
 
