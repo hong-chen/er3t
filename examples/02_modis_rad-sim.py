@@ -25,7 +25,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2023-03-05 by Hong Chen
+    1) Linux on 2023-03-14 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -67,7 +67,7 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 1e9,
+           'photon' : 1e8,
              'Ncpu' : 12,
        'photon_ipa' : 1e7,
           'cot_ipa' : np.concatenate((       \
@@ -747,7 +747,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
     dy = np.pi*6378.1*(lat_2d[0, 1]-lat_2d[0, 0])/180.0
 
-    fdir  = 'tmp-data/ipa-%06.1fnm_thick_alb-%04.2f' % (params['wavelength'], alb.mean())
+    fdir  = 'tmp-data/ipa-%06.1fnm_thick_alb-%04.2f' % (wvl, alb.mean())
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=25.0,
@@ -755,7 +755,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             dy=dy,
             fdir=fdir,
             date=params['date'],
-            wavelength=params['wavelength'],
+            wavelength=wvl,
             surface_albedo=alb.mean(),
             solar_zenith_angle=sza.mean(),
             solar_azimuth_angle=saa.mean(),
@@ -768,7 +768,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             overwrite=False
             )
 
-    fdir  = 'tmp-data/ipa-%06.1fnm_thin_alb-%04.2f' % (params['wavelength'], alb.mean())
+    fdir  = 'tmp-data/ipa-%06.1fnm_thin_alb-%04.2f' % (wvl, alb.mean())
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=10.0,
@@ -776,7 +776,7 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
             dy=dy,
             fdir=fdir,
             date=params['date'],
-            wavelength=params['wavelength'],
+            wavelength=wvl,
             surface_albedo=alb.mean(),
             solar_zenith_angle=sza.mean(),
             solar_azimuth_angle=saa.mean(),
@@ -852,8 +852,8 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     # fill-in the empty cracks due to parallax and wind correction
     #/--------------------------------------------------------------\#
     Npixel = 2
-    percent_a = 0.7
-    percent_b = 0.7
+    frac_a = 0.7
+    frac_b = 0.7
     for i in range(indices_x.size):
         ix = indices_x[i]
         iy = indices_y[i]
@@ -868,8 +868,8 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
                logic_cld0 = (data_cot_ipa0>0.0)
                logic_cld  = (data_cot_ipa>0.0)
 
-               if (logic_cld0.sum() > int(percent_a * logic_cld0.size)) and \
-                  (logic_cld.sum()  > int(percent_b * logic_cld.size)):
+               if (logic_cld0.sum() > int(frac_a * logic_cld0.size)) and \
+                  (logic_cld.sum()  > int(frac_b * logic_cld.size)):
                    cot_ipa[ix, iy] = data_cot_ipa[logic_cld].mean()
                    cer_ipa[ix, iy] = data_cer_ipa[logic_cld].mean()
                    cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
@@ -1416,7 +1416,7 @@ def main_sim(wvl=params['wavelength'], run_ipa=False):
     #/----------------------------------------------------------------------------\#
     cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
     if run_ipa:
-        cal_mca_rad(sat0, wvl, 1e10, fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
+        cal_mca_rad(sat0, wvl, 1e9, fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(wvl=params['wavelength'], plot=False):
