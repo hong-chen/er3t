@@ -32,7 +32,7 @@ import er3t
 
 # global variables
 #/-----------------------------------------------------------------------------\
-name_tag = os.path.relpath(__file__).replace('.py', '')
+name_tag = '00_er3t_mca'
 photons = 1e8
 Ncpu    = 12
 #\-----------------------------------------------------------------------------/
@@ -52,7 +52,7 @@ def test_01_flux_clear_sky(
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s' % (er3t.common.fdir_examples, name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -233,7 +233,7 @@ def test_02_flux_les_cloud_3d(
     """
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s' % (er3t.common.fdir_examples, name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -290,7 +290,7 @@ def test_02_flux_les_cloud_3d(
     # define an cloud object
     #/-----------------------------------------------------------------------------\
     # file name of the netcdf file
-    fname_nc  = 'data/%s/aux/les.nc' % name_tag
+    fname_nc  = '%s/data/%s/aux/les.nc' % (er3t.common.fdir_examples, name_tag)
 
     # file name of the pickle file for cloud
     fname_les = '%s/les.pk' % fdir
@@ -451,7 +451,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     """
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s' % (er3t.common.fdir_examples, name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -508,7 +508,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     # define an cloud object
     #/-----------------------------------------------------------------------------\
     # file name of the netcdf file
-    fname_nc  = 'data/%s/aux/les.nc' % name_tag
+    fname_nc  = '%s/data/%s/aux/les.nc' % (er3t.common.fdir_examples, name_tag)
 
     # file name of the pickle file for cloud
     fname_les = '%s/les.pk' % fdir
@@ -678,7 +678,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     """
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s' % (er3t.common.fdir_examples, name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -735,7 +735,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     # define an cloud object
     #/-----------------------------------------------------------------------------\
     # file name of the netcdf file
-    fname_nc  = 'data/%s/aux/les.nc' % name_tag
+    fname_nc  = '%s/data/%s/aux/les.nc' % (er3t.common.fdir_examples, name_tag)
 
     # file name of the pickle file for cloud
     fname_les = '%s/les.pk' % fdir
@@ -915,7 +915,7 @@ def test_05_rad_les_cloud_3d(
     """
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s' % (er3t.common.fdir_examples, name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -972,7 +972,7 @@ def test_05_rad_les_cloud_3d(
     # define an cloud object
     #/-----------------------------------------------------------------------------\
     # file name of the netcdf file
-    fname_nc  = 'data/%s/aux/les.nc' % name_tag
+    fname_nc  = '%s/data/%s/aux/les.nc' % (er3t.common.fdir_examples, name_tag)
 
     # file name of the pickle file for cloud
     fname_les = '%s/les.pk' % fdir
@@ -1135,7 +1135,7 @@ def test_06_rad_cld_gen_hem(
     """
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s' % (er3t.common.fdir_examples, name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
