@@ -135,6 +135,8 @@ class mca_run:
 
                 with mp.Pool(processes=self.Ncpu) as pool:
                     r = list(tqdm(pool.imap(execute_command, self.commands), total=len(self.commands)))
+                    pool.close()
+                    pool.join()
 
             except ImportError:
 

@@ -69,14 +69,8 @@ Dependencies
 
     ::
 
-        # assume <requests>, <tqdm>, <numpy>, <scipy>, <matplotlib>, <h5py>
-        #     are preinstalled by Anaconda installer
-
-        conda install -c conda-forge gdown
-        conda install -c conda-forge pyhdf
-        conda install -c conda-forge netcdf4
-        conda install -c conda-forge owslib
-        conda install -c conda-forge cartopy
+        conda env create -f er3t-env.yml
+        conda activate er3t
 
     * A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
       (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
