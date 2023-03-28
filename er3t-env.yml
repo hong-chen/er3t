@@ -18,3 +18,5 @@ dependencies:
   - cartopy=0.18.*
   - vim=8.2.*
   - powerline-status=2.7.*
+  - mscorefonts
+  - font-ttf-source-code-pro

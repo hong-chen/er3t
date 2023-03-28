@@ -30,7 +30,8 @@ import er3t
 
 # global variables
 #/--------------------------------------------------------------\#
-name_tag = os.path.relpath(__file__).replace('.py', '')
+name_tag = '00_mca_lrt'
+fdir0    = er3t.common.fdir_examples
 #\--------------------------------------------------------------/#
 
 
@@ -43,7 +44,7 @@ def test_flux_01_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -73,7 +74,7 @@ def test_flux_02_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -109,7 +110,7 @@ def test_flux_03_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -153,7 +154,7 @@ def test_flux_04_cloud():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -206,7 +207,7 @@ def test_flux_05_cloud_and_aerosol():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -268,7 +269,7 @@ def test_rad_01_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -294,7 +295,7 @@ def test_rad_02_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -330,7 +331,7 @@ def test_rad_03_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -374,7 +375,7 @@ def test_rad_04_cloud():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -427,7 +428,7 @@ def test_rad_05_cloud_and_aerosol():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -491,7 +492,7 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -561,7 +562,7 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
