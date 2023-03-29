@@ -500,7 +500,7 @@ class mcarats_ng:
             print('           Surface Albedo : 2D domain')
 
         if self.sca is None:
-            print('           Phase Function : Henyey-Greenstein (g=0.85)')
+            print('           Phase Function : Henyey-Greenstein')
         else:
             print('           Phase Function : Mie')
 
