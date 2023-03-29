@@ -558,7 +558,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
     asy    = 0.6 # aerosol asymmetry parameter
     z_bot  = 5.0 # altitude of layer bottom in km
     z_top  = 8.0 # altitude of layer top in km
-    aer_ext = aod / (atm0.lay['thickness']['data'].sum()*1000.0)
+    aer_ext = aod / (z_top-z_bot) / 1000.0
 
     atm1d0.add_mca_1d_atm(ext1d=aer_ext, omg1d=ssa, apf1d=asy, z_bottom=z_bot, z_top=z_top)
     # data can be accessed at
