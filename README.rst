@@ -135,7 +135,7 @@ b) Under newly cloned ``er3t``, where it contains ``install.sh``, type in the fo
 
 |
 
-**2. From Public Release (most reliable)**
+**2. From Public Release (fully tested)**
 
 a) Download the latest release from `here <https://github.com/hong-chen/er3t/releases/latest>`_;
 
