@@ -751,8 +751,6 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=25.0,
-            dx=dx,
-            dy=dy,
             fdir=fdir,
             date=params['date'],
             wavelength=wvl,
@@ -772,8 +770,6 @@ def cdata_cld_ipa(wvl=params['wavelength'], plot=True):
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=10.0,
-            dx=dx,
-            dy=dy,
             fdir=fdir,
             date=params['date'],
             wavelength=wvl,
@@ -1363,7 +1359,7 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # mod/sfc/lat ------------ : Dataset  (472, 472)
     # mod/sfc/lon ------------ : Dataset  (472, 472)
     #/----------------------------------------------------------------------------\#
-    cdata_sat_raw(wvl=wvl, plot=plot)
+    # cdata_sat_raw(wvl=wvl, plot=plot)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1614,14 +1610,14 @@ if __name__ == '__main__':
     #   require a lot of photons (thus long computational time) to achieve relatively
     #   high accuracy
     #/----------------------------------------------------------------------------\#
-    main_sim(run_ipa=False)
+    # main_sim(run_ipa=False)
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
     #   a. <post-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    main_post(plot=True)
+    # main_post(plot=True)
     #\----------------------------------------------------------------------------/#
 
     pass

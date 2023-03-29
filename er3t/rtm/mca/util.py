@@ -124,7 +124,13 @@ class func_ref_vs_cot:
 
         # phase function
         #/----------------------------------------------------------------------------\#
-        pha0 = er3t.pre.pha.pha_mie_wc(wavelength=self.wvl0)
+        pha0 = er3t.pre.pha.pha_mie_wc(wavelength=self.wvl0, overwrite=False)
+        #\----------------------------------------------------------------------------/#
+
+        # mca_sca object
+        #/----------------------------------------------------------------------------\#
+        fname_sca = '%s/mca_sca-%06.1fnm.bin' % (self.fdir, self.wvl0)
+        sca0  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname=fname_sca, overwrite=True)
         #\----------------------------------------------------------------------------/#
 
         # cloud setup
@@ -132,7 +138,7 @@ class func_ref_vs_cot:
         iref = np.argmin(np.abs(pha0.data['ref']['data']-cer0))
         ext0 = cot0/(cth0-cbh0)/1000.0
         ssa0 = pha0.data['ssa']['data'][iref]
-        asy0 = pha0.data['asy']['data'][iref]
+        asy0 = iref + 1
         #\----------------------------------------------------------------------------/#
 
         # mca_cld object
@@ -150,6 +156,7 @@ class func_ref_vs_cot:
                 date=self.date0,
                 atm_1ds=atm_1ds,
                 atm_3ds=atm_3ds,
+                sca=sca0,
                 target='radiance',
                 surface_albedo       = self.alb0,
                 solar_zenith_angle   = self.sza0,
