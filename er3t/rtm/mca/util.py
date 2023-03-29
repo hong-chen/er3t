@@ -129,10 +129,10 @@ class func_ref_vs_cot:
 
         # cloud setup
         #/----------------------------------------------------------------------------\#
-        iref = np.argmin(np.abs(pha0['ref']['data']-cer0))
+        iref = np.argmin(np.abs(pha0.data['ref']['data']-cer0))
         ext0 = cot0/(cth0-cbh0)/1000.0
-        ssa0 = pha0['ssa']['data'][iref]
-        asy0 = pha0['asy']['data'][iref]
+        ssa0 = pha0.data['ssa']['data'][iref]
+        asy0 = pha0.data['asy']['data'][iref]
         #\----------------------------------------------------------------------------/#
 
         # mca_cld object
