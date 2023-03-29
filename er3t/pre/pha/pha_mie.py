@@ -92,6 +92,8 @@ class pha_mie_wc:
 
     reference = 'Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, 1980.'
 
+    ID = 'Mie (Water Clouds)'
+
     def __init__(self,
                  wavelength=555.0,
                  angles=np.concatenate((

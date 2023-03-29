@@ -502,7 +502,7 @@ class mcarats_ng:
         if self.sca is None:
             print('           Phase Function : Henyey-Greenstein')
         else:
-            print('           Phase Function : Mie')
+            print('           Phase Function : %s' % self.sca.pha.ID)
 
         if (self.Nx > 1) | (self.Ny > 1):
             print('     Domain Size (Nx, Ny) : (%d, %d)' % (self.Nx, self.Ny))
