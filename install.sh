@@ -5,7 +5,7 @@
 # ====================================================================================================
 if ! command -v gdown &> /dev/null
 then
-    echo "[Error]: 'gdown' could not be found, please install 'gdown' first, abort."
+    echo "[Error]: <gdown> could not be found, please install <gdown> first, abort."
     exit
 fi
 
@@ -31,7 +31,7 @@ sleep 2
 # check if file is successfully downloaded
 if  [ ! -f "$er3t_data_local_filename" ]
 then
-    echo "[Error]: cannot find '$er3t_data_local_filename', abort."
+    echo "[Error]: cannot find <$er3t_data_local_filename>, abort."
     exit
 fi
 
