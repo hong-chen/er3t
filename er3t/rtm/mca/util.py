@@ -203,7 +203,7 @@ class func_ref_vs_cot:
 
 
 
-class func_ref_vs_cot_backup:
+class func_ref_vs_cot_multi_pixel:
 
     def __init__(self,
             cot,

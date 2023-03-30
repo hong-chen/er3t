@@ -69,7 +69,7 @@ params = {
            'region' : [-109.1, -106.9, 36.9, 39.1],
            'photon' : 1e8,
              'Ncpu' : 12,
-       'photon_ipa' : 1e7,
+       'photon_ipa' : 2e7,
           'cot_ipa' : np.concatenate((       \
                np.arange(0.0, 2.0, 0.5),     \
                np.arange(2.0, 30.0, 2.0),    \
@@ -1359,7 +1359,7 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # mod/sfc/lat ------------ : Dataset  (472, 472)
     # mod/sfc/lon ------------ : Dataset  (472, 472)
     #/----------------------------------------------------------------------------\#
-    # cdata_sat_raw(wvl=wvl, plot=plot)
+    cdata_sat_raw(wvl=wvl, plot=plot)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1610,14 +1610,14 @@ if __name__ == '__main__':
     #   require a lot of photons (thus long computational time) to achieve relatively
     #   high accuracy
     #/----------------------------------------------------------------------------\#
-    # main_sim(run_ipa=False)
+    main_sim(run_ipa=False)
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
     #   a. <post-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    # main_post(plot=True)
+    main_post(plot=True)
     #\----------------------------------------------------------------------------/#
 
     pass

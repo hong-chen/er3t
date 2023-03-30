@@ -69,7 +69,7 @@ params = {
            'region' : [-109.1, -106.9, 36.9, 39.1],
            'photon' : 1e8,
              'Ncpu' : 12,
-       'photon_ipa' : 1e7,
+       'photon_ipa' : 2e7,
    'wavelength_ipa' : 650.0,
           'cot_ipa' : np.concatenate((       \
                np.arange(0.0, 2.0, 0.5),     \
@@ -913,8 +913,6 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=25.0,
-            dx=dx,
-            dy=dy,
             fdir=fdir,
             date=params['date'],
             wavelength=params['wavelength_ipa'],
@@ -934,8 +932,6 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=10.0,
-            dx=dx,
-            dy=dy,
             fdir=fdir,
             date=params['date'],
             wavelength=params['wavelength_ipa'],

@@ -59,7 +59,7 @@ params = {
                         'date' : datetime.datetime(2019, 10, 5),
                       'photon' : 1e7,
                'surface_albedo': 0.03,
-                  'photon_ipa' : 1e7,
+                  'photon_ipa' : 2e7,
             'cloud_top_height' : 2.0,
  'cloud_geometrical_thickness' : 1.0
         }
@@ -362,10 +362,6 @@ def main_pre_ipa():
             sensor_azimuth_angle=0.0,
             cloud_top_height=2.0,
             cloud_geometrical_thickness=1.0,
-            Nx=2,
-            Ny=2,
-            dx=0.1,
-            dy=0.1,
             photon_number=params['photon_ipa'],
             overwrite=False
             )
