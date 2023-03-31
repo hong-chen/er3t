@@ -61,8 +61,6 @@ class mcarats_ng:
                  atm_1ds             = [],                      \
                  atm_3ds             = [],                      \
 
-                 sfc_2d              = None,                    \
-
                  sca                 = None,                    \
 
                  Ng                  = 16,                      \
@@ -120,7 +118,6 @@ class mcarats_ng:
         self.sca                 = sca
 
         self.surface_albedo      = surface_albedo
-        self.sfc_2d              = sfc_2d
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
 
@@ -226,7 +223,7 @@ class mcarats_ng:
             self.init_atm(atm_1ds=atm_1ds, atm_3ds=atm_3ds)
 
             # MCARaTS surface initialization
-            self.init_sfc(sfc_2d=sfc_2d, surface_albedo=surface_albedo)
+            self.init_sfc(surface_albedo=surface_albedo)
 
             # MCARaTS source (e.g., solar) initialization
             self.init_src(solar_zenith_angle=solar_zenith_angle, solar_azimuth_angle=solar_azimuth_angle)
@@ -386,25 +383,35 @@ class mcarats_ng:
             self.nml[ig]['Src_phi']   = cal_mca_azimuth(solar_azimuth_angle)
 
 
-    def init_sfc(self, sfc_2d=None, surface_albedo=0.03):
+    def init_sfc(self, surface_albedo=0.03):
 
         for ig in range(self.Ng):
 
             if self.verbose:
                 print('Message [mcarats_ng]: Assume Lambertian surface ...')
 
-            if sfc_2d is not None:
+            if isinstance(surface_albedo, float):
 
-                for key in sfc_2d.nml.keys():
-                    if '2d' not in key:
-                        if os.path.exists(sfc_2d.nml['Sfc_inpfile']['data']):
-                            sfc_2d.nml['Sfc_inpfile']['data'] = os.path.relpath(sfc_2d.nml['Sfc_inpfile']['data'], start=self.fdir)
-                        self.nml[ig][key] = sfc_2d.nml[key]['data']
-
-            else:
                 self.nml[ig]['Sfc_mbrdf'] = np.array([1, 0, 0, 0])
                 self.nml[ig]['Sfc_mtype'] = 1
                 self.nml[ig]['Sfc_param(1)'] = surface_albedo
+
+                self.sfc_2d = False
+
+            elif isinstance(surface_albedo, er3t.rtm.mca.mca_sfc_2d):
+
+                for key in surface_albedo.nml.keys():
+                    if '2d' not in key:
+                        if os.path.exists(surface_albedo.nml['Sfc_inpfile']['data']):
+                            surface_albedo.nml['Sfc_inpfile']['data'] = os.path.relpath(surface_albedo.nml['Sfc_inpfile']['data'], start=self.fdir)
+                        self.nml[ig][key] = surface_albedo.nml[key]['data']
+
+                self.sfc_2d = True
+
+            else:
+
+                msg = '\nError [mcarats_ng]: Cannot ingest <surface_albedo>.'
+                raise ValueError(msg)
 
 
     def gen_mca_inp(self, comment=False):
@@ -494,7 +501,7 @@ class mcarats_ng:
             print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
             print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
 
-        if self.sfc_2d is None:
+        if not self.sfc_2d:
             print('           Surface Albedo : %.2f' % self.surface_albedo)
         else:
             print('           Surface Albedo : 2D domain')

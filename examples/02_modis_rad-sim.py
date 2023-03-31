@@ -1307,7 +1307,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
             date=sat.date,
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            sfc_2d=sfc_2d,
+            surface_albedo=sfc_2d,
             sca=sca,
             Ng=abs0.Ng,
             target='radiance',
