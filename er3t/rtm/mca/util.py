@@ -334,7 +334,7 @@ class func_ref_vs_cot_multi_pixel:
 
         # mca_sca object
         #/----------------------------------------------------------------------------\#
-        fname_sca = '%s/mca_sca_%s.bin' % (self.fdir, name_tag)
+        fname_sca = '%s/mca_sca-%06.1fnm.bin' % (self.fdir, self.wvl0)
         sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname=fname_sca, overwrite=True)
         #\----------------------------------------------------------------------------/#
 
