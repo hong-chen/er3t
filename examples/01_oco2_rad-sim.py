@@ -923,7 +923,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
             sensor_azimuth_angle=vaa.mean(),
             cloud_top_height=10.0,
             cloud_geometrical_thickness=7.0,
-            photon_number=params['photon_ipa'],
+            Nphoton=params['photon_ipa'],
             solver='3d',
             overwrite=False
             )
@@ -942,7 +942,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
             sensor_azimuth_angle=vaa.mean(),
             cloud_top_height=3.0,
             cloud_geometrical_thickness=1.0,
-            photon_number=params['photon_ipa'],
+            Nphoton=params['photon_ipa'],
             solver='3d',
             overwrite=False
             )

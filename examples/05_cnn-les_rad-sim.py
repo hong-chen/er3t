@@ -460,7 +460,7 @@ if __name__ == '__main__':
     #         sensor_azimuth_angle=params['sensor_azimuth_angle'],
     #         cloud_top_height=params['cloud_top_height'],
     #         cloud_geometrical_thickness=params['cloud_geometrical_thickness'],
-    #         photon_number=params['photon_ipa'],
+    #         Nphoton=params['photon_ipa'],
     #         overwrite=False
     #         )
     #\----------------------------------------------------------------------------/#

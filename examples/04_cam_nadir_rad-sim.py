@@ -362,7 +362,7 @@ def main_pre_ipa():
             sensor_azimuth_angle=0.0,
             cloud_top_height=2.0,
             cloud_geometrical_thickness=1.0,
-            photon_number=params['photon_ipa'],
+            Nphoton=params['photon_ipa'],
             overwrite=False
             )
     #\--------------------------------------------------------------/#

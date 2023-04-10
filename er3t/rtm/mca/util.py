@@ -21,7 +21,7 @@ class func_ref_vs_cot:
             cot,
             cer0=10.0,
             fdir=er3t.common.params['fdir_tmp'],
-            date=datetime.datetime.now(),
+            date=er3t.common.params['date'],
             wavelength=er3t.common.params['wavelength'],
             surface_albedo=er3t.common.params['surface_albedo'],
             solar_zenith_angle=er3t.common.params['solar_zenith_angle'],
@@ -29,11 +29,11 @@ class func_ref_vs_cot:
             sensor_zenith_angle=er3t.common.params['sensor_zenith_angle'],
             sensor_azimuth_angle=er3t.common.params['sensor_azimuth_angle'],
             sensor_altitude=er3t.common.params['sensor_altitude'],
-            photon_number=er3t.common.params['photon_number'],
             cloud_top_height=2.0,
             cloud_geometrical_thickness=1.0,
-            solver='3D',
-            cpu_number=12,
+            solver='3d',
+            Nphoton=er3t.common.params['Nphoton'],
+            Ncpu=er3t.common.params['Ncpu'],
             output_tag=er3t.common.params['output_tag'],
             overwrite=er3t.common.params['overwrite'],
             ):
@@ -54,7 +54,7 @@ class func_ref_vs_cot:
         self.output_tag = output_tag
         self.photon0 = photon_number
         self.solver0 = solver
-        self.cpu0 = cpu_number
+        self.cpu0 = Ncpu
         self.date0 = date
 
         self.mu0  = np.cos(np.deg2rad(self.sza0))
@@ -225,7 +225,7 @@ class func_ref_vs_cot_multi_pixel:
             Ny=2,
             dx=0.1,
             dy=0.1,
-            cpu_number=12,
+            Ncpu=12,
             output_tag=er3t.common.params['output_tag'],
             overwrite=er3t.common.params['overwrite'],
             ):
@@ -246,7 +246,7 @@ class func_ref_vs_cot_multi_pixel:
         self.output_tag = output_tag
         self.photon0 = photon_number
         self.solver0 = solver
-        self.cpu0 = cpu_number
+        self.cpu0 = Ncpu
         self.date0 = date
         self.Nx = Nx
         self.Ny = Ny
