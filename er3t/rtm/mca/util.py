@@ -52,7 +52,7 @@ class func_ref_vs_cot:
         self.alb0 = surface_albedo
         self.fdir = fdir
         self.output_tag = output_tag
-        self.photon0 = photon_number
+        self.photon0 = Nphoton
         self.solver0 = solver
         self.cpu0 = Ncpu
         self.date0 = date
@@ -217,7 +217,7 @@ class func_ref_vs_cot_multi_pixel:
             sensor_zenith_angle=er3t.common.params['sensor_zenith_angle'],
             sensor_azimuth_angle=er3t.common.params['sensor_azimuth_angle'],
             sensor_altitude=er3t.common.params['sensor_altitude'],
-            photon_number=er3t.common.params['photon_number'],
+            Nphoton=er3t.common.params['Nphoton'],
             cloud_top_height=2.0,
             cloud_geometrical_thickness=1.0,
             solver='ipa',
@@ -244,7 +244,7 @@ class func_ref_vs_cot_multi_pixel:
         self.alb0 = surface_albedo
         self.fdir = fdir
         self.output_tag = output_tag
-        self.photon0 = photon_number
+        self.photon0 = Nphoton
         self.solver0 = solver
         self.cpu0 = Ncpu
         self.date0 = date
