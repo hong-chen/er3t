@@ -24,6 +24,7 @@ class func_ref_vs_cot:
             date=er3t.common.params['date'],
             wavelength=er3t.common.params['wavelength'],
             surface_albedo=er3t.common.params['surface_albedo'],
+            atmospheric_profile=er3t.common.params['atmospheric_profile'],
             solar_zenith_angle=er3t.common.params['solar_zenith_angle'],
             solar_azimuth_angle=er3t.common.params['solar_azimuth_angle'],
             sensor_zenith_angle=er3t.common.params['sensor_zenith_angle'],
@@ -56,6 +57,7 @@ class func_ref_vs_cot:
         self.solver0 = solver
         self.cpu0 = Ncpu
         self.date0 = date
+        self.fname_atm = atmospheric_profile
 
         self.mu0  = np.cos(np.deg2rad(self.sza0))
         self.ref_2s = er3t.util.cal_r_twostream(cot, a=self.alb0, mu=self.mu0)
@@ -113,7 +115,7 @@ class func_ref_vs_cot:
         #/----------------------------------------------------------------------------\#
         levels = np.arange(0.0, 20.1, 0.1)
         fname_atm = '%s/atm_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
-        atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=False)
+        atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=self.fname_atm, overwrite=False)
         #\----------------------------------------------------------------------------/#
 
         # abs object
