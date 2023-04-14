@@ -45,12 +45,12 @@ Applicable area:
 
 **How to cite:**
 
-* `Chen et al., 2022 <https://doi.org/10.5194/amt-2022-143>`_
+* `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
 
    Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
-   Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.
+   Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
 |
 
@@ -86,7 +86,7 @@ Dependencies
 
       ::
 
-        export MCARATS_V010_EXE="/somewhere/mcarats-0.10.4/src/mcarats"
+        export MCARATS_V010_EXE="/system/path/to/mcarats-0.10.4/src/mcarats"
 
     * When the installation processes are complete,
       ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
@@ -96,6 +96,13 @@ Dependencies
 **3. (optional) Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `official installation guide <http://www.libradtran.org/doku.php?id=download>`_ (or a step-by-step `installation guide (unofficial) <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`_ by Hong Chen)
 
     * After installation, please specify environment variable ``LIBRADTRAN_V2_DIR`` for the directory that contains compiled libRadtran (the directory should contain ``bin``, ``lib``, ``src`` etc.).
+
+      For example, if you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
+
+      ::
+
+        export LIBRADTRAN_V2_DIR="/system/path/to/libradtran/v2.0.1"
 
     * When the installation processes are complete,
       ``er3t.rtm.lrt`` can be used to perform IPA radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
@@ -237,12 +244,12 @@ Publications
 
 So far, the following publications have used EaR³T
 
-#. `Chen et al., 2022 <https://doi.org/10.5194/amt-2022-143>`_
+#. `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
 
-   Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
+   Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
-   Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.
+   Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
 #. `Nataraja et al., 2022 <https://doi.org/10.5194/amt-15-5181-2022>`_
 
