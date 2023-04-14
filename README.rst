@@ -111,7 +111,7 @@ Dependencies
 
 **4. (optional) Install** `SHDOM <https://coloradolinux.com/shdom/>`_
 
-    **Unavaiable yet (under development)**
+    **Unavailable yet (under development)**
 
 
 |
@@ -175,7 +175,7 @@ How to Use
 We provide various examples extend from simple demo to complex research project under `examples <https://github.com/hong-chen/er3t/tree/dev/examples>`_.
 ``examples/00_er3t_mca.py`` and ``examples/00_er3t_lrt.py`` can be used to perform test runs.
 
-Details can be found in `here <https://github.com/hong-chen/er3t/tree/dev/examples#readme>`_.
+A detailed instruction can be found `here <https://github.com/hong-chen/er3t/tree/dev/examples#readme>`_.
 
 
 |
@@ -244,6 +244,13 @@ Publications
 
 So far, the following publications have used EaR³T
 
+#. `Gristey et al., 2023 <https://doi.org/10.5194/amt-2023-7>`_
+
+   Gristey, J. J., Schmidt, K. S., Chen, H., Feldman, D. R., Kindel, B. C., Mauss, J., van den Heever, M.,
+   Hakuba, M. Z., and Pilewskie, P.: Angular Sampling of a Monochromatic, Wide-Field-of-View Camera to Augment
+   Next-Generation Earth Radiation Budget Satellite Observations, Atmos. Meas. Tech. Discuss. [preprint],
+   doi:10.5194/amt-2023-7, in review, 2023.
+
 #. `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
 
    Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
@@ -292,13 +299,17 @@ Contributors
 
 Current and past contributors are:
 
-* `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (from Dec., 2022 - current)
+* `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (Dec., 2022 - current)
 
    - improved the automated process of satellite data download (functions in ``er3t/util/util.py``)
 
 * `Ken Hirata <Ken.Hirata@colorado.edu>`_ (Jan., 2023 - current)
 
    - implementing the Mie scattering phase function support for aerosols (work in progress)
+
+* `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
+
+   - implementing spectroscopy support for OCO-2 (work in progress)
 
 |
 
