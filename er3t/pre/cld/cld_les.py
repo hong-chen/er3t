@@ -329,6 +329,24 @@ class cld_les:
         #\----------------------------------------------------------------------------/#
 
 
+    def get_cloud_mask(self):
+
+        """
+        cloud mask
+        """
+
+        # cloud mask based on cer
+        #/----------------------------------------------------------------------------\#
+        cld_msk_3d = np.zeros(self.lay['cer']['data'].shape, dtype=np.int32)
+        cld_msk_3d[self.lay['cer']['data']>0] = 1
+
+        cld_msk_2d = np.sum(cld_msk_3d, axis=-1)
+        cld_msk_2d[cld_msk_2d>0] = 1
+        #\----------------------------------------------------------------------------/#
+
+
+
+
 
 if __name__ == '__main__':
 
