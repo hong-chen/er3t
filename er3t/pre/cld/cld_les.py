@@ -329,7 +329,7 @@ class cld_les:
         #\----------------------------------------------------------------------------/#
 
 
-    def get_cloud_property(self, cer_mode='top', fill_clear=0.0):
+    def get_extra_cloud_property(self, cer_mode='top', fill_clear=0.0):
 
         """
         cloud mask
