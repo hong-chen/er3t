@@ -719,8 +719,6 @@ class cld_gen_cop:
                 ['ny']
                 ['cot']
                 ['cer']
-                ['lon']
-                ['lat']
                 ['altitude']
                 ['temperature']   (x, y, z)
                 ['extinction']    (x, y, z)
@@ -764,7 +762,7 @@ class cld_gen_cop:
 
         else:
 
-            msg = '\nError [cld_sat]: Please check if <%s> exists or provide <cot> to proceed.' % self.fname
+            msg = '\nError [cld_gen_cop]: Please check if <%s> exists or provide <cot> to proceed.' % self.fname
             raise OSError(msg)
 
 
@@ -774,32 +772,32 @@ class cld_gen_cop:
             obj = pickle.load(f)
             if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
                 if self.verbose:
-                    print('Message [cld_sat]: loading %s ...' % fname)
+                    print('Message [cld_gen_cop]: loading %s ...' % fname)
                 self.fname  = obj.fname
                 self.extent = obj.extent
                 self.lay    = obj.lay
                 self.lev    = obj.lev
             else:
-                sys.exit('Error   [cld_sat]: %s is not the correct \'pickle\' file to load.' % fname)
+                msg = '\nError [cld_gen_cop]: <%s> is not the correct pickle file to load.' % fname
+                raise OSError(msg)
 
 
     def run(self, cth, cgt, dz):
 
         if cth is None:
             cth = 3.0
-            print("Warning [cld_sat]: \'cth\' is not specified, setting \'cth\' to 3km ...")
+            print("Warning [cld_gen_cop]: \'cth\' is not specified, setting \'cth\' to 3km ...")
 
         if cgt is None:
             cgt = 1.0
-            print("Warning [cld_sat]: \'cgt\' is not specified, setting \'cgt\' to 1km ...")
+            print("Warning [cld_gen_cop]: \'cgt\' is not specified, setting \'cgt\' to 1km ...")
 
         if dz is None:
             dz = 1.0
-            print("Warning [cld_sat]: \'dz\' is not specified, setting \'dz\' to 1km ...")
+            print("Warning [cld_gen_cop]: \'dz\' is not specified, setting \'dz\' to 1km ...")
 
         # process
         self.process(self.sat, cloud_top_height=cth, cloud_geometrical_thickness=cgt, layer_thickness=dz)
-
 
 
     def dump(self, fname):
@@ -807,7 +805,7 @@ class cld_gen_cop:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_sat]: saving object into %s ...' % fname)
+                print('Message [cld_gen_cop]: saving object into %s ...' % fname)
             pickle.dump(self, f)
 
 
@@ -822,14 +820,16 @@ class cld_gen_cop:
         self.lev = {}
 
         keys = self.sat.data.keys()
-        if ('lon_2d' not in keys) or ('lat_2d' not in keys) or ('cot_2d' not in keys) or ('cer_2d' not in keys):
-            sys.exit('Error   [cld_sat]: Please make sure \'sat_obj.data\' contains \'lon_2d\', \'lat_2d\', \'cot_2d\' and \'cer_2d\'.')
+        if ('cot_2d' not in keys) or ('cer_2d' not in keys):
+            msg = '\nError [cld_gen_cop]: Please make sure <cot_2d> and <cer_2d> are provided.'
+            raise OSError(msg)
 
         cloud_bottom_height = cloud_top_height-cloud_geometrical_thickness
 
         if isinstance(cloud_top_height, np.ndarray):
             if cloud_top_height.shape != self.sat.data['cot_2d']['data'].shape:
-                sys.exit('Error   [cld_sat]: The dimension of \'cloud_top_height\' does not match \'lon_2d\', \'lat_2d\', \'cot_2d\' and \'cer_2d\'.')
+                msg = '\nError [cld_gen_cop]: The dimension of <cloud_top_height> does not match <cot_2d> and <cer_2d>.'
+                raise OSError(msg)
 
             cloud_bottom_height[cloud_bottom_height<layer_thickness] = layer_thickness
             h_bottom = max([np.nanmin(cloud_bottom_height), layer_thickness])
@@ -843,13 +843,11 @@ class cld_gen_cop:
             h_top    = min([cloud_top_height, 30.0])
 
         if h_bottom >= h_top:
-            sys.exit('Error   [cld_sat]: Cloud bottom height is greater than cloud top height, check whether the input cloud top height \'cth\' is in the units of \'km\'.')
+            msg = '\nError [cld_gen_cop]: Cloud bottom height is greater than cloud top height, check whether the input cloud top height <cth> is in the units of <km>.'
+            raise ValueError(msg)
 
         levels   = np.arange(h_bottom, h_top+0.1*layer_thickness, layer_thickness)
         self.atm = atm_atmmod(levels=levels)
-
-        lon_1d = self.sat.data['lon_2d']['data'][:, 0]
-        lat_1d = self.sat.data['lat_2d']['data'][0, :]
 
         if 'dx' not in keys:
             dx = cal_dist(lon_1d[1]-lon_1d[0])
@@ -875,8 +873,6 @@ class cld_gen_cop:
         self.lay['dy'] = {'data':dy       , 'name':'dy'         , 'units':'km'}
         self.lay['altitude'] = copy.deepcopy(self.atm.lay['altitude'])
         self.lay['thickness']= copy.deepcopy(self.atm.lay['thickness'])
-        self.lay['lon']      = copy.deepcopy(self.sat.data['lon_2d'])
-        self.lay['lat']      = copy.deepcopy(self.sat.data['lat_2d'])
         self.lay['cot']      = copy.deepcopy(self.sat.data['cot_2d'])
 
         self.lev['altitude'] = copy.deepcopy(self.atm.lev['altitude'])
