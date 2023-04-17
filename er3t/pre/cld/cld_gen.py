@@ -1,5 +1,6 @@
 import os
 import sys
+import copy
 import pickle
 import warnings
 import numpy as np
@@ -728,22 +729,32 @@ class cld_gen_cop:
     """
 
 
-    ID = 'Cloud Retrieval 3D'
+    ID = 'Cloud Product 3D (Satellite)'
 
 
     def __init__(self,              \
+                 fname     = None,  \
                  cot       = None,  \
                  cer       = None,  \
                  cth       = None,  \
                  cgt       = None,  \
                  dz        = None,  \
-                 fname     = None,  \
-                 extent    = None,  \
+                 atm_obj   = None,  \
+                 extent_xy = None,  \
                  overwrite = False, \
                  verbose   = False):
 
+        if cot is None:
+            msg = '\nError [cld_gen_cop]: Please provide <cot> to proceed.'
+            raise OSError(msg)
+
+        if extent_xy is None:
+            msg = '\nError [cld_gen_cop]: Please provide <extent_xy> to proceed.'
+            raise OSError(msg)
+
         self.fname      = fname       # file name of the pickle file
-        self.extent     = extent
+        self.atm        = atm_obj
+        self.extent     = extent_xy
         self.verbose    = verbose     # verbose tag
 
         if ((self.fname is not None) and (os.path.exists(self.fname)) and (not overwrite)):
@@ -772,7 +783,7 @@ class cld_gen_cop:
             obj = pickle.load(f)
             if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
                 if self.verbose:
-                    print('Message [cld_gen_cop]: loading %s ...' % fname)
+                    print('Message [cld_gen_cop]: loading <%s> ...' % fname)
                 self.fname  = obj.fname
                 self.extent = obj.extent
                 self.lay    = obj.lay
@@ -782,22 +793,35 @@ class cld_gen_cop:
                 raise OSError(msg)
 
 
-    def run(self, cth, cgt, dz):
+    def run(self, cot, cer, cth, cgt, dz):
+
+        if cer is None:
+            msg = '\nWarning [cld_gen_cop]: <cer> is not specified, setting <cer> to 10 micron ...'
+            warnings.warn(msg)
 
         if cth is None:
             cth = 3.0
-            print("Warning [cld_gen_cop]: \'cth\' is not specified, setting \'cth\' to 3km ...")
+            msg = '\nWarning [cld_gen_cop]: <cth> is not specified, setting <cth> to 3km ...'
+            warnings.warn(msg)
 
         if cgt is None:
             cgt = 1.0
-            print("Warning [cld_gen_cop]: \'cgt\' is not specified, setting \'cgt\' to 1km ...")
+            msg = '\nWarning [cld_gen_cop]: <cgt> is not specified, setting <cgt> to 1km ...'
+            warnings.warn(msg)
 
         if dz is None:
-            dz = 1.0
-            print("Warning [cld_gen_cop]: \'dz\' is not specified, setting \'dz\' to 1km ...")
+            dz  = 1.0
+            msg = '\nWarning [cld_gen_cop]: <dz> is not specified, setting <dz> to 1km ...'
+            warnings.warn(msg)
 
         # process
-        self.process(self.sat, cloud_top_height=cth, cloud_geometrical_thickness=cgt, layer_thickness=dz)
+        self.process(
+                cot,
+                cloud_effective_radius=cer,
+                cloud_top_height=cth,
+                cloud_geometrical_thickness=cgt,
+                layer_thickness=dz
+                )
 
 
     def dump(self, fname):
@@ -811,59 +835,54 @@ class cld_gen_cop:
 
     def process(
             self,
-            cloud_geometrical_thickness=1.0,
+            cloud_optical_thickness,
+            cloud_effective_radius=10.0,
             cloud_top_height=3.0,
+            cloud_geometrical_thickness=1.0,
             layer_thickness=1.0
             ):
 
         self.lay = {}
         self.lev = {}
 
-        keys = self.sat.data.keys()
-        if ('cot_2d' not in keys) or ('cer_2d' not in keys):
-            msg = '\nError [cld_gen_cop]: Please make sure <cot_2d> and <cer_2d> are provided.'
+        Nx, Ny = cloud_optical_thickness.shape
+
+        if not isinstance(cloud_effective_radius, np.ndarray):
+            cloud_effective_radius = np.full(cloud_optical_thickness.shape, cloud_effective_radius)
+
+        if not isinstance(cloud_top_height, np.ndarray):
+            cloud_top_height = np.full(cloud_optical_thickness.shape, cloud_top_height)
+
+        if not isinstance(cloud_geometrical_thickness, np.ndarray):
+            cloud_geometrical_thickness = np.full(cloud_optical_thickness.shape, cloud_geometrical_thickness)
+
+        if cloud_top_height.shape != cloud_optical_thickness.shape:
+            msg = '\nError [cld_gen_cop]: The dimension of <cloud_top_height> does not match <cloud_optical_thickness>.'
             raise OSError(msg)
 
         cloud_bottom_height = cloud_top_height-cloud_geometrical_thickness
+        cloud_bottom_height[cloud_bottom_height<0.0] = 0.0
 
-        if isinstance(cloud_top_height, np.ndarray):
-            if cloud_top_height.shape != self.sat.data['cot_2d']['data'].shape:
-                msg = '\nError [cld_gen_cop]: The dimension of <cloud_top_height> does not match <cot_2d> and <cer_2d>.'
-                raise OSError(msg)
-
-            cloud_bottom_height[cloud_bottom_height<layer_thickness] = layer_thickness
-            h_bottom = max([np.nanmin(cloud_bottom_height), layer_thickness])
-            h_top    = min([np.nanmax(cloud_top_height), 30.0])
-
-        else:
-
-            if cloud_bottom_height < layer_thickness:
-                cloud_bottom_height = layer_thickness
-            h_bottom = max([cloud_bottom_height, layer_thickness])
-            h_top    = min([cloud_top_height, 30.0])
+        h_bottom = max([np.nanmin(cloud_bottom_height), 0.0])
+        h_top    = min([np.nanmax(cloud_top_height), 20.0])
 
         if h_bottom >= h_top:
             msg = '\nError [cld_gen_cop]: Cloud bottom height is greater than cloud top height, check whether the input cloud top height <cth> is in the units of <km>.'
             raise ValueError(msg)
 
         levels   = np.arange(h_bottom, h_top+0.1*layer_thickness, layer_thickness)
-        self.atm = atm_atmmod(levels=levels)
-
-        if 'dx' not in keys:
-            dx = cal_dist(lon_1d[1]-lon_1d[0])
+        if self.atm is None:
+            self.atm = atm_atmmod(levels=levels)
         else:
-            dx = self.sat.data['dx']['data']
+            self.atm = atm_atmmod(levels=levels, fname_atmmod=self.atm.fname_atmmod)
 
-        if 'dy' not in keys:
-            dy = cal_dist(lat_1d[1]-lat_1d[0])
-        else:
-            dy = self.sat.data['dy']['data']
+        x_1d_ = np.linspace(self.extent[0], self.extent[1], Nx+1)
+        y_1d_ = np.linspace(self.extent[2], self.extent[3], Ny+1)
 
-        x_1d = (lon_1d-lon_1d[0])*dx
-        y_1d = (lat_1d-lat_1d[0])*dy
-
-        Nx   = x_1d.size
-        Ny   = y_1d.size
+        dx = x_1d_[1]-x_1d_[0]
+        dy = y_1d_[1]-y_1d_[0]
+        x_1d = x_1d_[:-1] + dx/2.0
+        y_1d = y_1d_[:-1] + dy/2.0
 
         self.lay['x']  = {'data':x_1d     , 'name':'X'          , 'units':'km'}
         self.lay['y']  = {'data':y_1d     , 'name':'Y'          , 'units':'km'}
@@ -873,50 +892,56 @@ class cld_gen_cop:
         self.lay['dy'] = {'data':dy       , 'name':'dy'         , 'units':'km'}
         self.lay['altitude'] = copy.deepcopy(self.atm.lay['altitude'])
         self.lay['thickness']= copy.deepcopy(self.atm.lay['thickness'])
-        self.lay['cot']      = copy.deepcopy(self.sat.data['cot_2d'])
 
         self.lev['altitude'] = copy.deepcopy(self.atm.lev['altitude'])
+        self.lev['cot_2d'] = {'data':cloud_optical_thickness    , 'name':'Cloud Optical Thickness'    , 'units':'N/A'}
+        self.lev['cer_2d'] = {'data':cloud_effective_radius     , 'name':'Cloud Effective Radius'     , 'units':'micron'}
+        self.lev['cth_2d'] = {'data':cloud_top_height           , 'name':'Cloud Top Height'           , 'units':'km'}
+        self.lev['cgt_2d'] = {'data':cloud_geometrical_thickness, 'name':'Cloud Geometrical Thickness', 'units':'km'}
 
         # temperature 3d
+        #/--------------------------------------------------------------\#
         t_1d = self.atm.lay['temperature']['data']
         Nz   = t_1d.size
         t_3d      = np.empty((Nx, Ny, Nz), dtype=t_1d.dtype)
         t_3d[...] = t_1d[None, None, :]
 
-        cer_2d = self.sat.data['cer_2d']['data']
-        cer_3d = np.empty((Nx, Ny, Nz), dtype=cer_2d.dtype)
-        cer_3d[...] = cer_2d[:, :, None]
-
         self.lay['temperature'] = {'data':t_3d, 'name':'Temperature', 'units':'K'}
+        #\--------------------------------------------------------------/#
+
 
         # extinction 3d
+        #/--------------------------------------------------------------\#
         ext_3d      = np.zeros((Nx, Ny, Nz), dtype=np.float64)
 
         alt = self.atm.lay['altitude']['data']
 
         for i in range(Nx):
             for j in range(Ny):
-                if isinstance(cloud_top_height, np.ndarray):
-                    cbh0 = cloud_bottom_height[i, j]
-                    cth0 = cloud_top_height[i, j]
-                else:
-                    cbh0 = cloud_bottom_height
-                    cth0 = cloud_top_height
+                cbh0 = cloud_bottom_height[i, j]
+                cth0 = cloud_top_height[i, j]
 
-                cot0  = self.lay['cot']['data'][i, j]
-                cer0  = cer_2d[i, j]
+                cot0  = self.lev['cot_2d']['data'][i, j]
                 indices =  np.where((alt>=cbh0) & (alt<=cth0))[0]
                 if indices.size == 0:
                     indices = np.array([-1])
-
 
                 dz    = self.atm.lay['thickness']['data'][indices].sum() * 1000.0
                 ext_3d[i, j, indices] = cot0/dz
 
         ext_3d[np.isnan(ext_3d)] = 0.0
-        cer_3d[np.isnan(ext_3d)] = 0.0
         self.lay['extinction']   = {'data':ext_3d, 'name':'Extinction coefficients', 'units':'m^-1'}
-        self.lay['cer']          = {'data':cer_3d, 'name':'Effective radius'       , 'units':'mm'}
+        #\--------------------------------------------------------------/#
+
+        # cer 3d
+        #/--------------------------------------------------------------\#
+        cer_2d = self.lev['cer_2d']['data']
+        cer_3d = np.empty((Nx, Ny, Nz), dtype=cer_2d.dtype)
+        cer_3d[...] = cer_2d[:, :, None]
+
+        cer_3d[np.isnan(ext_3d)] = 0.0
+        self.lay['cer'] = {'data':cer_3d, 'name':'Cloud Effective radius', 'units':'micron'}
+        #\--------------------------------------------------------------/#
 
         self.Nx = Nx
         self.Ny = Ny
