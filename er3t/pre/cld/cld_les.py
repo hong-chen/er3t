@@ -338,7 +338,7 @@ class cld_les:
 
         # cloud mask based on cer
         #/----------------------------------------------------------------------------\#
-        if ('cld_msk' not in self.lay.keys()) and ('cld_msk_2d' not in self.lev.keys()) and (not overwrite):
+        if ('cld_msk' not in self.lay.keys()) or ('cld_msk_2d' not in self.lev.keys()) or (overwrite):
             cld_msk_3d = np.zeros(self.lay['cer']['data'].shape, dtype=np.int32)
             cld_msk_3d[self.lay['cer']['data']>0] = 1
 
@@ -353,7 +353,7 @@ class cld_les:
         # cloud top height <cth_2d>
         # cloud base height <cbh_2d>
         #/----------------------------------------------------------------------------\#
-        if ('cer_2d' not in self.lev.keys()) and ('cth_2d' not in self.lev.keys()) and ('cbh_2d' not in self.lev.keys()) and (not overwrite):
+        if ('cer_2d' not in self.lev.keys()) or ('cth_2d' not in self.lev.keys()) or ('cbh_2d' not in self.lev.keys()) or (overwrite):
             cer_3d = self.lay['cer']['data'].copy()
             cer_3d[cld_msk_3d==0] = np.nan
 
