@@ -848,14 +848,18 @@ class cld_gen_cop:
 
         Nx, Ny = cloud_optical_thickness.shape
 
+        logic_clear = np.isnan(cloud_optical_thickness) | (cloud_optical_thickness == 0.0)
         if not isinstance(cloud_effective_radius, np.ndarray):
             cloud_effective_radius = np.full(cloud_optical_thickness.shape, cloud_effective_radius)
+            cloud_effective_radius[logic_clear] = 0.0
 
         if not isinstance(cloud_top_height, np.ndarray):
             cloud_top_height = np.full(cloud_optical_thickness.shape, cloud_top_height)
+            cloud_top_height[logic_clear] = 0.0
 
         if not isinstance(cloud_geometrical_thickness, np.ndarray):
             cloud_geometrical_thickness = np.full(cloud_optical_thickness.shape, cloud_geometrical_thickness)
+            cloud_geometrical_thickness[logic_clear] = 0.0
 
         if cloud_top_height.shape != cloud_optical_thickness.shape:
             msg = '\nError [cld_gen_cop]: The dimension of <cloud_top_height> does not match <cloud_optical_thickness>.'
