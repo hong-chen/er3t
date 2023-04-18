@@ -744,13 +744,6 @@ class cld_gen_cop:
                  overwrite = False, \
                  verbose   = True):
 
-        if cot is None:
-            msg = '\nError [cld_gen_cop]: Please provide <cot> to proceed.'
-            raise OSError(msg)
-
-        if extent_xy is None:
-            msg = '\nError [cld_gen_cop]: Please provide <extent_xy> to proceed.'
-            raise OSError(msg)
 
         self.fname      = fname       # file name of the pickle file
         self.atm        = atm_obj
@@ -794,6 +787,14 @@ class cld_gen_cop:
 
 
     def run(self, cot, cer, cth, cgt, dz):
+
+        if self.extent is None:
+            msg = '\nError [cld_gen_cop]: Please provide <extent_xy> to proceed.'
+            raise OSError(msg)
+
+        if cot is None:
+            msg = '\nError [cld_gen_cop]: Please provide <cot> to proceed.'
+            raise OSError(msg)
 
         if cer is None:
             msg = '\nWarning [cld_gen_cop]: <cer> is not specified, setting <cer> to 10 micron ...'
