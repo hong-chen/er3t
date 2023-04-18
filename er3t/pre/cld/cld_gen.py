@@ -894,10 +894,6 @@ class cld_gen_cop:
         self.lay['thickness']= copy.deepcopy(self.atm.lay['thickness'])
 
         self.lev['altitude'] = copy.deepcopy(self.atm.lev['altitude'])
-        self.lev['cot_2d'] = {'data':cloud_optical_thickness    , 'name':'Cloud Optical Thickness'    , 'units':'N/A'}
-        self.lev['cer_2d'] = {'data':cloud_effective_radius     , 'name':'Cloud Effective Radius'     , 'units':'micron'}
-        self.lev['cth_2d'] = {'data':cloud_top_height           , 'name':'Cloud Top Height'           , 'units':'km'}
-        self.lev['cgt_2d'] = {'data':cloud_geometrical_thickness, 'name':'Cloud Geometrical Thickness', 'units':'km'}
 
         # temperature 3d
         #/--------------------------------------------------------------\#
@@ -921,7 +917,7 @@ class cld_gen_cop:
                 cbh0 = cloud_bottom_height[i, j]
                 cth0 = cloud_top_height[i, j]
 
-                cot0  = self.lev['cot_2d']['data'][i, j]
+                cot0  = cloud_optical_thickness[i, j]
                 indices =  np.where((alt>=cbh0) & (alt<=cth0))[0]
                 if indices.size == 0:
                     indices = np.array([-1])
@@ -935,17 +931,77 @@ class cld_gen_cop:
 
         # cer 3d
         #/--------------------------------------------------------------\#
-        cer_2d = self.lev['cer_2d']['data']
-        cer_3d = np.empty((Nx, Ny, Nz), dtype=cer_2d.dtype)
-        cer_3d[...] = cer_2d[:, :, None]
+        cer_3d = np.empty((Nx, Ny, Nz), dtype=cloud_effective_radius.dtype)
+        cer_3d[...] = cloud_effective_radius[:, :, None]
 
-        cer_3d[np.isnan(ext_3d)] = 0.0
+        cer_3d[ext_3d==0.0] = 0.0
         self.lay['cer'] = {'data':cer_3d, 'name':'Cloud Effective radius', 'units':'micron'}
         #\--------------------------------------------------------------/#
 
-        self.Nx = Nx
-        self.Ny = Ny
-        self.Nz = Nz
+
+    def get_extra_cloud_property(self, cer_mode='top', fill_clear=0.0, overwrite=False):
+
+        """
+        cloud mask
+        cloud effective radius
+        """
+
+        # cloud mask based on cer
+        #/----------------------------------------------------------------------------\#
+        cer_3d = self.lay['cer']['data'].copy()
+        if ('cld_msk' not in self.lay.keys()) or ('cld_msk_2d' not in self.lev.keys()) or (overwrite):
+            cld_msk_3d = np.zeros(cer_3d.shape, dtype=np.int32)
+            cld_msk_3d[cer_3d>0.0] = 1
+
+            cld_msk_2d = np.sum(cld_msk_3d, axis=-1)
+            cld_msk_2d[cld_msk_2d>0] = 1
+
+            self.lay['cld_msk'] = {'data':cld_msk_3d, 'name':'Cloud Mask (1: Cloud)', 'units':'N/A'}
+            self.lev['cld_msk_2d'] = {'data': cld_msk_2d, 'name': 'Cloud Mask (1: Cloud)', 'units':'N/A'}
+        #\----------------------------------------------------------------------------/#
+
+        # cloud optical thickness
+        #/----------------------------------------------------------------------------\#
+        if ('cot_2d' not in self.lev.keys()) or (overwrite):
+            cot_2d = np.nansum(self.lay['extinction']['data']*self.lay['thickness']['data'][0]*1000.0, axis=-1)
+            self.lev['cot_2d'] = {'data': cot_2d, 'name': 'Cloud Optical Thickness', 'units': 'N/A'}
+        #\----------------------------------------------------------------------------/#
+
+        # cloud effective radius <cer_2d>
+        # cloud top height <cth_2d>
+        # cloud base height <cbh_2d>
+        #/----------------------------------------------------------------------------\#
+        if ('cer_2d' not in self.lev.keys()) or ('cth_2d' not in self.lev.keys()) or ('cbh_2d' not in self.lev.keys()) or (overwrite):
+            cer_3d[cld_msk_3d==0] = np.nan
+
+            Nx, Ny, Nz = cer_3d.shape
+
+            z  = self.lay['altitude']['data']
+            dz = self.lay['thickness']['data'][0]
+            z_indice = np.arange(Nz)
+
+            cer_2d = np.zeros((Nx, Ny), dtype=np.float64); cer_2d[...] = fill_clear
+
+            cth_2d = np.zeros((Nx, Ny), dtype=np.float64); cth_2d[...] = fill_clear
+            cbh_2d = np.zeros((Nx, Ny), dtype=np.float64); cbh_2d[...] = fill_clear
+
+            for i in range(Nx):
+                for j in range(Ny):
+                    cer0 = cer_3d[i, j, :]
+                    logic_good = np.logical_not(np.isnan(cer0)) & (cer0>0)
+                    if logic_good.sum() > 0:
+                        if cer_mode.lower() == 'top':
+                            cer_2d[i, j]  = cer0[np.max(z_indice[logic_good])]
+                        elif cer_mode.lower() == 'mean':
+                            cer_2d[i, j] = np.mean(cer0[logic_good])
+
+                        cth_2d[i, j] = z[np.max(z_indice[logic_good])] + dz/2.0
+                        cbh_2d[i, j] = z[np.min(z_indice[logic_good])] - dz/2.0
+
+            self.lev['cer_2d'] = {'data': cer_2d, 'name': 'Cloud Effective Radius', 'units': 'micron'}
+            self.lev['cth_2d'] = {'data': cth_2d, 'name': 'Cloud Top Height'      , 'units': 'km'}
+            self.lev['cbh_2d'] = {'data': cbh_2d, 'name': 'Cloud Base Height'     , 'units': 'km'}
+        #\----------------------------------------------------------------------------/#
 
 
 

@@ -345,8 +345,15 @@ class cld_les:
             cld_msk_2d = np.sum(cld_msk_3d, axis=-1)
             cld_msk_2d[cld_msk_2d>0] = 1
 
-            self.lay['cld_msk'] = {'data':cld_msk_3d, 'name':'Cloud Mask (1: Cloud)'}
-            self.lev['cld_msk_2d'] = {'data': cld_msk_2d, 'name': 'Cloud Mask (1: Cloud)'}
+            self.lay['cld_msk'] = {'data':cld_msk_3d, 'name':'Cloud Mask (1: Cloud)', 'units':'N/A'}
+            self.lev['cld_msk_2d'] = {'data': cld_msk_2d, 'name': 'Cloud Mask (1: Cloud)', 'units':'N/A'}
+        #\----------------------------------------------------------------------------/#
+
+        # cloud optical thickness
+        #/----------------------------------------------------------------------------\#
+        if ('cot_2d' not in self.lev.keys()) or (overwrite):
+            cot_2d = np.nansum(self.lay['extinction']['data']*self.lay['thickness']['data'][0]*1000.0, axis=-1)
+            self.lev['cot_2d'] = {'data': cot_2d, 'name': 'Cloud Optical Thickness', 'units': 'N/A'}
         #\----------------------------------------------------------------------------/#
 
         # cloud effective radius <cer_2d>
@@ -371,7 +378,7 @@ class cld_les:
             for i in range(Nx):
                 for j in range(Ny):
                     cer0 = cer_3d[i, j, :]
-                    logic_good = np.logical_not(np.isnan(cer0))
+                    logic_good = np.logical_not(np.isnan(cer0)) & (cer0>0)
                     if logic_good.sum() > 0:
                         if cer_mode.lower() == 'top':
                             cer_2d[i, j]  = cer0[np.max(z_indice[logic_good])]
@@ -381,9 +388,9 @@ class cld_les:
                         cth_2d[i, j] = z[np.max(z_indice[logic_good])] + dz/2.0
                         cbh_2d[i, j] = z[np.min(z_indice[logic_good])] - dz/2.0
 
-            self.lev['cer_2d'] = {'data': cer_2d, 'name': 'Cloud Effective Radius [micron]'}
-            self.lev['cth_2d'] = {'data': cth_2d, 'name': 'Cloud Top Height [km]'}
-            self.lev['cbh_2d'] = {'data': cbh_2d, 'name': 'Cloud Base Height [km]'}
+            self.lev['cer_2d'] = {'data': cer_2d, 'name': 'Cloud Effective Radius', 'units': 'micron'}
+            self.lev['cth_2d'] = {'data': cth_2d, 'name': 'Cloud Top Height'      , 'units': 'km'}
+            self.lev['cbh_2d'] = {'data': cbh_2d, 'name': 'Cloud Base Height'     , 'units': 'km'}
         #\----------------------------------------------------------------------------/#
 
 
