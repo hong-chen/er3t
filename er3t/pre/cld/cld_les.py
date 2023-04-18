@@ -353,6 +353,7 @@ class cld_les:
         #/----------------------------------------------------------------------------\#
         if ('cot_2d' not in self.lev.keys()) or (overwrite):
             cot_2d = np.nansum(self.lay['extinction']['data']*self.lay['thickness']['data'][0]*1000.0, axis=-1)
+            cot_2d[cld_msk_2d==0] = fill_clear
             self.lev['cot_2d'] = {'data': cot_2d, 'name': 'Cloud Optical Thickness', 'units': 'N/A'}
         #\----------------------------------------------------------------------------/#
 
