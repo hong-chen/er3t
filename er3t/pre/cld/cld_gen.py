@@ -783,7 +783,7 @@ class cld_gen_cop:
             obj = pickle.load(f)
             if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
                 if self.verbose:
-                    print('Message [cld_gen_cop]: loading <%s> ...' % fname)
+                    print('Message [cld_gen_cop]: Loading <%s> ...' % fname)
                 self.fname  = obj.fname
                 self.extent = obj.extent
                 self.lay    = obj.lay
@@ -829,7 +829,7 @@ class cld_gen_cop:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_gen_cop]: saving object into %s ...' % fname)
+                print('Message [cld_gen_cop]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
 
 
