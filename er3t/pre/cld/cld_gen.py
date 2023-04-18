@@ -742,7 +742,7 @@ class cld_gen_cop:
                  atm_obj   = None,  \
                  extent_xy = None,  \
                  overwrite = False, \
-                 verbose   = False):
+                 verbose   = True):
 
         if cot is None:
             msg = '\nError [cld_gen_cop]: Please provide <cot> to proceed.'
