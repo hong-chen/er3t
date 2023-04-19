@@ -848,7 +848,7 @@ class cld_gen_cop:
 
         Nx, Ny = cloud_optical_thickness.shape
 
-        logic_clear = np.isnan(cloud_optical_thickness) | (cloud_optical_thickness == 0.0)
+        logic_clear = np.isnan(cloud_optical_thickness) | (cloud_optical_thickness <= 0.0)
         if not isinstance(cloud_effective_radius, np.ndarray):
             cloud_effective_radius = np.full(cloud_optical_thickness.shape, cloud_effective_radius)
             cloud_effective_radius[logic_clear] = 0.0
@@ -939,7 +939,7 @@ class cld_gen_cop:
         cer_3d = np.empty((Nx, Ny, Nz), dtype=cloud_effective_radius.dtype)
         cer_3d[...] = cloud_effective_radius[:, :, None]
 
-        cer_3d[ext_3d==0.0] = 0.0
+        cer_3d[ext_3d<=0.0] = 0.0
         self.lay['cer'] = {'data':cer_3d, 'name':'Cloud Effective radius', 'units':'micron'}
         #\--------------------------------------------------------------/#
 
