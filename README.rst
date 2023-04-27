@@ -122,16 +122,16 @@ How to Install
 
 a) Open a terminal, type in the following
 
-      ::
+    ::
 
-        git clone https://github.com/hong-chen/er3t.git
+      git clone https://github.com/hong-chen/er3t.git
 
 b) Under newly cloned ``er3t``, where it contains ``er3t-env.yml``, type in the following
 
-      ::
+    ::
 
-        conda env create -f er3t-env.yml
-        conda activate er3t
+      conda env create -f er3t-env.yml
+      conda activate er3t
 
     * A `Python package list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
       (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
@@ -140,9 +140,9 @@ b) Under newly cloned ``er3t``, where it contains ``er3t-env.yml``, type in the 
 
 c) Under newly cloned ``er3t``, where it contains ``install.sh``, type in the following
 
-      ::
+    ::
 
-        bash install.sh
+      bash install.sh
 
     * If ``install.sh`` fails to download the data from Google Drive for any reason, you can download the required data
       manually from `here <https://drive.google.com/file/d/1KKpLR7IyqJ4gS6xCxc7f1hwUfUMJksVL/view?usp=sharing>`_.
