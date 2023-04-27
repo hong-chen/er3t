@@ -118,8 +118,6 @@ How to Install
 
 **You will need to have the dependencies installed first.**
 
-**1. Download from Github**
-
 a) Open a terminal, type in the following
 
     ::
@@ -133,7 +131,7 @@ b) Under newly cloned ``er3t``, where it contains ``er3t-env.yml``, type in the 
       conda env create -f er3t-env.yml
       conda activate er3t
 
-    * A `Python package list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
+    * A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
       (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
 
 
