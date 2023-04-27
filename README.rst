@@ -64,18 +64,10 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 Dependencies
 ============
 
-**1. Python packages** (we recommend using `Anaconda <https://www.anaconda.com/>`_ Python)
+**1. Python package manager** (we recommend using ``conda`` by `Anaconda <https://www.anaconda.com/>`_)
 
-
-    ::
-
-        conda env create -f er3t-env.yml
-        conda activate er3t
-
-    * A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
+    * A `Python package list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
       (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
-
-|
 
 **2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or a step-by-step `installation guide (unofficial) <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_ by Hong Chen)
 
@@ -123,8 +115,7 @@ How to Install
 
 **You will need to have the dependencies installed first.**
 
-**1. From Github (most up-to-date)**
-
+**1. Download from Github**
 
 a) Open a terminal, type in the following
 
@@ -132,29 +123,19 @@ a) Open a terminal, type in the following
 
     git clone https://github.com/hong-chen/er3t.git
 
+b) Under newly cloned ``er3t``, where it contains ``er3t-env.yml``, type in the following
 
-b) Under newly cloned ``er3t``, where it contains ``install.sh``, type in the following
+::
+
+    conda env create -f er3t-env.yml
+    conda activate er3t
+
+c) Under newly cloned ``er3t``, where it contains ``install.sh``, type in the following
 
 ::
 
     bash install.sh
 
-
-|
-
-**2. From Public Release (fully tested)**
-
-a) Download the latest release from `here <https://github.com/hong-chen/er3t/releases/latest>`_;
-
-
-b) Unzip or untar the file after download;
-
-
-3) Under the unzipped directory ``er3t``, where it contains ``install.sh``, type in the following
-
-::
-
-    bash install.sh
 
 |
 
