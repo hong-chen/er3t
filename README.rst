@@ -64,10 +64,13 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 Dependencies
 ============
 
-**1. Python package manager** (we recommend using ``conda`` by `Anaconda <https://www.anaconda.com/>`_)
+**1. Python package manager** (we recommend using ``conda`` from one of the following installers)
 
-    * A `Python package list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
-      (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
+    * `Anaconda <https://www.anaconda.com/>`_ (comprehensive, more popular);
+
+    * `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ (compact, more system-friendly).
+
+|
 
 **2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or a step-by-step `installation guide (unofficial) <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_ by Hong Chen)
 
@@ -125,10 +128,14 @@ a) Open a terminal, type in the following
 
 b) Under newly cloned ``er3t``, where it contains ``er3t-env.yml``, type in the following
 
+    * A `Python package list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
+      (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
+
 ::
 
     conda env create -f er3t-env.yml
     conda activate er3t
+
 
 c) Under newly cloned ``er3t``, where it contains ``install.sh``, type in the following
 
