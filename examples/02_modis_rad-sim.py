@@ -80,16 +80,18 @@ class satellite_download:
             date=None,
             extent=None,
             fname=None,
+            satellite='aqua',
             fdir_out='data',
             overwrite=False,
             quiet=False,
             verbose=False):
 
-        self.date     = date
-        self.extent   = extent
-        self.fdir_out = fdir_out
-        self.quiet    = quiet
-        self.verbose  = verbose
+        self.date      = date
+        self.extent    = extent
+        self.satellite = satellite
+        self.fdir_out  = fdir_out
+        self.quiet     = quiet
+        self.verbose   = verbose
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -128,21 +130,33 @@ class satellite_download:
         lon0 = np.linspace(self.extent[0], self.extent[1], 100)
         lat0 = np.linspace(self.extent[2], self.extent[3], 100)
         lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
-
+        
+        # create prefixes for the satellite products
+        if self.satellite.lower() == 'aqua':
+            dataset_tags = ['61/MYD03', '61/MYD06_L2', '61/MYD02QKM']
+        elif self.satellite.lower() == 'terra':
+            dataset_tags = ['61/MOD03', '61/MOD06_L2', '61/MOD02QKM']
+        else:
+            msg = 'Message [satellite_download]: Satellite must be either \'Aqua\' or \'Terra\'. %s is currently not supported' % self.satellite)
+            sys.exit(msg)
+        
         self.fnames = {}
-
-        self.fnames['mod_rgb'] = [download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
+        # MODIS RGB imagery 
+        self.fnames['mod_rgb'] = [download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
-        filename_tags_03 = get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
 
+        filename_tags_03 = get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
+        if self.verbose:
+           print('Message [satellite_download]: Found %s %s overpasses' % (len(filename_tags_03), self.satellite))
+        
         for filename_tag in filename_tags_03:
-            fnames_03     = download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02
             self.fnames['mod_03'] += fnames_03
