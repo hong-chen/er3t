@@ -64,7 +64,7 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 Dependencies
 ============
 
-**1. Install** ``conda`` **Python package manager** (pick **one** of the following installers)
+**1. Install** ``conda`` **Python package manager** (pick **one** from the following installers)
 
     * `Anaconda <https://www.anaconda.com/>`_ (comprehensive, more popular);
 
@@ -162,7 +162,7 @@ How to Use
 We provide various examples extend from simple demo to complex research project under `examples <https://github.com/hong-chen/er3t/tree/dev/examples>`_.
 ``examples/00_er3t_mca.py`` and ``examples/00_er3t_lrt.py`` can be used to perform test runs.
 
-A detailed instruction can be found `here <https://github.com/hong-chen/er3t/tree/dev/examples#readme>`_.
+A more detailed instruction can be found `here <https://github.com/hong-chen/er3t/tree/dev/examples#readme>`_.
 
 
 |
