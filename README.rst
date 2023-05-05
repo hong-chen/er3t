@@ -64,11 +64,12 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 Dependencies
 ============
 
-**1. Python package manager** (we recommend using ``conda`` from one of the following installers)
+**1. Install** ``conda`` **Python package manager** (pick **one** of the following installers)
 
     * `Anaconda <https://www.anaconda.com/>`_ (comprehensive, more popular);
 
     * `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ (compact, more system-friendly).
+
 
 |
 
@@ -86,6 +87,7 @@ Dependencies
     * When the installation processes are complete,
       ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
 
+
 |
 
 **3. (optional) Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `official installation guide <http://www.libradtran.org/doku.php?id=download>`_ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`_)
@@ -101,6 +103,7 @@ Dependencies
 
     * When the installation processes are complete,
       ``er3t.rtm.lrt`` can be used to perform IPA radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
+
 
 |
 
