@@ -25,17 +25,17 @@ Applicable area:
 
 .. list-table:: **Demo**
 
-    * - Multi-Angle (downward-looking from space)
+    * - Multi-Angle (space view)
 
-      - Sunrise to Sunset (downward-looking from space)
+      - Sunrise to Sunset (space view)
 
     * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle_space.gif
 
       - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/sunrise-sunset_space.gif
 
-    * - Multi-Angle (upward-looking from ground)
+    * - Multi-Angle (ground view)
 
-      - Sunrise to Sunset (upward-looking from ground)
+      - Sunrise to Sunset (ground view)
 
     * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle_ground.gif
 
@@ -76,8 +76,8 @@ Dependencies
 
     * After installation, please specify environment variable ``MCARATS_V010_EXE``.
 
-      For example, if you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file
-      (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
+      For example, if you are using ``bash`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc``):
 
       ::
 
@@ -92,8 +92,8 @@ Dependencies
 
     * After installation, please specify environment variable ``LIBRADTRAN_V2_DIR`` for the directory that contains compiled libRadtran (the directory should contain ``bin``, ``lib``, ``src`` etc.).
 
-      For example, if you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file
-      (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
+      For example, if you are using ``bash`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc``):
 
       ::
 
@@ -226,7 +226,7 @@ Publications
 ============
 
 
-So far, the following publications have used EaR³T
+So far, EaR³T has been used in the following publications:
 
 #. `Gristey et al., 2023 <https://doi.org/10.5194/amt-2023-7>`_
 
