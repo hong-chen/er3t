@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import math
 import shutil
 import datetime
 import time
@@ -8,6 +9,7 @@ import importlib
 import requests
 import urllib.request
 from io import StringIO
+import geopy.distance as gdist
 import numpy as np
 from scipy import interpolate
 import warnings
@@ -19,7 +21,7 @@ __all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
            'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
-           'get_satfile_tag', \
+           'get_lon2lat2', 're_extend', 'get_satfile_tag'\
            'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
@@ -403,6 +405,72 @@ def get_doy_tag(date, day_interval=8):
 
     return doy_tag
 
+
+def get_lon2lat2(lon1, lat1, bearing, distance, use_great_circle=True):
+    """
+    Gets lat/lon of the destination point given an initial point,
+    bearing, and the distance between the points.
+    Args:
+        - lon1: float, longitude of the first point in degrees
+        - lat1: float, latitude of the first point in degrees
+        - bearing: float, angle of trajectory. 
+                   For instance, 0 is true north, 90 is east, 180 is south, 270 is west.
+        - distance: float, distance between the points in meters
+        - use_great_circle: bool, set to True if great circle distance needs to be used.
+                            If set to False, geodetic/ellipsoid distance will be used.
+    Returns:
+        - lon2: float, longitude of the second point in degrees
+        - lat2: float, latitude of the second point in degrees
+    
+    Reference: http://www.movable-type.co.uk/scripts/latlong.html
+    """
+    if use_great_circle:
+        lon1, lat1, bearing = map(math.radians, [lon1, lat1, bearing]) # convert to radians
+        delta = distance/(gdist.EARTH_RADIUS * 1e3) # delta = d/R
+        lat2 = math.asin(math.sin(lat1) * math.cos(delta) + math.cos(lat1) * math.sin(delta) * math.cos(bearing))
+        lon2 = lon1 + math.atan2(math.sin(bearing) * math.sin(delta) * math.cos(lat1),
+                             math.cos(delta) - math.sin(lat1) * math.sin(lat2))
+        return lon2 * 180./math.pi, lat2 * 180./math.pi # convert back to degrees
+    else:
+        dest = gdist.distance(meters=distance).destination((lat1, lon1), bearing=bearing)
+        return dest.longitude, dest.latitude
+
+def re_extend(extent, width, height, resolution):
+    """
+    Re-extends the given extent so that the resulting extent can be gridded
+    to a fixed `resolution` to generate the same image size always (width x height).
+    Useful when downloading data from multiple locations at different latitudes.
+    Args:
+        - extent: list or arr, the extent of the location of interest in WESN format.
+        - width:  int, the width you will be gridding the image to after download.
+        - height: int, the height you will be gridding the image to after download.
+        - resolution: int, the resolution you will be gridding the image to.
+    Returns:
+        - lon2_arr: arr, a 1d array of longitudes gridded to `resolution` and of size `height`.
+        - lat2_arr: arr, a 1d array of latitudes gridded to `resolution` and of size `width`.
+        - extent: list, the new extent that will ensure same image size for the given resolution.
+    """
+    west, east, south, north = extent
+    lon2_arr = np.zeros((width))
+    lat2_arr = np.zeros((height))
+    lon1, lat1 = west, south # start at the southwest corner
+    for i in range(width):
+        # start at the southwest corner of the original extent and go east (bearing of 90 deg) 
+        # along a great circle or geodetic/ellipsoid distance to get the new coordinates
+        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=90, distance=resolution, use_great_circle=True)
+        lon2_arr[i] = lon2
+        lon1, lat1 = lon2, lat2
+
+    lon1, lat1 = west, south # re-start at the southwest corner
+    for j in range(height):
+        # start at the southwest corner of the original extent and go north (bearing of 0 deg)
+        # along a great circle or geodetic/ellipsoid distance to get the new coordinates
+        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=0, distance=resolution, use_great_circle=True)
+        lat2_arr[j] = lat2
+        lon1, lat1 = lon2, lat2
+
+    west, east, south, north = lon2_arr[0], lon2_arr[-1]+0.15, lat2_arr[0], lat2_arr[-1]+0.15 # padding
+    return lon2_arr, lat2_arr, [west, east, south, north]
 
 
 def get_satfile_tag(
