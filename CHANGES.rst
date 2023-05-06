@@ -1,3 +1,16 @@
+Version 0.1.1
+-------------
+Important updates from previous version (v0.1.0):
+
+* Fixes Mie phase function for water clouds (details see Discord);
+
+* Updates example code under ``examples``;
+
+* Improves satellite data download process.
+
+
+
+
 Version 0.1.0
 -------------
 First official public release.

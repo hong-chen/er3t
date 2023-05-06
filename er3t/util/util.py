@@ -11,14 +11,16 @@ import urllib.request
 from io import StringIO
 import geopy.distance as gdist
 import numpy as np
-from scipy import interpolate
+from scipy import interpolate, stats
 import warnings
 
+import er3t.common
 
 
 
-__all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
-           'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
+
+__all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
+           'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
            'haversine', 'cal_lonlat_by_dist', 're_extend', 'get_satfile_tag'\
@@ -66,6 +68,37 @@ def check_equal(a, b, threshold=1.0e-6):
     """
 
     if abs(a-b) >= threshold:
+        return False
+    else:
+        return True
+
+
+
+def check_equidistant(z, threshold=1.0e-6):
+
+    """
+    Check if an array is equidistant (or close to each other)
+
+    Input:
+        z: numpy array
+
+    Output:
+        boolen, true or false
+    """
+
+    if not isinstance(z, np.ndarray):
+        msg = '\nError [check_equidistant]: Only support numpy.ndarray.'
+        raise ValueError(msg)
+
+    if z.size < 2:
+        msg = '\nError [check_equidistant]: Too few data for checking.'
+        raise ValueError(msg)
+    else:
+        dz = z[1:] - z[:-1]
+
+    fac = dz/dz[0]
+
+    if np.abs(fac-1.0).sum() >= threshold:
         return False
     else:
         return True
@@ -254,6 +287,85 @@ def get_data_h4(hdf_dset):
         data = data + attrs['add_offset']
 
     return data
+
+
+
+def find_nearest(x, y, data_2d, x_2d, y_2d, fill_nan=True):
+
+    x = x.ravel()
+    y = y.ravel()
+
+    dx = x_2d[1, 0] - x_2d[0, 0]
+    dy = y_2d[0, 1] - y_2d[0, 0]
+
+    logic_in  = (x>=x_2d[0, 0]) & (x<=x_2d[-1, 0]) & (y>=y_2d[0, 0]) & (y<=y_2d[0, -1])
+    logic_out = np.logical_not(logic_in)
+
+    indices_x = np.int_((x-x_2d[0, 0])//dx)
+    indices_y = np.int_((y-y_2d[0, 0])//dy)
+
+    nearest = np.zeros(x.size, dtype=np.float64)
+    nearest[logic_in] = data_2d[indices_x[logic_in], indices_y[logic_in]]
+
+    # deal with nan data
+    #/----------------------------------------------------------------------------\#
+    logic_nan  = np.isnan(data_2d)
+    logic_good = np.logical_not(logic_nan)
+    if np.isnan(nearest).sum()>0 and fill_nan:
+        data_2d_ = data_2d[logic_good]
+        x_2d_    = x_2d[logic_good]
+        y_2d_    = y_2d[logic_good]
+
+        indices_nan = np.where(np.isnan(nearest))[0]
+        for index in indices_nan:
+            x_ = x[index]
+            y_ = y[index]
+            index_closest = np.argmin(np.abs((x_2d_-x_)**2+(y_2d_-y_)**2))
+            nearest[index] = data_2d_[index_closest]
+
+    nearest[logic_out] = np.nan
+    #\----------------------------------------------------------------------------/#
+
+    return nearest
+
+
+
+def move_correlate(data0, data, Ndx=5, Ndy=5):
+
+    Nx, Ny = data.shape
+    x = np.arange(Nx, dtype=np.int32)
+    y = np.arange(Ny, dtype=np.int32)
+    xx, yy = np.meshgrid(x, y, indexing='ij')
+
+    xx0 = xx.copy()
+    yy0 = yy.copy()
+    valid = np.ones((Nx, Ny), dtype=np.int32)
+
+    corr_coef = np.zeros((2*Ndx+1, 2*Ndy+1), dtype=np.float64)
+    dxx = np.arange(-Ndx, Ndx+1)
+    dyy = np.arange(-Ndy, Ndy+1)
+
+    for idx, dx in enumerate(dxx):
+        xx_ = xx + dx
+        valid[xx_< 0 ] = 0
+        valid[xx_>=Nx] = 0
+        for idy, dy in enumerate(dyy):
+            yy_ = yy + dy
+            valid[yy_< 0 ] = 0
+            valid[yy_>=Ny] = 0
+
+            logic = (valid == 1)
+            data0_ = data0[xx0[logic], yy0[logic]]
+            data_  = data[xx_[logic], yy_[logic]]
+
+            corr_coef[idx, idy] = stats.pearsonr(data0_, data_)[0]
+
+    indices = np.unravel_index(np.argmax(corr_coef, axis=None), corr_coef.shape)
+
+    offset_dx = -dxx[indices[0]]
+    offset_dy = -dyy[indices[1]]
+
+    return offset_dx, offset_dy
 
 
 
@@ -591,10 +703,24 @@ def get_satfile_tag(
     #/----------------------------------------------------------------------------\#
 
     # try to get information from local
+    # check two locations:
+    #   1) <tmp-data/satfile> directory under er3t main directory
+    #   2) current directory;
     #/--------------------------------------------------------------\#
-    fname_local = os.path.abspath('%s/%s' % (local, fname_server.split('/')[-1]))
-    if os.path.exists(fname_local):
-        with open(fname_local, 'r') as f_:
+    fdir_satfile_tmp = '%s/satfile' % er3t.common.fdir_data_tmp
+    if not os.path.exists(fdir_satfile_tmp):
+        os.makedirs(fdir_satfile_tmp)
+
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_satfile_tmp, os.path.basename(fname_server)))
+    fname_local2 = os.path.abspath('%s/%s' % (local           , os.path.basename(fname_server)))
+
+    if os.path.exists(fname_local1):
+        with open(fname_local1, 'r') as f_:
+            content = f_.read()
+
+    elif os.path.exists(fname_local2):
+        os.system('cp %s %s' % (fname_local2, fname_local1))
+        with open(fname_local2, 'r') as f_:
             content = f_.read()
     #\--------------------------------------------------------------/#
 
@@ -642,12 +768,23 @@ def get_satfile_tag(
     try:
         data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
     except ValueError:
+
         msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
         print(msg)
+
         try:
-            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, os.environ['EARTHDATA_TOKEN'], os.path.basename(fname_server))
+            token = os.environ['EARTHDATA_TOKEN']
+        except KeyError:
+            token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
+
+        if verbose:
+            msg = '\nWarning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+            warnings.warn(msg)
+
+        try:
+            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
             os.system(command)
-            with open(os.path.basename(fname_server), 'r') as f_:
+            with open(fname_local1, 'r') as f_:
                 content = f_.read()
             data = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
         except ValueError:
@@ -1284,14 +1421,14 @@ def cal_ext(cot, cer, dz=1.0, Qe=2.0):
         cer: float or array, cloud effective radius in micro meter (10^-6 m)
     """
 
-    # liquid water path
+    # liquid water path [g/m^2]
     # from equation 7.86 in Petty's book
     #           3*lwp
     # cot = ---------------, where rho is the density of water
     #         2*rho*cer
     lwp  = 2.0/3000.0 * cot * cer
 
-    # liquid water content
+    # liquid water content [g/m^3]
     # assume vertically homogeneous distribution of cloud water
     lwc  = lwp / dz
 

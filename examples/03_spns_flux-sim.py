@@ -1,5 +1,5 @@
 """
-by Hong Chen (hong.chen.cu@gmail.com)
+by Hong Chen (hong.chen@lasp.colorado.edu)
 
 This code serves as an example code to reproduce 3D irradiance simulation for App. 3 in Chen et al. (2022).
 Special note: due to large data volume, only partial flight track simulation is provided for illustration purpose.
@@ -17,7 +17,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2022-10-19 by Hong Chen
+    1) Linux on 2023-03-14 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -37,24 +37,20 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-from er3t.pre.atm import atm_atmmod
-from er3t.pre.abs import abs_16g
-from er3t.pre.cld import cld_les, cld_sat
-from er3t.pre.pha import pha_mie_wc as pha_mie
 
-from er3t.rtm.mca import mca_atm_1d, mca_atm_3d
-from er3t.rtm.mca import mcarats_ng
-from er3t.rtm.mca import mca_out_ng
-from er3t.rtm.mca import mca_sca
-from er3t.util.ahi import ahi_l2
-from er3t.util import grid_by_extent
+
+import er3t
+
 
 
 # global variables
 #/--------------------------------------------------------------\#
-name_tag = os.path.relpath(__file__).replace('.py', '')
-photon_sim = 1e7
+params = {
+                    'name_tag' : os.path.relpath(__file__).replace('.py', ''),
+                      'photon' : 1e7,
+        }
 #\--------------------------------------------------------------/#
+
 
 
 def get_jday_ahi(fnames):
@@ -169,7 +165,7 @@ def cal_mca_flux(
         date=datetime.datetime.now(),
         target='flux',
         solver='3D',
-        photons=photon_sim,
+        photons=params['photon'],
         Ncpu=14,
         overwrite=True,
         quiet=False
@@ -183,13 +179,14 @@ def cal_mca_flux(
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     levels    = np.linspace(0.0, 20.0, 21)
     fname_atm = '%s/atm_%3.3d.pk' % (fdir, index)
-    atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    fname_prof = '%s/afglus.dat' % er3t.common.fdir_data_atmmod
+    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=fname_prof, overwrite=overwrite)
     # ------------------------------------------------------------------------------------------------------
 
     # define an absorption object
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     fname_abs = '%s/abs_%3.3d.pk' % (fdir, index)
-    abs0      = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
     # ------------------------------------------------------------------------------------------------------
 
     # define an cloud object
@@ -197,9 +194,9 @@ def cal_mca_flux(
     fname_cld = '%s/cld_ahi_%3.3d.pk' % (fdir, index)
 
     if overwrite:
-        ahi0      = ahi_l2(fnames=[fname_sat], extent=extent, vnames=['cld_height_acha'])
-        lon_2d, lat_2d, cot_2d = grid_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cot']['data'], extent=extent)
-        lon_2d, lat_2d, cer_2d = grid_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cer']['data'], extent=extent)
+        ahi0      = er3t.util.ahi_l2(fnames=[fname_sat], extent=extent, vnames=['cld_height_acha'])
+        lon_2d, lat_2d, cot_2d = er3t.util.grid_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cot']['data'], extent=extent)
+        lon_2d, lat_2d, cer_2d = er3t.util.grid_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cer']['data'], extent=extent)
         cot_2d[cot_2d>100.0] = 100.0
         cer_2d[cer_2d==0.0] = 1.0
         ahi0.data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=lon_2d)
@@ -208,33 +205,33 @@ def cal_mca_flux(
         ahi0.data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=cer_2d)
 
         if cloud_top_height is None:
-            lon_2d, lat_2d, cth_2d = grid_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cld_height_acha']['data'], extent=extent)
+            lon_2d, lat_2d, cth_2d = er3t.util.grid_by_extent(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cld_height_acha']['data'], extent=extent)
             cth_2d[cth_2d<0.0]  = 0.0; cth_2d /= 1000.0
             ahi0.data['cth_2d'] = dict(name='Gridded cloud top height', units='km', data=cth_2d)
             cloud_top_height = ahi0.data['cth_2d']['data']
-        cld0 = cld_sat(sat_obj=ahi0, fname=fname_cld, cth=cloud_top_height, cgt=1.0, dz=(levels[1]-levels[0]), overwrite=overwrite)
+        cld0 = er3t.pre.cld.cld_sat(sat_obj=ahi0, fname=fname_cld, cth=cloud_top_height, cgt=1.0, dz=(levels[1]-levels[0]), overwrite=overwrite)
     else:
-        cld0 = cld_sat(fname=fname_cld, overwrite=overwrite)
+        cld0 = er3t.pre.cld.cld_sat(fname=fname_cld, overwrite=overwrite)
     # ----------------------------------------------------------------------------------------------------
 
     # mie scattering phase function setup
-    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    pha0 = pha_mie(wvl0=wavelength)
-    sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    #/--------------------------------------------------------------\#
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    #\--------------------------------------------------------------/#
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm_1ds = [atm1d0]
 
-    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, quiet=quiet, overwrite=overwrite)
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, quiet=quiet, overwrite=overwrite)
     atm_3ds = [atm3d0]
     # ------------------------------------------------------------------------------------------------------
 
     # define mcarats object
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    mca0 = mcarats_ng(
+    mca0 = er3t.rtm.mca.mcarats_ng(
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             sca=sca,
@@ -255,7 +252,7 @@ def cal_mca_flux(
 
     # define mcarats output object
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    out0 = mca_out_ng(fname='%s/mca-out-%s-%s_ahi_%3.3d.h5' % (fdir, target.lower(), solver.lower(), index), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, quiet=quiet, overwrite=overwrite)
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-%s-%s_ahi_%3.3d.h5' % (fdir, target.lower(), solver.lower(), index), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, quiet=quiet, overwrite=overwrite)
     # ------------------------------------------------------------------------------------------------------
 
     return atm0, cld0, out0
@@ -310,9 +307,9 @@ class flt_sim:
     def __init__(
             self,
             date=datetime.datetime.now(),
-            photons=photon_sim,
-            Ncpu=16,
-            fdir='tmp-data/%s' % name_tag,
+            photons=params['photon'],
+            Ncpu=12,
+            fdir='tmp-data/%s' % params['name_tag'],
             wavelength=None,
             flt_trks=None,
             sat_imgs=None,
@@ -443,16 +440,15 @@ def main_run(
         wavelength=745.0,
         spns=True,
         run_rtm=True,
-        fdir_sat='data/%s/aux/ahi' % name_tag,
-        fdir_flt='data/%s/aux' % name_tag):
+        fdir_sat='data/%s/aux/ahi' % params['name_tag'],
+        fdir_flt='data/%s/aux' % params['name_tag']):
 
 
     # create data directory (for storing data) if the directory does not exist
     #/--------------------------------------------------------------\#
     date_s   = date.strftime('%Y%m%d')
-    name_tag = os.path.relpath(__file__).replace('.py', '')
 
-    fdir = os.path.abspath('tmp-data/%s/%s/%09.4fnm' % (name_tag, date_s, wavelength))
+    fdir = os.path.abspath('tmp-data/%s/%s/%09.4fnm' % (params['name_tag'], date_s, wavelength))
     if not os.path.exists(fdir):
         os.makedirs(fdir)
     #\--------------------------------------------------------------/#
@@ -465,7 +461,7 @@ def main_run(
     jday_ahi   = get_jday_ahi(fnames_ahi)
 
     # read in flight data
-    fname_flt = 'data/%s/aux/spns_%s.h5' % (name_tag, date_s)
+    fname_flt = 'data/%s/aux/spns_%s.h5' % (params['name_tag'], date_s)
     if not os.path.exists(fname_flt):
         sys.exit('Error   [main_pre]: cannot locate flight data.')
 
@@ -518,7 +514,7 @@ def main_run(
             wavelength=wavelength,
             flt_trks=flt_trks,
             sat_imgs=sat_imgs,
-            fname='data/%s/flt_sim_%s_%09.4fnm.pk' % (name_tag, date_s, wavelength),
+            fname='data/%s/flt_sim_%s_%09.4fnm.pk' % (params['name_tag'], date_s, wavelength),
             fdir=fdir,
             overwrite=True,
             overwrite_rtm=run_rtm
@@ -542,11 +538,11 @@ def main_post(
     date_s = date.strftime('%Y%m%d')
 
     # aircraft measurements and simulations
-    fname      = 'data/%s/flt_sim_%s_%09.4fnm.pk' % (name_tag, date_s, wavelength)
+    fname      = 'data/%s/flt_sim_%s_%09.4fnm.pk' % (params['name_tag'], date_s, wavelength)
     flt_sim0   = flt_sim(fname=fname)
 
     # create hdf5 file to store data
-    fname_h5   = 'data/%s/post-data.h5' % name_tag
+    fname_h5   = 'data/%s/post-data.h5' % params['name_tag']
     f = h5py.File(fname_h5, 'w')
 
     for vname in vnames:
@@ -614,7 +610,7 @@ def main_post(
 
         ax1.set_xlabel('Longitude [$^\circ$]')
         ax1.set_ylabel('Irradiance [$\mathrm{W m^{-2} nm^{-1}}$]')
-        plt.savefig('%s.png' % name_tag, bbox_inches='tight')
+        plt.savefig('%s.png' % params['name_tag'], bbox_inches='tight')
         plt.close(fig)
         #\--------------------------------------------------------------/#
 

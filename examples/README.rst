@@ -14,7 +14,7 @@ type in the following
 |
 
     If ``install-examples.sh`` fails to download the data from Google Drive for any reason, you can download the required data manually
-    from `here <https://drive.google.com/file/d/1i5inbkybHE2bFwHIJ472-tZYRCZDqSOR>`_.
+    from `here <https://drive.google.com/file/d/1Oov75VffmuQSljxjoOS6q6egmfT6CmkI/view?usp=share_link>`_.
 
     After you download the file (``er3t-data-examples.tar.gz``), put it under ``er3t/examples`` directory where
     it contains ``install-examples.sh``, then run the command ``bash install-examples.sh`` through a terminal again.
@@ -24,7 +24,7 @@ type in the following
 Codes ``00`` can be used for quickly adapting the usage of ``er3t.rtm.mca`` (MCARaTS) and ``er3t.rtm.lrt`` (libRadtran).
 
 Codes ``01`` to ``04`` can be used to reproduce scientific results discussed in
-`Chen et al. (2022) <https://doi.org/10.5194/amt-2022-143>`_.
+`Chen et al. (2023) <https://doi.org/10.5194/amt-16-1971-2023>`_.
 
 The figure results for each example are provided in ``check`` directory (available after installing auxiliary data)
 for validation.
@@ -46,11 +46,11 @@ To get the data access, you will need to register an account with NASA EARTHDATA
 
 #. Assume you registered with an username ``abc`` and a password ``123``, in the ``~/.netrc`` file, put in
 
-::
+   ::
 
-    machine urs.earthdata.nasa.gov
-    login abc
-    password 123
+     machine urs.earthdata.nasa.gov
+     login abc
+     password 123
 
 #. Request a token (instructions `here <https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens/>`_)
    for your EARTHDATA account and store the token under environment variable ``EARTHDATA_TOKEN``, e.g., ``export EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"``.

@@ -60,6 +60,7 @@ class mca_atm_1d:
             self.abs = abs_obj
 
         self.Ng = self.abs.Ng
+        self.wvl_info = self.abs.wvl_info
 
         self.pre_mca_1d_atm()
 
@@ -155,8 +156,6 @@ class mca_atm_3d:
                 ['Atm_nx']
                 ['Atm_ny']
                 ['Atm_dx']
-                ['Atm_dy']
-                ['Atm_dy']
                 ['Atm_dy']
                 ['Atm_nz3']
                 ['Atm_iz3l']
@@ -260,7 +259,7 @@ class mca_atm_3d:
             atm_apf[...] = 0.85
 
         else:
-            # Rayleigh scattering
+            # Rayleigh scattering by default, will later assign different values for clouds
             atm_omg[...] = 1.0
             atm_apf[...] = -1.0
 
@@ -291,13 +290,19 @@ class mca_atm_3d:
                 atm_omg[logic_cld, 0] = f_interp_ssa(cer[logic_cld])
                 atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
 
+                # set left-outbound to left-most value
+                #/--------------------------------------------------------------\#
                 logic0 = (atm_apf>0.0) & (atm_apf<ind[0])
                 atm_omg[logic0] = ssa[0]
                 atm_apf[logic0] = ind[0]
+                #\--------------------------------------------------------------/#
 
+                # set right-outbound to right-most value
+                #/--------------------------------------------------------------\#
                 logic1 = (atm_apf>ind[-1])
                 atm_omg[logic1] = ssa[-1]
                 atm_apf[logic1] = ind[-1]
+                #\--------------------------------------------------------------/#
 
         self.nml['Atm_nx']     = copy.deepcopy(self.cld.lay['nx'])
         self.nml['Atm_ny']     = copy.deepcopy(self.cld.lay['ny'])

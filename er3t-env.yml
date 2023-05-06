@@ -1,0 +1,22 @@
+name: er3t
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.9.*
+  - requests=2.27.*
+  - tqdm=4.64.*
+  - gdown=4.5.*
+  - numpy=1.21.*
+  - scipy=1.7.*
+  - matplotlib=3.5.*
+  - pyhdf=0.10.*
+  - h5py=3.6.*
+  - netcdf4=1.5.*
+  - owslib=0.27.*
+  - cartopy=0.18.*
+  - vim=8.2.*
+  - powerline-status=2.7.*
+  - mscorefonts
+  - font-ttf-source-code-pro

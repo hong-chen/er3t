@@ -5,11 +5,12 @@
 # ====================================================================================================
 if ! command -v gdown &> /dev/null
 then
-    echo "[Error]: 'gdown' could not be found, please install 'gdown' first, abort."
+    echo "[Error]: <gdown> could not be found, please install <gdown> first, abort."
     exit
 fi
 
-er3t_data_google_id="1GSN7B3rPX8B9C59IVdYqswFiGas--lJo"
+er3t_data_google_id="1KKpLR7IyqJ4gS6xCxc7f1hwUfUMJksVL"
+
 er3t_data_local_filename="er3t-data.tar.gz"
 
 echo "1. Install Data ########################################"
@@ -30,7 +31,7 @@ sleep 2
 # check if file is successfully downloaded
 if  [ ! -f "$er3t_data_local_filename" ]
 then
-    echo "[Error]: cannot find '$er3t_data_local_filename', abort."
+    echo "[Error]: cannot find <$er3t_data_local_filename>, abort."
     exit
 fi
 

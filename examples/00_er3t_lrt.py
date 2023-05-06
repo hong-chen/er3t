@@ -22,13 +22,18 @@ from matplotlib import rcParams
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 
-import er3t.rtm.lrt as lrt
+
+import er3t
+
+
 
 
 # global variables
 #/--------------------------------------------------------------\#
-name_tag = os.path.relpath(__file__).replace('.py', '')
+name_tag = '00_mca_lrt'
+fdir0    = er3t.common.fdir_examples
 #\--------------------------------------------------------------/#
+
 
 
 
@@ -39,19 +44,19 @@ def test_flux_01_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
 
-    init = lrt.lrt_init_mono(
+    init = er3t.rtm.lrt.lrt_init_mono_flx(
             input_file  = '%s/input.txt' % fdir_tmp,
             output_file = '%s/output.txt' % fdir_tmp
             )
 
-    lrt.lrt_run(init)
+    er3t.rtm.lrt.lrt_run(init)
 
-    data = lrt.lrt_read_uvspec([init])
+    data = er3t.rtm.lrt.lrt_read_uvspec_flx([init])
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -69,14 +74,14 @@ def test_flux_02_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
-    init = lrt.lrt_init_mono(
+    init = er3t.rtm.lrt.lrt_init_mono_flx(
             input_file  = '%s/input.txt' % fdir_tmp,
             output_file = '%s/output.txt' % fdir_tmp,
             date        = datetime.datetime(2014, 9, 11),
@@ -86,9 +91,9 @@ def test_flux_02_clear_sky():
             output_altitude    = 5.0,
             lrt_cfg            = lrt_cfg,
             )
-    lrt.lrt_run(init)
+    er3t.rtm.lrt.lrt_run(init)
 
-    data = lrt.lrt_read_uvspec([init])
+    data = er3t.rtm.lrt.lrt_read_uvspec_flx([init])
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -105,18 +110,18 @@ def test_flux_03_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
     sza = np.arange(60.0, 65.1, 0.5)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
     inits = []
     for i, sza0 in enumerate(sza):
-        init = lrt.lrt_init_mono(
+        init = er3t.rtm.lrt.lrt_init_mono_flx(
                 input_file  = '%s/input%2.2d.txt' % (fdir_tmp, i),
                 output_file = '%s/output%2.2d.txt' % (fdir_tmp, i),
                 date        = datetime.datetime(2014, 9, 11),
@@ -129,9 +134,9 @@ def test_flux_03_clear_sky():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, Ncpu=6)
+    er3t.rtm.lrt.lrt_run_mp(inits, Ncpu=6)
 
-    data = lrt.lrt_read_uvspec(inits)
+    data = er3t.rtm.lrt.lrt_read_uvspec_flx(inits)
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -149,16 +154,16 @@ def test_flux_04_cloud():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
     sza = np.arange(60.0, 65.1, 0.5)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
-    cld_cfg = lrt.get_cld_cfg()
+    cld_cfg = er3t.rtm.lrt.get_cld_cfg()
     cld_cfg['cloud_file'] = '%s/cloud.txt' % fdir_tmp
     cld_cfg['cloud_optical_thickness'] = 10.0
     cld_cfg['cloud_effective_radius']  = 12.0
@@ -167,7 +172,7 @@ def test_flux_04_cloud():
     inits = []
     for i, sza0 in enumerate(sza):
 
-        init = lrt.lrt_init_mono(
+        init = er3t.rtm.lrt.lrt_init_mono_flx(
                 input_file  = '%s/input%2.2d.txt'  % (fdir_tmp, i),
                 output_file = '%s/output%2.2d.txt' % (fdir_tmp, i),
                 date        = datetime.datetime(2014, 9, 11),
@@ -181,9 +186,9 @@ def test_flux_04_cloud():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, Ncpu=6)
+    er3t.rtm.lrt.lrt_run_mp(inits, Ncpu=6)
 
-    data = lrt.lrt_read_uvspec(inits)
+    data = er3t.rtm.lrt.lrt_read_uvspec_flx(inits)
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -202,22 +207,22 @@ def test_flux_05_cloud_and_aerosol():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
     sza = np.arange(60.0, 65.1, 0.5)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
-    cld_cfg = lrt.get_cld_cfg()
+    cld_cfg = er3t.rtm.lrt.get_cld_cfg()
     cld_cfg['cloud_file']  = '%s/cloud.txt' % fdir_tmp
     cld_cfg['cloud_optical_thickness'] = 10.0
     cld_cfg['cloud_effective_radius']  = 12.0
     cld_cfg['cloud_altitude'] = np.arange(0.5, 1.1, 0.1)
 
-    aer_cfg = lrt.get_aer_cfg()
+    aer_cfg = er3t.rtm.lrt.get_aer_cfg()
     aer_cfg['aerosol_file'] = '%s/aerosol.txt' % fdir_tmp
     aer_cfg['aerosol_optical_depth']    = 0.4
     aer_cfg['asymmetry_parameter']      = 0.6
@@ -227,7 +232,7 @@ def test_flux_05_cloud_and_aerosol():
     inits = []
     for i, sza0 in enumerate(sza):
 
-        init = lrt.lrt_init_mono(
+        init = er3t.rtm.lrt.lrt_init_mono_flx(
                 input_file  = '%s/input%2.2d.txt'  % (fdir_tmp, i),
                 output_file = '%s/output%2.2d.txt' % (fdir_tmp, i),
                 date        = datetime.datetime(2014, 9, 11),
@@ -242,9 +247,9 @@ def test_flux_05_cloud_and_aerosol():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, Ncpu=6)
+    er3t.rtm.lrt.lrt_run_mp(inits, Ncpu=6)
 
-    data = lrt.lrt_read_uvspec(inits)
+    data = er3t.rtm.lrt.lrt_read_uvspec_flx(inits)
 
     # the flux calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -264,17 +269,17 @@ def test_rad_01_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
-    init = lrt.lrt_init_mono_rad(
+    init = er3t.rtm.lrt.lrt_init_mono_rad(
             input_file  = '%s/input.txt' % fdir_tmp,
             output_file = '%s/output.txt' % fdir_tmp
             )
-    lrt.lrt_run(init)
+    er3t.rtm.lrt.lrt_run(init)
 
-    data = lrt.lrt_read_uvspec_rad([init])
+    data = er3t.rtm.lrt.lrt_read_uvspec_rad([init])
 
     # the radiance calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -290,14 +295,14 @@ def test_rad_02_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
-    init = lrt.lrt_init_mono_rad(
+    init = er3t.rtm.lrt.lrt_init_mono_rad(
             input_file  = '%s/input.txt' % fdir_tmp,
             output_file = '%s/output.txt' % fdir_tmp,
             date        = datetime.datetime(2014, 9, 11),
@@ -310,9 +315,9 @@ def test_rad_02_clear_sky():
             output_altitude    = 'toa',
             lrt_cfg            = lrt_cfg,
             )
-    lrt.lrt_run(init)
+    er3t.rtm.lrt.lrt_run(init)
 
-    data = lrt.lrt_read_uvspec_rad([init])
+    data = er3t.rtm.lrt.lrt_read_uvspec_rad([init])
 
     # the radiance calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -326,18 +331,18 @@ def test_rad_03_clear_sky():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
     sza = np.arange(60.0, 65.1, 0.5)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
     inits = []
     for i, sza0 in enumerate(sza):
-        init = lrt.lrt_init_mono_rad(
+        init = er3t.rtm.lrt.lrt_init_mono_rad(
                 input_file  = '%s/input%2.2d.txt' % (fdir_tmp, i),
                 output_file = '%s/output%2.2d.txt' % (fdir_tmp, i),
                 date        = datetime.datetime(2014, 9, 11),
@@ -353,9 +358,9 @@ def test_rad_03_clear_sky():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, Ncpu=6)
+    er3t.rtm.lrt.lrt_run_mp(inits, Ncpu=6)
 
-    data = lrt.lrt_read_uvspec_rad(inits)
+    data = er3t.rtm.lrt.lrt_read_uvspec_rad(inits)
 
     # the radiance calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -370,16 +375,16 @@ def test_rad_04_cloud():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
     sza = np.arange(60.0, 65.1, 0.5)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
-    cld_cfg = lrt.get_cld_cfg()
+    cld_cfg = er3t.rtm.lrt.get_cld_cfg()
     cld_cfg['cloud_file'] = '%s/cloud.txt' % fdir_tmp
     cld_cfg['cloud_optical_thickness'] = 10.0
     cld_cfg['cloud_effective_radius']  = 12.0
@@ -388,7 +393,7 @@ def test_rad_04_cloud():
     inits = []
     for i, sza0 in enumerate(sza):
 
-        init = lrt.lrt_init_mono_rad(
+        init = er3t.rtm.lrt.lrt_init_mono_rad(
                 input_file  = '%s/input%2.2d.txt'  % (fdir_tmp, i),
                 output_file = '%s/output%2.2d.txt' % (fdir_tmp, i),
                 date        = datetime.datetime(2014, 9, 11),
@@ -405,9 +410,9 @@ def test_rad_04_cloud():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, Ncpu=6)
+    er3t.rtm.lrt.lrt_run_mp(inits, Ncpu=6)
 
-    data = lrt.lrt_read_uvspec_rad(inits)
+    data = er3t.rtm.lrt.lrt_read_uvspec_rad(inits)
 
     # the radiance calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -423,22 +428,22 @@ def test_rad_05_cloud_and_aerosol():
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
     sza = np.arange(60.0, 65.1, 0.5)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
-    cld_cfg = lrt.get_cld_cfg()
+    cld_cfg = er3t.rtm.lrt.get_cld_cfg()
     cld_cfg['cloud_file']  = '%s/cloud.txt' % fdir_tmp
     cld_cfg['cloud_optical_thickness'] = 10.0
     cld_cfg['cloud_effective_radius']  = 12.0
     cld_cfg['cloud_altitude'] = np.arange(0.5, 1.1, 0.1)
 
-    aer_cfg = lrt.get_aer_cfg()
+    aer_cfg = er3t.rtm.lrt.get_aer_cfg()
     aer_cfg['aerosol_file'] = '%s/aerosol.txt' % fdir_tmp
     aer_cfg['aerosol_optical_depth']    = 0.4
     aer_cfg['asymmetry_parameter']      = 0.6
@@ -448,7 +453,7 @@ def test_rad_05_cloud_and_aerosol():
     inits = []
     for i, sza0 in enumerate(sza):
 
-        init = lrt.lrt_init_mono_rad(
+        init = er3t.rtm.lrt.lrt_init_mono_rad(
                 input_file  = '%s/input%2.2d.txt'  % (fdir_tmp, i),
                 output_file = '%s/output%2.2d.txt' % (fdir_tmp, i),
                 date        = datetime.datetime(2014, 9, 11),
@@ -466,9 +471,9 @@ def test_rad_05_cloud_and_aerosol():
         inits.append(init)
 
     # run with multi cores
-    lrt.lrt_run_mp(inits, Ncpu=6)
+    er3t.rtm.lrt.lrt_run_mp(inits, Ncpu=6)
 
-    data = lrt.lrt_read_uvspec_rad(inits)
+    data = er3t.rtm.lrt.lrt_read_uvspec_rad(inits)
 
     # the radiance calculated can be accessed through
     print('Results for <%s>:' % _metadata['Function'])
@@ -487,20 +492,20 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
     vaa = np.arange(0.0, 361.0, 5.0)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
     input_dict_extra = {'brdf_cam': 'u10 1'}
 
     # radiance calculations without aerosol
     # ===========================================================================================
-    init = lrt.lrt_init_mono_rad(
+    init = er3t.rtm.lrt.lrt_init_mono_rad(
             input_file  = '%s/input.txt'  % (fdir_tmp),
             output_file = '%s/output.txt' % (fdir_tmp),
             date        = datetime.datetime(2014, 9, 11),
@@ -520,9 +525,9 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
 
     # run with multi cores
     print('Running calculations for <%s> ...' % (_metadata['Function']))
-    lrt.lrt_run(init)
+    er3t.rtm.lrt.lrt_run(init)
 
-    data = lrt.lrt_read_uvspec_rad([init])
+    data = er3t.rtm.lrt.lrt_read_uvspec_rad([init])
     rad  = np.squeeze(data.rad)
     # ===========================================================================================
 
@@ -552,25 +557,27 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
     """
     The following example is similar to Example 3 but for cloud calculations.
     Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
+
+    To do: modify this function code for Jake's publication
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = 'tmp-data/%s/%s' % (name_tag, _metadata['Function'])
+    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
     vaa = np.arange(0.0, 361.0, 5.0)
 
-    lrt_cfg = lrt.get_lrt_cfg()
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
-    cld_cfg = lrt.get_cld_cfg()
+    cld_cfg = er3t.rtm.lrt.get_cld_cfg()
     cld_cfg['cloud_file']  = '%s/cloud.txt' % fdir_tmp
     cld_cfg['cloud_optical_thickness'] = 10.0
     cld_cfg['cloud_effective_radius']  = 12.0
     cld_cfg['cloud_altitude'] = np.arange(0.5, 1.1, 0.1)
 
-    aer_cfg = lrt.get_aer_cfg()
+    aer_cfg = er3t.rtm.lrt.get_aer_cfg()
     aer_cfg['aerosol_file'] = '%s/aerosol.txt' % fdir_tmp
     aer_cfg['aerosol_optical_depth']    = 0.2
     aer_cfg['asymmetry_parameter']      = 0.6
@@ -581,7 +588,7 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
 
     # radiance calculations without aerosol
     # ===========================================================================================
-    init = lrt.lrt_init_mono_rad(
+    init = er3t.rtm.lrt.lrt_init_mono_rad(
             input_file  = '%s/input.txt'  % (fdir_tmp),
             output_file = '%s/output.txt' % (fdir_tmp),
             date        = datetime.datetime(2014, 9, 11),
@@ -601,15 +608,15 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
 
     # run with multi cores
     print('Running calculations for <%s> ...' % (_metadata['Function']))
-    lrt.lrt_run(init)
+    er3t.rtm.lrt.lrt_run(init)
 
-    data1 = lrt.lrt_read_uvspec_rad([init])
+    data1 = er3t.rtm.lrt.lrt_read_uvspec_rad([init])
     rad1  = np.squeeze(data1.rad)
     # ===========================================================================================
 
     # radiance calculations with aerosol
     # ===========================================================================================
-    init = lrt.lrt_init_mono_rad(
+    init = er3t.rtm.lrt.lrt_init_mono_rad(
             input_file  = '%s/input.txt'  % (fdir_tmp),
             output_file = '%s/output.txt' % (fdir_tmp),
             date        = datetime.datetime(2014, 9, 11),
@@ -626,9 +633,9 @@ def example_rad_02_anisotropy(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
             )
 
     # run with multi cores
-    lrt.lrt_run(init)
+    er3t.rtm.lrt.lrt_run(init)
 
-    data2 = lrt.lrt_read_uvspec_rad([init])
+    data2 = er3t.rtm.lrt.lrt_read_uvspec_rad([init])
     rad2  = np.squeeze(data2.rad)
     # ===========================================================================================
 

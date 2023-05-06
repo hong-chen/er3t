@@ -1,31 +1,33 @@
 """
-by Hong Chen (hong.chen.cu@gmail.com)
+by Hong Chen (hong.chen@lasp.colorado.edu)
 
 This code serves as an example code to reproduce 3D radiance simulations for App. 4 in Chen et al. (2022).
 
 The processes include:
     1) `main_pre_ipa()`: pre-process all-sky camera data
         a) read in camera radiance observations at red channel
-        b) convert radiance into reflectance and perform IPA method (two-stream approximation) to retrieve
+        b) convert radiance into reflectance and perform IPA method to retrieve
            cloud optical thickness (cot_ipa)
 
     2) `main_pre_cnn()`: use CNN model to predict cloud optical thickness (cot_cnn) based on camera measured radiance
         a) load CNN model
         b) predict cot_cnn
 
-    3) `main_sim()`: use EaR3T to run 3D radiance simulations based on
-        a) cot_ipa
-        b) cot_cnn
+    3) `main_sim()`: use EaR3T to run IPA/3D radiance simulations based on
+        a) IPA radiance simulation using cot_ipa
+        b) 3D radiance simulation using cot_ipa
+        c) 3D radiance simulation using cot_cnn
 
     4) `main_post()`: post-process data and plot
         a) read in
             i) camera observed radiance
-            j) 3D radiance simulation based on cot_ipa
-            k) 3D radiance simulation based on cot_cnn
+            j) IPA radiance simulation based on cot_ipa
+            k) 3D radiance simulation based on cot_ipa
+            l) 3D radiance simulation based on cot_cnn
         b) plot
 
 This code has been tested under:
-    1) Linux on 2022-11-16 by Hong Chen
+    1) Linux on 2023-03-14 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -33,6 +35,8 @@ This code has been tested under:
 """
 
 import os
+import sys
+import copy
 import h5py
 import numpy as np
 import datetime
@@ -40,48 +44,26 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 
-from er3t.pre.atm import atm_atmmod
-from er3t.pre.abs import abs_16g
-from er3t.pre.cld import cld_sat, cld_les
-from er3t.util import cal_r_twostream
 
-from er3t.rtm.mca import mca_atm_1d, mca_atm_3d, mca_sfc_2d
-from er3t.rtm.mca import mcarats_ng
-from er3t.rtm.mca import mca_out_ng
+
+import er3t
+
+
 
 
 # global variables
 #/--------------------------------------------------------------\#
-_name_tag = os.path.relpath(__file__).replace('.py', '')
-_photon_sim = 1e8
-_wavelength = 600.0
-_cloud_top_height = 2.0
+params = {
+                    'name_tag' : os.path.relpath(__file__).replace('.py', ''),
+                  'wavelength' : 600.0,
+                        'date' : datetime.datetime(2019, 10, 5),
+                      'photon' : 1e7,
+               'surface_albedo': 0.03,
+                  'photon_ipa' : 2e7,
+            'cloud_top_height' : 2.0,
+ 'cloud_geometrical_thickness' : 1.0
+        }
 #\--------------------------------------------------------------/#
-
-
-def get_cld_rtv_ipa(ref_2d, lon_2d, lat_2d, sza0):
-
-    a0         = 0.03
-    mu0        = np.cos(np.deg2rad(sza0))
-
-    xx_2stream = np.linspace(0.0, 200.0, 10000)
-    yy_2stream = cal_r_twostream(xx_2stream, a=a0, mu=mu0)
-
-    threshold  = a0 * 1.0
-    indices    = np.where(ref_2d>threshold)
-    indices_x  = indices[0]
-    indices_y  = indices[1]
-    lon        = lon_2d[indices_x, indices_y]
-    lat        = lat_2d[indices_x, indices_y]
-
-    Nx, Ny = ref_2d.shape
-    cot_2d_2s = np.zeros_like(ref_2d)
-    cer_2d_2s = np.zeros_like(ref_2d); cer_2d_2s[...] = 1.0
-    for i in range(indices_x.size):
-        cot_2d_2s[indices_x[i], indices_y[i]] = xx_2stream[np.argmin(np.abs(yy_2stream-ref_2d[indices_x[i], indices_y[i]]))]
-        cer_2d_2s[indices_x[i], indices_y[i]] = 12.0
-
-    return cot_2d_2s, cer_2d_2s
 
 
 
@@ -178,7 +160,7 @@ class sat_tmp:
 
         self.data = data
 
-def cal_mca_rad(date, geometry, cloud, wavelength=600.0, cth=2.0, photons=1e7, fdir='tmp-data/%s' % _name_tag, solver='3D', overwrite=True):
+def cal_mca_rad(date, geometry, cloud, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], fdir='tmp-data/%s' % params['name_tag'], photons=params['photon'], solver='3D', overwrite=True):
 
     """
     Simulate radiance for camera using IPA/CNN based cloud optical thickness
@@ -189,39 +171,39 @@ def cal_mca_rad(date, geometry, cloud, wavelength=600.0, cth=2.0, photons=1e7, f
 
     # atm object
     #/----------------------------------------------------------------------------\#
-    levels    = np.arange(0.0, 20.1, 0.5)
-    fname_atm = '%s/atm.pk' % fdir
-    atm0      = atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    levels     = np.arange(0.0, 20.1, 0.5)
+    fname_atm  = '%s/atm.pk' % fdir
+    fname_prof = '%s/afglus.dat' % er3t.common.fdir_data_atmmod
+    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=fname_prof, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
     # abs object
     #/----------------------------------------------------------------------------\#
     fname_abs = '%s/abs.pk' % fdir
-    abs0      = abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
     # mca_sca object (enable/disable mie scattering)
     #/----------------------------------------------------------------------------\#
-    #pha0 = pha_mie(wvl0=wavelength)
-    #sca  = mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    pha0 = None
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
     # cld object
     #/----------------------------------------------------------------------------\#
-    modl1b    =  sat_tmp(cloud)
+    sat0 =  sat_tmp(cloud)
     fname_cld = '%s/cld.pk' % fdir
-    cld0      = cld_sat(sat_obj=modl1b, fname=fname_cld, cth=2.0, cgt=1.0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_sat(sat_obj=sat0, fname=fname_cld, cth=cth, cgt=cgt, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
     # mca_cld object
     #/----------------------------------------------------------------------------\#
-    atm3d0  = mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
-    atm1d0  = mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
+    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm_1ds = [atm1d0]
     atm_3ds = [atm3d0]
     #\----------------------------------------------------------------------------/#
@@ -229,12 +211,12 @@ def cal_mca_rad(date, geometry, cloud, wavelength=600.0, cth=2.0, photons=1e7, f
 
     # run mcarats
     #/----------------------------------------------------------------------------\#
-    mca0 = mcarats_ng(
+    mca0 = er3t.rtm.mca.mcarats_ng(
             date=date,
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            surface_albedo=0.03,
-            #sca=sca, # disable/enable mie scattering
+            surface_albedo=params['surface_albedo'],
+            sca=sca,
             Ng=abs0.Ng,
             target='radiance',
             solar_zenith_angle   = geometry['sza']['data'],
@@ -254,7 +236,85 @@ def cal_mca_rad(date, geometry, cloud, wavelength=600.0, cth=2.0, photons=1e7, f
 
     # mcarats output
     #/----------------------------------------------------------------------------\#
-    out0 = mca_out_ng(fname='%s/mca-out-rad-cam-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-cam-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+def cal_mca_flux(date, geometry, cloud, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], fdir='tmp-data/%s' % params['name_tag'], photons=params['photon'], solver='3D', overwrite=True):
+
+    """
+    Simulate irradiance for camera using IPA/CNN based cloud optical thickness
+    """
+
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
+    # atm object
+    #/----------------------------------------------------------------------------\#
+    levels     = np.arange(0.0, 20.1, 0.5)
+    fname_atm  = '%s/atm.pk' % fdir
+    fname_prof = '%s/afglus.dat' % er3t.common.fdir_data_atmmod
+    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=fname_prof, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # abs object
+    #/----------------------------------------------------------------------------\#
+    fname_abs = '%s/abs.pk' % fdir
+    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # mca_sca object (enable/disable mie scattering)
+    #/----------------------------------------------------------------------------\#
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # cld object
+    #/----------------------------------------------------------------------------\#
+    sat0 =  sat_tmp(cloud)
+    fname_cld = '%s/cld.pk' % fdir
+    cld0      = er3t.pre.cld.cld_sat(sat_obj=sat0, fname=fname_cld, cth=cth, cgt=cgt, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # mca_cld object
+    #/----------------------------------------------------------------------------\#
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
+    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
+    atm_1ds = [atm1d0]
+    atm_3ds = [atm3d0]
+    #\----------------------------------------------------------------------------/#
+
+
+    # run mcarats
+    #/----------------------------------------------------------------------------\#
+    mca0 = er3t.rtm.mca.mcarats_ng(
+            date=date,
+            atm_1ds=atm_1ds,
+            atm_3ds=atm_3ds,
+            surface_albedo=params['surface_albedo'],
+            sca=sca,
+            Ng=abs0.Ng,
+            target='flux',
+            solar_zenith_angle   = geometry['sza']['data'],
+            solar_azimuth_angle  = geometry['saa']['data'],
+            fdir='%s/%.4fnm/cam/flux_%s' % (fdir, wavelength, solver.lower()),
+            Nrun=3,
+            weights=abs0.coef['weight']['data'],
+            photons=photons,
+            solver=solver,
+            Ncpu=12,
+            mp_mode='py',
+            overwrite=overwrite
+            )
+    #\----------------------------------------------------------------------------/#
+
+
+    # mcarats output
+    #/----------------------------------------------------------------------------\#
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-flux-cam-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
@@ -264,43 +324,91 @@ def main_pre_ipa():
 
     # read in raw all-sky camera imagery data
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/aux/cam_nadir_imagery.h5' % _name_tag, "r")
+    f = h5py.File('data/%s/aux/cam_nadir_imagery.h5' % params['name_tag'], 'r')
     extent = f['gridded/ext'][...]
     red    = f['gridded/red'][...]
     lon    = f['gridded/lon'][...]
     lat    = f['gridded/lat'][...]
     sza0   = f['geometry/sza'][...]
+    saa0   = f['geometry/saa'][...]
+    alt0   = f['geometry/altitude'][...]
     f.close()
     #\----------------------------------------------------------------------------/#
 
-    # estimate reflectance based on red-channel radiance (isotropic assumption)
-    #/----------------------------------------------------------------------------\#
-    f_toa = 1.782035
-    ref = np.pi*red/(f_toa*np.cos(np.deg2rad(sza0)))
-    #\----------------------------------------------------------------------------/#
 
-    # use two-stream approximation to estimate cloud optical thickness from reflectance
-    # special note: cloud effective radius is constantly set to 12 micron
+    # use IPA reflectance vs COT mapping to estimate cloud optical thickness from cloud reflectance
+    # special note: cloud effective radius is constantly set to 10 micron
     #/----------------------------------------------------------------------------\#
-    cot_ipa, cer_ipa = get_cld_rtv_ipa(ref, lon, lat, sza0)
+    # ipa relationship of reflectance vs cloud optical thickness
+    #/--------------------------------------------------------------\#
+    cot = np.concatenate((np.arange(0.0, 2.0, 0.5),
+                          np.arange(2.0, 30.0, 2.0),
+                          np.arange(30.0, 60.0, 5.0),
+                          np.arange(60.0, 100.0, 10.0),
+                          np.arange(100.0, 201.0, 50.0)))
+    cer0  = 10.0
+    fdir  = 'tmp-data/ipa-%06.1fnm_alb-%04.2f' % (params['wavelength'], params['surface_albedo'])
+    f_mca = er3t.rtm.mca.func_ref_vs_cot(
+            cot,
+            cer0=cer0,
+            fdir=fdir,
+            date=params['date'],
+            wavelength=params['wavelength'],
+            surface_albedo=params['surface_albedo'],
+            solar_zenith_angle=sza0,
+            solar_azimuth_angle=saa0,
+            sensor_altitude=alt0,
+            sensor_zenith_angle=0.0,
+            sensor_azimuth_angle=0.0,
+            cloud_top_height=2.0,
+            cloud_geometrical_thickness=1.0,
+            Nphoton=params['photon_ipa'],
+            overwrite=False
+            )
+    #\--------------------------------------------------------------/#
+
+    # estimate reflectance based on red-channel radiance (isotropic assumption)
+    #/--------------------------------------------------------------\#
+    ref_norm = np.pi*red/(f_mca.toa0*np.cos(np.deg2rad(sza0)))
+    #\--------------------------------------------------------------/#
+
+    # retrieve COT
+    #/--------------------------------------------------------------\#
+    cot_ipa = f_mca.get_cot_from_ref(ref_norm)
+    cot_ipa[cot_ipa<0.0] = 0.0
+    cot_ipa[cot_ipa>f_mca.cot[-1]] = f_mca.cot[-1]
+    #\--------------------------------------------------------------/#
+
+    # assign 10 micron to cloud effective radius
+    #/----------------------------------------------------------------------------\#
+    cer_ipa = np.zeros_like(cot_ipa)
+    cer_ipa[cot_ipa>0.0] = cer0
     #\----------------------------------------------------------------------------/#
 
     # save pre-processed data
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/pre-data_ipa.h5' % _name_tag, 'w')
+    f = h5py.File('data/%s/pre-data_ipa.h5' % params['name_tag'], 'w')
     f['rad'] = red
-    f['ref'] = ref
+    f['ref'] = ref_norm
     f['lon'] = lon
     f['lat'] = lat
     f['extent'] = extent
     g = f.create_group('ipa')
     g['cot'] = cot_ipa
     g['cer'] = cer_ipa
+    g = f.create_group('mca_ipa')
+    g['cot'] = f_mca.cot
+    g['ref'] = f_mca.ref
+    g['ref_std'] = f_mca.ref_std
+    g['rad'] = f_mca.rad
+    g['rad_std'] = f_mca.rad_std
+    g['toa0'] = f_mca.toa0
+    g['mu0'] = f_mca.mu0
     f.close()
     #\----------------------------------------------------------------------------/#
 
 def main_pre_cnn(
-        fname='data/%s/pre-data_ipa.h5' % _name_tag,
+        fname='data/%s/pre-data_ipa.h5' % params['name_tag'],
         model_path='/data/vikas/weights/chosen_uniform_fine_4x_16.h5'
         ):
 
@@ -309,7 +417,7 @@ def main_pre_cnn(
 
     # write cnn-related data
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/pre-data_cnn.h5' % _name_tag, 'w')
+    f = h5py.File('data/%s/pre-data_cnn.h5' % params['name_tag'], 'w')
 
     f0 = h5py.File(fname, 'r')
     rad = f0['rad'][...]
@@ -348,7 +456,7 @@ def main_sim():
     # read in solar geometries
     #/----------------------------------------------------------------------------\#
     geometry = {}
-    f = h5py.File('data/%s/aux/cam_nadir_imagery.h5' % _name_tag, 'r')
+    f = h5py.File('data/%s/aux/cam_nadir_imagery.h5' % params['name_tag'], 'r')
     geometry['sza'] = dict(name='Solar Zenith Angle'              , units='degree'    , data=f['geometry/sza'][...])
     geometry['saa'] = dict(name='Solar Azimuth Angle'             , units='degree'    , data=f['geometry/saa'][...])
     geometry['alt'] = dict(name='Altitude'                        , units='meter'     , data=f['geometry/altitude'][...])
@@ -358,11 +466,13 @@ def main_sim():
     # read in IPA based cloud data
     #/----------------------------------------------------------------------------\#
     cloud_ipa = {}
-    f = h5py.File('data/%s/pre-data_ipa.h5' % _name_tag, 'r')
+    f = h5py.File('data/%s/pre-data_ipa.h5' % params['name_tag'], 'r')
     cot_2d = f['ipa/cot'][...]
     cer_2d = f['ipa/cer'][...]
     cloud_ipa['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['lon'][...])
     cloud_ipa['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['lat'][...])
+    cloud_ipa['dx']     = dict(name='delta x'                         , units='km'         , data=0.1)
+    cloud_ipa['dy']     = dict(name='delta y'                         , units='km'         , data=0.1)
     cloud_ipa['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=cot_2d)
     cloud_ipa['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=cer_2d)
     f.close()
@@ -371,15 +481,17 @@ def main_sim():
     # read in CNN based cloud data
     #/----------------------------------------------------------------------------\#
     cloud_cnn = {}
-    if os.path.exists('data/%s/pre-data_cnn.h5' % _name_tag):
-        fname = 'data/%s/pre-data_cnn.h5' % _name_tag
+    if os.path.exists('data/%s/pre-data_cnn.h5' % params['name_tag']):
+        fname = 'data/%s/pre-data_cnn.h5' % params['name_tag']
     else:
-        fname = 'data/%s/aux/pre-data_cnn.h5' % _name_tag
+        fname = 'data/%s/aux/pre-data_cnn.h5' % params['name_tag']
     f = h5py.File(fname, 'r')
     cot_2d = f['cnn/cot_wei'][...]
     cer_2d = np.zeros_like(cot_2d); cer_2d[...] = 12.0
     cloud_cnn['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['lon'][...])
     cloud_cnn['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['lat'][...])
+    cloud_cnn['dx']     = dict(name='delta x'                         , units='km'         , data=0.1)
+    cloud_cnn['dy']     = dict(name='delta y'                         , units='km'         , data=0.1)
     cloud_cnn['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=cot_2d)
     cloud_cnn['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=cer_2d)
     f.close()
@@ -387,40 +499,61 @@ def main_sim():
 
     # run simulations using EaR3T
     #/----------------------------------------------------------------------------\#
-    date = datetime.datetime(2019, 10, 5)
-    cal_mca_rad(date, geometry, cloud_ipa, wavelength=_wavelength, cth=_cloud_top_height, photons=_photon_sim, fdir='tmp-data/%s/ipa' % _name_tag, solver='3D', overwrite=True)
-    cal_mca_rad(date, geometry, cloud_cnn, wavelength=_wavelength, cth=_cloud_top_height, photons=_photon_sim, fdir='tmp-data/%s/cnn' % _name_tag, solver='3D', overwrite=True)
+    cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=1e8, fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
+    cal_mca_rad(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
+    cal_mca_rad(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
+    #\----------------------------------------------------------------------------/#
+
+    # irradiance simulation (turned off by default)
+    #/----------------------------------------------------------------------------\#
+    # cal_mca_flux(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
+    # cal_mca_flux(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
+    # cal_mca_flux(params['date'], geometry, cloud_ipa, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/ipa' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
+    # cal_mca_flux(params['date'], geometry, cloud_cnn, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/cnn' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
+
+    # cloud_free = copy.deepcopy(cloud_cnn)
+    # cloud_free['cot_2d']['data'][...] = 0.0
+    # cal_mca_flux(params['date'], geometry, cloud_free, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/clear' % (params['name_tag'], params['wavelength']), solver='IPA', overwrite=True)
+    # cal_mca_flux(params['date'], geometry, cloud_free, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], photons=params['photon'], fdir='tmp-data/%s/sim-%06.1fnm/clear' % (params['name_tag'], params['wavelength']), solver='3D', overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 def main_post(plot=True):
 
     # read in camera measured red channel radiance
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/pre-data_ipa.h5' % _name_tag, 'r')
+    f = h5py.File('data/%s/pre-data_ipa.h5' % params['name_tag'], 'r')
     extent = f['extent'][...]
     rad_cam = f['rad'][...]
     f.close()
     #\----------------------------------------------------------------------------/#
 
+    # read in simulated IPA radiance based on cot_ipa
+    #/----------------------------------------------------------------------------\#
+    f = h5py.File('tmp-data/%s/sim-%06.1fnm/ipa/mca-out-rad-cam-ipa_600.0000nm.h5' % (params['name_tag'], params['wavelength']), 'r')
+    rad_sim_iipa = f['mean/rad'][...]
+    f.close()
+    #\----------------------------------------------------------------------------/#
+
     # read in simulated 3D radiance based on cot_ipa
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('tmp-data/%s/ipa/mca-out-rad-cam-3d_600.0000nm.h5' % _name_tag, 'r')
+    f = h5py.File('tmp-data/%s/sim-%06.1fnm/ipa/mca-out-rad-cam-3d_600.0000nm.h5' % (params['name_tag'], params['wavelength']), 'r')
     rad_sim_ipa = f['mean/rad'][...]
     f.close()
     #\----------------------------------------------------------------------------/#
 
     # read in simulated 3D radiance based on cot_cnn
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('tmp-data/%s/cnn/mca-out-rad-cam-3d_600.0000nm.h5' % _name_tag, 'r')
+    f = h5py.File('tmp-data/%s/sim-%06.1fnm/cnn/mca-out-rad-cam-3d_600.0000nm.h5' % (params['name_tag'], params['wavelength']), 'r')
     rad_sim_cnn = f['mean/rad'][...]
     f.close()
     #\----------------------------------------------------------------------------/#
 
     # save data into <post-data.h5> under data/04_cam_nadir_rad-sim
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/post-data.h5' % _name_tag, 'w')
+    f = h5py.File('data/%s/post-data.h5' % params['name_tag'], 'w')
     f['extent'] = extent
     f['rad_cam'] = rad_cam
+    f['rad_sim-ipa_cot-ipa'] = rad_sim_iipa
     f['rad_sim-3d_cot-ipa'] = rad_sim_ipa
     f['rad_sim-3d_cot-cnn'] = rad_sim_cnn
     f.close()
@@ -429,44 +562,44 @@ def main_post(plot=True):
     if plot:
 
         #/--------------------------------------------------------------\#
-        fig = plt.figure(figsize=(13, 8))
+        fig = plt.figure(figsize=(13, 13))
 
         # 2D plot: rad_obs
         #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(231)
+        ax1 = fig.add_subplot(331)
         ax1.imshow(rad_cam.T, extent=extent, origin='lower', cmap='Greys_r', vmin=0.0, vmax=0.6, alpha=0.3)
         rad_cam0 = rad_cam.copy()
         rad_cam0[-7:, :] = np.nan
         rad_cam0[:, -7:] = np.nan
         rad_cam0[:7, :] = np.nan
         rad_cam0[:, :7] = np.nan
-        ax1.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='viridis', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax1.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
         ax1.set_xlabel('X [km]')
         ax1.set_ylabel('Y [km]')
-        ax1.set_title('Radiance Observation (Red)')
+        ax1.set_title('Rad. Obs.')
         #\--------------------------------------------------------------/#
 
         # 2D plot: rad_cot_ipa
         #/--------------------------------------------------------------\#
-        ax2 = fig.add_subplot(232)
-        ax2.imshow(rad_sim_ipa.T, extent=extent, origin='lower', cmap='Greys_r', vmin=0.0, vmax=0.6, alpha=0.3)
-        rad_sim_ipa0 = rad_sim_ipa.copy()
-        rad_sim_ipa0[-7:, :] = np.nan
-        rad_sim_ipa0[:, -7:] = np.nan
-        rad_sim_ipa0[:7, :] = np.nan
-        rad_sim_ipa0[:, :7] = np.nan
-        ax2.imshow(rad_sim_ipa0.T, extent=extent, origin='lower', cmap='viridis', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax2 = fig.add_subplot(332)
+        ax2.imshow(rad_sim_iipa.T, extent=extent, origin='lower', cmap='Greys_r', vmin=0.0, vmax=0.6, alpha=0.3)
+        rad_sim_iipa0 = rad_sim_iipa.copy()
+        rad_sim_iipa0[-7:, :] = np.nan
+        rad_sim_iipa0[:, -7:] = np.nan
+        rad_sim_iipa0[:7, :] = np.nan
+        rad_sim_iipa0[:, :7] = np.nan
+        ax2.imshow(rad_sim_iipa0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
         ax2.set_xlabel('X [km]')
         ax2.set_ylabel('Y [km]')
-        ax2.set_title('3D Radiance Simulation (COT$\mathrm{_{IPA}}$)')
+        ax2.set_title('IPA Rad. Sim. (COT$\mathrm{_{IPA}}$)')
         #\--------------------------------------------------------------/#
 
         # heatmap: rad_cot_ipa vs rad_obs
         #/--------------------------------------------------------------\#
-        ax3 = fig.add_subplot(233)
+        ax3 = fig.add_subplot(333)
         xedges = np.arange(0.0, 0.61, 0.03)
         yedges = np.arange(0.0, 0.61, 0.03)
-        heatmap, xedges, yedges = np.histogram2d(rad_cam0.ravel(), rad_sim_ipa0.ravel(), bins=(xedges, yedges))
+        heatmap, xedges, yedges = np.histogram2d(rad_cam0.ravel(), rad_sim_iipa0.ravel(), bins=(xedges, yedges))
         extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
         YY, XX = np.meshgrid((yedges[:-1]+yedges[1:])/2.0, (xedges[:-1]+xedges[1:])/2.0)
         levels = np.power(10, np.linspace(0.0, 1.5, 151))
@@ -475,28 +608,91 @@ def main_post(plot=True):
         ax3.plot([0.0, 1.0], [0.0, 1.0], lw=1.5, color='gray', ls='--', zorder=2)
         ax3.set_xlim([0.0, 0.6])
         ax3.set_ylim([0.0, 0.6])
-        ax3.set_xlabel('Radiance Observation')
-        ax3.set_ylabel('Radiance Simulation (COT$\mathrm{_{IPA}}$)')
+        ax3.set_xlabel('Rad. Obs.')
+        ax3.set_ylabel('IPA Rad. Sim. (COT$\mathrm{_{IPA}}$)')
+        #\--------------------------------------------------------------/#
+
+        # 2D plot: rad_obs
+        #/--------------------------------------------------------------\#
+        ax4 = fig.add_subplot(334)
+        ax4.imshow(rad_cam.T, extent=extent, origin='lower', cmap='Greys_r', vmin=0.0, vmax=0.6, alpha=0.3)
+        rad_cam0 = rad_cam.copy()
+        rad_cam0[-7:, :] = np.nan
+        rad_cam0[:, -7:] = np.nan
+        rad_cam0[:7, :] = np.nan
+        rad_cam0[:, :7] = np.nan
+        ax4.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax4.set_xlabel('X [km]')
+        ax4.set_ylabel('Y [km]')
+        ax4.set_title('Rad. Obs.')
+        #\--------------------------------------------------------------/#
+
+        # 2D plot: rad_cot_ipa
+        #/--------------------------------------------------------------\#
+        ax5 = fig.add_subplot(335)
+        ax5.imshow(rad_sim_ipa.T, extent=extent, origin='lower', cmap='Greys_r', vmin=0.0, vmax=0.6, alpha=0.3)
+        rad_sim_ipa0 = rad_sim_ipa.copy()
+        rad_sim_ipa0[-7:, :] = np.nan
+        rad_sim_ipa0[:, -7:] = np.nan
+        rad_sim_ipa0[:7, :] = np.nan
+        rad_sim_ipa0[:, :7] = np.nan
+        ax5.imshow(rad_sim_ipa0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax5.set_xlabel('X [km]')
+        ax5.set_ylabel('Y [km]')
+        ax5.set_title('3D Rad. Sim. (COT$\mathrm{_{IPA}}$)')
+        #\--------------------------------------------------------------/#
+
+        # heatmap: rad_cot_ipa vs rad_obs
+        #/--------------------------------------------------------------\#
+        ax6 = fig.add_subplot(336)
+        xedges = np.arange(0.0, 0.61, 0.03)
+        yedges = np.arange(0.0, 0.61, 0.03)
+        heatmap, xedges, yedges = np.histogram2d(rad_cam0.ravel(), rad_sim_ipa0.ravel(), bins=(xedges, yedges))
+        extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+        YY, XX = np.meshgrid((yedges[:-1]+yedges[1:])/2.0, (xedges[:-1]+xedges[1:])/2.0)
+        levels = np.power(10, np.linspace(0.0, 1.5, 151))
+
+        cs = ax6.contourf(XX, YY, heatmap, levels, extend='both', cmap='jet')
+        ax6.plot([0.0, 1.0], [0.0, 1.0], lw=1.5, color='gray', ls='--', zorder=2)
+        ax6.set_xlim([0.0, 0.6])
+        ax6.set_ylim([0.0, 0.6])
+        ax6.set_xlabel('Rad. Obs.')
+        ax6.set_ylabel('3D Rad. Sim. (COT$\mathrm{_{IPA}}$)')
+        #\--------------------------------------------------------------/#
+
+        # 2D plot: rad_obs
+        #/--------------------------------------------------------------\#
+        ax7 = fig.add_subplot(337)
+        ax7.imshow(rad_cam.T, extent=extent, origin='lower', cmap='Greys_r', vmin=0.0, vmax=0.6, alpha=0.3)
+        rad_cam0 = rad_cam.copy()
+        rad_cam0[-7:, :] = np.nan
+        rad_cam0[:, -7:] = np.nan
+        rad_cam0[:7, :] = np.nan
+        rad_cam0[:, :7] = np.nan
+        ax7.imshow(rad_cam0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax7.set_xlabel('X [km]')
+        ax7.set_ylabel('Y [km]')
+        ax7.set_title('Rad. Obs.')
         #\--------------------------------------------------------------/#
 
         # 2D plot: rad_cot_cnn
         #/--------------------------------------------------------------\#
-        ax4 = fig.add_subplot(235)
-        ax4.imshow(rad_sim_cnn.T, extent=extent, origin='lower', cmap='Greys_r', vmin=0.0, vmax=0.6, alpha=0.3)
+        ax8 = fig.add_subplot(338)
+        ax8.imshow(rad_sim_cnn.T, extent=extent, origin='lower', cmap='Greys_r', vmin=0.0, vmax=0.6, alpha=0.3)
         rad_sim_cnn0 = rad_sim_cnn.copy()
         rad_sim_cnn0[-7:, :] = np.nan
         rad_sim_cnn0[:, -7:] = np.nan
         rad_sim_cnn0[:7, :] = np.nan
         rad_sim_cnn0[:, :7] = np.nan
-        ax4.imshow(rad_sim_cnn0.T, extent=extent, origin='lower', cmap='viridis', vmin=0.0, vmax=0.6, alpha=1.0)
-        ax4.set_xlabel('X [km]')
-        ax4.set_ylabel('Y [km]')
-        ax4.set_title('3D Radiance Simulation (COT$\mathrm{_{CNN}}$)')
+        ax8.imshow(rad_sim_cnn0.T, extent=extent, origin='lower', cmap='jet', vmin=0.0, vmax=0.6, alpha=1.0)
+        ax8.set_xlabel('X [km]')
+        ax8.set_ylabel('Y [km]')
+        ax8.set_title('3D Rad. Sim. (COT$\mathrm{_{CNN}}$)')
         #\--------------------------------------------------------------/#
 
         # heatmap: rad_cot_cnn vs rad_obs
         #/--------------------------------------------------------------\#
-        ax5 = fig.add_subplot(236)
+        ax9 = fig.add_subplot(339)
         xedges = np.arange(0.0, 0.61, 0.03)
         yedges = np.arange(0.0, 0.61, 0.03)
         heatmap, xedges, yedges = np.histogram2d(rad_cam0.ravel(), rad_sim_cnn0.ravel(), bins=(xedges, yedges))
@@ -504,17 +700,17 @@ def main_post(plot=True):
         YY, XX = np.meshgrid((yedges[:-1]+yedges[1:])/2.0, (xedges[:-1]+xedges[1:])/2.0)
         levels = np.power(10, np.linspace(0.0, 1.5, 151))
 
-        cs = ax5.contourf(XX, YY, heatmap, levels, extend='both', cmap='jet')
-        ax5.plot([0.0, 1.0], [0.0, 1.0], lw=1.5, color='gray', ls='--', zorder=2)
-        ax5.set_xlim([0.0, 0.6])
-        ax5.set_ylim([0.0, 0.6])
-        ax5.set_xlabel('Radiance Observation')
-        ax5.set_ylabel('Radiance Simulation (COT$\mathrm{_{CNN}}$)')
+        cs = ax9.contourf(XX, YY, heatmap, levels, extend='both', cmap='jet')
+        ax9.plot([0.0, 1.0], [0.0, 1.0], lw=1.5, color='gray', ls='--', zorder=2)
+        ax9.set_xlim([0.0, 0.6])
+        ax9.set_ylim([0.0, 0.6])
+        ax9.set_xlabel('Rad. Obs.')
+        ax9.set_ylabel('3D Rad. Sim. (COT$\mathrm{_{CNN}}$)')
         #\--------------------------------------------------------------/#
 
         plt.subplots_adjust(hspace=0.45, wspace=0.45)
 
-        plt.savefig('%s.png' % _name_tag, bbox_inches='tight')
+        plt.savefig('%s.png' % params['name_tag'], bbox_inches='tight')
         plt.close(fig)
         #\--------------------------------------------------------------/#
 
@@ -525,14 +721,15 @@ if __name__ == '__main__':
 
     # Step 1. Pre-process all-sky camera data
     #    a. convert red channel radiance into reflectance
-    #    b. estimate cloud optical thickness (cot) based on reflectance through two-stream approximation
+    #    b. estimate cloud optical thickness (cot) based on reflectance through IPA
+    #       reflectance vs cot mapping
     #    c. store data in <pre-data.h5> under data/04_cam_nadir_rad-sim
     #/--------------------------------------------------------------\#
     main_pre_ipa()
     #\--------------------------------------------------------------/#
 
-    # Step 2. Use CNN to predict cloud optical thickness from camera red channel radiance
-    # Special note: to run the following function, tensorflow needs to be installed.
+    # Step 2*. Use CNN to predict cloud optical thickness from camera red channel radiance
+    # *Special note: to run the following function, tensorflow needs to be installed.
     #               If you have problems in setting up tensorflow enviroment, you can skip this step and
     #               use <pre-data_cnn.h5> provided under data/04_cam_nadir_rad-sim/aux instead.
     #               CNN model credit: Nataraja et al. 2022 (https://doi.org/10.5194/amt-2022-45)
@@ -541,8 +738,9 @@ if __name__ == '__main__':
     #\--------------------------------------------------------------/#
 
     # Step 3. Use EaR3T to run radiance simulations for both cot_ipa and cot_cnn
-    #    a. 3D radiance simulation using cot_ipa
-    #    b. 3D radiance simulation using cot_cnn
+    #    a. IPA radiance simulation using cot_ipa
+    #    b. 3D radiance simulation using cot_ipa
+    #    c. 3D radiance simulation using cot_cnn
     #/--------------------------------------------------------------\#
     main_sim()
     #\--------------------------------------------------------------/#
@@ -550,8 +748,9 @@ if __name__ == '__main__':
     # Step 4. Post-process and plot
     #    a. save data in <post-data.h5> under data/04_cam_nadir_rad-sim
     #        1) raw camera radiance measurements
-    #        2) radiance simulation based on cot_ipa
-    #        3) radiance simulation based on cot_cnn
+    #        2) IPA radiance simulation based on cot_ipa
+    #        3) 3D radiance simulation based on cot_ipa
+    #        4) 3D radiance simulation based on cot_cnn
     #    b. plot
     #/--------------------------------------------------------------\#
     main_post()

@@ -46,6 +46,7 @@ class modis_l1b:
 
     def __init__(self, \
                  fnames    = None, \
+                 f03       = None, \
                  extent    = None, \
                  resolution= None, \
                  overwrite = False,\
@@ -53,6 +54,7 @@ class modis_l1b:
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the hdf files
+        self.f03        = f03         # geolocation file
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
         self.quiet      = quiet       # quiet tag
@@ -104,17 +106,26 @@ class modis_l1b:
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
             raw0      = f.select('EV_250_RefSB')
             wvl       = np.array([650.0, 860.0])
+            do_region = True
 
         # when resolution equals to 500 m
         elif check_equal(self.resolution, 0.5):
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
             raw0      = f.select('EV_500_RefSB')
             wvl       = np.array([470.0, 555.0, 1240.0, 1640.0, 2130.0])
+            do_region = True
 
         # when resolution equals to 1000 m
         elif check_equal(self.resolution, 1.0):
-            # lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=False)
-            sys.exit('Error   [modis_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
+            if self.f03 is not None:
+                raw0      = f.select('EV_250_Aggr1km_RefSB')
+                wvl       = np.array([650.0, 860.0])
+                do_region = False
+                lon       = self.f03.data['lon']['data']
+                lat       = self.f03.data['lat']['data']
+                logic     = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
+            else:
+                sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented without geolocation file being specified.' % self.resolution)
 
         else:
             sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
@@ -122,7 +133,7 @@ class modis_l1b:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/----------------------------------------------------------------------------\#
         if self.extent is None:
 
             if 'actual_range' in lon0.attributes().keys():
@@ -140,14 +151,15 @@ class modis_l1b:
             lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
             lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
 
-        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
-        lon       = lon[logic]
-        lat       = lat[logic]
-        # -------------------------------------------------------------------------------------------------
+        if do_region:
+            logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+            lon       = lon[logic]
+            lat       = lat[logic]
+        #\----------------------------------------------------------------------------/#
 
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/----------------------------------------------------------------------------\#
         raw = raw0[:][:, logic]
         rad = np.zeros(raw.shape, dtype=np.float64)
         ref = np.zeros(raw.shape, dtype=np.float64)
@@ -161,14 +173,16 @@ class modis_l1b:
             cnt[i, ...]  = (raw[i, ...] - raw0.attributes()['corrected_counts_offsets'][i]) * raw0.attributes()['corrected_counts_scales'][i]
 
         f.end()
-        # -------------------------------------------------------------------------------------------------
+        #\----------------------------------------------------------------------------/#
 
 
 
         if hasattr(self, 'data'):
 
-            self.data['lon'] = dict(name='Longitude'               , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
-            self.data['lat'] = dict(name='Latitude'                , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            if do_region:
+                self.data['lon'] = dict(name='Longitude'               , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+                self.data['lat'] = dict(name='Latitude'                , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+
             self.data['rad'] = dict(name='Radiance'                , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
             self.data['cnt'] = dict(name='Corrected Counts'        , data=np.hstack((self.data['cnt']['data'], cnt)), units='N/A')
@@ -1422,6 +1436,20 @@ def get_sinusoidal_grid_tag(lon, lat, verbose=False):
                 tile_tags.append(tile_tag)
 
     return tile_tags
+
+
+
+def find_fname_match(fname0, fnames, index_s=1, index_e=3):
+
+    filename0 = os.path.basename(fname0)
+    pattern  = '.'.join(filename0.split('.')[index_s:index_e+1])
+
+    fname_match = None
+    for fname in fnames:
+        if pattern in fname:
+            fname_match = fname
+
+    return fname_match
 
 #\-----------------------------------------------------------------------------/
 

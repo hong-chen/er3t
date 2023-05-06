@@ -6,36 +6,36 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 
 |
 
-EaR³T provides high-level interfaces that can automate the process of performing IPA/3D
+EaR³T (pronounced [ɜːt]) provides high-level interfaces that can automate the process of performing IPA/3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
 publicly available IPA/3D radiative transfer models including MCARaTS (**implemented**),
 libRadtran (**implemented**, IPA only), and SHDOM (under development).
 
 Applicable area:
 
-* Spaceborne remote sensing;
+* Spaceborne and airborne remote sensing;
 
-* Airborne remote sensing;
+* 3D radiative effects (of clouds, aerosols, and trace gases etc.);
 
-* 3D radiative effects (of clouds, aerosols, etc.);
+* Synthetic data generation (for CNN training);
 
-* Novel retrieval algorithms (e.g., CNN).
+* Novel retrieval algorithm development (e.g., CNN-based).
 
 |
 
 .. list-table:: **Demo**
 
-    * - Multi-Angle (downward-looking from space)
+    * - Multi-Angle (space view)
 
-      - Sunrise to Sunset (downward-looking from space)
+      - Sunrise to Sunset (space view)
 
     * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle_space.gif
 
       - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/sunrise-sunset_space.gif
 
-    * - Multi-Angle (upward-looking from ground)
+    * - Multi-Angle (ground view)
 
-      - Sunrise to Sunset (upward-looking from ground)
+      - Sunrise to Sunset (ground view)
 
     * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle_ground.gif
 
@@ -45,12 +45,12 @@ Applicable area:
 
 **How to cite:**
 
-* `Chen et al., 2022 <https://doi.org/10.5194/amt-2022-143>`_
+* `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
 
-   Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
+   Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
-   Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.
+   Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
 |
 
@@ -64,53 +64,52 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 Dependencies
 ============
 
-**1. Python packages** (we recommend using `Anaconda <https://www.anaconda.com/>`_ Python)
+**1. Install** ``conda`` **Python package manager** (pick **one** from the following installers)
 
+    * `Anaconda <https://www.anaconda.com/>`_ (comprehensive, more popular);
 
-    ::
+    * `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ (compact, more system-friendly).
 
-        # assume <requests>, <tqdm>, <numpy>, <scipy>, <matplotlib>, <h5py>
-        #     are preinstalled by Anaconda installer
-
-        conda install -c conda-forge gdown
-        conda install -c conda-forge pyhdf
-        conda install -c conda-forge netcdf4
-        conda install -c conda-forge owslib
-        conda install -c conda-forge cartopy
-
-    * A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
-      (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
 
 |
 
-**2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or a step-by-step `installation guide (unofficial) <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_ by Hong Chen)
+**2. Install** `MCARaTS <https://sites.google.com/site/mcarats>`_ **through the** `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_)
 
     * After installation, please specify environment variable ``MCARATS_V010_EXE``.
 
-      For example, if you are using ``bash`` or ``zsh`` shell, add the following line to the shell source file
-      (e.g., ``~/.bashrc`` for ``bash`` or ``~/.zshrc`` for ``zsh``):
+      For example, if you are using ``bash`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc``):
 
       ::
 
-        export MCARATS_V010_EXE="/somewhere/mcarats-0.10.4/src/mcarats"
+        export MCARATS_V010_EXE="/system/path/to/mcarats-0.10.4/src/mcarats"
 
     * When the installation processes are complete,
       ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
 
+
 |
 
-**3. (optional) Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `official installation guide <http://www.libradtran.org/doku.php?id=download>`_ (or a step-by-step `installation guide (unofficial) <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`_ by Hong Chen)
+**3. (optional) Install** `libRadtran <http://www.libradtran.org/>`_ **through the** `official installation guide <http://www.libradtran.org/doku.php?id=download>`_ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`_)
 
     * After installation, please specify environment variable ``LIBRADTRAN_V2_DIR`` for the directory that contains compiled libRadtran (the directory should contain ``bin``, ``lib``, ``src`` etc.).
 
+      For example, if you are using ``bash`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc``):
+
+      ::
+
+        export LIBRADTRAN_V2_DIR="/system/path/to/libradtran/v2.0.1"
+
     * When the installation processes are complete,
       ``er3t.rtm.lrt`` can be used to perform IPA radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
+
 
 |
 
 **4. (optional) Install** `SHDOM <https://coloradolinux.com/shdom/>`_
 
-    **Unavaiable yet (under development)**
+    **Unavailable yet (under development)**
 
 
 |
@@ -122,46 +121,35 @@ How to Install
 
 **You will need to have the dependencies installed first.**
 
-**1. From Github (most up-to-date)**
-
-
 a) Open a terminal, type in the following
 
-::
+    ::
 
-    git clone https://github.com/hong-chen/er3t.git
+      git clone https://github.com/hong-chen/er3t.git
 
+b) Under newly cloned ``er3t``, where it contains ``er3t-env.yml``, type in the following
 
-b) Under newly cloned ``er3t``, where it contains ``install.sh``, type in the following
+    ::
 
-::
+      conda env create -f er3t-env.yml
+      conda activate er3t
 
-    bash install.sh
-
-
-|
-
-**2. From Public Release (most reliable)**
-
-a) Download the latest release from `here <https://github.com/hong-chen/er3t/releases/latest>`_;
+    * A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
+      (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
 
 
-b) Unzip or untar the file after download;
 
+c) Under newly cloned ``er3t``, where it contains ``install.sh``, type in the following
 
-3) Under the unzipped directory ``er3t``, where it contains ``install.sh``, type in the following
+    ::
 
-::
+      bash install.sh
 
-    bash install.sh
+    * If ``install.sh`` fails to download the data from Google Drive for any reason, you can download the required data
+      manually from `here <https://drive.google.com/file/d/1KKpLR7IyqJ4gS6xCxc7f1hwUfUMJksVL/view?usp=sharing>`_.
 
-|
-
-    If ``install.sh`` fails to download the data from Google Drive for any reason, you can download the required data
-    manually from `here <https://drive.google.com/uc?id=1GSN7B3rPX8B9C59IVdYqswFiGas--lJo>`_.
-
-    After you download the file (``er3t-data.tar.gz``), put it under ``er3t`` directory where it contains ``install.sh``,
-    then run the command ``bash install.sh`` through a terminal again.
+      After you download the file (``er3t-data.tar.gz``), put it under ``er3t`` directory where it contains ``install.sh``,
+      then run the command ``bash install.sh`` through a terminal again.
 
 
 |
@@ -171,10 +159,10 @@ b) Unzip or untar the file after download;
 How to Use
 ==========
 
-We provide various examples extend from simple demo to complicate research project under ``examples``.
+We provide various examples extend from simple demo to complex research project under `examples <https://github.com/hong-chen/er3t/tree/dev/examples>`_.
 ``examples/00_er3t_mca.py`` and ``examples/00_er3t_lrt.py`` can be used to perform test runs.
 
-Details can be found in ``examples/README.rst``.
+A more detailed instruction can be found `here <https://github.com/hong-chen/er3t/tree/dev/examples#readme>`_.
 
 
 |
@@ -236,23 +224,30 @@ Acknowledgements
 |
 
 
-===========
+============
 Publications
-===========
+============
 
 
-So far, the following publications have used EaR³T
+So far, EaR³T has been used in the following publications:
 
-#. `Chen et al., 2022 <https://doi.org/10.5194/amt-2022-143>`_
+#. `Gristey et al., 2023 <https://doi.org/10.5194/amt-2023-7>`_
 
-   Chen, H., Schmidt, S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold,G.,
+   Gristey, J. J., Schmidt, K. S., Chen, H., Feldman, D. R., Kindel, B. C., Mauss, J., van den Heever, M.,
+   Hakuba, M. Z., and Pilewskie, P.: Angular Sampling of a Monochromatic, Wide-Field-of-View Camera to Augment
+   Next-Generation Earth Radiation Budget Satellite Observations, Atmos. Meas. Tech. Discuss. [preprint],
+   doi:10.5194/amt-2023-7, in review, 2023.
+
+#. `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
+
+   Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
-   Atmos. Meas. Tech. Discuss. [preprint], doi:10.5194/amt-2022-143, in review, 2022.
+   Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
 #. `Nataraja et al., 2022 <https://doi.org/10.5194/amt-15-5181-2022>`_
 
-   Nataraja, V., Schmidt, S., Chen, H., Yamaguchi, T., Kazil, J., Feingold, G., Wolf, K., and
+   Nataraja, V., Schmidt, K. S., Chen, H., Yamaguchi, T., Kazil, J., Feingold, G., Wolf, K., and
    Iwabuchi, H.: Segmentation-Based Multi-Pixel Cloud Optical Thickness Retrieval Using a Convolutional
    Neural Network, Atmos. Meas. Tech., 15, 5181–5205, doi:10.5194/amt-15-5181-2022, 2022.
 
@@ -282,6 +277,36 @@ So far, the following publications have used EaR³T
 
 |
 |
+
+
+
+============
+Contributors
+============
+
+Current and past contributors are:
+
+* `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (Dec., 2022 - current)
+
+   - improved the automated process of satellite data download (functions in ``er3t/util/util.py``)
+
+* `Ken Hirata <Ken.Hirata@colorado.edu>`_ (Jan., 2023 - current)
+
+   - implementing the Mie scattering phase function support for aerosols (work in progress)
+
+* `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
+
+   - implementing spectroscopy support for OCO-2 (work in progress)
+
+|
+
+If you are interested in making contributions to the package,
+please refer to `CONTRIBUTING <https://github.com/hong-chen/er3t/blob/dev/CONTRIBUTING.rst>`_
+doc for further information.
+
+|
+|
+
 
 
 =====
