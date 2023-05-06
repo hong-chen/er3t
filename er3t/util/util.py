@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import math
 import shutil
 import datetime
 import time
@@ -8,6 +9,7 @@ import importlib
 import requests
 import urllib.request
 from io import StringIO
+import geopy.distance as gdist
 import numpy as np
 from scipy import interpolate, stats
 import warnings
@@ -20,8 +22,8 @@ import er3t.common
 __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
-           'find_nearest', 'move_correlate', 'grid_by_extent', 'grid_by_lonlat', \
-           'get_doy_tag', 'get_satfile_tag', \
+           'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
+           'haversine', 'cal_lonlat_by_dist', 're_extend', 'get_satfile_tag'\
            'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
@@ -515,6 +517,96 @@ def get_doy_tag(date, day_interval=8):
 
     return doy_tag
 
+
+def haversine(lon1, lon2, lat1, lat2):
+    """
+    Calculates the Haversine distance between two points.
+    Args:
+        - lon1: float, longitude of the first point in degrees
+        - lon2: float, longitude of the second point in degrees
+        - lat1: float, latitude of the first point in degrees
+        - lat2: float, latitude of the second point in degrees
+    Returns:
+        Haversine distance in meters
+
+    Reference: https://www.movable-type.co.uk/scripts/latlong.html
+    """
+    lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2]) # convert to radians
+
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
+    c = 2 * np.arcsin(np.sqrt(a))
+    r = EARTH_RADIUS * 1e3 # Radius of earth in meters
+    return c * r
+
+
+# IUGG mean earth radius in kilometers, from
+# https://en.wikipedia.org/wiki/Earth_radius#Mean_radius.  Using a
+# sphere with this radius results in an error of up to about 0.5%.
+EARTH_RADIUS = 6371.009
+
+def calc_lonlat_by_dist(lon1, lat1, bearing, distance):
+    """
+    Gets lat/lon of the destination point given an initial point,
+    bearing, and the great circle distance between the points.
+    Args:
+        - lon1: float, longitude of the first point in degrees
+        - lat1: float, latitude of the first point in degrees
+        - bearing: float, angle of trajectory.
+                   For instance, 0 is true north, 90 is east, 180 is south, 270 is west.
+        - distance: float, distance between the points in meters
+    Returns:
+        - lon2: float, longitude of the second point in degrees
+        - lat2: float, latitude of the second point in degrees
+
+    Reference: http://www.movable-type.co.uk/scripts/latlong.html
+    """
+    lon1, lat1, bearing = map(np.radians, [lon1, lat1, bearing]) # convert to radians
+    delta = distance/(EARTH_RADIUS * 1e3) # delta = dist/(radius of earth)
+    lat2 = np.arcsin(np.sin(lat1) * np.cos(delta) + np.cos(lat1) * np.sin(delta) * np.cos(bearing))
+    lon2 = lon1 + np.arctan2(np.sin(bearing) * np.sin(delta) * np.cos(lat1),
+                             np.cos(delta) - np.sin(lat1) * np.sin(lat2))
+    return np.degrees(lon2), np.degrees(lat2) # convert back to degrees
+
+
+def re_extend(extent, width, height, resolution):
+    """
+    Re-extends the given extent so that the resulting extent can be gridded
+    to a fixed `resolution` to generate the same image size always (width x height).
+    Useful when downloading data from multiple locations at different latitudes.
+    Args:
+        - extent: list or arr, the extent of the location of interest in WESN format.
+        - width:  int, the width you will be gridding the image to after download.
+        - height: int, the height you will be gridding the image to after download.
+        - resolution: int, the resolution you will be gridding the image to.
+    Returns:
+        - lon2_arr: arr, a 1d array of longitudes gridded to `resolution` and of size `height`.
+        - lat2_arr: arr, a 1d array of latitudes gridded to `resolution` and of size `width`.
+        - extent: list, the new extent that will ensure same image size for the given resolution.
+    """
+    west, east, south, north = extent
+    lon2_arr = np.zeros((width))
+    lat2_arr = np.zeros((height))
+    lon1, lat1 = west, south # start at the southwest corner
+    for i in range(width):
+        # start at the southwest corner of the original extent and go east (bearing of 90 deg)
+        # along a great circle or geodetic/ellipsoid distance to get the new coordinates
+        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=90, distance=resolution, use_great_circle=True)
+        lon2_arr[i] = lon2
+        lon1, lat1 = lon2, lat2
+
+    lon1, lat1 = west, south # re-start at the southwest corner
+    for j in range(height):
+        # start at the southwest corner of the original extent and go north (bearing of 0 deg)
+        # along a great circle or geodetic/ellipsoid distance to get the new coordinates
+        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=0, distance=resolution, use_great_circle=True)
+        lat2_arr[j] = lat2
+        lon1, lat1 = lon2, lat2
+
+    west, east, south, north = lon2_arr[0], lon2_arr[-1]+0.15, lat2_arr[0], lat2_arr[-1]+0.15 # padding
+    return lon2_arr, lat2_arr, [west, east, south, north]
 
 
 def get_satfile_tag(
