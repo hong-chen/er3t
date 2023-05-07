@@ -1,5 +1,6 @@
 """
 by Hong Chen (hong.chen@lasp.colorado.edu)
+   Vikas Nataraja
 
 This code serves as an example code to reproduce 3D MODIS radiance simulation for App. 2 in Chen et al. (2022).
 

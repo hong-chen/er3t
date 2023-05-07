@@ -44,6 +44,7 @@ params = {
                  'output_tag': 'rtm-out_rad-3d',
                   'overwrite': True,
                     'verbose': True,
+               'earth_radius': 6371.009,
         }
 
 references = [
