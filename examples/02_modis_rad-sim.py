@@ -120,7 +120,8 @@ class satellite_download:
 
         else:
 
-            sys.exit('Error   [satellite_download]: Please check if \'%s\' exists or provide \'date\' and \'extent\' to proceed.' % fname)
+            msg = '\nError [satellite_download]: Please check if <%s> exists or provide <date> and <extent> to proceed.' % fname
+            raise OSError(msg)
 
     def load(self, fname):
 
@@ -134,26 +135,27 @@ class satellite_download:
                 self.fnames   = obj.fnames
                 self.fdir_out = obj.fdir_out
             else:
-                sys.exit('Error   [satellite_download]: File \'%s\' is not the correct pickle file to load.' % fname)
+                msg = '\nError [satellite_download]: File <%s> is not the correct pickle file to load.' % fname
+                raise OSError(msg)
 
     def run(self, run=True):
 
         lon0 = np.linspace(self.extent[0], self.extent[1], 100)
         lat0 = np.linspace(self.extent[2], self.extent[3], 100)
         lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
-        
+
         # create prefixes for the satellite products
         if self.satellite.lower() == 'aqua':
             dataset_tags = ['61/MYD03', '61/MYD06_L2', '61/MYD02QKM']
         elif self.satellite.lower() == 'terra':
             dataset_tags = ['61/MOD03', '61/MOD06_L2', '61/MOD02QKM']
         else:
-            msg = 'Message [satellite_download]: Satellite must be either \'Aqua\' or \'Terra\'. %s is currently not supported' % self.satellite)
-            sys.exit(msg)
-        
+            msg = '\nError [satellite_download]: Satellite must be either \'Aqua\' or \'Terra\'. %s is currently not supported' % self.satellite
+            raise ValueError(msg)
+
         self.fnames = {}
 
-        # MODIS RGB imagery 
+        # MODIS RGB imagery
         self.fnames['mod_rgb'] = [download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
@@ -164,7 +166,7 @@ class satellite_download:
         filename_tags_03 = get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
         if self.verbose:
            print('Message [satellite_download]: Found %s %s overpasses' % (len(filename_tags_03), self.satellite))
-        
+
         for filename_tag in filename_tags_03:
             fnames_03     = download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             fnames_l2     = download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
@@ -200,7 +202,8 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     elif (wvl>=841) & (wvl<=876):
         wvl = 860
     else:
-        sys.exit('Error [cdata_sat_raw]: do not support wavelength of %d nm.' % wvl)
+        msg = '\nError [cdata_sat_raw]: do not support wavelength of %d nm.' % wvl
+        raise ValueError(msg)
 
     index_wvl = index[wvl]
     #\----------------------------------------------------------------------------/#
