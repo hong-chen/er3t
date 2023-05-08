@@ -574,8 +574,6 @@ def cal_lonlat_by_dist(lon1, lat1, bearing, distance, earth_radius=er3t.common.p
     by Vikas Nataraja
     """
 
-    import geopy.distance as gdist
-
     lon1, lat1, bearing = map(np.radians, [lon1, lat1, bearing]) # convert to radians
     delta = distance/(earth_radius * 1.0e3) # delta = dist/(radius of earth)
     lat2 = np.arcsin(np.sin(lat1) * np.cos(delta) + np.cos(lat1) * np.sin(delta) * np.cos(bearing))
@@ -610,16 +608,16 @@ def re_extend(extent, width, height, resolution):
     lon1, lat1 = west, south # start at the southwest corner
     for i in range(width):
         # start at the southwest corner of the original extent and go east (bearing of 90 deg)
-        # along a great circle or geodetic/ellipsoid distance to get the new coordinates
-        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=90, distance=resolution, use_great_circle=True)
+        # along a great circle distance to get the new coordinates
+        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=90, distance=resolution,)
         lon2_arr[i] = lon2
         lon1, lat1 = lon2, lat2
 
     lon1, lat1 = west, south # re-start at the southwest corner
     for j in range(height):
         # start at the southwest corner of the original extent and go north (bearing of 0 deg)
-        # along a great circle or geodetic/ellipsoid distance to get the new coordinates
-        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=0, distance=resolution, use_great_circle=True)
+        # along a great circle distance to get the new coordinates
+        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=0, distance=resolution)
         lat2_arr[j] = lat2
         lon1, lat1 = lon2, lat2
 
