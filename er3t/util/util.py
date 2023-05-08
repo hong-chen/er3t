@@ -23,7 +23,7 @@ __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
-           'haversine', 'cal_lonlat_by_dist', 're_extend', 'get_satfile_tag'\
+           'haversine', 'cal_lonlat_by_dist', 're_extend', 'get_satfile_tag',\
            'download_laads_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
@@ -547,7 +547,7 @@ def haversine(lon1, lon2, lat1, lat2):
 # sphere with this radius results in an error of up to about 0.5%.
 EARTH_RADIUS = 6371.009
 
-def calc_lonlat_by_dist(lon1, lat1, bearing, distance):
+def cal_lonlat_by_dist(lon1, lat1, bearing, distance):
     """
     Gets lat/lon of the destination point given an initial point,
     bearing, and the great circle distance between the points.
