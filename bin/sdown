@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
 """
-Downloads MODIS products given location (lat/lon) and date.
+Downloads satellite data products for any user-specified date and geolocation location (lat/lon).
+
+Now supports:
+    MODIS data: MOD-RGB, MYD-RGB, MOD03, MOD02QKM, MOD02HKM, MOD021KM, MOD06_L2, ...
+    VIIRS data: ...
+    OCO-2 data: ...
 
 This is a functionality of EaR3T.
 
@@ -10,11 +15,11 @@ Authors:
     Modified by Vikas Nataraja.
 
 Example Usage:
-    download_modis --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir tmp-data/
-    download_modis --date 20130714 --extent 30 35 0 10 --satellite terra --products rgb 02hkm 06_l2 --fdir tmp-data/
+    sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir tmp-data
+    sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products rgb 02hkm 06_l2 --fdir tmp-data
 
 To see a demonstration of how this tool works, use:
-    download_modis --run_demo
+    sdown --run_demo
 """
 
 import os
@@ -33,15 +38,15 @@ import er3t
 description = '===================================================================\n\n'\
               '    Education and Research 3D Radiative Transfer Toolbox (EaR\u00b3T)  \n\n'\
               '===================================================================\n'\
-              '================ MODIS Data Product Download Tool =================\n'\
+              '============== Satellite Data Product Download Tool ===============\n'\
               'Example Usage:\n'\
-              'download_modis --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data/\n'\
-              'download_modis --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data/\n'
+              'sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data\n'\
+              'sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data\n'
 
 
 product_options = ['02QKM', '02HKM', '021KM', '06_L2', '03', 'RGB', '43']
 product_names   = ['MODIS Level 1b Radiances (250 m)', 'MODIS Level 1b Radiances (500 m)', 'MODIS Level 1b Radiances (1 km)',
-                   'MODIS Level 2 Cloud Product', 'MODIS Solar/Viewing Geometries', 'MODIS False-Color RGB Imagery',
+                   'MODIS Level 2 Cloud Product', 'MODIS Solar/Viewing Geometries', 'MODIS True-Color RGB Imagery',
                    'MODIS Level 2 Surface Reflectance/Albedo Product']
 product_dict    = dict(zip(product_options, product_names))
 
@@ -60,29 +65,29 @@ class SatelliteDownload:
 
         # Error handling
         if satellite.lower() not in ['aqua', 'terra']:
-            msg = '\nError [satellite_download]: Satellite must be either \'Aqua\' or \'Terra\'. %s is currently not supported\n' % satellite
+            msg = '\nError [sdown]: Satellite must be either \'Aqua\' or \'Terra\'. %s is currently not supported\n' % satellite
             sys.exit(msg)
 
         if len(products) == 0:
-            sys.exit('\nError [download_modis]: Please specify a product to download. We currently support %s\n' % product_options)
+            sys.exit('\nError [sdown]: Please specify a product to download. We currently support %s\n' % product_options)
 
         if (extent is None) and ((lats is None) or (lons is None)):
-            sys.exit('\nError [download_modis]: Must provide either extent or lon/lat coordinates\n')
+            sys.exit('\nError [sdown]: Must provide either extent or lon/lat coordinates\n')
         elif (extent is None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
             self.extent = [lons[0], lons[1], lats[0], lats[1]]
         elif (len(extent) == 4) and ((lats is None) and (lons is None)):
             self.extent = extent
         else:
-            sys.exit('\nError [download_modis]: The provided lon/lat coordinates are incorrect, check again\n')
+            sys.exit('\nError [sdown]: The provided lon/lat coordinates are incorrect, check again\n')
 
         if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-            msg = '\nError [download_modis]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.\n' % self.extent
+            msg = '\nError [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.\n' % self.extent
             sys.exit(msg)
 
         if not os.path.exists(fdir_out):
             os.makedirs(fdir_out)
             if verbose:
-                print('\nMessage [download_modis]: Created %s. Files will be downloaded to this directory\n' % fdir_out)
+                print('\nMessage [sdown]: Created %s. Files will be downloaded to this directory\n' % fdir_out)
 
         self.date = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
         self.satellite = satellite.lower()
@@ -116,7 +121,7 @@ class SatelliteDownload:
         self.fnames = {}
         for product in self.products:
             if product.upper() not in product_options:
-                sys.exit('\nMessage [download_modis]: Specified product %s cannot be downloaded. Currently supported products are \n%s\n' % (product, product_options))
+                sys.exit('\nMessage [sdown]: Specified product %s cannot be downloaded. Currently supported products are \n%s\n' % (product, product_options))
 
             if self.verbose:
                 print('===================================================================\n\n'\
@@ -160,16 +165,64 @@ class SatelliteDownload:
                     fnames = er3t.util.download_laads_https(self.date, dataset_tag, filename_tag, day_interval=1, fdir_out=self.fdir_out, verbose=self.verbose)
                     self.fnames['mod_l2'] += fnames
 
-        print('\nMessage [download_modis]: Finished downloading MODIS files! You can find them in %s\n' % self.fdir_out)
+        print('\nMessage [sdown]: Finished downloading MODIS files! You can find them in %s\n' % self.fdir_out)
 
+
+def get_sat_info_from_product_tag(tag_):
+
+    tag = tag_.upper()
+
+    sat_info = {}
+
+    if any(pattern in tag for pattern in ['MOD']):
+        sat_info['satellite']  = 'Terra'
+        sat_info['instrument'] = 'MODIS'
+    elif any(pattern in tag for pattern in ['MYD']):
+        sat_info['satellite']  = 'Aqua'
+        sat_info['instrument'] = 'MODIS'
+    elif any(pattern in tag for pattern in ['MCD']):
+        sat_info['satellite']  = 'Terra and Aqua (Combined)'
+        sat_info['instrument'] = 'MODIS'
+    elif any(pattern in tag for pattern in ['VNP']):
+        sat_info['satellite']  = 'Suomi NPP'
+        sat_info['instrument'] = 'VIIRS'
+    elif any(pattern in tag for pattern in ['VJ102', 'VJ103']):
+        sat_info['satellite']  = 'NOAA 20'
+        sat_info['instrument'] = 'VIIRS'
+    else:
+        msg = '\n Error [sdown]: Cannot recognize satellite platform and instrument from the given product tag <%s>, abort.' % tag_
+        raise OSError(msg)
+
+    if any(pattern in tag for pattern in ['RGB']):
+        sat_info['product'] = 'True Color Imagery'
+    elif any(pattern in tag for pattern in ['03']):
+        sat_info['product'] = 'Geolocation Fields Product'
+    elif any(pattern in tag for pattern in ['02QKM', '02HKM', '021KM']):
+        sat_info['product'] = 'Calibrated Radiances Product'
+    elif any(pattern in tag for pattern in ['06_L2']):
+        sat_info['product'] = 'L2 Cloud Product'
+    elif any(pattern in tag for pattern in ['43A1', '43A2', '43A3', '43A4']):
+        sat_info['product'] = 'Surface BRDF/Albedo Product'
+
+    return sat_info
 
 if __name__ == '__main__':
 
-    parser = ArgumentParser(prog='download_modis', formatter_class=RawTextHelpFormatter,
+    # sat_info = get_sat_info_from_product_tag('MOD03')
+    # print(sat_info)
+    # sat_info = get_sat_info_from_product_tag('MOD02QKM')
+    # print(sat_info)
+    # sat_info = get_sat_info_from_product_tag('MOD06_L2')
+    # print(sat_info)
+    # sat_info = get_sat_info_from_product_tag('MCD43A3')
+    # print(sat_info)
+    # sys.exit()
+
+    parser = ArgumentParser(prog='sdown', formatter_class=RawTextHelpFormatter,
                             description=description, usage='%(prog)s [-h] [--help] [-i]')
-    parser.add_argument('-f', '--fdir', type=str, metavar='', default='modis-data/',
+    parser.add_argument('-f', '--fdir', type=str, metavar='', default='modis-data',
                         help='Directory where the files will be downloaded\n'\
-                             'By default, files will be downloaded to \'modis-data/\'')
+                             'By default, files will be downloaded to \'modis-data\'')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Pass --verbose if status of your request should be reported frequently.\n'\
                              'This is disabled by default.')
@@ -199,7 +252,7 @@ if __name__ == '__main__':
                         '03:    Solar/viewing geometry product\n'\
                         '06_L2: Level 2 cloud product\n'\
                         '43:    Level 2 surface product MCD43A3\n'\
-                        'RGB:   False-color RGB imagery, useful for visuzliation'
+                        'RGB:   True-Color RGB imagery, useful for visuzliation'
                         '\nTo download multiple products at a time:\n'\
                         '--product 021km 02hkm 06_l2\n')
 
@@ -211,7 +264,7 @@ if __name__ == '__main__':
         lons      = None
         lats      = None
         satellite = 'aqua'
-        fdir      = 'tmp-data/'
+        fdir      = 'tmp-data'
         products  = ['RGB', '02QKM']
         verbose   = 1
 
