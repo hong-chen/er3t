@@ -347,11 +347,10 @@ def get_sat_info_from_product_tag(tag_):
 
 if __name__ == '__main__':
 
-    sat_info = get_sat_info_from_product_tag('MYD03')
-    print(sat_info)
-    sat_info = get_sat_info_from_product_tag('MOD02QKM')
-    print(sat_info)
-    sys.exit()
+    # sat_info = get_sat_info_from_product_tag('MYD03')
+    # print(sat_info)
+    # sat_info = get_sat_info_from_product_tag('MOD02QKM')
+    # print(sat_info)
     # sat_info = get_sat_info_from_product_tag('MOD06_L2')
     # print(sat_info)
     # sat_info = get_sat_info_from_product_tag('MCD43A3')
