@@ -204,6 +204,7 @@ def get_sat_info_from_product_tag(tag_):
                   'instrument': 'MODIS',
                    'reference': 'Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: %s), 2021.' % date_today_str,
                    },
+
             }
     #\----------------------------------------------------------------------------/#
 
@@ -222,7 +223,7 @@ def get_sat_info_from_product_tag(tag_):
     if (tag in tags_support.keys()):
         return tags_support[tag]
     else:
-        msg = '\n Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort.' % tag_
+        msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (tag_, '\n'.join(tags_support_.keys()))
         raise OSError(msg)
     #\----------------------------------------------------------------------------/#
 
