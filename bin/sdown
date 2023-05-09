@@ -11,8 +11,8 @@ Now supports:
 This is a functionality of EaR3T.
 
 Authors:
-    Original code written by Hong Chen.
-    Modified by Vikas Nataraja.
+    Vikas Nataraja
+    Hong Chen
 
 Example Usage:
     sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir tmp-data
@@ -177,7 +177,55 @@ def get_sat_info_from_product_tag(tag_):
     #/----------------------------------------------------------------------------\#
     tags_support_ = {
 
+               'MODRGB': {
+                    'name_tag': 'MODRGB',
+                 'description': 'Terra MODIS True Color (RGB) Imagery',
+                     'website': 'https://worldview.earthdata.nasa.gov',
+                   'satellite': 'Terra',
+                  'instrument': 'MODIS',
+             'acknowledgement': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
+                   },
+
+
+               'MOD03': {
+                    'name_tag': 'MOD03',
+                 'description': 'Terra MODIS Geolocation Fields Product',
+                     'website': 'http://dx.doi.org/10.5067/MODIS/MOD03.061',
+                   'satellite': 'Terra',
+                  'instrument': 'MODIS',
+                   'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD03.061 (last access: %s), 2017.' % date_today_str,
+                   },
+
+            'MOD02QKM': {
+                    'name_tag': 'MOD02QKM',
+                 'description': 'Terra MODIS 250m Calibrated Radiances Product',
+                     'website': 'http://dx.doi.org/10.5067/MODIS/MOD02QKM.061',
+                   'satellite': 'Terra',
+                  'instrument': 'MODIS',
+                   'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02QKM.061 (last access: %s), 2017.' % date_today_str,
+                   },
+
+            'MOD06_L2': {
+                    'name_tag': 'MOD06_L2',
+                 'description': 'Terra MODIS Atmosphere L2 Cloud Product',
+                     'website': 'http://dx.doi.org/10.5067/MODIS/MOD06_L2.061',
+                   'satellite': 'Terra',
+                  'instrument': 'MODIS',
+                   'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % date_today_str,
+                   },
+
+               'MYDRGB': {
+                    'name_tag': 'MYDRGB',
+                 'description': 'Aqua MODIS True Color (RGB) Imagery',
+                     'website': 'https://worldview.earthdata.nasa.gov',
+                   'satellite': 'Aqua',
+                  'instrument': 'MODIS',
+             'acknowledgement': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
+                   },
+
                'MYD03': {
+                    'name_tag': 'MYD03',
+                 'description': 'Aqua MODIS Geolocation Fields Product',
                      'website': 'http://dx.doi.org/10.5067/MODIS/MYD03.061',
                    'satellite': 'Aqua',
                   'instrument': 'MODIS',
@@ -185,6 +233,8 @@ def get_sat_info_from_product_tag(tag_):
                    },
 
             'MYD02QKM': {
+                    'name_tag': 'MYD02QKM',
+                 'description': 'Aqua MODIS 250m Calibrated Radiances Product',
                      'website': 'http://dx.doi.org/10.5067/MODIS/MYD02QKM.061',
                    'satellite': 'Aqua',
                   'instrument': 'MODIS',
@@ -192,6 +242,8 @@ def get_sat_info_from_product_tag(tag_):
                    },
 
             'MYD06_L2': {
+                    'name_tag': 'MYD06_L2',
+                 'description': 'Aqua MODIS Atmosphere L2 Cloud Product',
                      'website': 'http://dx.doi.org/10.5067/MODIS/MYD06_L2.061',
                    'satellite': 'Aqua',
                   'instrument': 'MODIS',
@@ -199,10 +251,39 @@ def get_sat_info_from_product_tag(tag_):
                    },
 
             'MCD43A3': {
+                    'name_tag': 'MCD43A3',
+                 'description': 'MODIS BRDF/Albedo L3 Surface Product',
                      'website': 'https://doi.org/10.5067/MODIS/MCD43A3.061',
                    'satellite': 'Terra & Aqua',
                   'instrument': 'MODIS',
                    'reference': 'Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: %s), 2021.' % date_today_str,
+                   },
+
+            'oco2_L1bScND': {
+                    'name_tag': 'oco2_L1bScND',
+                 'description': 'OCO-2 L1B Calibrated Radiances Product',
+                     'website': 'https://doi.org/10.5067/6O3GEUK7U2JG',
+                   'satellite': 'OCO-2',
+                  'instrument': 'OCO-2',
+                   'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 1B calibrated, geolocated science spectra, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6O3GEUK7U2JG (last access: %s), 2019.' % date_today_str,
+                   },
+
+            'oco2_L2MetND': {
+                    'name_tag': 'oco2_L2MetND',
+                 'description': 'OCO-2 L2 Meteorological Parameters Product',
+                     'website': 'https://doi.org/10.5067/OJZZW0LIGSDH',
+                   'satellite': 'OCO-2',
+                  'instrument': 'OCO-2',
+                   'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 meteorological parameters interpolated from global assimilation model for each sounding, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/OJZZW0LIGSDH (last access: %s), 2019.' % date_today_str,
+                   },
+
+            'oco2_L2StdND': {
+                    'name_tag': 'oco2_L2StdND',
+                 'description': 'OCO-2 L2 XCO2 Retrieval Product',
+                     'website': 'https://doi.org/10.5067/6SBROTA57TFH',
+                   'satellite': 'OCO-2',
+                  'instrument': 'OCO-2',
+                   'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 geolocated XCO2 retrievals results, physical model, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6SBROTA57TFH (last access: %s), 2020.' % date_today_str,
                    },
 
             }
@@ -266,10 +347,11 @@ def get_sat_info_from_product_tag(tag_):
 
 if __name__ == '__main__':
 
-    # sat_info = get_sat_info_from_product_tag('MYD03')
-    # print(sat_info)
-    # sat_info = get_sat_info_from_product_tag('MOD02QKM')
-    # print(sat_info)
+    sat_info = get_sat_info_from_product_tag('MYD03')
+    print(sat_info)
+    sat_info = get_sat_info_from_product_tag('MOD02QKM')
+    print(sat_info)
+    sys.exit()
     # sat_info = get_sat_info_from_product_tag('MOD06_L2')
     # print(sat_info)
     # sat_info = get_sat_info_from_product_tag('MCD43A3')
