@@ -50,6 +50,7 @@ product_names   = ['MODIS Level 1b Radiances (250 m)', 'MODIS Level 1b Radiances
                    'MODIS Level 2 Surface Reflectance/Albedo Product']
 product_dict    = dict(zip(product_options, product_names))
 
+
 class SatelliteDownload:
 
     def __init__(
@@ -170,45 +171,101 @@ class SatelliteDownload:
 
 def get_sat_info_from_product_tag(tag_):
 
+    date_today_str = datetime.date.today().strftime('%d %B, %Y')
+
+    # this <tags_support_> will be updated over time
+    #/----------------------------------------------------------------------------\#
+    tags_support_ = {
+
+               'MYD03': {
+                     'website': 'http://dx.doi.org/10.5067/MODIS/MYD03.061',
+                   'satellite': 'Aqua',
+                  'instrument': 'MODIS',
+                   'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD03.061 (last access: %s), 2017.' % date_today_str,
+                   },
+
+            'MYD02QKM': {
+                     'website': 'http://dx.doi.org/10.5067/MODIS/MYD02QKM.061',
+                   'satellite': 'Aqua',
+                  'instrument': 'MODIS',
+                   'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02QKM.061 (last access: %s), 2017.' % date_today_str,
+                   },
+
+            'MYD06_L2': {
+                     'website': 'http://dx.doi.org/10.5067/MODIS/MYD06_L2.061',
+                   'satellite': 'Aqua',
+                  'instrument': 'MODIS',
+                   'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD06_L2.061 (last access: %s), 2015.' % date_today_str,
+                   },
+
+            'MCD43A3': {
+                     'website': 'https://doi.org/10.5067/MODIS/MCD43A3.061',
+                   'satellite': 'Terra & Aqua',
+                  'instrument': 'MODIS',
+                   'reference': 'Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: %s), 2021.' % date_today_str,
+                   },
+            }
+    #\----------------------------------------------------------------------------/#
+
+
+    # make all variable names (keys) upper case
+    #/----------------------------------------------------------------------------\#
+    tags_support = {}
+    for key in tags_support_.keys():
+        tags_support[key.upper()] = tags_support_[key]
+    #\----------------------------------------------------------------------------/#
+
+
+    # return satellite product information
+    #/----------------------------------------------------------------------------\#
     tag = tag_.upper()
-
-    sat_info = {}
-
-    if any(pattern in tag for pattern in ['MOD']):
-        sat_info['satellite']  = 'Terra'
-        sat_info['instrument'] = 'MODIS'
-    elif any(pattern in tag for pattern in ['MYD']):
-        sat_info['satellite']  = 'Aqua'
-        sat_info['instrument'] = 'MODIS'
-    elif any(pattern in tag for pattern in ['MCD']):
-        sat_info['satellite']  = 'Terra and Aqua (Combined)'
-        sat_info['instrument'] = 'MODIS'
-    elif any(pattern in tag for pattern in ['VNP']):
-        sat_info['satellite']  = 'Suomi NPP'
-        sat_info['instrument'] = 'VIIRS'
-    elif any(pattern in tag for pattern in ['VJ102', 'VJ103']):
-        sat_info['satellite']  = 'NOAA 20'
-        sat_info['instrument'] = 'VIIRS'
+    if (tag in tags_support.keys()):
+        return tags_support[tag]
     else:
-        msg = '\n Error [sdown]: Cannot recognize satellite platform and instrument from the given product tag <%s>, abort.' % tag_
+        msg = '\n Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort.' % tag_
         raise OSError(msg)
+    #\----------------------------------------------------------------------------/#
 
-    if any(pattern in tag for pattern in ['RGB']):
-        sat_info['product'] = 'True Color Imagery'
-    elif any(pattern in tag for pattern in ['03']):
-        sat_info['product'] = 'Geolocation Fields Product'
-    elif any(pattern in tag for pattern in ['02QKM', '02HKM', '021KM']):
-        sat_info['product'] = 'Calibrated Radiances Product'
-    elif any(pattern in tag for pattern in ['06_L2']):
-        sat_info['product'] = 'L2 Cloud Product'
-    elif any(pattern in tag for pattern in ['43A1', '43A2', '43A3', '43A4']):
-        sat_info['product'] = 'Surface BRDF/Albedo Product'
 
-    return sat_info
+    # old
+    #/----------------------------------------------------------------------------\#
+    # sat_info = {}
+
+    # if any(pattern in tag for pattern in ['MOD']):
+    #     sat_info['satellite']  = 'Terra'
+    #     sat_info['instrument'] = 'MODIS'
+    # elif any(pattern in tag for pattern in ['MYD']):
+    #     sat_info['satellite']  = 'Aqua'
+    #     sat_info['instrument'] = 'MODIS'
+    # elif any(pattern in tag for pattern in ['MCD']):
+    #     sat_info['satellite']  = 'Terra and Aqua (Combined)'
+    #     sat_info['instrument'] = 'MODIS'
+    # elif any(pattern in tag for pattern in ['VNP']):
+    #     sat_info['satellite']  = 'Suomi NPP'
+    #     sat_info['instrument'] = 'VIIRS'
+    # elif any(pattern in tag for pattern in ['VJ102', 'VJ103']):
+    #     sat_info['satellite']  = 'NOAA 20'
+    #     sat_info['instrument'] = 'VIIRS'
+    #     raise OSError(msg)
+
+    # if any(pattern in tag for pattern in ['RGB']):
+    #     sat_info['product'] = 'True Color Imagery'
+    # elif any(pattern in tag for pattern in ['03']):
+    #     sat_info['product'] = 'Geolocation Fields Product'
+    # elif any(pattern in tag for pattern in ['02QKM', '02HKM', '021KM']):
+    #     sat_info['product'] = 'Calibrated Radiances Product'
+    # elif any(pattern in tag for pattern in ['06_L2']):
+    #     sat_info['product'] = 'L2 Cloud Product'
+    # elif any(pattern in tag for pattern in ['43A1', '43A2', '43A3', '43A4']):
+    #     sat_info['product'] = 'Surface BRDF/Albedo Product'
+
+    # return sat_info
+    #\----------------------------------------------------------------------------/#
+
 
 if __name__ == '__main__':
 
-    # sat_info = get_sat_info_from_product_tag('MOD03')
+    # sat_info = get_sat_info_from_product_tag('MYD03')
     # print(sat_info)
     # sat_info = get_sat_info_from_product_tag('MOD02QKM')
     # print(sat_info)
@@ -216,7 +273,6 @@ if __name__ == '__main__':
     # print(sat_info)
     # sat_info = get_sat_info_from_product_tag('MCD43A3')
     # print(sat_info)
-    # sys.exit()
 
     parser = ArgumentParser(prog='sdown', formatter_class=RawTextHelpFormatter,
                             description=description, usage='%(prog)s [-h] [--help] [-i]')
