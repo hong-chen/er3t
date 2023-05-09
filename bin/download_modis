@@ -12,6 +12,9 @@ Authors:
 Example Usage:
     download_modis --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir tmp-data/
     download_modis --date 20130714 --extent 30 35 0 10 --satellite terra --products rgb 02hkm 06_l2 --fdir tmp-data/
+
+To see a demonstration of how this tool works, use:
+    download_modis --run_demo
 """
 
 import os
