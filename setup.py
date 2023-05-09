@@ -36,7 +36,7 @@ setup(
          'owslib',
          'cartopy'],
      python_requires = '~=3.9',
-     scripts = ['bin/lss', 'bin/lsa'],
+     scripts = ['bin/lss', 'bin/lsa', 'bin/download_modis'],
      include_package_data = True,
      zip_safe = False
      )
