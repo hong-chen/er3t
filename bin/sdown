@@ -49,6 +49,13 @@ description = '=================================================================
               'sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data\n'\
               'sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data\n'
 
+description = '=' * width + '\n\n' + \
+              'Education and Research 3D Radiative Transfer Toolbox (EaR\u00b3T)'.center(width) + '\n\n' + \
+              '=' * width + '\n' + \
+              ' Satellite Data Product Download Tool '.center(width, '=') + '\n\n' + \
+              'Example Usage:\n'\
+              'sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data\n'\
+              'sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data\n'
 
 # product tags
 # this <tags_support_> will be updated over time
