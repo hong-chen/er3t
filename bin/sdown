@@ -4,8 +4,8 @@
 Downloads satellite data products for any user-specified date and geolocation location (lat/lon).
 
 Now supports:
-    MODIS data: MOD-RGB,  MYD-RGB 
-                MOD03,    MYD03 
+    MODIS data: MOD-RGB,  MYD-RGB
+                MOD03,    MYD03
                 MOD02QKM, MYD02QKM
                 MOD02HKM, MYD02HKM
                 MOD021KM, MYD021KM
@@ -38,190 +38,190 @@ import datetime
 import er3t
 
 # get width for stdout statements
-width = os.get_terminal_size().columns
+_width_ = os.get_terminal_size().columns
 
 # set welcome text
-description = '===================================================================\n\n'\
-              '    Education and Research 3D Radiative Transfer Toolbox (EaR\u00b3T)  \n\n'\
-              '===================================================================\n'\
-              '============== Satellite Data Product Download Tool ===============\n'\
-              'Example Usage:\n'\
-              'sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data\n'\
-              'sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data\n'
+_description_ = '===================================================================\n\n'\
+                '    Education and Research 3D Radiative Transfer Toolbox (EaR\u00b3T)  \n\n'\
+                '===================================================================\n'\
+                '============== Satellite Data Product Download Tool ===============\n'\
+                'Example Usage:\n'\
+                'sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data\n'\
+                'sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data\n'
 
-description = '=' * width + '\n\n' + \
-              'Education and Research 3D Radiative Transfer Toolbox (EaR\u00b3T)'.center(width) + '\n\n' + \
-              '=' * width + '\n' + \
-              ' Satellite Data Product Download Tool '.center(width, '=') + '\n\n' + \
-              'Example Usage:\n'\
-              'sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data\n'\
-              'sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data\n'
+_description_ = '=' * _width_ + '\n\n' + \
+                'Education and Research 3D Radiative Transfer Toolbox (EaR\u00b3T)'.center(_width_) + '\n\n' + \
+                '=' * _width_ + '\n' + \
+                ' Satellite Data Product Download Tool '.center(_width_, '=') + '\n\n' + \
+                'Example Usage:\n'\
+                'sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data\n'\
+                'sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data\n'
 
 # product tags
-# this <tags_support_> will be updated over time
+# this <_sat_tags_support_> will be updated over time
 #/----------------------------------------------------------------------------\#
-date_today_str = datetime.date.today().strftime('%d %B, %Y')
+_date_today_ = datetime.date.today().strftime('%d %B, %Y')
 
-tags_support_ = {
+_sat_tags_support_ = {
 
         'MODRGB': {
                 'dataset_tag': 'MODRGB',
-                'dict_key': 'mod_rgb',
+                   'dict_key': 'mod_rgb',
                 'description': 'Terra MODIS True Color (RGB) Imagery',
-                'website': 'https://worldview.earthdata.nasa.gov',
-                'satellite': 'Terra',
-                'instrument': 'MODIS',
+                    'website': 'https://worldview.earthdata.nasa.gov',
+                  'satellite': 'Terra',
+                 'instrument': 'MODIS',
             'acknowledgement': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
                 },
 
         'MYDRGB': {
                 'dataset_tag': 'MYDRGB',
-                'dict_key': 'myd_rgb',
+                   'dict_key': 'myd_rgb',
                 'description': 'Aqua MODIS True Color (RGB) Imagery',
-                'website': 'https://worldview.earthdata.nasa.gov',
-                'satellite': 'Aqua',
-                'instrument': 'MODIS',
+                    'website': 'https://worldview.earthdata.nasa.gov',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
             'acknowledgement': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
                 },
 
         'MOD03': {
                 'dataset_tag': '61/MOD03',
-                'dict_key': 'mod_03',
+                   'dict_key': 'mod_03',
                 'description': 'Terra MODIS Geolocation Fields Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MOD03.061',
-                'satellite': 'Terra',
-                'instrument': 'MODIS',
-                'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD03.061 (last access: %s), 2017.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD03.061',
+                  'satellite': 'Terra',
+                 'instrument': 'MODIS',
+                  'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD03.061 (last access: %s), 2017.' % _date_today_,
                 },
 
         'MYD03': {
                 'dataset_tag': '61/MYD03',
-                'dict_key': 'myd_03',
+                   'dict_key': 'myd_03',
                 'description': 'Aqua MODIS Geolocation Fields Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MYD03.061',
-                'satellite': 'Aqua',
-                'instrument': 'MODIS',
-                'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD03.061 (last access: %s), 2017.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD03.061',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD03.061 (last access: %s), 2017.' % _date_today_,
                 },
 
         'MOD02QKM': {
                 'dataset_tag': '61/MOD02QKM',
-                'dict_key': 'mod_02',
+                   'dict_key': 'mod_02',
                 'description': 'Terra MODIS Level 1b (250m) Calibrated Radiances Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MOD02QKM.061',
-                'satellite': 'Terra',
-                'instrument': 'MODIS',
-                'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02QKM.061 (last access: %s), 2017.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD02QKM.061',
+                  'satellite': 'Terra',
+                 'instrument': 'MODIS',
+                  'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02QKM.061 (last access: %s), 2017.' % _date_today_,
                 },
 
         'MYD02QKM': {
                 'dataset_tag': '61/MYD02QKM',
-                'dict_key': 'myd_02',
+                   'dict_key': 'myd_02',
                 'description': 'Aqua MODIS Level 1b (250m) Calibrated Radiances Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MYD02QKM.061',
-                'satellite': 'Aqua',
-                'instrument': 'MODIS',
-                'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02QKM.061 (last access: %s), 2017.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD02QKM.061',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02QKM.061 (last access: %s), 2017.' % _date_today_,
                 },
 
         'MOD02HKM': {
                 'dataset_tag': '61/MOD02HKM',
-                'dict_key': 'mod_02',
+                   'dict_key': 'mod_02',
                 'description': 'Terra MODIS Level 1b (500m) Calibrated Radiances Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MOD02HKM.061',
-                'satellite': 'Terra',
-                'instrument': 'MODIS',
-                'reference': 'MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02HKM.061 (last access: %s), 2017.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD02HKM.061',
+                  'satellite': 'Terra',
+                 'instrument': 'MODIS',
+                  'reference': 'MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02HKM.061 (last access: %s), 2017.' % _date_today_,
                 },
 
         'MYD02HKM': {
                 'dataset_tag': '61/MYD02HKM',
-                'dict_key': 'myd_02',
+                   'dict_key': 'myd_02',
                 'description': 'Aqua MODIS Level 1b (250m) Calibrated Radiances Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MYD02HKM.061',
-                'satellite': 'Aqua',
-                'instrument': 'MODIS',
-                'reference': 'MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02HKM.061 (last access: %s), 2017.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD02HKM.061',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02HKM.061 (last access: %s), 2017.' % _date_today_,
                 },
 
         'MOD021KM': {
                 'dataset_tag': '61/MOD021KM',
-                'dict_key': 'mod_02',
+                   'dict_key': 'mod_02',
                 'description': 'Terra MODIS Level 1b (1km) Calibrated Radiances Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MOD021KM.061',
-                'satellite': 'Terra',
-                'instrument': 'MODIS',
-                'reference': 'MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD021KM.061 (last access: %s), 2017.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD021KM.061',
+                  'satellite': 'Terra',
+                 'instrument': 'MODIS',
+                  'reference': 'MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD021KM.061 (last access: %s), 2017.' % _date_today_,
                 },
 
         'MYD021KM': {
-                'dataset_tag': '61/MYD02HKM',
-                'dict_key': 'myd_02',
+                'dataset_tag': '61/MYD021KM',
+                   'dict_key': 'myd_02',
                 'description': 'Aqua MODIS Level 1b (1km) Calibrated Radiances Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MYD021KM.061',
-                'satellite': 'Aqua',
-                'instrument': 'MODIS',
-                'reference': 'MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD021KM.061 (last access: %s), 2017.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD021KM.061',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD021KM.061 (last access: %s), 2017.' % _date_today_,
                 },
 
         'MOD06_L2': {
                 'dataset_tag': '61/MOD06_L2',
-                'dict_key': 'mod_l2',
+                   'dict_key': 'mod_l2',
                 'description': 'Terra MODIS Atmosphere L2 Cloud Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MOD06_L2.061',
-                'satellite': 'Terra',
-                'instrument': 'MODIS',
-                'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD06_L2.061',
+                  'satellite': 'Terra',
+                 'instrument': 'MODIS',
+                  'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % _date_today_,
                 },
 
         'MYD06_L2': {
                 'dataset_tag': '61/MYD06_L2',
-                'dict_key': 'myd_02',
+                   'dict_key': 'myd_l2',
                 'description': 'Aqua MODIS Atmosphere L2 Cloud Product',
-                'website': 'http://dx.doi.org/10.5067/MODIS/MYD06_L2.061',
-                'satellite': 'Aqua',
-                'instrument': 'MODIS',
-                'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % date_today_str,
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD06_L2.061',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % _date_today_,
                 },
 
         'MCD43A3': {
                 'dataset_tag': '61/MCD43A3',
-                'dict_key': 'mod_43',
+                   'dict_key': 'mod_43',
                 'description': 'MODIS BRDF/Albedo L3 Surface Product',
-                'website': 'https://doi.org/10.5067/MODIS/MCD43A3.061',
-                'satellite': 'Terra & Aqua',
-                'instrument': 'MODIS',
-                'reference': 'Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: %s), 2021.' % date_today_str,
+                    'website': 'https://doi.org/10.5067/MODIS/MCD43A3.061',
+                  'satellite': 'Terra & Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: %s), 2021.' % _date_today_,
                 },
 
         'oco2_L1bScND': {
                 'dataset_tag': 'oco2_L1bScND',
-                'dict_key': 'oco_l1b',
+                   'dict_key': 'oco_l1b',
                 'description': 'OCO-2 L1B Calibrated Radiances Product',
-                'website': 'https://doi.org/10.5067/6O3GEUK7U2JG',
-                'satellite': 'OCO-2',
-                'instrument': 'OCO-2',
-                'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 1B calibrated, geolocated science spectra, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6O3GEUK7U2JG (last access: %s), 2019.' % date_today_str,
+                    'website': 'https://doi.org/10.5067/6O3GEUK7U2JG',
+                  'satellite': 'OCO-2',
+                 'instrument': 'OCO-2',
+                  'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 1B calibrated, geolocated science spectra, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6O3GEUK7U2JG (last access: %s), 2019.' % _date_today_,
                 },
 
         'oco2_L2MetND': {
-                'dataset_tag':    'oco2_L2MetND',
-                'dict_key':    'oco_met_l2',
+                'dataset_tag': 'oco2_L2MetND',
+                   'dict_key': 'oco_met_l2',
                 'description': 'OCO-2 L2 Meteorological Parameters Product',
-                'website':     'https://doi.org/10.5067/OJZZW0LIGSDH',
-                'satellite':   'OCO-2',
-                'instrument':  'OCO-2',
-                'reference':   'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 meteorological parameters interpolated from global assimilation model for each sounding, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/OJZZW0LIGSDH (last access: %s), 2019.' % date_today_str,
+                    'website': 'https://doi.org/10.5067/OJZZW0LIGSDH',
+                  'satellite': 'OCO-2',
+                 'instrument': 'OCO-2',
+                  'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 meteorological parameters interpolated from global assimilation model for each sounding, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/OJZZW0LIGSDH (last access: %s), 2019.' % _date_today_,
                 },
 
         'oco2_L2StdND': {
                 'dataset_tag': 'oco2_L2StdND',
-                'dict_key': 'oco_ret_l2',
+                   'dict_key': 'oco_ret_l2',
                 'description': 'OCO-2 L2 XCO2 Retrieval Product',
-                'website': 'https://doi.org/10.5067/6SBROTA57TFH',
-                'satellite': 'OCO-2',
-                'instrument': 'OCO-2',
-                'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 geolocated XCO2 retrievals results, physical model, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6SBROTA57TFH (last access: %s), 2020.' % date_today_str,
+                    'website': 'https://doi.org/10.5067/6SBROTA57TFH',
+                  'satellite': 'OCO-2',
+                 'instrument': 'OCO-2',
+                  'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 geolocated XCO2 retrievals results, physical model, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6SBROTA57TFH (last access: %s), 2020.' % _date_today_,
                 },
 
         }
@@ -284,16 +284,16 @@ class SatelliteDownload:
             product_info = get_sat_info_from_product_tag(product)
             self.fnames[product_info['dict_key']] = []
             if self.verbose:
-                stdout = '=' * width + '\n\n%s\n' % product_info['description'].center(width)
+                stdout = '=' * _width_ + '\n\n%s\n' % product_info['description'].center(_width_)
                 print(stdout)
 
             # MODIS RGB imagery
             if 'RGB' in product.upper():
-                fnames = [er3t.util.download_worldview_rgb(date=self.date, 
-                                                           extent=self.extent, 
-                                                           fdir_out=self.fdir_out, 
-                                                           satellite=product_info['satellite'], 
-                                                           instrument=product_info['instrument'], 
+                fnames = [er3t.util.download_worldview_rgb(date=self.date,
+                                                           extent=self.extent,
+                                                           fdir_out=self.fdir_out,
+                                                           satellite=product_info['satellite'],
+                                                           instrument=product_info['instrument'],
                                                            coastline=True)]
                 self.fnames[product_info['dict_key']] += fnames
 
@@ -301,11 +301,11 @@ class SatelliteDownload:
             elif '43' in product.upper():
                 filename_tags_43 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
                 for filename_tag in filename_tags_43:
-                    fnames = er3t.util.download_laads_https(date=self.date, 
-                                                            dataset_tag=product_info['dataset_tag'], 
-                                                            filename_tag=filename_tag, 
-                                                            day_interval=1, 
-                                                            fdir_out=self.fdir_out, 
+                    fnames = er3t.util.download_laads_https(date=self.date,
+                                                            dataset_tag=product_info['dataset_tag'],
+                                                            filename_tag=filename_tag,
+                                                            day_interval=1,
+                                                            fdir_out=self.fdir_out,
                                                             verbose=self.verbose)
                     self.fnames[product_info['dict_key']] += fnames
 
@@ -321,16 +321,16 @@ class SatelliteDownload:
                     print('Message [sdown]: Found %s %s overpasses\n' % (len(filename_tags_03), product_info['satellite']))
 
                 for filename_tag in filename_tags_03:
-                    fnames = er3t.util.download_laads_https(date=self.date, 
-                                                            dataset_tag=product_info['dataset_tag'], 
-                                                            filename_tag=filename_tag, 
-                                                            day_interval=1, 
-                                                            fdir_out=self.fdir_out, 
+                    fnames = er3t.util.download_laads_https(date=self.date,
+                                                            dataset_tag=product_info['dataset_tag'],
+                                                            filename_tag=filename_tag,
+                                                            day_interval=1,
+                                                            fdir_out=self.fdir_out,
                                                             verbose=self.verbose)
                     self.fnames[product_info['dict_key']] += fnames
 
             else:
-                msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(tags_support_.keys()))
+                msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
                 raise OSError(msg)
         print('\nMessage [sdown]: Finished downloading MODIS files! You can find them in %s\n' % self.fdir_out)
 
@@ -340,8 +340,8 @@ def get_sat_info_from_product_tag(tag_):
     # make all variable names (keys) upper case
     #/----------------------------------------------------------------------------\#
     tags_support = {}
-    for key in tags_support_.keys():
-        tags_support[key.upper()] = tags_support_[key]
+    for key in _sat_tags_support_.keys():
+        tags_support[key.upper()] = _sat_tags_support_[key]
     #\----------------------------------------------------------------------------/#
 
     # return satellite product information
@@ -350,60 +350,16 @@ def get_sat_info_from_product_tag(tag_):
     if (tag in tags_support.keys()):
         return tags_support[tag]
     else:
-        msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (tag_, '\n'.join(tags_support_.keys()))
+        msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (tag_, '\n'.join(_sat_tags_support_.keys()))
         raise OSError(msg)
     #\----------------------------------------------------------------------------/#
 
 
-    # old
-    #/----------------------------------------------------------------------------\#
-    # sat_info = {}
-
-    # if any(pattern in tag for pattern in ['MOD']):
-    #     sat_info['satellite']  = 'Terra'
-    #     sat_info['instrument'] = 'MODIS'
-    # elif any(pattern in tag for pattern in ['MYD']):
-    #     sat_info['satellite']  = 'Aqua'
-    #     sat_info['instrument'] = 'MODIS'
-    # elif any(pattern in tag for pattern in ['MCD']):
-    #     sat_info['satellite']  = 'Terra and Aqua (Combined)'
-    #     sat_info['instrument'] = 'MODIS'
-    # elif any(pattern in tag for pattern in ['VNP']):
-    #     sat_info['satellite']  = 'Suomi NPP'
-    #     sat_info['instrument'] = 'VIIRS'
-    # elif any(pattern in tag for pattern in ['VJ102', 'VJ103']):
-    #     sat_info['satellite']  = 'NOAA 20'
-    #     sat_info['instrument'] = 'VIIRS'
-    #     raise OSError(msg)
-
-    # if any(pattern in tag for pattern in ['RGB']):
-    #     sat_info['product'] = 'True Color Imagery'
-    # elif any(pattern in tag for pattern in ['03']):
-    #     sat_info['product'] = 'Geolocation Fields Product'
-    # elif any(pattern in tag for pattern in ['02QKM', '02HKM', '021KM']):
-    #     sat_info['product'] = 'Calibrated Radiances Product'
-    # elif any(pattern in tag for pattern in ['06_L2']):
-    #     sat_info['product'] = 'L2 Cloud Product'
-    # elif any(pattern in tag for pattern in ['43A1', '43A2', '43A3', '43A4']):
-    #     sat_info['product'] = 'Surface BRDF/Albedo Product'
-
-    # return sat_info
-    #\----------------------------------------------------------------------------/#
-
 
 if __name__ == '__main__':
 
-    # sat_info = get_sat_info_from_product_tag('MYD03')
-    # print(sat_info)
-    # sat_info = get_sat_info_from_product_tag('MOD02QKM')
-    # print(sat_info)
-    # sat_info = get_sat_info_from_product_tag('MOD06_L2')
-    # print(sat_info)
-    # sat_info = get_sat_info_from_product_tag('MCD43A3')
-    # print(sat_info)
-
     parser = ArgumentParser(prog='sdown', formatter_class=RawTextHelpFormatter,
-                            description=description, usage='%(prog)s [-h] [--help] [-i]')
+                            description=_description_, usage='%(prog)s [-h] [--help] [-i]')
     parser.add_argument('-f', '--fdir', type=str, metavar='', default='modis-data',
                         help='Directory where the files will be downloaded\n'\
                              'By default, files will be downloaded to \'modis-data\'')
