@@ -41,14 +41,6 @@ import er3t
 _width_ = os.get_terminal_size().columns
 
 # set welcome text
-_description_ = '===================================================================\n\n'\
-                '    Education and Research 3D Radiative Transfer Toolbox (EaR\u00b3T)  \n\n'\
-                '===================================================================\n'\
-                '============== Satellite Data Product Download Tool ===============\n'\
-                'Example Usage:\n'\
-                'sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data\n'\
-                'sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data\n'
-
 _description_ = '=' * _width_ + '\n\n' + \
                 'Education and Research 3D Radiative Transfer Toolbox (EaR\u00b3T)'.center(_width_) + '\n\n' + \
                 '=' * _width_ + '\n' + \
