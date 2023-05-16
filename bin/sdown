@@ -220,111 +220,99 @@ _sat_tags_support_ = {
 #\----------------------------------------------------------------------------/#
 
 
-class SatelliteDownload:
+def satellite_download(date, extent, lons, lats, fdir_out, products, verbose):
 
-    def __init__(
-            self,
-            date=None,
-            extent=None,
-            lons=None,
-            lats=None,
-            fdir_out=None,
-            products=None,
-            verbose=False):
 
-        # Error handling
-        if len(products) == 0:
-            sys.exit('\nError [sdown]: Please specify a product to download. We currently support %s\n' % product_options)
+    # Error handling
+    if products is None:
+        sys.exit('\nError [sdown]: Please specify a product to download. \nWe currently support the following:\n%s\n' % ('\n'.join(_sat_tags_support_.keys())))
 
-        if (extent is None) and ((lats is None) or (lons is None)):
-            sys.exit('\nError [sdown]: Must provide either extent or lon/lat coordinates\n')
-        elif (extent is None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
-            self.extent = [lons[0], lons[1], lats[0], lats[1]]
-        elif (len(extent) == 4) and ((lats is None) and (lons is None)):
-            self.extent = extent
-        else:
-            sys.exit('\nError [sdown]: The provided lon/lat coordinates are incorrect, check again\n')
+    if (extent is None) and ((lats is None) or (lons is None)):
+        sys.exit('\nError [sdown]: Must provide either extent or lon/lat coordinates\n')
 
-        if (self.extent[0] >= self.extent[1]) or (self.extent[2] >= self.extent[3]):
-            msg = '\nError [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.\n' % self.extent
-            sys.exit(msg)
+    elif (extent is not None) and (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
+        sys.exit('\nError [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lon and --lat\n')
 
-        if not os.path.exists(fdir_out):
-            os.makedirs(fdir_out)
+    elif (extent is None) and (lats is not None) and (lons is not None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
+        extent = [lons[0], lons[1], lats[0], lats[1]]
+
+
+    if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
+        msg = '\nError [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.\n' % extent
+        sys.exit(msg)
+
+    if not os.path.exists(fdir_out):
+        os.makedirs(fdir_out)
+        if verbose:
+            print('\nMessage [sdown]: Created %s. Files will be downloaded to this directory\n' % fdir_out)
+
+    date = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
+
+    run(date, extent, fdir_out, products, verbose)
+
+
+def run(date, extent, fdir_out, products, verbose):
+
+    lon0 = np.linspace(extent[0], extent[1], 100)
+    lat0 = np.linspace(extent[2], extent[3], 100)
+    lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
+
+    # add product IDs
+    fnames = {}
+    for product in products:
+
+        product_info = get_sat_info_from_product_tag(product)
+        fnames[product_info['dict_key']] = []
+        if verbose:
+            stdout = '=' * _width_ + '\n\n%s\n' % product_info['description'].center(_width_)
+            print(stdout)
+
+        # MODIS RGB imagery
+        if 'RGB' in product.upper():
+            p_fnames = [er3t.util.download_worldview_rgb(date=date,
+                                                         extent=extent,
+                                                         fdir_out=fdir_out,
+                                                         satellite=product_info['satellite'],
+                                                         instrument=product_info['instrument'],
+                                                         coastline=False)]
+            fnames[product_info['dict_key']] += p_fnames
+
+        # MODIS surface product
+        elif '43' in product.upper():
+            filename_tags_43 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
+            for filename_tag in filename_tags_43:
+                p_fnames = er3t.util.download_laads_https(date=date,
+                                                        dataset_tag=product_info['dataset_tag'],
+                                                        filename_tag=filename_tag,
+                                                        day_interval=1,
+                                                        fdir_out=fdir_out,
+                                                        verbose=verbose)
+                fnames[product_info['dict_key']] += p_fnames
+
+        # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
+        elif product.upper().endswith(('QKM', 'HKM', '1KM', '06_L2', '03')):
+            filename_tags_03 = er3t.util.get_satfile_tag(date=date,
+                                                         lon=lon,
+                                                         lat=lat,
+                                                         satellite=product_info['satellite'],
+                                                         instrument=product_info['instrument'],
+                                                         verbose=verbose)
             if verbose:
-                print('\nMessage [sdown]: Created %s. Files will be downloaded to this directory\n' % fdir_out)
+                print('Message [sdown]: Found %s %s overpasses\n' % (len(filename_tags_03), product_info['satellite']))
 
-        self.date = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
-        self.products  = products
-        self.fdir_out  = fdir_out
-        self.verbose   = verbose
+            for filename_tag in filename_tags_03:
+                p_fnames = er3t.util.download_laads_https(date=date,
+                                                        dataset_tag=product_info['dataset_tag'],
+                                                        filename_tag=filename_tag,
+                                                        day_interval=1,
+                                                        fdir_out=fdir_out,
+                                                        verbose=verbose)
+                fnames[product_info['dict_key']] += p_fnames
 
-        self.run()
-
-
-    def run(self):
-
-        lon0 = np.linspace(self.extent[0], self.extent[1], 100)
-        lat0 = np.linspace(self.extent[2], self.extent[3], 100)
-        lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
-
-
-        # add product IDs
-        self.fnames = {}
-        for product in self.products:
-
-            product_info = get_sat_info_from_product_tag(product)
-            self.fnames[product_info['dict_key']] = []
-            if self.verbose:
-                stdout = '=' * _width_ + '\n\n%s\n' % product_info['description'].center(_width_)
-                print(stdout)
-
-            # MODIS RGB imagery
-            if 'RGB' in product.upper():
-                fnames = [er3t.util.download_worldview_rgb(date=self.date,
-                                                           extent=self.extent,
-                                                           fdir_out=self.fdir_out,
-                                                           satellite=product_info['satellite'],
-                                                           instrument=product_info['instrument'],
-                                                           coastline=True)]
-                self.fnames[product_info['dict_key']] += fnames
-
-            # MODIS surface product
-            elif '43' in product.upper():
-                filename_tags_43 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
-                for filename_tag in filename_tags_43:
-                    fnames = er3t.util.download_laads_https(date=self.date,
-                                                            dataset_tag=product_info['dataset_tag'],
-                                                            filename_tag=filename_tag,
-                                                            day_interval=1,
-                                                            fdir_out=self.fdir_out,
-                                                            verbose=self.verbose)
-                    self.fnames[product_info['dict_key']] += fnames
-
-            # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
-            elif product.upper().endswith(('QKM', 'HKM', '1KM', '06_L2', '03')):
-                filename_tags_03 = er3t.util.get_satfile_tag(date=self.date,
-                                                             lon=lon,
-                                                             lat=lat,
-                                                             satellite=product_info['satellite'],
-                                                             instrument=product_info['instrument'],
-                                                             verbose=self.verbose)
-                if self.verbose:
-                    print('Message [sdown]: Found %s %s overpasses\n' % (len(filename_tags_03), product_info['satellite']))
-
-                for filename_tag in filename_tags_03:
-                    fnames = er3t.util.download_laads_https(date=self.date,
-                                                            dataset_tag=product_info['dataset_tag'],
-                                                            filename_tag=filename_tag,
-                                                            day_interval=1,
-                                                            fdir_out=self.fdir_out,
-                                                            verbose=self.verbose)
-                    self.fnames[product_info['dict_key']] += fnames
-
-            else:
-                msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
-                raise OSError(msg)
-        print('\nMessage [sdown]: Finished downloading MODIS files! You can find them in %s\n' % self.fdir_out)
+        else:
+            msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
+            raise OSError(msg)
+    print('\nMessage [sdown]: Finished downloading MODIS files! You can find them in %s\n' % fdir_out)
 
 
 def get_sat_info_from_product_tag(tag_):
@@ -405,18 +393,18 @@ if __name__ == '__main__':
         products  = ['MODRGB', 'MYD02QKM']
         verbose   = 1
 
-        sat0 = SatelliteDownload(date=date,
-                                 extent=extent,
-                                 lons=lons,
-                                 lats=lats,
-                                 fdir_out=fdir,
-                                 products=products,
-                                 verbose=verbose)
+        sat0 = satellite_download(date=date,
+                                  extent=extent,
+                                  lons=lons,
+                                  lats=lats,
+                                  fdir_out=fdir,
+                                  products=products,
+                                  verbose=verbose)
     else:
-        sat0 = SatelliteDownload(date=args.date,
-                                extent=args.extent,
-                                lons=args.lons,
-                                lats=args.lats,
-                                fdir_out=args.fdir,
-                                products=args.products,
-                                verbose=args.verbose)
+        sat0 = satellite_download(date=args.date,
+                                  extent=args.extent,
+                                  lons=args.lons,
+                                  lats=args.lats,
+                                  fdir_out=args.fdir,
+                                  products=args.products,
+                                  verbose=args.verbose)
