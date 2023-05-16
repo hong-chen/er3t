@@ -46,8 +46,8 @@ _description_ = '=' * _width_ + '\n\n' + \
                 '=' * _width_ + '\n' + \
                 ' Satellite Data Product Download Tool '.center(_width_, '=') + '\n\n' + \
                 'Example Usage:\n'\
-                'sdown --date 20210523 --lons 30 35 --lats 0 10 --satellite aqua --products 06_l2 --fdir_out tmp-data\n'\
-                'sdown --date 20130714 --extent 30 35 0 10 --satellite terra --products l1b --fdir_out tmp-data\n'
+                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir_out tmp-data\n'\
+                'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir_out tmp-data\n'
 
 # product tags
 # this <_sat_tags_support_> will be updated over time
@@ -245,7 +245,7 @@ class SatelliteDownload:
         else:
             sys.exit('\nError [sdown]: The provided lon/lat coordinates are incorrect, check again\n')
 
-        if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
+        if (self.extent[0] >= self.extent[1]) or (self.extent[2] >= self.extent[3]):
             msg = '\nError [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.\n' % self.extent
             sys.exit(msg)
 
@@ -375,15 +375,15 @@ if __name__ == '__main__':
                                 'Example:  --lats 25 30')
     required.add_argument('-p', '--products', type=str, nargs='+', metavar='',
                         help='Short prefix (case insensitive) for the product name. Currently supported products are:\n'\
-                        '02QKM: Level 1b 250m radiance product\n'\
-                        '02HKM: Level 1b 500m radiance product\n'\
-                        '021KM: Level 1b 1km radiance product\n'\
-                        '03:    Solar/viewing geometry product\n'\
-                        '06_L2: Level 2 cloud product\n'\
-                        '43:    Level 3 surface product MCD43A3\n'\
-                        'RGB:   True-Color RGB imagery, useful for visuzliation'
+                        'MxD02QKM: Level 1b 250m radiance product\n'\
+                        'MxD02HKM: Level 1b 500m radiance product\n'\
+                        'MxD021KM: Level 1b 1km radiance product\n'\
+                        'MxD03:    Solar/viewing geometry product\n'\
+                        'MxD06_L2: Level 2 cloud product\n'\
+                        'MCD43:    Level 3 surface product MCD43A3\n'\
+                        'MxDRGB:   True-Color RGB imagery, useful for visuzliation'
                         '\nTo download multiple products at a time:\n'\
-                        '--product 021km 02hkm 06_l2\n')
+                        '--product MOD021KM MYD02HKM MYD06_l2\n')
 
     args = parser.parse_args()
 
