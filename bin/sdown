@@ -351,39 +351,48 @@ def get_sat_info_from_product_tag(tag_):
 if __name__ == '__main__':
 
     parser = ArgumentParser(prog='sdown', formatter_class=RawTextHelpFormatter,
-                            description=_description_, usage='%(prog)s [-h] [--help] [-i]')
+                            description=_description_)
     parser.add_argument('-f', '--fdir', type=str, metavar='', default='modis-data',
                         help='Directory where the files will be downloaded\n'\
-                             'By default, files will be downloaded to \'modis-data\'')
+                        'By default, files will be downloaded to \'modis-data\'\n \n')
     parser.add_argument('-v', '--verbose', action='store_true',
-                        help='Pass --verbose if status of your request should be reported frequently.\n'\
-                             'This is disabled by default.')
+                        help='Pass --verbose if status of your request should be reported frequently.\n \n'\
+                        'This is disabled by default.\n \n')
     parser.add_argument('-r', '--run_demo', action='store_true',
-                        help='Pass --run_demo if you would like to run a demonstration of this tool.')
+                        help='Pass --run_demo if you would like to run a demonstration of this tool.\n \n')
     required = parser.add_argument_group('Required Arguments')
     required.add_argument('-d', '--date', type=str, metavar='',
                         help='Date for which you would like to download data. '\
-                        'Use yyyymmdd format.\nExample: --date 20210404')
+                        'Use yyyymmdd format.\n'\
+                        'Example: --date 20210404\n \n')
     required.add_argument('-e', '--extent', nargs='+', type=float, metavar='',
-                        help='Extent of region of interest lon1 lon2 lat1 lat2 in West East South North format.\n'\
-                                'Example:  --extent -10 -5 25 30')
+                        help='Extent of region of interest \nlon1 lon2 lat1 lat2 in West East South North format.\n'\
+                        'Example:  --extent -10 -5 25 30\n \n')
     required.add_argument('-x', '--lons', nargs='+', type=float, metavar='',
-                        help='The west-most and east-most longitudes of the region. Alternative to providing the first two terms in `extent`.\n'\
-                                'Example:  --lons -10 -5')
+                        help='The west-most and east-most longitudes of the region.\nAlternative to providing the first two terms in `extent`.\n'\
+                        'Example:  --lons -10 -5\n \n')
     required.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
-                        help='The south-most and north-most latitudes of the region. Alternative to providing the last two terms in `extent`.\n'\
-                                'Example:  --lats 25 30')
+                        help='The south-most and north-most latitudes of the region.\nAlternative to providing the last two terms in `extent`.\n'\
+                        'Example:  --lats 25 30\n \n')
     required.add_argument('-p', '--products', type=str, nargs='+', metavar='',
-                        help='Short prefix (case insensitive) for the product name. Currently supported products are:\n'\
-                        'MxD02QKM: Level 1b 250m radiance product\n'\
-                        'MxD02HKM: Level 1b 500m radiance product\n'\
-                        'MxD021KM: Level 1b 1km radiance product\n'\
-                        'MxD03:    Solar/viewing geometry product\n'\
-                        'MxD06_L2: Level 2 cloud product\n'\
-                        'MCD43:    Level 3 surface product MCD43A3\n'\
-                        'MxDRGB:   True-Color RGB imagery, useful for visuzliation'
-                        '\nTo download multiple products at a time:\n'\
-                        '--product MOD021KM MYD02HKM MYD06_l2\n')
+                        help='Short prefix (case insensitive) for the product name.\n'\
+                        'Example:  --products MOD02QKM\n'
+                        'Currently supported products are:\n'\
+                        'MOD02QKM:  Level 1b 250m (Terra) radiance product\n'\
+                        'MYD02QKM:  Level 1b 250m (Aqua)  radiance product\n'\
+                        'MOD02HKM:  Level 1b 500m (Terra) radiance product\n'\
+                        'MYD02HKM:  Level 1b 500m (Aqua)  radiance product\n'\
+                        'MOD021KM:  Level 1b 1km (Terra)  radiance product\n'\
+                        'MYD021KM:  Level 1b 1km (Aqua)   radiance product\n'\
+                        'MOD06_L2:  Level 2 (Terra) cloud product\n'\
+                        'MYD06_L2:  Level 2 (Aqua)  cloud product\n'\
+                        'MOD03   :  Solar/viewing geometry (Terra) product\n'\
+                        'MYD03   :  Solar/viewing geometry (Aqua)  product\n'\
+                        'MODRGB  :  True-Color RGB (Terra) imagery, useful for visuzliation\n'\
+                        'MYDRGB  :  True-Color RGB (Aqua)  imagery, useful for visuzliation\n'\
+                        'MCD43   :  Level 3 surface product MCD43A3\n'\
+                        '\n\nTo download multiple products at a time:\n'\
+                        '--product MOD021KM MYD02HKM MYD06_l2\n \n')
 
     args = parser.parse_args()
 
