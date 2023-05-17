@@ -63,7 +63,7 @@ _sat_tags_support_ = {
                     'website': 'https://worldview.earthdata.nasa.gov',
                   'satellite': 'Terra',
                  'instrument': 'MODIS',
-            'acknowledgement': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
+                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
                 },
 
         'MYDRGB': {
@@ -73,7 +73,7 @@ _sat_tags_support_ = {
                     'website': 'https://worldview.earthdata.nasa.gov',
                   'satellite': 'Aqua',
                  'instrument': 'MODIS',
-            'acknowledgement': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
+                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
                 },
 
         'MOD03': {
@@ -176,6 +176,26 @@ _sat_tags_support_ = {
                   'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % _date_today_,
                 },
 
+        'MOD35_L2': {
+                'dataset_tag': '61/MOD35_L2',
+                   'dict_key': 'mod_l2',
+                'description': 'Terra MODIS Atmosphere L2 Cloud Mask',
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD35_L2.061',
+                  'satellite': 'Terra',
+                 'instrument': 'MODIS',
+                  'reference': 'Ackerman, S., P. Menzel, R. Frey, B.Baum, 2017. MODIS Atmosphere L2 Cloud Mask Product. NASA MODIS Adaptive Processing System, Goddard Space Flight Center, [doi:10.5067/MODIS/MOD35_L2.061'
+                },
+
+        'MYD35_L2': {
+                'dataset_tag': '61/MYD35_L2',
+                   'dict_key': 'myd_l2',
+                'description': 'Aqua MODIS Atmosphere L2 Cloud Mask',
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD35_L2.061',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'Ackerman, S., P. Menzel, R. Frey, B.Baum, 2017. MODIS Atmosphere L2 Cloud Mask Product. NASA MODIS Adaptive Processing System, Goddard Space Flight Center, [doi:10.5067/MODIS/MYD35_L2.061]'
+                },
+
         'MCD43A3': {
                 'dataset_tag': '61/MCD43A3',
                    'dict_key': 'mod_43',
@@ -257,12 +277,13 @@ def run(date, extent, fdir_out, products, verbose):
     lat0 = np.linspace(extent[2], extent[3], 100)
     lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
 
-    # add product IDs
+    references = []
     fnames = {}
     for product in products:
 
         product_info = get_sat_info_from_product_tag(product)
         fnames[product_info['dict_key']] = []
+
         if verbose:
             stdout = '=' * _width_ + '\n\n%s\n' % product_info['description'].center(_width_)
             print(stdout)
@@ -290,7 +311,7 @@ def run(date, extent, fdir_out, products, verbose):
                 fnames[product_info['dict_key']] += p_fnames
 
         # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
-        elif product.upper().endswith(('QKM', 'HKM', '1KM', '06_L2', '03')):
+        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03')):
             filename_tags_03 = er3t.util.get_satfile_tag(date=date,
                                                          lon=lon,
                                                          lat=lat,
@@ -312,6 +333,10 @@ def run(date, extent, fdir_out, products, verbose):
         else:
             msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
             raise OSError(msg)
+
+        references.append(product_info['reference'])
+    
+    print('Please cite the use of this data as follows:\n%s' % '\n\n'.join(references))
     print('\nMessage [sdown]: Finished downloading MODIS files! You can find them in %s\n' % fdir_out)
 
 
