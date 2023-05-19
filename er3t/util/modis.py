@@ -462,18 +462,21 @@ class modis_35_l2:
     Output:
         self.data
                 ['lon']             
-                ['lat']            
-                ['cloud_mask_flag']=> 0: not determined, 1: determined
-                ['fov_qa_cat']     => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
-                ['day_night_flag'] => 0: night, 1: day
-                ['sunglint_flag']  => 0: not in sunglint path, 1: in sunglint path
-                ['snow_ice_flag']  => 0: no snow/ice in background, 1: possible snow/ice in background
-                ['land_water_cat'] => 0: water, 1: coastal, 2: desert, 3: land
+                ['lat']           
+                ['use_qa']          => 0: not useful (discard), 1: useful
+                ['confidence_qa']   => 0: no confidence (do not use), 1: low confidence, 2, ... 7: very high confidence
+                ['cloud_mask_flag'] => 0: not determined, 1: determined
+                ['fov_qa_cat']      => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
+                ['day_night_flag']  => 0: night, 1: day
+                ['sunglint_flag']   => 0: not in sunglint path, 1: in sunglint path
+                ['snow_ice_flag']   => 0: no snow/ice in background, 1: possible snow/ice in background
+                ['land_water_cat']  => 0: water, 1: coastal, 2: desert, 3: land
                 ['lon_5km']        
                 ['lat_5km']
                 
-    References: https://atmosphere-imager.gsfc.nasa.gov/products/cloud-mask
-                https://atmosphere-imager.gsfc.nasa.gov/sites/default/files/ModAtmo/MOD35_ATBD_Collection6_1.pdf
+    References: (Product Page) https://atmosphere-imager.gsfc.nasa.gov/products/cloud-mask
+                (ATBD)         https://atmosphere-imager.gsfc.nasa.gov/sites/default/files/ModAtmo/MOD35_ATBD_Collection6_1.pdf
+                (User Guide)   http://cimss.ssec.wisc.edu/modis/CMUSERSGUIDE.PDF
     """
 
 
@@ -511,7 +514,19 @@ class modis_35_l2:
         cloud_mask_flag = data[:, 7]
         return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat 
         
-
+    def quality_assurance(self, data):
+        """
+        Extract cloud mask QA data to determine confidence
+        """
+        if data.dtype != 'uint8':
+            data = data.astype('uint8')
+        
+        data = np.unpackbits(data, bitorder='big', axis=1)
+        confidence_qa = 4 * data[:, 4] + 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 7 confidence
+        useful_qa = data[:, 7] # usefulness QA flag
+        return useful_qa, confidence_qa
+        
+        
     def read(self, fname):
 
         """
@@ -545,6 +560,7 @@ class modis_35_l2:
         lat0       = f.select('Latitude')
         lon0       = f.select('Longitude')
         cld_msk0   = f.select('Cloud_Mask')
+        qa0        = f.select('Quality_Assurance')
         
 
         # 1. If region (extent=) is specified, filter data within the specified region
@@ -585,11 +601,19 @@ class modis_35_l2:
         # Get cloud mask and flag fields 
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         cm0_data = get_data_h4(cld_msk0)
+        qa0_data = get_data_h4(qa0)
         cm = cm0_data.copy()
+        qa = qa0_data.copy()
+        
         cm = cm[0, :, :] # read only the first of 6 bytes; rest will be supported in the future if needed
         cm = np.array(cm[logic], dtype='uint8')
         cm = cm.reshape((cm.size, 1))
         cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
+        
+        qa = qa[:, :, 0] # read only the first byte for confidence (indexed differently from cloud mask sds)
+        qa = np.array(qa[logic], dtype='uint8')
+        qa = qa.reshape((qa.size, 1))
+        use_qa, confidence_qa = self.quality_assurance(qa)
         
         f.end()
         # -------------------------------------------------------------------------------------------------
@@ -600,6 +624,8 @@ class modis_35_l2:
 
             self.data['lon']               = dict(name='Longitude',            data=np.hstack((self.data['lon']['data'], lon)),                         units='degrees')
             self.data['lat']               = dict(name='Latitude',             data=np.hstack((self.data['lat']['data'], lat)),                         units='degrees')
+            self.data['use_qa']            = dict(name='QA useful',           data=np.hstack((self.data['use_qa']['data']), use_qa),                    units='N/A')
+            self.data['confidence_qa']     = dict(name='QA Mask confidence',  data=np.hstack((self.data['confidence_qa']['data']), confidence_qa),      units='N/A')
             self.data['cloud_mask_flag']   = dict(name='Cloud mask flag',      data=np.hstack((self.data['cloud_mask_flag']['data'], cloud_mask_flag)), units='N/A')
             self.data['fov_qa_cat']        = dict(name='FOV quality cateogry', data=np.hstack((self.data['fov_qa_cat']['data'], fov_qa_cat)),           units='N/A')
             self.data['day_night_flag']    = dict(name='Day/night flag',       data=np.hstack((self.data['day_night_flag']['data'], day_night_flag)),   units='N/A')
@@ -616,6 +642,8 @@ class modis_35_l2:
             self.data  = {}
             self.data['lon']             = dict(name='Longitude',            data=lon,             units='degrees')
             self.data['lat']             = dict(name='Latitude',             data=lat,             units='degrees')
+            self.data['use_qa']          = dict(name='QA useful',            data=use_qa,          units='N/A')         
+            self.data['confidence_qa']   = dict(name='QA Mask confidence',   data=confidence_qa,   units='N/A')
             self.data['cloud_mask_flag'] = dict(name='Cloud mask flag',      data=cloud_mask_flag, units='N/A')
             self.data['fov_qa_cat']      = dict(name='FOV quality category', data=fov_qa_cat,      units='N/A')
             self.data['day_night_flag']  = dict(name='Day/night flag',       data=day_night_flag,  units='N/A')
@@ -624,6 +652,7 @@ class modis_35_l2:
             self.data['land_water_cat']  = dict(name='Land/water category',  data=land_water_cat,  units='N/A')
             self.data['lon_5km']         = dict(name='Longitude at 5km',     data=lon_5km,         units='degrees')
             self.data['lat_5km']         = dict(name='Latitude at 5km',      data=lat_5km,         units='degrees')
+
 
 
     
