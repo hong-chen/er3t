@@ -446,6 +446,187 @@ class modis_l2:
 
 
 
+class modis_35_l2:
+
+    """
+    Read MODIS level 2 cloud mask product
+    
+    Note: We currently only support processing of the cloud mask bytes at a 1 km resolution only.
+
+    Input:
+        fnames=   : keyword argument, default=None, Python list of the file path of the original HDF4 file
+        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        overwrite=: keyword argument, default=False, whether to overwrite or not
+        verbose=  : keyword argument, default=False, verbose tag
+
+    Output:
+        self.data
+                ['lon']             
+                ['lat']            
+                ['cloud_mask_flag']=> 0: not determined, 1: determined
+                ['fov_qa_cat']     => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
+                ['day_night_flag'] => 0: night, 1: day
+                ['sunglint_flag']  => 0: not in sunglint path, 1: in sunglint path
+                ['snow_ice_flag']  => 0: no snow/ice in background, 1: possible snow/ice in background
+                ['land_water_cat'] => 0: water, 1: coastal, 2: desert, 3: land
+                ['lon_5km']        
+                ['lat_5km']
+                
+    References: https://atmosphere-imager.gsfc.nasa.gov/products/cloud-mask
+                https://atmosphere-imager.gsfc.nasa.gov/sites/default/files/ModAtmo/MOD35_ATBD_Collection6_1.pdf
+    """
+
+
+    ID = 'MODIS Level 2 Cloud Mask Product'
+
+
+    def __init__(self, \
+                 fnames    = None,  \
+                 extent    = None,  \
+                 verbose   = False):
+
+        self.fnames     = fnames      # file name of the pickle file
+        self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
+        self.verbose    = verbose     # verbose tag
+
+        for fname in self.fnames:
+            self.read(fname)
+
+    
+    def extract_data(self, data):
+        """
+        Extract cloud mask (in byte format) flags and categories
+        """
+        if data.dtype != 'uint8':
+            data = data.astype('uint8')
+            
+        data = np.unpackbits(data, bitorder='big', axis=1) # convert to binary
+        
+        # extract flags and categories (*_cat) bit by bit
+        land_water_cat  = 2 * data[:, 0] + 1 * data[:, 1] # convert to a value between 0 and 3
+        snow_ice_flag   = data[:, 2]
+        sunglint_flag   = data[:, 3]
+        day_night_flag  = data[:, 4]
+        fov_qa_cat      = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3
+        cloud_mask_flag = data[:, 7]
+        return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat 
+        
+
+    def read(self, fname):
+
+        """
+        Read cloud mask flags and tests/categories
+
+        self.data
+            ['lon']             
+            ['lat']            
+            ['cloud_mask_flag'] => 0: not determined, 1: determined
+            ['fov_qa_cat']      => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
+            ['day_night_flag']  => 0: night, 1: day
+            ['sunglint_flag']   => 0: not in sunglint path, 1: in sunglint path
+            ['snow_ice_flag']   => 0: no snow/ice in background, 1: possible snow/ice in background
+            ['land_water_cat']  => 0: water, 1: coastal, 2: desert, 3: land
+            ['lon_5km']        
+            ['lat_5km']
+
+        self.logic
+        self.logic_5km
+        """
+
+        try:
+            from pyhdf.SD import SD, SDC
+        except ImportError:
+            msg = 'Warning [modis_35_l2]: To use \'modis_35_l2\', \'pyhdf\' needs to be installed.'
+            raise ImportError(msg)
+        
+        f          = SD(fname, SDC.READ)
+
+        # lon lat
+        lat0       = f.select('Latitude')
+        lon0       = f.select('Longitude')
+        cld_msk0   = f.select('Cloud_Mask')
+        
+
+        # 1. If region (extent=) is specified, filter data within the specified region
+        # 2. If region (extent=) is not specified, filter invalid data
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=True)
+
+        if self.extent is None:
+
+            if 'actual_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['actual_range']
+                lat_range = lat0.attributes()['actual_range']
+            elif 'valid_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['valid_range']
+                lat_range = lat0.attributes()['valid_range']
+            else:
+                lon_range = [-180.0, 180.0]
+                lat_range = [-90.0 , 90.0]
+
+        else:
+
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
+
+        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+        lon       = lon[logic]
+        lat       = lat[logic]
+
+        lon_5km   = lon0[:]
+        lat_5km   = lat0[:]
+        logic_5km = (lon_5km>=lon_range[0]) & (lon_5km<=lon_range[1]) & (lat_5km>=lat_range[0]) & (lat_5km<=lat_range[1])
+        lon_5km   = lon_5km[logic_5km]
+        lat_5km   = lat_5km[logic_5km]
+        
+        
+        # -------------------------------------------------------------------------------------------------
+
+        # Get cloud mask and flag fields 
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        cm0_data = get_data_h4(cld_msk0)
+        cm = cm0_data.copy()
+        cm = cm[0, :, :] # read only the first of 6 bytes; rest will be supported in the future if needed
+        cm = np.array(cm[logic], dtype='uint8')
+        cm = cm.reshape((cm.size, 1))
+        cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
+        
+        f.end()
+        # -------------------------------------------------------------------------------------------------
+
+        if hasattr(self, 'data'):
+
+            self.logic[fname] = {'1km':logic, '5km':logic_5km}
+
+            self.data['lon']               = dict(name='Longitude',            data=np.hstack((self.data['lon']['data'], lon)),                         units='degrees')
+            self.data['lat']               = dict(name='Latitude',             data=np.hstack((self.data['lat']['data'], lat)),                         units='degrees')
+            self.data['cloud_mask_flag']   = dict(name='Cloud mask flag',      data=np.hstack((self.data['cloud_mask_flag']['data'], cloud_mask_flag)), units='N/A')
+            self.data['fov_qa_cat']        = dict(name='FOV quality cateogry', data=np.hstack((self.data['fov_qa_cat']['data'], fov_qa_cat)),           units='N/A')
+            self.data['day_night_flag']    = dict(name='Day/night flag',       data=np.hstack((self.data['day_night_flag']['data'], day_night_flag)),   units='N/A')
+            self.data['sunglint_flag']     = dict(name='Sunglint flag',        data=np.hstack((self.data['sunglint_flag']['data'], sunglint_flag)),     units='N/A')
+            self.data['snow_ice_flag']     = dict(name='Snow/ice flag',        data=np.hstack((self.data['snow_flag']['data'], snow_ice_flag)),         units='N/A')
+            self.data['land_water_cat']    = dict(name='Land/water flag',      data=np.hstack((self.data['land_water_cat']['data'], land_water_cat)),   units='N/A')
+            self.data['lon_5km']           = dict(name='Longitude at 5km',     data=np.hstack((self.data['lon_5km']['data'], lon_5km)),                 units='degrees')
+            self.data['lat_5km']           = dict(name='Latitude at 5km',      data=np.hstack((self.data['lat_5km']['data'], lat_5km)),                 units='degrees')
+
+        else:
+            self.logic = {}
+            self.logic[fname] = {'1km':logic, '5km':logic_5km}
+
+            self.data  = {}
+            self.data['lon']             = dict(name='Longitude',            data=lon,             units='degrees')
+            self.data['lat']             = dict(name='Latitude',             data=lat,             units='degrees')
+            self.data['cloud_mask_flag'] = dict(name='Cloud mask flag',      data=cloud_mask_flag, units='N/A')
+            self.data['fov_qa_cat']      = dict(name='FOV quality category', data=fov_qa_cat,      units='N/A')
+            self.data['day_night_flag']  = dict(name='Day/night flag',       data=day_night_flag,  units='N/A')
+            self.data['sunglint_flag']   = dict(name='Sunglint flag',        data=sunglint_flag,   units='N/A')
+            self.data['snow_ice_flag']   = dict(name='Snow/ice flag',        data=snow_ice_flag,   units='N/A')
+            self.data['land_water_cat']  = dict(name='Land/water category',  data=land_water_cat,  units='N/A')
+            self.data['lon_5km']         = dict(name='Longitude at 5km',     data=lon_5km,         units='degrees')
+            self.data['lat_5km']         = dict(name='Latitude at 5km',      data=lat_5km,         units='degrees')
+
+
+    
 class modis_03:
 
     """
