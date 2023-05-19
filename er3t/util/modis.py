@@ -514,6 +514,7 @@ class modis_35_l2:
         cloud_mask_flag = data[:, 7]
         return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat 
         
+    
     def quality_assurance(self, data):
         """
         Extract cloud mask QA data to determine confidence
@@ -521,6 +522,7 @@ class modis_35_l2:
         if data.dtype != 'uint8':
             data = data.astype('uint8')
         
+        # process qa flags
         data = np.unpackbits(data, bitorder='big', axis=1)
         confidence_qa = 4 * data[:, 4] + 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 7 confidence
         useful_qa = data[:, 7] # usefulness QA flag
@@ -534,7 +536,9 @@ class modis_35_l2:
 
         self.data
             ['lon']             
-            ['lat']            
+            ['lat']           
+            ['use_qa']          => 0: not useful (discard), 1: useful
+            ['confidence_qa']   => 0: no confidence (do not use), 1: low confidence, 2, ... 7: very high confidence
             ['cloud_mask_flag'] => 0: not determined, 1: determined
             ['fov_qa_cat']      => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
             ['day_night_flag']  => 0: night, 1: day
