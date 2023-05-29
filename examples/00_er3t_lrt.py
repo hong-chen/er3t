@@ -21,7 +21,7 @@ from matplotlib.ticker import FixedLocator
 from matplotlib import rcParams
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
-# mpl.use('Agg')
+mpl.use('Agg')
 
 
 import er3t
@@ -485,11 +485,10 @@ def test_rad_05_cloud_and_aerosol():
 
 
 
-def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
+def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0, plot=True):
 
     """
-    The following example is similar to Example 3 but for cloud calculations.
-    Assume we have a homogeneous cloud layer (COT=10.0, CER=12.0) located at 0.5 to 1.0 km.
+    This example code is used to provide simulated radiance for ocean BRDF surface.
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -499,13 +498,16 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
 
     vaa = np.arange(0.0, 361.0, 5.0)
 
+    # rt initialization
+    #/----------------------------------------------------------------------------\#
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = lrt_cfg['atmosphere_file'].replace('afglus.dat', 'afglss.dat')
 
     input_dict_extra = {'brdf_cam': 'u10 1'}
+    #\----------------------------------------------------------------------------/#
 
-    # radiance calculations without aerosol
-    # ===========================================================================================
+    # rt setup
+    #/----------------------------------------------------------------------------\#
     init = er3t.rtm.lrt.lrt_init_mono_rad(
             input_file  = '%s/input.txt'  % (fdir_tmp),
             output_file = '%s/output.txt' % (fdir_tmp),
@@ -523,35 +525,41 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0):
             cld_cfg            = None,
             aer_cfg            = None,
             )
+    #\----------------------------------------------------------------------------/#
 
-    # run with multi cores
+    # run rt
+    #/----------------------------------------------------------------------------\#
     print('Running calculations for <%s> ...' % (_metadata['Function']))
     er3t.rtm.lrt.lrt_run(init)
+    #\----------------------------------------------------------------------------/#
 
+    # read output
+    #/--------------------------------------------------------------\#
     data = er3t.rtm.lrt.lrt_read_uvspec_rad([init])
     rad  = np.squeeze(data.rad)
-    # ===========================================================================================
+    #\--------------------------------------------------------------/#
 
 
-    # =============================================================================
-    fig = plt.figure(figsize=(8, 6))
-    ax1 = fig.add_subplot(111, projection='polar')
-    ax1.plot(np.deg2rad(vaa), rad, color='r')
+    if plot:
+        #/----------------------------------------------------------------------------\#
+        fig = plt.figure(figsize=(8, 6))
+        ax1 = fig.add_subplot(111, projection='polar')
+        ax1.plot(np.deg2rad(vaa), rad, color='r')
 
-    ax1.scatter(np.deg2rad(saa0), rad.max()*1.1, s=400, c='orange', lw=0.0, alpha=0.8)
+        ax1.scatter(np.deg2rad(saa0), rad.max()*1.1, s=400, c='orange', lw=0.0, alpha=0.8)
 
-    ax1.set_title('Radiance at %d nm (SZA=%d$^\circ$, SAA=%d$^\circ$, VZA=%d$^\circ$)' % (wvl0, sza0, saa0, vza0), y=1.08)
+        ax1.set_title('Radiance at %d nm (SZA=%d$^\circ$, SAA=%d$^\circ$, VZA=%d$^\circ$)' % (wvl0, sza0, saa0, vza0), y=1.08)
 
-    ax1.set_theta_zero_location('N')
-    ax1.set_theta_direction(-1)
+        ax1.set_theta_zero_location('N')
+        ax1.set_theta_direction(-1)
 
-    fname_png = '%s-%s.png' % (name_tag, _metadata['Function'])
-    plt.savefig(fname_png, bbox_inches='tight')
-    plt.close(fig)
-    # =============================================================================
+        fname_png = '%s-%s.png' % (name_tag, _metadata['Function'])
+        plt.savefig(fname_png, bbox_inches='tight')
+        plt.close(fig)
+        #\----------------------------------------------------------------------------/#
 
-    print('Results for <%s> is saved at <%s>.' % (_metadata['Function'], fname_png))
-    print()
+        print('Results for <%s> is saved at <%s>.' % (_metadata['Function'], fname_png))
+        print()
 
 def example_rad_02_libera_adm(
         sza0=60.0,
@@ -644,6 +652,7 @@ def example_rad_02_libera_adm(
 
     # run rt
     #/----------------------------------------------------------------------------\#
+    print('Running calculations for <%s> ...' % (_metadata['Function']))
     er3t.rtm.lrt.lrt_run_mp(inits_rad, Ncpu=12)
     er3t.rtm.lrt.lrt_run_mp(inits_flx, Ncpu=12)
     #\----------------------------------------------------------------------------/#
@@ -720,7 +729,7 @@ def example_rad_02_libera_adm(
 
         # vis band
         #/----------------------------------------------------------------------------\#
-        scale_factor = 1.0/(ref_vis[0]/ref_555[0])
+        scale_factor = ref_555[0]/ref_vis[0]
         ax1.plot(np.deg2rad(vaa), ref_vis*scale_factor, color='orange', ls='--', lw=6.0, zorder=1)
         #\----------------------------------------------------------------------------/#
 
@@ -739,30 +748,33 @@ def example_rad_02_libera_adm(
         ax1.set_title('Anisotropic Reflectance (SZA=%d$^\circ$, VZA=%d$^\circ$, COT=%d, SF=%.2f)' % (sza0, vza0, cot0, scale_factor))
 
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        fig.savefig('%s_%s.png' % (_metadata['Function'], job_tag), bbox_inches='tight', metadata=_metadata)
+        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], job_tag)
+        fig.savefig(fname_png, bbox_inches='tight', metadata=_metadata)
         #\----------------------------------------------------------------------------/#
 
+        print('Results for <%s> is saved at <%s>.' % (_metadata['Function'], fname_png))
+        print()
 
 
 
 if __name__ == '__main__':
 
 
-    test_flux_01_clear_sky()
-    test_flux_02_clear_sky()
-    test_flux_03_clear_sky()
-    test_flux_04_cloud()
-    test_flux_05_cloud_and_aerosol()
+    # test_flux_01_clear_sky()
+    # test_flux_02_clear_sky()
+    # test_flux_03_clear_sky()
+    # test_flux_04_cloud()
+    # test_flux_05_cloud_and_aerosol()
 
 
-    test_rad_01_clear_sky()
-    test_rad_02_clear_sky()
-    test_rad_03_clear_sky()
-    test_rad_04_cloud()
-    test_rad_05_cloud_and_aerosol()
+    # test_rad_01_clear_sky()
+    # test_rad_02_clear_sky()
+    # test_rad_03_clear_sky()
+    # test_rad_04_cloud()
+    # test_rad_05_cloud_and_aerosol()
 
 
-    example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0)
+    example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0, plot=True)
     example_rad_02_libera_adm(sza0=60.0, saa0=0.0, vza0=45.0, cot0=10.0, cer0=12.0, plot=True)
 
     pass
