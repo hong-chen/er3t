@@ -199,7 +199,7 @@ class mca_out_ng:
         if self.verbose:
             print('Message [mca_out_ng]: Reading <%s> ...' % self.mca.target.lower())
 
-        if self.mca.target == 'flux': # ['f', 'flux', 'irradiance', 'heating rate', 'hr']:
+        if self.mca.target in ['flux', 'flux0']: # ['f', 'flux', 'irradiance', 'heating rate', 'hr']:
             self.data = read_flux_mca_out(self.mca, self.abs, mode=self.mode, squeeze=self.squeeze)
 
         elif self.mca.target == 'radiance':
