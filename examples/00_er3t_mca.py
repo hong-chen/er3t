@@ -830,6 +830,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             Ng=abs0.Ng,
+            target='flux0',
             Nrun=3,
             surface_albedo=0.03,
             solar_zenith_angle=30.0,

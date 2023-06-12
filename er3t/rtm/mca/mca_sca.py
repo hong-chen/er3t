@@ -50,6 +50,8 @@ class mca_sca:
         self.verbose   = verbose
         self.quiet     = quiet
 
+        self.numpf = []
+
         if pha_obj is None:
             msg = 'Error [mca_sca]: Please provide an \'pha\' object for <pha_obj>.'
             raise OSError(msg)
@@ -77,6 +79,42 @@ class mca_sca:
         self.nml['Sca_nskip'] = dict(data=nskip, name='Number of phase functions to be skipped', units='N/A')
         self.nml['Sca_nanci'] = dict(data=nanci, name='Number of ancillary data', units='N/A')
         self.nml['Sca_nangi'] = dict(data=self.pha.data['ang']['data'].size, name='Number of angles', units='N/A')
+
+        self.numpf.append(self.nml['Sca_npf']['data'])
+
+    def add_mca_sca(self, angles=None, pha=None):
+
+        if (angles is None) or (angles is None):
+            msg = 'Error [mca_sca]: Please provide an <angles>, and <pha>.'
+            raise OSError(msg)
+        else:
+
+            if isinstance(angles, np.ndarray):
+                if angles.ndim != 1:
+                    msg = 'Error [mca_sca]: <angles> should be in the dimension of (nang).'
+                    raise ValueError(msg)
+
+            if isinstance(pha, np.ndarray):
+                if pha.ndim != 2:
+                    msg = 'Error [mca_sca]: <pha> should be in the dimension of (nang, npf).'
+                    raise ValueError(msg)
+
+            if isinstance(angles, np.ndarray):
+                if angles.size != self.nml['Sca_nangi']['data']:
+                    msg = 'Error [mca_sca]: <angles> should be in the dimension of (nang).'
+                    raise ValueError(msg)
+                if (angles != self.pha.data['ang']['data']).any():
+                    msg = 'Error [mca_sca]: <angles> should match angles used in the preceding object.'
+                    raise ValueError(msg)
+
+
+        # pha_pha = np.concatenate((self.pha.data['pha']['data'], pha[..., np.newaxis]), axis=-1)
+        pha_pha = np.concatenate((self.pha.data['pha']['data'], pha[...]), axis=-1)
+
+        self.pha.data['pha']['data'] = pha_pha
+        self.nml['Sca_npf']['data'] += pha[0, :].size
+
+        self.numpf.append(self.nml['Sca_npf']['data'])
 
 
     def gen_mca_sca_file(self, fname):

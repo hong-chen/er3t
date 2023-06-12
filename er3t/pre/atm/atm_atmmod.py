@@ -66,11 +66,15 @@ class atm_atmmod:
                  levels       = None, \
                  fname        = None, \
                  fname_atmmod = '%s/afglus.dat' % er3t.common.fdir_data_atmmod, \
+                 fname_nc     = None, \
+                 nc_type      = None, \
                  overwrite    = False, \
                  verbose      = False):
 
         self.verbose      = verbose
         self.fname_atmmod = fname_atmmod
+        self.fname_nc     = fname_nc
+        self.nc_type      = nc_type
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -130,6 +134,9 @@ class atm_atmmod:
         #   self.lev['h2o']         | self.lay['h2o']
         #   self.lev['o3']          | self.lay['o3']
         #   self.lev['o2']          | self.lay['o2']
+        if self.fname_nc is not None:
+            self.read_file_vapor()
+        
         self.interp()
 
         # add self.lev['ch4'] and self.lay['ch4']
@@ -169,6 +176,50 @@ class atm_atmmod:
             if key in self.gases:
                 self.atm0[key]['data']  = self.atm0[key]['data']/self.atm0['air']['data']
                 self.atm0[key]['units'] = 'N/A'
+        # self.atm0['h2o']['data'] *= 2.0 #### Added for a testing purpose (Feb 3, 2023)
+
+    def read_file_vapor(self, index_t=0):
+        from er3t.util import mmr2vmr, cal_rho_air
+        try:
+            from netCDF4 import Dataset
+        except ImportError:
+            msg = 'Error [cld_les]: Please install <netCDF4> to proceed.'
+            raise ImportError(msg)
+
+        f = Dataset(self.fname_nc, 'r')
+        if self.nc_type == 'les':
+            index_e = -1
+            z0     = f.variables['z'][:]/1000.0        # z direction, altitude (in km)
+            p      = f.variables['p'][:index_e]                   # pressure
+            pp_3d  = f.variables['PP'][index_t, :index_e, :, :]   # pressure purturbation
+            qv_3d  = f.variables['QV'][index_t, :index_e, :, :]   # water vapor
+            t_3d   = f.variables['TABS'][index_t, :index_e, :, :] # absolute temperature
+            f.close()
+            print('index_e: {}'.format(index_e))
+            z      = z0[:index_e]   # z direction, altitude
+            Nz, Ny, Nx = qv_3d.shape
+            p_3d      = np.empty((Nz, Ny, Nx), dtype=p.dtype)
+            p_3d[...] = p[:, None, None]
+            p_3d[...] = p_3d[:, :, :] + pp_3d*0.01
+            vmr_3d = mmr2vmr(qv_3d * 0.001)
+            rho_3d = cal_rho_air(p_3d, t_3d, vmr_3d)
+            wv_1d      = np.empty((Nz), dtype=p.dtype)
+            qv_1d      = np.empty((Nz), dtype=p.dtype)
+            vmr_1d     = np.empty((Nz), dtype=p.dtype)
+            wv_rho_3d  = qv_3d/(1000. + qv_3d)*1000.*rho_3d   # vapor mass/total air volume
+            wv_1d      = np.mean(wv_rho_3d, axis=(1,2))/np.mean(rho_3d, axis=(1,2))
+            qv_1d      = wv_1d/(1000. - wv_1d)*1000.
+            # vmr_1d     = mmr2vmr(qv_1d * 0.001) #cm^3/cm^3
+        elif self.nc_type == 'aeri':
+            z      = f.variables['z'][:]/1000.0        # z direction, altitude (in km)
+            qv_1d  = f.variables['vmr_avg'][:]         # mass mixing ratio
+            # vmr_1d = mmr2vmr(qv_1d * 0.001) #cm^3/cm^3
+        vmr_1d     = mmr2vmr(qv_1d * 0.001) #cm^3/cm^3
+        # vmr_1d     = qv_1d*0.001/0.622 #cm^3/cm^3
+        self.z_file = z
+        self.vmr_1d_file = vmr_1d
+        
+
 
 
     def interp(self):
@@ -192,10 +243,32 @@ class atm_atmmod:
                  'data':self.levels[1:]-self.levels[:-1]}
 
         # Linear interpolate to input levels and layers
-        for key in self.atm0.keys():
-            if key not in ['altitude', 'pressure']:
-                self.lev[key]['data'] = np.interp(self.lev['altitude']['data'], self.atm0['altitude']['data'], self.atm0[key]['data'])
-                self.lay[key]['data'] = np.interp(self.lay['altitude']['data'], self.atm0['altitude']['data'], self.atm0[key]['data'])
+        if self.fname_nc is None:
+            for key in self.atm0.keys():
+                if key not in ['altitude', 'pressure']:
+                    self.lev[key]['data'] = np.interp(self.lev['altitude']['data'], self.atm0['altitude']['data'], self.atm0[key]['data'])
+                    self.lay[key]['data'] = np.interp(self.lay['altitude']['data'], self.atm0['altitude']['data'], self.atm0[key]['data'])
+        else:
+            for key in self.atm0.keys():
+                if key not in ['altitude', 'pressure', 'h2o']:
+                    self.lev[key]['data'] = np.interp(self.lev['altitude']['data'], self.atm0['altitude']['data'], self.atm0[key]['data'])
+                    self.lay[key]['data'] = np.interp(self.lay['altitude']['data'], self.atm0['altitude']['data'], self.atm0[key]['data'])
+                elif key == 'h2o':
+                    self.lev[key]['data'] = np.interp(self.lev['altitude']['data'], self.z_file, self.vmr_1d_file)
+                    self.lay[key]['data'] = np.interp(self.lay['altitude']['data'], self.z_file, self.vmr_1d_file)
+
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize=(6, 5))
+
+        ax1 = fig.add_subplot(111)
+        cs1 = ax1.plot(self.lev['h2o']['data'], self.lev['altitude']['data'])
+        ax1.set_xlabel('vap')
+        ax1.set_ylabel('z')
+        # plt.colorbar(cs1)
+
+        plt.savefig('png/vap_test.png', bbox_inches='tight')
+        plt.close(fig)
+
 
         # Use Barometric formula to interpolate pressure
         self.lev['pressure']['data'] = atm_interp_pressure(self.atm0['pressure']['data'], self.atm0['altitude']['data'], self.atm0['temperature']['data'], \

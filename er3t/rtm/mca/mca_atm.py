@@ -237,6 +237,7 @@ class mca_atm_3d:
         nx   = self.cld.lay['nx']['data']
         ny   = self.cld.lay['ny']['data']
         nz3  = int(lay_index.size)
+        print('nz3:', nz3)
         iz3l = int(lay_index[0] + 1)
 
         if (iz3l+nz3) > self.atm.lay['altitude']['data'].size:
@@ -299,6 +300,31 @@ class mca_atm_3d:
                 atm_omg[logic1] = ssa[-1]
                 atm_apf[logic1] = ind[-1]
 
+            elif self.pha.data['id']['data'].lower() == 'mie_aer':
+
+                if isinstance(self.cld.lay['rh']['data'], np.ma.MaskedArray):
+                    rh = self.cld.lay['rh']['data'].data
+                elif isinstance(self.cld.lay['rh']['data'], np.ndarray):
+                    rh = self.cld.lay['rh']['data']
+
+                hum = self.pha.data['hum']['data']
+                ssa = self.pha.data['ssa']['data']
+                ind = np.arange(float(hum.size)) + 1.0
+
+                f_interp_ssa = interpolate.interp1d(hum, ssa, bounds_error=False, fill_value='extrapolate')
+                f_interp_ind = interpolate.interp1d(hum, ind, bounds_error=False, fill_value='extrapolate')
+
+                atm_omg[logic_cld, 0] = f_interp_ssa(rh[logic_cld])
+                atm_apf[logic_cld, 0] = f_interp_ind(rh[logic_cld])
+
+                logic0 = (atm_apf>0.0) & (atm_apf<ind[0])
+                atm_omg[logic0] = ssa[0]
+                atm_apf[logic0] = ind[0]
+
+                logic1 = (atm_apf>ind[-1])
+                atm_omg[logic1] = ssa[-1]
+                atm_apf[logic1] = ind[-1]
+
         self.nml['Atm_nx']     = copy.deepcopy(self.cld.lay['nx'])
         self.nml['Atm_ny']     = copy.deepcopy(self.cld.lay['ny'])
 
@@ -321,7 +347,7 @@ class mca_atm_3d:
         self.nml['Atm_np3d']   = {'data':1      , 'units':'N/A', 'name': 'Number of 3D atmospheric constituents'}
 
 
-    def add_mca_3d_atm(self, ext3d=None, omg3d=None, apf3d=None):
+    def add_mca_3d_atm(self, ext3d=None, omg3d=None, apf3d=None, incr_apf=0):
 
         if (ext3d is None) or (omg3d is None) or (apf3d is None):
             msg = 'Error [mca_atm_3d]: Please provide an <ext3d>, <omg3d>, and <apf3d>.'
@@ -342,11 +368,25 @@ class mca_atm_3d:
                 if apf3d.ndim != 3:
                     msg = 'Error [mca_atm_3d]: <apf3d> should be in the dimension of (nx, ny, nz).'
                     raise ValueError(msg)
+        
+        if incr_apf == 0:
+            if self.pha is not None:
+                print('Message [mca_atm_3d]: <incr_apf> is set to 0. If aerosol mie function is used, ' + \
+                    'make sure that ' + \
+                    'this matches the number of phase functions used in the pre-exisiting atm object.')
+                # msg = 'Error [mca_atm_3d]: <incr_apf> must not be 0 because the pre-exisiting atm object uses a scattering table.'
+                # raise ValueError(msg)
+            # else:
+            #     print('Message [mca_atm_3d]: <incr_apf> is set to 0. Make sure that ' + \
+            #             'Mie scattering is not applied to the pre-existing atm object.')
+        else:
+            print('Message [mca_atm_3d]: <incr_apf> is set to %d. Make sure that ' % incr_apf + \
+                    'this matches the number of phase functions used in the pre-exisiting atm object.')
 
 
         atm_ext = np.concatenate((self.nml['Atm_extp3d']['data'], ext3d[..., np.newaxis]), axis=-1)
         atm_omg = np.concatenate((self.nml['Atm_omgp3d']['data'], omg3d[..., np.newaxis]), axis=-1)
-        atm_apf = np.concatenate((self.nml['Atm_apfp3d']['data'], apf3d[..., np.newaxis]), axis=-1)
+        atm_apf = np.concatenate((self.nml['Atm_apfp3d']['data'], apf3d[..., np.newaxis] + incr_apf), axis=-1)
 
         self.nml['Atm_extp3d']['data'] = atm_ext
         self.nml['Atm_omgp3d']['data'] = atm_omg
