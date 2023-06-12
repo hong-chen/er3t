@@ -40,7 +40,7 @@ def lrt_run(init, verbose=False):
 
 
 
-def lrt_run_mp(inits, Ncpu=6):
+def lrt_run_mp(inits, Ncpu=None):
 
     """
     Use multiprocessing to run lrt_run with multiple CPUs
@@ -49,10 +49,22 @@ def lrt_run_mp(inits, Ncpu=6):
         Python list of lrt_init objects
     """
 
-    pool = mp.Pool(processes=Ncpu)
-    pool.outputs = pool.map(lrt_run, inits)
-    pool.close()
-    pool.join()
+    if Ncpu is None:
+        Ncpu = mp.cpu_count() - 1
+
+    try:
+        from tqdm import tqdm
+
+        print('\nMessage [lrt_run_mp]: running libRadtran ...')
+        with mp.Pool(processes=Ncpu) as pool:
+            r = list(tqdm(pool.imap_unordered(lrt_run, inits), total=len(inits)))
+
+    except ImportError:
+
+        pool = mp.Pool(processes=Ncpu)
+        pool.outputs = pool.map_async(lrt_run, inits)
+        pool.close()
+        pool.join()
 
 
 

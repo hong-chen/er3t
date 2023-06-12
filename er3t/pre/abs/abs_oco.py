@@ -4,6 +4,7 @@ import pickle
 import multiprocessing as mp
 import h5py
 from scipy.io import readsav
+from scipy.interpolate import interp2d
 import copy
 import numpy as np
 
@@ -110,7 +111,7 @@ class abs_oco:
         #     self.coef['abso_coef']
         #     self.coef['slit_func']
         #     self.coef['solar']
-        self.get_coefficient()
+        self.get_coefficient(atm_obj)
 
 
     def dump(self, fname):
@@ -122,7 +123,7 @@ class abs_oco:
             pickle.dump(self, f)
 
 
-    def get_coefficient(self, wvl_threshold=1.0):
+    def get_coefficient(self, atm_obj, wvl_threshold=1.0):
 
         f = readsav(self.fname_idl)
 
@@ -207,6 +208,7 @@ class abs_oco_idl:
 
         self.verbose   = verbose
         self.wvl       = wavelength
+        self.wvl_info  = '%.4f nm (applied OCO-2 slit)' % wavelength
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -239,6 +241,7 @@ class abs_oco_idl:
                 self.nwl   = obj.nwl
                 self.coef  = obj.coef
                 self.Ng    = obj.Ng
+                self.wvl_info   = obj.wvl_info
             else:
                 sys.exit('Error   [abs_oco_idl]: \'%s\' is not the correct pickle file to load.' % fname)
 
@@ -253,7 +256,7 @@ class abs_oco_idl:
         #     self.coef['abso_coef']
         #     self.coef['slit_func']
         #     self.coef['solar']
-        self.get_coefficient()
+        self.get_coefficient(atm_obj)
 
 
     def dump(self, fname):
@@ -265,7 +268,7 @@ class abs_oco_idl:
             pickle.dump(self, f)
 
 
-    def get_coefficient(self, wvl_threshold=1.0):
+    def get_coefficient(self, atm_obj, wvl_threshold=1.0):
 
         f = readsav(self.fname_idl)
 
@@ -273,7 +276,7 @@ class abs_oco_idl:
 
         index_wvl = np.argmin(np.abs(wvl_center_oco-self.wvl))
         if abs(wvl_center_oco[index_wvl]-self.wvl) >= wvl_threshold:
-            sys.exit('Error   [abs_oco_idl]: Cannot pick a close wavelength for %.2fnm from \'%s\'.' % (self.wvl, self.fname_idl))
+            sys.exit('Error [abs_oco_idl]: Cannot pick a close wavelength for %.2fnm from \'%s\'.' % (self.wvl, self.fname_idl))
         else:
             if self.verbose:
                 print('Message [abs_oco_idl]: Picked wvl=%.2f from \'%s\' for input wavelength %.2fnm.' % (wvl_center_oco[index_wvl], self.fname_idl, self.wvl))
@@ -281,7 +284,14 @@ class abs_oco_idl:
 
         Ng        = f.absgn[index_wvl]
         wvls      = f.absgx[:Ng, index_wvl] * 1000.0
-        abso_coef = f.absgl[:Ng, index_wvl, :]
+
+        abso_coef0 = f.absgl[:Ng, index_wvl, :]
+        alt0       = (f.atm_zgrd[1:]+f.atm_zgrd[:-1])/2000.0
+        alt        = atm_obj.lay['altitude']['data']
+        x_         = np.arange(abso_coef0.shape[0])
+
+        f_interp = interp2d(alt0, x_, abso_coef0)
+        abso_coef = f_interp(alt, x_)
 
         slit_func0     = f.absgy[:Ng, index_wvl]
         slit_func      = np.empty(abso_coef.shape, dtype=slit_func0.dtype)

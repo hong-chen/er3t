@@ -8,136 +8,80 @@ import er3t
 
 
 
-__all__ = ['sfc_gen']
+__all__ = ['sfc_2d_gen']
 
 
-
-# under development
-
-class sfc_gen:
+class sfc_2d_gen:
 
     """
     Input:
-
-        fname=       : keyword argument, string, default=None, the atmoshpere file user wants to name
-        fname_atmmod=: keyword argument, string, defult='mca-data/atmmod/afglus.dat', the base atmosphere file to interpolate to levels and layers
-        overwrite=   : keyword argument, boolen, default=False, whether or not user wants to overwrite the atmosphere file
-        verbose=     : keyword argument, boolen, default=False, whether or not print detailed messages
-
-    Note:
-    If levels is provided but fname does not exisit:
-        calculate atmospheric gases profile and save data into fname
-
-    if levels is not provided but fname is provided (also exists):
-        read out the data from fname
-
-    if levels and fname are neither provided:
-        exit with error message
+        alb_2d=   : keyword argument, default=None, 2D array of surface albedo
+        fname=    : keyword argument, default=None, the file path of the Python pickle file
+        overwrite=: keyword argument, default=False, whether to overwrite or not
+        verbose=  : keyword argument, default=False, verbose tag
 
     Output:
-        self.lev['pressure']
-        self.lev['temperature']
-        self.lev['altitude']
-        self.lev['h2o']
-        self.lev['o2']
-        self.lev['o3']
-        self.lev['co2']
-        self.lev['no2']
-        self.lev['ch4']
-        self.lev['factor']
-
-        self.lay['pressure']
-        self.lay['temperature']
-        self.lay['altitude']
-        self.lay['thickness']
-        self.lay['h2o']
-        self.lay['o2']
-        self.lay['o3']
-        self.lay['co2']
-        self.lay['no2']
-        self.lay['ch4']
-        self.lay['factor']
+        self.sfc
+                ['nx']
+                ['ny']
+                ['alb']
     """
 
 
-    ID     = 'Surface 2D'
+    ID = 'Surface 2D'
 
 
-    def __init__(self,                \
-                 levels       = None, \
-                 fname        = None, \
-                 fname_atmmod = '%s/atmmod/afglus.dat' % er3t.common.fdir_data, \
-                 overwrite    = False, \
-                 verbose      = False):
+    def __init__(self, \
+                 alb_2d    = None, \
+                 fname     = None, \
+                 overwrite = False, \
+                 verbose   = False):
 
-        self.verbose      = verbose
-        self.fname_atmmod = fname_atmmod
 
-        if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
+        self.alb        = alb_2d
+        self.fname      = fname       # file name of the pickle file
+        self.verbose    = verbose     # verbose tag
 
-            self.load(fname)
 
-        elif ((levels is not None) and (fname is not None) and (os.path.exists(fname)) and (overwrite)) or \
-             ((levels is not None) and (fname is not None) and (not os.path.exists(fname))):
+        if ((self.fname is not None) and (os.path.exists(self.fname)) and (not overwrite)):
 
-            self.run(levels)
-            self.dump(fname)
+            self.load(self.fname)
 
-        elif ((levels is not None) and (fname is None)):
+        elif ((self.alb is not None) and (self.fname is not None) and (os.path.exists(self.fname)) and (overwrite)) or \
+             ((self.alb is not None) and (self.fname is not None) and (not os.path.exists(self.fname))):
 
-            self.run(levels)
+            self.run()
+            self.dump(self.fname)
+
+        elif ((self.alb is not None) and (self.fname is None)):
+
+            self.run()
 
         else:
 
-            exit('Error   [atm_atmmod]: Please check if \'%s\' exists or provide \'levels\' to proceed.' % fname)
+            msg = 'Error [sfc_2d_gen]: Please check if <%s> exists or provide <alb_2d> to proceed.' % self.fname
+            raise OSError(msg)
 
 
     def load(self, fname):
 
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
-            if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
+            if hasattr(obj, 'data'):
                 if self.verbose:
-                    print('Message [atm_atmmod]: Loading %s ...' % fname)
-                self.fname = obj.fname
-                self.lev   = obj.lev
-                self.lay   = obj.lay
+                    print('Message [sfc_2d_gen]: Loading <%s> ...' % fname)
+                self.fname  = obj.fname
+                self.data   = obj.data
+                self.Nx     = obj.Nx
+                self.Ny     = obj.Ny
             else:
-                exit('Error   [atm_atmmod]: \'%s\' is not the correct pickle file to load.' % fname)
+                msg = 'Error [sfc_2d_gen]: <%s> is not the correct <pickle> file to load.' % fname
+                raise OSError(msg)
 
 
-    def run(self, levels):
+    def run(self):
 
-        self.levels = levels
-        self.layers = 0.5 * (levels[1:]+levels[:-1])
-
-        # self.atm0: Python dictionary
-        #   self.atm0['altitude']
-        #   self.atm0['pressure']
-        #   self.atm0['temperature']
-        #   self.atm0['co2']
-        #   self.atm0['no2']
-        #   self.atm0['h2o']
-        #   self.atm0['o3']
-        #   self.atm0['o2']
-        self.atmmod()
-
-        # self.lev, self.lay: Python dictionary
-        #   self.lev['altitude']    | self.lay['altitude']
-        #   self.lev['pressure']    | self.lay['pressure']
-        #   self.lev['temperature'] | self.lay['temperature']
-        #   self.lev['co2']         | self.lay['co2']
-        #   self.lev['no2']         | self.lay['no2']
-        #   self.lev['h2o']         | self.lay['h2o']
-        #   self.lev['o3']          | self.lay['o3']
-        #   self.lev['o2']          | self.lay['o2']
-        self.interp()
-
-        # add self.lev['ch4'] and self.lay['ch4']
-        self.add_ch4()
-
-        # covert mixing ratio [unitless] to number density [cm-3]
-        self.cal_num_den()
+        self.pre_alb()
 
 
     def dump(self, fname):
@@ -145,9 +89,22 @@ class sfc_gen:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [atm_atmmod]: Saving object into %s ...' % fname)
+                print('Message [sfc_2d_gen]: Saving object into <%s> ...' % fname)
             pickle.dump(self, f)
 
+
+    def pre_alb(self):
+
+        self.data = {}
+
+        Nx, Ny = self.alb.shape
+
+        self.data['nx']   = {'data':Nx             , 'name':'Nx'            , 'units':'N/A'}
+        self.data['ny']   = {'data':Ny             , 'name':'Ny'            , 'units':'N/A'}
+        self.data['alb']  = {'data':self.alb.copy(), 'name':'Surface albedo', 'units':'N/A'}
+
+        self.Nx = Nx
+        self.Ny = Ny
 
 
 if __name__ == '__main__':

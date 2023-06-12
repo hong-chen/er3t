@@ -5,7 +5,6 @@ import datetime
 import warnings
 import multiprocessing as mp
 import numpy as np
-from tqdm import tqdm
 
 import er3t.common
 from er3t.rtm.mca import mca_inp_file
@@ -62,13 +61,13 @@ class mcarats_ng:
                  atm_1ds             = [],                      \
                  atm_3ds             = [],                      \
 
-                 sfc_2d              = None,                    \
-
                  sca                 = None,                    \
 
                  Ng                  = 16,                      \
-                 fdir                = 'data/tmp/mca',          \
-                 Nrun                = 1,                       \
+                 weights             = None,                    \
+
+                 fdir                = 'tmp-data/sim',          \
+                 Nrun                = 3,                       \
                  Ncpu                = 'auto',                  \
                  mp_mode             = 'py',                    \
                  overwrite           = True,                    \
@@ -88,9 +87,8 @@ class mcarats_ng:
                  sensor_xpos         = 0.5,                     \
                  sensor_ypos         = 0.5,                     \
 
-                 solver              = '3d',                       \
-                 photons             = 1e6,                     \
-                 weights             = None,                    \
+                 solver              = '3d',                    \
+                 photons             = 1e7,                     \
 
                  verbose             = False,                   \
                  quiet               = False                    \
@@ -120,7 +118,6 @@ class mcarats_ng:
         self.sca                 = sca
 
         self.surface_albedo      = surface_albedo
-        self.sfc_2d              = sfc_2d
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
 
@@ -135,12 +132,36 @@ class mcarats_ng:
         self.Nrun    = Nrun
 
 
-        self.solver  = solver
+        solver = solver.lower()
+        if solver in ['3d', '3 d', 'three d']:
+            self.solver = '3D'
+        elif solver in ['p3d', 'p-3d', 'partial 3d', 'partial-3d']:
+            self.solver = 'Partial 3D'
+        elif solver in ['ipa', 'independent pixel approximation']:
+            self.solver = 'IPA'
+        else:
+            msg = 'Error [mcarats_ng]: Cannot understand <solver=%s>.' % self.solver
+            raise OSError(msg)
+
         self.target  = target
 
+        # Nx, Ny
+        #/----------------------------------------------------------------------------\#
+        if len(atm_3ds) > 0:
+            self.Nx = atm_3ds[0].nml['Atm_nx']['data']
+            self.Ny = atm_3ds[0].nml['Atm_ny']['data']
+        else:
+            self.Nx = 1
+            self.Ny = 1
+        #\----------------------------------------------------------------------------/#
+
+        # photon distribution over gs of correlated-k
+        #/----------------------------------------------------------------------------\#
+        photons_min_ipa0 = int(self.Nx*self.Ny*100)
+        photons_min_3d0  = min(int(1e7), photons_min_ipa0)
 
         if weights is None:
-            self.np_mode = 'even'
+            self.np_mode = 'evenly'
             weights = np.repeat(1.0/self.Ng, Ng)
         else:
             self.np_mode = 'weighted'
@@ -150,8 +171,14 @@ class mcarats_ng:
         index        = np.argmax(photons_dist)
         photons_dist[index] = photons_dist[index] - Ndiff
 
+        if ((photons_dist<photons_min_ipa0).sum() > 0) and (self.solver=='IPA'):
+            photons_dist += (abs(photons_min_ipa0-photons_dist.min()))
+        elif ((photons_dist<photons_min_3d0).sum() > 0) and (self.solver=='3D'):
+            photons_dist += (abs(photons_min_3d0-photons_dist.min()))
+
         self.photons = np.tile(photons_dist, Nrun)
-        self.photons_per_set = photons
+        self.photons_per_set = photons_dist.sum()
+        #\----------------------------------------------------------------------------/#
 
         # Determine how many CPUs to utilize
         Ncpu_total = mp.cpu_count()
@@ -196,7 +223,7 @@ class mcarats_ng:
             self.init_atm(atm_1ds=atm_1ds, atm_3ds=atm_3ds)
 
             # MCARaTS surface initialization
-            self.init_sfc(sfc_2d=sfc_2d, surface_albedo=surface_albedo)
+            self.init_sfc(surface_albedo=surface_albedo)
 
             # MCARaTS source (e.g., solar) initialization
             self.init_src(solar_zenith_angle=solar_zenith_angle, solar_azimuth_angle=solar_azimuth_angle)
@@ -209,7 +236,6 @@ class mcarats_ng:
 
 
         self.run_check()
-
 
 
     def init_wld(self, tune=False, verbose=False, \
@@ -321,6 +347,8 @@ class mcarats_ng:
 
                         self.nml[ig][key] = atm_1d.nml[ig][key]['data']
 
+                self.wvl_info = atm_1d.wvl_info
+
             if len(atm_3ds) > 0:
 
                 for atm_3d in atm_3ds:
@@ -331,6 +359,11 @@ class mcarats_ng:
                             if os.path.exists(atm_3d.nml['Atm_inpfile']['data']):
                                 atm_3d.nml['Atm_inpfile']['data'] = os.path.relpath(atm_3d.nml['Atm_inpfile']['data'], start=self.fdir)
                             self.nml[ig][key] = atm_3d.nml[key]['data']
+
+                self.Nx = atm_3d.nml['Atm_nx']['data']
+                self.Ny = atm_3d.nml['Atm_ny']['data']
+                self.dx = atm_3d.nml['Atm_dx']['data']
+                self.dy = atm_3d.nml['Atm_dy']['data']
 
                 if self.target == 'radiance':
                     if 'satellite' in self.sensor_type.lower():
@@ -358,25 +391,35 @@ class mcarats_ng:
             self.nml[ig]['Src_phi']   = cal_mca_azimuth(solar_azimuth_angle)
 
 
-    def init_sfc(self, sfc_2d=None, surface_albedo=0.03):
+    def init_sfc(self, surface_albedo=0.03):
 
         for ig in range(self.Ng):
 
             if self.verbose:
                 print('Message [mcarats_ng]: Assume Lambertian surface ...')
 
-            if sfc_2d is not None:
+            if isinstance(surface_albedo, float):
 
-                for key in sfc_2d.nml.keys():
-                    if '2d' not in key:
-                        if os.path.exists(sfc_2d.nml['Sfc_inpfile']['data']):
-                            sfc_2d.nml['Sfc_inpfile']['data'] = os.path.relpath(sfc_2d.nml['Sfc_inpfile']['data'], start=self.fdir)
-                        self.nml[ig][key] = sfc_2d.nml[key]['data']
-
-            else:
                 self.nml[ig]['Sfc_mbrdf'] = np.array([1, 0, 0, 0])
                 self.nml[ig]['Sfc_mtype'] = 1
                 self.nml[ig]['Sfc_param(1)'] = surface_albedo
+
+                self.sfc_2d = False
+
+            elif isinstance(surface_albedo, er3t.rtm.mca.mca_sfc_2d):
+
+                for key in surface_albedo.nml.keys():
+                    if '2d' not in key:
+                        if os.path.exists(surface_albedo.nml['Sfc_inpfile']['data']):
+                            surface_albedo.nml['Sfc_inpfile']['data'] = os.path.relpath(surface_albedo.nml['Sfc_inpfile']['data'], start=self.fdir)
+                        self.nml[ig][key] = surface_albedo.nml[key]['data']
+
+                self.sfc_2d = True
+
+            else:
+
+                msg = '\nError [mcarats_ng]: Cannot ingest <surface_albedo>.'
+                raise ValueError(msg)
 
 
     def gen_mca_inp(self, comment=False):
@@ -409,16 +452,6 @@ class mcarats_ng:
         """
 
 
-        solver = self.solver.lower()
-        if solver in ['3d', '3 d', 'three d']:
-            self.solver = '3D'
-        elif solver in ['p3d', 'p-3d', 'partial 3d', 'partial-3d']:
-            self.solver = 'Partial 3D'
-        elif solver in ['ipa', 'independent pixel approximation']:
-            self.solver = 'IPA'
-        else:
-            msg = 'Error [mcarats_ng]: Cannot understand <solver=%s>.' % self.solver
-            raise OSError(msg)
 
         # solver:
         #   0: Full 3D radiative transfer
@@ -460,25 +493,39 @@ class mcarats_ng:
 
         print('----------------------------------------------------------')
         print('                 General Information                      ')
-        print('                     Date : %s' % self.date.strftime('%Y-%m-%d'))
-        print('       Solar Zenith Angle : %.2f' % self.solar_zenith_angle)
-        print('      Solar Azimuth Angle : %.2f' % self.solar_azimuth_angle)
+        print('               Simulation : %s %s' % (self.solver, self.target.title()))
+        print('               Wavelength : %s' % (self.wvl_info))
 
-        if self.sfc_2d is None:
+        print('               Date (DOY) : %s (%d)' % (self.date.strftime('%Y-%m-%d'), self.date.timetuple().tm_yday))
+
+        print('       Solar Zenith Angle : %.4f° (0 at local zenith)' % self.solar_zenith_angle)
+        print('      Solar Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.solar_azimuth_angle)
+
+        if self.target == 'radiance':
+            if self.sensor_zenith_angle < 90.0:
+                print('      Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % self.sensor_zenith_angle)
+            else:
+                print('      Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % self.sensor_zenith_angle)
+            print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
+            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
+
+        if not self.sfc_2d:
             print('           Surface Albedo : %.2f' % self.surface_albedo)
         else:
             print('           Surface Albedo : 2D domain')
 
         if self.sca is None:
-            print('           Phase Function : HG (g=0.85)')
+            print('           Phase Function : Henyey-Greenstein')
         else:
-            print('           Phase Function : Mie')
+            print('           Phase Function : %s' % self.sca.pha.ID)
 
-        print('  Number of Photons / Set : %.1e (%s distribution over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
-        print('           Number of Runs : %s(g) * %d(set)' % (self.Ng, self.Nrun))
-        print('           Number of CPUs : %d(used) of %d(total)' % (self.Ncpu, self.Ncpu_total))
-        print('                   Target : %s' % self.target.title())
-        print('                   Solver : %s' % self.solver)
+        if (self.Nx > 1) | (self.Ny > 1):
+            print('     Domain Size (Nx, Ny) : (%d, %d)' % (self.Nx, self.Ny))
+            print('      Pixel Res. (dx, dy) : (%.2f km, %.2f km)' % (self.dx/1000.0, self.dy/1000.0))
+
+        print('  Number of Photons / Set : %.1e (%s over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
+        print('           Number of Runs : %s (g) * %d (set)' % (self.Ng, self.Nrun))
+        print('           Number of CPUs : %d (used) of %d (total)' % (self.Ncpu, self.Ncpu_total))
         print('----------------------------------------------------------')
 
 

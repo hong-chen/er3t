@@ -167,8 +167,15 @@ class cld_sat:
         lon_1d = self.sat.data['lon_2d']['data'][:, 0]
         lat_1d = self.sat.data['lat_2d']['data'][0, :]
 
-        dx = cal_dist(lon_1d[1]-lon_1d[0])
-        dy = cal_dist(lat_1d[1]-lat_1d[0])
+        if 'dx' not in keys:
+            dx = cal_dist(lon_1d[1]-lon_1d[0])
+        else:
+            dx = self.sat.data['dx']['data']
+
+        if 'dy' not in keys:
+            dy = cal_dist(lat_1d[1]-lat_1d[0])
+        else:
+            dy = self.sat.data['dy']['data']
 
         x_1d = (lon_1d-lon_1d[0])*dx
         y_1d = (lat_1d-lat_1d[0])*dy
@@ -224,7 +231,7 @@ class cld_sat:
 
 
                 dz    = self.atm.lay['thickness']['data'][indices].sum() * 1000.0
-                ext_3d[i, j, indices] = cal_ext(cot0, cer0, dz=dz)
+                ext_3d[i, j, indices] = cot0/dz
 
         ext_3d[np.isnan(ext_3d)] = 0.0
         cer_3d[np.isnan(ext_3d)] = 0.0

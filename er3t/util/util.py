@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import math
 import shutil
 import datetime
 import time
@@ -9,7 +10,7 @@ import requests
 import urllib.request
 from io import StringIO
 import numpy as np
-from scipy import interpolate
+from scipy import interpolate, stats
 import warnings
 
 import er3t.common
@@ -17,15 +18,23 @@ import er3t.common
 
 
 
-__all__ = ['all_files', 'check_equal', 'send_email', 'nice_array_str', \
-           'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
+__all__ = ['all_files', 'check_equal', \
+           'check_equidistant', 'send_email', \
+           'nice_array_str', 'h5dset_to_pydict', \
+           'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
-           'grid_by_extent', 'grid_by_lonlat', 'get_doy_tag', \
-           'get_satfile_tag', \
-           'download_laads_https', 'download_worldview_rgb'] + \
-          ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
-           'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_t_twostream', 'cal_dist', 'cal_cth_hist']
+           'find_nearest', \
+           'grid_by_extent', 'grid_by_lonlat', \
+           'haversine', 'cal_lonlat_by_dist', 're_extend', \
+           'get_satfile_tag', 'get_doy_tag', \
+           'download_laads_https', 'download_worldview_rgb'] \
+          + \
+          ['combine_alt', 'get_lay_index', \
+           'downscale', 'upscale_2d', 'mmr2vmr', \
+           'cal_rho_air', 'cal_sol_fac', \
+           'cal_mol_ext', 'cal_ext', \
+           'cal_r_twostream', 'cal_t_twostream',\
+           'cal_dist', 'cal_cth_hist']
 
 
 # tools
@@ -66,6 +75,37 @@ def check_equal(a, b, threshold=1.0e-6):
     """
 
     if abs(a-b) >= threshold:
+        return False
+    else:
+        return True
+
+
+
+def check_equidistant(z, threshold=1.0e-6):
+
+    """
+    Check if an array is equidistant (or close to each other)
+
+    Input:
+        z: numpy array
+
+    Output:
+        boolen, true or false
+    """
+
+    if not isinstance(z, np.ndarray):
+        msg = '\nError [check_equidistant]: Only support numpy.ndarray.'
+        raise ValueError(msg)
+
+    if z.size < 2:
+        msg = '\nError [check_equidistant]: Too few data for checking.'
+        raise ValueError(msg)
+    else:
+        dz = z[1:] - z[:-1]
+
+    fac = dz/dz[0]
+
+    if np.abs(fac-1.0).sum() >= threshold:
         return False
     else:
         return True
@@ -257,6 +297,85 @@ def get_data_h4(hdf_dset):
 
 
 
+def find_nearest(x, y, data_2d, x_2d, y_2d, fill_nan=True):
+
+    x = x.ravel()
+    y = y.ravel()
+
+    dx = x_2d[1, 0] - x_2d[0, 0]
+    dy = y_2d[0, 1] - y_2d[0, 0]
+
+    logic_in  = (x>=x_2d[0, 0]) & (x<=x_2d[-1, 0]) & (y>=y_2d[0, 0]) & (y<=y_2d[0, -1])
+    logic_out = np.logical_not(logic_in)
+
+    indices_x = np.int_((x-x_2d[0, 0])//dx)
+    indices_y = np.int_((y-y_2d[0, 0])//dy)
+
+    nearest = np.zeros(x.size, dtype=np.float64)
+    nearest[logic_in] = data_2d[indices_x[logic_in], indices_y[logic_in]]
+
+    # deal with nan data
+    #/----------------------------------------------------------------------------\#
+    logic_nan  = np.isnan(data_2d)
+    logic_good = np.logical_not(logic_nan)
+    if np.isnan(nearest).sum()>0 and fill_nan:
+        data_2d_ = data_2d[logic_good]
+        x_2d_    = x_2d[logic_good]
+        y_2d_    = y_2d[logic_good]
+
+        indices_nan = np.where(np.isnan(nearest))[0]
+        for index in indices_nan:
+            x_ = x[index]
+            y_ = y[index]
+            index_closest = np.argmin(np.abs((x_2d_-x_)**2+(y_2d_-y_)**2))
+            nearest[index] = data_2d_[index_closest]
+
+    nearest[logic_out] = np.nan
+    #\----------------------------------------------------------------------------/#
+
+    return nearest
+
+
+
+def move_correlate(data0, data, Ndx=5, Ndy=5):
+
+    Nx, Ny = data.shape
+    x = np.arange(Nx, dtype=np.int32)
+    y = np.arange(Ny, dtype=np.int32)
+    xx, yy = np.meshgrid(x, y, indexing='ij')
+
+    xx0 = xx.copy()
+    yy0 = yy.copy()
+    valid = np.ones((Nx, Ny), dtype=np.int32)
+
+    corr_coef = np.zeros((2*Ndx+1, 2*Ndy+1), dtype=np.float64)
+    dxx = np.arange(-Ndx, Ndx+1)
+    dyy = np.arange(-Ndy, Ndy+1)
+
+    for idx, dx in enumerate(dxx):
+        xx_ = xx + dx
+        valid[xx_< 0 ] = 0
+        valid[xx_>=Nx] = 0
+        for idy, dy in enumerate(dyy):
+            yy_ = yy + dy
+            valid[yy_< 0 ] = 0
+            valid[yy_>=Ny] = 0
+
+            logic = (valid == 1)
+            data0_ = data0[xx0[logic], yy0[logic]]
+            data_  = data[xx_[logic], yy_[logic]]
+
+            corr_coef[idx, idy] = stats.pearsonr(data0_, data_)[0]
+
+    indices = np.unravel_index(np.argmax(corr_coef, axis=None), corr_coef.shape)
+
+    offset_dx = -dxx[indices[0]]
+    offset_dy = -dyy[indices[1]]
+
+    return offset_dx, offset_dy
+
+
+
 def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
 
     """
@@ -404,6 +523,107 @@ def get_doy_tag(date, day_interval=8):
     doy_tag = '%3.3d' % doys[np.argmin(np.abs(doys-doy))]
 
     return doy_tag
+
+
+
+def haversine(lon1, lon2, lat1, lat2, earth_radius=er3t.common.params['earth_radius']):
+
+    """
+    Calculates the Haversine distance between two points.
+    Args:
+        - lon1: float, longitude of the first point in degrees
+        - lon2: float, longitude of the second point in degrees
+        - lat1: float, latitude of the first point in degrees
+        - lat2: float, latitude of the second point in degrees
+    Returns:
+        Haversine distance in meters
+
+    Reference: https://www.movable-type.co.uk/scripts/latlong.html
+
+    by Vikas Nataraja
+    """
+
+    lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2]) # convert to radians
+
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = np.sin(dlat/2.0)**2.0 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2.0)**2.0
+    c = 2.0 * np.arcsin(np.sqrt(a))
+    r = earth_radius * 1.0e3 # Radius of earth in meters
+    return c * r
+
+
+
+def cal_lonlat_by_dist(lon1, lat1, bearing, distance, earth_radius=er3t.common.params['earth_radius']):
+
+    """
+    Gets lat/lon of the destination point given an initial point,
+    bearing, and the great circle distance between the points.
+    Args:
+        - lon1: float, longitude of the first point in degrees
+        - lat1: float, latitude of the first point in degrees
+        - bearing: float, angle of trajectory.
+                   For instance, 0 is true north, 90 is east, 180 is south, 270 is west.
+        - distance: float, distance between the points in meters
+    Returns:
+        - lon2: float, longitude of the second point in degrees
+        - lat2: float, latitude of the second point in degrees
+
+    Reference: http://www.movable-type.co.uk/scripts/latlong.html
+
+    by Vikas Nataraja
+    """
+
+    lon1, lat1, bearing = map(np.radians, [lon1, lat1, bearing]) # convert to radians
+    delta = distance/(earth_radius * 1.0e3) # delta = dist/(radius of earth)
+    lat2 = np.arcsin(np.sin(lat1) * np.cos(delta) + np.cos(lat1) * np.sin(delta) * np.cos(bearing))
+    lon2 = lon1 + np.arctan2(np.sin(bearing) * np.sin(delta) * np.cos(lat1),
+                             np.cos(delta) - np.sin(lat1) * np.sin(lat2))
+    return np.degrees(lon2), np.degrees(lat2) # convert back to degrees
+
+
+
+def re_extend(extent, width, height, resolution):
+
+    """
+    Re-extends the given extent so that the resulting extent can be gridded
+    to a fixed `resolution` to generate the same image size always (width x height).
+    Useful when downloading data from multiple locations at different latitudes.
+    Args:
+        - extent: list or arr, the extent of the location of interest in WESN format.
+        - width:  int, the width you will be gridding the image to after download.
+        - height: int, the height you will be gridding the image to after download.
+        - resolution: int, the resolution you will be gridding the image to.
+    Returns:
+        - lon2_arr: arr, a 1d array of longitudes gridded to `resolution` and of size `height`.
+        - lat2_arr: arr, a 1d array of latitudes gridded to `resolution` and of size `width`.
+        - extent: list, the new extent that will ensure same image size for the given resolution.
+
+    by Vikas Nataraja
+    """
+
+    west, east, south, north = extent
+    lon2_arr = np.zeros((width))
+    lat2_arr = np.zeros((height))
+    lon1, lat1 = west, south # start at the southwest corner
+    for i in range(width):
+        # start at the southwest corner of the original extent and go east (bearing of 90 deg)
+        # along a great circle distance to get the new coordinates
+        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=90, distance=resolution,)
+        lon2_arr[i] = lon2
+        lon1, lat1 = lon2, lat2
+
+    lon1, lat1 = west, south # re-start at the southwest corner
+    for j in range(height):
+        # start at the southwest corner of the original extent and go north (bearing of 0 deg)
+        # along a great circle distance to get the new coordinates
+        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=0, distance=resolution)
+        lat2_arr[j] = lat2
+        lon1, lat1 = lon2, lat2
+
+    west, east, south, north = lon2_arr[0], lon2_arr[-1]+0.15, lat2_arr[0], lat2_arr[-1]+0.15 # padding
+    return lon2_arr, lat2_arr, [west, east, south, north]
 
 
 
@@ -1219,14 +1439,14 @@ def cal_ext(cot, cer, dz=1.0, Qe=2.0):
         cer: float or array, cloud effective radius in micro meter (10^-6 m)
     """
 
-    # liquid water path
+    # liquid water path [g/m^2]
     # from equation 7.86 in Petty's book
     #           3*lwp
     # cot = ---------------, where rho is the density of water
     #         2*rho*cer
     lwp  = 2.0/3000.0 * cot * cer
 
-    # liquid water content
+    # liquid water content [g/m^3]
     # assume vertically homogeneous distribution of cloud water
     lwc  = lwp / dz
 
@@ -1284,7 +1504,7 @@ def cal_t_twostream(tau, a=0.0, g=0.85, mu=1.0):
 
 
 
-def cal_dist(delta_degree, earth_radius=6378.0):
+def cal_dist(delta_degree, earth_radius=er3t.common.params['earth_radius']):
 
     """
     Calculate distance from longitude/latitude difference

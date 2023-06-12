@@ -70,7 +70,7 @@ class cld_les:
 
         else:
 
-            msg = 'Error [cld_les]: Please check if <%s> exists or provide <fname_nc> to proceed.' % self.fname
+            msg = '\nError [cld_les]: Please check if <%s> exists or provide <fname_nc> to proceed.' % self.fname
             raise OSError(msg)
 
 
@@ -90,7 +90,7 @@ class cld_les:
                 self.lay   = obj.lay
                 self.lev   = obj.lev
             else:
-                msg = 'Error [cld_les]: <%s> is not the correct pickle file to load.' % fname
+                msg = '\nError [cld_les]: <%s> is not the correct pickle file to load.' % fname
                 raise OSError(msg)
 
 
@@ -120,7 +120,7 @@ class cld_les:
         try:
             from netCDF4 import Dataset
         except ImportError:
-            msg = 'Error [cld_les]: Please install <netCDF4> to proceed.'
+            msg = '\nError [cld_les]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
         # read data
@@ -292,14 +292,14 @@ class cld_les:
             msg = '\nWarning [cld_les]: <coarsen=[dnx, dny, dnz, dnt]> will be deprecated in future release (will only support <coarsen=[dnx, dny, dnz]>)'
             warnings.warn(msg)
         else:
-            msg = 'Error [cld_les]: Cannot interpret <coarsen> factors.'
+            msg = '\nError [cld_les]: Cannot interpret <coarsen> factors.'
             raise OSError(msg)
         #\----------------------------------------------------------------------------/#
 
         # downscale in process
         #/----------------------------------------------------------------------------\#
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or (self.Nz%dnz != 0):
-            msg = 'Error [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['temperature']['data'].shape), str(coarsen))
+            msg = '\nError [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['temperature']['data'].shape), str(coarsen))
             raise ValueError(msg)
 
         else:
@@ -327,6 +327,74 @@ class cld_les:
             self.Nx = self.lay['nx']['data']
             self.Ny = self.lay['ny']['data']
         #\----------------------------------------------------------------------------/#
+
+
+    def get_extra_cloud_property(self, cer_mode='top', fill_clear=0.0, overwrite=False):
+
+        """
+        cloud mask
+        cloud effective radius
+        """
+
+        # cloud mask based on cer
+        #/----------------------------------------------------------------------------\#
+        if ('cld_msk' not in self.lay.keys()) or ('cld_msk_2d' not in self.lev.keys()) or (overwrite):
+            cld_msk_3d = np.zeros(self.lay['cer']['data'].shape, dtype=np.int32)
+            cld_msk_3d[self.lay['cer']['data']>0] = 1
+
+            cld_msk_2d = np.sum(cld_msk_3d, axis=-1)
+            cld_msk_2d[cld_msk_2d>0] = 1
+
+            self.lay['cld_msk'] = {'data':cld_msk_3d, 'name':'Cloud Mask (1: Cloud)', 'units':'N/A'}
+            self.lev['cld_msk_2d'] = {'data': cld_msk_2d, 'name': 'Cloud Mask (1: Cloud)', 'units':'N/A'}
+        #\----------------------------------------------------------------------------/#
+
+        # cloud optical thickness
+        #/----------------------------------------------------------------------------\#
+        if ('cot_2d' not in self.lev.keys()) or (overwrite):
+            cot_2d = np.nansum(self.lay['extinction']['data']*self.lay['thickness']['data'][0]*1000.0, axis=-1)
+            cot_2d[cld_msk_2d==0] = fill_clear
+            self.lev['cot_2d'] = {'data': cot_2d, 'name': 'Cloud Optical Thickness', 'units': 'N/A'}
+        #\----------------------------------------------------------------------------/#
+
+        # cloud effective radius <cer_2d>
+        # cloud top height <cth_2d>
+        # cloud base height <cbh_2d>
+        #/----------------------------------------------------------------------------\#
+        if ('cer_2d' not in self.lev.keys()) or ('cth_2d' not in self.lev.keys()) or ('cbh_2d' not in self.lev.keys()) or (overwrite):
+            cer_3d = self.lay['cer']['data'].copy()
+            cer_3d[cld_msk_3d==0] = np.nan
+
+            Nx, Ny, Nz = cer_3d.shape
+
+            z  = self.lay['altitude']['data']
+            dz = self.lay['thickness']['data'][0]
+            z_indice = np.arange(Nz)
+
+            cer_2d = np.zeros((Nx, Ny), dtype=np.float64); cer_2d[...] = fill_clear
+
+            cth_2d = np.zeros((Nx, Ny), dtype=np.float64); cth_2d[...] = fill_clear
+            cbh_2d = np.zeros((Nx, Ny), dtype=np.float64); cbh_2d[...] = fill_clear
+
+            for i in range(Nx):
+                for j in range(Ny):
+                    cer0 = cer_3d[i, j, :]
+                    logic_good = np.logical_not(np.isnan(cer0)) & (cer0>0)
+                    if logic_good.sum() > 0:
+                        if cer_mode.lower() == 'top':
+                            cer_2d[i, j]  = cer0[np.max(z_indice[logic_good])]
+                        elif cer_mode.lower() == 'mean':
+                            cer_2d[i, j] = np.mean(cer0[logic_good])
+
+                        cth_2d[i, j] = z[np.max(z_indice[logic_good])] + dz/2.0
+                        cbh_2d[i, j] = z[np.min(z_indice[logic_good])] - dz/2.0
+
+            self.lev['cer_2d'] = {'data': cer_2d, 'name': 'Cloud Effective Radius', 'units': 'micron'}
+            self.lev['cth_2d'] = {'data': cth_2d, 'name': 'Cloud Top Height'      , 'units': 'km'}
+            self.lev['cbh_2d'] = {'data': cbh_2d, 'name': 'Cloud Base Height'     , 'units': 'km'}
+        #\----------------------------------------------------------------------------/#
+
+
 
 
 

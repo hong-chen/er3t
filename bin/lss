@@ -64,9 +64,9 @@ def get_data_brief(args):
             raise ValueError(msg)
 
     dataTypeDict = {
-            # 'out' : 'IDL',
-            # 'sav' : 'IDL',
-            # 'idl' : 'IDL',
+            'out' : 'IDL',
+            'sav' : 'IDL',
+            'idl' : 'IDL',
 
             'hdf' : 'HDF4',
             'h4'  : 'HDF4',

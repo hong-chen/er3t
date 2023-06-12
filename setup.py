@@ -9,7 +9,7 @@ with open(os.path.join(current_dir, 'README.rst'), encoding='utf-8') as f:
 
 setup(
      name = 'er3t',
-     version = '0.1.0',
+     version = '0.1.1',
      description = 'Education and Research 3D Radiative Transfer Toolbox',
      long_description = long_description,
      classifiers = [
@@ -36,7 +36,7 @@ setup(
          'owslib',
          'cartopy'],
      python_requires = '~=3.9',
-     scripts = ['bin/lss', 'bin/lsa'],
+     scripts = ['bin/lss', 'bin/lsa', 'bin/sdown'],
      include_package_data = True,
      zip_safe = False
      )
