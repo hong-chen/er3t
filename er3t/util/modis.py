@@ -26,7 +26,6 @@ class modis_l1b:
 
     Input:
         fnames=     : keyword argument, default=None, Python list of the file path of the original HDF4 files
-        overwrite=  : keyword argument, default=False, whether to overwrite or not
         extent=     : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
         resolution= : keyword argument, default=None, data spatial resolution in km, can be detected from filename
         verbose=    : keyword argument, default=False, verbose tag
@@ -48,14 +47,11 @@ class modis_l1b:
                  fnames    = None, \
                  extent    = None, \
                  resolution= None, \
-                 quiet     = True, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the hdf files
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
-        self.quiet      = quiet       # quiet tag
-
 
         if resolution is None:
             filename = os.path.basename(fnames[0]).lower()
@@ -84,6 +80,7 @@ class modis_l1b:
             ['rad']
             ['ref']
             ['cnt']
+            ['uct']
         """
 
         try:
