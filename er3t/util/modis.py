@@ -12,7 +12,7 @@ from er3t.util import check_equal, get_doy_tag, get_data_h4
 
 
 
-__all__ = ['modis_l1b', 'modis_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'upscale_modis_lonlat', \
+__all__ = ['modis_l1b', 'modis_l2', 'modis_35_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'upscale_modis_lonlat', \
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag']
 
 
@@ -46,15 +46,12 @@ class modis_l1b:
 
     def __init__(self, \
                  fnames    = None, \
-                 f03       = None, \
                  extent    = None, \
                  resolution= None, \
-                 overwrite = False,\
                  quiet     = True, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the hdf files
-        self.f03        = f03         # geolocation file
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
         self.quiet      = quiet       # quiet tag
@@ -105,27 +102,19 @@ class modis_l1b:
         if check_equal(self.resolution, 0.25):
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
             raw0      = f.select('EV_250_RefSB')
+            uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
             wvl       = np.array([650.0, 860.0])
-            do_region = True
 
         # when resolution equals to 500 m
         elif check_equal(self.resolution, 0.5):
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
             raw0      = f.select('EV_500_RefSB')
+            uct0      = f.select('EV_500_RefSB_Uncert_Indexes')
             wvl       = np.array([470.0, 555.0, 1240.0, 1640.0, 2130.0])
-            do_region = True
 
         # when resolution equals to 1000 m
         elif check_equal(self.resolution, 1.0):
-            if self.f03 is not None:
-                raw0      = f.select('EV_250_Aggr1km_RefSB')
-                wvl       = np.array([650.0, 860.0])
-                do_region = False
-                lon       = self.f03.data['lon']['data']
-                lat       = self.f03.data['lat']['data']
-                logic     = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
-            else:
-                sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented without geolocation file being specified.' % self.resolution)
+            sys.exit('Error   [modis_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
 
         else:
             sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
@@ -133,7 +122,7 @@ class modis_l1b:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        #/----------------------------------------------------------------------------\#
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         if self.extent is None:
 
             if 'actual_range' in lon0.attributes().keys():
@@ -148,45 +137,61 @@ class modis_l1b:
 
         else:
 
-            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
-            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
 
-        if do_region:
-            logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
-            lon       = lon[logic]
-            lat       = lat[logic]
-        #\----------------------------------------------------------------------------/#
+        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+        lon       = lon[logic]
+        lat       = lat[logic]
+        # -------------------------------------------------------------------------------------------------
 
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
-        #/----------------------------------------------------------------------------\#
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         raw = raw0[:][:, logic]
         rad = np.zeros(raw.shape, dtype=np.float64)
         ref = np.zeros(raw.shape, dtype=np.float64)
         cnt = np.zeros(raw.shape, dtype=np.float64)
 
+        # save offsets and scaling factors
+        rad_off = raw0.attributes()['radiance_offsets']
+        rad_sca = raw0.attributes()['radiance_scales']
+
+        ref_off = raw0.attributes()['reflectance_offsets']
+        ref_sca = raw0.attributes()['reflectance_scales']
+
+        cnt_off = raw0.attributes()['corrected_counts_offsets']
+        cnt_sca = raw0.attributes()['corrected_counts_scales']
+
+        uct_spc = uct0.attributes()['specified_uncertainty']
+        uct_sca = uct0.attributes()['scaling_factor']
+
+
+        # Calculate uncertainty 
+        uct     = uct0[:][:, logic]
+        uct_pct = np.zeros(uct.shape, dtype=np.float64)
+
         for i in range(raw.shape[0]):
 
-            rad[i, ...]  = (raw[i, ...] - raw0.attributes()['radiance_offsets'][i])         * raw0.attributes()['radiance_scales'][i]
-            rad[i, ...] /= 1000.0 # convert to W/m^2/nm/sr
-            ref[i, ...]  = (raw[i, ...] - raw0.attributes()['reflectance_offsets'][i])      * raw0.attributes()['reflectance_scales'][i]
-            cnt[i, ...]  = (raw[i, ...] - raw0.attributes()['corrected_counts_offsets'][i]) * raw0.attributes()['corrected_counts_scales'][i]
-
+            rad[i, ...]       = (raw[i, ...] - rad_off[i]) * rad_sca[i]
+            rad[i, ...]      /= 1000.0 # convert to W/m^2/nm/sr
+            ref[i, ...]       = (raw[i, ...] - ref_off[i]) * ref_sca[i]
+            cnt[i, ...]       = (raw[i, ...] - cnt_off[i]) * cnt_sca[i]
+            uct_pct[i, ...]   = uct_spc[i] * np.exp(uct[i] / uct_sca[i]) # convert to percentage
+        
         f.end()
-        #\----------------------------------------------------------------------------/#
+        # -------------------------------------------------------------------------------------------------
 
 
 
         if hasattr(self, 'data'):
 
-            if do_region:
-                self.data['lon'] = dict(name='Longitude'               , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
-                self.data['lat'] = dict(name='Latitude'                , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
-
+            self.data['lon'] = dict(name='Longitude'               , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+            self.data['lat'] = dict(name='Latitude'                , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
             self.data['rad'] = dict(name='Radiance'                , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
             self.data['cnt'] = dict(name='Corrected Counts'        , data=np.hstack((self.data['cnt']['data'], cnt)), units='N/A')
-
+            self.data['uct'] = dict(name='Uncertainty Percentage'  , data=np.hstack((self.data['uct']['data'], uct_pct)), units='N/A')
 
         else:
 
@@ -197,7 +202,7 @@ class modis_l1b:
             self.data['rad'] = dict(name='Radiance'                , data=rad, units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=ref, units='N/A')
             self.data['cnt'] = dict(name='Corrected Counts'        , data=cnt, units='N/A')
-
+            self.data['uct'] = dict(name='Uncertainty Percentage'  , data=uct_pct, units='N/A')
 
     def save_h5(self, fname):
 
@@ -240,7 +245,6 @@ class modis_l2:
                  extent    = None,  \
                  vnames    = [],    \
                  cop_flag  = '',    \
-                 overwrite = False, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the pickle file
@@ -276,7 +280,7 @@ class modis_l2:
         try:
             from pyhdf.SD import SD, SDC
         except ImportError:
-            msg = 'Warning [modis_l1b]: To use \'modis_l1b\', \'pyhdf\' needs to be installed.'
+            msg = 'Warning [modis_l2]: To use \'modis_l2\', \'pyhdf\' needs to be installed.'
             raise ImportError(msg)
 
         if len(cop_flag) == 0:
@@ -326,8 +330,8 @@ class modis_l2:
 
         else:
 
-            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
-            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
 
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]
@@ -446,6 +450,219 @@ class modis_l2:
 
 
 
+class modis_35_l2:
+
+    """
+    Read MODIS level 2 cloud mask product
+    
+    Note: We currently only support processing of the cloud mask bytes at a 1 km resolution only.
+
+    Input:
+        fnames=   : keyword argument, default=None, Python list of the file path of the original HDF4 file
+        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        overwrite=: keyword argument, default=False, whether to overwrite or not
+        verbose=  : keyword argument, default=False, verbose tag
+
+    Output:
+        self.data
+                ['lon']             
+                ['lat']           
+                ['use_qa']          => 0: not useful (discard), 1: useful
+                ['confidence_qa']   => 0: no confidence (do not use), 1: low confidence, 2, ... 7: very high confidence
+                ['cloud_mask_flag'] => 0: not determined, 1: determined
+                ['fov_qa_cat']      => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
+                ['day_night_flag']  => 0: night, 1: day
+                ['sunglint_flag']   => 0: not in sunglint path, 1: in sunglint path
+                ['snow_ice_flag']   => 0: no snow/ice in background, 1: possible snow/ice in background
+                ['land_water_cat']  => 0: water, 1: coastal, 2: desert, 3: land
+                ['lon_5km']        
+                ['lat_5km']
+                
+    References: (Product Page) https://atmosphere-imager.gsfc.nasa.gov/products/cloud-mask
+                (ATBD)         https://atmosphere-imager.gsfc.nasa.gov/sites/default/files/ModAtmo/MOD35_ATBD_Collection6_1.pdf
+                (User Guide)   http://cimss.ssec.wisc.edu/modis/CMUSERSGUIDE.PDF
+    """
+
+
+    ID = 'MODIS Level 2 Cloud Mask Product'
+
+
+    def __init__(self, \
+                 fnames    = None,  \
+                 extent    = None,  \
+                 verbose   = False):
+
+        self.fnames     = fnames      # file name of the pickle file
+        self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
+        self.verbose    = verbose     # verbose tag
+
+        for fname in self.fnames:
+            self.read(fname)
+
+    
+    def extract_data(self, data):
+        """
+        Extract cloud mask (in byte format) flags and categories
+        """
+        if data.dtype != 'uint8':
+            data = data.astype('uint8')
+            
+        data = np.unpackbits(data, bitorder='big', axis=1) # convert to binary
+        
+        # extract flags and categories (*_cat) bit by bit
+        land_water_cat  = 2 * data[:, 0] + 1 * data[:, 1] # convert to a value between 0 and 3
+        snow_ice_flag   = data[:, 2]
+        sunglint_flag   = data[:, 3]
+        day_night_flag  = data[:, 4]
+        fov_qa_cat      = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3
+        cloud_mask_flag = data[:, 7]
+        return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat 
+        
+    
+    def quality_assurance(self, data):
+        """
+        Extract cloud mask QA data to determine confidence
+        """
+        if data.dtype != 'uint8':
+            data = data.astype('uint8')
+        
+        # process qa flags
+        data = np.unpackbits(data, bitorder='big', axis=1)
+        confidence_qa = 4 * data[:, 4] + 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 7 confidence
+        useful_qa = data[:, 7] # usefulness QA flag
+        return useful_qa, confidence_qa
+        
+        
+    def read(self, fname):
+
+        """
+        Read cloud mask flags and tests/categories
+
+        self.data
+            ['lon']             
+            ['lat']           
+            ['use_qa']          => 0: not useful (discard), 1: useful
+            ['confidence_qa']   => 0: no confidence (do not use), 1: low confidence, 2, ... 7: very high confidence
+            ['cloud_mask_flag'] => 0: not determined, 1: determined
+            ['fov_qa_cat']      => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
+            ['day_night_flag']  => 0: night, 1: day
+            ['sunglint_flag']   => 0: not in sunglint path, 1: in sunglint path
+            ['snow_ice_flag']   => 0: no snow/ice in background, 1: possible snow/ice in background
+            ['land_water_cat']  => 0: water, 1: coastal, 2: desert, 3: land
+            ['lon_5km']        
+            ['lat_5km']
+
+        self.logic
+        self.logic_5km
+        """
+
+        try:
+            from pyhdf.SD import SD, SDC
+        except ImportError:
+            msg = 'Warning [modis_35_l2]: To use \'modis_35_l2\', \'pyhdf\' needs to be installed.'
+            raise ImportError(msg)
+        
+        f          = SD(fname, SDC.READ)
+
+        # lon lat
+        lat0       = f.select('Latitude')
+        lon0       = f.select('Longitude')
+        cld_msk0   = f.select('Cloud_Mask')
+        qa0        = f.select('Quality_Assurance')
+        
+
+        # 1. If region (extent=) is specified, filter data within the specified region
+        # 2. If region (extent=) is not specified, filter invalid data
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=True)
+
+        if self.extent is None:
+
+            if 'actual_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['actual_range']
+                lat_range = lat0.attributes()['actual_range']
+            elif 'valid_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['valid_range']
+                lat_range = lat0.attributes()['valid_range']
+            else:
+                lon_range = [-180.0, 180.0]
+                lat_range = [-90.0 , 90.0]
+
+        else:
+
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
+
+        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+        lon       = lon[logic]
+        lat       = lat[logic]
+
+        lon_5km   = lon0[:]
+        lat_5km   = lat0[:]
+        logic_5km = (lon_5km>=lon_range[0]) & (lon_5km<=lon_range[1]) & (lat_5km>=lat_range[0]) & (lat_5km<=lat_range[1])
+        lon_5km   = lon_5km[logic_5km]
+        lat_5km   = lat_5km[logic_5km]
+        
+        
+        # -------------------------------------------------------------------------------------------------
+
+        # Get cloud mask and flag fields 
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        cm0_data = get_data_h4(cld_msk0)
+        qa0_data = get_data_h4(qa0)
+        cm = cm0_data.copy()
+        qa = qa0_data.copy()
+        
+        cm = cm[0, :, :] # read only the first of 6 bytes; rest will be supported in the future if needed
+        cm = np.array(cm[logic], dtype='uint8')
+        cm = cm.reshape((cm.size, 1))
+        cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
+        
+        qa = qa[:, :, 0] # read only the first byte for confidence (indexed differently from cloud mask sds)
+        qa = np.array(qa[logic], dtype='uint8')
+        qa = qa.reshape((qa.size, 1))
+        use_qa, confidence_qa = self.quality_assurance(qa)
+        
+        f.end()
+        # -------------------------------------------------------------------------------------------------
+
+        if hasattr(self, 'data'):
+
+            self.logic[fname] = {'1km':logic, '5km':logic_5km}
+
+            self.data['lon']               = dict(name='Longitude',            data=np.hstack((self.data['lon']['data'], lon)),                         units='degrees')
+            self.data['lat']               = dict(name='Latitude',             data=np.hstack((self.data['lat']['data'], lat)),                         units='degrees')
+            self.data['use_qa']            = dict(name='QA useful',            data=np.hstack((self.data['use_qa']['data'], use_qa)),                   units='N/A')
+            self.data['confidence_qa']     = dict(name='QA Mask confidence',   data=np.hstack((self.data['confidence_qa']['data'], confidence_qa)),     units='N/A')
+            self.data['cloud_mask_flag']   = dict(name='Cloud mask flag',      data=np.hstack((self.data['cloud_mask_flag']['data'], cloud_mask_flag)), units='N/A')
+            self.data['fov_qa_cat']        = dict(name='FOV quality cateogry', data=np.hstack((self.data['fov_qa_cat']['data'], fov_qa_cat)),           units='N/A')
+            self.data['day_night_flag']    = dict(name='Day/night flag',       data=np.hstack((self.data['day_night_flag']['data'], day_night_flag)),   units='N/A')
+            self.data['sunglint_flag']     = dict(name='Sunglint flag',        data=np.hstack((self.data['sunglint_flag']['data'], sunglint_flag)),     units='N/A')
+            self.data['snow_ice_flag']     = dict(name='Snow/ice flag',        data=np.hstack((self.data['snow_flag']['data'], snow_ice_flag)),         units='N/A')
+            self.data['land_water_cat']    = dict(name='Land/water flag',      data=np.hstack((self.data['land_water_cat']['data'], land_water_cat)),   units='N/A')
+            self.data['lon_5km']           = dict(name='Longitude at 5km',     data=np.hstack((self.data['lon_5km']['data'], lon_5km)),                 units='degrees')
+            self.data['lat_5km']           = dict(name='Latitude at 5km',      data=np.hstack((self.data['lat_5km']['data'], lat_5km)),                 units='degrees')
+
+        else:
+            self.logic = {}
+            self.logic[fname] = {'1km':logic, '5km':logic_5km}
+
+            self.data  = {}
+            self.data['lon']             = dict(name='Longitude',            data=lon,             units='degrees')
+            self.data['lat']             = dict(name='Latitude',             data=lat,             units='degrees')
+            self.data['use_qa']          = dict(name='QA useful',            data=use_qa,          units='N/A')         
+            self.data['confidence_qa']   = dict(name='QA Mask confidence',   data=confidence_qa,   units='N/A')
+            self.data['cloud_mask_flag'] = dict(name='Cloud mask flag',      data=cloud_mask_flag, units='N/A')
+            self.data['fov_qa_cat']      = dict(name='FOV quality category', data=fov_qa_cat,      units='N/A')
+            self.data['day_night_flag']  = dict(name='Day/night flag',       data=day_night_flag,  units='N/A')
+            self.data['sunglint_flag']   = dict(name='Sunglint flag',        data=sunglint_flag,   units='N/A')
+            self.data['snow_ice_flag']   = dict(name='Snow/ice flag',        data=snow_ice_flag,   units='N/A')
+            self.data['land_water_cat']  = dict(name='Land/water category',  data=land_water_cat,  units='N/A')
+            self.data['lon_5km']         = dict(name='Longitude at 5km',     data=lon_5km,         units='degrees')
+            self.data['lat_5km']         = dict(name='Latitude at 5km',      data=lat_5km,         units='degrees')
+
+
+
 class modis_03:
 
     """
@@ -545,8 +762,8 @@ class modis_03:
 
         else:
 
-            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
-            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
 
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]
@@ -693,8 +910,8 @@ class modis_09a1:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
         else:
-            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
-            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
 
         lon   = LonLat[..., 0]
         lat   = LonLat[..., 1]
@@ -821,8 +1038,8 @@ class modis_43a3:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
         else:
-            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
-            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
 
         lon   = LonLat[..., 0]
         lat   = LonLat[..., 1]
@@ -1436,20 +1653,6 @@ def get_sinusoidal_grid_tag(lon, lat, verbose=False):
                 tile_tags.append(tile_tag)
 
     return tile_tags
-
-
-
-def find_fname_match(fname0, fnames, index_s=1, index_e=3):
-
-    filename0 = os.path.basename(fname0)
-    pattern  = '.'.join(filename0.split('.')[index_s:index_e+1])
-
-    fname_match = None
-    for fname in fnames:
-        if pattern in fname:
-            fname_match = fname
-
-    return fname_match
 
 #\-----------------------------------------------------------------------------/
 
