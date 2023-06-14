@@ -76,7 +76,7 @@ class modis_l1b:
     def read(self, fname):
 
         """
-        Read radiance/reflectance/corrected counts from the MODIS L1B data
+        Read radiance/reflectance/corrected counts along with their uncertainties from the MODIS L1B data
         self.data
             ['lon']
             ['lat']
@@ -338,8 +338,8 @@ class modis_l2:
 
         else:
 
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]
@@ -770,8 +770,8 @@ class modis_03:
 
         else:
 
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]
@@ -918,8 +918,8 @@ class modis_09a1:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
         else:
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
         lon   = LonLat[..., 0]
         lat   = LonLat[..., 1]
@@ -937,7 +937,7 @@ class modis_09a1:
         try:
             from pyhdf.SD import SD, SDC
         except ImportError:
-            msg = 'Warning [modis_l1b]: To use \'modis_l1b\', \'pyhdf\' needs to be installed.'
+            msg = 'Warning [modis_09a1]: To use \'modis_09a1\', \'pyhdf\' needs to be installed.'
             raise ImportError(msg)
 
         f     = SD(fname, SDC.READ)
@@ -1046,8 +1046,8 @@ class modis_43a3:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
         else:
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
         lon   = LonLat[..., 0]
         lat   = LonLat[..., 1]
