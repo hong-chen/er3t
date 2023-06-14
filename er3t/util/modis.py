@@ -45,13 +45,16 @@ class modis_l1b:
 
     def __init__(self, \
                  fnames    = None, \
+                 f03       = None, \
                  extent    = None, \
                  resolution= None, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the hdf files
+        self.f03        = f03         # geolocation file
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
+
 
         if resolution is None:
             filename = os.path.basename(fnames[0]).lower()
@@ -101,6 +104,7 @@ class modis_l1b:
             raw0      = f.select('EV_250_RefSB')
             uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
             wvl       = np.array([650.0, 860.0])
+            do_region = True
 
         # when resolution equals to 500 m
         elif check_equal(self.resolution, 0.5):
@@ -108,10 +112,19 @@ class modis_l1b:
             raw0      = f.select('EV_500_RefSB')
             uct0      = f.select('EV_500_RefSB_Uncert_Indexes')
             wvl       = np.array([470.0, 555.0, 1240.0, 1640.0, 2130.0])
+            do_region = True
 
         # when resolution equals to 1000 m
         elif check_equal(self.resolution, 1.0):
-            sys.exit('Error   [modis_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
+            if self.f03 is not None:
+                raw0      = f.select('EV_250_Aggr1km_RefSB')
+                wvl       = np.array([650.0, 860.0])
+                do_region = False
+                lon       = self.f03.data['lon']['data']
+                lat       = self.f03.data['lat']['data']
+                logic     = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
+            else:
+                sys.exit('Error   [modis_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
 
         else:
             sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
@@ -134,8 +147,8 @@ class modis_l1b:
 
         else:
 
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]
@@ -182,9 +195,10 @@ class modis_l1b:
 
 
         if hasattr(self, 'data'):
-
-            self.data['lon'] = dict(name='Longitude'               , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
-            self.data['lat'] = dict(name='Latitude'                , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            if do_region:
+                self.data['lon'] = dict(name='Longitude'               , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+                self.data['lat'] = dict(name='Latitude'                , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            
             self.data['rad'] = dict(name='Radiance'                , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
             self.data['cnt'] = dict(name='Corrected Counts'        , data=np.hstack((self.data['cnt']['data'], cnt)), units='N/A')
@@ -207,9 +221,6 @@ class modis_l1b:
         for key in self.data.keys():
             f[key] = self.data[key]['data']
         f.close()
-
-        if not self.quiet:
-            print('Message [modis_l1b]: File \'%s\' is created.' % fname)
 
 
 
@@ -1650,6 +1661,20 @@ def get_sinusoidal_grid_tag(lon, lat, verbose=False):
                 tile_tags.append(tile_tag)
 
     return tile_tags
+
+
+
+def find_fname_match(fname0, fnames, index_s=1, index_e=3):
+
+    filename0 = os.path.basename(fname0)
+    pattern  = '.'.join(filename0.split('.')[index_s:index_e+1])
+
+    fname_match = None
+    for fname in fnames:
+        if pattern in fname:
+            fname_match = fname
+
+    return fname_match
 
 #\-----------------------------------------------------------------------------/
 
