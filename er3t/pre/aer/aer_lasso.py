@@ -1,3 +1,8 @@
+"""
+ This file is planned to be overwritten (as of 2023-06-13,
+ contact Ken Hirata (ken.hirata@colorado.edu) for further details)
+"""
+
 import os
 import sys
 import pickle
