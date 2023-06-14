@@ -124,7 +124,7 @@ class modis_l1b:
                 lat       = self.f03.data['lat']['data']
                 logic     = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
             else:
-                sys.exit('Error   [modis_l1b]: \'resolution=%.1f\' has not been implemented.' % self.resolution)
+                sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented without geolocation file being specified.' % self.resolution)
 
         else:
             sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
@@ -132,7 +132,7 @@ class modis_l1b:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/----------------------------------------------------------------------------\# 
         if self.extent is None:
 
             if 'actual_range' in lon0.attributes().keys():
@@ -157,7 +157,7 @@ class modis_l1b:
 
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/----------------------------------------------------------------------------\#
         raw = raw0[:][:, logic]
         rad = np.zeros(raw.shape, dtype=np.float64)
         ref = np.zeros(raw.shape, dtype=np.float64)
@@ -321,7 +321,7 @@ class modis_l2:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/----------------------------------------------------------------------------\#
         lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=True)
 
         if self.extent is None:
@@ -354,7 +354,7 @@ class modis_l2:
 
 
         # Calculate 1. cot, 2. cer, 3. ctp
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/--------------------------------\#
         ctp0_data     = get_data_h4(ctp0)
         cot0_data     = get_data_h4(cot0)
         cer0_data     = get_data_h4(cer0)
@@ -581,7 +581,7 @@ class modis_35_l2:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/----------------------------------------------------------------------------\#
         lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=True)
 
         if self.extent is None:
@@ -598,8 +598,8 @@ class modis_35_l2:
 
         else:
 
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
+            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]
@@ -614,8 +614,8 @@ class modis_35_l2:
         
         # -------------------------------------------------------------------------------------------------
 
-        # Get cloud mask and flag fields 
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # Get cloud mask and flag fields
+        #/-----------------------------\#
         cm0_data = get_data_h4(cld_msk0)
         qa0_data = get_data_h4(qa0)
         cm = cm0_data.copy()
@@ -626,7 +626,7 @@ class modis_35_l2:
         cm = cm.reshape((cm.size, 1))
         cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
         
-        qa = qa[:, :, 0] # read only the first byte for confidence (indexed differently from cloud mask sds)
+        qa = qa[:, :, 0] # read only the first byte for confidence (indexed differently from cloud mask SDS)
         qa = np.array(qa[logic], dtype='uint8')
         qa = qa.reshape((qa.size, 1))
         use_qa, confidence_qa = self.quality_assurance(qa)
@@ -752,7 +752,7 @@ class modis_03:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/----------------------------------------------------------------------------\#
         lon = lon0[:]
         lat = lat0[:]
 
@@ -780,7 +780,7 @@ class modis_03:
 
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #/---------------------------------------\#
         sza0_data = get_data_h4(sza0)
         saa0_data = get_data_h4(saa0)
         vza0_data = get_data_h4(vza0)
