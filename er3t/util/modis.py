@@ -581,6 +581,7 @@ class modis_35_l2:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
+
         #/----------------------------------------------------------------------------\#
         lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=True)
 
@@ -626,6 +627,7 @@ class modis_35_l2:
         cm = cm.reshape((cm.size, 1))
         cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
         
+
         qa = qa[:, :, 0] # read only the first byte for confidence (indexed differently from cloud mask SDS)
         qa = np.array(qa[logic], dtype='uint8')
         qa = qa.reshape((qa.size, 1))
@@ -668,6 +670,7 @@ class modis_35_l2:
             self.data['land_water_cat']  = dict(name='Land/water category',  data=land_water_cat,  units='N/A')
             self.data['lon_5km']         = dict(name='Longitude at 5km',     data=lon_5km,         units='degrees')
             self.data['lat_5km']         = dict(name='Latitude at 5km',      data=lat_5km,         units='degrees')
+
 
 
 

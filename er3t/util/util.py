@@ -23,6 +23,7 @@ __all__ = ['all_files', 'check_equal', \
            'nice_array_str', 'h5dset_to_pydict', \
            'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
+           'find_nearest', \
            'grid_by_extent', 'grid_by_lonlat', \
            'haversine', 'cal_lonlat_by_dist', 're_extend', \
            'get_satfile_tag', 'get_doy_tag', \
