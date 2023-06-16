@@ -734,12 +734,12 @@ def download_laads_https(
              fdir_out='tmp-data',
              data_format=None,
              run=True,
-             quiet=False,
              verbose=True):
 
 
     """
-    Downloads products from the LAADS Data Archive (DAAC)
+    Downloads products from the LAADS Data Archive (DAAC).
+    
     Input:
         date: Python datetime object
         dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
@@ -921,7 +921,8 @@ def download_lance_https(
 
 
     """
-    Downloads products from the LANCE Near Real Time (NRT) Data Archive (DAAC)
+    Downloads products from the LANCE Near Real Time (NRT) Data Archive (DAAC).
+
     Input:
         date: Python datetime object
         dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
@@ -933,6 +934,7 @@ def download_lance_https(
         data_format=None: e.g., 'hdf'
         run=: boolean type, if true, the command will only be displayed but not run
         verbose=: boolean type, verbose tag
+    
     Output:
         fnames_local: Python list that contains downloaded satellite data file paths
     """
