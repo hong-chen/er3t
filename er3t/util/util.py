@@ -20,27 +20,12 @@ import er3t.common
 __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
-<<<<<<< HEAD
            'find_nearest', 'move_correlate', 'grid_by_extent', 'grid_by_lonlat', \
            'get_doy_tag', 'get_satfile_tag', \
            'download_laads_https', 'download_lance_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_dist', 'cal_cth_hist']
-=======
-           'find_nearest', \
-           'grid_by_extent', 'grid_by_lonlat', \
-           'haversine', 'cal_lonlat_by_dist', 're_extend', \
-           'get_satfile_tag', 'get_doy_tag', \
-           'download_laads_https', 'download_worldview_rgb'] \
-          + \
-          ['combine_alt', 'get_lay_index', \
-           'downscale', 'upscale_2d', 'mmr2vmr', \
-           'cal_rho_air', 'cal_sol_fac', \
-           'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_t_twostream',\
-           'cal_dist', 'cal_cth_hist']
->>>>>>> 5e09fa22fa67bdbf642dafe76c5b8f714d11eebb
 
 
 # tools
