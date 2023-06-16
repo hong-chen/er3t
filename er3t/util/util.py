@@ -747,7 +747,7 @@ def download_laads_https(
         day_interval=: integer, for 8 day data, day_interval=8
         fdir_out=: string, output data directory
         data_format=None: e.g., 'hdf'
-        run=: boolean type, if true, the command will only be displayed but not run
+        run=: boolean type, if False, the command will only be displayed but not run
         verbose=: boolean type, verbose tag
 
     Output:
@@ -930,7 +930,7 @@ def download_lance_https(
         day_interval=: integer, for 8 day data, day_interval=8
         fdir_out=: string, output data directory
         data_format=None: e.g., 'hdf'
-        run=: boolean type, if true, the command will only be displayed but not run
+        run=: boolean type, if False, the command will only be displayed but not run
         verbose=: boolean type, verbose tag
     
     Output:
