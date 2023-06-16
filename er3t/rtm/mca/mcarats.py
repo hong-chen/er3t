@@ -87,7 +87,7 @@ class mcarats_ng:
                  sensor_xpos         = 0.5,                     \
                  sensor_ypos         = 0.5,                     \
 
-                 solver              = '3d',                       \
+                 solver              = '3d',                    \
                  photons             = 1e7,                     \
 
                  verbose             = False,                   \
@@ -244,6 +244,8 @@ class mcarats_ng:
 
         if self.target.lower() in ['f', 'flux', 'irradiance']:
             self.target = 'flux'
+        elif self.target.lower() in ['f0', 'flux0', 'irradiance0']:
+            self.target = 'flux0'
         elif self.target.lower() in ['heating rate', 'hr']:
             self.target = 'heating rate'
         elif self.target.lower() in ['radiance', 'rad']:
@@ -274,6 +276,12 @@ class mcarats_ng:
 
                 self.nml[ig]['Wld_mtarget'] = 1
                 self.nml[ig]['Flx_mflx']    = 3
+                self.nml[ig]['Flx_mhrt']    = 0
+
+            elif self.target == 'flux0' :
+
+                self.nml[ig]['Wld_mtarget'] = 1
+                self.nml[ig]['Flx_mflx']    = 1
                 self.nml[ig]['Flx_mhrt']    = 0
 
             elif self.target == 'heating rate':
