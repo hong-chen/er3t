@@ -1,6 +1,5 @@
 import os
 import sys
-import csv
 import shutil
 import datetime
 import time
