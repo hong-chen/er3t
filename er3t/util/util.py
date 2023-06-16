@@ -739,6 +739,7 @@ def download_laads_https(
 
 
     """
+    Downloads products from the LAADS Data Archive (DAAC)
     Input:
         date: Python datetime object
         dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
@@ -748,9 +749,8 @@ def download_laads_https(
         day_interval=: integer, for 8 day data, day_interval=8
         fdir_out=: string, output data directory
         data_format=None: e.g., 'hdf'
-        run=: boolen type, if true, the command will only be displayed but not run
-        quiet=: Boolen type, quiet tag
-        verbose=: Boolen type, verbose tag
+        run=: boolean type, if true, the command will only be displayed but not run
+        verbose=: boolean type, verbose tag
 
     Output:
         fnames_local: Python list that contains downloaded satellite data file paths
@@ -814,17 +814,16 @@ def download_laads_https(
             commands.append(command)
 
     if not run:
-
-        if not quiet:
-            print('Message [download_laads_https]: The commands to run are:')
-            for command in commands:
-                print(command)
+        print('Message [download_laads_https]: The commands to run are:')
+        for command in commands:
+            print(command)
 
     else:
 
         for i, command in enumerate(commands):
-
-            print('Message [download_laads_https]: Downloading %s ...' % fnames_local[i])
+            
+            if verbose:
+                print('Message [download_laads_https]: Downloading %s ...' % fnames_local[i])
             os.system(command)
 
             fname_local = fnames_local[i]
@@ -847,10 +846,12 @@ def download_laads_https(
                 # the server side
                 #/----------------------------------------------------------------------------\#
                 try:
-                    print('Message [download_laads_https]: Reading \'%s\' ...\n' % fname_local)
+                    if verbose:
+                        print('Message [download_laads_https]: Reading \'%s\' ...\n' % fname_local)
                     f = SD(fname_local, SDC.READ)
                     f.end()
-                    print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+                    if verbose:
+                        print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
 
                 except pyhdf.error.HDF4Error:
                     print('Message [download_laads_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
@@ -860,7 +861,8 @@ def download_laads_https(
                         os.system(command) # re-download
                         f = SD(fname_local, SDC.READ)
                         f.end()
-                        print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+                        if verbose:
+                            print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
                     except pyhdf.error.HDF4Error:
                         print('Message [download_laads_https]: WARNING: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local)
                         fnames_local.remove(fname_local)
@@ -874,7 +876,8 @@ def download_laads_https(
                     from netCDF4 import Dataset
                     f = Dataset(fname_local, 'r')
                     f.close()
-                    print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
+                    if verbose:
+                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
                 except:
                     msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
                     warnings.warn(msg)
@@ -886,7 +889,8 @@ def download_laads_https(
                     import h5py
                     f = h5py.File(fname_local, 'r')
                     f.close()
-                    print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
+                    if verbose:
+                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
                 except:
                     msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
                     warnings.warn(msg)
@@ -996,17 +1000,16 @@ def download_lance_https(
             commands.append(command)
 
     if not run:
-
-        if verbose:
-            print('Message [download_lance_https]: The commands to run are:')
-            for command in commands:
-                print(command)
+        print('Message [download_lance_https]: The commands to run are:')
+        for command in commands:
+            print(command)
 
     else:
 
         for i, command in enumerate(commands):
-
-            print('Message [download_lance_https]: Downloading %s ...' % fnames_local[i])
+            
+            if verbose:
+                print('Message [download_lance_https]: Downloading %s ...' % fnames_local[i])
             os.system(command)
 
             fname_local = fnames_local[i]
@@ -1029,10 +1032,12 @@ def download_lance_https(
                 # the server side
                 #/----------------------------------------------------------------------------\#
                 try:
-                    print('Message [download_lance_https]: Reading \'%s\' ...\n' % fname_local)
+                    if verbose:
+                        print('Message [download_lance_https]: Reading \'%s\' ...\n' % fname_local)
                     f = SD(fname_local, SDC.READ)
                     f.end()
-                    print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
+                    if verbose:
+                        print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
 
                 except pyhdf.error.HDF4Error:
                     print('Message [download_lance_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
@@ -1042,7 +1047,8 @@ def download_lance_https(
                         os.system(command) # re-download
                         f = SD(fname_local, SDC.READ)
                         f.end()
-                        print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
+                        if verbose:
+                            print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
                     except pyhdf.error.HDF4Error:
                         msg = 'Warning [download_lance_https]: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local
                         warnings.warn(msg)
@@ -1057,7 +1063,8 @@ def download_lance_https(
                     from netCDF4 import Dataset
                     f = Dataset(fname_local, 'r')
                     f.close()
-                    print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
+                    if verbose:
+                        print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
                 except:
                     msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
                     warnings.warn(msg)
@@ -1069,7 +1076,8 @@ def download_lance_https(
                     import h5py
                     f = h5py.File(fname_local, 'r')
                     f.close()
-                    print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
+                    if verbose:
+                        print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
                 except:
                     msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
                     warnings.warn(msg)
