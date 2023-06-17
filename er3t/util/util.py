@@ -737,7 +737,7 @@ def download_laads_https(
 
     """
     Downloads products from the LAADS Data Archive (DAAC).
-    
+
     Input:
         date: Python datetime object
         dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
@@ -822,7 +822,7 @@ def download_laads_https(
     else:
 
         for i, command in enumerate(commands):
-            
+
             if verbose:
                 print('Message [download_laads_https]: Downloading %s ...' % fnames_local[i])
             os.system(command)
@@ -932,7 +932,7 @@ def download_lance_https(
         data_format=None: e.g., 'hdf'
         run=: boolean type, if False, the command will only be displayed but not run
         verbose=: boolean type, verbose tag
-    
+
     Output:
         fnames_local: Python list that contains downloaded satellite data file paths
     """
@@ -981,7 +981,7 @@ def download_lance_https(
         except urllib.error.HTTPError:
             msg = '\nError [download_lance_https]: cannot access <%s>.' % fdir_server
             raise OSError(msg)
-    
+
     content  = webpage.read().decode('utf-8')
     lines    = content.split('\n')
 
@@ -1010,7 +1010,7 @@ def download_lance_https(
     else:
 
         for i, command in enumerate(commands):
-            
+
             if verbose:
                 print('Message [download_lance_https]: Downloading %s ...' % fnames_local[i])
             os.system(command)

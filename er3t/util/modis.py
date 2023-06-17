@@ -132,7 +132,7 @@ class modis_l1b:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        #/----------------------------------------------------------------------------\# 
+        #/----------------------------------------------------------------------------\#
         if self.extent is None:
 
             if 'actual_range' in lon0.attributes().keys():
@@ -177,7 +177,7 @@ class modis_l1b:
         uct_sca = uct0.attributes()['scaling_factor']
 
 
-        # Calculate uncertainty 
+        # Calculate uncertainty
         uct     = uct0[:][:, logic]
         uct_pct = np.zeros(uct.shape, dtype=np.float64)
 
@@ -188,7 +188,7 @@ class modis_l1b:
             ref[i, ...]       = (raw[i, ...] - ref_off[i]) * ref_sca[i]
             cnt[i, ...]       = (raw[i, ...] - cnt_off[i]) * cnt_sca[i]
             uct_pct[i, ...]   = uct_spc[i] * np.exp(uct[i] / uct_sca[i]) # convert to percentage
-        
+
         f.end()
         # -------------------------------------------------------------------------------------------------
 
@@ -198,7 +198,7 @@ class modis_l1b:
             if do_region:
                 self.data['lon'] = dict(name='Longitude'               , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
                 self.data['lat'] = dict(name='Latitude'                , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
-            
+
             self.data['rad'] = dict(name='Radiance'                , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
             self.data['cnt'] = dict(name='Corrected Counts'        , data=np.hstack((self.data['cnt']['data'], cnt)), units='N/A')
@@ -462,7 +462,7 @@ class modis_35_l2:
 
     """
     Read MODIS level 2 cloud mask product
-    
+
     Note: We currently only support processing of the cloud mask bytes at a 1 km resolution only.
 
     Input:
@@ -473,8 +473,8 @@ class modis_35_l2:
 
     Output:
         self.data
-                ['lon']             
-                ['lat']           
+                ['lon']
+                ['lat']
                 ['use_qa']          => 0: not useful (discard), 1: useful
                 ['confidence_qa']   => 0: no confidence (do not use), 1: low confidence, 2, ... 7: very high confidence
                 ['cloud_mask_flag'] => 0: not determined, 1: determined
@@ -483,9 +483,9 @@ class modis_35_l2:
                 ['sunglint_flag']   => 0: not in sunglint path, 1: in sunglint path
                 ['snow_ice_flag']   => 0: no snow/ice in background, 1: possible snow/ice in background
                 ['land_water_cat']  => 0: water, 1: coastal, 2: desert, 3: land
-                ['lon_5km']        
+                ['lon_5km']
                 ['lat_5km']
-                
+
     References: (Product Page) https://atmosphere-imager.gsfc.nasa.gov/products/cloud-mask
                 (ATBD)         https://atmosphere-imager.gsfc.nasa.gov/sites/default/files/ModAtmo/MOD35_ATBD_Collection6_1.pdf
                 (User Guide)   http://cimss.ssec.wisc.edu/modis/CMUSERSGUIDE.PDF
@@ -507,16 +507,16 @@ class modis_35_l2:
         for fname in self.fnames:
             self.read(fname)
 
-    
+
     def extract_data(self, data):
         """
         Extract cloud mask (in byte format) flags and categories
         """
         if data.dtype != 'uint8':
             data = data.astype('uint8')
-            
+
         data = np.unpackbits(data, bitorder='big', axis=1) # convert to binary
-        
+
         # extract flags and categories (*_cat) bit by bit
         land_water_cat  = 2 * data[:, 0] + 1 * data[:, 1] # convert to a value between 0 and 3
         snow_ice_flag   = data[:, 2]
@@ -524,31 +524,31 @@ class modis_35_l2:
         day_night_flag  = data[:, 4]
         fov_qa_cat      = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3
         cloud_mask_flag = data[:, 7]
-        return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat 
-        
-    
+        return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat
+
+
     def quality_assurance(self, data):
         """
         Extract cloud mask QA data to determine confidence
         """
         if data.dtype != 'uint8':
             data = data.astype('uint8')
-        
+
         # process qa flags
         data = np.unpackbits(data, bitorder='big', axis=1)
         confidence_qa = 4 * data[:, 4] + 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 7 confidence
         useful_qa = data[:, 7] # usefulness QA flag
         return useful_qa, confidence_qa
-        
-        
+
+
     def read(self, fname):
 
         """
         Read cloud mask flags and tests/categories
 
         self.data
-            ['lon']             
-            ['lat']           
+            ['lon']
+            ['lat']
             ['use_qa']          => 0: not useful (discard), 1: useful
             ['confidence_qa']   => 0: no confidence (do not use), 1: low confidence, 2, ... 7: very high confidence
             ['cloud_mask_flag'] => 0: not determined, 1: determined
@@ -557,7 +557,7 @@ class modis_35_l2:
             ['sunglint_flag']   => 0: not in sunglint path, 1: in sunglint path
             ['snow_ice_flag']   => 0: no snow/ice in background, 1: possible snow/ice in background
             ['land_water_cat']  => 0: water, 1: coastal, 2: desert, 3: land
-            ['lon_5km']        
+            ['lon_5km']
             ['lat_5km']
 
         self.logic
@@ -569,7 +569,7 @@ class modis_35_l2:
         except ImportError:
             msg = 'Warning [modis_35_l2]: To use \'modis_35_l2\', \'pyhdf\' needs to be installed.'
             raise ImportError(msg)
-        
+
         f          = SD(fname, SDC.READ)
 
         # lon lat
@@ -577,7 +577,7 @@ class modis_35_l2:
         lon0       = f.select('Longitude')
         cld_msk0   = f.select('Cloud_Mask')
         qa0        = f.select('Quality_Assurance')
-        
+
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
@@ -611,8 +611,8 @@ class modis_35_l2:
         logic_5km = (lon_5km>=lon_range[0]) & (lon_5km<=lon_range[1]) & (lat_5km>=lat_range[0]) & (lat_5km<=lat_range[1])
         lon_5km   = lon_5km[logic_5km]
         lat_5km   = lat_5km[logic_5km]
-        
-        
+
+
         # -------------------------------------------------------------------------------------------------
 
         # Get cloud mask and flag fields
@@ -621,18 +621,18 @@ class modis_35_l2:
         qa0_data = get_data_h4(qa0)
         cm = cm0_data.copy()
         qa = qa0_data.copy()
-        
+
         cm = cm[0, :, :] # read only the first of 6 bytes; rest will be supported in the future if needed
         cm = np.array(cm[logic], dtype='uint8')
         cm = cm.reshape((cm.size, 1))
         cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
-        
+
 
         qa = qa[:, :, 0] # read only the first byte for confidence (indexed differently from cloud mask SDS)
         qa = np.array(qa[logic], dtype='uint8')
         qa = qa.reshape((qa.size, 1))
         use_qa, confidence_qa = self.quality_assurance(qa)
-        
+
         f.end()
         # -------------------------------------------------------------------------------------------------
 
@@ -660,7 +660,7 @@ class modis_35_l2:
             self.data  = {}
             self.data['lon']             = dict(name='Longitude',            data=lon,             units='degrees')
             self.data['lat']             = dict(name='Latitude',             data=lat,             units='degrees')
-            self.data['use_qa']          = dict(name='QA useful',            data=use_qa,          units='N/A')         
+            self.data['use_qa']          = dict(name='QA useful',            data=use_qa,          units='N/A')
             self.data['confidence_qa']   = dict(name='QA Mask confidence',   data=confidence_qa,   units='N/A')
             self.data['cloud_mask_flag'] = dict(name='Cloud mask flag',      data=cloud_mask_flag, units='N/A')
             self.data['fov_qa_cat']      = dict(name='FOV quality category', data=fov_qa_cat,      units='N/A')
