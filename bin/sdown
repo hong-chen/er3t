@@ -405,7 +405,7 @@ if __name__ == '__main__':
                         'MYDRGB  :  True-Color RGB (Aqua)  imagery, useful for visuzliation\n'\
                         'MCD43   :  Level 3 surface product MCD43A3\n'\
                         '\n\nTo download multiple products at a time:\n'\
-                        '--product MOD021KM MYD02HKM MYD06_l2\n \n')
+                        '--products MOD021KM MYD02HKM MYD06_l2\n \n')
 
     args = parser.parse_args()
 

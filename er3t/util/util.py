@@ -1,11 +1,8 @@
 import os
 import sys
-import csv
-import math
 import shutil
 import datetime
 import time
-import importlib
 import requests
 import urllib.request
 from io import StringIO
@@ -18,23 +15,15 @@ import er3t.common
 
 
 
-__all__ = ['all_files', 'check_equal', \
-           'check_equidistant', 'send_email', \
-           'nice_array_str', 'h5dset_to_pydict', \
-           'dtime_to_jday', 'jday_to_dtime', \
+__all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
+           'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
-           'find_nearest', \
-           'grid_by_extent', 'grid_by_lonlat', \
-           'haversine', 'cal_lonlat_by_dist', 're_extend', \
-           'get_satfile_tag', 'get_doy_tag', \
-           'download_laads_https', 'download_worldview_rgb'] \
-          + \
-          ['combine_alt', 'get_lay_index', \
-           'downscale', 'upscale_2d', 'mmr2vmr', \
-           'cal_rho_air', 'cal_sol_fac', \
-           'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_t_twostream',\
-           'cal_dist', 'cal_cth_hist']
+           'find_nearest', 'move_correlate', 'grid_by_extent', 'grid_by_lonlat', \
+           'get_doy_tag', 'get_satfile_tag', \
+           'download_laads_https', 'download_lance_https', 'download_worldview_rgb'] + \
+          ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
+           'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
+           'cal_r_twostream', 'cal_t_twostream', 'cal_dist', 'cal_cth_hist']
 
 
 # tools
@@ -44,10 +33,8 @@ def all_files(root_dir):
 
     """
     Go through all the subdirectories of the input directory and return all the file paths
-
     Input:
         root_dir: string, the directory to walk through
-
     Output:
         allfiles: Python list, all the file paths under the 'root_dir'
     """
@@ -65,11 +52,9 @@ def check_equal(a, b, threshold=1.0e-6):
 
     """
     Check if two values are equal (or close to each other)
-
     Input:
         a: integer or float, value of a
         b: integer or float, value of b
-
     Output:
         boolen, true or false
     """
@@ -85,10 +70,8 @@ def check_equidistant(z, threshold=1.0e-6):
 
     """
     Check if an array is equidistant (or close to each other)
-
     Input:
         z: numpy array
-
     Output:
         boolen, true or false
     """
@@ -121,12 +104,10 @@ def send_email(
 
     """
     Send email using default account er3t@hongchen.cz
-
     Input:
         content= : string, text content of the email
         files=   : Python list, contains file paths of the email attachments
         receiver=: string, reveiver's email address
-
     Output:
         None
     """
@@ -174,10 +155,8 @@ def nice_array_str(array1d, numPerLine=6):
 
     """
     Covert 1d array to string
-
     Input:
         array1d: numpy array, 1d array to be converted to string
-
     Output:
         converted string
     """
@@ -211,11 +190,8 @@ def h5dset_to_pydict(dset):
     """
     Retreive information about the H5 dataset and
     store them into a Python dictionary
-
     e.g.,
-
     The dataset dset = f['mean/f_down'] can be converted into
-
     variable = {
                 'data' : f_down    ,                # numpy.array
                 'units': 'W/m^2/nm',                # string
@@ -238,10 +214,8 @@ def dtime_to_jday(dtime):
 
     """
     Purpose: convert regular date and time (Python <datetime.datetime> object) to julian day (referenced to 0001-01-01)
-
     Input:
         dtime: Python <datetime.datetime> object
-
     Output:
         jday: julian day (float number)
     """
@@ -256,10 +230,8 @@ def jday_to_dtime(jday):
 
     """
     Purpose: convert julian day (referenced to 0001-01-01) to regular date and time (Python <datetime.datetime> object)
-
     Input:
         jday: julian day (float number)
-
     Output:
         dtime: Python <datetime.datetime> object
     """
@@ -380,7 +352,6 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
 
     """
     Grid irregular data into a regular grid by input 'extent' (westmost, eastmost, southmost, northmost)
-
     Input:
         lon: numpy array, input longitude to be gridded
         lat: numpy array, input latitude to be gridded
@@ -388,12 +359,10 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
         extent=: Python list, [westmost, eastmost, southmost, northmost]
         NxNy=: Python list, [Nx, Ny], lon_2d = np.linspace(westmost, eastmost, Nx)
                                       lat_2d = np.linspace(southmost, northmost, Ny)
-
     Output:
         lon_2d : numpy array, gridded longitude
         lat_2d : numpy array, gridded latitude
         data_2d: numpy array, gridded data
-
     How to use:
         After read in the longitude latitude and data into lon0, lat0, data0
         lon, lat data = grid_by_extent(lon0, lat0, data0, extent=[10, 15, 10, 20])
@@ -443,19 +412,16 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest'):
 
     """
     Grid irregular data into a regular grid by input longitude and latitude
-
     Input:
         lon: numpy array, input longitude to be gridded
         lat: numpy array, input latitude to be gridded
         data: numpy array, input data to be gridded
         lon_1d=: numpy array, the longitude of the grids
         lat_1d=: numpy array, the latitude of the grids
-
     Output:
         lon_2d : numpy array, gridded longitude
         lat_2d : numpy array, gridded latitude
         data_2d: numpy array, gridded data
-
     How to use:
         After read in the longitude latitude and data into lon0, lat0, data0
         lon, lat data = grid_by_lonlat(lon0, lat0, data0, lon_1d=np.linspace(10.0, 15.0, 100), lat_1d=np.linspace(10.0, 20.0, 100))
@@ -505,13 +471,10 @@ def get_doy_tag(date, day_interval=8):
 
     """
     Get day of year tag, e.g., 078, for a given day
-
     Input:
         date: datetime/date object, e.g., datetime.datetime(2000, 1, 1)
-
     Output:
         doy_tag: string, closest day of the year, e.g. '097'
-
     """
 
     doy = date.timetuple().tm_yday
@@ -523,107 +486,6 @@ def get_doy_tag(date, day_interval=8):
     doy_tag = '%3.3d' % doys[np.argmin(np.abs(doys-doy))]
 
     return doy_tag
-
-
-
-def haversine(lon1, lon2, lat1, lat2, earth_radius=er3t.common.params['earth_radius']):
-
-    """
-    Calculates the Haversine distance between two points.
-    Args:
-        - lon1: float, longitude of the first point in degrees
-        - lon2: float, longitude of the second point in degrees
-        - lat1: float, latitude of the first point in degrees
-        - lat2: float, latitude of the second point in degrees
-    Returns:
-        Haversine distance in meters
-
-    Reference: https://www.movable-type.co.uk/scripts/latlong.html
-
-    by Vikas Nataraja
-    """
-
-    lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2]) # convert to radians
-
-    # haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = np.sin(dlat/2.0)**2.0 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2.0)**2.0
-    c = 2.0 * np.arcsin(np.sqrt(a))
-    r = earth_radius * 1.0e3 # Radius of earth in meters
-    return c * r
-
-
-
-def cal_lonlat_by_dist(lon1, lat1, bearing, distance, earth_radius=er3t.common.params['earth_radius']):
-
-    """
-    Gets lat/lon of the destination point given an initial point,
-    bearing, and the great circle distance between the points.
-    Args:
-        - lon1: float, longitude of the first point in degrees
-        - lat1: float, latitude of the first point in degrees
-        - bearing: float, angle of trajectory.
-                   For instance, 0 is true north, 90 is east, 180 is south, 270 is west.
-        - distance: float, distance between the points in meters
-    Returns:
-        - lon2: float, longitude of the second point in degrees
-        - lat2: float, latitude of the second point in degrees
-
-    Reference: http://www.movable-type.co.uk/scripts/latlong.html
-
-    by Vikas Nataraja
-    """
-
-    lon1, lat1, bearing = map(np.radians, [lon1, lat1, bearing]) # convert to radians
-    delta = distance/(earth_radius * 1.0e3) # delta = dist/(radius of earth)
-    lat2 = np.arcsin(np.sin(lat1) * np.cos(delta) + np.cos(lat1) * np.sin(delta) * np.cos(bearing))
-    lon2 = lon1 + np.arctan2(np.sin(bearing) * np.sin(delta) * np.cos(lat1),
-                             np.cos(delta) - np.sin(lat1) * np.sin(lat2))
-    return np.degrees(lon2), np.degrees(lat2) # convert back to degrees
-
-
-
-def re_extend(extent, width, height, resolution):
-
-    """
-    Re-extends the given extent so that the resulting extent can be gridded
-    to a fixed `resolution` to generate the same image size always (width x height).
-    Useful when downloading data from multiple locations at different latitudes.
-    Args:
-        - extent: list or arr, the extent of the location of interest in WESN format.
-        - width:  int, the width you will be gridding the image to after download.
-        - height: int, the height you will be gridding the image to after download.
-        - resolution: int, the resolution you will be gridding the image to.
-    Returns:
-        - lon2_arr: arr, a 1d array of longitudes gridded to `resolution` and of size `height`.
-        - lat2_arr: arr, a 1d array of latitudes gridded to `resolution` and of size `width`.
-        - extent: list, the new extent that will ensure same image size for the given resolution.
-
-    by Vikas Nataraja
-    """
-
-    west, east, south, north = extent
-    lon2_arr = np.zeros((width))
-    lat2_arr = np.zeros((height))
-    lon1, lat1 = west, south # start at the southwest corner
-    for i in range(width):
-        # start at the southwest corner of the original extent and go east (bearing of 90 deg)
-        # along a great circle distance to get the new coordinates
-        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=90, distance=resolution,)
-        lon2_arr[i] = lon2
-        lon1, lat1 = lon2, lat2
-
-    lon1, lat1 = west, south # re-start at the southwest corner
-    for j in range(height):
-        # start at the southwest corner of the original extent and go north (bearing of 0 deg)
-        # along a great circle distance to get the new coordinates
-        lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=0, distance=resolution)
-        lat2_arr[j] = lat2
-        lon1, lat1 = lon2, lat2
-
-    west, east, south, north = lon2_arr[0], lon2_arr[-1]+0.15, lat2_arr[0], lat2_arr[-1]+0.15 # padding
-    return lon2_arr, lat2_arr, [west, east, south, north]
 
 
 
@@ -647,7 +509,6 @@ def get_satfile_tag(
         server=: string, data server
         fdir_prefix=: string, data directory on NASA server
         verbose=: Boolen type, verbose tag
-
     output:
         filename_tags: Python list of file name tags
     """
@@ -871,11 +732,12 @@ def download_laads_https(
              fdir_out='tmp-data',
              data_format=None,
              run=True,
-             quiet=False,
              verbose=True):
 
 
     """
+    Downloads products from the LAADS Data Archive (DAAC).
+    
     Input:
         date: Python datetime object
         dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
@@ -885,9 +747,8 @@ def download_laads_https(
         day_interval=: integer, for 8 day data, day_interval=8
         fdir_out=: string, output data directory
         data_format=None: e.g., 'hdf'
-        run=: boolen type, if true, the command will only be displayed but not run
-        quiet=: Boolen type, quiet tag
-        verbose=: Boolen type, verbose tag
+        run=: boolean type, if False, the command will only be displayed but not run
+        verbose=: boolean type, verbose tag
 
     Output:
         fnames_local: Python list that contains downloaded satellite data file paths
@@ -931,7 +792,7 @@ def download_laads_https(
         try:
             webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
         except urllib.error.HTTPError:
-            msg = '\nError [download_laads_https]: cannot access <%s>.' % fdir_server
+            msg = '\nError [download_laads_https]: cannot access <%s>.' % fname_server
             raise OSError(msg)
     content  = webpage.read().decode('utf-8')
     lines    = content.split('\n')
@@ -948,20 +809,22 @@ def download_laads_https(
                 command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
             elif command_line_tool == 'wget':
                 command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
+            else:
+                msg = '\nError [download_laads_https]: command line tool %s is not currently supported. Please use one of `curl` or `wget`.' % command_line_tool
+                raise OSError(msg)
             commands.append(command)
 
     if not run:
-
-        if not quiet:
-            print('Message [download_laads_https]: The commands to run are:')
-            for command in commands:
-                print(command)
+        print('Message [download_laads_https]: The commands to run are:')
+        for command in commands:
+            print(command)
 
     else:
 
         for i, command in enumerate(commands):
-
-            print('Message [download_laads_https]: Downloading %s ...' % fnames_local[i])
+            
+            if verbose:
+                print('Message [download_laads_https]: Downloading %s ...' % fnames_local[i])
             os.system(command)
 
             fname_local = fnames_local[i]
@@ -984,10 +847,12 @@ def download_laads_https(
                 # the server side
                 #/----------------------------------------------------------------------------\#
                 try:
-                    print('Message [download_laads_https]: Reading \'%s\' ...\n' % fname_local)
+                    if verbose:
+                        print('Message [download_laads_https]: Reading \'%s\' ...\n' % fname_local)
                     f = SD(fname_local, SDC.READ)
                     f.end()
-                    print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+                    if verbose:
+                        print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
 
                 except pyhdf.error.HDF4Error:
                     print('Message [download_laads_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
@@ -997,7 +862,8 @@ def download_laads_https(
                         os.system(command) # re-download
                         f = SD(fname_local, SDC.READ)
                         f.end()
-                        print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+                        if verbose:
+                            print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
                     except pyhdf.error.HDF4Error:
                         print('Message [download_laads_https]: WARNING: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local)
                         fnames_local.remove(fname_local)
@@ -1011,7 +877,8 @@ def download_laads_https(
                     from netCDF4 import Dataset
                     f = Dataset(fname_local, 'r')
                     f.close()
-                    print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
+                    if verbose:
+                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
                 except:
                     msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
                     warnings.warn(msg)
@@ -1023,7 +890,8 @@ def download_laads_https(
                     import h5py
                     f = h5py.File(fname_local, 'r')
                     f.close()
-                    print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
+                    if verbose:
+                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
                 except:
                     msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
                     warnings.warn(msg)
@@ -1035,6 +903,194 @@ def download_laads_https(
 
     return fnames_local
 
+
+
+def download_lance_https(
+             date,
+             dataset_tag,
+             filename_tag,
+             server='https://nrt3.modaps.eosdis.nasa.gov/api/v2/content',
+             fdir_prefix='/archives/allData',
+             day_interval=1,
+             fdir_out='tmp-data',
+             data_format=None,
+             run=True,
+             verbose=True):
+
+
+    """
+    Downloads products from the LANCE Near Real Time (NRT) Data Archive (DAAC).
+
+    Input:
+        date: Python datetime object
+        dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
+        filename_tag: string, string pattern in the filename, e.g. '.2035.'
+        server=: string, data server
+        fdir_prefix=: string, data directory on NASA server
+        day_interval=: integer, for 8 day data, day_interval=8
+        fdir_out=: string, output data directory
+        data_format=None: e.g., 'hdf'
+        run=: boolean type, if False, the command will only be displayed but not run
+        verbose=: boolean type, verbose tag
+    
+    Output:
+        fnames_local: Python list that contains downloaded satellite data file paths
+    """
+
+    try:
+        token = os.environ['EARTHDATA_TOKEN']
+    except KeyError:
+        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
+        if verbose:
+            msg = '\nWarning [download_lance_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+            warnings.warn(msg)
+
+    if shutil.which('curl'):
+        command_line_tool = 'curl'
+    elif shutil.which('wget'):
+        command_line_tool = 'wget'
+    else:
+        msg = '\nError [download_lance_https]: <download_lance_https> needs <curl> or <wget> to be installed.'
+        raise OSError(msg)
+
+    year_str = str(date.timetuple().tm_year).zfill(4)
+    if day_interval == 1:
+        doy_str  = str(date.timetuple().tm_yday).zfill(3)
+    else:
+        doy_str = get_doy_tag(date, day_interval=day_interval)
+
+    fdir_csv_prefix = '/details/allData'
+    fdir_csv_format = '?fields=all&formats=csv'
+    fdir_csv_data   = '%s/%s/%s/%s%s' % (fdir_csv_prefix, dataset_tag, year_str, doy_str, fdir_csv_format)
+
+    fdir_data       = '%s/%s/%s/%s.csv' % (fdir_prefix, dataset_tag, year_str, doy_str)
+    fdir_server     = server + fdir_data
+    fdir_csv_server = server + fdir_csv_data
+
+    #\----------------------------------------------------------------------------/#
+    # Use error handling to overcome occasional issues with LANCE DAAC servers
+    #/----------------------------------------------------------------------------\#
+    try:
+        webpage = urllib.request.urlopen(fdir_csv_server)
+    except urllib.error.HTTPError:
+        msg = "The LANCE DAAC servers appear to be down or there could be an error with the fetch request. Attempting again in 10 seconds..."
+        print(msg)
+        time.sleep(10)
+        try:
+            webpage = urllib.request.urlopen(fdir_csv_server)
+        except urllib.error.HTTPError:
+            msg = '\nError [download_lance_https]: cannot access <%s>.' % fdir_server
+            raise OSError(msg)
+    
+    content  = webpage.read().decode('utf-8')
+    lines    = content.split('\n')
+
+    commands = []
+    fnames_local = []
+    for line in lines:
+        filename = line.strip().split(',')[0]
+        if (filename_tag in filename) and (filename.endswith('.hdf')):
+            fname_server = '%s/%s' % (fdir_server, filename)
+            fname_local  = '%s/%s' % (fdir_out, filename)
+            fnames_local.append(fname_local)
+            if command_line_tool == 'curl':
+                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
+            elif command_line_tool == 'wget':
+                command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
+            else:
+                msg = '\nError [download_lance_https]: command line tool %s is not currently supported. Please use one of `curl` or `wget`.' % command_line_tool
+                raise OSError(msg)
+            commands.append(command)
+
+    if not run:
+        print('Message [download_lance_https]: The commands to run are:')
+        for command in commands:
+            print(command)
+
+    else:
+
+        for i, command in enumerate(commands):
+            
+            if verbose:
+                print('Message [download_lance_https]: Downloading %s ...' % fnames_local[i])
+            os.system(command)
+
+            fname_local = fnames_local[i]
+
+            if data_format is None:
+                data_format = os.path.basename(fname_local).split('.')[-1]
+
+            if data_format == 'hdf':
+
+                try:
+                    from pyhdf.SD import SD, SDC
+                    import pyhdf
+                except ImportError:
+                    msg = '\nError [download_lance_https]: To use \'download_lance_https\', \'pyhdf\' needs to be installed.'
+                    raise ImportError(msg)
+
+                #\----------------------------------------------------------------------------/#
+                # Attempt to download files. In case of an HDF4Error, attempt to re-download
+                # afer a time period as this could be caused by an internal timeout at
+                # the server side
+                #/----------------------------------------------------------------------------\#
+                try:
+                    if verbose:
+                        print('Message [download_lance_https]: Reading \'%s\' ...\n' % fname_local)
+                    f = SD(fname_local, SDC.READ)
+                    f.end()
+                    if verbose:
+                        print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
+
+                except pyhdf.error.HDF4Error:
+                    print('Message [download_lance_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
+                    try:
+                        os.remove(fname_local)
+                        time.sleep(10) # wait 10 seconds
+                        os.system(command) # re-download
+                        f = SD(fname_local, SDC.READ)
+                        f.end()
+                        if verbose:
+                            print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
+                    except pyhdf.error.HDF4Error:
+                        msg = 'Warning [download_lance_https]: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local
+                        warnings.warn(msg)
+                        fnames_local.remove(fname_local)
+                        os.remove(fname_local)
+                        continue
+
+
+            elif data_format == 'nc':
+
+                try:
+                    from netCDF4 import Dataset
+                    f = Dataset(fname_local, 'r')
+                    f.close()
+                    if verbose:
+                        print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
+                except:
+                    msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
+                    warnings.warn(msg)
+
+
+            elif data_format == 'h5':
+
+                try:
+                    import h5py
+                    f = h5py.File(fname_local, 'r')
+                    f.close()
+                    if verbose:
+                        print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
+                except:
+                    msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
+                    warnings.warn(msg)
+
+            else:
+
+                msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
+                warnings.warn(msg)
+
+    return fnames_local
 
 
 def download_worldview_rgb(
@@ -1052,7 +1108,6 @@ def download_worldview_rgb(
 
     """
     Purpose: download satellite RGB imagery from NASA Worldview for a user-specified date and region
-
     Inputs:
         date: date object of <datetime.datetime>
         extent: rectangular region, Python list of [west_most_longitude, east_most_longitude, south_most_latitude, north_most_latitude]
@@ -1064,10 +1119,8 @@ def download_worldview_rgb(
         coastline=: boolen type, whether to plot coastline
         fmt=: can be either 'png' or 'h5'
         run=: boolen type, whether to plot
-
     Output:
         fname: file name of the saved RGB file (png format)
-
     Usage example:
         import datetime
         fname = download_wordview_rgb(datetime.datetime(2022, 5, 18), [-94.26,-87.21,31.86,38.91], instrument='modis', satellite='aqua')
@@ -1192,12 +1245,10 @@ def get_lay_index(lay, lay_ref):
 
     """
     Check where the input 'lay' locates in input 'lay_ref'.
-
     Input:
         lay    : numpy array, layer height
         lay_ref: numpy array, reference layer height
         threshold=: float, threshold of the largest difference between 'lay' and 'lay_ref'
-
     Output:
         layer_index: numpy array, indices for where 'lay' locates in 'lay_ref'
     """
@@ -1226,15 +1277,12 @@ def downscale(ndarray, new_shape, operation='mean'):
     """
     Bins an ndarray in all axes based on the target shape, by summing or
         averaging.
-
     Number of output dimensions must match number of input dimensions and
         new axes must divide old ones.
-
     Input:
         ndarray: numpy array, any dimension of array to be downscaled
         new_shape: Python tuple or list, new dimension/shape of the array
         operation=: string, can be 'mean', 'sum', or 'max', default='mean'
-
     Output:
         ndarray: numpy array, downscaled array
     """
@@ -1272,13 +1320,10 @@ def mmr2vmr(mmr):
 
     """
     Convert water vapor mass mixing ratio to volume mixing ratio (=partial pressure ratio)
-
     Input:
         mmr: numpy array, mass mixing ratio
-
     Output:
         vmr: numpy array, volume mixing ratio
-
     """
 
     Md  = 0.0289644   # molar mass of dry air  [kg/mol]
@@ -1294,15 +1339,12 @@ def cal_rho_air(p, T, vmr):
 
     """
     Calculate the density of humid air [kg/m3]
-
     Input:
         p: numpy array, pressure in hPa
         T: numpy array, temperature in K
         vmr: numpy array, water vapor mixing ratio
-
     Output:
         rho: numpy array, density of humid air in kg/m3
-
     """
 
     # pressure [hPa], temperature [K], vapor volume mixing ratio (=partial pressure ratio)
@@ -1330,13 +1372,10 @@ def cal_sol_fac(dtime):
 
     """
     Calculate solar factor that accounts for Sun-Earth distance
-
     Input:
         dtime: datetime.datetime object
-
     Output:
         solfac: solar factor
-
     """
 
     doy = dtime.timetuple().tm_yday
@@ -1353,17 +1392,14 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
 
     """
     Calculate solar angles - solar zenith angle and solar azimuth angle
-
     Input:
         julian_day: julian data (day count starting from 0001-01-01)
         longitude: longitude in degree
         latitude: latitude in degree
         altitude: altitude in meter
-
     Output:
         sza: solar zenith angle
         saa: solar azimuth angle
-
     """
 
     dateRef = datetime.datetime(1, 1, 1)
@@ -1411,14 +1447,11 @@ def cal_mol_ext(wv0, pz1, pz2):
         wv0: wavelength (in microns) --- can be an array
         pz1: numpy array, Pressure of lower layer (hPa)
         pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
-
     Output:
         tauray: extinction
-
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
     in Python program:
         result=bodhaine(0.5,1000,4)
-
     Note: If you input an array of wavelengths, the result will also be an
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
@@ -1465,13 +1498,11 @@ def cal_r_twostream(tau, a=0.0, g=0.85, mu=1.0):
 
     """
     Two-stream approximation of reflectance (no absorption)
-
     Input:
         tau: optical thickness
         a: surface albedo
         g: asymmetry parameter
         mu: cosine of solar zenith angle
-
     Output:
         Reflectance
     """
@@ -1487,12 +1518,10 @@ def cal_t_twostream(tau, a=0.0, g=0.85, mu=1.0):
 
     """
     Two-stream approximation of transmittance (no absorption)
-
     Input:
         a: surface albedo
         g: asymmetry parameter
         mu: cosine of solar zenith angle
-
     Output:
         Transmittance
     """
@@ -1504,14 +1533,12 @@ def cal_t_twostream(tau, a=0.0, g=0.85, mu=1.0):
 
 
 
-def cal_dist(delta_degree, earth_radius=er3t.common.params['earth_radius']):
+def cal_dist(delta_degree, earth_radius=6378.0):
 
     """
     Calculate distance from longitude/latitude difference
-
     Input:
         delta_degree: float or numpy array
-
     Output:
         dist: float or numpy array, distance in km
     """
@@ -1526,10 +1553,8 @@ def cal_cth_hist(cth):
 
     """
     Calculate the cloud top height based on the peak of histograms
-
     Input:
         cth: cloud top height
-
     Output:
         cth_peak: cloud top height of the peak of histogram
     """
@@ -1544,3 +1569,4 @@ def cal_cth_hist(cth):
 if __name__ == '__main__':
 
     pass
+
