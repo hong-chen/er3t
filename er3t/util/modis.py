@@ -12,7 +12,7 @@ from er3t.util import check_equal, get_doy_tag, get_data_h4
 
 
 
-__all__ = ['modis_l1b', 'modis_l2', 'modis_35_l2', 'modis_03', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'upscale_modis_lonlat', \
+__all__ = ['modis_l1b', 'modis_l2', 'modis_35_l2', 'modis_03', 'modis_04', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'upscale_modis_lonlat', \
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag']
 
 
@@ -429,7 +429,7 @@ class modis_l2:
         try:
             from pyhdf.SD import SD, SDC
         except ImportError:
-            msg = 'Warning [modis_03]: To use \'modis_03\', \'pyhdf\' needs to be installed.'
+            msg = 'Warning [modis_l2]: To use \'modis_l2\', \'pyhdf\' needs to be installed.'
             raise ImportError(msg)
 
         f     = SD(fname, SDC.READ)
@@ -844,6 +844,167 @@ class modis_03:
 
         f.end()
 
+
+
+
+class modis_04:
+
+    """
+    Read MODIS 04 deep blue aerosol data
+
+    Input:
+        fnames=   : keyword argument, default=None, Python list of the file path of the original HDF4 file
+        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        vnames=   : keyword argument, default=[], additional variable names to be read in to self.data
+        overwrite=: keyword argument, default=False, whether to overwrite or not
+        verbose=  : keyword argument, default=False, verbose tag
+
+    Output:
+        self.data
+                ['lon']
+                ['lat']
+                ['AOD_550_land']
+                ['Angstrom_Exponent_land']
+                ['Aerosol_type_land']
+                ['SSA_land']
+    """
+
+
+    ID = 'MODIS 04 Geolocation Product'
+
+
+    def __init__(self, \
+                 fnames    = None,  \
+                 extent    = None,  \
+                 vnames    = [],    \
+                 overwrite = False, \
+                 verbose   = False):
+
+        self.fnames     = fnames      # file name of the pickle file
+        self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
+        self.verbose    = verbose     # verbose tag
+
+        for fname in self.fnames:
+
+            self.read(fname)
+
+            if len(vnames) > 0:
+                self.read_vars(fname, vnames=vnames)
+
+
+    def read(self, fname):
+
+        """
+        Read aerosol properties
+        """
+
+        try:
+            from pyhdf.SD import SD, SDC
+        except ImportError:
+            msg = 'Warning [modis_04]: To use \'modis_04\', \'pyhdf\' needs to be installed.'
+            raise ImportError(msg)
+
+        f     = SD(fname, SDC.READ)
+
+        # lon lat
+        lat0       = f.select('Latitude')
+        lon0       = f.select('Longitude')
+
+        Deep_Blue_AOD_550_land_0            = f.select('Deep_Blue_Aerosol_Optical_Depth_550_Land')
+        Deep_Blue_Angstrom_Exponent_land_0  = f.select('Deep_Blue_Angstrom_Exponent_Land')
+        Deep_Blue_Aerosol_type_land_0       = f.select('Aerosol_Type_Land')
+        Deep_Blue_Aerosol_cloud_frac_land_0 = f.select('Aerosol_Cloud_Fraction_Land')
+        Deep_Blue_SSA_land_0                = f.select('Deep_Blue_Spectral_Single_Scattering_Albedo_Land')
+
+
+        # 1. If region (extent=) is specified, filter data within the specified region
+        # 2. If region (extent=) is not specified, filter invalid data
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        lon = lon0[:]
+        lat = lat0[:]
+
+        if self.extent is None:
+
+            if 'actual_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['actual_range']
+                lat_range = lat0.attributes()['actual_range']
+            elif 'valid_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['valid_range']
+                lat_range = lat0.attributes()['valid_range']
+            else:
+                lon_range = [-180.0, 180.0]
+                lat_range = [-90.0 , 90.0]
+
+        else:
+
+            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
+            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
+
+        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+        lon       = lon[logic]
+        lat       = lat[logic]
+        # -------------------------------------------------------------------------------------------------
+
+
+        # 
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        Deep_Blue_AOD_550_land              = get_data_h4(Deep_Blue_AOD_550_land_0)[logic]
+        Deep_Blue_Angstrom_Exponent_land    = get_data_h4(Deep_Blue_Angstrom_Exponent_land_0)[logic]
+        Deep_Blue_Aerosol_type_land         = get_data_h4(Deep_Blue_Aerosol_type_land_0)[logic]
+        Deep_Blue_Aerosol_cloud_frac_land   = get_data_h4(Deep_Blue_Aerosol_cloud_frac_land_0)[logic]
+        Deep_Blue_SSA_land                  = get_data_h4(Deep_Blue_SSA_land_0)[logic]
+
+        f.end()
+        # -------------------------------------------------------------------------------------------------
+
+        if hasattr(self, 'data'):
+            self.logic = {}
+            self.logic[fname] = {'1km':logic}
+            self.data  = {}
+            self.data['lon'] = dict(name='Longitude'                                        , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+            self.data['lat'] = dict(name='Latitude'                                         , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            self.data['AOD_550_land'] = dict(name='AOD 550nm (Land)'                        , data=np.hstack((self.data['AOD_550_land']['data'], Deep_Blue_AOD_550_land)), units='None')
+            self.data['Angstrom_Exponent_land'] = dict(name='Angstrom Exponent (Land)'      , data=np.hstack((self.data['Angstrom_Exponent_land']['data'], Deep_Blue_Angstrom_Exponent_land)), units='None')
+            self.data['Aerosol_type_land'] = dict(name='Aerosol type (Land)'                , data=np.hstack((self.data['aerosol_type_land']['data'], Deep_Blue_Aerosol_type_land)), units='None')
+            self.data['Aerosol_cloud_frac_land'] = dict(name='Aerosol Cloud Fraction (Land)', data=np.hstack((self.data['SSA_land']['data'], Deep_Blue_Aerosol_cloud_frac_land)), units='None')
+            self.data['SSA_land'] = dict(name='Single Scattering Albedo (Land)'             , data=np.hstack((self.data['SSA_land']['data'], Deep_Blue_SSA_land)), units='None')
+        else:
+            self.logic = {}
+            self.logic[fname] = {'1km':logic}
+            self.data  = {}            
+            self.data['lon'] = dict(name='Longitude'                                        , data=lon                              , units='degrees')
+            self.data['lat'] = dict(name='Latitude'                                         , data=lat                              , units='degrees')
+            self.data['AOD_550_land'] = dict(name='AOD 550nm (Land)'                        , data=Deep_Blue_AOD_550_land           , units='None')
+            self.data['Angstrom_Exponent_land'] = dict(name='Angstrom Exponent (Land)'      , data=Deep_Blue_Angstrom_Exponent_land , units='None')
+            self.data['Aerosol_type_land'] = dict(name='Aerosol type (Land)'                , data=Deep_Blue_Aerosol_type_land      , units='None')
+            self.data['Aerosol_cloud_frac_land'] = dict(name='Aerosol Cloud Fraction (Land)', data=Deep_Blue_Aerosol_cloud_frac_land, units='None')
+            self.data['SSA_land'] = dict(name='Single Scattering Albedo (Land)'             , data=Deep_Blue_SSA_land               , units='None')
+
+
+
+
+    def read_vars(self, fname, vnames=[]):
+
+        try:
+            from pyhdf.SD import SD, SDC
+        except ImportError:
+            msg = 'Warning [modis_04]: To use \'modis_04\', \'pyhdf\' needs to be installed.'
+            raise ImportError(msg)
+
+        logic = self.logic[fname]['1km']
+        f     = SD(fname, SDC.READ)
+
+        for vname in vnames:
+
+            data0 = f.select(vname)
+            print(get_data_h4(data0).shape)
+            data  = get_data_h4(data0)[2,:,:][logic]
+            if vname.lower() in self.data.keys():
+                self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.attributes()['units'])
+            else:
+                self.data[vname.lower()] = dict(name=vname, data=data, units=data0.attributes()['units'])
+
+        f.end()
 
 
 class modis_09a1:
@@ -1331,6 +1492,15 @@ def download_modis_rgb(
         if proj is None:
             proj=ccrs.PlateCarree()
 
+
+        import cartopy.io.ogc_clients as ogcc
+        ogcc._URN_TO_CRS['urn:ogc:def:crs:EPSG:6.18:3:3857'] = ccrs.GOOGLE_MERCATOR
+        ogcc.METERS_PER_UNIT['urn:ogc:def:crs:EPSG:6.18:3:3857'] = 1
+
+        from matplotlib.axes import Axes
+        from cartopy.mpl.geoaxes import GeoAxes
+        #GeoAxes._pcolormesh_patched = Axes.pcolormesh
+        
         wmts = WebMapTileService(wmts_cgi)
 
         fig = plt.figure(figsize=(12, 6))
@@ -1339,7 +1509,8 @@ def download_modis_rgb(
         if coastline:
             ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
         ax1.set_extent(extent, crs=ccrs.PlateCarree())
-        ax1.outline_patch.set_visible(False)
+        #ax1.outline_patch.set_visible(False)
+        ax1.patch.set_visible(False)
         ax1.axis('off')
         plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
         plt.close(fig)

@@ -570,7 +570,10 @@ def download_oco2_https(
     year_str = str(dtime.timetuple().tm_year).zfill(4)
     doy_str  = str(dtime.timetuple().tm_yday).zfill(3)
 
-    if dataset_tag in ['OCO2_L2_Met.10', 'OCO2_L2_Met.10r', 'OCO2_L2_Standard.10', 'OCO2_L2_Standard.10r', 'OCO2_L1B_Science.10', 'OCO2_L1B_Science.10r', 'OCO2_L1B_Calibration.10', 'OCO2_L1B_Calibration.10r']:
+    if dataset_tag in ['OCO2_L2_Met.10', 'OCO2_L2_Met.10r', 'OCO2_L2_Standard.10', 'OCO2_L2_Standard.10r',
+                       'OCO2_L1B_Science.10', 'OCO2_L1B_Science.10r', 'OCO2_L1B_Calibration.10', 'OCO2_L1B_Calibration.10r', 
+                       'OCO2_L2_CO2Prior.10r', 'OCO2_L2_CO2Prior.10', 'OCO2_L2_IMAPDOAS.10r', 'OCO2_L2_IMAPDOAS.10',
+                       'OCO2_L2_Diagnostic.10r', 'OCO2_L2_Diagnostic.10']:
         fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
     elif dataset_tag in ['OCO2_L2_Lite_FP.9r', 'OCO2_L2_Lite_FP.10r', 'OCO2_L2_Lite_SIF.10r']:
         fdir_data = '%s/%s/%s' % (fdir_prefix, dataset_tag, year_str)
