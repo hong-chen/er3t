@@ -39,11 +39,13 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
         lon, lat data = grid_by_extent(lon0, lat0, data0, extent=[10, 15, 10, 20])
     """
 
-    # get central lon/lat
+    # flatten lon/lat/data
     #/----------------------------------------------------------------------------\#
-    lon0 = np.nanmean(lon)
-    lat0 = np.nanmean(lat)
+    lon = np.array(lon).ravel()
+    lat = np.array(lat).ravel()
+    data = np.array(data).ravel()
     #\----------------------------------------------------------------------------/#
+
 
     # get extent
     #/----------------------------------------------------------------------------\#
