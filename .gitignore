@@ -2,8 +2,8 @@
 future_dev
 !tests
 !tests/*.py
-!examples
-!examples/*.py
+examples
+examples/*.py
 !examples/*.sh
 
 # system files
