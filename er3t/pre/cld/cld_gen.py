@@ -1013,8 +1013,6 @@ class cld_gen_cop:
 
 
 
-
-
 if __name__ == '__main__':
 
     pass

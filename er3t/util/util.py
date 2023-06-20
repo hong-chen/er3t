@@ -23,7 +23,7 @@ __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
            'download_laads_https', 'download_lance_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_t_twostream', 'cal_dist', 'cal_cth_hist']
+           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat']
 
 
 # tools
@@ -1533,40 +1533,49 @@ def cal_t_twostream(tau, a=0.0, g=0.85, mu=1.0):
 
 
 
-def cal_dist(delta_degree, earth_radius=6378.0):
+def cal_geodesic_dist(lon0, lat0, lon1, lat1):
 
-    """
-    Calculate distance from longitude/latitude difference
-    Input:
-        delta_degree: float or numpy array
-    Output:
-        dist: float or numpy array, distance in km
-    """
+    try:
+        import cartopy.geodesic as cg
+    except ImportError:
+        msg = '\nError [cal_geodesic_dist]: Please install <cartopy> to proceed.'
+        raise ImportError(msg)
 
-    dist = delta_degree/180.0 * (np.pi*earth_radius)
+    geo0 = cg.Geodesic()
+
+    points0 = np.transpose(np.vstack((lon0, lat0)))
+
+    points1 = np.transpose(np.vstack((lon1, lat1)))
+
+    output = np.squeeze(np.asarray(geo0.inverse(points0, points1)))
+
+    dist = output[..., 0]
 
     return dist
 
 
 
-def cal_cth_hist(cth):
+def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
 
-    """
-    Calculate the cloud top height based on the peak of histograms
-    Input:
-        cth: cloud top height
-    Output:
-        cth_peak: cloud top height of the peak of histogram
-    """
+    try:
+        import cartopy.geodesic as cg
+    except ImportError:
+        msg = '\nError [cal_geodesic_lonlat]: Please install <cartopy> to proceed.'
+        raise ImportError(msg)
 
-    hist = np.histogram(cth)
+    points = np.transpose(np.vstack((lon0, lat0)))
 
+    geo0 = cg.Geodesic()
 
-    pass
+    output = np.squeeze(np.asarray(geo0.direct(points, azimuth, dist)))
+
+    lon1 = output[..., 0]
+    lat1 = output[..., 1]
+
+    return lon1, lat1
 
 #\---------------------------------------------------------------------------/
 
 if __name__ == '__main__':
 
     pass
-

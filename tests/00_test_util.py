@@ -213,19 +213,21 @@ def test_mp():
 
 
 
-def main():
-    import cartopy.crs as ccrs
-    import matplotlib.pyplot as plt
+def test_dist():
 
-    url = 'https://map1c.vis.earthdata.nasa.gov/wmts-geo/wmts.cgi'
-    layer = 'VIIRS_CityLights_2012'
+    # calculate distance using cartopy
+    #/----------------------------------------------------------------------------\#
+    spnts = [0.0, 70.0]
+    epnts = [1.0, 70.0]
 
-    ax = plt.axes(projection=ccrs.PlateCarree())
-    ax.add_wmts(url, layer)
-    ax.set_extent((-15, 25, 35, 60))
+    import cartopy.geodesic as cg
 
-    plt.title('Suomi NPP Earth at night April/October 2012')
-    plt.show()
+    proj = cg.Geodesic()
+
+    dist = np.asarray(proj.inverse(spnts, epnts))[0][0]
+    print(dist)
+    #\----------------------------------------------------------------------------/#
+
 
 if __name__ == '__main__':
 
@@ -237,8 +239,4 @@ if __name__ == '__main__':
 
     # test_solar_spectra('tmp-data/abs_16g')
 
-    # test_viirs()
-    for i in range(5):
-        func_run(i)
-
-    # main()
+    test_dist()
