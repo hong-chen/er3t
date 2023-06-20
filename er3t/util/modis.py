@@ -253,7 +253,6 @@ class modis_l2:
                  extent    = None,  \
                  vnames    = [],    \
                  cop_flag  = '',    \
-                 overwrite = False, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the pickle file
