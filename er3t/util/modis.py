@@ -265,7 +265,7 @@ class modis_l2:
             self.read(fname, cop_flag=cop_flag)
 
             if len(vnames) > 0:
-                self.read_vars(fname, vnames=vnames, resolution=resolution)    # added resolution
+                self.read_vars(fname, vnames=vnames)    # added resolution
 
 
     def read(self, fname, cop_flag=''):
