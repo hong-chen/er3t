@@ -51,24 +51,47 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
         extent = [np.nanmin(lon), np.nanmax(lon), np.nanmin(lat), np.nanmax(lat)]
     #\----------------------------------------------------------------------------/#
 
-    # Nx and Ny
+
+    # get dx and dy
     #/----------------------------------------------------------------------------\#
-    xy = (extent[1]-extent[0])*(extent[3]-extent[2])
-    N0 = np.sqrt(lon.size/xy)
-    Nx = int(N0*(extent[1]-extent[0]))
-    Ny = int(N0*(extent[3]-extent[2]))
+    if dx is None or dy is None:
+
+        # dist_x and dist_y
+        #/----------------------------------------------------------------------------\#
+        lon0 = [extent[0], extent[0]]
+        lat0 = [extent[2], extent[3]]
+        lon1 = [extent[1], extent[1]]
+        lat1 = [extent[2], extent[3]]
+        dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+
+        lon0 = [extent[0], extent[1]]
+        lat0 = [extent[2], extent[2]]
+        lon1 = [extent[0], extent[1]]
+        lat1 = [extent[3], extent[3]]
+        dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+        #\----------------------------------------------------------------------------/#
+
+        # Nx and Ny
+        #/----------------------------------------------------------------------------\#
+        xy = (extent[1]-extent[0])*(extent[3]-extent[2])
+        N0 = np.sqrt(lon.size/xy)
+        Nx = int(N0*(extent[1]-extent[0]))
+        Ny = int(N0*(extent[3]-extent[2]))
+        #\----------------------------------------------------------------------------/#
+
+        # dx and dy
+        #/----------------------------------------------------------------------------\#
+        dx = dist_x / Nx
+        dy = dist_y / Ny
+        #\----------------------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
-    lon1 = lon.copy()
-    lon1[...] = extent[0]
-    lat1 = lat.copy()
-    dist_x = er3t.util.cal_geodesic_dist(lon, lat, lon1, lat1).reshape(lon.shape)
 
-    lon1 = lon.copy()
-    lat1 = lat.copy()
-    lat1[...] = extent[2]
-    dist_y = er3t.util.cal_geodesic_dist(lon, lat, lon1, lat1).reshape(lat.shape)
+    # get new lon lat
+    #/----------------------------------------------------------------------------\#
+    #\----------------------------------------------------------------------------/#
 
+    print(dx, dy)
 
     # point1_x, point1_y = er3t.util.cal_geodesic_lonlat(extent[0], extent[2], 222000.0, 90.0)
     # point2_x, point2_y = er3t.util.cal_geodesic_lonlat(extent[0], extent[2], 222000.0, 0.0)
@@ -129,26 +152,6 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     #\----------------------------------------------------------------------------/#
 
 
-
-
-
-
-    if (dx is None) or (dy is None):
-
-        # calculate dx and dy
-        #/----------------------------------------------------------------------------\#
-        lon0 = extent[0]
-        lat0 = (extent[2]+extent[3])/2.0
-        lon1 = extent[1]
-        lat1 = (extent[2]+extent[3])/2.0
-        dx = cal_geodesic_dist(lon0, lat0, lon1, lat1)/Nx
-
-        lon0 = (extent[0]+extent[1])/2.0
-        lat0 = extent[2]
-        lon1 = (extent[0]+extent[1])/2.0
-        lat1 = extent[3]
-        dy = cal_geodesic_dist(lon0, lat0, lon1, lat1)/Ny
-        #\----------------------------------------------------------------------------/#
 
     lon_1d0 = np.linspace(extent[0], extent[1], Nx+1)
     lat_1d0 = np.linspace(extent[2], extent[3], Ny+1)

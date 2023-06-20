@@ -1542,11 +1542,16 @@ def cal_geodesic_dist(lon0, lat0, lon1, lat1):
         msg = '\nError [cal_geodesic_dist]: Please install <cartopy> to proceed.'
         raise ImportError(msg)
 
+    lon0 = np.array(lon0).ravel()
+    lat0 = np.array(lat0).ravel()
+    lon1 = np.array(lon1).ravel()
+    lat1 = np.array(lat1).ravel()
+
     geo0 = cg.Geodesic()
 
-    points0 = np.transpose(np.vstack((lon0.ravel(), lat0.ravel())))
+    points0 = np.transpose(np.vstack((lon0, lat0)))
 
-    points1 = np.transpose(np.vstack((lon1.ravel(), lat1.ravel())))
+    points1 = np.transpose(np.vstack((lon1, lat1)))
 
     output = np.squeeze(np.asarray(geo0.inverse(points0, points1)))
 
@@ -1564,7 +1569,12 @@ def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
         msg = '\nError [cal_geodesic_lonlat]: Please install <cartopy> to proceed.'
         raise ImportError(msg)
 
-    points = np.transpose(np.vstack((lon0.ravel(), lat0.ravel())))
+    lon0 = np.array(lon0).ravel()
+    lat0 = np.array(lat0).ravel()
+    dist = np.array(dist).ravel()
+    azimuth = np.array(azimuth).ravel()
+
+    points = np.transpose(np.vstack((lon0, lat0)))
 
     geo0 = cg.Geodesic()
 
