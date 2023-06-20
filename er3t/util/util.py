@@ -18,7 +18,7 @@ import er3t
 __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
-           'find_nearest', 'move_correlate', 'grid_by_extent', 'grid_by_lonlat', \
+           'find_nearest', 'move_correlate', 'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
            'get_doy_tag', 'get_satfile_tag', \
            'download_laads_https', 'download_lance_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
@@ -470,7 +470,7 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest'):
 def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'):
 
     """
-    !!!!!!!!! incomplete !!!!!!!!!
+    !!!!!!!!! under dev !!!!!!!!!
     Grid irregular data into a regular grid by input 'extent' (westmost, eastmost, southmost, northmost)
     Input:
         lon: numpy array, input longitude to be gridded
@@ -494,27 +494,92 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     lat0 = np.nanmean(lat)
     #\----------------------------------------------------------------------------/#
 
-
     # get extent
     #/----------------------------------------------------------------------------\#
     if extent is None:
-        extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+        extent = [np.nanmin(lon), np.nanmax(lon), np.nanmin(lat), np.nanmax(lat)]
     #\----------------------------------------------------------------------------/#
-
 
     # Nx and Ny
     #/----------------------------------------------------------------------------\#
     xy = (extent[1]-extent[0])*(extent[3]-extent[2])
     N0 = np.sqrt(lon.size/xy)
-
     Nx = int(N0*(extent[1]-extent[0]))
-    if Nx%2 == 1:
-        Nx += 1
-
     Ny = int(N0*(extent[3]-extent[2]))
-    if Ny%2 == 1:
-        Ny += 1
     #\----------------------------------------------------------------------------/#
+
+    lon1 = lon.copy()
+    lon1[...] = extent[0]
+    lat1 = lat.copy()
+    dist_x = er3t.util.cal_geodesic_dist(lon, lat, lon1, lat1).reshape(lon.shape)
+
+    lon1 = lon.copy()
+    lat1 = lat.copy()
+    lat1[...] = extent[2]
+    dist_y = er3t.util.cal_geodesic_dist(lon, lat, lon1, lat1).reshape(lat.shape)
+
+
+    # point1_x, point1_y = er3t.util.cal_geodesic_lonlat(extent[0], extent[2], 222000.0, 90.0)
+    # point2_x, point2_y = er3t.util.cal_geodesic_lonlat(extent[0], extent[2], 222000.0, 0.0)
+
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    import matplotlib.path as mpl_path
+    import matplotlib.image as mpl_img
+    import matplotlib.patches as mpatches
+    import matplotlib.gridspec as gridspec
+    from matplotlib import rcParams, ticker
+    from matplotlib.ticker import FixedLocator
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    # import cartopy.crs as ccrs
+    # mpl.use('Agg')
+    # figure
+    #/----------------------------------------------------------------------------\#
+    if True:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111)
+        # cs = ax1.imshow(dist_y.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        ax1.scatter(dist_x, dist_y, s=2, c='k', lw=0.0)
+        # ax1.scatter(lon, lat, s=2, c='k', lw=0.0)
+        # ax1.scatter(point1_x, point1_y, s=20, c='r', lw=0.0)
+        # ax1.scatter(point2_x, point2_y, s=20, c='r', lw=0.0)
+        # ax1.scatter(point1_x, point2_y, s=20, c='r', lw=0.0)
+        ax1.grid()
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.plot([0, 1], [0, 1], color='k', ls='--')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
+    #\----------------------------------------------------------------------------/#
+
+
+    sys.exit()
+
+
+    # get dx and dy
+    #/----------------------------------------------------------------------------\#
+    #\----------------------------------------------------------------------------/#
+
+
+
+
 
 
     if (dx is None) or (dy is None):
@@ -1634,9 +1699,9 @@ def cal_geodesic_dist(lon0, lat0, lon1, lat1):
 
     geo0 = cg.Geodesic()
 
-    points0 = np.transpose(np.vstack((lon0, lat0)))
+    points0 = np.transpose(np.vstack((lon0.ravel(), lat0.ravel())))
 
-    points1 = np.transpose(np.vstack((lon1, lat1)))
+    points1 = np.transpose(np.vstack((lon1.ravel(), lat1.ravel())))
 
     output = np.squeeze(np.asarray(geo0.inverse(points0, points1)))
 
@@ -1654,7 +1719,7 @@ def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
         msg = '\nError [cal_geodesic_lonlat]: Please install <cartopy> to proceed.'
         raise ImportError(msg)
 
-    points = np.transpose(np.vstack((lon0, lat0)))
+    points = np.transpose(np.vstack((lon0.ravel(), lat0.ravel())))
 
     geo0 = cg.Geodesic()
 

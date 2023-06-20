@@ -213,20 +213,26 @@ def test_mp():
 
 
 
-def test_dist():
+def test_grid_by_dxdy():
 
-    # calculate distance using cartopy
-    #/----------------------------------------------------------------------------\#
-    spnts = [0.0, 70.0]
-    epnts = [1.0, 70.0]
+    extent_lonlat = [125.0, 127.0, 35.0, 37.0] # china
+    # extent_lonlat = [125.0, 127.0, 15.0, 17.0] # philippine sea
+    # extent_lonlat = [125.0, 127.0, -1.0, 1.0]  # equator
+    # extent_lonlat = [125.0, 127.0, 85.0, 87.0] # arctic region
 
-    import cartopy.geodesic as cg
+    lon_1d = np.linspace(extent_lonlat[0], extent_lonlat[1], 201)
+    lat_1d = np.linspace(extent_lonlat[2], extent_lonlat[3], 201)
 
-    proj = cg.Geodesic()
+    lon_2d, lat_2d = np.meshgrid(lon_1d, lat_1d, indexing='ij')
 
-    dist = np.asarray(proj.inverse(spnts, epnts))[0][0]
-    print(dist)
-    #\----------------------------------------------------------------------------/#
+    data_2d = lon_2d**2 + lat_2d**2
+
+    er3t.util.grid_by_dxdy(lon_2d, lat_2d, data_2d)
+
+
+    print(lon_2d[:, 0])
+    print(lat_2d[0, :])
+
 
 
 if __name__ == '__main__':
@@ -239,4 +245,4 @@ if __name__ == '__main__':
 
     # test_solar_spectra('tmp-data/abs_16g')
 
-    test_dist()
+    test_grid_by_dxdy()
