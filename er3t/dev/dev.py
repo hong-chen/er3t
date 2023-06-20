@@ -52,24 +52,25 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     #\----------------------------------------------------------------------------/#
 
 
-    # get dx and dy
+    # dist_x and dist_y
+    #/----------------------------------------------------------------------------\#
+    lon0 = [extent[0], extent[0]]
+    lat0 = [extent[2], extent[3]]
+    lon1 = [extent[1], extent[1]]
+    lat1 = [extent[2], extent[3]]
+    dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+
+    lon0 = [extent[0], extent[1]]
+    lat0 = [extent[2], extent[2]]
+    lon1 = [extent[0], extent[1]]
+    lat1 = [extent[3], extent[3]]
+    dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    #\----------------------------------------------------------------------------/#
+
+
+    # get Nx/Ny and dx/dy
     #/----------------------------------------------------------------------------\#
     if dx is None or dy is None:
-
-        # dist_x and dist_y
-        #/----------------------------------------------------------------------------\#
-        lon0 = [extent[0], extent[0]]
-        lat0 = [extent[2], extent[3]]
-        lon1 = [extent[1], extent[1]]
-        lat1 = [extent[2], extent[3]]
-        dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
-
-        lon0 = [extent[0], extent[1]]
-        lat0 = [extent[2], extent[2]]
-        lon1 = [extent[0], extent[1]]
-        lat1 = [extent[3], extent[3]]
-        dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
-        #\----------------------------------------------------------------------------/#
 
         # Nx and Ny
         #/----------------------------------------------------------------------------\#
@@ -84,83 +85,36 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
         dx = dist_x / Nx
         dy = dist_y / Ny
         #\----------------------------------------------------------------------------/#
+
+    else:
+
+        Nx = dist_x // dx
+        Ny = dist_y // dy
     #\----------------------------------------------------------------------------/#
 
 
-    # get new lon lat
+    # get west-most lon_1d/lat_1d
     #/----------------------------------------------------------------------------\#
+    lon_1d = np.repeat(extent[0], Ny)
+    lat_1d = np.repeat(extent[2], Ny)
+    for i in range(1, Ny):
+        lon_1d[i], lat_1d[i] = er3t.util.cal_geodesic_lonlat(lon_1d[i-1], lat_1d[i-1], dy, 0.0)
     #\----------------------------------------------------------------------------/#
 
-    print(dx, dy)
 
-    # point1_x, point1_y = er3t.util.cal_geodesic_lonlat(extent[0], extent[2], 222000.0, 90.0)
-    # point2_x, point2_y = er3t.util.cal_geodesic_lonlat(extent[0], extent[2], 222000.0, 0.0)
-
-    import matplotlib as mpl
-    import matplotlib.pyplot as plt
-    import matplotlib.path as mpl_path
-    import matplotlib.image as mpl_img
-    import matplotlib.patches as mpatches
-    import matplotlib.gridspec as gridspec
-    from matplotlib import rcParams, ticker
-    from matplotlib.ticker import FixedLocator
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    # import cartopy.crs as ccrs
-    # mpl.use('Agg')
-    # figure
+    # get lon_2d/lat_2d
     #/----------------------------------------------------------------------------\#
-    if True:
-        plt.close('all')
-        fig = plt.figure(figsize=(8, 6))
-        # fig.suptitle('Figure')
-        # plot
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        # cs = ax1.imshow(dist_y.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
-        ax1.scatter(dist_x, dist_y, s=2, c='k', lw=0.0)
-        # ax1.scatter(lon, lat, s=2, c='k', lw=0.0)
-        # ax1.scatter(point1_x, point1_y, s=20, c='r', lw=0.0)
-        # ax1.scatter(point2_x, point2_y, s=20, c='r', lw=0.0)
-        # ax1.scatter(point1_x, point2_y, s=20, c='r', lw=0.0)
-        ax1.grid()
-        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
-        # ax1.plot([0, 1], [0, 1], color='k', ls='--')
-        # ax1.set_xlim(())
-        # ax1.set_ylim(())
-        # ax1.set_xlabel('')
-        # ax1.set_ylabel('')
-        # ax1.set_title('')
-        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
-        #\--------------------------------------------------------------/#
-        # save figure
-        #/--------------------------------------------------------------\#
-        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
-        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        # fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        plt.show()
-        sys.exit()
+    lon_2d = np.zeros((Nx, Ny), dtype=np.float64)
+    lat_2d = np.zeros((Nx, Ny), dtype=np.float64)
+    lon_2d[0, :] = lon_1d
+    lat_2d[0, :] = lat_1d
+    for i in range(1, Nx):
+        lon_2d[i, :], lat_2d[i, :] = er3t.util.cal_geodesic_lonlat(lon_2d[i-1, :], lat_2d[i-1, :], dx, 90.0)
     #\----------------------------------------------------------------------------/#
 
 
-    sys.exit()
-
-
-    # get dx and dy
+    # gridding
     #/----------------------------------------------------------------------------\#
-    #\----------------------------------------------------------------------------/#
-
-
-
-    lon_1d0 = np.linspace(extent[0], extent[1], Nx+1)
-    lat_1d0 = np.linspace(extent[2], extent[3], Ny+1)
-
-    lon_1d = (lon_1d0[1:]+lon_1d0[:-1])/2.0
-    lat_1d = (lat_1d0[1:]+lat_1d0[:-1])/2.0
-
-    lat_2d, lon_2d = np.meshgrid(lat_1d, lon_1d)
-
     points   = np.transpose(np.vstack((lon, lat)))
     data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
 
@@ -173,6 +127,9 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
         logic = np.isnan(data_2d0)
         data_2d0[logic] = 0.0
         return lon_2d, lat_2d, data_2d0
+    #\----------------------------------------------------------------------------/#
+
+
 
 
 if __name__ == '__main__':
