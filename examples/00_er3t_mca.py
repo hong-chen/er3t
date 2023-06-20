@@ -769,7 +769,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
     #/-----------------------------------------------------------------------------\
     # inhomogeneous 3d mcarats "atmosphere"
-    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=False)
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
 
     # 3d aerosol near surface (mixed with clouds)
     #/-----------------------------------------------------------------------------\
