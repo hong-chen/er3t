@@ -36,6 +36,7 @@ This code has been tested under:
 import os
 import sys
 import pickle
+import warnings
 import h5py
 from pyhdf.SD import SD, SDC
 import numpy as np
@@ -255,8 +256,8 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     lat0  = modl1b.data['lat']['data']
     ref0  = modl1b.data['ref']['data'][index_wvl, ...]
     rad0  = modl1b.data['rad']['data'][index_wvl, ...]
-    lon_2d, lat_2d, ref_2d = er3t.util.grid_by_extent(lon0, lat0, ref0, extent=sat0.extent)
-    lon_2d, lat_2d, rad_2d = er3t.util.grid_by_extent(lon0, lat0, rad0, extent=sat0.extent)
+    lon_2d, lat_2d, ref_2d = er3t.util.grid_by_dxdy(lon0, lat0, ref0, extent=sat0.extent, dx=250.0, dy=250.0)
+    lon_2d, lat_2d, rad_2d = er3t.util.grid_by_dxdy(lon0, lat0, rad0, extent=sat0.extent, dx=250.0, dy=250.0)
 
     g1['rad_%4.4d' % wvl] = rad_2d
     g1['ref_%4.4d' % wvl] = ref_2d
@@ -283,11 +284,11 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     sfh0  = mod03.data['height']['data']/1000.0 # units: km
     sfh0[sfh0<0.0] = np.nan
 
-    lon_2d, lat_2d, sza_2d = er3t.util.grid_by_lonlat(lon0, lat0, sza0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, saa_2d = er3t.util.grid_by_lonlat(lon0, lat0, saa0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, vza_2d = er3t.util.grid_by_lonlat(lon0, lat0, vza0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, vaa_2d = er3t.util.grid_by_lonlat(lon0, lat0, vaa0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, sfh_2d = er3t.util.grid_by_lonlat(lon0, lat0, sfh0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, sza_2d = er3t.util.grid_by_dxdy(lon0, lat0, sza0, extent=sat0.extent, dx=250.0, dy=250.0, method='linear')
+    lon_2d, lat_2d, saa_2d = er3t.util.grid_by_dxdy(lon0, lat0, saa0, extent=sat0.extent, dx=250.0, dy=250.0, method='linear')
+    lon_2d, lat_2d, vza_2d = er3t.util.grid_by_dxdy(lon0, lat0, vza0, extent=sat0.extent, dx=250.0, dy=250.0, method='linear')
+    lon_2d, lat_2d, vaa_2d = er3t.util.grid_by_dxdy(lon0, lat0, vaa0, extent=sat0.extent, dx=250.0, dy=250.0, method='linear')
+    lon_2d, lat_2d, sfh_2d = er3t.util.grid_by_dxdy(lon0, lat0, sfh0, extent=sat0.extent, dx=250.0, dy=250.0, method='linear')
 
     g0['sza'] = sza_2d
     g0['saa'] = saa_2d
@@ -311,13 +312,13 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     cth0  = modl2.data['cloud_top_height_1km']['data']/1000.0 # units: km
     cth0[cth0<=0.0] = np.nan
 
-    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cer0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
+    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cer0, extent=sat0.extent, dx=250.0, dy=250.0, method='nearest')
     cer_2d_l2[cer_2d_l2<=1.0] = np.nan
 
-    lon_2d, lat_2d, cot_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cot0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
+    lon_2d, lat_2d, cot_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cot0, extent=sat0.extent, dx=250.0, dy=250.0, method='nearest')
     cot_2d_l2[cot_2d_l2<=0.0] = np.nan
 
-    lon_2d, lat_2d, cth_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cth0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, cth_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cth0, extent=sat0.extent, dx=250.0, dy=250.0, method='linear')
     cth_2d_l2[cth_2d_l2<=0.0] = np.nan
 
     g2['cot_l2'] = cot_2d_l2
@@ -339,7 +340,7 @@ def cdata_sat_raw(wvl=params['wavelength'], plot=True):
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
     mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent)
     sfc_43[sfc_43<0.0] = 0.0
     sfc_43[sfc_43>1.0] = 1.0
 
@@ -1381,6 +1382,7 @@ def main_pre(wvl=params['wavelength'], plot=True):
     #/----------------------------------------------------------------------------\#
     cdata_sat_raw(wvl=wvl, plot=plot)
     #\----------------------------------------------------------------------------/#
+    sys.exit()
 
 
     # apply IPA method to retrieve cloud optical thickness (COT) from MODIS radiance
@@ -1614,6 +1616,8 @@ def main_post(wvl=params['wavelength'], plot=False):
 
 
 if __name__ == '__main__':
+
+    warnings.warn('\nThis code is currently under development ...')
 
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim

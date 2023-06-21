@@ -539,8 +539,8 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
 
     else:
 
-        Nx = dist_x // dx
-        Ny = dist_y // dy
+        Nx = int(dist_x // dx)
+        Ny = int(dist_y // dy)
     #\----------------------------------------------------------------------------/#
 
 
