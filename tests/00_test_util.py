@@ -227,7 +227,7 @@ def test_grid_by_dxdy():
 
     data_2d = lon_2d**2 + lat_2d**2
 
-    lon_2d, lat_2d, data_2d0 = er3t.dev.grid_by_dxdy(lon_2d, lat_2d, data_2d)
+    lon_2d, lat_2d, data_2d0 = er3t.util.grid_by_dxdy(lon_2d, lat_2d, data_2d)
 
     # figure
     #/----------------------------------------------------------------------------\#
