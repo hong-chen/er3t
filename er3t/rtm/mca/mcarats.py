@@ -1,6 +1,7 @@
 import os
 import sys
 import copy
+import time
 import datetime
 import warnings
 import multiprocessing as mp
@@ -261,7 +262,6 @@ class mcarats_ng:
             else:
                 self.nml[ig]['Wld_mverb'] = 0
 
-
             if tune:
                 self.nml[ig]['Wld_moptim'] = 2
             else:
@@ -437,8 +437,10 @@ class mcarats_ng:
         """
 
         # create input files for MCARaTS
+        Nseed = int(time.time())
         for ir in range(self.Nrun):
             for ig in range(self.Ng):
+                self.nml[ig]['Wld_jseed'] = Nseed + ig + self.Ng*ir
                 mca_inp_file(self.fnames_inp[ir][ig], self.nml[ig], comment=comment)
 
         if not self.quiet:
