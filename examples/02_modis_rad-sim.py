@@ -26,7 +26,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2023-03-14 by Hong Chen
+    1) Linux on 2023-06-22 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -54,7 +54,7 @@ from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 # import cartopy.crs as ccrs
-# mpl.use('Agg')
+mpl.use('Agg')
 
 
 
