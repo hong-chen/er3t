@@ -167,7 +167,6 @@ class mcarats_ng:
             self.np_mode = 'weighted'
 
         photons_dist = distribute_photon(photons, weights, base_rate=base_rate)
-        print(photons_dist)
 
         self.photons = np.tile(photons_dist, Nrun)
         self.photons_per_set = photons_dist.sum()
