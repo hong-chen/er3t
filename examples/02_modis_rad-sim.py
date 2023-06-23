@@ -69,7 +69,7 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 1e8,
+           'photon' : 1e9,
              'Ncpu' : 12,
        'photon_ipa' : 2e7,
           'cot_ipa' : np.concatenate((       \
@@ -1441,7 +1441,7 @@ def main_pre(wvl=params['wavelength'], plot=True):
     #        used for 3D radiance self-consistency check to ensure their physical processes
     #        are consistent
     # additional data will be saved at <data/02_modis_rad-sim/pre_data.h5>,
-    # which are
+    # which are (data dimension might vary)
     # cld_msk/indices_x ------ : Dataset  (156443,)
     # cld_msk/indices_x0 ----- : Dataset  (188638,)
     # cld_msk/indices_y ------ : Dataset  (156443,)
