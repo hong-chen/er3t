@@ -10,6 +10,8 @@ examples/*.py
 .DS_Store
 
 # python files
+dev
+dev/*.py
 *.pyc
 __pycache__
 *.egg-info
