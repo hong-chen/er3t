@@ -53,7 +53,6 @@ import matplotlib.gridspec as gridspec
 from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-# import cartopy.crs as ccrs
 mpl.use('Agg')
 
 
@@ -1669,8 +1668,6 @@ def main_post(wvl=params['wavelength'], plot=False):
 
 
 if __name__ == '__main__':
-
-    warnings.warn('\nThis code is currently under development ...')
 
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
