@@ -1,7 +1,7 @@
 # exceptions for er3t
 future_dev
-!tests
-!tests/*.py
+tests
+tests/*.py
 examples
 examples/*.py
 !examples/*.sh
