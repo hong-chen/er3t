@@ -550,7 +550,7 @@ def cal_mca_azimuth(normal_azimuth_angle):
 
 
 
-def distribute_photon(Nphoton, weights, base_rate=0.1):
+def distribute_photon(Nphoton, weights, base_rate=0.05):
 
     Ndist = weights.size
     photons_dist = np.int_(Nphoton*(1.0-base_rate)*weights) + np.int_(Nphoton*base_rate/Ndist)
