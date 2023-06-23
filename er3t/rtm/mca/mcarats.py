@@ -91,7 +91,7 @@ class mcarats_ng:
 
                  solver              = '3d',                    \
                  photons             = 1e7,                     \
-                 base_rate           = 0.05,                    \
+                 base_ratio          = 0.05,                    \
 
                  verbose             = False,                   \
                  quiet               = False                    \
@@ -166,7 +166,7 @@ class mcarats_ng:
         else:
             self.np_mode = 'weighted'
 
-        photons_dist = distribute_photon(photons, weights, base_rate=base_rate)
+        photons_dist = distribute_photon(photons, weights, base_ratio=base_ratio)
 
         self.photons = np.tile(photons_dist, Nrun)
         self.photons_per_set = photons_dist.sum()
@@ -549,10 +549,10 @@ def cal_mca_azimuth(normal_azimuth_angle):
 
 
 
-def distribute_photon(Nphoton, weights, base_rate=0.05):
+def distribute_photon(Nphoton, weights, base_ratio=0.05):
 
     Ndist = weights.size
-    photons_dist = np.int_(Nphoton*(1.0-base_rate)*weights) + np.int_(Nphoton*base_rate/Ndist)
+    photons_dist = np.int_(Nphoton*(1.0-base_ratio)*weights) + np.int_(Nphoton*base_ratio/Ndist)
 
     Ndiff = Nphoton - photons_dist.sum()
 
