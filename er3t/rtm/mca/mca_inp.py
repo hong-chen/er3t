@@ -655,7 +655,7 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
             if var is not None:
 
                 if isinstance(var, (int, float)):
-                    f.write(' %-15s = %-15.15g\n' % (var_key, var))
+                    f.write(' %-15s = %-.16g\n' % (var_key, var))
                 elif isinstance(var, str):
                     if '*' in var:
                         f.write(' %-15s = %s\n' % (var_key, var))
