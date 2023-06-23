@@ -1,17 +1,17 @@
 # exceptions for er3t
-future_dev
-tests
-tests/*.py
-examples
-examples/*.py
+!tests
+!tests/*.py
+!dev
+!dev/*.py
+!examples
+!examples/*.py
 !examples/*.sh
+future_dev
 
 # system files
 .DS_Store
 
 # python files
-dev
-dev/*.py
 *.pyc
 __pycache__
 *.egg-info
