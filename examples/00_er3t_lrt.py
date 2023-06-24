@@ -2,7 +2,7 @@
 by Hong Chen (hong.chen.cu@gmail.com)
 
 This code has been tested under:
-    1) Linux on 2022-10-20 by Hong Chen
+    1) Linux on 2023-06-20 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -31,7 +31,7 @@ import er3t
 
 # global variables
 #/--------------------------------------------------------------\#
-name_tag = '00_mca_lrt'
+name_tag = '00_er3t_lrt'
 fdir0    = er3t.common.fdir_examples
 #\--------------------------------------------------------------/#
 
@@ -485,14 +485,21 @@ def test_rad_05_cloud_and_aerosol():
 
 
 
-def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0, plot=True):
+def example_rad_01_sun_glint(
+        wvl0=532.0,
+        sza0=60.0,
+        saa0=0.0,
+        vza0=60.0,
+        plot=True
+        ):
 
     """
     This example code is used to provide simulated radiance for ocean BRDF surface.
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = '%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
+    job_tag  = 'sza%3.3d_saa%3.3d_vza%3.3d' % (sza0, saa0, vza0)
+    fdir_tmp = '%s/tmp-data/%s/%s/%s' % (fdir0, name_tag, _metadata['Function'], job_tag)
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -544,7 +551,7 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0, plot=Tr
         #/----------------------------------------------------------------------------\#
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111, projection='polar')
-        ax1.plot(np.deg2rad(vaa), rad, color='r')
+        ax1.plot(np.deg2rad(vaa), rad, color='red', lw=6.0, zorder=1)
 
         ax1.scatter(np.deg2rad(saa0), rad.max()*1.1, s=400, c='orange', lw=0.0, alpha=0.8)
 
@@ -553,7 +560,7 @@ def example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0, plot=Tr
         ax1.set_theta_zero_location('N')
         ax1.set_theta_direction(-1)
 
-        fname_png = '%s-%s.png' % (name_tag, _metadata['Function'])
+        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], job_tag)
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
         #\----------------------------------------------------------------------------/#
@@ -697,7 +704,7 @@ def example_rad_02_libera_adm(
 
     # write output file
     #/----------------------------------------------------------------------------\#
-    fname = 'libera_adm_%s.h5' % (job_tag)
+    fname = '%s/libera_adm_%s.h5' % (fdir_tmp, job_tag)
     f = h5py.File(fname, 'w')
     f['wvl'] = wvl
     f['vaa'] = vaa
@@ -711,15 +718,15 @@ def example_rad_02_libera_adm(
     f['toa'] = toa
     f['rad_555'] = rad_555
     f['ref_555'] = ref_555
-    f['rad_vis'] = rad_555
-    f['ref_vis'] = ref_555
+    f['rad_vis'] = rad_vis
+    f['ref_vis'] = ref_vis
     f.close()
     #\----------------------------------------------------------------------------/#
 
     if plot:
 
         #/----------------------------------------------------------------------------\#
-        fig = plt.figure(figsize=(8, 8))
+        fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111, projection='polar', aspect='equal')
 
         # 555 nm
@@ -745,7 +752,7 @@ def example_rad_02_libera_adm(
         ax1.set_rmax(1.0)
         ax1.set_rlabel_position(180.0)  # Move radial labels away from plotted line
 
-        ax1.set_title('Anisotropic Reflectance (SZA=%d$^\circ$, VZA=%d$^\circ$, COT=%d, SF=%.2f)' % (sza0, vza0, cot0, scale_factor))
+        ax1.set_title('Anisotropic Reflectance (SZA=%d$^\circ$, VZA=%d$^\circ$, COT=%d, SF=%.2f)' % (sza0, vza0, cot0, scale_factor), y=1.08)
 
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], job_tag)
@@ -760,18 +767,18 @@ def example_rad_02_libera_adm(
 if __name__ == '__main__':
 
 
-    # test_flux_01_clear_sky()
-    # test_flux_02_clear_sky()
-    # test_flux_03_clear_sky()
-    # test_flux_04_cloud()
-    # test_flux_05_cloud_and_aerosol()
+    test_flux_01_clear_sky()
+    test_flux_02_clear_sky()
+    test_flux_03_clear_sky()
+    test_flux_04_cloud()
+    test_flux_05_cloud_and_aerosol()
 
 
-    # test_rad_01_clear_sky()
-    # test_rad_02_clear_sky()
-    # test_rad_03_clear_sky()
-    # test_rad_04_cloud()
-    # test_rad_05_cloud_and_aerosol()
+    test_rad_01_clear_sky()
+    test_rad_02_clear_sky()
+    test_rad_03_clear_sky()
+    test_rad_04_cloud()
+    test_rad_05_cloud_and_aerosol()
 
 
     example_rad_01_sun_glint(wvl0=532.0, sza0=60.0, saa0=0.0, vza0=60.0, plot=True)

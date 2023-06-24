@@ -2,7 +2,7 @@
 by Hong Chen (hong.chen.cu@gmail.com)
 
 This code has been tested under:
-    1) Linux on 2023-02-18 by Hong Chen
+    1) Linux on 2023-06-20 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -759,10 +759,17 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
     #\-----------------------------------------------------------------------------/
 
 
+    # define mca_sca object
+    #/-----------------------------------------------------------------------------\
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
+    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
+    #\-----------------------------------------------------------------------------/
+
+
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
     #/-----------------------------------------------------------------------------\
     # inhomogeneous 3d mcarats "atmosphere"
-    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=False)
+    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
 
     # 3d aerosol near surface (mixed with clouds)
     #/-----------------------------------------------------------------------------\
@@ -819,6 +826,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
             date=datetime.datetime(2017, 8, 13),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
+            sca=sca,
             Ng=abs0.Ng,
             target='flux0',
             Nrun=3,

@@ -27,7 +27,7 @@ The processes include:
         b) plot
 
 This code has been tested under:
-    1) Linux on 2023-03-14 by Hong Chen
+    1) Linux on 2023-06-23 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -154,12 +154,6 @@ def preprocess(img, resize_dims=None, normalize=False):
 
 
 
-class sat_tmp:
-
-    def __init__(self, data):
-
-        self.data = data
-
 def cal_mca_rad(date, geometry, cloud, wavelength=params['wavelength'], cth=params['cloud_top_height'], cgt=params['cloud_geometrical_thickness'], fdir='tmp-data/%s' % params['name_tag'], photons=params['photon'], solver='3D', overwrite=True):
 
     """
@@ -194,9 +188,21 @@ def cal_mca_rad(date, geometry, cloud, wavelength=params['wavelength'], cth=para
 
     # cld object
     #/----------------------------------------------------------------------------\#
-    sat0 =  sat_tmp(cloud)
+    Nx, Ny = cloud['cot_2d']['data'].shape
+    extent_xy = [0.0, cloud['dx']['data']*Nx, 0.0, cloud['dy']['data']*Ny]
+
     fname_cld = '%s/cld.pk' % fdir
-    cld0      = er3t.pre.cld.cld_sat(sat_obj=sat0, fname=fname_cld, cth=cth, cgt=cgt, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    cld0 = er3t.pre.cld.cld_gen_cop(
+            fname=fname_cld,
+            cot=cloud['cot_2d']['data'],
+            cer=cloud['cer_2d']['data'],
+            cth=cth,
+            cgt=cgt,
+            dz=atm0.lay['thickness']['data'][0],
+            extent_xy=extent_xy,
+            atm_obj=atm0,
+            overwrite=overwrite
+            )
     #\----------------------------------------------------------------------------/#
 
 
@@ -273,9 +279,21 @@ def cal_mca_flux(date, geometry, cloud, wavelength=params['wavelength'], cth=par
 
     # cld object
     #/----------------------------------------------------------------------------\#
-    sat0 =  sat_tmp(cloud)
+    Nx, Ny = cloud['cot_2d']['data'].shape
+    extent_xy = [0.0, cloud['dx']['data']*Nx, 0.0, cloud['dy']['data']*Ny]
+
     fname_cld = '%s/cld.pk' % fdir
-    cld0      = er3t.pre.cld.cld_sat(sat_obj=sat0, fname=fname_cld, cth=cth, cgt=cgt, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    cld0 = er3t.pre.cld.cld_gen_cop(
+            fname=fname_cld,
+            cot=cloud['cot_2d']['data'],
+            cer=cloud['cer_2d']['data'],
+            cth=cth,
+            cgt=cgt,
+            dz=atm0.lay['thickness']['data'][0],
+            extent_xy=extent_xy,
+            atm_obj=atm0,
+            overwrite=overwrite
+            )
     #\----------------------------------------------------------------------------/#
 
 
@@ -375,8 +393,12 @@ def main_pre_ipa():
     # retrieve COT
     #/--------------------------------------------------------------\#
     cot_ipa = f_mca.get_cot_from_ref(ref_norm)
-    cot_ipa[cot_ipa<0.0] = 0.0
-    cot_ipa[cot_ipa>f_mca.cot[-1]] = f_mca.cot[-1]
+
+    logic_out = (cot_ipa<cot[0]) | (cot_ipa>cot[-1])
+    logic_low = (logic_out) & (ref_norm<np.median(ref_norm))
+    logic_high = logic_out & np.logical_not(logic_low)
+    cot_ipa[logic_low]  = cot[0]
+    cot_ipa[logic_high] = cot[-1]
     #\--------------------------------------------------------------/#
 
     # assign 10 micron to cloud effective radius

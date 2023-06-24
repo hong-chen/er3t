@@ -1,6 +1,7 @@
 import os
 import sys
 import copy
+import time
 import datetime
 import warnings
 import multiprocessing as mp
@@ -56,6 +57,7 @@ class mcarats_ng:
 
     reference = 'Iwabuchi, H.: Efficient Monte Carlo methods for radiative transfer modeling, J. Atmos. Sci., 63, 2324-2339, doi:10.1175/JAS3755.1, 2006.'
 
+
     def __init__(self,                                          \
 
                  atm_1ds             = [],                      \
@@ -89,6 +91,7 @@ class mcarats_ng:
 
                  solver              = '3d',                    \
                  photons             = 1e7,                     \
+                 base_ratio          = 0.05,                    \
 
                  verbose             = False,                   \
                  quiet               = False                    \
@@ -157,24 +160,13 @@ class mcarats_ng:
 
         # photon distribution over gs of correlated-k
         #/----------------------------------------------------------------------------\#
-        photons_min_ipa0 = int(self.Nx*self.Ny*100)
-        photons_min_3d0  = min(int(1e7), photons_min_ipa0)
-
         if weights is None:
             self.np_mode = 'evenly'
             weights = np.repeat(1.0/self.Ng, Ng)
         else:
             self.np_mode = 'weighted'
 
-        photons_dist = np.int_(photons*weights)
-        Ndiff        = (photons_dist.sum()-photons)
-        index        = np.argmax(photons_dist)
-        photons_dist[index] = photons_dist[index] - Ndiff
-
-        if ((photons_dist<photons_min_ipa0).sum() > 0) and (self.solver=='IPA'):
-            photons_dist += (abs(photons_min_ipa0-photons_dist.min()))
-        elif ((photons_dist<photons_min_3d0).sum() > 0) and (self.solver=='3D'):
-            photons_dist += (abs(photons_min_3d0-photons_dist.min()))
+        photons_dist = distribute_photon(photons, weights, base_ratio=base_ratio)
 
         self.photons = np.tile(photons_dist, Nrun)
         self.photons_per_set = photons_dist.sum()
@@ -260,7 +252,6 @@ class mcarats_ng:
                 self.nml[ig]['Wld_mverb'] = 3
             else:
                 self.nml[ig]['Wld_mverb'] = 0
-
 
             if tune:
                 self.nml[ig]['Wld_moptim'] = 2
@@ -437,8 +428,10 @@ class mcarats_ng:
         """
 
         # create input files for MCARaTS
+        Nseed = int(time.time())
         for ir in range(self.Nrun):
             for ig in range(self.Ng):
+                self.nml[ig]['Wld_jseed'] = Nseed + ig + self.Ng*ir
                 mca_inp_file(self.fnames_inp[ir][ig], self.nml[ig], comment=comment)
 
         if not self.quiet:
@@ -529,6 +522,7 @@ class mcarats_ng:
         print('----------------------------------------------------------')
 
 
+
 def cal_mca_azimuth(normal_azimuth_angle):
 
     """
@@ -552,6 +546,22 @@ def cal_mca_azimuth(normal_azimuth_angle):
         mca_azimuth += 360.0
 
     return mca_azimuth
+
+
+
+def distribute_photon(Nphoton, weights, base_ratio=0.05):
+
+    Ndist = weights.size
+    photons_dist = np.int_(Nphoton*(1.0-base_ratio)*weights) + np.int_(Nphoton*base_ratio/Ndist)
+
+    Ndiff = Nphoton - photons_dist.sum()
+
+    if Ndiff >= 0:
+        photons_dist[np.argmin(weights)] += Ndiff
+    else:
+        photons_dist[np.argmax(weights)] += Ndiff
+
+    return photons_dist
 
 
 

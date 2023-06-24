@@ -193,39 +193,75 @@ def test_viirs():
 
     pass
 
+def test_grid_by_dxdy():
 
-def func_run(n):
+    extent_lonlat = [125.0, 127.0, 35.0, 37.0] # china
+    # extent_lonlat = [125.0, 127.0, 15.0, 17.0] # philippine sea
+    # extent_lonlat = [125.0, 127.0, -1.0, 1.0]  # equator
+    # extent_lonlat = [125.0, 127.0, 85.0, 87.0] # arctic region
 
-    time.sleep(n)
+    lon_1d = np.linspace(extent_lonlat[0], extent_lonlat[1], 201)
+    lat_1d = np.linspace(extent_lonlat[2], extent_lonlat[3], 201)
 
-    print(n)
-    return n
+    lon_2d, lat_2d = np.meshgrid(lon_1d, lat_1d, indexing='ij')
 
-def test_mp():
+    data_2d = lon_2d**2 + lat_2d**2
 
+    lon_2d, lat_2d, data_2d0 = er3t.util.grid_by_dxdy(lon_2d, lat_2d, data_2d)
 
+    # figure
+    #/----------------------------------------------------------------------------\#
+    if True:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111)
+        # cs = ax1.imshow(.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        ax1.scatter(lon_2d, lat_2d, s=6, c='k', lw=0.0)
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.plot([0, 1], [0, 1], color='k', ls='--')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
+    #\----------------------------------------------------------------------------/#
+
+    print(lon_2d[:, 0])
+    print(lat_2d[0, :])
+
+def test_allocate_jobs():
+
+    import psutil
     import multiprocessing as mp
 
+    weights0 = np.array([
+        14824075, 14483931, 13811633, 12822922, 11540979, \
+        9995858,  8223786,   6266341, 4349287,   752063,
+        676158,   599970,    523397,   446830,   363135,   319635])
 
+    weights = np.tile(weights0, 3)
 
+    workers = er3t.dev.allocate_jobs(5, weights)
+
+    # for i in range(5):
+    #     print(i, workers[i], len(workers[i]))
 
     pass
 
-
-
-def main():
-    import cartopy.crs as ccrs
-    import matplotlib.pyplot as plt
-
-    url = 'https://map1c.vis.earthdata.nasa.gov/wmts-geo/wmts.cgi'
-    layer = 'VIIRS_CityLights_2012'
-
-    ax = plt.axes(projection=ccrs.PlateCarree())
-    ax.add_wmts(url, layer)
-    ax.set_extent((-15, 25, 35, 60))
-
-    plt.title('Suomi NPP Earth at night April/October 2012')
-    plt.show()
 
 if __name__ == '__main__':
 
@@ -237,8 +273,6 @@ if __name__ == '__main__':
 
     # test_solar_spectra('tmp-data/abs_16g')
 
-    # test_viirs()
-    for i in range(5):
-        func_run(i)
+    # test_grid_by_dxdy()
 
-    # main()
+    test_allocate_jobs()

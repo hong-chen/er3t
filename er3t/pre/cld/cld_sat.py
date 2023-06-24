@@ -5,7 +5,7 @@ import numpy as np
 import copy
 from scipy import interpolate
 
-from er3t.util import mmr2vmr, cal_rho_air, downscale, cal_ext, cal_dist
+from er3t.util import mmr2vmr, cal_rho_air, downscale, cal_ext, cal_geodesic_dist
 from er3t.pre.atm import atm_atmmod
 
 
@@ -168,12 +168,18 @@ class cld_sat:
         lat_1d = self.sat.data['lat_2d']['data'][0, :]
 
         if 'dx' not in keys:
-            dx = cal_dist(lon_1d[1]-lon_1d[0])
+            dx = cal_geodesic_dist(
+                    self.sat.data['lon_2d']['data'][:-1, :], self.sat.data['lat_2d']['data'][:-1, :], \
+                    self.sat.data['lon_2d']['data'][1:, :] , self.sat.data['lat_2d']['data'][1:, :]   \
+                    ).mean()
         else:
             dx = self.sat.data['dx']['data']
 
         if 'dy' not in keys:
-            dy = cal_dist(lat_1d[1]-lat_1d[0])
+            dy = cal_geodesic_dist(
+                    self.sat.data['lon_2d']['data'][:, :-1], self.sat.data['lat_2d']['data'][:, :-1], \
+                    self.sat.data['lon_2d']['data'][:, 1:] , self.sat.data['lat_2d']['data'][:, 1:]   \
+                    ).mean()
         else:
             dy = self.sat.data['dy']['data']
 

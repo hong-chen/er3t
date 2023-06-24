@@ -1836,6 +1836,8 @@ def main_post(plot=True):
 
 if __name__ == '__main__':
 
+    warnings.warn('\nThis code is currently under development ...')
+
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
     #   b. <01_oco2_rad-sim_<cdata_sat_raw>.png> will be created under current directory
