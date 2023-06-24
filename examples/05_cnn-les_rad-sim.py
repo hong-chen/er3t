@@ -17,7 +17,7 @@ The processes include:
        data at different cloud fractions and cloud inhomogeneities to avoid biasing CNN model.
 
 This code has been tested under:
-    1) Linux on 2023-03-14 by Hong Chen
+    1) Linux on 2023-06-23 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
