@@ -677,7 +677,7 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
                         f.write(' %-15s = %-g\n' % (var_key, var))
 
                 else:
-                    msg = 'Error [mca_inp_file]: only types of int, float, str, ndarray are supported (do not support %s as %s).' % (var_key, type(var))
+                    msg = 'Error [mca_inp_file]: only types of int, float, str, ndarray are supported (do not support <%s> as %s).' % (var_key, type(var))
                     raise ValueError(msg)
 
                 if comment:
