@@ -44,7 +44,7 @@ class mca_run:
                  solver     = 0,      \
                  Ncpu       = 1,      \
                  mp_mode    = 'py',   \
-                 optimize   = False,   \
+                 optimize   = True,   \
                  fname_sh   = None,   \
                  verbose    = True,   \
                  quiet      = False   \
