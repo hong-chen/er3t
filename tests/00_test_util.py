@@ -193,26 +193,6 @@ def test_viirs():
 
     pass
 
-
-def func_run(n):
-
-    time.sleep(n)
-
-    print(n)
-    return n
-
-def test_mp():
-
-
-    import multiprocessing as mp
-
-
-
-
-    pass
-
-
-
 def test_grid_by_dxdy():
 
     extent_lonlat = [125.0, 127.0, 35.0, 37.0] # china
@@ -263,6 +243,24 @@ def test_grid_by_dxdy():
     print(lon_2d[:, 0])
     print(lat_2d[0, :])
 
+def test_allocate_jobs():
+
+    import psutil
+    import multiprocessing as mp
+
+    weights0 = np.array([
+        14824075, 14483931, 13811633, 12822922, 11540979, \
+        9995858,  8223786,   6266341, 4349287,   752063,
+        676158,   599970,    523397,   446830,   363135,   319635])
+
+    weights = np.tile(weights0, 3)
+
+    workers = er3t.dev.allocate_jobs(5, weights)
+
+    # for i in range(5):
+    #     print(i, workers[i], len(workers[i]))
+
+    pass
 
 
 if __name__ == '__main__':
@@ -275,4 +273,6 @@ if __name__ == '__main__':
 
     # test_solar_spectra('tmp-data/abs_16g')
 
-    test_grid_by_dxdy()
+    # test_grid_by_dxdy()
+
+    test_allocate_jobs()
