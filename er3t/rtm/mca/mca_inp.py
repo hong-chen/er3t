@@ -654,7 +654,7 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
             var = mcarats_nml_all[nml_key][var_key]
             if var is not None:
 
-                if isinstance(var, (int, float)):
+                if isinstance(var, (int, float, np.int32, np.int64, np.float32, np.float64)):
                     f.write(' %-15s = %-.16g\n' % (var_key, var))
                 elif isinstance(var, str):
                     if '*' in var:
@@ -677,7 +677,7 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
                         f.write(' %-15s = %-g\n' % (var_key, var))
 
                 else:
-                    msg = 'Error [mca_inp_file]: only types of int, float, str, ndarray are supported.'
+                    msg = 'Error [mca_inp_file]: only types of int, float, str, ndarray are supported (do not support %s as %s).' % (var_key, type(var))
                     raise ValueError(msg)
 
                 if comment:
