@@ -297,6 +297,8 @@ Current and past contributors are:
 
 * `Ken Hirata <Ken.Hirata@colorado.edu>`_ (Jan., 2023 - current)
 
+   - contributed to the theoretical development of CPU multithreading optimization (functions in ``er3t/rtm/mca/mca_run.py``)
+
    - implementing the Mie scattering phase function support for aerosols (work in progress)
 
 * `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
