@@ -116,7 +116,7 @@ class mcarats_ng:
         self.verbose = verbose
         self.quiet   = quiet
         self.overwrite = overwrite
-        self.mp_mode   = mp_mode
+        self.mp_mode   = mp_mode.lower()
 
         self.sca                 = sca
 
@@ -131,9 +131,7 @@ class mcarats_ng:
         self.sensor_xpos         = sensor_xpos
         self.sensor_ypos         = sensor_ypos
 
-
         self.Nrun    = Nrun
-
 
         solver = solver.lower()
         if solver in ['3d', '3 d', 'three d']:
@@ -173,6 +171,7 @@ class mcarats_ng:
         #\----------------------------------------------------------------------------/#
 
         # Determine how many CPUs to utilize
+        #/----------------------------------------------------------------------------\#
         Ncpu_total = mp.cpu_count()
         self.Ncpu_total = Ncpu_total
         if Ncpu == 'auto':
@@ -185,6 +184,7 @@ class mcarats_ng:
         else:
             msg = 'Error [mcarats_ng]: Cannot understand <Ncpu=%s>.' % Ncpu
             raise OSError(msg)
+        #\----------------------------------------------------------------------------/#
 
         # in file names, 'r' indicates #run, 'g' indicates #g, index of 'r' and 'g' both start from 0
         # self.fnames_inp/self.fnames_out is a list embeded with lists
@@ -227,7 +227,8 @@ class mcarats_ng:
             self.gen_mca_out()
 
 
-        self.run_check()
+        if self.mp_mode not in ['batch', 'shell', 'bash', 'hpc', 'sh']:
+            self.run_check()
 
 
     def init_wld(self, tune=False, verbose=False, \
@@ -445,8 +446,6 @@ class mcarats_ng:
         """
         Run MCARaTS to get MCARaTS output files
         """
-
-
 
         # solver:
         #   0: Full 3D radiative transfer

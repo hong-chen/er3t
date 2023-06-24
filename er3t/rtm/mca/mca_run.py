@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import datetime
 import warnings
 import multiprocessing as mp
@@ -45,6 +46,7 @@ class mca_run:
                  Ncpu       = 1,      \
                  mp_mode    = 'py',   \
                  optimize   = True,   \
+                 has_mpi    = er3t.common.has_mpi, \
                  fname_sh   = None,   \
                  verbose    = True,   \
                  quiet      = False   \
@@ -78,9 +80,10 @@ class mca_run:
         mp_mode = mp_mode.lower()
         if mp_mode in ['mpi', 'openmpi']:
             mp_mode = 'mpi'
+            has_mpi = True
         elif mp_mode in ['python', 'multiprocessing', 'py', 'mp', 'pymp']:
             mp_mode = 'py'
-        elif mp_mode in ['batch', 'shell', 'bash', 'hpc']:
+        elif mp_mode in ['batch', 'shell', 'bash', 'hpc', 'sh']:
             mp_mode = 'sh'
         else:
             msg = 'Error [mca_run]: Cannot understand input <mp_mode=\'%s\'>.' % mp_mode
@@ -103,7 +106,7 @@ class mca_run:
             if not os.path.exists(fdir_out):
                 os.system('mkdir -p %s' % fdir_out)
 
-            if (Ncpu > 1) and (self.mp_mode == 'mpi'):
+            if (Ncpu > 1) and has_mpi:
                 command = 'mpirun -n %d %s %d %d %s %s' % (Ncpu, executable, photons_dist[i], solver, input_file, output_file)
             else:
                 command = '%s %d %d %s %s' % (executable, photons_dist[i], solver, input_file, output_file)
@@ -158,7 +161,7 @@ class mca_run:
     def save(self, fname=None):
 
         if fname is None:
-            fname = 'mca_batch_script_%s.sh' % str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+            fname = 'er3t-mca_shell-script_%18.7f.sh' % time.time()
 
         if not self.quiet:
             print('Message [mca_run]: Creating batch script <%s> ...' % fname)
