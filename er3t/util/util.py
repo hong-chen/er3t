@@ -395,14 +395,15 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
     lat_2d, lon_2d = np.meshgrid(lat_1d, lon_1d)
 
     points   = np.transpose(np.vstack((lon, lat)))
-    data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
 
     if method == 'nearest':
+        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
         data_2d  = interpolate.griddata(points, data, (lon_2d, lat_2d), method='nearest')
         logic = np.isnan(data_2d0) | np.isnan(data_2d)
         data_2d[logic] = 0.0
         return lon_2d, lat_2d, data_2d
     else:
+        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
         logic = np.isnan(data_2d0)
         data_2d0[logic] = 0.0
         return lon_2d, lat_2d, data_2d0
@@ -453,9 +454,9 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest'):
     lat_2d, lon_2d = np.meshgrid(lat_1d, lon_1d)
 
     points   = np.transpose(np.vstack((lon, lat)))
-    data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
 
     if method == 'nearest':
+        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
         data_2d  = interpolate.griddata(points, data, (lon_2d, lat_2d), method='nearest')
         logic = np.isnan(data_2d0) | np.isnan(data_2d)
         data_2d[logic] = 0.0
@@ -567,14 +568,15 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     # gridding
     #/----------------------------------------------------------------------------\#
     points   = np.transpose(np.vstack((lon, lat)))
-    data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
 
     if method == 'nearest':
+        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
         data_2d  = interpolate.griddata(points, data, (lon_2d, lat_2d), method='nearest')
         logic = np.isnan(data_2d0) | np.isnan(data_2d)
         data_2d[logic] = 0.0
         return lon_2d, lat_2d, data_2d
     else:
+        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
         logic = np.isnan(data_2d0)
         data_2d0[logic] = 0.0
         return lon_2d, lat_2d, data_2d0

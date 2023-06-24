@@ -253,12 +253,11 @@ def test_allocate_jobs():
         9995858,  8223786,   6266341, 4349287,   752063,
         676158,   599970,    523397,   446830,   363135,   319635])
 
-    weights = np.tile(weights0, 3)
+    weights_in = np.tile(weights0, 3)
+    print(weights_in)
 
-    workers = er3t.dev.allocate_jobs(5, weights)
-
-    # for i in range(5):
-    #     print(i, workers[i], len(workers[i]))
+    indices_out = er3t.dev.rearrange_jobs(5, weights_in)
+    print(indices_out)
 
     pass
 
