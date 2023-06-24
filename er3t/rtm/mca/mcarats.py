@@ -429,9 +429,11 @@ class mcarats_ng:
 
         # create input files for MCARaTS
         Nseed = int(time.time())
+        rands = np.arange(self.Nrun*self.Ng).reshape((self.Nrun, self.Ng))
+        np.random.shuffle(rands)
         for ir in range(self.Nrun):
             for ig in range(self.Ng):
-                self.nml[ig]['Wld_jseed'] = Nseed + ig + self.Ng*ir
+                self.nml[ig]['Wld_jseed'] = Nseed + rands[ir, ig]
                 mca_inp_file(self.fnames_inp[ir][ig], self.nml[ig], comment=comment)
 
         if not self.quiet:
