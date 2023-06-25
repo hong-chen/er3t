@@ -946,7 +946,7 @@ class modis_04:
         # -------------------------------------------------------------------------------------------------
 
 
-        # 
+        #
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         Deep_Blue_AOD_550_land              = get_data_h4(Deep_Blue_AOD_550_land_0)[logic]
         Deep_Blue_Angstrom_Exponent_land    = get_data_h4(Deep_Blue_Angstrom_Exponent_land_0)[logic]
@@ -971,7 +971,7 @@ class modis_04:
         else:
             self.logic = {}
             self.logic[fname] = {'1km':logic}
-            self.data  = {}            
+            self.data  = {}
             self.data['lon'] = dict(name='Longitude'                                        , data=lon                              , units='degrees')
             self.data['lat'] = dict(name='Latitude'                                         , data=lat                              , units='degrees')
             self.data['AOD_550_land'] = dict(name='AOD 550nm (Land)'                        , data=Deep_Blue_AOD_550_land           , units='None')
@@ -1500,7 +1500,7 @@ def download_modis_rgb(
         from matplotlib.axes import Axes
         from cartopy.mpl.geoaxes import GeoAxes
         #GeoAxes._pcolormesh_patched = Axes.pcolormesh
-        
+
         wmts = WebMapTileService(wmts_cgi)
 
         fig = plt.figure(figsize=(12, 6))
