@@ -22,8 +22,8 @@ Authors:
     Hong Chen
 
 Example Usage:
-    sdown --date 20210523 --lons 30 35 --lats 0 10 --products mod06_l2 --fdir tmp-data
-    sdown --date 20130714 --extent 30 35 0 10 --products modrgb myd02hkm myd06_l2 --fdir tmp-data
+    sdown --date 20210523 --lons 30 35 --lats 0 10 --products mod06_l2 --fdir sat-data
+    sdown --date 20130714 --extent 30 35 0 10 --products modrgb myd02hkm myd06_l2 --fdir sat-data
 
 To see a demonstration of how this tool works, use:
     sdown --run_demo
@@ -47,8 +47,9 @@ _description_ = '=' * _width_ + '\n\n' + \
                 '=' * _width_ + '\n' + \
                 ' Satellite Data Product Download Tool '.center(_width_, '=') + '\n\n' + \
                 'Example Usage:\n'\
-                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir_out tmp-data\n'\
-                'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir_out tmp-data\n'
+                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir_out sat-data\n'\
+                'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir_out sat-data\n'
+
 
 # product tags
 # this <_sat_tags_support_> will be updated over time
@@ -353,7 +354,7 @@ def run(date, extent, fdir_out, products, verbose):
 
         references.append(product_info['reference'])
 
-    print('Please cite the use of this data as follows:\n%s' % '\n\n'.join(references))
+    print('If you are looking for references, you can cite the use of this data as follows:\n%s' % '\n\n'.join(references))
     print('\nMessage [sdown]: Finished downloading MODIS files! You can find them in %s\n' % fdir_out)
 
 
@@ -382,9 +383,9 @@ if __name__ == '__main__':
 
     parser = ArgumentParser(prog='sdown', formatter_class=RawTextHelpFormatter,
                             description=_description_)
-    parser.add_argument('-f', '--fdir', type=str, metavar='', default='modis-data',
+    parser.add_argument('-f', '--fdir', type=str, metavar='', default='sat-data',
                         help='Directory where the files will be downloaded\n'\
-                        'By default, files will be downloaded to \'modis-data\'\n \n')
+                        'By default, files will be downloaded to \'sat-data\'\n \n')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Pass --verbose if status of your request should be reported frequently.\n \n'\
                         'This is disabled by default.\n \n')
@@ -441,7 +442,7 @@ if __name__ == '__main__':
         extent     = [-79.4, -71.1, 21.6, 25.8]
         lons       = None
         lats       = None
-        fdir       = 'tmp-data'
+        fdir       = 'sat-data'
         products   = ['MODRGB', 'MYD02QKM']
         verbose    = 1
 
