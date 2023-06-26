@@ -25,8 +25,8 @@ def grid_nearest_fast(x, y, data, x_2d, y_2d, fill_nan=True):
 
     # check equidistant
     #/----------------------------------------------------------------------------\#
-    if check_equidistant(x_2d[:, 0]) and check_equidistant(x_2d[:, -1]) and
-       check_equidistant(y_2d[0, :]) and check_equidistant(y_2d[-1, :]):
+    if er3t.util.check_equidistant(x_2d[:, 0]) and er3t.util.check_equidistant(x_2d[:, -1]) and \
+       er3t.util.check_equidistant(y_2d[0, :]) and er3t.util.check_equidistant(y_2d[-1, :]):
 
         dx = x_2d[1, 0] - x_2d[0, 0]
         dy = y_2d[0, 1] - y_2d[0, 0]
