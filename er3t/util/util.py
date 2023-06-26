@@ -8,6 +8,7 @@ import urllib.request
 from io import StringIO
 import numpy as np
 from scipy import interpolate, stats
+from scipy.spatial import KDTree
 import warnings
 
 import er3t
@@ -89,7 +90,7 @@ def check_equidistant(z, threshold=1.0e-6):
 
     fac = dz/dz[0]
 
-    if np.abs(fac-1.0).sum() >= threshold:
+    if np.abs(fac-1.0).sum() >= (threshold*z.size):
         return False
     else:
         return True
@@ -349,7 +350,78 @@ def move_correlate(data0, data, Ndx=5, Ndy=5):
 
 
 
-def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
+def grid_nearest_fast(x, y, data, x_2d, y_2d, Ngrid_limit=1, fill_value=np.nan):
+
+    """
+    Use scipy.spatial.KDTree to perform fast nearest gridding
+
+    References:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.KDTree.html
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.KDTree.query.html
+
+    Inputs:
+        x: x position of raw data
+        y: y position of raw data
+        data: value of raw data
+        x_2d: x position of the data (to be gridded)
+        y_2d: y position of the data (to be gridded)
+        Ngrid_limit=<1>=: number of grids for defining "too far"
+        fill_value=<np.nan>: fill-in value for the data that is "too far" away from raw data
+
+    Output:
+        data_2d: gridded data
+    """
+
+    # preprocess raw data
+    #/----------------------------------------------------------------------------\#
+    x = np.array(x).ravel()
+    y = np.array(y).ravel()
+    data = np.array(data).ravel()
+    #\----------------------------------------------------------------------------/#
+
+
+    # create KDTree
+    #/----------------------------------------------------------------------------\#
+    points = np.transpose(np.vstack((x, y)))
+    tree_xy = KDTree(points, leafsize=50)
+    #\----------------------------------------------------------------------------/#
+
+
+    # search KDTree for the nearest neighbor
+    #/----------------------------------------------------------------------------\#
+    points_query = np.transpose(np.vstack((x_2d.ravel(), y_2d.ravel())))
+    dist_xy, indices_xy = tree_xy.query(points_query, workers=-1)
+
+    dist_2d = dist_xy.reshape(x_2d.shape)
+    data_2d = data[indices_xy].reshape(x_2d.shape)
+    #\----------------------------------------------------------------------------/#
+
+
+    # use fill value to fill in grids that are "two far"* away from raw data
+    #   * by default 1 grid away is defined as "too far"
+    #/----------------------------------------------------------------------------\#
+    dx = np.zeros_like(x_2d, dtype=np.float64)
+    dx[1:, :] = x_2d[1:, :] - x_2d[:-1, :]
+    dx[0, :]  = dx[1, :]
+
+    dy = np.zeros_like(y_2d, dtype=np.float64)
+    dy[:, 1:] = y_2d[:, 1:] - y_2d[:, :-1]
+    dy[:, 0]  = dy[:, 1]
+
+
+    dist_limit = np.sqrt((dx*Ngrid_limit)**2+(dy*Ngrid_limit)**2)
+
+
+    logic_out = (dist_2d>dist_limit)
+
+    data_2d[logic_out] = fill_value
+    #\----------------------------------------------------------------------------/#
+
+    return data_2d
+
+
+
+def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fill_value=0.0, Ngrid_limit=1):
 
     """
     Grid irregular data into a regular grid by input 'extent' (westmost, eastmost, southmost, northmost)
@@ -397,20 +469,18 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
     points   = np.transpose(np.vstack((lon, lat)))
 
     if method == 'nearest':
-        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
-        data_2d  = interpolate.griddata(points, data, (lon_2d, lat_2d), method='nearest')
-        logic = np.isnan(data_2d0) | np.isnan(data_2d)
-        data_2d[logic] = 0.0
-        return lon_2d, lat_2d, data_2d
+        data_2d = grid_nearest_fast(lon, lat, data, lon_2d, lat_2d, fill_value=np.nan, Ngrid_limit=Ngrid_limit)
     else:
-        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
-        logic = np.isnan(data_2d0)
-        data_2d0[logic] = 0.0
-        return lon_2d, lat_2d, data_2d0
+        data_2d = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
+
+    logic = np.isnan(data_2d)
+    data_2d[logic] = fill_value
+
+    return lon_2d, lat_2d, data_2d
 
 
 
-def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest'):
+def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', fill_value=0.0, Ngrid_limit=1):
 
     """
     Grid irregular data into a regular grid by input longitude and latitude
@@ -456,20 +526,18 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest'):
     points   = np.transpose(np.vstack((lon, lat)))
 
     if method == 'nearest':
-        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
-        data_2d  = interpolate.griddata(points, data, (lon_2d, lat_2d), method='nearest')
-        logic = np.isnan(data_2d0) | np.isnan(data_2d)
-        data_2d[logic] = 0.0
-        return lon_2d, lat_2d, data_2d
+        data_2d = grid_nearest_fast(lon, lat, data, lon_2d, lat_2d, fill_value=np.nan, Ngrid_limit=Ngrid_limit)
     else:
-        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
-        logic = np.isnan(data_2d0)
-        data_2d0[logic] = 0.0
-        return lon_2d, lat_2d, data_2d0
+        data_2d = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
+
+    logic = np.isnan(data_2d)
+    data_2d[logic] = fill_value
+
+    return lon_2d, lat_2d, data_2d
 
 
 
-def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'):
+def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', fill_value=0.0, Ngrid_limit=1):
 
     """
     Grid irregular data into a regular xy grid by input 'extent' (westmost, eastmost, southmost, northmost)
@@ -570,16 +638,14 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     points   = np.transpose(np.vstack((lon, lat)))
 
     if method == 'nearest':
-        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method='linear', fill_value=np.nan)
-        data_2d  = interpolate.griddata(points, data, (lon_2d, lat_2d), method='nearest')
-        logic = np.isnan(data_2d0) | np.isnan(data_2d)
-        data_2d[logic] = 0.0
-        return lon_2d, lat_2d, data_2d
+        data_2d = grid_nearest_fast(lon, lat, data, lon_2d, lat_2d, fill_value=np.nan, Ngrid_limit=Ngrid_limit)
     else:
-        data_2d0 = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
-        logic = np.isnan(data_2d0)
-        data_2d0[logic] = 0.0
-        return lon_2d, lat_2d, data_2d0
+        data_2d = interpolate.griddata(points, data, (lon_2d, lat_2d), method=method, fill_value=np.nan)
+
+    logic = np.isnan(data_2d)
+    data_2d[logic] = fill_value
+
+    return lon_2d, lat_2d, data_2d
     #\----------------------------------------------------------------------------/#
 
 

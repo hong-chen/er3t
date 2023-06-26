@@ -9,6 +9,7 @@ import urllib.request
 from io import StringIO
 import numpy as np
 from scipy import interpolate, stats
+from scipy.spatial import KDTree
 import warnings
 
 import er3t
@@ -21,7 +22,27 @@ __all__ = ['grid_nearest_fast']
 
 
 
-def grid_nearest_fast(x, y, data, x_2d, y_2d, fill_nan=True):
+def grid_nearest_fast(x, y, data, x_2d, y_2d, Ngrid_limit=1, fill_value=np.nan):
+
+    """
+    Use scipy.spatial.KDTree to perform fast nearest gridding
+
+    References:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.KDTree.html
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.KDTree.query.html
+
+    Inputs:
+        x: x position of raw data
+        y: y position of raw data
+        data: value of raw data
+        x_2d: x position of the data (to be gridded)
+        y_2d: y position of the data (to be gridded)
+        Ngrid_limit=<1>=: number of grids for defining "too far"
+        fill_value=<np.nan>: fill-in value for the data that is "too far" away from raw data
+
+    Output:
+        data_2d: gridded data
+    """
 
     # check equidistant
     #/----------------------------------------------------------------------------\#
@@ -38,13 +59,6 @@ def grid_nearest_fast(x, y, data, x_2d, y_2d, fill_nan=True):
     #\----------------------------------------------------------------------------/#
 
 
-    # check whether raw data is contained within the gridded region
-    #/----------------------------------------------------------------------------\#
-    logic_in  = (x>=x_2d[0, 0]) & (x<=x_2d[-1, 0]) & (y>=y_2d[0, 0]) & (y<=y_2d[0, -1])
-    logic_out = np.logical_not(logic_in)
-    #\----------------------------------------------------------------------------/#
-
-
     # preprocess raw data
     #/----------------------------------------------------------------------------\#
     x = np.array(x).ravel()
@@ -53,40 +67,43 @@ def grid_nearest_fast(x, y, data, x_2d, y_2d, fill_nan=True):
     #\----------------------------------------------------------------------------/#
 
 
-    # define data_2d for storing gridded data
+    # check whether raw data is contained within the gridded region
     #/----------------------------------------------------------------------------\#
-    data_2d = np.zeros(x_2d.shape, dtype=np.float64)
-    if fill_nan:
-        data_2d[...] = np.nan
+    logic_in  = (x>=x_2d[0, 0]) & (x<=x_2d[-1, 0]) & (y>=y_2d[0, 0]) & (y<=y_2d[0, -1])
+
+    x = x[logic_in]
+    y = y[logic_in]
+    data = data[logic_in]
     #\----------------------------------------------------------------------------/#
 
 
-    indices_x = np.int_((x-x_2d[0, 0])//dx)
-    indices_y = np.int_((y-y_2d[0, 0])//dy)
-
-    nearest = np.zeros(x.size, dtype=np.float64)
-    nearest[logic_in] = data_2d[indices_x[logic_in], indices_y[logic_in]]
-
-    # deal with nan data
+    # create KDTree
     #/----------------------------------------------------------------------------\#
-    logic_nan  = np.isnan(data_2d)
-    logic_good = np.logical_not(logic_nan)
-    if np.isnan(nearest).sum()>0 and fill_nan:
-        data_2d_ = data_2d[logic_good]
-        x_2d_    = x_2d[logic_good]
-        y_2d_    = y_2d[logic_good]
-
-        indices_nan = np.where(np.isnan(nearest))[0]
-        for index in indices_nan:
-            x_ = x[index]
-            y_ = y[index]
-            index_closest = np.argmin(np.abs((x_2d_-x_)**2+(y_2d_-y_)**2))
-            nearest[index] = data_2d_[index_closest]
-
-    nearest[logic_out] = np.nan
+    points = np.transpose(np.vstack((x, y)))
+    tree_xy = KDTree(points, leafsize=50)
     #\----------------------------------------------------------------------------/#
 
-    return nearest
+
+    # search KDTree for the nearest neighbor
+    #/----------------------------------------------------------------------------\#
+    points_query = np.transpose(np.vstack((x_2d.ravel(), y_2d.ravel())))
+    dist_xy, indices_xy = tree_xy.query(points_query, workers=-1)
+
+    dist_2d = dist_xy.reshape(x_2d.shape)
+    data_2d = data[indices_xy].reshape(x_2d.shape)
+    #\----------------------------------------------------------------------------/#
+
+
+    # use fill value to fill in grids that are "two far"* away from raw data
+    #   * by default 1 grid away is defined as "too far"
+    #/----------------------------------------------------------------------------\#
+    dist_limit = np.sqrt((dx*Ngrid_limit)**2+(dy*Ngrid_limit)**2)
+    logic_out = (dist_2d>dist_limit)
+
+    data_2d[logic_out] = fill_value
+    #\----------------------------------------------------------------------------/#
+
+    return data_2d
 
 
 
