@@ -408,10 +408,7 @@ def grid_nearest_fast(x, y, data, x_2d, y_2d, Ngrid_limit=1, fill_value=np.nan):
     dy[:, 1:] = y_2d[:, 1:] - y_2d[:, :-1]
     dy[:, 0]  = dy[:, 1]
 
-
     dist_limit = np.sqrt((dx*Ngrid_limit)**2+(dy*Ngrid_limit)**2)
-
-
     logic_out = (dist_2d>dist_limit)
 
     data_2d[logic_out] = fill_value
@@ -554,7 +551,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
         data_2d: numpy array, gridded data
     How to use:
         After read in the longitude latitude and data into lon0, lat0, data0
-        lon, lat, data = grid_by_extent(lon0, lat0, data0, dx=250.0, dy=250.0)
+        lon, lat, data = grid_by_dxdy(lon0, lat0, data0, dx=250.0, dy=250.0)
     """
 
     # flatten lon/lat/data
