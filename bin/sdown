@@ -372,7 +372,7 @@ def run(date, extent, fdir_out, products, verbose):
 
         references.append(product_info['reference'])
 
-    print('The following references were used/downloaded:\n\n%s' % '\n\n'.join(references))
+    print('If you would like to cite the use of this data:\n\n%s' % '\n\n'.join(references))
     print('\nMessage [sdown]: Finished downloading satellite files! You can find them in %s\n' % fdir_out)
 
 
