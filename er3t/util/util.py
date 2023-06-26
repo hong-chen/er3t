@@ -958,7 +958,7 @@ def download_laads_https(
         try:
             webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
         except urllib.error.HTTPError:
-            msg = '\nError [download_laads_https]: cannot access <%s>.' % fname_server
+            msg = '\nError [download_laads_https]: cannot access <%s>.' % fdir_server
             raise OSError(msg)
     content  = webpage.read().decode('utf-8')
     lines    = content.split('\n')
