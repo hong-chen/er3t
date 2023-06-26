@@ -54,7 +54,8 @@ _description_ = '=' * _width_ + '\n\n' + \
 # product tags
 # this <_sat_tags_support_> will be updated over time
 #/----------------------------------------------------------------------------\#
-_date_today_ = datetime.date.today().strftime('%d %B, %Y')
+_today_dt    = datetime.datetime.today()
+_date_today_ = _today_dt.strftime('%d %B, %Y')
 
 _sat_tags_support_ = {
 
@@ -291,9 +292,20 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]))
         if datetime.timedelta((end_dt - start_dt).days).days < 0:
             msg = '\nError [sdown]: `end_date` must be on or after `start_date`.' + \
-                  '\n\nReceived start_date: %s\nReceived end_date: %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y"))
+                  '\n\nReceived start date: %s\nReceived end date: %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y"))
             sys.exit(msg)
         
+        if (datetime.timedelta((_today_dt - start_dt).days).days < 0):
+            msg = '\nError [sdown]: `start_date` cannot be in the future.' + \
+                  '\n\nReceived start date: %s\nToday\'s date is    : %s\n' % (start_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
+            sys.exit(msg)
+
+        if (datetime.timedelta((_today_dt - end_dt).days).days < 0):
+            msg = '\nWarning [sdown]: End date is in the future. Data will only be downloaded until today\'s date.' + \
+                  '\n\nReceived end date: %s\nToday\'s date is : %s\n' % (end_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
+            print(msg)
+            end_dt = _today_dt
+
         if verbose:
             print('\nMessage [sdown]: Data will be downloaded for dates beginning %s to %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y")))
         
