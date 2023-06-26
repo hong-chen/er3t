@@ -276,7 +276,14 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         sys.exit('\nError [sdown]: Please provide a date via --date or date range via --start_date and --end_date\n')
 
     elif (date is not None) and ((start_date is None) or (end_date is None)):
+        
         single_dt = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
+
+        if (datetime.timedelta((_today_dt - single_dt).days).days < 0):
+            msg = '\nError [sdown]: Provided date is in the future. Data will only be downloaded until today\'s date.' + \
+                  '\n\nReceived date   : %s\nToday\'s date is : %s\n' % (single_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
+            sys.exit(msg)
+
         if verbose:
             print('\nMessage [sdown]: Data will be downloaded for %s\n' % single_dt.strftime("%d %B, %Y"))
         
