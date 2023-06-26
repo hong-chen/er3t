@@ -36,6 +36,7 @@ This code has been tested under:
 import os
 import sys
 import pickle
+import warnings
 import h5py
 from pyhdf.SD import SD, SDC
 import numpy as np
@@ -53,7 +54,7 @@ from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 # import cartopy.crs as ccrs
-mpl.use('Agg')
+# mpl.use('Agg')
 
 
 import er3t
@@ -67,6 +68,8 @@ params = {
        'wavelength' : 768.5151,
          'oco_band' : 'o2a',
            'region' : [-109.1, -106.9, 36.9, 39.1],
+               'dx' : 250.0,
+               'dy' : 250.0,
            'photon' : 1e8,
              'Ncpu' : 12,
        'photon_ipa' : 2e7,
@@ -216,7 +219,12 @@ def cal_sat_delta_t(sat):
 
     return utc_oco.mean()-utc_mod.mean()
 
-def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
+def cdata_sat_raw(
+        oco_band=params['oco_band'],
+        dx=params['dx'],
+        dy=params['dy'],
+        plot=True
+        ):
 
     # process wavelength
     #/----------------------------------------------------------------------------\#
@@ -277,8 +285,8 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
     lat0  = modl1b.data['lat']['data']
     ref0  = modl1b.data['ref']['data'][index_wvl, ...]
     rad0  = modl1b.data['rad']['data'][index_wvl, ...]
-    lon_2d, lat_2d, ref_2d = er3t.util.grid_by_extent(lon0, lat0, ref0, extent=sat0.extent)
-    lon_2d, lat_2d, rad_2d = er3t.util.grid_by_extent(lon0, lat0, rad0, extent=sat0.extent)
+    lon_2d, lat_2d, ref_2d = er3t.util.grid_by_dxdy(lon0, lat0, ref0, extent=sat0.extent, dx=dx, dy=dy, method='nearest')
+    lon_2d, lat_2d, rad_2d = er3t.util.grid_by_dxdy(lon0, lat0, rad0, extent=sat0.extent, dx=dx, dy=dy, method='nearest')
 
     g1['rad_%4.4d' % wvl] = rad_2d
     g1['ref_%4.4d' % wvl] = ref_2d
@@ -305,11 +313,11 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
     sfh0  = mod03.data['height']['data']/1000.0 # units: km
     sfh0[sfh0<0.0] = np.nan
 
-    lon_2d, lat_2d, sza_2d = er3t.util.grid_by_lonlat(lon0, lat0, sza0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, saa_2d = er3t.util.grid_by_lonlat(lon0, lat0, saa0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, vza_2d = er3t.util.grid_by_lonlat(lon0, lat0, vza0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, vaa_2d = er3t.util.grid_by_lonlat(lon0, lat0, vaa0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
-    lon_2d, lat_2d, sfh_2d = er3t.util.grid_by_lonlat(lon0, lat0, sfh0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, sza_2d = er3t.util.grid_by_dxdy(lon0, lat0, sza0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, saa_2d = er3t.util.grid_by_dxdy(lon0, lat0, saa0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, vza_2d = er3t.util.grid_by_dxdy(lon0, lat0, vza0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, vaa_2d = er3t.util.grid_by_dxdy(lon0, lat0, vaa0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, sfh_2d = er3t.util.grid_by_dxdy(lon0, lat0, sfh0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
 
     g0['sza'] = sza_2d
     g0['saa'] = saa_2d
@@ -333,13 +341,13 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
     cth0  = modl2.data['cloud_top_height_1km']['data']/1000.0 # units: km
     cth0[cth0<=0.0] = np.nan
 
-    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cer0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
+    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cer0, extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     cer_2d_l2[cer_2d_l2<=1.0] = np.nan
 
-    lon_2d, lat_2d, cot_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cot0, lon_1d=lon_1d, lat_1d=lat_1d, method='nearest')
+    lon_2d, lat_2d, cot_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cot0, extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     cot_2d_l2[cot_2d_l2<=0.0] = np.nan
 
-    lon_2d, lat_2d, cth_2d_l2 = er3t.util.grid_by_lonlat(lon0, lat0, cth0, lon_1d=lon_1d, lat_1d=lat_1d, method='linear')
+    lon_2d, lat_2d, cth_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cth0, extent=sat0.extent, dx=dx, dy=dy, method='linear', Ngrid_limit=4)
     cth_2d_l2[cth_2d_l2<=0.0] = np.nan
 
     g2['cot_l2'] = cot_2d_l2
@@ -361,17 +369,18 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
     mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_43_0 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, sfc_43_0 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     sfc_43_0[sfc_43_0<0.0] = 0.0
     sfc_43_0[sfc_43_0>1.0] = 1.0
-    lon_2d_sfc, lat_2d_sfc, sfc_43_1 = er3t.util.grid_by_extent(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl_sfc, :], extent=sat0.extent)
+
+    lon_2d_sfc, lat_2d_sfc, sfc_43_1 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl_sfc, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     sfc_43_1[sfc_43_1<0.0] = 0.0
     sfc_43_1[sfc_43_1>1.0] = 1.0
 
     g3['lon'] = lon_2d_sfc
     g3['lat'] = lat_2d_sfc
 
-    g3['alb_43_%4.4d' % wvl] = sfc_43_0
+    g3['alb_43_%4.4d' % wvl]     = sfc_43_0
     g3['alb_43_%4.4d' % wvl_sfc] = sfc_43_1
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
@@ -459,225 +468,6 @@ def cdata_sat_raw(oco_band=params['oco_band'], plot=True):
 
     f0.close()
     #/----------------------------------------------------------------------------\#
-
-    if plot:
-
-        f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-        extent = f0['extent'][...]
-
-        rgb = f0['mod/rgb'][...]
-        rad = f0['mod/rad/rad_%4.4d' % wvl][...]
-        ref = f0['mod/rad/ref_%4.4d' % wvl][...]
-
-        sza = f0['mod/geo/sza'][...]
-        saa = f0['mod/geo/saa'][...]
-        vza = f0['mod/geo/vza'][...]
-        vaa = f0['mod/geo/vaa'][...]
-
-        cot = f0['mod/cld/cot_l2'][...]
-        cer = f0['mod/cld/cer_l2'][...]
-        cth = f0['mod/cld/cth_l2'][...]
-        sfh = f0['mod/geo/sfh'][...]
-
-        alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
-
-        f0.close()
-
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        rcParams['font.size'] = 12
-        fig = plt.figure(figsize=(16, 16))
-
-        fig.suptitle('MODIS Products Preview')
-
-        # RGB
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(441)
-        cs = ax1.imshow(rgb, zorder=0, extent=extent)
-        ax1.set_xlim((extent[:2]))
-        ax1.set_ylim((extent[2:]))
-        ax1.set_xlabel('Longitude [$^\circ$]')
-        ax1.set_ylabel('Latitude [$^\circ$]')
-        ax1.set_title('RGB Imagery')
-
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cax.axis('off')
-        #\--------------------------------------------------------------/#
-
-        # L1B radiance
-        #/----------------------------------------------------------------------------\#
-        ax2 = fig.add_subplot(442)
-        cs = ax2.imshow(rad.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.5)
-        ax2.set_xlim((extent[:2]))
-        ax2.set_ylim((extent[2:]))
-        ax2.set_xlabel('Longitude [$^\circ$]')
-        ax2.set_ylabel('Latitude [$^\circ$]')
-        ax2.set_title('L1B Radiance (%d nm)' % wvl)
-
-        divider = make_axes_locatable(ax2)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # L1B reflectance
-        #/----------------------------------------------------------------------------\#
-        ax3 = fig.add_subplot(443)
-        cs = ax3.imshow(ref.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=1.0)
-        ax3.set_xlim((extent[:2]))
-        ax3.set_ylim((extent[2:]))
-        ax3.set_xlabel('Longitude [$^\circ$]')
-        ax3.set_ylabel('Latitude [$^\circ$]')
-        ax3.set_title('L1B Reflectance (%d nm)' % wvl)
-
-        divider = make_axes_locatable(ax3)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # sza
-        #/----------------------------------------------------------------------------\#
-        ax5 = fig.add_subplot(445)
-        cs = ax5.imshow(sza.T, origin='lower', cmap='jet', zorder=0, extent=extent)
-        ax5.set_xlim((extent[:2]))
-        ax5.set_ylim((extent[2:]))
-        ax5.set_xlabel('Longitude [$^\circ$]')
-        ax5.set_ylabel('Latitude [$^\circ$]')
-        ax5.set_title('Solar Zenith [$^\circ$]')
-
-        divider = make_axes_locatable(ax5)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # saa
-        #/----------------------------------------------------------------------------\#
-        ax6 = fig.add_subplot(446)
-        cs = ax6.imshow(saa.T, origin='lower', cmap='jet', zorder=0, extent=extent)
-        ax6.set_xlim((extent[:2]))
-        ax6.set_ylim((extent[2:]))
-        ax6.set_xlabel('Longitude [$^\circ$]')
-        ax6.set_ylabel('Latitude [$^\circ$]')
-        ax6.set_title('Solar Azimuth [$^\circ$]')
-
-        divider = make_axes_locatable(ax6)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # vza
-        #/----------------------------------------------------------------------------\#
-        ax7 = fig.add_subplot(447)
-        cs = ax7.imshow(vza.T, origin='lower', cmap='jet', zorder=0, extent=extent)
-        ax7.set_xlim((extent[:2]))
-        ax7.set_ylim((extent[2:]))
-        ax7.set_xlabel('Longitude [$^\circ$]')
-        ax7.set_ylabel('Latitude [$^\circ$]')
-        ax7.set_title('Viewing Zenith [$^\circ$]')
-
-        divider = make_axes_locatable(ax7)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # vaa
-        #/----------------------------------------------------------------------------\#
-        ax8 = fig.add_subplot(448)
-        cs = ax8.imshow(vaa.T, origin='lower', cmap='jet', zorder=0, extent=extent)
-        ax8.set_xlim((extent[:2]))
-        ax8.set_ylim((extent[2:]))
-        ax8.set_xlabel('Longitude [$^\circ$]')
-        ax8.set_ylabel('Latitude [$^\circ$]')
-        ax8.set_title('Viewing Azimuth [$^\circ$]')
-
-        divider = make_axes_locatable(ax8)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # cot
-        #/----------------------------------------------------------------------------\#
-        ax9 = fig.add_subplot(449)
-        cs = ax9.imshow(cot.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=50.0)
-        ax9.set_xlim((extent[:2]))
-        ax9.set_ylim((extent[2:]))
-        ax9.set_xlabel('Longitude [$^\circ$]')
-        ax9.set_ylabel('Latitude [$^\circ$]')
-        ax9.set_title('L2 COT')
-
-        divider = make_axes_locatable(ax9)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # cer
-        #/----------------------------------------------------------------------------\#
-        ax10 = fig.add_subplot(4, 4, 10)
-        cs = ax10.imshow(cer.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=30.0)
-        ax10.set_xlim((extent[:2]))
-        ax10.set_ylim((extent[2:]))
-        ax10.set_xlabel('Longitude [$^\circ$]')
-        ax10.set_ylabel('Latitude [$^\circ$]')
-        ax10.set_title('L2 CER [$\mu m$]')
-
-        divider = make_axes_locatable(ax10)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # cth
-        #/----------------------------------------------------------------------------\#
-        ax11 = fig.add_subplot(4, 4, 11)
-        cs = ax11.imshow(cth.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=15.0)
-        ax11.set_xlim((extent[:2]))
-        ax11.set_ylim((extent[2:]))
-        ax11.set_xlabel('Longitude [$^\circ$]')
-        ax11.set_ylabel('Latitude [$^\circ$]')
-        ax11.set_title('L2 CTH [km]')
-
-        divider = make_axes_locatable(ax11)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # sfh
-        #/----------------------------------------------------------------------------\#
-        ax12 = fig.add_subplot(4, 4, 12)
-        cs = ax12.imshow(sfh.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=5.0)
-        ax12.set_xlim((extent[:2]))
-        ax12.set_ylim((extent[2:]))
-        ax12.set_xlabel('Longitude [$^\circ$]')
-        ax12.set_ylabel('Latitude [$^\circ$]')
-        ax12.set_title('Surface Height [km]')
-
-        divider = make_axes_locatable(ax12)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # surface albedo (MYD43A3, white sky albedo)
-        #/----------------------------------------------------------------------------\#
-        ax13 = fig.add_subplot(4, 4, 13)
-        cs = ax13.imshow(alb43.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
-        ax13.set_xlim((extent[:2]))
-        ax13.set_ylim((extent[2:]))
-        ax13.set_xlabel('Longitude [$^\circ$]')
-        ax13.set_ylabel('Latitude [$^\circ$]')
-        ax13.set_title('43A3 WSA at %d nm' % wvl_sfc)
-
-        divider = make_axes_locatable(ax13)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
-
-        # save figure
-        #/--------------------------------------------------------------\#
-        plt.subplots_adjust(hspace=0.4, wspace=0.4)
-        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        plt.savefig('%s_<%s>.png' % (params['name_tag'], _metadata['Function']), bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        #\----------------------------------------------------------------------------/#
 
 
 
@@ -885,7 +675,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     cth_[cth_==0.0] = np.nan
 
     cth_ipa0 = np.zeros_like(ref_2d)
-    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cth_, lon_2d_, lat_2d_)
+    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cth_, lon_cld, lat_cld)
     cth_ipa0[np.isnan(cth_ipa0)] = np.nanmean(cth_ipa0[indices_x, indices_y])
 
     msg = 'Message [cdata_cld_ipa]: cloud top height is retrieved at <cth_ipa0>.'
@@ -895,7 +685,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     # cer_ipa0
     #/--------------------------------------------------------------\#
     cer_ipa0 = np.zeros_like(ref_2d)
-    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cer_l2, lon_2d_, lat_2d_)
+    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cer_l2, lon_cld, lat_cld)
     cer_ipa0[np.isnan(cer_ipa0)] = np.nanmean(cer_ipa0[indices_x, indices_y])
 
     msg = 'Message [cdata_cld_ipa]: cloud effective radius is retrieved at <cer_ipa0>.'
@@ -1640,6 +1430,7 @@ def main_pre(oco_band='o2a'):
     #/----------------------------------------------------------------------------\#
     cdata_sat_raw(oco_band=oco_band, plot=True)
     #\----------------------------------------------------------------------------/#
+    sys.exit()
 
 
     # apply IPA method to retrieve cloud optical thickness (COT) from MODIS radiance
