@@ -438,6 +438,13 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
         lon, lat, data = grid_by_extent(lon0, lat0, data0, extent=[10, 15, 10, 20])
     """
 
+    # flatten lon/lat/data
+    #/----------------------------------------------------------------------------\#
+    lon = np.array(lon).ravel()
+    lat = np.array(lat).ravel()
+    data = np.array(data).ravel()
+    #\----------------------------------------------------------------------------/#
+
     if extent is None:
         extent = [lon.min(), lon.max(), lat.min(), lat.max()]
 
@@ -496,6 +503,13 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         lon, lat, data = grid_by_lonlat(lon0, lat0, data0, lon_1d=np.linspace(10.0, 15.0, 100), lat_1d=np.linspace(10.0, 20.0, 100))
     """
 
+    # flatten lon/lat/data
+    #/----------------------------------------------------------------------------\#
+    lon = np.array(lon).ravel()
+    lat = np.array(lat).ravel()
+    data = np.array(data).ravel()
+    #\----------------------------------------------------------------------------/#
+
     if lon_1d is None or lat_1d is None:
 
         extent = [lon.min(), lon.max(), lat.min(), lat.max()]
@@ -516,7 +530,6 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
 
         lon_1d = (lon_1d0[1:]+lon_1d0[:-1])/2.0
         lat_1d = (lat_1d0[1:]+lat_1d0[:-1])/2.0
-
 
     lat_2d, lon_2d = np.meshgrid(lat_1d, lon_1d)
 
