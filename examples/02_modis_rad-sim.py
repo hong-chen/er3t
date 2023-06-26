@@ -317,13 +317,13 @@ def cdata_sat_raw(
     cth0  = modl2.data['cloud_top_height_1km']['data']/1000.0 # units: km
     cth0[cth0<=0.0] = np.nan
 
-    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cer0, extent=sat0.extent, dx=dx, dy=dy, method='nearest')
+    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cer0, extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     cer_2d_l2[cer_2d_l2<=1.0] = np.nan
 
-    lon_2d, lat_2d, cot_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cot0, extent=sat0.extent, dx=dx, dy=dy, method='nearest')
+    lon_2d, lat_2d, cot_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cot0, extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     cot_2d_l2[cot_2d_l2<=0.0] = np.nan
 
-    lon_2d, lat_2d, cth_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cth0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, cth_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cth0, extent=sat0.extent, dx=dx, dy=dy, method='linear', Ngrid_limit=4)
     cth_2d_l2[cth_2d_l2<=0.0] = np.nan
 
     g2['cot_l2'] = cot_2d_l2
@@ -345,7 +345,7 @@ def cdata_sat_raw(
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
     mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest')
+    lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     sfc_43[sfc_43<0.0] = 0.0
     sfc_43[sfc_43>1.0] = 1.0
 
@@ -755,7 +755,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     cth_[cth_==0.0] = np.nan
 
     cth_ipa0 = np.zeros_like(ref_2d)
-    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cth_, lon_2d_, lat_2d_)
+    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cth_, lon_cld, lat_cld, Ngrid_limit=None)
     cth_ipa0[np.isnan(cth_ipa0)] = np.nanmean(cth_ipa0[indices_x, indices_y])
 
     msg = 'Message [cdata_cld_ipa]: cloud top height is retrieved at <cth_ipa0>.'
@@ -765,7 +765,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     # cer_ipa0
     #/--------------------------------------------------------------\#
     cer_ipa0 = np.zeros_like(ref_2d)
-    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_cld, lat_cld, cer_l2, lon_2d_, lat_2d_)
+    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cer_l2, lon_cld, lat_cld, Ngrid_limit=None)
     cer_ipa0[np.isnan(cer_ipa0)] = np.nanmean(cer_ipa0[indices_x, indices_y])
 
     msg = 'Message [cdata_cld_ipa]: cloud effective radius is retrieved at <cer_ipa0>.'
