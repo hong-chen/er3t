@@ -272,8 +272,10 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         sys.exit('\nError [sdown]: Please provide a date via --date or date range via --start_date and --end_date\n')
 
     elif (date is not None) and ((start_date is None) or (end_date is None)):
-        date = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
-        run(date, extent, fdir_out, products, verbose)
+        single_dt = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
+        if verbose:
+            print('\nMessage [sdown]: Data will be downloaded for %s\n' % single_dt.strftime("%d %B, %Y"))
+        run(single_dt, extent, fdir_out, products, verbose)
 
     elif (start_date is not None) and (end_date is not None):
 
@@ -283,7 +285,10 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = '\nError [sdown]: `end_date` must be on or after `start_date`.' + \
                   '\n Received start_date: %s\nreceived end_date: %s' % (datetime.datetime.strftime(start_date), datetime.datetime.strftime(end_date))
             sys.exit(msg)
-
+        
+        if verbose:
+            print('\nMessage [sdown]: Data will be downloaded for dates beginning %s to %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y")))
+        
         date_list = [start_dt + datetime.timedelta(days=x) for x in range((end_dt - start_dt).days + 1)]
         for date_x in date_list:
             run(date_x, extent, fdir_out, products, verbose)
