@@ -22,7 +22,7 @@ Authors:
     Hong Chen
 
 Example Usage:
-    sdown --date 20210523 --lons 30 35 --lats 0 10 --products mod06_l2 --fdir sat-data
+    sdown --date 20210523 --lons 30 35 --lats 0 10 --products mod06_l2 --fdir sat-data --verbose
     sdown --date 20130714 --extent 30 35 0 10 --products modrgb myd02hkm myd06_l2 --fdir sat-data
 
 To see a demonstration of how this tool works, use:
@@ -47,7 +47,7 @@ _description_ = '=' * _width_ + '\n\n' + \
                 '=' * _width_ + '\n' + \
                 ' Satellite Data Product Download Tool '.center(_width_, '=') + '\n\n' + \
                 'Example Usage:\n'\
-                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir_out sat-data\n'\
+                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir_out sat-data --verbose\n'\
                 'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir_out sat-data\n'
 
 
@@ -258,7 +258,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
     elif (extent is None) and (lats is not None) and (lons is not None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
         extent = [lons[0], lons[1], lats[0], lats[1]]
 
-
+    
+    # check to make sure extent is correct
     if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
         msg = '\nError [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.\n' % extent
         sys.exit(msg)
@@ -266,8 +267,10 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
         if verbose:
-            print('\nMessage [sdown]: Created %s. Files will be downloaded to this directory\n' % fdir_out)
+            print('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
 
+
+    # error handling for dates
     if (date is None) and ((start_date is None) or (end_date is None)):
         sys.exit('\nError [sdown]: Please provide a date via --date or date range via --start_date and --end_date\n')
 
@@ -275,7 +278,12 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         single_dt = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
         if verbose:
             print('\nMessage [sdown]: Data will be downloaded for %s\n' % single_dt.strftime("%d %B, %Y"))
-        run(single_dt, extent, fdir_out, products, verbose)
+        
+        fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+        if not os.path.exists(fdir_out_dt):
+            os.makedirs(fdir_out_dt)
+        
+        run(single_dt, extent, fdir_out_dt, products, verbose)
 
     elif (start_date is not None) and (end_date is not None):
 
@@ -283,15 +291,20 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]))
         if datetime.timedelta((end_dt - start_dt).days).days < 0:
             msg = '\nError [sdown]: `end_date` must be on or after `start_date`.' + \
-                  '\n Received start_date: %s\nreceived end_date: %s' % (datetime.datetime.strftime(start_date), datetime.datetime.strftime(end_date))
+                  '\n\nReceived start_date: %s\nReceived end_date: %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y"))
             sys.exit(msg)
         
         if verbose:
             print('\nMessage [sdown]: Data will be downloaded for dates beginning %s to %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y")))
         
         date_list = [start_dt + datetime.timedelta(days=x) for x in range((end_dt - start_dt).days + 1)]
-        for date_x in date_list:
-            run(date_x, extent, fdir_out, products, verbose)
+        for date_x in date_list: # download products date by date
+            fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+            if not os.path.exists(fdir_out_dt):
+                os.makedirs(fdir_out_dt)
+            run(date_x, extent, fdir_out_dt, products, verbose)
+
+
 
 
 def run(date, extent, fdir_out, products, verbose):
@@ -342,7 +355,7 @@ def run(date, extent, fdir_out, products, verbose):
                                                          instrument=product_info['instrument'],
                                                          verbose=verbose)
             if verbose:
-                print('Message [sdown]: Found %s %s overpasses\n' % (len(filename_tags_03), product_info['satellite']))
+                print('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
             for filename_tag in filename_tags_03:
                 p_fnames = er3t.util.download_laads_https(date=date,
@@ -359,8 +372,8 @@ def run(date, extent, fdir_out, products, verbose):
 
         references.append(product_info['reference'])
 
-    print('If you are looking for references, you can cite the use of this data as follows:\n%s' % '\n\n'.join(references))
-    print('\nMessage [sdown]: Finished downloading MODIS files! You can find them in %s\n' % fdir_out)
+    print('The following references were used/downloaded:\n\n%s' % '\n\n'.join(references))
+    print('\nMessage [sdown]: Finished downloading satellite files! You can find them in %s\n' % fdir_out)
 
 
 def get_sat_info_from_product_tag(tag_):
@@ -395,20 +408,20 @@ if __name__ == '__main__':
                         help='Pass --verbose if status of your request should be reported frequently.\n \n'\
                         'This is disabled by default.\n \n')
     parser.add_argument('-r', '--run_demo', action='store_true',
-                        help='Pass --run_demo if you would like to run a demonstration of this tool.\n \n')
+                        help='Pass --run_demo if you would like to view a demonstration of this tool.\n \n')
     required = parser.add_argument_group('Required Arguments')
     required.add_argument('-d', '--date', type=str, metavar='', default=None,
                         help='Date for which you would like to download data. '\
                         'Use yyyymmdd format.\n'\
                         'Example: --date 20210404\n \n')
     required.add_argument('-t', '--start_date', type=str, metavar='', default=None,
-                        help='The starting date for which you would like to download data over multiple days. '\
+                        help='The start date of the range of dates for which you would like to download data. '\
                         'Use yyyymmdd format.\n'\
-                        'Example: --date 20210404\n \n')
+                        'Example: --start_date 20210404\n \n')
     required.add_argument('-u', '--end_date', type=str, metavar='', default=None,
-                        help='The end date for which you would like to download data over multiple days. '\
+                        help='The end date of the range of dates for which you would like to download data. '\
                         'Use yyyymmdd format.\n'\
-                        'Example: --date 20210404\n \n')
+                        'Example: --end_date 20210414\n \n')
     required.add_argument('-e', '--extent', nargs='+', type=float, metavar='',
                         help='Extent of region of interest \nlon1 lon2 lat1 lat2 in West East South North format.\n'\
                         'Example:  --extent -10 -5 25 30\n \n')
@@ -421,7 +434,7 @@ if __name__ == '__main__':
     required.add_argument('-p', '--products', type=str, nargs='+', metavar='',
                         help='Short prefix (case insensitive) for the product name.\n'\
                         'Example:  --products MOD02QKM\n'
-                        'Currently supported products are:\n'\
+                        '\nCurrently, the following products are supported:\n'\
                         'MOD02QKM:  Level 1b 250m (Terra) radiance product\n'\
                         'MYD02QKM:  Level 1b 250m (Aqua)  radiance product\n'\
                         'MOD02HKM:  Level 1b 500m (Terra) radiance product\n'\
@@ -430,12 +443,14 @@ if __name__ == '__main__':
                         'MYD021KM:  Level 1b 1km (Aqua)   radiance product\n'\
                         'MOD06_L2:  Level 2 (Terra) cloud product\n'\
                         'MYD06_L2:  Level 2 (Aqua)  cloud product\n'\
+                        'MOD35_L2:  Level 2 (Terra) cloud mask product\n'\
+                        'MYD35_L2:  Level 2 (Aqua)  cloud mask product\n'\
                         'MOD03   :  Solar/viewing geometry (Terra) product\n'\
                         'MYD03   :  Solar/viewing geometry (Aqua)  product\n'\
                         'MODRGB  :  True-Color RGB (Terra) imagery, useful for visuzliation\n'\
                         'MYDRGB  :  True-Color RGB (Aqua)  imagery, useful for visuzliation\n'\
                         'MCD43   :  Level 3 surface product MCD43A3\n'\
-                        '\n\nTo download multiple products at a time:\n'\
+                        '\nTo download multiple products at a time:\n'\
                         '--products MOD021KM MYD02HKM MYD06_l2\n \n')
 
     args = parser.parse_args()
