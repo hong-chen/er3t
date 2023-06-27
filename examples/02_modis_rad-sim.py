@@ -631,7 +631,7 @@ def cloud_mask_rgb(
 
     return indices[0], indices[1]
 
-def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, R_earth=6378000.0, verbose=True):
+def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, verbose=True):
 
     """
     Parallax correction for the cloud positions
@@ -645,7 +645,7 @@ def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, R_earth=6378000.0, verbose=Tru
     """
 
     if verbose:
-        print('Message [para_corr]: Please make sure the units of \'cld_h\' and \'sfc_h\' are in \'meter\'.')
+        print('Message [para_corr]: Please make sure the units of <cld_h> and <sfc_h> are in the units of <m>.')
 
     dist = (cld_h-sfc_h)*np.tan(np.deg2rad(vza))
 
@@ -737,14 +737,14 @@ def cdata_cld_ipa(wvl=params['wavelength']):
 
     offset_nx, offset_ny = er3t.util.move_correlate(data0, data)
 
-    if offset_nx > 0:
+    if offset_nx != 0:
         dist_x = params['dx'] * offset_nx
         lon_2d_, _ = er3t.util.cal_geodesic_lonlat(lon_2d, lat_2d, dist_x, 90.0)
         lon_2d_ = lon_2d_.reshape(lon_2d.shape)
     else:
         lon_2d_ = lon_2d.copy()
 
-    if offset_ny > 0:
+    if offset_ny != 0:
         dist_y = params['dy'] * offset_ny
         _, lat_2d_ = er3t.util.cal_geodesic_lonlat(lon_2d, lat_2d, dist_y, 0.0)
         lat_2d_ = lat_2d_.reshape(lat_2d.shape)
@@ -863,6 +863,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
 
         ix_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_2d[0, 0], lat_corr0) // params['dx'])
         iy_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_corr0, lat_2d[0, 0]) // params['dy'])
+
         if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
             cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
             cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
@@ -900,7 +901,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
                    cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
                    cld_msk[ix, iy] = 1
 
-    msg = 'Message [cdata_cld_ipa]: artifacts of "cloud cracks" from parallax correction are fixed.'
+    msg = 'Message [cdata_cld_ipa]: artifacts of "cloud cracks" from parallax correction are fixed.\n'
     print(msg)
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
@@ -1295,7 +1296,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     f.close()
 
     fname_sfc = '%s/sfc.pk' % fdir
-    sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname='%s/sfc.pk' % fdir)
+    sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc)
     sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 

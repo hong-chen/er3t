@@ -2,7 +2,7 @@
 by Hong Chen (hong.chen.cu@gmail.com)
 
 This code has been tested under:
-    1) Linux on 2023-06-20 by Hong Chen
+    1) Linux on 2023-06-27 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -41,7 +41,7 @@ Ncpu    = 12
 
 
 
-def test_01_flux_clear_sky(
+def example_01_flux_clear_sky(
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -220,7 +220,7 @@ def test_01_flux_clear_sky(
 
 
 
-def test_02_flux_les_cloud_3d(
+def example_02_flux_les_cloud_3d(
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -438,7 +438,7 @@ def test_02_flux_les_cloud_3d(
 
 
 
-def test_03_flux_les_cloud_3d_aerosol_1d(
+def example_03_flux_les_cloud_3d_aerosol_1d(
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -665,7 +665,7 @@ def test_03_flux_les_cloud_3d_aerosol_1d(
 
 
 
-def test_04_flux_les_cloud_3d_aerosol_3d(
+def example_04_flux_les_cloud_3d_aerosol_3d(
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -908,7 +908,7 @@ def test_04_flux_les_cloud_3d_aerosol_3d(
 
 
 
-def test_05_rad_les_cloud_3d(
+def example_05_rad_les_cloud_3d(
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -1130,7 +1130,7 @@ def test_05_rad_les_cloud_3d(
 
 
 
-def test_06_rad_cld_gen_hem(
+def example_06_rad_cld_gen_hem(
         wavelength=650.0,
         solver='3D',
         overwrite=True,
@@ -1326,16 +1326,16 @@ if __name__ == '__main__':
 
     # irradiance simulation
     #/-----------------------------------------------------------------------------\
-    test_01_flux_clear_sky()
-    test_02_flux_les_cloud_3d()
-    test_03_flux_les_cloud_3d_aerosol_1d()
-    test_04_flux_les_cloud_3d_aerosol_3d()
+    example_01_flux_clear_sky()
+    example_02_flux_les_cloud_3d()
+    example_03_flux_les_cloud_3d_aerosol_1d()
+    example_04_flux_les_cloud_3d_aerosol_3d()
     #\-----------------------------------------------------------------------------/
 
     # radiance simulation
     #/-----------------------------------------------------------------------------\
-    test_05_rad_les_cloud_3d()
-    test_06_rad_cld_gen_hem()
+    example_05_rad_les_cloud_3d()
+    example_06_rad_cld_gen_hem()
     #\-----------------------------------------------------------------------------/
 
     pass
