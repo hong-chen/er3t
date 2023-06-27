@@ -25,7 +25,7 @@ The processes include:
         c) plot
 
 This code has been tested under:
-    1) Linux on 2023-03-14 by Hong Chen
+    1) Linux on 2023-06-27 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
@@ -70,7 +70,7 @@ params = {
            'region' : [-109.1, -106.9, 36.9, 39.1],
                'dx' : 250.0,
                'dy' : 250.0,
-           'photon' : 1e8,
+           'photon' : 1e9,
              'Ncpu' : 12,
        'photon_ipa' : 2e7,
    'wavelength_ipa' : 650.0,
@@ -219,11 +219,49 @@ def cal_sat_delta_t(sat):
 
     return utc_oco.mean()-utc_mod.mean()
 
+def func(x, a):
+
+    return a*x
+
+def cal_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, scale=True, replace=True):
+
+    logic = (x_ref>=x_bkg_2d.min()) & (x_ref<=x_bkg_2d.max()) & (y_ref>=y_bkg_2d.min()) & (y_ref<=y_bkg_2d.max())
+    x_ref = x_ref[logic]
+    y_ref = y_ref[logic]
+    data_ref = data_ref[logic]
+
+    points = np.transpose(np.vstack((x_bkg_2d.ravel(), y_bkg_2d.ravel())))
+    data_bkg = interpolate.griddata(points, data_bkg_2d.ravel(), (x_ref, y_ref), method='nearest')
+
+    logic_valid = (data_bkg>0.0) & (data_ref>0.0)
+    x_ref = x_ref[logic_valid]
+    y_ref = y_ref[logic_valid]
+    data_bkg = data_bkg[logic_valid]
+    data_ref = data_ref[logic_valid]
+
+    if scale:
+        popt, pcov = curve_fit(func, data_bkg, data_ref)
+        slope = popt[0]
+    else:
+        slope = 1.0
+
+    print('Message [cal_sfc_alb_2d]: slope:', slope)
+    data_2d = data_bkg_2d*slope
+
+    dx = x_bkg_2d[1, 0] - x_bkg_2d[0, 0]
+    dy = y_bkg_2d[0, 1] - y_bkg_2d[0, 0]
+
+    if replace:
+        indices_x = np.int_(np.round((x_ref-x_bkg_2d[0, 0])/dx, decimals=0))
+        indices_y = np.int_(np.round((y_ref-y_bkg_2d[0, 0])/dy, decimals=0))
+        data_2d[indices_x, indices_y] = data_ref
+
+    return data_2d
+
 def cdata_sat_raw(
         oco_band=params['oco_band'],
         dx=params['dx'],
         dy=params['dy'],
-        plot=True
         ):
 
     # process wavelength
@@ -469,6 +507,231 @@ def cdata_sat_raw(
     f0.close()
     #/----------------------------------------------------------------------------\#
 
+def plot_sat_raw():
+
+    wvl = 650.0
+    wvl_sfc = 860.0
+
+    f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
+
+    extent = f0['extent'][...]
+    lon = f0['lon'][...]
+    lat = f0['lat'][...]
+
+    rgb = f0['mod/rgb'][...]
+    rad = f0['mod/rad/rad_%4.4d' % wvl][...]
+    ref = f0['mod/rad/ref_%4.4d' % wvl][...]
+
+    sza = f0['mod/geo/sza'][...]
+    saa = f0['mod/geo/saa'][...]
+    vza = f0['mod/geo/vza'][...]
+    vaa = f0['mod/geo/vaa'][...]
+
+    cot = f0['mod/cld/cot_l2'][...]
+    cer = f0['mod/cld/cer_l2'][...]
+    cth = f0['mod/cld/cth_l2'][...]
+    sfh = f0['mod/geo/sfh'][...]
+
+    alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl_sfc][...]
+
+    f0.close()
+
+    # figure
+    #/----------------------------------------------------------------------------\#
+    plt.close('all')
+    rcParams['font.size'] = 12
+    fig = plt.figure(figsize=(16, 16))
+
+    fig.suptitle('MODIS Products Preview')
+
+    # RGB
+    #/--------------------------------------------------------------\#
+    ax1 = fig.add_subplot(441)
+    cs = ax1.imshow(rgb, zorder=0, extent=extent)
+    ax1.set_xlim((extent[:2]))
+    ax1.set_ylim((extent[2:]))
+    ax1.set_xlabel('Longitude [$^\circ$]')
+    ax1.set_ylabel('Latitude [$^\circ$]')
+    ax1.set_title('RGB Imagery')
+
+    divider = make_axes_locatable(ax1)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cax.axis('off')
+    #\--------------------------------------------------------------/#
+
+    # L1B radiance
+    #/----------------------------------------------------------------------------\#
+    ax2 = fig.add_subplot(442)
+    cs = ax2.pcolormesh(lon, lat, rad, cmap='jet', zorder=0, vmin=0.0, vmax=0.5)
+    ax2.set_xlim((extent[:2]))
+    ax2.set_ylim((extent[2:]))
+    ax2.set_xlabel('Longitude [$^\circ$]')
+    ax2.set_ylabel('Latitude [$^\circ$]')
+    ax2.set_title('L1B Radiance (%d nm)' % wvl)
+
+    divider = make_axes_locatable(ax2)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # L1B reflectance
+    #/----------------------------------------------------------------------------\#
+    ax3 = fig.add_subplot(443)
+    cs = ax3.pcolormesh(lon, lat, ref, cmap='jet', zorder=0, vmin=0.0, vmax=1.0)
+    ax3.set_xlim((extent[:2]))
+    ax3.set_ylim((extent[2:]))
+    ax3.set_xlabel('Longitude [$^\circ$]')
+    ax3.set_ylabel('Latitude [$^\circ$]')
+    ax3.set_title('L1B Reflectance (%d nm)' % wvl)
+
+    divider = make_axes_locatable(ax3)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # sza
+    #/----------------------------------------------------------------------------\#
+    ax5 = fig.add_subplot(445)
+    cs = ax5.pcolormesh(lon, lat, sza, cmap='jet', zorder=0)
+    ax5.set_xlim((extent[:2]))
+    ax5.set_ylim((extent[2:]))
+    ax5.set_xlabel('Longitude [$^\circ$]')
+    ax5.set_ylabel('Latitude [$^\circ$]')
+    ax5.set_title('Solar Zenith [$^\circ$]')
+
+    divider = make_axes_locatable(ax5)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # saa
+    #/----------------------------------------------------------------------------\#
+    ax6 = fig.add_subplot(446)
+    cs = ax6.pcolormesh(lon, lat, saa, cmap='jet', zorder=0)
+    ax6.set_xlim((extent[:2]))
+    ax6.set_ylim((extent[2:]))
+    ax6.set_xlabel('Longitude [$^\circ$]')
+    ax6.set_ylabel('Latitude [$^\circ$]')
+    ax6.set_title('Solar Azimuth [$^\circ$]')
+
+    divider = make_axes_locatable(ax6)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # vza
+    #/----------------------------------------------------------------------------\#
+    ax7 = fig.add_subplot(447)
+    cs = ax7.pcolormesh(lon, lat, vza, cmap='jet', zorder=0)
+    ax7.set_xlim((extent[:2]))
+    ax7.set_ylim((extent[2:]))
+    ax7.set_xlabel('Longitude [$^\circ$]')
+    ax7.set_ylabel('Latitude [$^\circ$]')
+    ax7.set_title('Viewing Zenith [$^\circ$]')
+
+    divider = make_axes_locatable(ax7)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # vaa
+    #/----------------------------------------------------------------------------\#
+    ax8 = fig.add_subplot(448)
+    cs = ax8.pcolormesh(lon, lat, vaa, cmap='jet', zorder=0)
+    ax8.set_xlim((extent[:2]))
+    ax8.set_ylim((extent[2:]))
+    ax8.set_xlabel('Longitude [$^\circ$]')
+    ax8.set_ylabel('Latitude [$^\circ$]')
+    ax8.set_title('Viewing Azimuth [$^\circ$]')
+
+    divider = make_axes_locatable(ax8)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # cot
+    #/----------------------------------------------------------------------------\#
+    ax9 = fig.add_subplot(449)
+    cs = ax9.pcolormesh(lon, lat, cot, cmap='jet', zorder=0, vmin=0.0, vmax=50.0)
+    ax9.set_xlim((extent[:2]))
+    ax9.set_ylim((extent[2:]))
+    ax9.set_xlabel('Longitude [$^\circ$]')
+    ax9.set_ylabel('Latitude [$^\circ$]')
+    ax9.set_title('L2 COT')
+
+    divider = make_axes_locatable(ax9)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # cer
+    #/----------------------------------------------------------------------------\#
+    ax10 = fig.add_subplot(4, 4, 10)
+    cs = ax10.pcolormesh(lon, lat, cer, cmap='jet', zorder=0, vmin=0.0, vmax=30.0)
+    ax10.set_xlim((extent[:2]))
+    ax10.set_ylim((extent[2:]))
+    ax10.set_xlabel('Longitude [$^\circ$]')
+    ax10.set_ylabel('Latitude [$^\circ$]')
+    ax10.set_title('L2 CER [$\mu m$]')
+
+    divider = make_axes_locatable(ax10)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # cth
+    #/----------------------------------------------------------------------------\#
+    ax11 = fig.add_subplot(4, 4, 11)
+    cs = ax11.pcolormesh(lon, lat, cth, cmap='jet', zorder=0, vmin=0.0, vmax=15.0)
+    ax11.set_xlim((extent[:2]))
+    ax11.set_ylim((extent[2:]))
+    ax11.set_xlabel('Longitude [$^\circ$]')
+    ax11.set_ylabel('Latitude [$^\circ$]')
+    ax11.set_title('L2 CTH [km]')
+
+    divider = make_axes_locatable(ax11)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # sfh
+    #/----------------------------------------------------------------------------\#
+    ax12 = fig.add_subplot(4, 4, 12)
+    cs = ax12.pcolormesh(lon, lat, sfh, cmap='jet', zorder=0, vmin=0.0, vmax=5.0)
+    ax12.set_xlim((extent[:2]))
+    ax12.set_ylim((extent[2:]))
+    ax12.set_xlabel('Longitude [$^\circ$]')
+    ax12.set_ylabel('Latitude [$^\circ$]')
+    ax12.set_title('Surface Height [km]')
+
+    divider = make_axes_locatable(ax12)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # surface albedo (MYD43A3, white sky albedo)
+    #/----------------------------------------------------------------------------\#
+    ax13 = fig.add_subplot(4, 4, 13)
+    cs = ax13.pcolormesh(lon, lat, alb43, cmap='jet', zorder=0, vmin=0.0, vmax=0.4)
+    ax13.set_xlim((extent[:2]))
+    ax13.set_ylim((extent[2:]))
+    ax13.set_xlabel('Longitude [$^\circ$]')
+    ax13.set_ylabel('Latitude [$^\circ$]')
+    ax13.set_title('43A3 WSA (860 nm)')
+
+    divider = make_axes_locatable(ax13)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # save figure
+    #/--------------------------------------------------------------\#
+    plt.subplots_adjust(hspace=0.4, wspace=0.4)
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    plt.savefig('%s_<%s>.png' % (params['name_tag'], _metadata['Function']), bbox_inches='tight', metadata=_metadata)
+    #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
 
 
 
@@ -519,7 +782,7 @@ def cloud_mask_rgb(
 
     return indices[0], indices[1]
 
-def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, R_earth=6378000.0, verbose=True):
+def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, verbose=True):
 
     """
     Parallax correction for the cloud positions
@@ -533,19 +796,15 @@ def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, R_earth=6378000.0, verbose=Tru
     """
 
     if verbose:
-        print('Message [para_corr]: Please make sure the units of \'cld_h\' and \'sfc_h\' are in \'meter\'.')
+        print('Message [para_corr]: Please make sure the units of <cld_h> and <sfc_h> are in the units of <m>.')
 
     dist = (cld_h-sfc_h)*np.tan(np.deg2rad(vza))
 
-    delta_lon = dist*np.sin(np.deg2rad(vaa)) / (np.pi*R_earth) * 180.0
-    delta_lat = dist*np.cos(np.deg2rad(vaa)) / (np.pi*R_earth) * 180.0
-
-    lon = lon0 + delta_lon
-    lat = lat0 + delta_lat
+    lon, lat = er3t.util.cal_geodesic_lonlat(lon0, lat0, dist, vaa)
 
     return lon, lat
 
-def wind_corr(lon0, lat0, u, v, dt, R_earth=6378000.0, verbose=True):
+def wind_corr(lon0, lat0, u, v, dt, verbose=True):
 
     """
     Wind correction for the cloud positions
@@ -558,13 +817,10 @@ def wind_corr(lon0, lat0, u, v, dt, R_earth=6378000.0, verbose=True):
     """
 
     if verbose:
-        print('Message [wind_corr]: Please make sure the units of \'u\' and \'v\' are in \'meter/second\' and \'dt\' in \'second\'.')
+        print('Message [wind_corr]: Please make sure the units of <u> and <v> are in the units of <m/s> and <dt> is in the units of <s>.')
 
-    delta_lon = (u*dt) / (np.pi*R_earth) * 180.0
-    delta_lat = (v*dt) / (np.pi*R_earth) * 180.0
-
-    lon = lon0 + delta_lon
-    lat = lat0 + delta_lat
+    lon, _ = er3t.util.cal_geodesic_lonlat(lon0, lat0, u*dt, 90.0)
+    _, lat = er3t.util.cal_geodesic_lonlat(lon0, lat0, v*dt, 0.0)
 
     return lon, lat
 
@@ -663,19 +919,27 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     data = np.zeros(cth.shape, dtype=np.int32)
     data[cth>0.0] = 1
 
-    offset_dx, offset_dy = er3t.util.move_correlate(data0, data)
-    dlon = (lon_2d[1, 0]-lon_2d[0, 0]) * offset_dx
-    dlat = (lat_2d[0, 1]-lat_2d[0, 0]) * offset_dy
+    offset_nx, offset_ny = er3t.util.move_correlate(data0, data)
 
-    lon_2d_ = lon_2d + dlon
-    lat_2d_ = lat_2d + dlat
-    extent_ = [extent[0]+dlon, extent[1]+dlon, extent[2]+dlat, extent[3]+dlat]
+    if offset_nx != 0:
+        dist_x = params['dx'] * offset_nx
+        lon_2d_, _ = er3t.util.cal_geodesic_lonlat(lon_2d, lat_2d, dist_x, 90.0)
+        lon_2d_ = lon_2d_.reshape(lon_2d.shape)
+    else:
+        lon_2d_ = lon_2d.copy()
+
+    if offset_ny != 0:
+        dist_y = params['dy'] * offset_ny
+        _, lat_2d_ = er3t.util.cal_geodesic_lonlat(lon_2d, lat_2d, dist_y, 0.0)
+        lat_2d_ = lat_2d_.reshape(lat_2d.shape)
+    else:
+        lat_2d_ = lat_2d.copy()
 
     cth_ = cth.copy()
     cth_[cth_==0.0] = np.nan
 
     cth_ipa0 = np.zeros_like(ref_2d)
-    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cth_, lon_cld, lat_cld)
+    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cth_, lon_cld, lat_cld, Ngrid_limit=None)
     cth_ipa0[np.isnan(cth_ipa0)] = np.nanmean(cth_ipa0[indices_x, indices_y])
 
     msg = 'Message [cdata_cld_ipa]: cloud top height is retrieved at <cth_ipa0>.'
@@ -685,7 +949,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     # cer_ipa0
     #/--------------------------------------------------------------\#
     cer_ipa0 = np.zeros_like(ref_2d)
-    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cer_l2, lon_cld, lat_cld)
+    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cer_l2, lon_cld, lat_cld, Ngrid_limit=None)
     cer_ipa0[np.isnan(cer_ipa0)] = np.nanmean(cer_ipa0[indices_x, indices_y])
 
     msg = 'Message [cdata_cld_ipa]: cloud effective radius is retrieved at <cer_ipa0>.'
@@ -696,9 +960,6 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     # two relationships: one for geometrically thick clouds, one for geometrically thin clouds
     # ipa relationship of reflectance vs cloud optical thickness
     #/--------------------------------------------------------------\#
-    dx = np.pi*6378.1*(lon_2d[1, 0]-lon_2d[0, 0])/180.0
-    dy = np.pi*6378.1*(lat_2d[0, 1]-lat_2d[0, 0])/180.0
-
     fdir  = 'tmp-data/ipa-%06.1fnm_thick_alb-%04.2f' % (params['wavelength_ipa'], alb.mean())
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
@@ -780,8 +1041,10 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
 
         lon_corr0 = lon_corr[i]
         lat_corr0 = lat_corr[i]
-        ix_corr = int((lon_corr0-lon_2d[0, 0])//(lon_2d[1, 0]-lon_2d[0, 0]))
-        iy_corr = int((lat_corr0-lat_2d[0, 0])//(lat_2d[0, 1]-lat_2d[0, 0]))
+
+        ix_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_2d[0, 0], lat_corr0) // params['dx'])
+        iy_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_corr0, lat_2d[0, 0]) // params['dy'])
+
         if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
             cot_ipa_[ix_corr, iy_corr] = cot_ipa0[ix, iy]
             cer_ipa_[ix_corr, iy_corr] = cer_ipa0[ix, iy]
@@ -822,8 +1085,10 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
 
         lon_corr0 = lon_corr[i]
         lat_corr0 = lat_corr[i]
-        ix_corr = int((lon_corr0-lon_2d[0, 0])//(lon_2d[1, 0]-lon_2d[0, 0]))
-        iy_corr = int((lat_corr0-lat_2d[0, 0])//(lat_2d[0, 1]-lat_2d[0, 0]))
+
+        ix_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_2d[0, 0], lat_corr0) // params['dx'])
+        iy_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_corr0, lat_2d[0, 0]) // params['dy'])
+
         if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
             cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
             cer_ipa[ix_corr, iy_corr] = cer_ipa0[ix, iy]
@@ -860,7 +1125,7 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
                    cth_ipa[ix, iy] = data_cth_ipa[logic_cld].mean()
                    cld_msk[ix, iy] = 1
 
-    msg = 'Message [cdata_cld_ipa]: artifacts of "cloud cracks" from parallax correction are fixed.'
+    msg = 'Message [cdata_cld_ipa]: artifacts of "cloud cracks" from parallax correction are fixed.\n'
     print(msg)
     #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
@@ -964,289 +1229,290 @@ def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
     f0.close()
     #\----------------------------------------------------------------------------/#
 
-    if plot:
+def plot_cld_ipa():
 
-        # figure
-        #/----------------------------------------------------------------------------\#
-        plt.close('all')
-        rcParams['font.size'] = 12
-        fig = plt.figure(figsize=(16, 16))
+    wvl = 650.0
 
-        fig.suptitle('MODIS Cloud Re-Processing')
+    f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
 
-        # RGB
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(441)
-        cs = ax1.imshow(rgb, zorder=0, extent=extent)
-        ax1.set_xlim((extent[:2]))
-        ax1.set_ylim((extent[2:]))
-        ax1.set_xlabel('Longitude [$^\circ$]')
-        ax1.set_ylabel('Latitude [$^\circ$]')
-        ax1.set_title('RGB Imagery')
+    extent = f0['extent'][...]
+    lon_2d = f0['lon'][...]
+    lat_2d = f0['lat'][...]
 
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cax.axis('off')
-        #\--------------------------------------------------------------/#
+    rgb = f0['mod/rgb'][...]
+    ref_2d = f0['mod/rad/ref_%4.4d' % wvl][...]
 
-        # L1B reflectance
-        #/----------------------------------------------------------------------------\#
-        ax2 = fig.add_subplot(442)
-        cs = ax2.imshow(ref_2d.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=1.0)
-        ax2.set_xlim((extent[:2]))
-        ax2.set_ylim((extent[2:]))
-        ax2.set_xlabel('Longitude [$^\circ$]')
-        ax2.set_ylabel('Latitude [$^\circ$]')
-        ax2.set_title('L1B Reflectance (%d nm)' % wvl)
+    logic_cld = f0['mod/cld/logic_cld'][...]
 
-        divider = make_axes_locatable(ax2)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    indices_x0 = f0['cld_msk/indices_x0'][...]
+    indices_y0 = f0['cld_msk/indices_y0'][...]
+    indices_x = f0['cld_msk/indices_x'][...]
+    indices_y = f0['cld_msk/indices_y'][...]
 
-        # cloud mask (primary)
-        #/----------------------------------------------------------------------------\#
-        ax3 = fig.add_subplot(443)
-        cs = ax3.imshow(rgb, zorder=0, extent=extent)
-        ax3.scatter(lon_2d[indices_x0, indices_y0], lat_2d[indices_x0, indices_y0], s=0.1, c='r', alpha=0.1)
-        ax3.set_xlim((extent[:2]))
-        ax3.set_ylim((extent[2:]))
-        ax3.set_xlabel('Longitude [$^\circ$]')
-        ax3.set_ylabel('Latitude [$^\circ$]')
-        ax3.set_title('Primary Cloud Mask')
+    cot_l2 = f0['mod/cld/cot_l2'][...]
+    cer_l2 = f0['mod/cld/cer_l2'][...]
+    cth_l2 = f0['mod/cld/cth_l2'][...]
 
-        divider = make_axes_locatable(ax3)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cax.axis('off')
-        #\----------------------------------------------------------------------------/#
+    cot_ipa0 = f0['mod/cld/cot_ipa0'][...]
+    cer_ipa0 = f0['mod/cld/cer_ipa0'][...]
+    cth_ipa0 = f0['mod/cld/cth_ipa0'][...]
 
-        # cloud mask (final)
-        #/----------------------------------------------------------------------------\#
-        ax4 = fig.add_subplot(444)
-        cs = ax4.imshow(rgb, zorder=0, extent=extent)
-        ax4.scatter(lon_2d[indices_x, indices_y], lat_2d[indices_x, indices_y], s=0.1, c='r', alpha=0.1)
-        ax4.set_xlim((extent[:2]))
-        ax4.set_ylim((extent[2:]))
-        ax4.set_xlabel('Longitude [$^\circ$]')
-        ax4.set_ylabel('Latitude [$^\circ$]')
-        ax4.set_title('Secondary Cloud Mask (Final)')
+    cot_ipa = f0['mod/cld/cot_ipa'][...]
+    cer_ipa = f0['mod/cld/cer_ipa'][...]
+    cth_ipa = f0['mod/cld/cth_ipa'][...]
 
-        divider = make_axes_locatable(ax4)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cax.axis('off')
-        #\----------------------------------------------------------------------------/#
+    alb43 = f0['oco/sfc/alb_o2a_2d'][...]
 
-        # cot l2
-        #/----------------------------------------------------------------------------\#
-        ax5 = fig.add_subplot(445)
-        cs = ax5.imshow(cot_l2.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=50.0)
-        ax5.set_xlim((extent[:2]))
-        ax5.set_ylim((extent[2:]))
-        ax5.set_xlabel('Longitude [$^\circ$]')
-        ax5.set_ylabel('Latitude [$^\circ$]')
-        ax5.set_title('L2 COT')
+    f0.close()
 
-        divider = make_axes_locatable(ax5)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    cld_msk0 = np.ones(ref_2d.shape, dtype=np.int32)
+    cld_msk0[indices_x, indices_y] = 0
+    logic_nan0 = (cld_msk0 == 1)
 
-        # cer l2
-        #/----------------------------------------------------------------------------\#
-        ax6 = fig.add_subplot(446)
-        cs = ax6.imshow(cer_l2.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=30.0)
-        ax6.set_xlim((extent[:2]))
-        ax6.set_ylim((extent[2:]))
-        ax6.set_xlabel('Longitude [$^\circ$]')
-        ax6.set_ylabel('Latitude [$^\circ$]')
-        ax6.set_title('L2 CER [$\mu m$]')
+    cld_msk1 = np.ones(ref_2d.shape, dtype=np.int32)
+    cld_msk1[logic_cld] = 0
+    logic_nan1 = (cld_msk1 == 1)
 
-        divider = make_axes_locatable(ax6)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    # figure
+    #/----------------------------------------------------------------------------\#
+    plt.close('all')
+    rcParams['font.size'] = 12
+    fig = plt.figure(figsize=(16, 16))
 
-        # cth l2
-        #/----------------------------------------------------------------------------\#
-        ax7 = fig.add_subplot(447)
-        cs = ax7.imshow(cth.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=15.0)
-        ax7.set_xlim((extent[:2]))
-        ax7.set_ylim((extent[2:]))
-        ax7.set_xlabel('Longitude [$^\circ$]')
-        ax7.set_ylabel('Latitude [$^\circ$]')
-        ax7.set_title('L2 CTH [km]')
+    fig.suptitle('MODIS Cloud Re-Processing')
 
-        divider = make_axes_locatable(ax7)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    # RGB
+    #/--------------------------------------------------------------\#
+    ax1 = fig.add_subplot(441)
+    cs = ax1.imshow(rgb, zorder=0, extent=extent)
+    ax1.set_xlim((extent[:2]))
+    ax1.set_ylim((extent[2:]))
+    ax1.set_xlabel('Longitude [$^\circ$]')
+    ax1.set_ylabel('Latitude [$^\circ$]')
+    ax1.set_title('RGB Imagery')
 
-        # cot ipa0
-        #/----------------------------------------------------------------------------\#
-        ax9 = fig.add_subplot(449)
-        cs = ax9.imshow(cot_ipa0.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=50.0)
-        ax9.set_xlim((extent[:2]))
-        ax9.set_ylim((extent[2:]))
-        ax9.set_xlabel('Longitude [$^\circ$]')
-        ax9.set_ylabel('Latitude [$^\circ$]')
-        ax9.set_title('New IPA COT')
+    divider = make_axes_locatable(ax1)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cax.axis('off')
+    #\--------------------------------------------------------------/#
 
-        divider = make_axes_locatable(ax9)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    # L1B reflectance
+    #/----------------------------------------------------------------------------\#
+    ax2 = fig.add_subplot(442)
+    cs = ax2.pcolormesh(lon_2d, lat_2d, ref_2d, cmap='jet', zorder=0, vmin=0.0, vmax=1.0)
+    ax2.set_xlim((extent[:2]))
+    ax2.set_ylim((extent[2:]))
+    ax2.set_xlabel('Longitude [$^\circ$]')
+    ax2.set_ylabel('Latitude [$^\circ$]')
+    ax2.set_title('L1B Reflectance (%d nm)' % wvl)
 
-        # cer ipa0
-        #/----------------------------------------------------------------------------\#
-        ax10 = fig.add_subplot(4, 4, 10)
-        cs = ax10.imshow(cer_ipa0.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=30.0)
-        ax10.set_xlim((extent[:2]))
-        ax10.set_ylim((extent[2:]))
-        ax10.set_xlabel('Longitude [$^\circ$]')
-        ax10.set_ylabel('Latitude [$^\circ$]')
-        ax10.set_title('New L2 CER [$\mu m$]')
+    divider = make_axes_locatable(ax2)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
 
-        divider = make_axes_locatable(ax10)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    # cloud mask (primary)
+    #/----------------------------------------------------------------------------\#
+    ax3 = fig.add_subplot(443)
+    cs = ax3.imshow(rgb, zorder=0, extent=extent)
+    ax3.scatter(lon_2d[indices_x0, indices_y0], lat_2d[indices_x0, indices_y0], s=0.1, c='r', alpha=0.1, lw=0.0)
+    ax3.set_xlim((extent[:2]))
+    ax3.set_ylim((extent[2:]))
+    ax3.set_xlabel('Longitude [$^\circ$]')
+    ax3.set_ylabel('Latitude [$^\circ$]')
+    ax3.set_title('Primary Cloud Mask')
 
-        # cth ipa0
-        #/----------------------------------------------------------------------------\#
-        ax11 = fig.add_subplot(4, 4, 11)
-        cs = ax11.imshow(cth_ipa0.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=15.0)
-        ax11.set_xlim((extent[:2]))
-        ax11.set_ylim((extent[2:]))
-        ax11.set_xlabel('Longitude [$^\circ$]')
-        ax11.set_ylabel('Latitude [$^\circ$]')
-        ax11.set_title('New L2 CTH [km]')
+    divider = make_axes_locatable(ax3)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cax.axis('off')
+    #\----------------------------------------------------------------------------/#
 
-        divider = make_axes_locatable(ax11)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    # cloud mask (final)
+    #/----------------------------------------------------------------------------\#
+    ax4 = fig.add_subplot(444)
+    cs = ax4.imshow(rgb, zorder=0, extent=extent)
+    ax4.scatter(lon_2d[indices_x, indices_y], lat_2d[indices_x, indices_y], s=0.1, c='r', alpha=0.1, lw=0.0)
+    ax4.set_xlim((extent[:2]))
+    ax4.set_ylim((extent[2:]))
+    ax4.set_xlabel('Longitude [$^\circ$]')
+    ax4.set_ylabel('Latitude [$^\circ$]')
+    ax4.set_title('Secondary Cloud Mask (Final)')
 
-        # cot_ipa
-        #/----------------------------------------------------------------------------\#
-        ax13 = fig.add_subplot(4, 4, 13)
-        cs = ax13.imshow(cot_ipa.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=50.0)
-        ax13.set_xlim((extent[:2]))
-        ax13.set_ylim((extent[2:]))
-        ax13.set_xlabel('Longitude [$^\circ$]')
-        ax13.set_ylabel('Latitude [$^\circ$]')
-        ax13.set_title('New IPA COT (Para. Corr.)')
+    divider = make_axes_locatable(ax4)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cax.axis('off')
+    #\----------------------------------------------------------------------------/#
 
-        divider = make_axes_locatable(ax13)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    # cot l2
+    #/----------------------------------------------------------------------------\#
+    ax5 = fig.add_subplot(445)
+    cs = ax5.pcolormesh(lon_2d, lat_2d, cot_l2, cmap='jet', zorder=0, vmin=0.0, vmax=50.0)
+    ax5.set_xlim((extent[:2]))
+    ax5.set_ylim((extent[2:]))
+    ax5.set_xlabel('Longitude [$^\circ$]')
+    ax5.set_ylabel('Latitude [$^\circ$]')
+    ax5.set_title('L2 COT')
 
-        # cer_ipa
-        #/----------------------------------------------------------------------------\#
-        ax14 = fig.add_subplot(4, 4, 14)
-        cs = ax14.imshow(cer_ipa.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=30.0)
-        ax14.set_xlim((extent[:2]))
-        ax14.set_ylim((extent[2:]))
-        ax14.set_xlabel('Longitude [$^\circ$]')
-        ax14.set_ylabel('Latitude [$^\circ$]')
-        ax14.set_title('New L2 CER [$\mu m$] (Para. Corr.)')
+    divider = make_axes_locatable(ax5)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
 
-        divider = make_axes_locatable(ax14)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    # cer l2
+    #/----------------------------------------------------------------------------\#
+    ax6 = fig.add_subplot(446)
+    cs = ax6.pcolormesh(lon_2d, lat_2d, cer_l2, cmap='jet', zorder=0, vmin=0.0, vmax=30.0)
+    ax6.set_xlim((extent[:2]))
+    ax6.set_ylim((extent[2:]))
+    ax6.set_xlabel('Longitude [$^\circ$]')
+    ax6.set_ylabel('Latitude [$^\circ$]')
+    ax6.set_title('L2 CER [$\mu m$]')
 
-        # cth_ipa
-        #/----------------------------------------------------------------------------\#
-        ax15 = fig.add_subplot(4, 4, 15)
-        cs = ax15.imshow(cth_ipa.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=15.0)
-        ax15.set_xlim((extent[:2]))
-        ax15.set_ylim((extent[2:]))
-        ax15.set_xlabel('Longitude [$^\circ$]')
-        ax15.set_ylabel('Latitude [$^\circ$]')
-        ax15.set_title('New L2 CTH [km] (Para. Corr.)')
+    divider = make_axes_locatable(ax6)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
 
-        divider = make_axes_locatable(ax15)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    # cth l2
+    #/----------------------------------------------------------------------------\#
+    ax7 = fig.add_subplot(447)
+    cs = ax7.pcolormesh(lon_2d, lat_2d, cth_l2, cmap='jet', zorder=0, vmin=0.0, vmax=15.0)
+    ax7.set_xlim((extent[:2]))
+    ax7.set_ylim((extent[2:]))
+    ax7.set_xlabel('Longitude [$^\circ$]')
+    ax7.set_ylabel('Latitude [$^\circ$]')
+    ax7.set_title('L2 CTH [km]')
 
-        # surface albedo (MYD43A3, white sky albedo)
-        #/----------------------------------------------------------------------------\#
-        ax16 = fig.add_subplot(4, 4, 16)
-        cs = ax16.imshow(alb_oco.T, origin='lower', cmap='jet', zorder=0, extent=extent, vmin=0.0, vmax=0.4)
-        ax16.set_xlim((extent[:2]))
-        ax16.set_ylim((extent[2:]))
-        ax16.set_xlabel('Longitude [$^\circ$]')
-        ax16.set_ylabel('Latitude [$^\circ$]')
-        ax16.set_title('43A3 WSA (filled and scaled)')
-
-        divider = make_axes_locatable(ax16)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\----------------------------------------------------------------------------/#
+    divider = make_axes_locatable(ax7)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
 
 
-        # save figure
-        #/--------------------------------------------------------------\#
-        plt.subplots_adjust(hspace=0.4, wspace=0.4)
-        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        plt.savefig('%s_<%s>.png' % (params['name_tag'], _metadata['Function']), bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        #\----------------------------------------------------------------------------/#
+    # cot ipa0
+    #/----------------------------------------------------------------------------\#
+    ax9 = fig.add_subplot(449)
+    cot_ipa0[logic_nan0] = np.nan
+    cs = ax9.pcolormesh(lon_2d, lat_2d, cot_ipa0, cmap='jet', zorder=0, vmin=0.0, vmax=50.0)
+    ax9.set_xlim((extent[:2]))
+    ax9.set_ylim((extent[2:]))
+    ax9.set_xlabel('Longitude [$^\circ$]')
+    ax9.set_ylabel('Latitude [$^\circ$]')
+    ax9.set_title('New IPA COT')
+
+    divider = make_axes_locatable(ax9)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # cer ipa0
+    #/----------------------------------------------------------------------------\#
+    ax10 = fig.add_subplot(4, 4, 10)
+    cer_ipa0[logic_nan0] = np.nan
+    cs = ax10.pcolormesh(lon_2d, lat_2d, cer_ipa0, cmap='jet', zorder=0, vmin=0.0, vmax=30.0)
+    ax10.set_xlim((extent[:2]))
+    ax10.set_ylim((extent[2:]))
+    ax10.set_xlabel('Longitude [$^\circ$]')
+    ax10.set_ylabel('Latitude [$^\circ$]')
+    ax10.set_title('New L2 CER [$\mu m$]')
+
+    divider = make_axes_locatable(ax10)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # cth ipa0
+    #/----------------------------------------------------------------------------\#
+    ax11 = fig.add_subplot(4, 4, 11)
+    cth_ipa0[logic_nan0] = np.nan
+    cs = ax11.pcolormesh(lon_2d, lat_2d, cth_ipa0, cmap='jet', zorder=0, vmin=0.0, vmax=15.0)
+    ax11.set_xlim((extent[:2]))
+    ax11.set_ylim((extent[2:]))
+    ax11.set_xlabel('Longitude [$^\circ$]')
+    ax11.set_ylabel('Latitude [$^\circ$]')
+    ax11.set_title('New L2 CTH [km]')
+
+    divider = make_axes_locatable(ax11)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+
+    # cot_ipa
+    #/----------------------------------------------------------------------------\#
+    ax13 = fig.add_subplot(4, 4, 13)
+    cot_ipa[logic_nan1] = np.nan
+    cs = ax13.pcolormesh(lon_2d, lat_2d, cot_ipa, cmap='jet', zorder=0, vmin=0.0, vmax=50.0)
+    ax13.set_xlim((extent[:2]))
+    ax13.set_ylim((extent[2:]))
+    ax13.set_xlabel('Longitude [$^\circ$]')
+    ax13.set_ylabel('Latitude [$^\circ$]')
+    ax13.set_title('New IPA COT (Para. Corr.)')
+
+    divider = make_axes_locatable(ax13)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # cer_ipa
+    #/----------------------------------------------------------------------------\#
+    ax14 = fig.add_subplot(4, 4, 14)
+    cer_ipa[logic_nan1] = np.nan
+    cs = ax14.pcolormesh(lon_2d, lat_2d, cer_ipa, cmap='jet', zorder=0, vmin=0.0, vmax=30.0)
+    ax14.set_xlim((extent[:2]))
+    ax14.set_ylim((extent[2:]))
+    ax14.set_xlabel('Longitude [$^\circ$]')
+    ax14.set_ylabel('Latitude [$^\circ$]')
+    ax14.set_title('New L2 CER [$\mu m$] (Para. Corr.)')
+
+    divider = make_axes_locatable(ax14)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # cth_ipa
+    #/----------------------------------------------------------------------------\#
+    ax15 = fig.add_subplot(4, 4, 15)
+    cth_ipa[logic_nan1] = np.nan
+    cs = ax15.pcolormesh(lon_2d, lat_2d, cth_ipa, cmap='jet', zorder=0, vmin=0.0, vmax=15.0)
+    ax15.set_xlim((extent[:2]))
+    ax15.set_ylim((extent[2:]))
+    ax15.set_xlabel('Longitude [$^\circ$]')
+    ax15.set_ylabel('Latitude [$^\circ$]')
+    ax15.set_title('New L2 CTH [km] (Para. Corr.)')
+
+    divider = make_axes_locatable(ax15)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # surface albedo (MYD43A3, white sky albedo)
+    #/----------------------------------------------------------------------------\#
+    ax16 = fig.add_subplot(4, 4, 16)
+    cs = ax16.pcolormesh(lon_2d, lat_2d, alb43, cmap='jet', zorder=0, vmin=0.0, vmax=0.4)
+    ax16.set_xlim((extent[:2]))
+    ax16.set_ylim((extent[2:]))
+    ax16.set_xlabel('Longitude [$^\circ$]')
+    ax16.set_ylabel('Latitude [$^\circ$]')
+    ax16.set_title('43A3 WSA (filled and scaled)')
+
+    divider = make_axes_locatable(ax16)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+
+    # save figure
+    #/--------------------------------------------------------------\#
+    plt.subplots_adjust(hspace=0.4, wspace=0.4)
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    plt.savefig('%s_<%s>.png' % (params['name_tag'], _metadata['Function']), bbox_inches='tight', metadata=_metadata)
+    #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
 
 
 
 
-
-def func(x, a):
-
-    return a*x
-
-def cal_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, scale=True, replace=True):
-
-    logic = (x_ref>=x_bkg_2d.min()) & (x_ref<=x_bkg_2d.max()) & (y_ref>=y_bkg_2d.min()) & (y_ref<=y_bkg_2d.max())
-    x_ref = x_ref[logic]
-    y_ref = y_ref[logic]
-    data_ref = data_ref[logic]
-
-    points = np.transpose(np.vstack((x_bkg_2d.ravel(), y_bkg_2d.ravel())))
-    data_bkg = interpolate.griddata(points, data_bkg_2d.ravel(), (x_ref, y_ref), method='nearest')
-
-    logic_valid = (data_bkg>0.0) & (data_ref>0.0)
-    x_ref = x_ref[logic_valid]
-    y_ref = y_ref[logic_valid]
-    data_bkg = data_bkg[logic_valid]
-    data_ref = data_ref[logic_valid]
-
-    if scale:
-        popt, pcov = curve_fit(func, data_bkg, data_ref)
-        slope = popt[0]
-    else:
-        slope = 1.0
-
-    print('Message [cal_sfc_alb_2d]: slope:', slope)
-    data_2d = data_bkg_2d*slope
-
-    dx = x_bkg_2d[1, 0] - x_bkg_2d[0, 0]
-    dy = y_bkg_2d[0, 1] - y_bkg_2d[0, 0]
-
-    if replace:
-        indices_x = np.int_(np.round((x_ref-x_bkg_2d[0, 0])/dx, decimals=0))
-        indices_y = np.int_(np.round((y_ref-y_bkg_2d[0, 0])/dy, decimals=0))
-        data_2d[indices_x, indices_y] = data_ref
-
-    return data_2d
-
-
-
-
-
-class sat_tmp:
-
-    def __init__(self, data):
-
-        self.data = data
 
 def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', photon=params['photon'], overwrite=False):
 
@@ -1277,43 +1543,51 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', photon
     # sfc object
     #/----------------------------------------------------------------------------\#
     data = {}
-    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
-    data['alb_2d'] = dict(data=f['oco/sfc/alb_%s_2d' % params['oco_band'].lower()][...], name='Surface albedo', units='N/A')
-    data['lon_2d'] = dict(data=f['mod/sfc/lon'][...], name='Longitude', units='degrees')
-    data['lat_2d'] = dict(data=f['mod/sfc/lat'][...], name='Latitude' , units='degrees')
+    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
+    alb_2d = f['oco/sfc/alb_%s_2d' % params['oco_band'].lower()][...]
     f.close()
 
     fname_sfc = '%s/sfc.pk' % fdir
-    mod43     = sat_tmp(data)
-    sfc0      = er3t.pre.sfc.sfc_sat(sat_obj=mod43, fname=fname_sfc, extent=sat.extent, verbose=True, overwrite=overwrite)
+    sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc)
     sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
     # cld object
     #/----------------------------------------------------------------------------\#
-    data = {}
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=f['lon'][...])
-    data['lat_2d'] = dict(name='Gridded latitude'                , units='degrees'    , data=f['lat'][...])
     if solver.lower() == 'ipa':
-        data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_ipa0'][...])
-        data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_ipa0'][...])
-        data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_ipa0'][...])
+        cot_2d = f['mod/cld/cot_ipa0'][...]
+        cer_2d = f['mod/cld/cer_ipa0'][...]
+        cth_2d = f['mod/cld/cth_ipa0'][...]
     elif solver.lower() == '3d':
-        data['cot_2d'] = dict(name='Gridded cloud optical thickness' , units='N/A'        , data=f['mod/cld/cot_ipa'][...])
-        data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=f['mod/cld/cer_ipa'][...])
-        data['cth_2d'] = dict(name='Gridded cloud top height'        , units='km'         , data=f['mod/cld/cth_ipa'][...])
+        cot_2d = f['mod/cld/cot_ipa'][...]
+        cer_2d = f['mod/cld/cer_ipa'][...]
+        cth_2d = f['mod/cld/cth_ipa'][...]
     f.close()
 
-    modl1b = sat_tmp(data)
-    fname_cld = '%s/cld.pk' % fdir
+    # cloud geometrical thickness
+    #/--------------------------------------------------------------\#
+    cgt_2d = np.zeros_like(cth_2d)
+    cgt_2d[cth_2d>0.0] = 1.0                      # all clouds have geometrical thickness of 1 km
+    cgt_2d[cth_2d>4.0] = cth_2d[cth_2d>4.0]-3.0   # high clouds (cth>4km) has cloud base at 3 km
+    #\--------------------------------------------------------------/#
 
-    cth0 = modl1b.data['cth_2d']['data']
-    cgt0 = np.zeros_like(cth0)
-    cgt0[cth0>0.0] = 1.0                  # all clouds have geometrical thickness of 1 km
-    cgt0[cth0>4.0] = cth0[cth0>4.0]-3.0   # high clouds (cth>4km) has cloud base at 3 km
-    cld0 = er3t.pre.cld.cld_sat(sat_obj=modl1b, fname=fname_cld, cth=cth0, cgt=cgt0, dz=np.unique(atm0.lay['thickness']['data'])[0], overwrite=overwrite)
+    Nx, Ny = cot_2d.shape
+    extent_xy = [0.0, params['dx']*Nx/1000.0, 0.0, params['dy']*Ny/1000.0]
+
+    fname_cld = '%s/cld.pk' % fdir
+    cld0 = er3t.pre.cld.cld_gen_cop(
+            fname=fname_cld,
+            cot=cot_2d,
+            cer=cer_2d,
+            cth=cth_2d,
+            cgt=cgt_2d,
+            dz=atm0.lay['thickness']['data'][0],
+            extent_xy=extent_xy,
+            atm_obj=atm0,
+            overwrite=overwrite
+            )
     #\----------------------------------------------------------------------------/#
 
 
@@ -1384,7 +1658,7 @@ def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', photon
 
 
 
-def main_pre(oco_band='o2a'):
+def main_pre(oco_band='o2a', plot=True):
 
     # 1) Download and pre-process MODIS data products
     # MODIS data products will be downloaded at <data/02_modis_rad-sim/download>
@@ -1428,9 +1702,10 @@ def main_pre(oco_band='o2a'):
     # oco/sfc/lon ------------ : Dataset  (377,)
     # oco/snd_id ------------- : Dataset  (112, 8)
     #/----------------------------------------------------------------------------\#
-    cdata_sat_raw(oco_band=oco_band, plot=True)
+    cdata_sat_raw(oco_band=oco_band)
+    if plot:
+        plot_sat_raw()
     #\----------------------------------------------------------------------------/#
-    sys.exit()
 
 
     # apply IPA method to retrieve cloud optical thickness (COT) from MODIS radiance
@@ -1456,6 +1731,8 @@ def main_pre(oco_band='o2a'):
     # mod/cld/logic_cld0 ----- : Dataset  (846, 846)
     #/----------------------------------------------------------------------------\#
     cdata_cld_ipa(oco_band=oco_band, plot=True)
+    if plot:
+        plot_cld_ipa()
     #\----------------------------------------------------------------------------/#
 
 def main_sim(oco_band='o2a'):
@@ -1626,8 +1903,6 @@ def main_post(plot=True):
 
 
 if __name__ == '__main__':
-
-    warnings.warn('\nThis code is currently under development ...')
 
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
