@@ -162,6 +162,10 @@ How to Use
 We provide various examples extend from simple demo to complex research project under `examples <https://github.com/hong-chen/er3t/tree/dev/examples>`_.
 ``examples/00_er3t_mca.py`` and ``examples/00_er3t_lrt.py`` can be used to perform test runs.
 
+
+**Important Note**
+
+If you are interested in running our provided examples, additional installation and setup steps are needed.
 A more detailed instruction can be found `here <https://github.com/hong-chen/er3t/tree/dev/examples#readme>`_.
 
 
