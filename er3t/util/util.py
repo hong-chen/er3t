@@ -348,7 +348,7 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
     # create KDTree
     #/----------------------------------------------------------------------------\#
     points = np.transpose(np.vstack((x, y)))
-    tree_xy = KDTree(points, leafsize=50)
+    tree_xy = KDTree(points)
     #\----------------------------------------------------------------------------/#
 
 
