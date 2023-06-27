@@ -332,6 +332,14 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
         data_out: gridded data
     """
 
+    # only support output at maximum dimension of 2
+    #/----------------------------------------------------------------------------\#
+    if x_out.ndim > 2:
+        msg = '\nError [find_nearest]: Only supports <x_out.ndim<=2> and <y_out.ndim<=2>.'
+        raise ValueError(msg)
+    #\----------------------------------------------------------------------------/#
+
+
     # preprocess raw data
     #/----------------------------------------------------------------------------\#
     x = np.array(x_raw).ravel()
