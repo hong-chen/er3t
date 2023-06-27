@@ -192,8 +192,8 @@ class mcarats_ng:
         self.fnames_inp = []
         self.fnames_out = []
         for ir in range(self.Nrun):
-            self.fnames_inp.append(['%s/r%2.2d.g%2.2d.inp.txt' % (self.fdir, ir, ig) for ig in range(self.Ng)])
-            self.fnames_out.append(['%s/r%2.2d.g%2.2d.out.bin' % (self.fdir, ir, ig) for ig in range(self.Ng)])
+            self.fnames_inp.append(['%s/r%2.2d.g%3.3d.inp.txt' % (self.fdir, ir, ig) for ig in range(self.Ng)])
+            self.fnames_out.append(['%s/r%2.2d.g%3.3d.out.bin' % (self.fdir, ir, ig) for ig in range(self.Ng)])
 
         if not self.quiet and not self.overwrite:
             print('Message [mcarats_ng]: Reading mode ...')
