@@ -171,7 +171,7 @@ class cld_sat:
             dx = cal_geodesic_dist(
                     self.sat.data['lon_2d']['data'][:-1, :], self.sat.data['lat_2d']['data'][:-1, :], \
                     self.sat.data['lon_2d']['data'][1:, :] , self.sat.data['lat_2d']['data'][1:, :]   \
-                    ).mean()
+                    ).mean()/1000.0
         else:
             dx = self.sat.data['dx']['data']
 
@@ -179,7 +179,7 @@ class cld_sat:
             dy = cal_geodesic_dist(
                     self.sat.data['lon_2d']['data'][:, :-1], self.sat.data['lat_2d']['data'][:, :-1], \
                     self.sat.data['lon_2d']['data'][:, 1:] , self.sat.data['lat_2d']['data'][:, 1:]   \
-                    ).mean()
+                    ).mean()/1000.0
         else:
             dy = self.sat.data['dy']['data']
 
