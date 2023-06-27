@@ -165,8 +165,8 @@ We provide various examples extend from simple demo to complex research project 
 
 **Important Note**
 
-If you are interested in running our provided examples, additional installation and setup steps are needed.
-A more detailed instruction can be found `here <https://github.com/hong-chen/er3t/tree/dev/examples#readme>`_.
+    * If you are interested in running our provided examples, additional installation and setup steps are needed.
+      A more detailed instruction can be found `here <https://github.com/hong-chen/er3t/tree/dev/examples#readme>`_.
 
 
 |
