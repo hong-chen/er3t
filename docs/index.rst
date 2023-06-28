@@ -1,10 +1,13 @@
+EaR³T
+=====
+
 .. figure:: /_assets/er3t-logo.png
    :align: center
-   :width: 400px
+   :width: 300px
 
 |
 
-The Education and Research 3D Radiative Transfer Toolbox (EaR³T, pronounced [ɜːt])
+The Education and Research 3D Radiative Transfer Toolbox (**EaR³T**, /ɜːt/)
 provides high-level interfaces that can automate the process of performing IPA/3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
 publicly available IPA/3D radiative transfer models including MCARaTS (**implemented**),
@@ -22,25 +25,6 @@ Applicable area:
 
 |
 
-.. list-table:: **Demo**
-
-    * - Multi-Angle (space view)
-
-      - Sunrise to Sunset (space view)
-
-    * - .. image:: /_assets/multi-angle_space.gif
-
-      - .. image:: /_assets/sunrise-sunset_space.gif
-
-    * - Multi-Angle (ground view)
-
-      - Sunrise to Sunset (ground view)
-
-    * - .. image:: /_assets/multi-angle_ground.gif
-
-      - .. image:: /_assets/sunrise-sunset_ground.gif
-
-|
 
 **How to cite:**
 
@@ -67,3 +51,6 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   install
+   eyecandy
