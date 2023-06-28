@@ -4,7 +4,7 @@ Install
 Dependencies
 ------------
 
-1. Install ``conda`` Python package manager** (pick **one** from the following installers)
+1. Install ``conda`` Python package manager (pick **one** from the following installers)
 
     * `Anaconda <https://www.anaconda.com/>`_ (comprehensive, more popular);
 
