@@ -1,16 +1,11 @@
-.. EaR³T documentation master file, created by
-
-============================================================
-Education and Research 3D Radiative Transfer Toolbox (EaR³T)
-============================================================
-
 .. figure:: /_assets/er3t-logo.png
    :align: center
-   :width: 600px
+   :width: 400px
 
 |
 
-EaR³T (pronounced [ɜːt]) provides high-level interfaces that can automate the process of performing IPA/3D
+The Education and Research 3D Radiative Transfer Toolbox (EaR³T, pronounced [ɜːt])
+provides high-level interfaces that can automate the process of performing IPA/3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
 publicly available IPA/3D radiative transfer models including MCARaTS (**implemented**),
 libRadtran (**implemented**, IPA only), and SHDOM (under development).
