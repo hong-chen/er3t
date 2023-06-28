@@ -5,10 +5,9 @@ EaR³T
 
     This documentation is under active development.
 
-
 .. figure:: /_assets/er3t-logo.png
    :align: center
-   :width: 300px
+   :width: 400px
 
 The Education and Research 3D Radiative Transfer Toolbox (**EaR³T**, /ɜːt/)
 provides high-level interfaces that can automate the process of performing IPA/3D
@@ -53,12 +52,6 @@ Applicable area:
 
 |
 
-If you are interested in making contributions to the package,
-please refer to `CONTRIBUTING <https://github.com/hong-chen/er3t/blob/dev/CONTRIBUTING.rst>`_
-doc for further information.
-
-|
-
 **How to cite:**
 
 * `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
@@ -70,9 +63,7 @@ doc for further information.
 
 |
 
-
 Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
-
 
 |
 
