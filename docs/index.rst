@@ -9,13 +9,13 @@ EaR³T
    :align: center
    :width: 400px
 
-The Education and Research 3D Radiative Transfer Toolbox (EaR³T, /ɜːt/)
-provides high-level interfaces that can automate the process of performing IPA/3D
-radiative transfer calculations for measured or modeled cloud/aerosol fields using
-publicly available IPA/3D radiative transfer models including MCARaTS,
-libRadtran (IPA only), and SHDOM (under development).
+The Education and Research 3D Radiative Transfer Toolbox (EaR³T, /ɜːt/) is a Python
+software designed for radiative transfer applications. It provides high-level interfaces
+to automate the process of performing IPA/3D radiative transfer calculations for measured
+or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer models
+including MCARaTS, libRadtran (IPA only), and SHDOM (under development).
 
-The code is hosted and maintained at https://github.com/hong-chen/er3t.
+The code is publicly available at https://github.com/hong-chen/er3t.
 
 
 **Applicable area:**
