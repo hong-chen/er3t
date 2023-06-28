@@ -7,7 +7,7 @@
 Education and Research 3D Radiative Transfer Toolbox (EaR³T)
 ============================================================
 
-.. figure::  /_assets/er3t-logo.png
+.. figure:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/_assets/er3t-logo.png
    :align: center
    :width: 50%
 
