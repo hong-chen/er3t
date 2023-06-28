@@ -15,6 +15,8 @@ radiative transfer calculations for measured or modeled cloud/aerosol fields usi
 publicly available IPA/3D radiative transfer models including MCARaTS,
 libRadtran (IPA only), and SHDOM (under development).
 
+The code is hosted and maintained at https://github.com/hong-chen/er3t.
+
 
 **Applicable area:**
 
@@ -28,6 +30,12 @@ libRadtran (IPA only), and SHDOM (under development).
 
 
 **Contributors:**
+
+EaR³T was originally designed and developed by `Hong Chen <hong.chen@lasp.colorado.edu>`_ and
+`Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ at the University of Colorado Boulder
+and `Hong Chen <hong.chen@lasp.colorado.edu>`_ is the current maintainer.
+
+Additionally, EaR³T has been actively contributed by the following developers:
 
 * `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (Dec., 2022 - current)
 
@@ -65,6 +73,9 @@ libRadtran (IPA only), and SHDOM (under development).
 
 Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
 
+
+|
+|
 
 .. toctree::
    :maxdepth: 2
