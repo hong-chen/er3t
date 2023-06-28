@@ -1,7 +1,4 @@
 .. EaR³T documentation master file, created by
-   sphinx-quickstart on Wed Jun 28 12:10:28 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 ============================================================
 Education and Research 3D Radiative Transfer Toolbox (EaR³T)
@@ -9,9 +6,6 @@ Education and Research 3D Radiative Transfer Toolbox (EaR³T)
 
 .. figure:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/_assets/er3t-logo.png
    :align: center
-   :width: 50%
-
-   ..
 
 |
 
@@ -30,6 +24,43 @@ Applicable area:
 
 * Novel retrieval algorithm development (e.g., CNN-based).
 
+|
+
+.. list-table:: **Demo**
+
+    * - Multi-Angle (space view)
+
+      - Sunrise to Sunset (space view)
+
+    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/_assets/multi-angle_space.gif
+
+      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/_assets/sunrise-sunset_space.gif
+
+    * - Multi-Angle (ground view)
+
+      - Sunrise to Sunset (ground view)
+
+    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/_assets/multi-angle_ground.gif
+
+      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/_assets/sunrise-sunset_ground.gif
+
+|
+
+**How to cite:**
+
+* `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
+
+   Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
+   Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
+   Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
+   Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
+
+|
+
+Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
+
+|
+|
 
 .. note::
 
@@ -40,12 +71,3 @@ Applicable area:
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
