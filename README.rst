@@ -29,17 +29,17 @@ Applicable area:
 
       - Sunrise to Sunset (space view)
 
-    * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle_space.gif
+    * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/_assets/multi-angle_space.gif
 
-      - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/sunrise-sunset_space.gif
+      - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/_assets/sunrise-sunset_space.gif
 
     * - Multi-Angle (ground view)
 
       - Sunrise to Sunset (ground view)
 
-    * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/multi-angle_ground.gif
+    * - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/_assets/multi-angle_ground.gif
 
-      - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/assets/sunrise-sunset_ground.gif
+      - .. image:: https://github.com/hong-chen/er3t/blob/master/docs/_assets/sunrise-sunset_ground.gif
 
 |
 
