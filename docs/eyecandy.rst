@@ -2,7 +2,10 @@
 Eye Candy
 =========
 
-.. list-table:: **Multi-Spectral and Multi-Angle Demo**
+Multi-Spectral and Multi-Angle Radiance Simulation
+--------------------------------------------------
+
+.. list-table::
 
     * - Multi-Angle (space view)
 

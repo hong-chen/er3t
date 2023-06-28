@@ -72,3 +72,4 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 
    install
    eyecandy
+   publication
