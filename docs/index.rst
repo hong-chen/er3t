@@ -3,8 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to EaR³T's documentation!
-=================================
+============================================================
+Education and Research 3D Radiative Transfer Toolbox (EaR³T)
+============================================================
+
+.. figure::  /_assets/er3t-logo.png
+   :align: center
+   :width: 50%
+
+   ..
 
 |
 
