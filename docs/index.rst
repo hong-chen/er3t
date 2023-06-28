@@ -61,7 +61,7 @@ libRadtran (IPA only), and SHDOM (under development).
    Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
 
-**Community**
+**Community Support:**
 
 Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
 
