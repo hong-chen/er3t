@@ -15,7 +15,8 @@ radiative transfer calculations for measured or modeled cloud/aerosol fields usi
 publicly available IPA/3D radiative transfer models including MCARaTS,
 libRadtran (IPA only), and SHDOM (under development).
 
-Applicable area:
+
+**Applicable area:**
 
 * Spaceborne and airborne remote sensing;
 
@@ -25,7 +26,6 @@ Applicable area:
 
 * Novel retrieval algorithm development (e.g., CNN-based).
 
-|
 
 **Current contributors are:**
 
@@ -50,7 +50,6 @@ Applicable area:
 
    - implementing spectroscopy support for OCO-2 (work in progress, functions in ``er3t/pre/abs/abs_oco.py``)
 
-|
 
 **How to cite:**
 
@@ -61,11 +60,11 @@ Applicable area:
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
    Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
-|
+
+**Community**
 
 Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
 
-|
 
 .. toctree::
    :maxdepth: 2
