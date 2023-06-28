@@ -1,6 +1,11 @@
 EaR³T
 =====
 
+.. note::
+
+    This documentation is under active development.
+
+
 .. figure:: /_assets/er3t-logo.png
    :align: center
    :width: 300px
@@ -23,20 +28,7 @@ Applicable area:
 
 |
 
-
-**How to cite:**
-
-* `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
-
-   Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
-   Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
-   Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
-   Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
-
-|
-
-
-Current and past contributors are:
+**Current contributors are:**
 
 * `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (Dec., 2022 - current)
 
@@ -65,15 +57,25 @@ If you are interested in making contributions to the package,
 please refer to `CONTRIBUTING <https://github.com/hong-chen/er3t/blob/dev/CONTRIBUTING.rst>`_
 doc for further information.
 
+|
+
+**How to cite:**
+
+* `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
+
+   Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
+   Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
+   Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
+   Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
+
+|
+
 
 Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
 
-.. note::
-
-    This documentation is under active development.
-
 
 |
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
