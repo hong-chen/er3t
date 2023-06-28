@@ -11,8 +11,6 @@ Dependencies
     * `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ (compact, more system-friendly).
 
 
-|
-
 2. Install `MCARaTS <https://sites.google.com/site/mcarats>`_ through the `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`_ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`_)
 
     * After installation, please specify environment variable ``MCARATS_V010_EXE``.
@@ -27,8 +25,6 @@ Dependencies
     * When the installation processes are complete,
       ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
 
-
-|
 
 3. (optional) Install `libRadtran <http://www.libradtran.org/>`_ through the `official installation guide <http://www.libradtran.org/doku.php?id=download>`_ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`_)
 
@@ -45,16 +41,11 @@ Dependencies
       ``er3t.rtm.lrt`` can be used to perform IPA radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
 
 
-|
-
 4. (optional) Install `SHDOM <https://coloradolinux.com/shdom/>`_
 
     **Unavailable yet (under development)**
 
-
 |
-|
-
 
 EaR³T
 -----
@@ -70,6 +61,7 @@ EaR³T
 
       git clone https://github.com/hong-chen/er3t.git
 
+
 2. Under newly cloned ``er3t``, where it contains ``er3t-env.yml``, type in the following
 
     ::
@@ -79,7 +71,6 @@ EaR³T
 
     * A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
       (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
-
 
 
 3. Under newly cloned ``er3t``, where it contains ``install.sh``, type in the following
