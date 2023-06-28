@@ -8,7 +8,7 @@ the usage of EaR³T from example.
 
 
 Examples (`code status <https://discord.com/channels/681619528945500252/1004090233412923544/1017575066139103293>`_)
-~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **The example code is under active development. Please check for the latest code status before use.**
 
