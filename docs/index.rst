@@ -5,8 +5,6 @@ EaR³T
    :align: center
    :width: 300px
 
-|
-
 The Education and Research 3D Radiative Transfer Toolbox (**EaR³T**, /ɜːt/)
 provides high-level interfaces that can automate the process of performing IPA/3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using
@@ -37,10 +35,38 @@ Applicable area:
 
 |
 
-Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
+
+Current and past contributors are:
+
+* `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (Dec., 2022 - current)
+
+   - improved the automated process of satellite data download (functions in ``er3t/util/util.py``)
+
+   - added support for MODIS 35 product (functions in ``er3t/util/modis.py``)
+
+   - implemented command line tool for satellite data download (``bin/sdown``)
+
+
+* `Ken Hirata <Ken.Hirata@colorado.edu>`_ (Jan., 2023 - current)
+
+   - contributed to the theoretical development of CPU multithreading optimization (functions in ``er3t/rtm/mca/mca_run.py``)
+
+   - implementing the Mie scattering phase function support for aerosols (work in progress)
+
+* `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
+
+   - added support for MODIS 04 product (functions in ``er3t/util/modis.py``)
+
+   - implementing spectroscopy support for OCO-2 (work in progress, functions in ``er3t/pre/abs/abs_oco.py``)
 
 |
-|
+
+If you are interested in making contributions to the package,
+please refer to `CONTRIBUTING <https://github.com/hong-chen/er3t/blob/dev/CONTRIBUTING.rst>`_
+doc for further information.
+
+
+Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
 
 .. note::
 
