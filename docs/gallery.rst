@@ -1,6 +1,6 @@
-=========
-Eye Candy
-=========
+=======
+Gallery
+=======
 
 Multi-Spectral and Multi-Angle Radiance Simulation
 --------------------------------------------------
