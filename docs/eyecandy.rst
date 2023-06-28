@@ -2,7 +2,7 @@
 Eye Candy
 =========
 
-.. list-table:: **Demo**
+.. list-table:: **Multi-Spectral and Multi-Angle Demo**
 
     * - Multi-Angle (space view)
 
