@@ -27,7 +27,7 @@ libRadtran (IPA only), and SHDOM (under development).
 * Novel retrieval algorithm development (e.g., CNN-based).
 
 
-**Current contributors are:**
+**Contributors:**
 
 * `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (Dec., 2022 - current)
 
