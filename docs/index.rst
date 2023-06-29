@@ -29,7 +29,7 @@ The code is publicly available at https://github.com/hong-chen/er3t.
 * Novel retrieval algorithm development (e.g., CNN-based).
 
 
-**Contributors:**
+**Authors and Contributors:**
 
 EaR³T was originally designed and developed by `Hong Chen <hong.chen@lasp.colorado.edu>`_ and
 `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ at the University of Colorado Boulder
@@ -51,7 +51,7 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 
 **How to Cite:**
 
-* `Paper <https://doi.org/10.5194/amt-16-1971-2023>`_
+* `Publication <https://doi.org/10.5194/amt-16-1971-2023>`_
 
    Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
