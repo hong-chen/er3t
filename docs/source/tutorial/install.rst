@@ -26,6 +26,11 @@ Dependencies
     * When the installation processes are complete,
       ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
 
+    .. note::
+
+       If you encountered any error, please feel free to reach out at `Discord SUPPORT/mcarats <https://discord.com/channels/681619528945500252/1123343304126365837>`__
+       for community support.
+
 
 3. (optional) Install `libRadtran <http://www.libradtran.org/>`_ through the `official installation guide <http://www.libradtran.org/doku.php?id=download>`__ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`__)
 
@@ -41,6 +46,10 @@ Dependencies
     * When the installation processes are complete,
       ``er3t.rtm.lrt`` can be used to perform IPA radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
 
+    .. note::
+
+       If you encountered any error, please feel free to reach out at `Discord SUPPORT/libradtran <https://discord.com/channels/681619528945500252/1123343342730760222>`__
+       for community support.
 
 4. (optional) Install `SHDOM <https://coloradolinux.com/shdom/>`_
 
