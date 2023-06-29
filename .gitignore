@@ -39,3 +39,4 @@ future_dev
 !examples/*.py
 !examples/*.sh
 !docs/_assets/*
+!docs/_source/*
