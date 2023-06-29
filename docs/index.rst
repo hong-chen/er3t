@@ -5,7 +5,7 @@ EaR³T
 
     This documentation is under active development.
 
-.. figure:: ../assets/er3t-logo.png
+.. figure:: assets/er3t-logo.png
    :align: center
    :width: 400px
 
@@ -71,9 +71,9 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for community suppo
    :maxdepth: 1
    :caption: Contents:
 
-   Installation <tutorial/install>
-   Usage <tutorial/usage>
-   EaR³T Tools <tutorial/tool>
-   EaR³T API <api/index>
-   Gallery <other/gallery>
-   Highlights <other/highlight>
+   Installation <source/tutorial/install>
+   Usage <source/tutorial/usage>
+   EaR³T Tools <source/tutorial/tool>
+   EaR³T API <source/api/index>
+   Gallery <source/other/gallery>
+   Highlights <source/other/highlight>
