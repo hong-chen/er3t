@@ -18,9 +18,9 @@ To run the example codes, auxiliary data is required.
 To download the data, under the example directory (``<root>/examples``) where it contains ``install-examples.sh``,
 type in the following
 
-    ::
+    .. code-block:: bash
 
-      bash install-examples.sh
+       bash install-examples.sh
 
     * If ``install-examples.sh`` fails to download the data from Google Drive for any reason, you can download the required data manually
       from `here <https://drive.google.com/file/d/1Oov75VffmuQSljxjoOS6q6egmfT6CmkI/view?usp=share_link>`_.
