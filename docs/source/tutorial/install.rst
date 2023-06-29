@@ -47,8 +47,8 @@ Dependencies
 
 |
 
-Python Package ``er3t``
------------------------
+Python Package - ``er3t``
+-------------------------
 
 .. note::
 

@@ -46,7 +46,7 @@ Additionally, EaR³T has been actively contributed by the following developers:
 
 **Community Support:**
 
-Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
+Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for community support and discussions.
 
 
 **How to Cite:**
