@@ -1,3 +1,4 @@
+==================
 Command Line Tools
 ==================
 
@@ -7,7 +8,7 @@ Current available tools are:
 Data Tool - ``lss``
 -------------------
 
-  can effortlessly display **brief** dataset information contained within a hierarchical
+  This tool can be used to effortlessly display **brief** dataset information contained within a hierarchical
   data file (currently supports ``netcdf``, ``hdf5``, ``hdf4``, and ``IDL sav``) on a terminal screen.
 
   **An Example:**
@@ -43,7 +44,7 @@ Data Tool - ``lss``
 Data Tool - ``lsa``
 -------------------
 
-  can effortlessly display **detailed** dataset information contained within a hierarchical
+  This tool can be used to effortlessly display **detailed** dataset information contained within a hierarchical
   data file (currently supports ``netcdf``, ``hdf5``, ``hdf4``, and ``IDL sav``) on a terminal screen.
 
   **An Example:**
@@ -89,6 +90,6 @@ Data Tool - ``lsa``
 Satellite Tool - ``sdown``
 --------------------------
 
-  can automatically download satellite data (currently supports MODIS and VIIRS data archived on
+  This tool can be used to effortlessly download satellite data (currently supports MODIS and VIIRS data archived on
   LAADS DAAC and LANCE, and satellite RGB imageries from NASA WorldView) for a user specified
   date and region. The development of ``sdown`` is led by Vikas Nataraja.

@@ -1,3 +1,4 @@
+=====
 EaR³T
 =====
 
@@ -5,20 +6,21 @@ EaR³T
 
     This documentation is under active development.
 
-.. figure:: ../assets/er3t-logo.png
+.. figure:: assets/er3t-logo.png
    :align: center
    :width: 400px
 
 The Education and Research 3D Radiative Transfer Toolbox (EaR³T, /ɜːt/) is a Python software package
-designed for radiative transfer and remote sensing applications. It provides high-level interfaces
-to automate the process of performing IPA/3D radiative transfer calculations for measured
+developed for cutting-edge radiative transfer and remote sensing applications. It provides high-level
+interfaces to automate the process of performing IPA/3D radiative transfer calculations for measured
 or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer models
 including MCARaTS, libRadtran (IPA only), and SHDOM (under development).
 
-EaR³T is publicly available at https://github.com/hong-chen/er3t.
+EaR³T is publicly available at https://github.com/hong-chen/er3t and licensed under `GPLv3 <https://www.gnu.org/licenses/gpl-3.0.html>`_.
 
 
-**Applications:**
+Applications
+------------
 
 * Spaceborne and airborne remote sensing;
 
@@ -29,7 +31,8 @@ EaR³T is publicly available at https://github.com/hong-chen/er3t.
 * Novel retrieval algorithm development (e.g., CNN-based).
 
 
-**Authors and Contributors:**
+Authors and Contributors
+------------------------
 
 EaR³T was originally designed and developed by `Hong Chen <hong.chen@lasp.colorado.edu>`_ and
 `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ at the University of Colorado Boulder
@@ -44,12 +47,16 @@ Additionally, EaR³T has been actively contributed by the following developers:
 * `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
 
 
-**Community Support:**
+Community Support
+-----------------
 
-Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for community support and discussions.
+We believe only we together can we do better and go futher. Thus we created a Discord server with aspiration
+to foster an informal radiative transfer and remote sensing focused community and to facilitate discussions
+and collaborations. Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ to hang out together.
 
 
-**How to Cite:**
+How to Cite
+-----------
 
 * `Publication <https://doi.org/10.5194/amt-16-1971-2023>`_
 
@@ -71,9 +78,10 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for community suppo
    :maxdepth: 1
    :caption: Contents:
 
-   Installation <tutorial/install>
-   Usage <tutorial/usage>
-   EaR³T Tools <tutorial/tool>
-   EaR³T API <api/index>
-   Gallery <other/gallery>
-   Highlights <other/highlight>
+   Installation <source/tutorial/install>
+   Usage <source/tutorial/usage>
+   EaR³T Tools <source/tutorial/tool>
+   EaR³T API <source/api/index>
+   Speed Contest <source/other/contest>
+   Gallery <source/other/gallery>
+   Highlights <source/other/highlight>

@@ -1,3 +1,4 @@
+==========
 Highlights
 ==========
 
@@ -34,6 +35,7 @@ So far, EaR³T has contributed to the following projects:
            :align: left
            :width: 300px
 
+|
 
 Publications
 ------------
