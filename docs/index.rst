@@ -82,6 +82,6 @@ How to Cite
    Usage <source/tutorial/usage>
    EaR³T Tools <source/tutorial/tool>
    EaR³T API <source/api/index>
-   Competition <source/other/compete>
+   Contest <source/other/contest>
    Gallery <source/other/gallery>
    Highlights <source/other/highlight>
