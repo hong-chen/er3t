@@ -137,7 +137,7 @@ use to compare with the same figure under ``examples/check``.
 
 At this point, congratulations! Your EaR³T is ready to go and you have done a successful 3D radiative transfer simulation!
 
-.. note::
+.. tip::
 
     If you encountered any error, please feel free to reach out at `Discord SUPPORT/examples <https://discord.com/channels/681619528945500252/1123343152477110453>`__
     for community support.

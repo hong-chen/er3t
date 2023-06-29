@@ -26,7 +26,7 @@ Dependencies
     * When the installation processes are complete,
       ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
 
-    .. note::
+    .. tip::
 
        If you encountered any error, please feel free to reach out at `Discord SUPPORT/mcarats <https://discord.com/channels/681619528945500252/1123343304126365837>`__
        for community support.
@@ -46,7 +46,7 @@ Dependencies
     * When the installation processes are complete,
       ``er3t.rtm.lrt`` can be used to perform IPA radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
 
-    .. note::
+    .. tip::
 
        If you encountered any error, please feel free to reach out at `Discord SUPPORT/libradtran <https://discord.com/channels/681619528945500252/1123343342730760222>`__
        for community support.
@@ -95,7 +95,7 @@ EaR³T Python Package - ``er3t``
       After you download the file (``er3t-data.tar.gz``), put it under ``er3t/`` directory where it contains ``install.sh``,
       then run the command ``bash install.sh`` through a terminal again.
 
-.. note::
+.. tip::
 
     If you encountered any error, please feel free to reach out at `Discord SUPPORT/installation <https://discord.com/channels/681619528945500252/1123343093417119754>`__
     for community support.
