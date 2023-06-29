@@ -31,7 +31,7 @@ type in the following
 Codes ``00`` (e.g., ``00_er3t_mca.py``) can be used to perform test runs.
 
 Codes ``01`` to ``04`` can be used to reproduce scientific results discussed in
-`Chen et al. (2024) <https://doi.org/10.5194/amt-16-1971-2023>`_.
+`Chen et al. (2023) <https://doi.org/10.5194/amt-16-1971-2023>`_.
 
 The figure results for each example are provided in ``<root>/examples/check`` directory (available after installing auxiliary data)
 for validation.

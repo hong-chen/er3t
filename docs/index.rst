@@ -60,7 +60,7 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 
 * `Code <https://github.com/hong-chen/er3t>`_
 
-   Chen, H., Schmidt, S., Nataraja, V., Hirata, K., and Chen, Y-W: hong-chen/er3t: er3t-v0.1.1 (v0.1.1),
+   Chen, H., Schmidt, K. S., Nataraja, V., Hirata, K., and Chen, Y-W: hong-chen/er3t: er3t-v0.1.1 (v0.1.1),
    Zenodo [code], https://doi.org/10.5281/zenodo.7734965, 2023. 
 
 
@@ -71,7 +71,8 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
    :maxdepth: 1
    :caption: Contents:
 
-   install
-   usage
-   gallery
-   highlight
+   Installation <_source/tutorial/install>
+   Usage <_source/tutorial/usage>
+   EaR³T API <_source/api/index>
+   Gallery <_source/other/gallery>
+   Highlights <_source/other/highlight>
