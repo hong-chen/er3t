@@ -40,4 +40,4 @@ future_dev
 !examples/*.sh
 !docs/assets/*
 !docs/source/*
-!docs/source/others/*
+!docs/source/other/*
