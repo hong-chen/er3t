@@ -15,7 +15,7 @@ to automate the process of performing IPA/3D radiative transfer calculations for
 or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer models
 including MCARaTS, libRadtran (IPA only), and SHDOM (under development).
 
-The code is publicly available at https://github.com/hong-chen/er3t.
+EaR³T is publicly available at https://github.com/hong-chen/er3t.
 
 
 **Applications:**
@@ -58,7 +58,7 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
    Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
-* `Code <https://github.com/hong-chen/er3t>`_
+* `Software <https://github.com/hong-chen/er3t>`_
 
    Chen, H., Schmidt, K. S., Nataraja, V., Hirata, K., and Chen, Y-W: hong-chen/er3t: er3t-v0.1.1 (v0.1.1),
    Zenodo [code], https://doi.org/10.5281/zenodo.7734965, 2023. 
@@ -73,6 +73,7 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 
    Installation <tutorial/install>
    Usage <tutorial/usage>
+   EaR³T Tools <tutorial/tool>
    EaR³T API <api/index>
    Gallery <other/gallery>
    Highlights <other/highlight>
