@@ -85,3 +85,8 @@ Python Package - ``er3t``
 
       After you download the file (``er3t-data.tar.gz``), put it under ``er3t`` directory where it contains ``install.sh``,
       then run the command ``bash install.sh`` through a terminal again.
+
+.. note::
+
+    If you encountered any error, please feel free to reach out at `Discord SUPPORT/installation <https://discord.com/channels/681619528945500252/1123343093417119754>`__
+    for community support.

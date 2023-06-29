@@ -139,5 +139,5 @@ At this point, congratulations! Your EaR³T is ready to go and you have done a s
 
 .. note::
 
-    If you encountered any error, please feel free to reach out at `Discord/Support/installation <https://discord.com/channels/681619528945500252/1123343093417119754>`__
+    If you encountered any error, please feel free to reach out at `Discord SUPPORT/examples <https://discord.com/channels/681619528945500252/1123343152477110453>`__
     for community support.
