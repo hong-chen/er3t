@@ -18,7 +18,8 @@ including MCARaTS, libRadtran (IPA only), and SHDOM (under development).
 EaR³T is publicly available at https://github.com/hong-chen/er3t and licensed under `GPLv3 <https://www.gnu.org/licenses/gpl-3.0.html>`_.
 
 
-**Applications:**
+Applications
+------------
 
 * Spaceborne and airborne remote sensing;
 
@@ -29,7 +30,8 @@ EaR³T is publicly available at https://github.com/hong-chen/er3t and licensed u
 * Novel retrieval algorithm development (e.g., CNN-based).
 
 
-**Authors and Contributors:**
+Authors and Contributors
+------------------------
 
 EaR³T was originally designed and developed by `Hong Chen <hong.chen@lasp.colorado.edu>`_ and
 `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ at the University of Colorado Boulder
@@ -44,12 +46,14 @@ Additionally, EaR³T has been actively contributed by the following developers:
 * `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
 
 
-**Community Support:**
+Community Support
+-----------------
 
 Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for community support and discussions.
 
 
-**How to Cite:**
+How to Cite
+-----------
 
 * `Publication <https://doi.org/10.5194/amt-16-1971-2023>`_
 
