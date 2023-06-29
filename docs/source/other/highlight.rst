@@ -9,29 +9,47 @@ So far, EaR³T has contributed to the following projects:
 
 .. list-table::
 
-    * - `NASA AOS (ongoing) <https://aos.gsfc.nasa.gov>`__
+    * - **NASA ARCSIX** (ongoing)
 
-    * - `NASA Libera (ongoing) <https://lasp.colorado.edu/libera>`__
+    * - **NASA AOS** (ongoing)
 
-    * - `NASA ARCSIX (ongoing) <https://espo.nasa.gov/arcsix>`__
+    * - .. figure:: https://aos.gsfc.nasa.gov/images/aos_constellation_image_thm.jpg
+           :target: https://aos.gsfc.nasa.gov
+           :align: center
+           :width: 300px
 
-    * - `NASA OCO-2 (ongoing) <https://ocov2.jpl.nasa.gov>`__
+    * - **NASA Libera** (ongoing)
 
-    * - `NASA CAMP²Ex 2019 <https://espo.nasa.gov/camp2ex>`__
+    * - .. figure:: https://lasp.colorado.edu/libera/files/2021/02/Libera-300.jpg
+           :target: https://lasp.colorado.edu/libera
+           :align: center
+           :width: 300px
+
+    * - **NASA OCO-2**
+
+    * - .. figure:: https://ocov2.jpl.nasa.gov/media/images/feature2_ri5txEN.max-312x226.jpg
+           :target: https://ocov2.jpl.nasa.gov
+           :align: center
+           :width: 300px
+
+    * - **NASA CAMP²Ex** (2019)
 
     * - .. figure:: https://espo.nasa.gov/sites/default/files/images/CAMP2EX%20Logo%202019.jpg
+           :target: https://espo.nasa.gov/camp2ex
            :align: center
            :width: 300px
 
-    * - `NASA ORACLES 2016-2018 <https://espo.nasa.gov/oracles>`__
+    * - **NASA ORACLES** (2016-2018)
 
     * - .. figure:: https://espo.nasa.gov/sites/default/files/images/ORACLE%20Logo%202017.png
+           :target: https://espo.nasa.gov/oracles
            :align: center
            :width: 300px
 
-    * - `NASA ARISE 2014 <https://espo.nasa.gov/arise>`__
+    * - **NASA ARISE** (2014)
 
         .. figure:: https://espo.nasa.gov/sites/default/files/images/ARISE%20Final.png
+           :target: https://espo.nasa.gov/arise
            :align: left
            :width: 300px
 
