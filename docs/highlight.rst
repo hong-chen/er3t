@@ -1,5 +1,8 @@
+Highlights
+==========
+
 Publications
-============
+------------
 
 So far, EaR³T has been used in the following publications:
 
@@ -41,3 +44,30 @@ So far, EaR³T has been used in the following publications:
    Gristey, J. J., Feingold, G., Glenn, I. B., Schmidt, K. S., and Chen, H.: Surface Solar Irradiance in
    Continental Shallow Cumulus Fields: Observations and Large-Eddy Simulation, J. Atmos. Sci., 77, 1065-1080,
    doi:10.1175/JAS-D-19-0261.1, 2020.
+
+Projects
+--------
+
+So far, EaR³T has contributed to the following projects:
+
+#. `NASA ARCSIX (ongoing) <https://espo.nasa.gov/arcsix>`__
+
+#. `NASA Libera (ongoing) <https://lasp.colorado.edu/libera>`__
+
+#. `NASA CAMP²Ex 2019 <https://espo.nasa.gov/camp2ex>`__
+
+.. figure:: https://espo.nasa.gov/sites/default/files/images/CAMP2EX%20Logo%202019.jpg
+   :align: left
+   :width: 400px
+
+#. `NASA ORACLES 2016-2018 <https://espo.nasa.gov/oracles>`__
+
+.. figure:: https://espo.nasa.gov/sites/default/files/images/ORACLE%20Logo%202017.png
+   :align: left
+   :width: 400px
+
+#. `NASA ARISE 2014 <https://espo.nasa.gov/arise>`__
+
+.. figure:: https://espo.nasa.gov/sites/default/files/images/ARISE%20Final.png
+   :align: left
+   :width: 400px
