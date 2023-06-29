@@ -62,7 +62,7 @@ EaR³T Python Package - ``er3t``
 
 .. warning::
 
-    You will need to have the dependencies installed first.
+    You will need to have the dependencies 1 and 2 installed first.
 
 
 1. Open a terminal, type in the following
