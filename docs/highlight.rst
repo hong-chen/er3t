@@ -56,18 +56,18 @@ So far, EaR³T has contributed to the following projects:
 
 #. `NASA CAMP²Ex 2019 <https://espo.nasa.gov/camp2ex>`__
 
-.. figure:: https://espo.nasa.gov/sites/default/files/images/CAMP2EX%20Logo%202019.jpg
-   :align: left
-   :width: 400px
+   .. figure:: https://espo.nasa.gov/sites/default/files/images/CAMP2EX%20Logo%202019.jpg
+      :align: left
+      :width: 200px
 
 #. `NASA ORACLES 2016-2018 <https://espo.nasa.gov/oracles>`__
 
-.. figure:: https://espo.nasa.gov/sites/default/files/images/ORACLE%20Logo%202017.png
-   :align: left
-   :width: 400px
+   .. figure:: https://espo.nasa.gov/sites/default/files/images/ORACLE%20Logo%202017.png
+      :align: left
+      :width: 200px
 
 #. `NASA ARISE 2014 <https://espo.nasa.gov/arise>`__
 
-.. figure:: https://espo.nasa.gov/sites/default/files/images/ARISE%20Final.png
-   :align: left
-   :width: 400px
+   .. figure:: https://espo.nasa.gov/sites/default/files/images/ARISE%20Final.png
+      :align: left
+      :width: 200px
