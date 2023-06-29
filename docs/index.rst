@@ -33,7 +33,7 @@ The code is publicly available at https://github.com/hong-chen/er3t.
 
 EaR³T was originally designed and developed by `Hong Chen <hong.chen@lasp.colorado.edu>`_ and
 `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ at the University of Colorado Boulder
-and `Hong Chen <hong.chen@lasp.colorado.edu>`_ is the current maintainer.
+in 2019. `Hong Chen <hong.chen@lasp.colorado.edu>`_ is the current maintainer.
 
 Additionally, EaR³T has been actively contributed by the following developers:
 
@@ -44,26 +44,31 @@ Additionally, EaR³T has been actively contributed by the following developers:
 * `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
 
 
-**How to cite:**
+**Community Support:**
 
-* `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
+Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
+
+
+**How to Cite:**
+
+* `Paper <https://doi.org/10.5194/amt-16-1971-2023>`_
 
    Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
    Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
+* `Code <https://github.com/hong-chen/er3t>`_
 
-**Community Support:**
-
-Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest information and community support.
+   Chen, H., Schmidt, S., Nataraja, V., Hirata, K., and Chen, Y-W: hong-chen/er3t: er3t-v0.1.1 (v0.1.1),
+   Zenodo [code], https://doi.org/10.5281/zenodo.7734965, 2023. 
 
 
 |
 |
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    install

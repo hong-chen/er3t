@@ -1,5 +1,5 @@
-Install
-=======
+Installation
+============
 
 Dependencies
 ------------
@@ -47,8 +47,8 @@ Dependencies
 
 |
 
-EaR³T
------
+Python Package ``er3t``
+-----------------------
 
 .. note::
 
