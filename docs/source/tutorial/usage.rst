@@ -4,8 +4,8 @@ Usage
 
 Due to the lack of funding support, only limited documentation has been developed.
 Despite the funding difficulties, we provide various examples extend from simple demo to complex research
-project under `<root>/examples <https://github.com/hong-chen/er3t/tree/dev/examples>`_, will be referred to
-as ``examples``)and hope users can learn the usage of EaR³T from the provided examples.
+project under ``<root>/examples``, will be referred to as ``examples/``) and hope users can learn the
+usage of EaR³T from the provided examples.
 
 
 Examples
@@ -16,7 +16,7 @@ Examples
     The example code is under active development. Please check for the `latest code status <https://discord.com/channels/681619528945500252/1004090233412923544/1017575066139103293>`_ before use.
 
 To run the example codes, auxiliary data is required.
-To download the data, under the example directory (``examples``) where it contains ``install-examples.sh``,
+To download the data, under the example directory (``examples/``) where it contains ``install-examples.sh``,
 type in the following
 
     .. code-block:: bash
@@ -26,7 +26,7 @@ type in the following
     * If ``install-examples.sh`` fails to download the data from Google Drive for any reason, you can download the required data manually
       from `here <https://drive.google.com/file/d/1Oov75VffmuQSljxjoOS6q6egmfT6CmkI/view?usp=share_link>`_.
 
-      After you download the file (``er3t-data-examples.tar.gz``), put it under ``examples`` directory where
+      After you download the file (``er3t-data-examples.tar.gz``), put it under ``examples/`` directory where
       it contains ``install-examples.sh``, then run the command ``bash install-examples.sh`` through a terminal again.
 
 Codes ``00`` (e.g., ``00_er3t_mca.py``) can be used to perform test runs.
@@ -43,7 +43,7 @@ Quick Start
 ~~~~~~~~~~~
 
 At current stage, we use ``MCARaTS`` as our default radiative transfer solver. To check whether EaR³T has been
-successfully installed, one can use ``00_er3t_mca.py`` under ``examples``.
+successfully installed, one can use ``00_er3t_mca.py`` under ``examples/``.
 
 There are total of 6 examples provided in ``00_er3t_mca.py`` (see the following from the code).
 
@@ -92,7 +92,7 @@ in the ``00_er3t_mca.py`` code. For example, the following will only run ``examp
 
        pass
 
-To run the code, type in the following command in a terminal under ``examples``
+To run the code, type in the following command in a terminal under ``examples/``
 
 .. code-block:: bash
 
@@ -132,7 +132,7 @@ for a successful installation
    ----------------------------------------------------------
      0%|                                                     | 0/48 [00:00<?, ?it/s]
 
-After the run is completed, you will have a figure (e.g., ``00_er3t_mca-example_05_rad_les_cloud_3d_3d.png``) created under ``examples``, which you can
+After the run is completed, you will have a figure (e.g., ``00_er3t_mca-example_05_rad_les_cloud_3d_3d.png``) created under ``examples/``, which you can
 use to compare with the same figure under ``examples/check``.
 
 At this point, congratulations! Your EaR³T is ready to go and you have done a successful 3D radiative transfer simulation!
