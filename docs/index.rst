@@ -2,7 +2,7 @@
 EaR³T
 =====
 
-.. note::
+.. warning::
 
     This documentation is under active development.
 
@@ -57,6 +57,8 @@ and collaborations. Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_
 
 How to Cite
 -----------
+
+If you find EaR³T is helpful and would like to cite it, here are the references:
 
 * `Publication <https://doi.org/10.5194/amt-16-1971-2023>`_
 

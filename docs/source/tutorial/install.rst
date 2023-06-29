@@ -26,6 +26,11 @@ Dependencies
     * When the installation processes are complete,
       ``er3t.rtm.mca`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_mca.py``).
 
+    .. note::
+
+       If you encountered any error, please feel free to reach out at `Discord SUPPORT/mcarats <https://discord.com/channels/681619528945500252/1123343304126365837>`__
+       for community support.
+
 
 3. (optional) Install `libRadtran <http://www.libradtran.org/>`_ through the `official installation guide <http://www.libradtran.org/doku.php?id=download>`__ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`__)
 
@@ -41,6 +46,10 @@ Dependencies
     * When the installation processes are complete,
       ``er3t.rtm.lrt`` can be used to perform IPA radiance/irradiance simulation (details see ``examples/00_er3t_lrt.py``).
 
+    .. note::
+
+       If you encountered any error, please feel free to reach out at `Discord SUPPORT/libradtran <https://discord.com/channels/681619528945500252/1123343342730760222>`__
+       for community support.
 
 4. (optional) Install `SHDOM <https://coloradolinux.com/shdom/>`_
 
@@ -48,12 +57,12 @@ Dependencies
 
 |
 
-Python Package - ``er3t``
--------------------------
+EaR³T Python Package - ``er3t``
+-------------------------------
 
-.. note::
+.. warning::
 
-    You will need to have the dependencies installed first.
+    You will need to have the dependencies 1 and 2 installed first.
 
 
 1. Open a terminal, type in the following
@@ -63,7 +72,7 @@ Python Package - ``er3t``
        git clone https://github.com/hong-chen/er3t.git
 
 
-2. Under newly cloned ``er3t``, where it contains ``er3t-env.yml``, type in the following
+2. Under newly cloned ``er3t/``, where it contains ``er3t-env.yml``, type in the following
 
     .. code-block:: bash
 
@@ -74,7 +83,7 @@ Python Package - ``er3t``
       (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.
 
 
-3. Under newly cloned ``er3t``, where it contains ``install.sh``, type in the following
+3. Under newly cloned ``er3t/``, where it contains ``install.sh``, type in the following
 
     .. code-block:: bash
 
@@ -83,5 +92,10 @@ Python Package - ``er3t``
     * If ``install.sh`` fails to download the data from Google Drive for any reason, you can download the required data
       manually from `here <https://drive.google.com/file/d/1KKpLR7IyqJ4gS6xCxc7f1hwUfUMJksVL/view?usp=sharing>`_.
 
-      After you download the file (``er3t-data.tar.gz``), put it under ``er3t`` directory where it contains ``install.sh``,
+      After you download the file (``er3t-data.tar.gz``), put it under ``er3t/`` directory where it contains ``install.sh``,
       then run the command ``bash install.sh`` through a terminal again.
+
+.. note::
+
+    If you encountered any error, please feel free to reach out at `Discord SUPPORT/installation <https://discord.com/channels/681619528945500252/1123343093417119754>`__
+    for community support.

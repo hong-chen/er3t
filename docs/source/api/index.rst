@@ -2,7 +2,7 @@
 EaR³T API
 =========
 
-.. note::
+.. warning::
 
     Under development ...
 
