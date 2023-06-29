@@ -130,7 +130,7 @@ for a successful installation
               Number of Runs : 16 (g) * 3 (set)
               Number of CPUs : 12 (used) of 16 (total)
    ----------------------------------------------------------
-     0%|                                                                                                                                 | 0/48 [00:00<?, ?it/s]
+     0%|                                                     | 0/48 [00:00<?, ?it/s]
 
 After the run is completed, you will have a figure (e.g., ``00_er3t_mca-example_05_rad_les_cloud_3d_3d.png``) created under ``examples``, which you can
-use to compare the same figure under ``examples/check``.
+use to compare with the same figure under ``examples/check``.
