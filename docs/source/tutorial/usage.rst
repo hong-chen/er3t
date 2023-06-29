@@ -11,7 +11,7 @@ as ``examples``)and hope users can learn the usage of EaR³T from the provided e
 Examples
 ~~~~~~~~
 
-.. note::
+.. warning::
 
     The example code is under active development. Please check for the `latest code status <https://discord.com/channels/681619528945500252/1004090233412923544/1017575066139103293>`_ before use.
 

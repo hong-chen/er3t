@@ -57,10 +57,10 @@ Dependencies
 
 |
 
-Python Package - ``er3t``
--------------------------
+EaR³T Python Package - ``er3t``
+-------------------------------
 
-.. note::
+.. warning::
 
     You will need to have the dependencies installed first.
 

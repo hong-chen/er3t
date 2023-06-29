@@ -2,7 +2,7 @@
 EaR³T
 =====
 
-.. note::
+.. warning::
 
     This documentation is under active development.
 
