@@ -101,7 +101,7 @@ To run the code, type in the following command in a terminal under ``examples``
 You would expect something similar to the following appear on your terminal screen as indication
 for a successful installation
 
-.. code-block:: bash
+.. code-block:: text
 
    Message [cld_les]: Processing </data/hong/mygit/er3t/examples/data/00_er3t_mca/aux/les.nc> ...
    Message [cld_les]: Downscaling data from dimension (480, 480, 100) to (480, 480, 4) ...
@@ -131,3 +131,6 @@ for a successful installation
               Number of CPUs : 12 (used) of 16 (total)
    ----------------------------------------------------------
      0%|                                                                                                                                 | 0/48 [00:00<?, ?it/s]
+
+After the run is completed, you will have a figure (e.g., ``00_er3t_mca-example_05_rad_les_cloud_3d_3d.png``) created under ``examples``, which you can
+use to compare the same figure under ``examples/check``.
