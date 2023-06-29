@@ -134,3 +134,10 @@ for a successful installation
 
 After the run is completed, you will have a figure (e.g., ``00_er3t_mca-example_05_rad_les_cloud_3d_3d.png``) created under ``examples``, which you can
 use to compare with the same figure under ``examples/check``.
+
+At this point, congratulations! Your EaR³T is ready to go and you have done a successful 3D radiative transfer simulation!
+
+.. note::
+
+    If you encountered any error, please feel free to reach out at `Discord/Support/installation <https://discord.com/channels/681619528945500252/1123343093417119754>`__
+    for community support.
