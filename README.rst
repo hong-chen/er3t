@@ -14,6 +14,12 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
    :target: https://discord.gg/ntqsguwaWv
    :alt: Discord Server
 
+.. image:: https://img.shields.io/badge/radiative-transfer-red
+   :alt: Radiative Transfer
+
+.. image:: https://img.shields.io/badge/remote-sensing-blue
+   :alt: Remote Sensing
+
 |
 
 EaR³T (pronounced [ɜːt]) provides high-level interfaces that can automate the process of performing IPA/3D
