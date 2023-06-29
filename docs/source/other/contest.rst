@@ -1,10 +1,10 @@
-=======
-Contest
-=======
+=============
+Speed Contest
+=============
 
-One of our dreams is to have 3D radiative transfer implemented into operational algorithms, where the
-biggest difficulty lies in the expensive computational time and resource. Thus we encourage speed
-contests for not only providing computational reference, but also fostering ideas to accelerate
+One of our ambitious goals is to have 3D radiative transfer implemented into operational algorithms,
+where the biggest challenge is the expensive computational time and resource. Thus we encourage speed
+contests for not only providing computational reference, but also stimulating ideas to accelerate
 computational speed.
 
 
