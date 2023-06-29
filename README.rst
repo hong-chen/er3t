@@ -1,5 +1,9 @@
 EaR³T (Education and Research 3D Radiative Transfer Toolbox)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: https://readthedocs.org/projects/er3t/badge/?version=latest
+    :target: https://er3t.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. figure:: https://discordapp.com/api/guilds/681619528945500252/widget.png?style=shield
    :target: https://discord.gg/ntqsguwaWv
