@@ -50,24 +50,26 @@ Projects
 
 So far, EaR³T has contributed to the following projects:
 
-#. `NASA ARCSIX (ongoing) <https://espo.nasa.gov/arcsix>`__
+.. list-table::
 
-#. `NASA Libera (ongoing) <https://lasp.colorado.edu/libera>`__
+    * - `NASA Libera (ongoing) <https://lasp.colorado.edu/libera>`__
 
-#. `NASA CAMP²Ex 2019 <https://espo.nasa.gov/camp2ex>`__
+    * - `NASA ARCSIX (ongoing) <https://espo.nasa.gov/arcsix>`__
 
-   .. figure:: https://espo.nasa.gov/sites/default/files/images/CAMP2EX%20Logo%202019.jpg
-      :align: left
-      :width: 200px
+    * - `NASA CAMP²Ex 2019 <https://espo.nasa.gov/camp2ex>`__
 
-#. `NASA ORACLES 2016-2018 <https://espo.nasa.gov/oracles>`__
+    * - .. figure:: https://espo.nasa.gov/sites/default/files/images/CAMP2EX%20Logo%202019.jpg
+           :align: center
+           :width: 200px
 
-   .. figure:: https://espo.nasa.gov/sites/default/files/images/ORACLE%20Logo%202017.png
-      :align: left
-      :width: 200px
+    * - `NASA ORACLES 2016-2018 <https://espo.nasa.gov/oracles>`__
 
-#. `NASA ARISE 2014 <https://espo.nasa.gov/arise>`__
+    * - .. figure:: https://espo.nasa.gov/sites/default/files/images/ORACLE%20Logo%202017.png
+           :align: center
+           :width: 200px
 
-   .. figure:: https://espo.nasa.gov/sites/default/files/images/ARISE%20Final.png
-      :align: left
-      :width: 200px
+    * - `NASA ARISE 2014 <https://espo.nasa.gov/arise>`__
+
+        .. figure:: https://espo.nasa.gov/sites/default/files/images/ARISE%20Final.png
+           :align: left
+           :width: 200px
