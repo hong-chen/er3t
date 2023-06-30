@@ -6,7 +6,7 @@ EaR³T
 
     This documentation is under active development.
 
-.. figure:: assets/er3t-logo.png
+.. figure:: ../assets/er3t-logo.png
    :align: center
    :width: 400px
 
@@ -80,10 +80,10 @@ If you find EaR³T is helpful and would like to cite it, here are the references
    :maxdepth: 1
    :caption: Contents:
 
-   Installation <source/tutorial/install>
-   Usage <source/tutorial/usage>
-   EaR³T Tools <source/tutorial/tool>
-   EaR³T API <source/api/index>
-   Speed Contest <source/other/contest>
-   Gallery <source/other/gallery>
-   Highlights <source/other/highlight>
+   Installation <tutorial/install>
+   Usage <tutorial/usage>
+   EaR³T Tools <tutorial/tool>
+   EaR³T API <api/index>
+   Speed Contest <other/contest>
+   Gallery <other/gallery>
+   Highlights <other/highlight>
