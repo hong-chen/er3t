@@ -34,7 +34,7 @@ Dependencies
 
 3. (optional) Install `libRadtran <http://www.libradtran.org/>`_ through the `official installation guide <http://www.libradtran.org/doku.php?id=download>`__ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`__)
 
-    * After installation, please specify environment variable ``LIBRADTRAN_V2_DIR`` for the directory that contains compiled libRadtran (the directory should contain ``bin``, ``lib``, ``src`` etc.).
+    * After installation, please specify environment variable ``LIBRADTRAN_V2_DIR`` for the directory that contains compiled libRadtran (the directory should contain ``bin/``, ``lib/``, ``src/`` etc.).
 
       For example, if you are using ``bash`` shell, add the following line to the shell source file
       (e.g., ``~/.bashrc``):
