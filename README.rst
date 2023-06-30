@@ -2,19 +2,18 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. image:: https://er3t.readthedocs.io/en/latest/_images/er3t-logo.png
-   :target: https://github.com/hong-chen/er3t
-   :wdith: 200
-   :align: left
+    :target: https://github.com/hong-chen/er3t
+    :wdith: 200
+    :align: left
 
 .. image:: https://readthedocs.org/projects/er3t/badge/?version=latest
-   :target: https://er3t.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
+    :target: https://er3t.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. image:: https://discordapp.com/api/guilds/681619528945500252/widget.png?style=shield
    :target: https://discord.gg/ntqsguwaWv
    :alt: Discord Server
 
-|
 
 EaR³T (pronounced [ɜːt]) provides high-level interfaces that can automate the process of performing IPA/3D
 radiative transfer calculations for measured or modeled cloud/aerosol fields using

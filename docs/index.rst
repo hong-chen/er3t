@@ -80,6 +80,7 @@ If you find EaR³T is helpful and would like to cite it, here are the references
    :maxdepth: 1
    :caption: Contents:
 
+   Home <self>
    Installation <source/tutorial/install>
    Usage <source/tutorial/usage>
    EaR³T Tools <source/tutorial/tool>
