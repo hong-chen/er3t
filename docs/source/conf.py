@@ -12,7 +12,9 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../source'))
+sys.path.insert(0, os.path.abspath('tutorial'))
+sys.path.insert(0, os.path.abspath('api'))
+sys.path.insert(0, os.path.abspath('other'))
 sys.path.insert(0, os.path.abspath('../assets'))
 
 
