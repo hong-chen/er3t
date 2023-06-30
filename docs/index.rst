@@ -88,3 +88,4 @@ If you find EaR³T is helpful and would like to cite it, here are the references
    Speed Contest <source/other/contest>
    Gallery <source/other/gallery>
    Highlights <source/other/highlight>
+   Acknowledgements <source/other/acknowledge>
