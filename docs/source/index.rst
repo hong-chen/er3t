@@ -80,10 +80,11 @@ If you find EaR³T is helpful and would like to cite it, here are the references
    :maxdepth: 1
    :caption: Contents:
 
-   Installation <tutorial/install>
-   Usage <tutorial/usage>
-   EaR³T Tools <tutorial/tool>
-   EaR³T API <api/index>
-   Speed Contest <other/contest>
-   Gallery <other/gallery>
-   Highlights <other/highlight>
+   Home <self>
+   Installation </tutorial/install>
+   Usage </tutorial/usage>
+   EaR³T Tools </tutorial/tool>
+   EaR³T API </api/index>
+   Speed Contest </other/contest>
+   Gallery </other/gallery>
+   Highlights </other/highlight>
