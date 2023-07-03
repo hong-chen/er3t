@@ -58,4 +58,14 @@ Resources
 
   * `FAQ <https://er3t.readthedocs.io/en/latest/source/other/faq.html>`_
 
-:Community: `Discord <https://discord.gg/ntqsguwaWv>`_
+:Community Support: `Discord <https://discord.gg/ntqsguwaWv>`_
+
+  * `Installation-related  <https://discord.com/channels/681619528945500252/1123343093417119754>`_
+
+  * `Examples-related <https://discord.com/channels/681619528945500252/1123343152477110453>`_
+
+  * `Satellite-related <https://discord.com/channels/681619528945500252/1123343438121799690>`_
+
+  * `MCARaTS-related <https://discord.com/channels/681619528945500252/1123343304126365837>`_
+
+  * `libRadtran-related <https://discord.com/channels/681619528945500252/1123343342730760222>`_
