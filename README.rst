@@ -37,11 +37,11 @@ Resources
 
 :Source Code: https://github.com/hong-chen/er3t/
 
-  * `**er3t/master** - Most Stable <https://github.com/hong-chen/er3t/tree/master>`_
+  * ` **er3t/master** - Most Stable <https://github.com/hong-chen/er3t/tree/master>`_
 
-  * `**er3t/dev** - Most Up-to-Date <https://github.com/hong-chen/er3t/tree/dev>`_
+  * ` **er3t/dev** - Most Up-to-Date <https://github.com/hong-chen/er3t/tree/dev>`_
 
-  * `**er3t/gh-pages** - Latest Docs <https://github.com/hong-chen/er3t/tree/gh-pages>`_
+  * ` **er3t/gh-pages** - Latest Docs <https://github.com/hong-chen/er3t/tree/gh-pages>`_
 
 
 :Documentation: https://er3t.readthedocs.io/
