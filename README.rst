@@ -43,6 +43,8 @@ Resources
 
   * `er3t/gh-pages (Latest Docs) <https://github.com/hong-chen/er3t/tree/gh-pages>`_
 
+  * `Releases <https://github.com/hong-chen/er3t/releases>`_
+
 
 :Documentation: https://er3t.readthedocs.io/
 
