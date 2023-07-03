@@ -69,3 +69,5 @@ Resources
   * `MCARaTS-related <https://discord.com/channels/681619528945500252/1123343304126365837>`_
 
   * `libRadtran-related <https://discord.com/channels/681619528945500252/1123343342730760222>`_
+
+  * `Discussion <https://discord.com/channels/681619528945500252/1001181810782388414>`_
