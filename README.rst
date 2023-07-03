@@ -37,6 +37,13 @@ Resources
 
 :Source Code: https://github.com/hong-chen/er3t/
 
+  * `Most Stable <https://github.com/hong-chen/er3t/tree/master>`_
+
+  * `Most Up-to-Date <https://github.com/hong-chen/er3t/tree/dev>`_
+
+  * `Latest Docs <https://github.com/hong-chen/er3t/tree/gh-pages>`_
+
+
 :Documentation: https://er3t.readthedocs.io/
 
   * `How to Install <https://er3t.readthedocs.io/en/latest/source/tutorial/install.html>`_
