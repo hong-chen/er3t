@@ -10,7 +10,7 @@ Acknowledgements
     doi:10.1029/2008JD010089, 2008.
 
 
-* MCARaTS is a 3D radiative transfer solver developed by `Iwabuchi (2006) <https://doi.org/10.1175/JAS3755.1>`_
+* `MCARaTS <https://sites.google.com/site/mcarats/>`_ is a 3D radiative transfer solver developed by `Iwabuchi (2006) <https://doi.org/10.1175/JAS3755.1>`_
   and `Iwabuchi and Okamura (2017) <https://doi.org/10.1016/j.jqsrt.2017.01.025>`_.
 
     Iwabuchi, H.: Efficient Monte Carlo methods for radiative transfer modeling, J. Atmos. Sci., 63, 2324-2339,
@@ -21,7 +21,7 @@ Acknowledgements
     doi:10.1016/j.jqsrt.2017.01.025, 2017.
 
 
-*  libRadtran is a library for radiative transfer developed by `Emde et al. (2016) <https://doi.org/10.5194/gmd-9-1647-2016>`_
+*  `libRadtran <http://www.libradtran.org/>`_ is a library for radiative transfer developed by `Emde et al. (2016) <https://doi.org/10.5194/gmd-9-1647-2016>`_
    and `Mayer and Kylling (2005) <https://doi.org/10.5194/acp-5-1855-2005>`_.
 
     Emde, C., Buras-Schnell, R., Kylling, A., Mayer, B., Gasteiger, J., Hamann, U., Kylling, J., Richter, B.,
@@ -33,8 +33,7 @@ Acknowledgements
     doi:10.5194/acp-5-1855-2005, 2005.
 
 
-*  SHDOM is a 3D radiative transfer solver developed by `Evans (1998) <https://doi.org/10.1175/1520-0469(1998)055%3C0429:TSHDOM%3E2.0.CO;2>`_.
-   The development of SHDOM by Evans has been discontinued since 2016.
+*  `SHDOM <https://coloradolinux.com/shdom/>`_ is a 3D radiative transfer solver developed by `Evans (1998) <https://doi.org/10.1175/1520-0469(1998)055%3C0429:TSHDOM%3E2.0.CO;2>`_.
 
     Evans, K. F.: The spherical harmonics discrete ordinate method for three-dimensional atmospheric
     radiative transfer, J. Atmos. Sci., 55, 429–446, 1998.

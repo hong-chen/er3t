@@ -4,7 +4,7 @@ EaR³T API
 
 .. warning::
 
-    Under development ...
+    Incomplete, under development ...
 
 .. include:: util.rst
 

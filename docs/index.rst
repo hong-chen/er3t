@@ -36,7 +36,7 @@ Authors and Contributors
 
 EaR³T was originally designed and developed by `Hong Chen <hong.chen@lasp.colorado.edu>`_ and
 `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ at the University of Colorado Boulder
-in 2019. `Hong Chen <hong.chen@lasp.colorado.edu>`_ is the current maintainer.
+in 2019. `Hong Chen>`_ is the current maintainer.
 
 Additionally, EaR³T has been actively contributed by the following developers:
 
@@ -85,6 +85,7 @@ If you find EaR³T is helpful and would like to cite it, here are the references
    Usage <source/tutorial/usage>
    EaR³T Tools <source/tutorial/tool>
    EaR³T API <source/api/index>
+   Contribution <source/tutorial/contribute>
    Speed Contest <source/other/contest>
    Gallery <source/other/gallery>
    Highlights <source/other/highlight>
