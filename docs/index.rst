@@ -36,7 +36,7 @@ Authors and Contributors
 
 EaR³T was originally designed and developed by `Hong Chen <hong.chen@lasp.colorado.edu>`_ and
 `Sebastian Schmidt <sebastian.schmidt@lasp.colorado.edu>`_ at the University of Colorado Boulder
-in 2019. `Hong Chen>`_ is the current maintainer.
+in 2019. `Hong Chen`_ is the current maintainer.
 
 Additionally, EaR³T has been actively contributed by the following developers:
 
