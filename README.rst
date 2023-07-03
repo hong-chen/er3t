@@ -68,23 +68,12 @@ Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ for the latest info
 |
 |
 
-.. include:: docs/source/tutorial/install.rst
+:Source Code: https://github.com/hong-chen/er3t/
 
-|
-|
+:Documentation: https://er3t.readthedocs.io/
 
-.. include:: docs/source/tutorial/usage.rst
-
-
-|
-|
-
-.. include:: docs/source/other/acknowledge.rst
-
-|
-|
-
-.. include:: docs/source/other/highlight.rst
+  * `How to Install <https://er3t.readthedocs.io/en/latest/source/tutorial/install.html>`_
+  * `How to Use <https://er3t.readthedocs.io/en/latest/source/tutorial/usage.html>`_
 
 |
 |
