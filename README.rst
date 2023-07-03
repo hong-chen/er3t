@@ -32,8 +32,8 @@ Applications
 
 * Novel retrieval algorithm development (e.g., CNN-based).
 
-|
-|
+Resources
+---------
 
 :Source Code: https://github.com/hong-chen/er3t/
 
