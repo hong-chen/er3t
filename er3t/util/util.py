@@ -7,8 +7,6 @@ import requests
 import urllib.request
 from io import StringIO
 import numpy as np
-from scipy import interpolate, stats
-from scipy.spatial import KDTree
 import warnings
 
 import er3t
@@ -272,6 +270,12 @@ def get_data_h4(hdf_dset):
 
 
 def move_correlate(data0, data, Ndx=5, Ndy=5):
+    
+    try:
+        from scipy import stats
+    except ImportError:
+        msg = '\nError [move_correlate]: `scipy` installation is required.'
+        raise ImportError(msg)
 
     Nx, Ny = data.shape
     x = np.arange(Nx, dtype=np.int32)
@@ -331,6 +335,12 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
     Output:
         data_out: gridded data
     """
+    
+    try:
+        from scipy.spatial import KDTree
+    except ImportError:
+        msg = 'Error [find_nearest]: `scipy` installation is required.'
+        raise ImportError(msg)
 
     # only support output at maximum dimension of 2
     #/----------------------------------------------------------------------------\#
@@ -418,6 +428,12 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
         After read in the longitude latitude and data into lon0, lat0, data0
         lon, lat, data = grid_by_extent(lon0, lat0, data0, extent=[10, 15, 10, 20])
     """
+    
+    try:
+        from scipy import interpolate
+    except ImportError:
+        msg = '\nError [grid_by_extent]: `scipy` installation is required.'
+        raise ImportError(msg)
 
     # flatten lon/lat/data
     #/----------------------------------------------------------------------------\#
@@ -483,6 +499,12 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         After read in the longitude latitude and data into lon0, lat0, data0
         lon, lat, data = grid_by_lonlat(lon0, lat0, data0, lon_1d=np.linspace(10.0, 15.0, 100), lat_1d=np.linspace(10.0, 20.0, 100))
     """
+    
+    try:
+        from scipy import interpolate
+    except ImportError:
+        msg = '\nError [grid_by_lonlat]: `scipy` installation is required.'
+        raise ImportError(msg)
 
     # flatten lon/lat/data
     #/----------------------------------------------------------------------------\#
@@ -547,6 +569,12 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
         After read in the longitude latitude and data into lon0, lat0, data0
         lon, lat, data = grid_by_dxdy(lon0, lat0, data0, dx=250.0, dy=250.0)
     """
+    
+    try:
+        from scipy import interpolate
+    except ImportError:
+        msg = '\nError [grid_by_dxdy]: `scipy` installation is required.'
+        raise ImportError(msg)
 
     # flatten lon/lat/data
     #/----------------------------------------------------------------------------\#
