@@ -21,8 +21,6 @@ interfaces to automate the process of performing IPA/3D radiative transfer calcu
 or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer models
 including MCARaTS, libRadtran (IPA only), and SHDOM (under development).
 
-EaR³T is publicly available at https://github.com/hong-chen/er3t and licensed under `GPLv3 <https://www.gnu.org/licenses/gpl-3.0.html>`_.
-
 Applications
 ------------
 
@@ -40,10 +38,15 @@ Applications
 :Source Code: https://github.com/hong-chen/er3t/
 
 :Documentation: https://er3t.readthedocs.io/
+
   * `How to Install <https://er3t.readthedocs.io/en/latest/source/tutorial/install.html>`_
+
   * `How to Use <https://er3t.readthedocs.io/en/latest/source/tutorial/usage.html>`_
+
   * `How to Cite <https://er3t.readthedocs.io/en/latest/#how-to-cite>`_
+
   * `How to Contribute <https://er3t.readthedocs.io/en/latest/source/tutorial/contribute.html>`_
+
   * `FAQ <https://er3t.readthedocs.io/en/latest/source/other/faq.html>`_
 
 :Community: `Discord <https://discord.gg/ntqsguwaWv>`_
