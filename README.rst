@@ -26,7 +26,7 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
     :target: https://doi.org/10.5194/amt-16-1971-2023
     :alt: Publication DOI
 
-.. image:: https://dcbadge.vercel.app/api/server/ntqsguwaWv?style=plastic
+.. image:: https://dcbadge.vercel.app/api/server/ntqsguwaWv?style=flat-square
     :target: https://discord.gg/ntqsguwaWv
     :alt: Discord Server
 
