@@ -1,7 +1,7 @@
 EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: https://er3t.readthedocs.io/en/latest/_images/er3t-logo.png
+.. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/er3t-logo.png
     :target: https://github.com/hong-chen/er3t
     :wdith: 200
     :align: left
@@ -24,6 +24,28 @@ developed for cutting-edge radiative transfer and remote sensing applications. I
 interfaces to automate the process of performing IPA/3D radiative transfer calculations for measured
 or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer models
 including MCARaTS, libRadtran (IPA only), and SHDOM (under development).
+
+.. list-table::
+
+    * - Multi-Angle (space view)
+
+      - Sunrise to Sunset (space view)
+
+    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_space.gif
+            :width: 300
+
+      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_space.gif
+            :width: 300
+
+    * - Multi-Angle (ground view)
+
+      - Sunrise to Sunset (ground view)
+
+    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_ground.gif
+            :width: 300
+
+      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_ground.gif
+            :width: 300
 
 Applications
 ------------
