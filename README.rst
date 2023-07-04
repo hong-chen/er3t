@@ -25,12 +25,12 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
     :target: https://doi.org/10.5194/amt-16-1971-2023
     :alt: Publication DOI
 
-|
 
 .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/er3t-logo.png
     :target: https://github.com/hong-chen/er3t
     :width: 400
     :align: center
+
 
 `EaR³T <https://er3t.readthedocs.io/en/latest/>`_ (pronounced /ɜːt/) is a Python software package
 developed for cutting-edge radiative transfer and remote sensing applications. It provides high-level
