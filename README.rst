@@ -1,7 +1,7 @@
 EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/er3t-logo.png
+.. figure:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/er3t-logo.png?raw=True
     :target: https://github.com/hong-chen/er3t
     :wdith: 200
     :align: left
@@ -18,6 +18,7 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
    :target: https://discord.gg/ntqsguwaWv
    :alt: Discord Server
 
+|
 
 The Education and Research 3D Radiative Transfer Toolbox (EaR³T, /ɜːt/) is a Python software package
 developed for cutting-edge radiative transfer and remote sensing applications. It provides high-level
