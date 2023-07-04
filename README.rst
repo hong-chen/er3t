@@ -14,7 +14,7 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
    :target: https://github.com/hong-chen/er3t
    :alt: Git Clone Counts
 
-.. image:: https://img.shields.io/badge/cited_by-6-brightgreen
+.. image:: https://img.shields.io/badge/Cited_by-6-brightgreen
    :target: https://er3t.readthedocs.io/en/latest/source/other/highlight.html#publications
    :alt: Citation Counts
 
