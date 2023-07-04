@@ -3,7 +3,7 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 
 .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/er3t-logo.png
     :target: https://github.com/hong-chen/er3t
-    :width: 150
+    :width: 300
     :align: left
 
 .. image:: https://dcbadge.vercel.app/api/server/ntqsguwaWv?style=flat&theme=discord-inverted

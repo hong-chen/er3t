@@ -1,6 +1,7 @@
 name: GitHub Clone Count Update
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
   schedule:
     - cron: "0 */2 * * *"
   workflow_dispatch:
