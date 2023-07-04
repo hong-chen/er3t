@@ -67,6 +67,22 @@ So far, EaR³T has been used in the following publications:
    Next-Generation Earth Radiation Budget Satellite Observations, Atmos. Meas. Tech. Discuss. [preprint],
    doi:10.5194/amt-2023-7, in review, 2023.
 
+#. `Reid et al., 2023 <https://doi.org/10.1175/BAMS-D-21-0285.1>`__
+
+   Reid, J. S., Maring, H. B., Narisma, G. T., van den Heever, S., Di Girolamo, L., Ferrare, R., Lawson, P.,
+   Mace, G. G., Simpas, J. B., Tanelli, S., Ziemba, L., van Diedenhoven, B., Bruintjes, R., Bucholtz, A.,
+   Cairns, B., Cambaliza, M. O., Chen, G., Diskin, G. S., Flynn, J. H., Hostetler, C. A., Holz, R. E., Lang, T. J.,
+   Schmidt, K. S., Smith, G., Sorooshian, A., Thompson, E. J., Thornhill, K. L., Trepte, C., Wang, J., Woods, S.,
+   Yoon, S., Alexandrov, M., Alvarez, S., Amiot, C. G., Bennett, J. R., Brooks, M., Burton, S. P., Cayanan, E.,
+   Chen, H., Collow, A., Crosbie, E., DaSilva, A., DiGangi, J. P., Flagg, D. D., Freeman, S. W., Fu, D.,
+   Fukada, E., Hilario, M. R. A., Hong, Y., Hristova-Veleva, S. M., Kuehn, R., Kowch, R. S., Leung, G. R.,
+   Loveridge, J., Meyer, K., Miller, R. M., Montes, M. J., Moum, J. N., Nenes, A., Nesbitt, S. W., Norgren, M.,
+   Nowottnick, E. P., Rauber, R. M., Reid, E. A., Rutledge, S., Schlosser, J. S., Sekiyama, T. T., Shook, M. A.,
+   Sokolowsky, G. A., Stamnes, S. A., Tanaka, T. Y., Wasilewski, A., Xian, P., Xiao, Q., Xu, Z., and Zavaleta, J.:
+   The Coupling Between Tropical Meteorology, Aerosol Lifecycle, Convection, and Radiation during the Cloud, Aerosol
+   and Monsoon Processes Philippines Experiment (CAMP²Ex), Bulletin of the American Meteorological Society, 104(6),
+   E1179-E1205. doi:10.1175/BAMS-D-21-0285.1, 2023.
+
 #. `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`__
 
    Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
