@@ -22,9 +22,9 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
     :target: https://er3t.readthedocs.io/en/latest/source/other/highlight.html#publications
     :alt: Citation Counts
 
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4093737.svg
-    :target: https://er3t.readthedocs.io/en/latest/#how-to-cite
-    :alt: Zenodo DOI
+.. image:: https://img.shields.io/badge/DOI-10.5194%2Famt--16--1971--2023-blue
+    :target: https://doi.org/10.5194/amt-16-1971-2023
+    :alt: Publication DOI
 
 .. image:: https://discordapp.com/api/guilds/681619528945500252/widget.png?style=shield
     :target: https://discord.gg/ntqsguwaWv
