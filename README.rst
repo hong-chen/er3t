@@ -26,27 +26,6 @@ interfaces to automate the process of performing IPA/3D radiative transfer calcu
 or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer models
 including MCARaTS, libRadtran (*IPA only*), and SHDOM (*under development*).
 
-.. list-table::
-
-    * - Multi-Angle (space view)
-
-      - Sunrise to Sunset (space view)
-
-    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_space.gif
-            :width: 300
-
-      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_space.gif
-            :width: 300
-
-    * - Multi-Angle (ground view)
-
-      - Sunrise to Sunset (ground view)
-
-    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_ground.gif
-            :width: 300
-
-      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_ground.gif
-            :width: 300
 
 Applications
 ------------
@@ -58,6 +37,32 @@ Applications
 * Synthetic data generation (for CNN training);
 
 * Novel retrieval algorithm development (e.g., CNN-based).
+
+|
+
+.. list-table::
+
+    * - Multi-Angle (space view)
+
+      - Sunrise to Sunset (space view)
+
+    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_space.gif
+            :width: 400
+
+      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_space.gif
+            :width: 400
+
+    * - Multi-Angle (ground view)
+
+      - Sunrise to Sunset (ground view)
+
+    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_ground.gif
+            :width: 400
+
+      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_ground.gif
+            :width: 400
+
+|
 
 Resources
 ---------
