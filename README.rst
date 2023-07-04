@@ -38,31 +38,6 @@ Applications
 
 * Novel retrieval algorithm development (e.g., CNN-based).
 
-|
-
-.. list-table::
-
-    * - Multi-Angle (space view)
-
-      - Sunrise to Sunset (space view)
-
-    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_space.gif
-            :width: 400
-
-      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_space.gif
-            :width: 400
-
-    * - Multi-Angle (ground view)
-
-      - Sunrise to Sunset (ground view)
-
-    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_ground.gif
-            :width: 400
-
-      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_ground.gif
-            :width: 400
-
-|
 
 Resources
 ---------
@@ -103,3 +78,29 @@ Resources
   * `libRadtran-related <https://discord.com/channels/681619528945500252/1123343342730760222>`_
 
   * `Discussion <https://discord.com/channels/681619528945500252/1001181810782388414>`_
+
+
+Gallery
+-------
+
+.. list-table::
+
+    * - Multi-Angle (space view)
+
+      - Sunrise to Sunset (space view)
+
+    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_space.gif
+            :width: 400
+
+      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_space.gif
+            :width: 400
+
+    * - Multi-Angle (ground view)
+
+      - Sunrise to Sunset (ground view)
+
+    * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_ground.gif
+            :width: 400
+
+      - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/sunrise-sunset_ground.gif
+            :width: 400
