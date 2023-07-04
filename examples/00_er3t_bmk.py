@@ -181,6 +181,11 @@ def test_01_flux_one_clear(plot=True):
 
 if __name__ == '__main__':
 
-    # test_00_util()
+    if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
-    test_01_flux_one_clear()
+        test_01_flux_one_clear()
+
+    else:
+
+        msg = '\nError [00_er3t_bmk.py]: Needs to have both <MCARaTS> and <libRadtran> to be installed for performing benchmark tests.'
+        raise OSError(msg)
