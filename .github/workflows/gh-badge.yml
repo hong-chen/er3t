@@ -4,6 +4,7 @@ name: GitHub Clone Count Update Everyday
   #schedule:
     #- cron: "0 */24 * * *"
   #workflow_dispatch:
+  # test
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
