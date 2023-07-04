@@ -27,7 +27,6 @@ or modeled cloud/aerosol fields using publicly available IPA/3D radiative transf
 including MCARaTS, libRadtran (IPA only), and SHDOM (under development).
 
 .. list-table::
-    :align: center
 
     * - Multi-Angle (space view)
 
