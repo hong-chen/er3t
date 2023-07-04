@@ -3,7 +3,7 @@ name: GitHub Clone Count Update
 # for actual deployment
 on:
   schedule:
-    - cron: "0 */24 * * *"
+    - cron: "0 */2 * * *"
   workflow_dispatch:
 
 # for testing
