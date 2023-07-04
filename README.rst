@@ -1,7 +1,7 @@
 EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/er3t-logo.png?raw=True
+.. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/er3t-logo.PNG
     :target: https://github.com/hong-chen/er3t
     :wdith: 200
     :align: left
