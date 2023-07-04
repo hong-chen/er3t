@@ -3,40 +3,42 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 
 .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/er3t-logo.png
     :target: https://github.com/hong-chen/er3t
-    :wdith: 200
+    :width: 150
     :align: left
-
-.. image:: https://readthedocs.org/projects/er3t/badge/?version=latest
-    :target: https://er3t.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
-
-.. image:: https://img.shields.io/badge/dynamic/json?color=blue&label=Unique%20Clone&query=uniques&url=https://gist.githubusercontent.com/hong-chen/54187b01bd3c5eac3b7645ad332f9ad3/raw/clone.json&logo=github
-    :target: https://github.com/hong-chen/er3t
-    :alt: Git Clone Counts
-
-.. image:: https://img.shields.io/github/stars/hong-chen/er3t?color=blue&label=Star&logo=github
-    :target: https://github.com/hong-chen/er3t/stargazers
-    :alt: GitHub Repo stars
-
-.. image:: https://img.shields.io/badge/Cited_by-7-blue
-    :target: https://er3t.readthedocs.io/en/latest/source/other/highlight.html#publications
-    :alt: Citation Counts
-
-.. image:: https://img.shields.io/badge/DOI-10.5194%2Famt--16--1971--2023-blue
-    :target: https://doi.org/10.5194/amt-16-1971-2023
-    :alt: Publication DOI
 
 .. image:: https://dcbadge.vercel.app/api/server/ntqsguwaWv?style=flat&theme=discord-inverted
     :target: https://discord.gg/ntqsguwaWv
     :alt: Discord Server
 
+.. image:: https://readthedocs.org/projects/er3t/badge/?version=latest
+    :target: https://er3t.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. image:: https://img.shields.io/badge/dynamic/json?color=blue&label=unique%20clone&query=uniques&url=https://gist.githubusercontent.com/hong-chen/54187b01bd3c5eac3b7645ad332f9ad3/raw/clone.json&logo=github
+    :target: https://github.com/hong-chen/er3t
+    :alt: Git Clone Counts
+
+.. image:: https://img.shields.io/github/stars/hong-chen/er3t?color=blue&label=star&logo=github
+    :target: https://github.com/hong-chen/er3t/stargazers
+    :alt: GitHub Repo Stars
+
+.. image:: https://img.shields.io/badge/cited_by-7-blue
+    :target: https://er3t.readthedocs.io/en/latest/source/other/highlight.html#publications
+    :alt: Citation Counts
+
+.. image:: https://img.shields.io/badge/doi-10.5194%2Famt--16--1971--2023-blue
+    :target: https://doi.org/10.5194/amt-16-1971-2023
+    :alt: Publication DOI
+
+
 |
 
-EaR³T (pronounced /ɜːt/) is a Python software package
+`EaR³T <https://er3t.readthedocs.io/en/latest/>`_ (pronounced /ɜːt/) is a Python software package
 developed for cutting-edge radiative transfer and remote sensing applications. It provides high-level
 interfaces to automate the process of performing IPA/3D radiative transfer calculations for measured
 or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer models
-including MCARaTS, libRadtran (*IPA only*), and SHDOM (*under development*).
+including `MCARaTS <https://sites.google.com/site/mcarats/>`_, `libRadtran <http://www.libradtran.org/>`_
+(*IPA only*), and `SHDOM <https://coloradolinux.com/shdom/>`_ (*under development*).
 
 
 Applications
@@ -56,24 +58,24 @@ Resources
 
 :Source Code: https://github.com/hong-chen/er3t/
 
-  * `er3t/master (Most Stable) <https://github.com/hong-chen/er3t/tree/master>`_
+  * `er3t/master (most stable) <https://github.com/hong-chen/er3t/tree/master>`_
 
-  * `er3t/dev (Most Up-to-Date) <https://github.com/hong-chen/er3t/tree/dev>`_
+  * `er3t/dev (most up-to-date) <https://github.com/hong-chen/er3t/tree/dev>`_
 
-  * `er3t/gh-pages (Latest Docs) <https://github.com/hong-chen/er3t/tree/gh-pages>`_
+  * `er3t/gh-pages (latest docs) <https://github.com/hong-chen/er3t/tree/gh-pages>`_
 
   * `Releases <https://github.com/hong-chen/er3t/releases>`_
 
 
 :Documentation: https://er3t.readthedocs.io/
 
-  * `How to Install <https://er3t.readthedocs.io/en/latest/source/tutorial/install.html>`_
+  * `How to install <https://er3t.readthedocs.io/en/latest/source/tutorial/install.html>`_
 
-  * `How to Use <https://er3t.readthedocs.io/en/latest/source/tutorial/usage.html>`_
+  * `How to use <https://er3t.readthedocs.io/en/latest/source/tutorial/usage.html>`_
 
-  * `How to Cite <https://er3t.readthedocs.io/en/latest/#how-to-cite>`_
+  * `How to cite <https://er3t.readthedocs.io/en/latest/#how-to-cite>`_
 
-  * `How to Contribute <https://er3t.readthedocs.io/en/latest/source/tutorial/contribute.html>`_
+  * `How to contribute <https://er3t.readthedocs.io/en/latest/source/tutorial/contribute.html>`_
 
   * `FAQ <https://er3t.readthedocs.io/en/latest/source/other/faq.html>`_
 
