@@ -1,11 +1,14 @@
+# this script is copied/pasted/modified from https://github.com/MShawon/github-clone-count-badge
 name: GitHub Clone Count Update
 
 on:
   push:
+    branches:
+      - master
     paths:
-      - '**.yml'
+      - '.github/workflows/gh-badge.yml'
   schedule:
-    - cron: "0 */2 * * *"
+    - cron: "0 */24 * * *"
   workflow_dispatch:
 
 jobs:
