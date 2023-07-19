@@ -4,7 +4,7 @@
 Downloads satellite data products for any user-specified date and geolocation (lat/lon).
 
 Now supports:
-    MODIS data: MOD-RGB,  MYD-RGB
+    MODIS data: MODRGB,   MYDRGB
                 MOD03,    MYD03
                 MOD02QKM, MYD02QKM
                 MOD02HKM, MYD02HKM
@@ -12,8 +12,15 @@ Now supports:
                 MOD06_L2, MYD06_L2
                 MOD35_L2, MYD35_L2
                 MCD43
-    VIIRS data: ...
-    OCO-2 data: ...
+    
+    VIIRS data: VNPRGB,         VJ1RGB
+                VNP03IMG,       VJ103IMG
+                VNP02IMG,       VJ102IMG
+                VNP03MOD,       VJ103MOD
+                VNP02MOD,       VJ102MOD
+                VNP_CLDPROP_L2, VNP_CLDPROP_L2
+    
+    OCO-2 data: coming soon...
 
 This is a functionality of EaR3T.
 
@@ -23,7 +30,7 @@ Authors:
 
 Example Usage:
     sdown --date 20210523 --lons 30 35 --lats 0 10 --products mod06_l2 --fdir sat-data/ --verbose
-    sdown --date 20130714 --extent 30 35 0 10 --products modrgb myd02hkm myd06_l2 --fdir sat-data/
+    sdown --date 20130714 --extent 30 35 0 10 --products modrgb vnp02img --fdir sat-data/
 
 To see a demonstration of how this tool works, use:
     sdown --run_demo
@@ -213,20 +220,20 @@ _sat_tags_support_ = {
                 'dataset_tag': '5200/VNP02IMG',
                    'dict_key': 'vnp_02',
                 'description': 'Suomi-NPP VIIRS Level 1b (375m) Calibrated Radiances Product',
-                    'website': 'placeholder',
+                    'website': 'https://doi.org/10.5067/VIIRS/VNP02IMG.002',
                   'satellite': 'SNPP',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'VCST Team. 2016-09-01. VIIRS/NPP Imagery Resolution 6-Min L1B Swath 375m. Version 1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP02IMG.001',
                 },
         
         'VJ102IMG': {
                 'dataset_tag': '5200/VJ102IMG',
                    'dict_key': 'vj1_02',
                 'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (375m) Calibrated Radiances Product',
-                    'website': 'placeholder',
+                    'website': 'https://doi.org/10.5067/VIIRS/VJ102IMG.021',
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Imagery Resolution 6-Min L1B Swath 375m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102IMG.002',
                 },
 
 
@@ -234,87 +241,87 @@ _sat_tags_support_ = {
                 'dataset_tag': '5200/VNP02MOD',
                    'dict_key': 'vnp_02',
                 'description': 'Suomi-NPP VIIRS Level 1b (750m) Calibrated Radiances Product',
-                    'website': 'placeholder',
+                    'website': 'https://doi.org/10.5067/VIIRS/VNP02MOD.002',
                   'satellite': 'SNPP',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'VCST Team. 2021-07-12. VIIRS/NPP Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750 m . Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP02MOD.002.',
                 },
         
         'VJ102MOD': {
                 'dataset_tag': '5200/VJ102MOD',
                    'dict_key': 'vj1_02',
                 'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (750m) Calibrated Radiances Product',
-                    'website': 'placeholder',
+                    'website': 'https://doi.org/10.5067/VIIRS/VJ102MOD.021',
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution 6-Min L1B Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102MOD.002',
                 },
 
         'VNP03IMG': {
                 'dataset_tag': '5200/VNP03IMG',
                    'dict_key': 'vnp_03',
                 'description': 'Suomi-NPP VIIRS (375m) Geolocation Fields Product',
-                    'website': 'placeholder',
+                    'website': 'https://doi.org/10.5067/VIIRS/VNP03IMG.002',
                   'satellite': 'SNPP',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'VCST Team. VIIRS/NPP Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP03IMGLL.001',
                 },
         
         'VJ103IMG': {
                 'dataset_tag': '5200/VJ103IMG',
                    'dict_key': 'vj1_03',
                 'description': 'JPSS1 (NOAA-20) VIIRS (375m) Geolocation Fields Product',
-                    'website': 'placeholder',
+                    'website': 'https://doi.org/10.5067/VIIRS/VJ103IMG.021',
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'VCST Team. VIIRS/JPSS1 Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103IMG.021',
                 },
             
         'VNP03MOD': {
                 'dataset_tag': '5200/VNP03MOD',
                    'dict_key': 'vnp_03',
                 'description': 'Suomi-NPP VIIRS (750m) Geolocation Fields Product',
-                    'website': 'placeholder',
+                    'website': 'https://doi.org/10.5067/VIIRS/VNP03MOD.002',
                   'satellite': 'SNPP',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'VCST Team. 2021-07-12. VIIRS/NPP Moderate Resolution Terrain-Corrected Geolocation L1 6-Min Swath 750 m. Version 2. LAADS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP03MOD.002',
                 },
         
         'VJ103MOD': {
                 'dataset_tag': '5200/VJ103MOD',
                    'dict_key': 'vj1_03',
                 'description': 'JPSS1 (NOAA-20) VIIRS (750m) Geolocation Fields Product',
-                    'website': 'placeholder',
+                    'website': 'https://doi.org/10.5067/VIIRS/VJ103MOD.021',
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103MOD.002',
                 },
 
         'VNPRGB': {
                 'dataset_tag': '5200/VNPRGB',
                    'dict_key': 'vnp_rgb',
                 'description': 'Suomi-NPP VIIRS True Color (RGB) Imagery',
-                    'website': 'placeholder',
+                    'website': 'https://worldview.earthdata.nasa.gov',
                   'satellite': 'SNPP',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
                 },
         
         'VJ1RGB': {
                 'dataset_tag': '5200/VJ1RGB',
                    'dict_key': 'vj1_rgb',
                 'description': 'JPSS1 (NOAA-20) VIIRS True Color (RGB) Imagery',
-                    'website': 'placeholder',
+                    'website': 'https://worldview.earthdata.nasa.gov',
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
                 },
 
         'VNP_CLDPROP_L2': {
                 'dataset_tag': '5111/CLDPROP_L2_VIIRS_SNPP',
                    'dict_key': 'vnp_l2',
                 'description': 'Suomi-NPP VIIRS Cloud Properties Product',
-                    'website': 'placeholder',
+                    'website': 'https://doi.org/10.5067/VIIRS/CLDPROP_L2_VIIRS_SNPP.011',
                   'satellite': 'SNPP',
                  'instrument': 'VIIRS',
                   'reference': 'placeholder',
@@ -324,7 +331,7 @@ _sat_tags_support_ = {
                 'dataset_tag': '5111/CLDPROP_L2_VIIRS_NOAA20',
                    'dict_key': 'vj1_l2',
                 'description': 'JPSS1 (NOAA-20) VIIRS Cloud Properties Product',
-                    'website': 'placeholder',
+                    'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA20',
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
                   'reference': 'placeholder',
@@ -447,9 +454,10 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             if not os.path.exists(fdir_out_dt):
                 os.makedirs(fdir_out_dt)
 
+            # Save metadata
             with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-                f.write("DATE:{}\n".format(date_x))
-                f.write("EXTENT:{}\n".format(extent))
+                f.write('Date: {}\n'.format(date_x))
+                f.write('Extent: {}\n'.format(extent))
 
             print("Obtaining data for: ", date_x, extent)
             run(date_x, extent, fdir_out_dt, nrt, products, verbose)
@@ -632,7 +640,7 @@ if __name__ == '__main__':
                         'MYDRGB  :  True-Color RGB (Aqua)  imagery, useful for visuzliation\n'\
                         'MCD43   :  Level 3 surface product MCD43A3\n'\
                         '\nTo download multiple products at a time:\n'\
-                        '--products MOD021KM MYD02HKM MYD06_l2\n \n')
+                        '--products MOD021KM VJ102MOD MYD06_l2\n \n')
 
     args = parser.parse_args()
 
@@ -644,7 +652,7 @@ if __name__ == '__main__':
         lons       = None
         lats       = None
         fdir       = 'sat-data/'
-        products   = ['MODRGB', 'MYD02QKM']
+        products   = ['MODRGB', 'VNP02IMG']
         nrt        =  False
         verbose    = 1
 
