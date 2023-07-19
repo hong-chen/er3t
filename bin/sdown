@@ -209,6 +209,107 @@ _sat_tags_support_ = {
                   'reference': 'Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: %s), 2021.' % _date_today_,
                 },
 
+        'VNP02IMG': {
+                'dataset_tag': '5200/VNP02IMG',
+                   'dict_key': 'vnp_02',
+                'description': 'Suomi-NPP VIIRS Level 1b (375m) Calibrated Radiances Product',
+                    'website': 'placeholder',
+                  'satellite': 'SNPP',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+        
+        'VJ102IMG': {
+                'dataset_tag': '5200/VJ102IMG',
+                   'dict_key': 'vj1_02',
+                'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (375m) Calibrated Radiances Product',
+                    'website': 'placeholder',
+                  'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+
+
+        'VNP02MOD': {
+                'dataset_tag': '5200/VNP02MOD',
+                   'dict_key': 'vnp_02',
+                'description': 'Suomi-NPP VIIRS Level 1b (750m) Calibrated Radiances Product',
+                    'website': 'placeholder',
+                  'satellite': 'SNPP',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+        
+        'VJ102MOD': {
+                'dataset_tag': '5200/VJ102MOD',
+                   'dict_key': 'vj1_02',
+                'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (750m) Calibrated Radiances Product',
+                    'website': 'placeholder',
+                  'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+
+        'VNP03IMG': {
+                'dataset_tag': '5200/VNP03IMG',
+                   'dict_key': 'vnp_03',
+                'description': 'Suomi-NPP VIIRS (375m) Geolocation Fields Product',
+                    'website': 'placeholder',
+                  'satellite': 'SNPP',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+        
+        'VJ103IMG': {
+                'dataset_tag': '5200/VJ103IMG',
+                   'dict_key': 'vj1_03',
+                'description': 'JPSS1 (NOAA-20) VIIRS (375m) Geolocation Fields Product',
+                    'website': 'placeholder',
+                  'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+            
+        'VNP03MOD': {
+                'dataset_tag': '5200/VNP03MOD',
+                   'dict_key': 'vnp_03',
+                'description': 'Suomi-NPP VIIRS (750m) Geolocation Fields Product',
+                    'website': 'placeholder',
+                  'satellite': 'SNPP',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+        
+        'VJ103MOD': {
+                'dataset_tag': '5200/VJ103MOD',
+                   'dict_key': 'vj1_03',
+                'description': 'JPSS1 (NOAA-20) VIIRS (750m) Geolocation Fields Product',
+                    'website': 'placeholder',
+                  'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+
+        'VNPRGB': {
+                'dataset_tag': '5200/VNPRGB',
+                   'dict_key': 'vnp_03',
+                'description': 'Suomi-NPP VIIRS True Color (RGB) Imagery',
+                    'website': 'placeholder',
+                  'satellite': 'SNPP',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+        
+        'VJ1RGB': {
+                'dataset_tag': '5200/VJ1RGB',
+                   'dict_key': 'vj1_03',
+                'description': 'JPSS1 (NOAA-20) VIIRS True Color (RGB) Imagery',
+                    'website': 'placeholder',
+                  'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+
         'oco2_L1bScND': {
                 'dataset_tag': 'oco2_L1bScND',
                    'dict_key': 'oco_l1b',
@@ -243,7 +344,7 @@ _sat_tags_support_ = {
 #\----------------------------------------------------------------------------/#
 
 
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, products, verbose):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, products, verbose):
 
 
     # Error handling
@@ -259,7 +360,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
     elif (extent is None) and (lats is not None) and (lons is not None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
         extent = [lons[0], lons[1], lats[0], lats[1]]
 
-    
+
     # check to make sure extent is correct
     if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
         msg = '\nError [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.\n' % extent
@@ -276,7 +377,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         sys.exit('\nError [sdown]: Please provide a date via --date or date range via --start_date and --end_date\n')
 
     elif (date is not None) and ((start_date is None) or (end_date is None)):
-        
+
         single_dt = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
 
         if (datetime.timedelta((_today_dt - single_dt).days).days < 0):
@@ -286,12 +387,16 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         if verbose:
             print('\nMessage [sdown]: Data will be downloaded for %s\n' % single_dt.strftime("%d %B, %Y"))
-        
+
         fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y_%m_%d')) # save files in dirs with dates specified
         if not os.path.exists(fdir_out_dt):
             os.makedirs(fdir_out_dt)
-        
-        run(single_dt, extent, fdir_out_dt, products, verbose)
+
+        with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
+            f.write("DATE:{}\n".format(single_dt))
+            f.write("EXTENT:{}\n".format(extent))
+
+        run(single_dt, extent, fdir_out_dt, nrt, products, verbose)
 
     elif (start_date is not None) and (end_date is not None):
 
@@ -301,7 +406,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = '\nError [sdown]: `end_date` must be on or after `start_date`.' + \
                   '\n\nReceived start date: %s\nReceived end date: %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y"))
             sys.exit(msg)
-        
+
         if (datetime.timedelta((_today_dt - start_dt).days).days < 0):
             msg = '\nError [sdown]: `start_date` cannot be in the future.' + \
                   '\n\nReceived start date: %s\nToday\'s date is    : %s\n' % (start_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
@@ -315,18 +420,24 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         if verbose:
             print('\nMessage [sdown]: Data will be downloaded for dates beginning %s to %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y")))
-        
+
         date_list = [start_dt + datetime.timedelta(days=x) for x in range((end_dt - start_dt).days + 1)]
         for date_x in date_list: # download products date by date
             fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
             if not os.path.exists(fdir_out_dt):
                 os.makedirs(fdir_out_dt)
-            run(date_x, extent, fdir_out_dt, products, verbose)
+
+            with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
+                f.write("DATE:{}\n".format(date_x))
+                f.write("EXTENT:{}\n".format(extent))
+
+            print("Obtaining data for: ", date_x, extent)
+            run(date_x, extent, fdir_out_dt, nrt, products, verbose)
 
 
 
 
-def run(date, extent, fdir_out, products, verbose):
+def run(date, extent, fdir_out, nrt, products, verbose):
 
     lon0 = np.linspace(extent[0], extent[1], 100)
     lat0 = np.linspace(extent[2], extent[3], 100)
@@ -366,24 +477,51 @@ def run(date, extent, fdir_out, products, verbose):
                 fnames[product_info['dict_key']] += p_fnames
 
         # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
-        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03')):
-            filename_tags_03 = er3t.util.get_satfile_tag(date=date,
+        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD')):
+            if nrt:
+                link_to_nrt = 'https://www.earthdata.nasa.gov/learn/find-data/near-real-time/near-real-time-versus-standard-products'
+                msg = 'Warning [sdown]: Downloading Near Real Time (NRT) products. \n'\
+                      'Please note that the standard product processing rules are relaxed to allow '\
+                      'for faster generation of products and therefore may not be the same quality. '\
+                      'For a complete breakdown of how NASA generates these NRT products, visit:\n'\
+                      ' %s\n\n' % link_to_nrt
+                print(msg)
+
+                filename_tags_03 = er3t.util.get_nrt_satfile_tag(date=date,
+                                                                lon=lon,
+                                                                lat=lat,
+                                                                satellite=product_info['satellite'],
+                                                                instrument=product_info['instrument'],
+                                                                verbose=verbose)
+                
+                if verbose:
+                    print('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
+
+                for filename_tag in filename_tags_03:
+                    p_fnames = er3t.util.download_lance_https(date=date,
+                                                            dataset_tag=product_info['dataset_tag'],
+                                                            filename_tag=filename_tag,
+                                                            day_interval=1,
+                                                            fdir_out=fdir_out,
+                                                            verbose=verbose)
+            else:
+                filename_tags_03 = er3t.util.get_satfile_tag(date=date,
                                                          lon=lon,
                                                          lat=lat,
                                                          satellite=product_info['satellite'],
                                                          instrument=product_info['instrument'],
                                                          verbose=verbose)
-            if verbose:
-                print('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
+                if verbose:
+                    print('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
-            for filename_tag in filename_tags_03:
-                p_fnames = er3t.util.download_laads_https(date=date,
-                                                          dataset_tag=product_info['dataset_tag'],
-                                                          filename_tag=filename_tag,
-                                                          day_interval=1,
-                                                          fdir_out=fdir_out,
-                                                          verbose=verbose)
-                fnames[product_info['dict_key']] += p_fnames
+                for filename_tag in filename_tags_03:
+                    p_fnames = er3t.util.download_laads_https(date=date,
+                                                            dataset_tag=product_info['dataset_tag'],
+                                                            filename_tag=filename_tag,
+                                                            day_interval=1,
+                                                            fdir_out=fdir_out,
+                                                            verbose=verbose)
+            fnames[product_info['dict_key']] += p_fnames
 
         else:
             msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
@@ -450,6 +588,10 @@ if __name__ == '__main__':
     required.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
                         help='The south-most and north-most latitudes of the region.\nAlternative to providing the last two terms in `extent`.\n'\
                         'Example:  --lats 25 30\n \n')
+    required.add_argument('-n', '--nrt', action='store_true',
+                        help='Pass --nrt if Near Real Time products should be downloaded.\n'\
+                             'This is disabled by default to automatically download standard products.\n'\
+                             'Currently, only MODIS NRT products can be downloaded.\n')
     required.add_argument('-p', '--products', type=str, nargs='+', metavar='',
                         help='Short prefix (case insensitive) for the product name.\n'\
                         'Example:  --products MOD02QKM\n'
@@ -483,6 +625,7 @@ if __name__ == '__main__':
         lats       = None
         fdir       = 'sat-data/'
         products   = ['MODRGB', 'MYD02QKM']
+        nrt        =  False
         verbose    = 1
 
         sat0 = satellite_download(date=date,
@@ -492,6 +635,7 @@ if __name__ == '__main__':
                                   lons=lons,
                                   lats=lats,
                                   fdir_out=fdir,
+                                  nrt=nrt,
                                   products=products,
                                   verbose=verbose)
     else:
@@ -502,5 +646,6 @@ if __name__ == '__main__':
                                   lons=args.lons,
                                   lats=args.lats,
                                   fdir_out=args.fdir,
+                                  nrt=args.nrt,
                                   products=args.products,
                                   verbose=args.verbose)
