@@ -162,7 +162,7 @@ _sat_tags_support_ = {
         'MOD06_L2': {
                 'dataset_tag': '61/MOD06_L2',
                    'dict_key': 'mod_l2',
-                'description': 'Terra MODIS Atmosphere L2 Cloud Product',
+                'description': 'Terra MODIS Atmosphere Level 2 Cloud Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MOD06_L2.061',
                   'satellite': 'Terra',
                  'instrument': 'MODIS',
@@ -172,7 +172,7 @@ _sat_tags_support_ = {
         'MYD06_L2': {
                 'dataset_tag': '61/MYD06_L2',
                    'dict_key': 'myd_l2',
-                'description': 'Aqua MODIS Atmosphere L2 Cloud Product',
+                'description': 'Aqua MODIS Atmosphere Level 2 Cloud Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MYD06_L2.061',
                   'satellite': 'Aqua',
                  'instrument': 'MODIS',
@@ -182,7 +182,7 @@ _sat_tags_support_ = {
         'MOD35_L2': {
                 'dataset_tag': '61/MOD35_L2',
                    'dict_key': 'mod_l2',
-                'description': 'Terra MODIS Atmosphere L2 Cloud Mask',
+                'description': 'Terra MODIS Atmosphere Level 2 Cloud Mask',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MOD35_L2.061',
                   'satellite': 'Terra',
                  'instrument': 'MODIS',
@@ -192,7 +192,7 @@ _sat_tags_support_ = {
         'MYD35_L2': {
                 'dataset_tag': '61/MYD35_L2',
                    'dict_key': 'myd_l2',
-                'description': 'Aqua MODIS Atmosphere L2 Cloud Mask',
+                'description': 'Aqua MODIS Atmosphere Level 2 Cloud Mask',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MYD35_L2.061',
                   'satellite': 'Aqua',
                  'instrument': 'MODIS',
@@ -202,7 +202,7 @@ _sat_tags_support_ = {
         'MCD43A3': {
                 'dataset_tag': '61/MCD43A3',
                    'dict_key': 'mod_43',
-                'description': 'MODIS BRDF/Albedo L3 Surface Product',
+                'description': 'MODIS BRDF/Albedo Level 3 Surface Product',
                     'website': 'https://doi.org/10.5067/MODIS/MCD43A3.061',
                   'satellite': 'Terra & Aqua',
                  'instrument': 'MODIS',
@@ -292,7 +292,7 @@ _sat_tags_support_ = {
 
         'VNPRGB': {
                 'dataset_tag': '5200/VNPRGB',
-                   'dict_key': 'vnp_03',
+                   'dict_key': 'vnp_rgb',
                 'description': 'Suomi-NPP VIIRS True Color (RGB) Imagery',
                     'website': 'placeholder',
                   'satellite': 'SNPP',
@@ -302,8 +302,28 @@ _sat_tags_support_ = {
         
         'VJ1RGB': {
                 'dataset_tag': '5200/VJ1RGB',
-                   'dict_key': 'vj1_03',
+                   'dict_key': 'vj1_rgb',
                 'description': 'JPSS1 (NOAA-20) VIIRS True Color (RGB) Imagery',
+                    'website': 'placeholder',
+                  'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+
+        'VNP_CLDPROP_L2': {
+                'dataset_tag': '5111/CLDPROP_L2_VIIRS_SNPP',
+                   'dict_key': 'vnp_l2',
+                'description': 'Suomi-NPP VIIRS Cloud Properties Product',
+                    'website': 'placeholder',
+                  'satellite': 'SNPP',
+                 'instrument': 'VIIRS',
+                  'reference': 'placeholder',
+                },
+
+        'VJ1_CLDPROP_L2': {
+                'dataset_tag': '5111/CLDPROP_L2_VIIRS_NOAA20',
+                   'dict_key': 'vj1_l2',
+                'description': 'JPSS1 (NOAA-20) VIIRS Cloud Properties Product',
                     'website': 'placeholder',
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
