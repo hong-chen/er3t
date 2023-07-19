@@ -917,13 +917,14 @@ def get_satfile_tag(
         modis_granule  = mpl_path.Path(LonLat_modis, closed=True)
         pointsIn       = modis_granule.contains_points(LonLat_in)
         percentIn      = float(pointsIn.sum()) * 100.0 / float(pointsIn.size)
-        if pointsIn.sum()>0 and percentIn>1 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
+        if pointsIn.sum()>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
             filename = data[i]['GranuleID'].decode('UTF-8')
             filename_tag = '.'.join(filename.split('.')[1:3])
             filename_tags.append(filename_tag)
 
     #\----------------------------------------------------------------------------/#
     return filename_tags
+
 
 
 def get_nrt_satfile_tag(
@@ -1151,13 +1152,13 @@ def get_nrt_satfile_tag(
 
         modis_granule  = mpl_path.Path(LonLat_modis, closed=True)
         pointsIn       = modis_granule.contains_points(LonLat_in)
-        percentIn      = float(pointsIn.sum()) / float(pointsIn.size) * 100.0
-        if pointsIn.sum()>0 and percentIn>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
+        percentIn      = float(pointsIn.sum()) * 100.0 / float(pointsIn.size)
+        if pointsIn.sum()>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
             filename = data[i]['GranuleID'].decode('UTF-8')
             filename_tag = '.'.join(filename.split('.')[1:3])
             filename_tags.append(filename_tag)
-    #\----------------------------------------------------------------------------/#
 
+    #\----------------------------------------------------------------------------/#
     return filename_tags
 
 
