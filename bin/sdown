@@ -64,6 +64,12 @@ _description_ = '=' * _width_ + '\n\n' + \
 _today_dt    = datetime.datetime.today()
 _date_today_ = _today_dt.strftime('%d %B, %Y')
 
+# Production start dates for error handling
+_aqua_modis_start_date   = datetime.datetime(2002, 7, 4)
+_terra_modis_start_date  = datetime.datetime(2000, 2, 24)
+_snpp_viirs_start_date   = datetime.datetime(2012, 1, 19)
+_noaa20_viirs_start_date = datetime.datetime(2018, 1, 5)
+
 _sat_tags_support_ = {
 
         'MODRGB': {
@@ -374,9 +380,19 @@ _sat_tags_support_ = {
 def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, products, verbose):
 
 
-    # Error handling
+    ########################################################################################################
+    ############################################ Error handling ############################################
+    ########################################################################################################
+
     if products is None:
         sys.exit('\nError [sdown]: Please specify a product to download. \nWe currently support the following:\n%s\n' % ('\n'.join(_sat_tags_support_.keys())))
+    else:
+        # separate product ids for error handling
+        modis_aqua   = list(filter(lambda x: x.upper().startswith('MYD'), products))
+        modis_terra  = list(filter(lambda x: x.upper().startswith('MOD'), products))
+        viirs_snpp   = list(filter(lambda x: x.upper().startswith('VNP'), products))
+        viirs_noaa20 = list(filter(lambda x: x.upper().startswith('VJ1'), products))
+
 
     if (extent is None) and ((lats is None) or (lons is None)):
         sys.exit('\nError [sdown]: Must provide either extent or lon/lat coordinates\n')
@@ -411,7 +427,25 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = '\nError [sdown]: Provided date is in the future. Data will only be downloaded until today\'s date.' + \
                   '\n\nReceived date   : %s\nToday\'s date is : %s\n' % (single_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
             sys.exit(msg)
+        
+        # check if products exist in those date ranges
+        if len(modis_aqua) > 0 and single_dt < _aqua_modis_start_date:
+            msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
+            sys.exit(msg)
 
+        if len(modis_terra) > 0 and single_dt < _aqua_terra_start_date:
+            msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
+            sys.exit(msg)
+        
+        if len(viirs_snpp) > 0 and single_dt < _snpp_viirs_start_date:
+            msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
+            sys.exit(msg)
+
+        if len(viirs_noaa20) > 0 and single_dt < _noaa20_viirs_start_date:
+            msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
+            sys.exit(msg)
+
+        # Passed checks, start download
         if verbose:
             print('\nMessage [sdown]: Data will be downloaded for %s\n' % single_dt.strftime("%d %B, %Y"))
 
@@ -420,8 +454,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             os.makedirs(fdir_out_dt)
 
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-            f.write("DATE:{}\n".format(single_dt))
-            f.write("EXTENT:{}\n".format(extent))
+            f.write("Date: {}\n".format(single_dt))
+            f.write("Extent: {}\n".format(extent))
 
         run(single_dt, extent, fdir_out_dt, nrt, products, verbose)
 
@@ -444,7 +478,30 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                   '\n\nReceived end date: %s\nToday\'s date is : %s\n' % (end_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
             print(msg)
             end_dt = _today_dt
+        
 
+        # check if products exist in those date ranges
+        if len(modis_aqua) > 0 and start_dt < _aqua_modis_start_date:
+            msg = '\nError [sdown]: Received %s as starting date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
+            sys.exit(msg)
+
+        if len(modis_terra) > 0 and start_dt < _aqua_terra_start_date:
+            msg = '\nError [sdown]: Received %s as starting date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
+            sys.exit(msg)
+
+        if len(viirs_snpp) > 0 and start_dt < _snpp_viirs_start_date:
+            msg = '\nError [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
+            sys.exit(msg)
+
+        if len(viirs_noaa20) > 0 and start_dt < _noaa20_viirs_start_date:
+            msg = '\nError [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
+            sys.exit(msg)
+
+        ########################################################################################################
+        ########################################## End error handling ##########################################
+        ########################################################################################################
+        
+        # Passed checks, start download
         if verbose:
             print('\nMessage [sdown]: Data will be downloaded for dates beginning %s to %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y")))
 
