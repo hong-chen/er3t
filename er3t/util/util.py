@@ -7,8 +7,6 @@ import requests
 import urllib.request
 from io import StringIO
 import numpy as np
-from scipy import interpolate, stats
-from scipy.spatial import KDTree
 import warnings
 
 import er3t
@@ -21,7 +19,7 @@ __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
            'get_data_nc', 'get_data_h4', \
            'find_nearest', 'move_correlate', \
            'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
-           'get_doy_tag', 'get_satfile_tag', \
+           'get_doy_tag', 'get_satfile_tag', 'get_nrt_satfile_tag', \
            'download_laads_https', 'download_lance_https', 'download_worldview_rgb'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
@@ -273,6 +271,12 @@ def get_data_h4(hdf_dset):
 
 def move_correlate(data0, data, Ndx=5, Ndy=5):
 
+    try:
+        from scipy import stats
+    except ImportError:
+        msg = '\nError [move_correlate]: `scipy` installation is required.'
+        raise ImportError(msg)
+
     Nx, Ny = data.shape
     x = np.arange(Nx, dtype=np.int32)
     y = np.arange(Ny, dtype=np.int32)
@@ -331,6 +335,12 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
     Output:
         data_out: gridded data
     """
+
+    try:
+        from scipy.spatial import KDTree
+    except ImportError:
+        msg = 'Error [find_nearest]: `scipy` installation is required.'
+        raise ImportError(msg)
 
     # only support output at maximum dimension of 2
     #/----------------------------------------------------------------------------\#
@@ -419,6 +429,12 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
         lon, lat, data = grid_by_extent(lon0, lat0, data0, extent=[10, 15, 10, 20])
     """
 
+    try:
+        from scipy import interpolate
+    except ImportError:
+        msg = '\nError [grid_by_extent]: `scipy` installation is required.'
+        raise ImportError(msg)
+
     # flatten lon/lat/data
     #/----------------------------------------------------------------------------\#
     lon = np.array(lon).ravel()
@@ -484,6 +500,12 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         lon, lat, data = grid_by_lonlat(lon0, lat0, data0, lon_1d=np.linspace(10.0, 15.0, 100), lat_1d=np.linspace(10.0, 20.0, 100))
     """
 
+    try:
+        from scipy import interpolate
+    except ImportError:
+        msg = '\nError [grid_by_lonlat]: `scipy` installation is required.'
+        raise ImportError(msg)
+
     # flatten lon/lat/data
     #/----------------------------------------------------------------------------\#
     lon = np.array(lon).ravel()
@@ -547,6 +569,12 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
         After read in the longitude latitude and data into lon0, lat0, data0
         lon, lat, data = grid_by_dxdy(lon0, lat0, data0, dx=250.0, dy=250.0)
     """
+
+    try:
+        from scipy import interpolate
+    except ImportError:
+        msg = '\nError [grid_by_dxdy]: `scipy` installation is required.'
+        raise ImportError(msg)
 
     # flatten lon/lat/data
     #/----------------------------------------------------------------------------\#
@@ -674,6 +702,10 @@ def get_satfile_tag(
              verbose=False):
 
     """
+    Get filename tag/overpass information for standard products.
+    Currently supported satellites/instruments are:
+    Aqua/MODIS, Terra/MODIS, SNPP/VIIRS, NOAA-20/VIIRS.
+
     Input:
         date: Python datetime.datetime object
         lon : longitude of, e.g. flight track
@@ -735,8 +767,8 @@ def get_satfile_tag(
     fnames_server = {
         'Aqua|MODIS'  : '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'           % (server, date.year, date_s),
         'Terra|MODIS' : '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'          % (server, date.year, date_s),
-        'NOAA20|VIIRS': '%s/archive/geoMetaJPSS/5200/JPSS1/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-        'SNPP|VIIRS'  : '%s/archive/geoMetaJPSS/5110/NPP/%4.4d/VNP03MOD_%s.txt'   % (server, date.year, date_s),
+        'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
+        'SNPP|VIIRS'  : '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'   % (server, date.year, date_s),
         }
     fname_server = fnames_server[vname]
     #\----------------------------------------------------------------------------/#
@@ -830,7 +862,6 @@ def get_satfile_tag(
         except KeyError:
             token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
 
-        if verbose:
             msg = '\nWarning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
             warnings.warn(msg)
 
@@ -885,13 +916,249 @@ def get_satfile_tag(
 
         modis_granule  = mpl_path.Path(LonLat_modis, closed=True)
         pointsIn       = modis_granule.contains_points(LonLat_in)
-        percentIn      = float(pointsIn.sum()) / float(pointsIn.size) * 100.0
+        percentIn      = float(pointsIn.sum()) * 100.0 / float(pointsIn.size)
         if pointsIn.sum()>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
             filename = data[i]['GranuleID'].decode('UTF-8')
             filename_tag = '.'.join(filename.split('.')[1:3])
             filename_tags.append(filename_tag)
+
+    #\----------------------------------------------------------------------------/#
+    return filename_tags
+
+
+
+def get_nrt_satfile_tag(
+             date,
+             lon,
+             lat,
+             satellite='aqua',
+             instrument='modis',
+             server='https://nrt3.modaps.eosdis.nasa.gov/api/v2/content',
+             local='./',
+             verbose=False):
+
+    """
+    Get filename tag/overpass information for Near Real Time (NRT) products.
+    Currently supported satellites/instruments are: 
+    Aqua/MODIS, Terra/MODIS, SNPP/VIIRS, NOAA-20/VIIRS.
+
+    Input:
+        date: Python datetime.datetime object
+        lon : longitude of, e.g. flight track
+        lat : latitude of, e.g. flight track
+        satellite=: default "aqua", can also change to "terra", 'snpp', 'noaa20'
+        instrument=: default "modis", can also change to "viirs"
+        server=: string, data server
+        fdir_prefix=: string, data directory on NASA server
+        verbose=: Boolen type, verbose tag
+    output:
+        filename_tags: Python list of file name tags
+    """
+
+    # check cartopy and matplotlib
+    #/----------------------------------------------------------------------------\#
+    try:
+        import cartopy.crs as ccrs
+    except ImportError:
+        msg = '\nError [get_satfile_tag]: Please install <cartopy> to proceed.'
+        raise ImportError(msg)
+
+    try:
+        import matplotlib.path as mpl_path
+    except ImportError:
+        msg = '\nError [get_satfile_tag]: Please install <matplotlib> to proceed.'
+        raise ImportError(msg)
     #\----------------------------------------------------------------------------/#
 
+
+    # check satellite and instrument
+    #/----------------------------------------------------------------------------\#
+    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
+        instrument = instrument.upper()
+        satellite  = satellite.lower().title()
+    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper()
+    else:
+        msg = 'Error [get_satfile_tag]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        raise NameError(msg)
+    #\----------------------------------------------------------------------------/#
+
+
+    # check login
+    #/----------------------------------------------------------------------------\#
+    try:
+        username = os.environ['EARTHDATA_USERNAME']
+        password = os.environ['EARTHDATA_PASSWORD']
+    except:
+        msg = '\nError [get_satfile_tag]: cannot find environment variables \'EARTHDATA_USERNAME\' and \'EARTHDATA_PASSWORD\'.'
+        raise OSError(msg)
+    #\----------------------------------------------------------------------------/#
+
+
+    # generate satellite filename on LAADS DAAC server
+    #/----------------------------------------------------------------------------\#
+    vname  = '%s|%s' % (satellite, instrument)
+    date_s = date.strftime('%Y-%m-%d')
+    fnames_server = {
+        'Aqua|MODIS'  : '%s/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt'           % (server, date.year, date_s),
+        'Terra|MODIS' : '%s/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt'          % (server, date.year, date_s),
+        'NOAA20|VIIRS': '%s/archives/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
+        'SNPP|VIIRS'  : '%s/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt'   % (server, date.year, date_s),
+        }
+    fname_server = fnames_server[vname]
+    #\----------------------------------------------------------------------------/#
+
+
+    # convert longitude in [-180, 180] range
+    # since the longitude in GeoMeta dataset is in the range of [-180, 180]
+    #/----------------------------------------------------------------------------\#
+    lon[lon>180.0] -= 360.0
+    logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
+    lon   = lon[logic]
+    lat   = lat[logic]
+    #\----------------------------------------------------------------------------/#
+
+
+    # try to access the server
+    #/----------------------------------------------------------------------------\#
+
+    # try to get information from local
+    # check two locations:
+    #   1) <tmp-data/satfile> directory under er3t main directory
+    #   2) current directory;
+    #/--------------------------------------------------------------\#
+    fdir_satfile_tmp = '%s/satfile' % er3t.common.fdir_data_tmp
+    if not os.path.exists(fdir_satfile_tmp):
+        os.makedirs(fdir_satfile_tmp)
+
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_satfile_tmp, os.path.basename(fname_server)))
+    fname_local2 = os.path.abspath('%s/%s' % (local           , os.path.basename(fname_server)))
+
+    if os.path.exists(fname_local1):
+        with open(fname_local1, 'r') as f_:
+            content = f_.read()
+
+    elif os.path.exists(fname_local2):
+        os.system('cp %s %s' % (fname_local2, fname_local1))
+        with open(fname_local2, 'r') as f_:
+            content = f_.read()
+    #\--------------------------------------------------------------/#
+
+    else:
+
+        # get information from server
+        #/--------------------------------------------------------------\#
+        try:
+            with requests.Session() as session:
+                session.auth = (username, password)
+                r1     = session.request('get', fname_server)
+                r      = session.get(r1.url, auth=(username, password))
+        except:
+            msg = '\nError [get_satfile_tag]: cannot access <%s>.' % fname_server
+            raise OSError(msg)
+
+        if r.ok:
+            content = r.content.decode('utf-8')
+        else:
+            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
+            raise OSError(msg)
+        #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
+    # extract granule information from <content>
+    # after the following session, granule information will be stored under <data>
+    # data['GranuleID'].decode('UTF-8') to get the file name of MODIS granule
+    # data['StartDateTime'].decode('UTF-8') to get the time stamp of MODIS granule
+    # variable names can be found through
+    # print(data.dtype.names)
+    #/----------------------------------------------------------------------------\#
+
+    if vname in ['Aqua|MODIS', 'Terra|MODIS']:
+        dtype = ['|S41', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
+    elif vname in ['NOAA20|VIIRS', 'SNPP|VIIRS']:
+        dtype = ['|S43', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
+    usecols = (0, 4, 9, 10, 11, 12, 13, 14, 15, 16)
+
+    #\----------------------------------------------------------------------------/#
+    # LAADS DAAC servers are known to cause some issues occasionally while
+    # accessing the metadata. We will attempt to read the txt file online directly
+    # on the server but as a backup, we will download the txt file locally and
+    # access the data there
+    #/----------------------------------------------------------------------------\#
+    try:
+        data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
+    except ValueError:
+
+        msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
+        print(msg)
+
+        try:
+            token = os.environ['EARTHDATA_TOKEN']
+        except KeyError:
+            token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
+
+            msg = '\nWarning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+            warnings.warn(msg)
+
+        try:
+            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
+            os.system(command)
+            with open(fname_local1, 'r') as f_:
+                content = f_.read()
+            data = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
+        except ValueError:
+            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nThis is likely an issue with LAADS DAAC servers, please try downloading the files manually or try again later.\n' % fname_server
+            raise OSError(msg)
+
+    #\----------------------------------------------------------------------------/#
+    # loop through all the "MODIS granules" constructed through four corner points
+    # and find which granules contain the input data
+    #/----------------------------------------------------------------------------\#
+    Ndata = data.size
+    filename_tags = []
+    proj_ori = ccrs.PlateCarree()
+    for i in range(Ndata):
+
+        line = data[i]
+        xx0  = np.array([line['GRingLongitude1'], line['GRingLongitude2'], line['GRingLongitude3'], line['GRingLongitude4'], line['GRingLongitude1']])
+        yy0  = np.array([line['GRingLatitude1'] , line['GRingLatitude2'] , line['GRingLatitude3'] , line['GRingLatitude4'] , line['GRingLatitude1']])
+
+        if (abs(xx0[0]-xx0[1])>180.0) | (abs(xx0[0]-xx0[2])>180.0) | \
+           (abs(xx0[0]-xx0[3])>180.0) | (abs(xx0[1]-xx0[2])>180.0) | \
+           (abs(xx0[1]-xx0[3])>180.0) | (abs(xx0[2]-xx0[3])>180.0):
+
+            xx0[xx0<0.0] += 360.0
+
+        # roughly determine the center of granule
+        #/----------------------------------------------------------------------------\#
+        xx = xx0[:-1]
+        yy = yy0[:-1]
+        center_lon = xx.mean()
+        center_lat = yy.mean()
+        #\----------------------------------------------------------------------------/#
+
+        # find the precise center point of MODIS granule
+        #/----------------------------------------------------------------------------\#
+        proj_tmp   = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
+        LonLat_tmp = proj_tmp.transform_points(proj_ori, xx, yy)[:, [0, 1]]
+        center_xx  = LonLat_tmp[:, 0].mean(); center_yy = LonLat_tmp[:, 1].mean()
+        center_lon, center_lat = proj_ori.transform_point(center_xx, center_yy, proj_tmp)
+        #\----------------------------------------------------------------------------/#
+
+        proj_new = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
+        LonLat_in = proj_new.transform_points(proj_ori, lon, lat)[:, [0, 1]]
+        LonLat_modis  = proj_new.transform_points(proj_ori, xx0, yy0)[:, [0, 1]]
+
+        modis_granule  = mpl_path.Path(LonLat_modis, closed=True)
+        pointsIn       = modis_granule.contains_points(LonLat_in)
+        percentIn      = float(pointsIn.sum()) * 100.0 / float(pointsIn.size)
+        if pointsIn.sum()>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
+            filename = data[i]['GranuleID'].decode('UTF-8')
+            filename_tag = '.'.join(filename.split('.')[1:3])
+            filename_tags.append(filename_tag)
+
+    #\----------------------------------------------------------------------------/#
     return filename_tags
 
 
@@ -1132,6 +1399,13 @@ def download_lance_https(
         doy_str  = str(date.timetuple().tm_yday).zfill(3)
     else:
         doy_str = get_doy_tag(date, day_interval=day_interval)
+    
+    #\----------------------------------------------------------------------------/#
+    # VIIRS NRT is labeled differently from the standard product.
+    # Therefore, the dataset_tag needs to be updated only for VIIRS NRT products.
+    #/----------------------------------------------------------------------------\#
+    if dataset_tag.split('/')[-1].upper().startswith(('VNP', 'VJ1', 'VJ2')):
+        dataset_tag = dataset_tag + '_NRT'
 
     fdir_csv_prefix = '/details/allData'
     fdir_csv_format = '?fields=all&formats=csv'
@@ -1140,7 +1414,7 @@ def download_lance_https(
     fdir_data       = '%s/%s/%s/%s.csv' % (fdir_prefix, dataset_tag, year_str, doy_str)
     fdir_server     = server + fdir_data
     fdir_csv_server = server + fdir_csv_data
-
+    
     #\----------------------------------------------------------------------------/#
     # Use error handling to overcome occasional issues with LANCE DAAC servers
     #/----------------------------------------------------------------------------\#
@@ -1153,17 +1427,17 @@ def download_lance_https(
         try:
             webpage = urllib.request.urlopen(fdir_csv_server)
         except urllib.error.HTTPError:
-            msg = '\nError [download_lance_https]: cannot access <%s>.' % fdir_server
+            msg = '\nError [download_lance_https]: cannot access <%s>.' % fdir_csv_server
             raise OSError(msg)
 
     content  = webpage.read().decode('utf-8')
     lines    = content.split('\n')
-
+    
     commands = []
     fnames_local = []
     for line in lines:
         filename = line.strip().split(',')[0]
-        if (filename_tag in filename) and (filename.endswith('.hdf')):
+        if filename_tag in filename and (filename.endswith('.hdf') or filename.endswith('.nc')):
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
