@@ -702,6 +702,10 @@ def get_satfile_tag(
              verbose=False):
 
     """
+    Get filename tag/overpass information for standard products.
+    Currently supported satellites/instruments are:
+    Aqua/MODIS, Terra/MODIS, SNPP/VIIRS, NOAA-20/VIIRS.
+
     Input:
         date: Python datetime.datetime object
         lon : longitude of, e.g. flight track
@@ -858,7 +862,6 @@ def get_satfile_tag(
         except KeyError:
             token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
 
-        if verbose:
             msg = '\nWarning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
             warnings.warn(msg)
 
@@ -934,6 +937,10 @@ def get_nrt_satfile_tag(
              verbose=False):
 
     """
+    Get filename tag/overpass information for Near Real Time (NRT) products.
+    Currently supported satellites/instruments are: 
+    Aqua/MODIS, Terra/MODIS, SNPP/VIIRS, NOAA-20/VIIRS.
+
     Input:
         date: Python datetime.datetime object
         lon : longitude of, e.g. flight track
@@ -995,8 +1002,8 @@ def get_nrt_satfile_tag(
     fnames_server = {
         'Aqua|MODIS'  : '%s/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt'           % (server, date.year, date_s),
         'Terra|MODIS' : '%s/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt'          % (server, date.year, date_s),
-        'NOAA20|VIIRS': '%s/archive/geoMetaJPSS/5200/JPSS1/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-        'SNPP|VIIRS'  : '%s/archive/geoMetaJPSS/5110/NPP/%4.4d/VNP03MOD_%s.txt'   % (server, date.year, date_s),
+        'NOAA20|VIIRS': '%s/archives/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
+        'SNPP|VIIRS'  : '%s/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt'   % (server, date.year, date_s),
         }
     fname_server = fnames_server[vname]
     #\----------------------------------------------------------------------------/#
@@ -1090,7 +1097,6 @@ def get_nrt_satfile_tag(
         except KeyError:
             token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
 
-        if verbose:
             msg = '\nWarning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
             warnings.warn(msg)
 
@@ -1392,6 +1398,13 @@ def download_lance_https(
         doy_str  = str(date.timetuple().tm_yday).zfill(3)
     else:
         doy_str = get_doy_tag(date, day_interval=day_interval)
+    
+    #\----------------------------------------------------------------------------/#
+    # VIIRS NRT is labeled differently from the standard product.
+    # Therefore, the dataset_tag needs to be updated only for VIIRS NRT products.
+    #/----------------------------------------------------------------------------\#
+    if dataset_tag.split('/')[-1].upper().startswith(('VNP', 'VJ1', 'VJ2')):
+        dataset_tag = dataset_tag + '_NRT'
 
     fdir_csv_prefix = '/details/allData'
     fdir_csv_format = '?fields=all&formats=csv'
@@ -1400,7 +1413,7 @@ def download_lance_https(
     fdir_data       = '%s/%s/%s/%s.csv' % (fdir_prefix, dataset_tag, year_str, doy_str)
     fdir_server     = server + fdir_data
     fdir_csv_server = server + fdir_csv_data
-
+    
     #\----------------------------------------------------------------------------/#
     # Use error handling to overcome occasional issues with LANCE DAAC servers
     #/----------------------------------------------------------------------------\#
@@ -1413,17 +1426,17 @@ def download_lance_https(
         try:
             webpage = urllib.request.urlopen(fdir_csv_server)
         except urllib.error.HTTPError:
-            msg = '\nError [download_lance_https]: cannot access <%s>.' % fdir_server
+            msg = '\nError [download_lance_https]: cannot access <%s>.' % fdir_csv_server
             raise OSError(msg)
 
     content  = webpage.read().decode('utf-8')
     lines    = content.split('\n')
-
+    
     commands = []
     fnames_local = []
     for line in lines:
         filename = line.strip().split(',')[0]
-        if (filename_tag in filename) and (filename.endswith('.hdf')):
+        if filename_tag in filename and (filename.endswith('.hdf') or filename.endswith('.nc')):
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
