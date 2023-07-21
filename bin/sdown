@@ -433,7 +433,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
 
-        if len(modis_terra) > 0 and single_dt < _terra_terra_start_date:
+        if len(modis_terra) > 0 and single_dt < _terra_modis_start_date:
             msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
         
@@ -485,7 +485,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = '\nError [sdown]: Received %s as starting date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
 
-        if len(modis_terra) > 0 and start_dt < _terra_terra_start_date:
+        if len(modis_terra) > 0 and start_dt < _terra_modis_start_date:
             msg = '\nError [sdown]: Received %s as starting date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
 
