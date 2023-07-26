@@ -444,6 +444,8 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
 
     if extent is None:
         extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+    else:
+        extent = np.float_(np.array(extent))
 
     if NxNy is None:
         xy = (extent[1]-extent[0])*(extent[3]-extent[2])
@@ -550,7 +552,7 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
 
 
 
-def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', fill_value=0.0, Ngrid_limit=1):
+def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', mode='min', fill_value=0.0, Ngrid_limit=1):
 
     """
     Grid irregular data into a regular xy grid by input 'extent' (westmost, eastmost, southmost, northmost)
@@ -588,6 +590,8 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     #/----------------------------------------------------------------------------\#
     if extent is None:
         extent = [np.nanmin(lon), np.nanmax(lon), np.nanmin(lat), np.nanmax(lat)]
+    else:
+        extent = np.float_(np.array(extent))
     #\----------------------------------------------------------------------------/#
 
 
@@ -597,13 +601,19 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     lat0 = [extent[2], extent[3]]
     lon1 = [extent[1], extent[1]]
     lat1 = [extent[2], extent[3]]
-    dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    if mode == 'min':
+        dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    elif mode == 'max':
+        dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
 
     lon0 = [extent[0], extent[1]]
     lat0 = [extent[2], extent[2]]
     lon1 = [extent[0], extent[1]]
     lat1 = [extent[3], extent[3]]
-    dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    if mode == 'min':
+        dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    elif mode == 'max':
+        dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
     #\----------------------------------------------------------------------------/#
 
 
