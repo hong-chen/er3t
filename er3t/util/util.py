@@ -602,7 +602,11 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     elif mode == 'max':
         dist_x = np.abs(extent[1]-extent[0])/180.0*np.pi*R_earth*np.cos(np.deg2rad(np.abs(extent[2:]).min()))*1000.0
 
-    dist_y = np.abs(extent[3]-extent[2])/180.0*np.pi*R_earth*1000.0
+    lon0 = [extent[0], extent[1]]
+    lat0 = [extent[2], extent[2]]
+    lon1 = [extent[0], extent[1]]
+    lat1 = [extent[3], extent[3]]
+    dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
     #\----------------------------------------------------------------------------/#
 
 
