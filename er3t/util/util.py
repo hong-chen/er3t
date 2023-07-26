@@ -552,7 +552,7 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
 
 
 
-def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', mode='min', fill_value=0.0, Ngrid_limit=1):
+def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', mode='min', fill_value=0.0, Ngrid_limit=1, R_earth=er3t.common.params['earth_radius']):
 
     """
     Grid irregular data into a regular xy grid by input 'extent' (westmost, eastmost, southmost, northmost)
@@ -597,23 +597,12 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
 
     # dist_x and dist_y
     #/----------------------------------------------------------------------------\#
-    lon0 = [extent[0], extent[0]]
-    lat0 = [extent[2], extent[3]]
-    lon1 = [extent[1], extent[1]]
-    lat1 = [extent[2], extent[3]]
     if mode == 'min':
-        dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+        dist_x = np.abs(extent[1]-extent[0])/180.0*np.pi*R_earth*np.cos(np.deg2rad(np.abs(extent[2:]).max()))*1000.0
     elif mode == 'max':
-        dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
+        dist_x = np.abs(extent[1]-extent[0])/180.0*np.pi*R_earth*np.cos(np.deg2rad(np.abs(extent[2:]).min()))*1000.0
 
-    lon0 = [extent[0], extent[1]]
-    lat0 = [extent[2], extent[2]]
-    lon1 = [extent[0], extent[1]]
-    lat1 = [extent[3], extent[3]]
-    if mode == 'min':
-        dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
-    elif mode == 'max':
-        dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
+    dist_y = np.abs(extent[3]-extent[2])/180.0*np.pi*R_earth*1000.0
     #\----------------------------------------------------------------------------/#
 
 
