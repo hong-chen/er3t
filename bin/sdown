@@ -433,7 +433,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
 
-        if len(modis_terra) > 0 and single_dt < _aqua_terra_start_date:
+        if len(modis_terra) > 0 and single_dt < _terra_modis_start_date:
             msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
         
@@ -455,7 +455,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
             f.write("Date: {}\n".format(single_dt))
-            f.write("Extent: {}\n".format(extent))
+            f.write("Extent:{}\n".format(extent))
 
         run(single_dt, extent, fdir_out_dt, nrt, products, verbose)
 
@@ -485,7 +485,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = '\nError [sdown]: Received %s as starting date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
 
-        if len(modis_terra) > 0 and start_dt < _aqua_terra_start_date:
+        if len(modis_terra) > 0 and start_dt < _terra_modis_start_date:
             msg = '\nError [sdown]: Received %s as starting date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
 
@@ -562,7 +562,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                 fnames[product_info['dict_key']] += p_fnames
 
         # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
-        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD')):
+        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'L2_VIIRS_NOAA20', 'L2_VIIRS_SNPP')):
             if nrt:
                 link_to_nrt = 'https://www.earthdata.nasa.gov/learn/find-data/near-real-time/near-real-time-versus-standard-products'
                 msg = 'Warning [sdown]: Downloading Near Real Time (NRT) products. \n'\
