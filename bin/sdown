@@ -18,7 +18,7 @@ Now supports:
                 VNP02IMG,       VJ102IMG
                 VNP03MOD,       VJ103MOD
                 VNP02MOD,       VJ102MOD
-                VNP_CLDPROP_L2, VNP_CLDPROP_L2
+                CLDPROP_L2_VIIRS_SNPP, CLDPROP_L2_VIIRS_NOAA20
     
     OCO-2 data: coming soon...
 
@@ -330,7 +330,7 @@ _sat_tags_support_ = {
                     'website': 'https://doi.org/10.5067/VIIRS/CLDPROP_L2_VIIRS_SNPP.011',
                   'satellite': 'SNPP',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/SNPP Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
                 },
 
         'VJ1_CLDPROP_L2': {
@@ -340,7 +340,7 @@ _sat_tags_support_ = {
                     'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA20',
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
-                  'reference': 'placeholder',
+                  'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/JPSS1 Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
                 },
 
         'oco2_L1bScND': {
@@ -454,8 +454,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             os.makedirs(fdir_out_dt)
 
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-            f.write("Date: {}\n".format(single_dt))
-            f.write("Extent: {}\n".format(extent))
+            f.write("DATE:{}\n".format(single_dt))
+            f.write("EXTENT:{}\n".format(extent))
 
         run(single_dt, extent, fdir_out_dt, nrt, products, verbose)
 
@@ -513,8 +513,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
             # Save metadata
             with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-                f.write('Date: {}\n'.format(date_x))
-                f.write('Extent: {}\n'.format(extent))
+                f.write('DATE:{}\n'.format(date_x))
+                f.write('EXTENT:{}\n'.format(extent))
 
             print("Obtaining data for: ", date_x, extent)
             run(date_x, extent, fdir_out_dt, nrt, products, verbose)
@@ -696,6 +696,18 @@ if __name__ == '__main__':
                         'MODRGB  :  True-Color RGB (Terra) imagery, useful for visuzliation\n'\
                         'MYDRGB  :  True-Color RGB (Aqua)  imagery, useful for visuzliation\n'\
                         'MCD43   :  Level 3 surface product MCD43A3\n'\
+                        'VNPRGB  :  True-Color RGB (S-NPP) imagery, useful for visuzliation\n'\
+                        'VJ1RGB  :  True-Color RGB (NOAA-20) imagery, useful for visuzliation\n'\
+                        'VNP02IMG:  Level 1b 375m (S-NPP) radiance product\n'\
+                        'VJ102IMG:  Level 1b 375m (NOAA-20) radiance product\n'\
+                        'VNP03IMG:  Solar/viewing geometry 375m (S-NPP) product\n'\
+                        'VJ103IMG:  Solar/viewing geometry 375m (NOAA-20) product\n'
+                        'VNP02MOD:  Level 1b 750m (S-NPP) radiance product\n'\
+                        'VJ102MOD:  Level 1b 750m (NOAA-20) radiance product\n'\
+                        'VNP03MOD:  Solar/viewing geometry 750m (S-NPP) product\n'\
+                        'VJ103MOD:  Solar/viewing geometry 750m (NOAA-20) product\n'\
+                        'CLDPROP_L2_VIIRS_SNPP: Level 2 (S-NPP) cloud properties product\n'\
+                        'CLDPROP_L2_VIIRS_NOAA20: Level 2(NOAA-20) cloud properties product\n'\
                         '\nTo download multiple products at a time:\n'\
                         '--products MOD021KM VJ102MOD MYD06_l2\n \n')
 
