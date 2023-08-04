@@ -94,12 +94,10 @@ class modis_l1b:
 
         f     = SD(fname, SDC.READ)
 
-        # lon lat
-        lat0       = f.select('Latitude')
-        lon0       = f.select('Longitude')
-
         # when resolution equals to 250 m
         if check_equal(self.resolution, 0.25):
+            lat0      = f.select('Latitude')
+            lon0      = f.select('Longitude')
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
             raw0      = f.select('EV_250_RefSB')
             uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
@@ -108,6 +106,8 @@ class modis_l1b:
 
         # when resolution equals to 500 m
         elif check_equal(self.resolution, 0.5):
+            lat0      = f.select('Latitude')
+            lon0      = f.select('Longitude')
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
             raw0      = f.select('EV_500_RefSB')
             uct0      = f.select('EV_500_RefSB_Uncert_Indexes')
@@ -117,9 +117,25 @@ class modis_l1b:
         # when resolution equals to 1000 m
         elif check_equal(self.resolution, 1.0):
             if self.f03 is not None:
-                raw0      = f.select('EV_250_Aggr1km_RefSB')
-                uct0      = f.select('EV_250_Aggr1km_RefSB_Uncert_Indexes')
-                wvl       = np.array([650.0, 860.0])
+                raw0_250  = f.select('EV_250_Aggr1km_RefSB')
+                uct0_250  = f.select('EV_250_Aggr1km_RefSB_Uncert_Indexes')
+                raw0_500  = f.select('EV_500_Aggr1km_RefSB')
+                uct0_500  = f.select('EV_500_Aggr1km_RefSB_Uncert_Indexes')
+                
+                # save offsets and scaling factors (from both visible and near infrared bands)
+                rad_off = raw0_250.attributes()['radiance_offsets'] + raw0_500.attributes()['radiance_offsets']
+                rad_sca = raw0_250.attributes()['radiance_scales'] + raw0_500.attributes()['radiance_offsets']
+                ref_off = raw0_250.attributes()['reflectance_offsets'] + raw0_500.attributes()['reflectance_offsets']
+                ref_sca = raw0_250.attributes()['reflectance_scales'] + raw0_500.attributes()['reflectance_offsets']
+                cnt_off = raw0_250.attributes()['corrected_counts_offsets'] + raw0_500.attributes()['corrected_counts_offsets']
+                cnt_sca = raw0_250.attributes()['corrected_counts_scales'] + raw0_500.attributes()['corrected_counts_offsets']
+                uct_spc = uct0_250.attributes()['specified_uncertainty'] + uct0_500.attributes()['specified_uncertainty']
+                uct_sca = uct0_250.attributes()['scaling_factor'] + uct0_500.attributes()['scaling_factor']
+                
+                # combine visible and near infrared bands
+                raw0      = np.vstack([raw0_250, raw0_500])
+                uct0      = np.vstack([uct0_250, uct0_500])
+                wvl       = np.array([650.0, 860.0, 470.0, 555.0, 1240.0, 1640.0, 2130.0])
                 do_region = False
                 lon       = self.f03.data['lon']['data']
                 lat       = self.f03.data['lat']['data']
@@ -156,6 +172,19 @@ class modis_l1b:
             logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
             lon       = lon[logic]
             lat       = lat[logic]
+            
+            # save offsets and scaling factors
+            rad_off = raw0.attributes()['radiance_offsets']
+            rad_sca = raw0.attributes()['radiance_scales']
+
+            ref_off = raw0.attributes()['reflectance_offsets']
+            ref_sca = raw0.attributes()['reflectance_scales']
+
+            cnt_off = raw0.attributes()['corrected_counts_offsets']
+            cnt_sca = raw0.attributes()['corrected_counts_scales']
+
+            uct_spc = uct0.attributes()['specified_uncertainty']
+            uct_sca = uct0.attributes()['scaling_factor']
         # -------------------------------------------------------------------------------------------------
 
 
@@ -165,20 +194,6 @@ class modis_l1b:
         rad = np.zeros(raw.shape, dtype=np.float64)
         ref = np.zeros(raw.shape, dtype=np.float64)
         cnt = np.zeros(raw.shape, dtype=np.float64)
-
-        # save offsets and scaling factors
-        rad_off = raw0.attributes()['radiance_offsets']
-        rad_sca = raw0.attributes()['radiance_scales']
-
-        ref_off = raw0.attributes()['reflectance_offsets']
-        ref_sca = raw0.attributes()['reflectance_scales']
-
-        cnt_off = raw0.attributes()['corrected_counts_offsets']
-        cnt_sca = raw0.attributes()['corrected_counts_scales']
-
-        uct_spc = uct0.attributes()['specified_uncertainty']
-        uct_sca = uct0.attributes()['scaling_factor']
-
 
         # Calculate uncertainty
         uct     = uct0[:][:, logic]
@@ -199,8 +214,8 @@ class modis_l1b:
 
         if hasattr(self, 'data'):
             if do_region:
-                self.data['lon'] = dict(name='Longitude'               , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
-                self.data['lat'] = dict(name='Latitude'                , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+                self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+                self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
 
             self.data['rad'] = dict(name='Radiance'                , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
