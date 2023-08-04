@@ -454,8 +454,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             os.makedirs(fdir_out_dt)
 
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-            f.write("DATE:{}\n".format(single_dt))
-            f.write("EXTENT:{}\n".format(extent))
+            f.write("Date: {}\n".format(single_dt))
+            f.write("Extent: {}\n".format(extent))
 
         run(single_dt, extent, fdir_out_dt, nrt, products, verbose)
 
@@ -513,8 +513,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
             # Save metadata
             with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-                f.write('DATE:{}\n'.format(date_x))
-                f.write('EXTENT:{}\n'.format(extent))
+                f.write('Date: {}\n'.format(date_x))
+                f.write('Extent: {}\n'.format(extent))
 
             print("Obtaining data for: ", date_x, extent)
             run(date_x, extent, fdir_out_dt, nrt, products, verbose)
