@@ -233,7 +233,7 @@ _sat_tags_support_ = {
                 },
         
         'VJ102IMG': {
-                'dataset_tag': '5200/VJ102IMG',
+                'dataset_tag': '5201/VJ102IMG',
                    'dict_key': 'vj1_02',
                 'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (375m) Calibrated Radiances Product',
                     'website': 'https://doi.org/10.5067/VIIRS/VJ102IMG.021',
@@ -254,7 +254,7 @@ _sat_tags_support_ = {
                 },
         
         'VJ102MOD': {
-                'dataset_tag': '5200/VJ102MOD',
+                'dataset_tag': '5201/VJ102MOD',
                    'dict_key': 'vj1_02',
                 'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (750m) Calibrated Radiances Product',
                     'website': 'https://doi.org/10.5067/VIIRS/VJ102MOD.021',
@@ -274,7 +274,7 @@ _sat_tags_support_ = {
                 },
         
         'VJ103IMG': {
-                'dataset_tag': '5200/VJ103IMG',
+                'dataset_tag': '5201/VJ103IMG',
                    'dict_key': 'vj1_03',
                 'description': 'JPSS1 (NOAA-20) VIIRS (375m) Geolocation Fields Product',
                     'website': 'https://doi.org/10.5067/VIIRS/VJ103IMG.021',
@@ -294,7 +294,7 @@ _sat_tags_support_ = {
                 },
         
         'VJ103MOD': {
-                'dataset_tag': '5200/VJ103MOD',
+                'dataset_tag': '5201/VJ103MOD',
                    'dict_key': 'vj1_03',
                 'description': 'JPSS1 (NOAA-20) VIIRS (750m) Geolocation Fields Product',
                     'website': 'https://doi.org/10.5067/VIIRS/VJ103MOD.021',
@@ -314,7 +314,7 @@ _sat_tags_support_ = {
                 },
         
         'VJ1RGB': {
-                'dataset_tag': '5200/VJ1RGB',
+                'dataset_tag': '5201/VJ1RGB',
                    'dict_key': 'vj1_rgb',
                 'description': 'JPSS1 (NOAA-20) VIIRS True Color (RGB) Imagery',
                     'website': 'https://worldview.earthdata.nasa.gov',
