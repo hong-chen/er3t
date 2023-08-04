@@ -118,6 +118,7 @@ class modis_l1b:
         elif check_equal(self.resolution, 1.0):
             if self.f03 is not None:
                 raw0      = f.select('EV_250_Aggr1km_RefSB')
+                uct0      = f.select('EV_250_Aggr1km_RefSB_Uncert_Indexes')
                 wvl       = np.array([650.0, 860.0])
                 do_region = False
                 lon       = self.f03.data['lon']['data']
@@ -129,30 +130,32 @@ class modis_l1b:
         else:
             sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
 
-
+        
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
         #/----------------------------------------------------------------------------\#
-        if self.extent is None:
+        
+        if do_region: # applied only for QKM (250m) or HKM (500m) products
+            if self.extent is None:
 
-            if 'actual_range' in lon0.attributes().keys():
-                lon_range = lon0.attributes()['actual_range']
-                lat_range = lat0.attributes()['actual_range']
-            elif 'valid_range' in lon0.attributes().keys():
-                lon_range = lon0.attributes()['valid_range']
-                lat_range = lat0.attributes()['valid_range']
+                if 'actual_range' in lon0.attributes().keys():
+                    lon_range = lon0.attributes()['actual_range']
+                    lat_range = lat0.attributes()['actual_range']
+                elif 'valid_range' in lon0.attributes().keys():
+                    lon_range = lon0.attributes()['valid_range']
+                    lat_range = lat0.attributes()['valid_range']
+                else:
+                    lon_range = [-180.0, 180.0]
+                    lat_range = [-90.0 , 90.0]
+
             else:
-                lon_range = [-180.0, 180.0]
-                lat_range = [-90.0 , 90.0]
 
-        else:
+                lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+                lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
-            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
-            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
-
-        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
-        lon       = lon[logic]
-        lat       = lat[logic]
+            logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+            lon       = lon[logic]
+            lat       = lat[logic]
         # -------------------------------------------------------------------------------------------------
 
 
