@@ -51,7 +51,7 @@ class modis_l1b:
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the hdf files
-        self.f03        = f03         # geolocation file
+        self.f03        = f03         # geolocation class object created using the `modis_03` reader
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
 
