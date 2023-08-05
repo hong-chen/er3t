@@ -1552,6 +1552,7 @@ def download_worldview_rgb(
         instrument='modis',
         satellite='aqua',
         wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi',
+        layer_name0='CorrectedReflectance_TrueColor',
         proj=None,
         coastline=False,
         fmt='png',
@@ -1612,7 +1613,7 @@ def download_worldview_rgb(
         if not os.path.exists(fdir_out):
             os.makedirs(fdir_out)
 
-        layer_name = '%s_%s_CorrectedReflectance_TrueColor' % (instrument, satellite)
+        layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
 
         if proj is None:
             proj=ccrs.PlateCarree()
