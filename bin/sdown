@@ -54,8 +54,8 @@ _description_ = '=' * _width_ + '\n\n' + \
                 '=' * _width_ + '\n' + \
                 ' Satellite Data Product Download Tool '.center(_width_, '=') + '\n\n' + \
                 'Example Usage:\n'\
-                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir_out sat-data/ --verbose\n'\
-                'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir_out sat-data/\n'
+                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir sat-data/ --verbose\n'\
+                'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir sat-data/\n'
 
 
 # product tags
