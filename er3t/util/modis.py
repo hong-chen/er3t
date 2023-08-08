@@ -124,11 +124,11 @@ class modis_l1b:
                 
                 # save offsets and scaling factors (from both visible and near infrared bands)
                 rad_off = raw0_250.attributes()['radiance_offsets'] + raw0_500.attributes()['radiance_offsets']
-                rad_sca = raw0_250.attributes()['radiance_scales'] + raw0_500.attributes()['radiance_offsets']
+                rad_sca = raw0_250.attributes()['radiance_scales'] + raw0_500.attributes()['radiance_scales']
                 ref_off = raw0_250.attributes()['reflectance_offsets'] + raw0_500.attributes()['reflectance_offsets']
-                ref_sca = raw0_250.attributes()['reflectance_scales'] + raw0_500.attributes()['reflectance_offsets']
+                ref_sca = raw0_250.attributes()['reflectance_scales'] + raw0_500.attributes()['reflectance_scales']
                 cnt_off = raw0_250.attributes()['corrected_counts_offsets'] + raw0_500.attributes()['corrected_counts_offsets']
-                cnt_sca = raw0_250.attributes()['corrected_counts_scales'] + raw0_500.attributes()['corrected_counts_offsets']
+                cnt_sca = raw0_250.attributes()['corrected_counts_scales'] + raw0_500.attributes()['corrected_counts_scales']
                 uct_spc = uct0_250.attributes()['specified_uncertainty'] + uct0_500.attributes()['specified_uncertainty']
                 uct_sca = uct0_250.attributes()['scaling_factor'] + uct0_500.attributes()['scaling_factor']
                 
