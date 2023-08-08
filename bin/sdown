@@ -18,7 +18,7 @@ Now supports:
                 VNP02IMG,       VJ102IMG
                 VNP03MOD,       VJ103MOD
                 VNP02MOD,       VJ102MOD
-                CLDPROP_L2_VIIRS_SNPP, CLDPROP_L2_VIIRS_NOAA20
+                VNP_CLDPROP_L2, VJ1_CLDPROP_L2
     
     OCO-2 data: coming soon...
 
@@ -54,8 +54,8 @@ _description_ = '=' * _width_ + '\n\n' + \
                 '=' * _width_ + '\n' + \
                 ' Satellite Data Product Download Tool '.center(_width_, '=') + '\n\n' + \
                 'Example Usage:\n'\
-                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir_out sat-data/ --verbose\n'\
-                'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir_out sat-data/\n'
+                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir sat-data/ --verbose\n'\
+                'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir sat-data/\n'
 
 
 # product tags
@@ -706,8 +706,8 @@ if __name__ == '__main__':
                         'VJ102MOD:  Level 1b 750m (NOAA-20) radiance product\n'\
                         'VNP03MOD:  Solar/viewing geometry 750m (S-NPP) product\n'\
                         'VJ103MOD:  Solar/viewing geometry 750m (NOAA-20) product\n'\
-                        'CLDPROP_L2_VIIRS_SNPP: Level 2 (S-NPP) cloud properties product\n'\
-                        'CLDPROP_L2_VIIRS_NOAA20: Level 2(NOAA-20) cloud properties product\n'\
+                        'VNP_CLDPROP_L2: Level 2 (S-NPP) cloud properties product\n'\
+                        'VJ1_CLDPROP_L2: Level 2 (NOAA-20) cloud properties product\n'\
                         '\nTo download multiple products at a time:\n'\
                         '--products MOD021KM VJ102MOD MYD06_l2\n \n')
 
