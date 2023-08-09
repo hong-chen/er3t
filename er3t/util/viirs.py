@@ -479,8 +479,8 @@ class viirs_cldprop_l2:
         
         # use the partially cloudy data to fill in potential missed clouds
         pcl     = np.zeros_like(cot, dtype=np.uint8)
-        logic_pcl = ((cot0_data < 0.0) | (cer0_data <= 0.0) | (cwp0_data <= 0.0)) &\
-                    ((cot1_data >= 0.0) & (cer1_data > 0.0) & (cwp1_data > 0.0))
+        logic_pcl = ((cot0_data < 0.0) | (cer0_data <= 0.0) | (cwp0_data < 0.0)) &\
+                    ((cot1_data >= 0.0) & (cer1_data > 0.0) & (cwp1_data >= 0.0))
         
         pcl[logic_pcl] = 1
         cot[logic_pcl] = cot1_data[logic_pcl]
@@ -488,7 +488,7 @@ class viirs_cldprop_l2:
         cwp[logic_pcl] = cwp1_data[logic_pcl]
         
         # make invalid pixels clear-sky
-        logic_invalid = (cot < 0.0) | (cer <= 0.0) | (cwp <= 0.0)
+        logic_invalid = (cot < 0.0) | (cer <= 0.0) | (cwp < 0.0)
         cot[logic_invalid]     = 0.0
         cer[logic_invalid]     = 1.0
         cwp[logic_invalid]     = 1.0
