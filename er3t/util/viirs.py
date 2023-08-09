@@ -421,7 +421,6 @@ class viirs_cldprop_l2:
         
         
         # TODO
-        # Support for cloud phase properties (byte format)
         # Support for cloud mask             (byte format)
         cot0 = f.groups['geophysical_data'].variables['Cloud_Optical_Thickness']
         cer0 = f.groups['geophysical_data'].variables['Cloud_Effective_Radius']
@@ -433,8 +432,6 @@ class viirs_cldprop_l2:
         cwp1 = f.groups['geophysical_data'].variables['Cloud_Water_Path_PCL']
         
         #-------------------------------------Uncertainties-------------------------------------#
-        ctp_uct0 = f.groups['geophysical_data'].variables['Cloud_Top_Pressure_Uncertainty']
-        cth_uct0 = f.groups['geophysical_data'].variables['Cloud_Top_Height_Uncertainty']
         cot_uct0 = f.groups['geophysical_data'].variables['Cloud_Optical_Thickness_Uncertainty']
         cer_uct0 = f.groups['geophysical_data'].variables['Cloud_Effective_Radius_Uncertainty']
         cwp_uct0 = f.groups['geophysical_data'].variables['Cloud_Water_Path_Uncertainty']
@@ -511,11 +508,9 @@ class viirs_cldprop_l2:
             self.data['cot']      = dict(name='Cloud optical thickness',             data=np.hstack((self.data['cot']['data'], cot)),                   units='N/A')
             self.data['cer']      = dict(name='Cloud effective radius',              data=np.hstack((self.data['cer']['data'], cer)),                   units='micron')
             self.data['cwp']      = dict(name='Cloud water path',                    data=np.hstack((self.data['cwp']['data'], cwp)),                   units='g/m^2')
-            self.data['ctp_uct']  = dict(name='Cloud top pressure uncertainty',      data=np.hstack((self.data['ctp_uct']['data'], ctp*ctp_uct/100.0)), units='mb')
-            self.data['cth_uct']  = dict(name='Cloud top height uncertainty',        data=np.hstack((self.data['cth_uct']['data'], cth*cth_uct/100.0)), units='m')
             self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_uct']['data'], cot*cot_uct/100.0)), units='N/A')
             self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_uct']['data'], cer*cer_uct/100.0)), units='micron')
-            self.data['cer_uct']  = dict(name='Cloud water path uncertainty',        data=np.hstack((self.data['cwp_uct']['data'], cwp*cwp_uct/100.0)), units='g/m^2')
+            self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=np.hstack((self.data['cwp_uct']['data'], cwp*cwp_uct/100.0)), units='g/m^2')
             self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
 
         else:
@@ -530,11 +525,9 @@ class viirs_cldprop_l2:
             self.data['cot']      = dict(name='Cloud optical thickness',             data=cot,               units='N/A')
             self.data['cer']      = dict(name='Cloud effective radius',              data=cer,               units='micron')
             self.data['cwp']      = dict(name='Cloud water path',                    data=cwp,               units='g/m^2')
-            self.data['ctp_uct']  = dict(name='Cloud top pressure uncertainty',      data=ctp*ctp_uct/100.0, units='mb')
-            self.data['cth_uct']  = dict(name='Cloud top height uncertainty',        data=cth*cth_uct/100.0, units='m')
             self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=cot*cot_uct/100.0, units='N/A')
             self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=cer*cer_uct/100.0, units='micron')
-            self.data['cer_uct']  = dict(name='Cloud water path uncertainty',        data=cwp*cwp_uct/100.0, units='g/m^2')
+            self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=cwp*cwp_uct/100.0, units='g/m^2')
             self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=pcl,               units='N/A')
             
 
