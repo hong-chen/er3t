@@ -453,8 +453,6 @@ class viirs_cldprop_l2:
         # Retrieve 1. ctp, 2. cth, 3. cot, 4. cer, 5. cwp, and select regional extent
         ctp           = get_data_nc(ctp0, nan=False)[logic_extent]
         cth           = get_data_nc(cth0, nan=False)[logic_extent]
-        ctp_uct       = get_data_nc(ctp_uct0)[logic_extent]
-        cth_uct       = get_data_nc(cth_uct0)[logic_extent]
         
         cot0_data     = get_data_nc(cot0)[logic_extent]
         cer0_data     = get_data_nc(cer0)[logic_extent]
@@ -488,7 +486,7 @@ class viirs_cldprop_l2:
         logic_invalid = (cot < 0.0) | (cer <= 0.0) | (cwp < 0.0)
         cot[logic_invalid]     = 0.0
         cer[logic_invalid]     = 1.0
-        cwp[logic_invalid]     = 1.0
+        cwp[logic_invalid]     = 0.0
         cot_uct[logic_invalid] = 0.0
         cer_uct[logic_invalid] = 0.0
         cwp_uct[logic_invalid] = 0.0
@@ -503,7 +501,7 @@ class viirs_cldprop_l2:
 
             self.data['lon']      = dict(name='Longitude',                           data=np.hstack((self.data['lon']['data'], lon)),                   units='degrees')
             self.data['lat']      = dict(name='Latitude',                            data=np.hstack((self.data['lat']['data'], lat)),                   units='degrees')
-            self.data['ctp']      = dict(name='Cloud phase optical proprties',                  data=np.hstack((self.data['ctp']['data'], ctp)),                   units='N/A')
+            self.data['ctp']      = dict(name='Cloud phase optical proprties',       data=np.hstack((self.data['ctp']['data'], ctp)),                   units='N/A')
             self.data['cth']      = dict(name='Cloud top height',                    data=np.hstack((self.data['cth']['data'], cth)),                   units='m')
             self.data['cot']      = dict(name='Cloud optical thickness',             data=np.hstack((self.data['cot']['data'], cot)),                   units='N/A')
             self.data['cer']      = dict(name='Cloud effective radius',              data=np.hstack((self.data['cer']['data'], cer)),                   units='micron')
