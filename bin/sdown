@@ -18,7 +18,7 @@ Now supports:
                 VNP02IMG,       VJ102IMG
                 VNP03MOD,       VJ103MOD
                 VNP02MOD,       VJ102MOD
-                CLDPROP_L2_VIIRS_SNPP, CLDPROP_L2_VIIRS_NOAA20
+                VNP_CLDPROP_L2, VJ1_CLDPROP_L2
     
     OCO-2 data: coming soon...
 
@@ -562,7 +562,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                 fnames[product_info['dict_key']] += p_fnames
 
         # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
-        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'L2_VIIRS_NOAA20', 'L2_VIIRS_SNPP')):
+        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2')):
             if nrt:
                 link_to_nrt = 'https://www.earthdata.nasa.gov/learn/find-data/near-real-time/near-real-time-versus-standard-products'
                 msg = 'Warning [sdown]: Downloading Near Real Time (NRT) products. \n'\
@@ -706,8 +706,8 @@ if __name__ == '__main__':
                         'VJ102MOD:  Level 1b 750m (NOAA-20) radiance product\n'\
                         'VNP03MOD:  Solar/viewing geometry 750m (S-NPP) product\n'\
                         'VJ103MOD:  Solar/viewing geometry 750m (NOAA-20) product\n'\
-                        'CLDPROP_L2_VIIRS_SNPP: Level 2 (S-NPP) cloud properties product\n'\
-                        'CLDPROP_L2_VIIRS_NOAA20: Level 2(NOAA-20) cloud properties product\n'\
+                        'VNP_CLDPROP_L2: Level 2 (S-NPP) cloud properties product\n'\
+                        'VJ1_CLDPROP_L2: Level 2 (NOAA-20) cloud properties product\n'\
                         '\nTo download multiple products at a time:\n'\
                         '--products MOD021KM VJ102MOD MYD06_l2\n \n')
 
