@@ -942,7 +942,7 @@ def get_nrt_satfile_tag(
 
     """
     Get filename tag/overpass information for Near Real Time (NRT) products.
-    Currently supported satellites/instruments are: 
+    Currently supported satellites/instruments are:
     Aqua/MODIS, Terra/MODIS, SNPP/VIIRS, NOAA-20/VIIRS.
 
     Input:
@@ -1402,7 +1402,7 @@ def download_lance_https(
         doy_str  = str(date.timetuple().tm_yday).zfill(3)
     else:
         doy_str = get_doy_tag(date, day_interval=day_interval)
-    
+
     #\----------------------------------------------------------------------------/#
     # VIIRS NRT is labeled differently from the standard product.
     # Therefore, the dataset_tag needs to be updated only for VIIRS NRT products.
@@ -1417,7 +1417,7 @@ def download_lance_https(
     fdir_data       = '%s/%s/%s/%s.csv' % (fdir_prefix, dataset_tag, year_str, doy_str)
     fdir_server     = server + fdir_data
     fdir_csv_server = server + fdir_csv_data
-    
+
     #\----------------------------------------------------------------------------/#
     # Use error handling to overcome occasional issues with LANCE DAAC servers
     #/----------------------------------------------------------------------------\#
@@ -1435,7 +1435,7 @@ def download_lance_https(
 
     content  = webpage.read().decode('utf-8')
     lines    = content.split('\n')
-    
+
     commands = []
     fnames_local = []
     for line in lines:

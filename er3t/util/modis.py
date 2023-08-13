@@ -121,7 +121,7 @@ class modis_l1b:
                 uct0_250  = f.select('EV_250_Aggr1km_RefSB_Uncert_Indexes')
                 raw0_500  = f.select('EV_500_Aggr1km_RefSB')
                 uct0_500  = f.select('EV_500_Aggr1km_RefSB_Uncert_Indexes')
-                
+
                 # save offsets and scaling factors (from both visible and near infrared bands)
                 rad_off = raw0_250.attributes()['radiance_offsets'] + raw0_500.attributes()['radiance_offsets']
                 rad_sca = raw0_250.attributes()['radiance_scales'] + raw0_500.attributes()['radiance_scales']
@@ -131,7 +131,7 @@ class modis_l1b:
                 cnt_sca = raw0_250.attributes()['corrected_counts_scales'] + raw0_500.attributes()['corrected_counts_scales']
                 uct_spc = uct0_250.attributes()['specified_uncertainty'] + uct0_500.attributes()['specified_uncertainty']
                 uct_sca = uct0_250.attributes()['scaling_factor'] + uct0_500.attributes()['scaling_factor']
-                
+
                 # combine visible and near infrared bands
                 raw0      = np.vstack([raw0_250, raw0_500])
                 uct0      = np.vstack([uct0_250, uct0_500])
@@ -146,11 +146,11 @@ class modis_l1b:
         else:
             sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
 
-        
+
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
         #/----------------------------------------------------------------------------\#
-        
+
         if do_region: # applied only for QKM (250m) or HKM (500m) products
             if self.extent is None:
 
@@ -172,7 +172,7 @@ class modis_l1b:
             logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
             lon       = lon[logic]
             lat       = lat[logic]
-            
+
             # save offsets and scaling factors
             rad_off = raw0.attributes()['radiance_offsets']
             rad_sca = raw0.attributes()['radiance_scales']

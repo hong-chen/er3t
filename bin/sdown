@@ -12,14 +12,14 @@ Now supports:
                 MOD06_L2, MYD06_L2
                 MOD35_L2, MYD35_L2
                 MCD43
-    
+
     VIIRS data: VNPRGB,         VJ1RGB
                 VNP03IMG,       VJ103IMG
                 VNP02IMG,       VJ102IMG
                 VNP03MOD,       VJ103MOD
                 VNP02MOD,       VJ102MOD
                 VNP_CLDPROP_L2, VJ1_CLDPROP_L2
-    
+
     OCO-2 data: coming soon...
 
 This is a functionality of EaR3T.
@@ -231,7 +231,7 @@ _sat_tags_support_ = {
                  'instrument': 'VIIRS',
                   'reference': 'VCST Team. 2016-09-01. VIIRS/NPP Imagery Resolution 6-Min L1B Swath 375m. Version 1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP02IMG.001',
                 },
-        
+
         'VJ102IMG': {
                 'dataset_tag': '5201/VJ102IMG',
                    'dict_key': 'vj1_02',
@@ -252,7 +252,7 @@ _sat_tags_support_ = {
                  'instrument': 'VIIRS',
                   'reference': 'VCST Team. 2021-07-12. VIIRS/NPP Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750 m . Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP02MOD.002.',
                 },
-        
+
         'VJ102MOD': {
                 'dataset_tag': '5201/VJ102MOD',
                    'dict_key': 'vj1_02',
@@ -272,7 +272,7 @@ _sat_tags_support_ = {
                  'instrument': 'VIIRS',
                   'reference': 'VCST Team. VIIRS/NPP Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP03IMGLL.001',
                 },
-        
+
         'VJ103IMG': {
                 'dataset_tag': '5201/VJ103IMG',
                    'dict_key': 'vj1_03',
@@ -282,7 +282,7 @@ _sat_tags_support_ = {
                  'instrument': 'VIIRS',
                   'reference': 'VCST Team. VIIRS/JPSS1 Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103IMG.021',
                 },
-            
+
         'VNP03MOD': {
                 'dataset_tag': '5200/VNP03MOD',
                    'dict_key': 'vnp_03',
@@ -292,7 +292,7 @@ _sat_tags_support_ = {
                  'instrument': 'VIIRS',
                   'reference': 'VCST Team. 2021-07-12. VIIRS/NPP Moderate Resolution Terrain-Corrected Geolocation L1 6-Min Swath 750 m. Version 2. LAADS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP03MOD.002',
                 },
-        
+
         'VJ103MOD': {
                 'dataset_tag': '5201/VJ103MOD',
                    'dict_key': 'vj1_03',
@@ -312,7 +312,7 @@ _sat_tags_support_ = {
                  'instrument': 'VIIRS',
                   'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
                 },
-        
+
         'VJ1RGB': {
                 'dataset_tag': '5201/VJ1RGB',
                    'dict_key': 'vj1_rgb',
@@ -427,7 +427,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = '\nError [sdown]: Provided date is in the future. Data will only be downloaded until today\'s date.' + \
                   '\n\nReceived date   : %s\nToday\'s date is : %s\n' % (single_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
             sys.exit(msg)
-        
+
         # check if products exist in those date ranges
         if len(modis_aqua) > 0 and single_dt < _aqua_modis_start_date:
             msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
@@ -436,7 +436,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         if len(modis_terra) > 0 and single_dt < _terra_modis_start_date:
             msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
-        
+
         if len(viirs_snpp) > 0 and single_dt < _snpp_viirs_start_date:
             msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
             sys.exit(msg)
@@ -478,7 +478,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                   '\n\nReceived end date: %s\nToday\'s date is : %s\n' % (end_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
             print(msg)
             end_dt = _today_dt
-        
+
 
         # check if products exist in those date ranges
         if len(modis_aqua) > 0 and start_dt < _aqua_modis_start_date:
@@ -500,7 +500,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         ########################################################################################################
         ########################################## End error handling ##########################################
         ########################################################################################################
-        
+
         # Passed checks, start download
         if verbose:
             print('\nMessage [sdown]: Data will be downloaded for dates beginning %s to %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y")))
@@ -578,7 +578,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                                                                 satellite=product_info['satellite'],
                                                                 instrument=product_info['instrument'],
                                                                 verbose=verbose)
-                
+
                 if verbose:
                     print('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
