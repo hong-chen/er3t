@@ -1006,7 +1006,7 @@ def get_nrt_satfile_tag(
     fnames_server = {
         'Aqua|MODIS'  : '%s/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt'           % (server, date.year, date_s),
         'Terra|MODIS' : '%s/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt'          % (server, date.year, date_s),
-        'NOAA20|VIIRS': '%s/archives/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
+        'NOAA20|VIIRS': '%s/archives/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
         'SNPP|VIIRS'  : '%s/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt'   % (server, date.year, date_s),
         }
     fname_server = fnames_server[vname]
