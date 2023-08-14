@@ -374,6 +374,7 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
     #/----------------------------------------------------------------------------\#
     points_query = np.transpose(np.vstack((x_out.ravel(), y_out.ravel())))
     dist_xy, indices_xy = tree_xy.query(points_query, workers=-1)
+    indices_xy[indices_xy>=data.size] = -1
 
     dist_out = dist_xy.reshape(x_out.shape)
     data_out = data[indices_xy].reshape(x_out.shape)
@@ -401,7 +402,7 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
         dist_limit = np.sqrt((dx*Ngrid_limit)**2+(dy*Ngrid_limit)**2)
         logic_out = (dist_out>dist_limit)
 
-    logic_out = logic_out | (indices_xy.reshape(data_out.shape)==indices_xy.size)
+    logic_out = logic_out | (indices_xy.reshape(data_out.shape)==indices_xy.size) | (indices_xy.reshape(data_out.shape)==-1)
     data_out[logic_out] = fill_value
     #\----------------------------------------------------------------------------/#
 
