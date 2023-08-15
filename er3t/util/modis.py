@@ -1,6 +1,5 @@
 import os
 import sys
-import datetime
 from io import StringIO
 import numpy as np
 import h5py
