@@ -4,5 +4,6 @@ from .modis import *
 from .ahi import *
 from .viirs import *
 from .oco2 import *
+from .daac import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
