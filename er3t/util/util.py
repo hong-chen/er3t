@@ -248,7 +248,7 @@ def get_data_nc(nc_dset, nan=True):
 
 
 
-def get_data_h4(hdf_dset):
+def get_data_h4(hdf_dset, nan=True):
 
     attrs = hdf_dset.attributes()
     data  = hdf_dset[:]
@@ -258,6 +258,10 @@ def get_data_h4(hdf_dset):
 
     if 'add_offset' in attrs:
         data = data + attrs['add_offset']
+
+    if '_FillValue' in attrs and nan:
+        _FillValue = np.float64(attrs['_FillValue'])
+        data[data == _FillValue] = np.nan
 
     return data
 
