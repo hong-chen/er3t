@@ -145,27 +145,27 @@ class satellite_download:
 
         self.fnames = {}
 
-        self.fnames['mod_rgb'] = [er3t.util.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.util.daac.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
-        filename_tags_03 = er3t.util.get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
+        filename_tags_03 = er3t.util.daac.get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
 
         for filename_tag in filename_tags_03:
-            fnames_03     = er3t.util.download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = er3t.util.download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = er3t.util.download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = er3t.util.daac.download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = er3t.util.daac.download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = er3t.util.daac.download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02
             self.fnames['mod_03'] += fnames_03
 
         # MODIS surface product
         self.fnames['mod_43'] = []
-        filename_tags_43 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
+        filename_tags_43 = er3t.util.modis.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_43:
-            fnames_43 = er3t.util.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_43 = er3t.util.daac.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_43'] += fnames_43
 
         # OCO2 std and met file
