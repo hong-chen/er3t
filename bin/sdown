@@ -43,7 +43,7 @@ import numpy as np
 import datetime
 
 
-import er3t.util
+import er3t.util.daac
 
 # get width for stdout statements
 _width_ = os.get_terminal_size().columns
@@ -541,7 +541,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
 
         # MODIS RGB imagery
         if 'RGB' in product.upper():
-            p_fnames = [er3t.util.download_worldview_rgb(date=date,
+            p_fnames = [er3t.util.daac.download_worldview_rgb(date=date,
                                                          extent=extent,
                                                          fdir_out=fdir_out,
                                                          satellite=product_info['satellite'],
@@ -551,9 +551,11 @@ def run(date, extent, fdir_out, nrt, products, verbose):
 
         # MODIS surface product
         elif '43' in product.upper():
-            filename_tags_43 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
+            from er3t.util import get_sinusoidal_grid_tag
+            
+            filename_tags_43 = get_sinusoidal_grid_tag(lon, lat)
             for filename_tag in filename_tags_43:
-                p_fnames = er3t.util.download_laads_https(date=date,
+                p_fnames = er3t.util.daac.download_laads_https(date=date,
                                                           dataset_tag=product_info['dataset_tag'],
                                                           filename_tag=filename_tag,
                                                           day_interval=1,
@@ -572,7 +574,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                       ' %s\n\n' % link_to_nrt
                 print(msg)
 
-                filename_tags_03 = er3t.util.get_nrt_satfile_tag(date=date,
+                filename_tags_03 = er3t.util.daac.get_nrt_satfile_tag(date=date,
                                                                 lon=lon,
                                                                 lat=lat,
                                                                 satellite=product_info['satellite'],
@@ -583,14 +585,14 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                     print('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
                 for filename_tag in filename_tags_03:
-                    p_fnames = er3t.util.download_lance_https(date=date,
+                    p_fnames = er3t.util.daac.download_lance_https(date=date,
                                                             dataset_tag=product_info['dataset_tag'],
                                                             filename_tag=filename_tag,
                                                             day_interval=1,
                                                             fdir_out=fdir_out,
                                                             verbose=verbose)
             else:
-                filename_tags_03 = er3t.util.get_satfile_tag(date=date,
+                filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                          lon=lon,
                                                          lat=lat,
                                                          satellite=product_info['satellite'],
@@ -600,7 +602,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                     print('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
                 for filename_tag in filename_tags_03:
-                    p_fnames = er3t.util.download_laads_https(date=date,
+                    p_fnames = er3t.util.daac.download_laads_https(date=date,
                                                             dataset_tag=product_info['dataset_tag'],
                                                             filename_tag=filename_tag,
                                                             day_interval=1,

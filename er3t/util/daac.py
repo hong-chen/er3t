@@ -573,9 +573,6 @@ def download_laads_https(
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
-            if os.path.exists(fname_local):
-                print("Skipping...{} already exists".format(fname_local))
-                continue
 
             if command_line_tool == 'curl':
                 command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
