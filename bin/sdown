@@ -551,8 +551,8 @@ def run(date, extent, fdir_out, nrt, products, verbose):
 
         # MODIS surface product
         elif '43' in product.upper():
-            from er3t.util import get_sinusoidal_grid_tag
-            
+            from er3t.util.modis import get_sinusoidal_grid_tag
+
             filename_tags_43 = get_sinusoidal_grid_tag(lon, lat)
             for filename_tag in filename_tags_43:
                 p_fnames = er3t.util.daac.download_laads_https(date=date,
