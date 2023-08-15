@@ -2,6 +2,10 @@
 Speed Contest
 =============
 
+.. warning::
+
+    Incomplete, under development ...
+
 One of our ambitious goals is to have 3D radiative transfer implemented into operational algorithms,
 where the biggest challenge resides in the expensive computational time and resource. Thus we encourage
 speed contests for not only providing computational reference, but also stimulating ideas to accelerate

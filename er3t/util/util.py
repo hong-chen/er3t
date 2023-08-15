@@ -370,6 +370,7 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
     #/----------------------------------------------------------------------------\#
     points_query = np.transpose(np.vstack((x_out.ravel(), y_out.ravel())))
     dist_xy, indices_xy = tree_xy.query(points_query, workers=-1)
+    indices_xy[indices_xy>=data.size] = -1
 
     dist_out = dist_xy.reshape(x_out.shape)
     data_out = data[indices_xy].reshape(x_out.shape)
@@ -397,7 +398,7 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
         dist_limit = np.sqrt((dx*Ngrid_limit)**2+(dy*Ngrid_limit)**2)
         logic_out = (dist_out>dist_limit)
 
-    logic_out = logic_out | (indices_xy.reshape(data_out.shape)==indices_xy.size)
+    logic_out = logic_out | (indices_xy.reshape(data_out.shape)==indices_xy.size) | (indices_xy.reshape(data_out.shape)==-1)
     data_out[logic_out] = fill_value
     #\----------------------------------------------------------------------------/#
 
@@ -440,6 +441,8 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
 
     if extent is None:
         extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+    else:
+        extent = np.float_(np.array(extent))
 
     if NxNy is None:
         xy = (extent[1]-extent[0])*(extent[3]-extent[2])
@@ -546,7 +549,7 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
 
 
 
-def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', fill_value=0.0, Ngrid_limit=1):
+def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', mode='min', fill_value=0.0, Ngrid_limit=1, R_earth=er3t.common.params['earth_radius']):
 
     """
     Grid irregular data into a regular xy grid by input 'extent' (westmost, eastmost, southmost, northmost)
@@ -584,22 +587,23 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     #/----------------------------------------------------------------------------\#
     if extent is None:
         extent = [np.nanmin(lon), np.nanmax(lon), np.nanmin(lat), np.nanmax(lat)]
+    else:
+        extent = np.float_(np.array(extent))
     #\----------------------------------------------------------------------------/#
 
 
     # dist_x and dist_y
     #/----------------------------------------------------------------------------\#
-    lon0 = [extent[0], extent[0]]
-    lat0 = [extent[2], extent[3]]
-    lon1 = [extent[1], extent[1]]
-    lat1 = [extent[2], extent[3]]
-    dist_x = cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    if mode == 'min':
+        dist_x = np.abs(extent[1]-extent[0])/180.0*np.pi*R_earth*np.cos(np.deg2rad(np.abs(extent[2:]).max()))*1000.0
+    elif mode == 'max':
+        dist_x = np.abs(extent[1]-extent[0])/180.0*np.pi*R_earth*np.cos(np.deg2rad(np.abs(extent[2:]).min()))*1000.0
 
     lon0 = [extent[0], extent[1]]
     lat0 = [extent[2], extent[2]]
     lon1 = [extent[0], extent[1]]
     lat1 = [extent[3], extent[3]]
-    dist_y = cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
     #\----------------------------------------------------------------------------/#
 
 

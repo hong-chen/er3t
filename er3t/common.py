@@ -1,16 +1,17 @@
 import os
 import sys
+import logging
 import datetime
 import importlib.util
 
 has_mcarats     = ('MCARATS_V010_EXE' in dict(os.environ))
-has_mpi         = False
 has_libradtran  = ('LIBRADTRAN_V2_DIR' in dict(os.environ))
 has_token       = ('EARTHDATA_TOKEN' in dict(os.environ))
 has_netcdf4     = (importlib.util.find_spec('netCDF4') is not None)
 has_hdf4        = (importlib.util.find_spec('pyhdf') is not None)
 has_hdf5        = (importlib.util.find_spec('h5py') is not None)
 has_xarray      = (importlib.util.find_spec('xarray') is not None)
+has_mpi         = False
 
 fdir_er3t        = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
 
