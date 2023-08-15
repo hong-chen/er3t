@@ -60,6 +60,7 @@ def get_satfile_tag(
         raise ImportError(msg)
     #\----------------------------------------------------------------------------/#
 
+    from er3t.common import fdir_data_tmp
 
     # check satellite and instrument
     #/----------------------------------------------------------------------------\#
@@ -118,7 +119,7 @@ def get_satfile_tag(
     #   1) <tmp-data/satfile> directory under er3t main directory
     #   2) current directory;
     #/--------------------------------------------------------------\#
-    fdir_satfile_tmp = '%s/satfile' % er3t.common.fdir_data_tmp
+    fdir_satfile_tmp = '%s/satfile' % fdir_data_tmp
     if not os.path.exists(fdir_satfile_tmp):
         os.makedirs(fdir_satfile_tmp)
 
@@ -296,7 +297,8 @@ def get_nrt_satfile_tag(
         msg = '\nError [get_satfile_tag]: Please install <matplotlib> to proceed.'
         raise ImportError(msg)
     #\----------------------------------------------------------------------------/#
-
+    
+    from er3t.common import fdir_data_tmp
 
     # check satellite and instrument
     #/----------------------------------------------------------------------------\#
@@ -355,7 +357,7 @@ def get_nrt_satfile_tag(
     #   1) <tmp-data/satfile> directory under er3t main directory
     #   2) current directory;
     #/--------------------------------------------------------------\#
-    fdir_satfile_tmp = '%s/satfile' % er3t.common.fdir_data_tmp
+    fdir_satfile_tmp = '%s/satfile' % fdir_data_tmp
     if not os.path.exists(fdir_satfile_tmp):
         os.makedirs(fdir_satfile_tmp)
 
