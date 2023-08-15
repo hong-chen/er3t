@@ -4,8 +4,6 @@ import datetime
 import numpy as np
 import warnings
 
-import er3t
-
 
 
 
@@ -241,7 +239,7 @@ def get_data_nc(nc_dset, nan=True):
     nc_dset.set_auto_maskandscale(True)
     data  = nc_dset[:]
 
-    if nan == True:
+    if nan:
         data.filled(fill_value=np.nan)
 
     return data
@@ -595,13 +593,13 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     lat0 = [extent[2], extent[3]]
     lon1 = [extent[1], extent[1]]
     lat1 = [extent[2], extent[3]]
-    dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    dist_x = cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
 
     lon0 = [extent[0], extent[1]]
     lat0 = [extent[2], extent[2]]
     lon1 = [extent[0], extent[1]]
     lat1 = [extent[3], extent[3]]
-    dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    dist_y = cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
     #\----------------------------------------------------------------------------/#
 
 
@@ -635,7 +633,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     lon_1d = np.repeat(extent[0], Ny)
     lat_1d = np.repeat(extent[2], Ny)
     for i in range(1, Ny):
-        lon_1d[i], lat_1d[i] = er3t.util.cal_geodesic_lonlat(lon_1d[i-1], lat_1d[i-1], dy, 0.0)
+        lon_1d[i], lat_1d[i] = cal_geodesic_lonlat(lon_1d[i-1], lat_1d[i-1], dy, 0.0)
     #\----------------------------------------------------------------------------/#
 
 
@@ -646,7 +644,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     lon_2d[0, :] = lon_1d
     lat_2d[0, :] = lat_1d
     for i in range(1, Nx):
-        lon_2d[i, :], lat_2d[i, :] = er3t.util.cal_geodesic_lonlat(lon_2d[i-1, :], lat_2d[i-1, :], dx, 90.0)
+        lon_2d[i, :], lat_2d[i, :] = cal_geodesic_lonlat(lon_2d[i-1, :], lat_2d[i-1, :], dx, 90.0)
     #\----------------------------------------------------------------------------/#
 
 
