@@ -1,17 +1,10 @@
 import os
-import sys
-import datetime
-from io import StringIO
 import numpy as np
 import h5py
-from scipy import interpolate
-import shutil
-from http.cookiejar import CookieJar
-import urllib.request
-import requests
+
 
 import er3t.common
-from er3t.util import check_equal, get_data_nc
+from er3t.util import get_data_nc
 from er3t.util.modis import cal_sinusoidal_grid
 
 
