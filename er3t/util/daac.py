@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import datetime
 import time
 import requests
 import urllib.request
@@ -297,7 +298,7 @@ def get_nrt_satfile_tag(
         msg = '\nError [get_satfile_tag]: Please install <matplotlib> to proceed.'
         raise ImportError(msg)
     #\----------------------------------------------------------------------------/#
-    
+
     from er3t.common import fdir_data_tmp
 
     # check satellite and instrument
@@ -880,6 +881,7 @@ def download_worldview_rgb(
         instrument='modis',
         satellite='aqua',
         wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi',
+        layer_name0=None,
         proj=None,
         coastline=False,
         fmt='png',
@@ -909,14 +911,33 @@ def download_worldview_rgb(
     if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
         instrument = instrument.upper()
         satellite  = satellite.lower().title()
+        sat_kind = 'polar-orbiting'
     elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp']):
         instrument = instrument.upper()
         satellite  = satellite.upper()
+        sat_kind = 'polar-orbiting'
+    elif instrument.lower() == 'abi' and (satellite.lower() in ['goes-east', 'goes-west']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper().replace('WEST', 'West').replace('EAST', 'East')
+        sat_kind = 'geostationary'
     else:
         msg = 'Error [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
         raise NameError(msg)
 
-    date_s = date.strftime('%Y-%m-%d')
+    if sat_kind == 'polar-orbiting':
+        date_s = date.strftime('%Y-%m-%d')
+        if layer_name0 is None:
+            layer_name0='CorrectedReflectance_TrueColor',
+        layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
+    elif sat_kind == 'geostationary':
+        date += datetime.timedelta(minutes=5)
+        date -= datetime.timedelta(minutes=date.minute % 10,
+                                   seconds=0)
+        date_s = date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        if layer_name0 is None:
+            layer_name0='GeoColor'
+        layer_name = '%s_%s_%s' % (satellite, instrument, layer_name0)
+
     fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
     fname  = os.path.abspath(fname)
 
@@ -940,21 +961,24 @@ def download_worldview_rgb(
         if not os.path.exists(fdir_out):
             os.makedirs(fdir_out)
 
-        layer_name = '%s_%s_CorrectedReflectance_TrueColor' % (instrument, satellite)
-
         if proj is None:
             proj=ccrs.PlateCarree()
 
-        fig = plt.figure(figsize=(12, 6))
-        ax1 = fig.add_subplot(111, projection=proj)
-        ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
-        if coastline:
-            ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
-        ax1.set_extent(extent, crs=ccrs.PlateCarree())
-        ax1.outline_patch.set_visible(False)
-        ax1.axis('off')
-        plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
-        plt.close(fig)
+        try:
+            fig = plt.figure(figsize=(12, 6))
+            ax1 = fig.add_subplot(111, projection=proj)
+            ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
+            if coastline:
+                ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
+            ax1.set_extent(extent, crs=ccrs.PlateCarree())
+            # ax1.outline_patch.set_visible(False) # changed according to DeprecationWarning
+            ax1.spines['geo'].set_visible(False)
+            ax1.axis('off')
+            plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.close(fig)
+        except:
+            msg = '\nError [download_wordview_rgb]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
+            warnings.warn(msg)
 
     if fmt == 'png':
 
@@ -1045,7 +1069,7 @@ def download_oco2_https(
     doy_str  = str(dtime.timetuple().tm_yday).zfill(3)
 
     if dataset_tag in ['OCO2_L2_Met.10', 'OCO2_L2_Met.10r', 'OCO2_L2_Standard.10', 'OCO2_L2_Standard.10r',
-                       'OCO2_L1B_Science.10', 'OCO2_L1B_Science.10r', 'OCO2_L1B_Calibration.10', 'OCO2_L1B_Calibration.10r', 
+                       'OCO2_L1B_Science.10', 'OCO2_L1B_Science.10r', 'OCO2_L1B_Calibration.10', 'OCO2_L1B_Calibration.10r',
                        'OCO2_L2_CO2Prior.10r', 'OCO2_L2_CO2Prior.10', 'OCO2_L2_IMAPDOAS.10r', 'OCO2_L2_IMAPDOAS.10',
                        'OCO2_L2_Diagnostic.10r', 'OCO2_L2_Diagnostic.10']:
         fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
@@ -1107,10 +1131,10 @@ def download_oco2_https(
     else:
 
         for i, command in enumerate(commands):
-            
+
             if verbose:
                 print('Message [download_oco2_https]: Downloading %s ...' % fnames_local[i])
-            
+
             os.system(command)
 
             fname_local = fnames_local[i]
@@ -1146,4 +1170,9 @@ def download_oco2_https(
                 print('Warning [download_oco2_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
 
     return fnames_local
-#\---------------------------------------------------------------------------/
+
+
+
+if __name__ == '__main__':
+
+    pass
