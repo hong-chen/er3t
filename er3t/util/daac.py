@@ -885,7 +885,8 @@ def download_worldview_rgb(
         proj=None,
         coastline=False,
         fmt='png',
-        run=True
+        dpi=300,
+        run=True,
         ):
 
     """
@@ -974,7 +975,7 @@ def download_worldview_rgb(
             # ax1.outline_patch.set_visible(False) # changed according to DeprecationWarning
             ax1.spines['geo'].set_visible(False)
             ax1.axis('off')
-            plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=dpi)
             plt.close(fig)
         except:
             msg = '\nError [download_wordview_rgb]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
