@@ -154,7 +154,7 @@ def get_satfile_tag(
             content = r.content.decode('utf-8')
         else:
             msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
-            raise OSError(msg)
+            warnings.warn(msg)
         #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -180,7 +180,8 @@ def get_satfile_tag(
     #/----------------------------------------------------------------------------\#
     try:
         data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
-    except ValueError:
+    # except ValueError or UnboundLocalError:
+    except:
 
         msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
         print(msg)
@@ -928,18 +929,33 @@ def download_worldview_rgb(
     if sat_kind == 'polar-orbiting':
         date_s = date.strftime('%Y-%m-%d')
         if layer_name0 is None:
-            layer_name0='CorrectedReflectance_TrueColor',
+            layer_name0='CorrectedReflectance_TrueColor'
         layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
+
+        try:
+            lon__ = np.arange(extent[0], extent[1], 500.0/111000.0)
+            lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
+            lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
+
+            satfile_tag = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+            date0 = datetime.datetime.strptime(satfile_tag, 'A%Y%j.%H%M')
+            date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+            fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        except:
+            fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+
     elif sat_kind == 'geostationary':
         date += datetime.timedelta(minutes=5)
         date -= datetime.timedelta(minutes=date.minute % 10,
-                                   seconds=0)
+                                   seconds=date.second)
         date_s = date.strftime('%Y-%m-%dT%H:%M:%SZ')
         if layer_name0 is None:
             layer_name0='GeoColor'
         layer_name = '%s_%s_%s' % (satellite, instrument, layer_name0)
 
-    fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+
     fname  = os.path.abspath(fname)
 
     if run:
@@ -966,6 +982,7 @@ def download_worldview_rgb(
             proj=ccrs.PlateCarree()
 
         try:
+        # if True:
             fig = plt.figure(figsize=(12, 6))
             ax1 = fig.add_subplot(111, projection=proj)
             ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
