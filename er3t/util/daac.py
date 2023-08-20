@@ -393,7 +393,7 @@ def get_nrt_satfile_tag(
             content = r.content.decode('utf-8')
         else:
             msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
-            raise OSError(msg)
+            warnings.warn(msg)
         #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -419,7 +419,8 @@ def get_nrt_satfile_tag(
     #/----------------------------------------------------------------------------\#
     try:
         data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
-    except ValueError:
+    # except ValueError:
+    except:
 
         msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
         print(msg)
@@ -937,7 +938,11 @@ def download_worldview_rgb(
             lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
-            satfile_tag = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+            try:
+                satfile_tag = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+            except:
+                satfile_tag = get_nrt_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+
             date0 = datetime.datetime.strptime(satfile_tag, 'A%Y%j.%H%M')
             date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
 
