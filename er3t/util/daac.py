@@ -941,9 +941,9 @@ def download_worldview_rgb(
             date0 = datetime.datetime.strptime(satfile_tag, 'A%Y%j.%H%M')
             date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-            fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
         except:
-            fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
 
     elif sat_kind == 'geostationary':
         date += datetime.timedelta(minutes=5)
@@ -954,7 +954,7 @@ def download_worldview_rgb(
             layer_name0='GeoColor'
         layer_name = '%s_%s_%s' % (satellite, instrument, layer_name0)
 
-        fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
 
     fname  = os.path.abspath(fname)
 
