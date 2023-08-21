@@ -358,7 +358,9 @@ class viirs_l1b:
             ref = np.zeros((len(self.bands), 
                            f.groups['observation_data'].variables[self.bands[0]].shape[0], 
                            f.groups['observation_data'].variables[self.bands[0]].shape[1]))
-            
+        
+        wvl = np.zeros(len(self.bands), dtype='uint16')
+
         # Calculate 1. radiance, 2. reflectance from the raw data
         #\-----------------------------------------------------------------------------/
         for i in range(len(self.bands)):
@@ -378,22 +380,22 @@ class viirs_l1b:
             if nc_dset.getncattr('radiance_units').endswith('micrometer'):
                 rad0 /= 1000. # from <per micron> to <per nm>
             
-            ref[i] = (data * nc_dset.getncattr('scale_factor')) + nc_dset.getncattr('add_offset')
             rad[i] = rad0
+            ref[i] = (data * nc_dset.getncattr('scale_factor')) + nc_dset.getncattr('add_offset')
+            wvl[i] = VIIRS_ALL_BANDS[self.bands[i]]
         
         f.close()
         #\-----------------------------------------------------------------------------/
 
         if hasattr(self, 'data'):
             
-            self.data['wvl'] = dict(name='Wavelengths', data=self.bands,                                 units='nm')
             self.data['rad'] = dict(name='Radiance'   , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
 
         else:
 
             self.data = {}
-            self.data['wvl'] = dict(name='Wavelengths', data=self.bands, units='nm')
+            self.data['wvl'] = dict(name='Wavelengths', data=wvl       , units='nm')
             self.data['rad'] = dict(name='Radiance'   , data=rad       , units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance', data=ref       , units='N/A')
 
