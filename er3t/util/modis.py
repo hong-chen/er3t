@@ -15,29 +15,29 @@ __all__ = ['modis_l1b', 'modis_l2', 'modis_35_l2', 'modis_03', 'modis_04', 'modi
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag']
 
 
-MODIS_L1B_1KM_BANDS = {    
-                        0: 650, 
-                        1: 860,
-                        2: 470, 
-                        3: 555, 
-                        4: 1240, 
-                        5: 1640, 
-                        6: 2130
+MODIS_L1B_1KM_BANDS = {
+                        1: 650,
+                        2: 860,
+                        3: 470,
+                        4: 555,
+                        5: 1240,
+                        6: 1640,
+                        7: 2130
                       }
 
 
-MODIS_L1B_QKM_BANDS = {    
-                        0: 650, 
-                        1: 860,
+MODIS_L1B_QKM_BANDS = {
+                        1: 650,
+                        2: 860,
                       }
 
 
-MODIS_L1B_HKM_BANDS = {    
-                        2: 470, 
-                        3: 555, 
-                        4: 1240, 
-                        5: 1640, 
-                        6: 2130
+MODIS_L1B_HKM_BANDS = {
+                        3: 470,
+                        4: 555,
+                        5: 1240,
+                        6: 1640,
+                        7: 2130
                       }
 
 # reader for MODIS (Moderate Resolution Imaging Spectroradiometer)
@@ -87,29 +87,29 @@ class modis_l1b:
             self.resolution = 0.25
             if bands is None:
                 self.bands = list(MODIS_L1B_QKM_BANDS.keys())
-            
+
             elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_QKM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_QKM_BANDS.keys())
                 raise KeyError(msg)
-                                
+
         elif 'hkm' in filename:
             self.resolution = 0.5
             if bands is None:
                 self.bands = list(MODIS_L1B_HKM_BANDS.keys())
-            
+
             elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_HKM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_BANDS.keys())
                 raise KeyError(msg)
-                
+
         elif '1km' in filename:
             self.resolution = 1.0
             if bands is None:
                 self.bands = list(MODIS_L1B_1KM_BANDS.keys())
-            
+
             elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_1KM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_1KM_BANDS.keys())
                 raise KeyError(msg)
-                
+
         else:
             sys.exit('Error [modis_l1b]: Currently, only QKM (0.25km), HKM (0.5km), and 1KM products are supported.')
 
@@ -243,7 +243,7 @@ class modis_l1b:
         # Calculate uncertainty
         uct     = uct0[:][:, logic]
         uct_pct = np.zeros(uct.shape, dtype=np.float64)
-        
+
         wvl = np.zeros(len(self.bands), dtype='uint16')
 
         for i in range(len(self.bands)):
@@ -254,7 +254,7 @@ class modis_l1b:
             cnt[i, ...]       = (raw[i, ...] - cnt_off[i]) * cnt_sca[i]
             uct_pct[i, ...]   = uct_spc[i] * np.exp(uct[i] / uct_sca[i]) # convert to percentage
             wvl[i]            = MODIS_L1B_1KM_BANDS[self.bands[i]]
-            
+
         f.end()
         # -------------------------------------------------------------------------------------------------
 
