@@ -77,7 +77,7 @@ class modis_l1b:
                  resolution= None, \
                  verbose   = False):
 
-        self.fnames     = fnames      # file name of the hdf files
+        self.fnames     = fnames      #  Python list of the file path of the original HDF4 files
         self.f03        = f03         # geolocation class object created using the `modis_03` reader
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.bands      = bands       # Python list of bands that need to be extracted
