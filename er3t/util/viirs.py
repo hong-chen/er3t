@@ -12,6 +12,50 @@ from er3t.util.modis import cal_sinusoidal_grid
 __all__ = ['viirs_03', 'viirs_l1b', 'viirs_09a1', 'viirs_43ma3', 'viirs_43ma4']
 
 
+VIIRS_ALL_BANDS = {
+                    'I01': 640,
+                    'I02': 865,
+                    'I03': 1610,
+                    'I04': 3740,
+                    'I05': 11450,
+                    'M01': 415,
+                    'M02': 445,
+                    'M03': 490,
+                    'M04': 555,
+                    'M05': 673,
+                    'M06': 746,
+                    'M07': 865,
+                    'M08': 1240,
+                    'M09': 1378,
+                    'M10': 1610,
+                    'M11': 2250,
+                    'M12': 3700,
+                    'M13': 4050,
+                    'M14': 8550,
+                    'M15': 12013
+                    }
+
+
+VIIRS_L1B_MOD_BANDS = {
+                    'M01': 415,
+                    'M02': 445,
+                    'M03': 490,
+                    'M04': 555,
+                    'M05': 673,
+                    'M06': 746,
+                    'M07': 865,
+                    'M08': 1240,
+                    'M10': 1610,
+                    'M11': 2250
+                    }
+
+VIIRS_L1B_IMG_BANDS = {
+                    'I01': 640,
+                    'I02': 865,
+                    'I03': 1610
+                    }
+
+
 # reader for VIIRS (Visible Infrared Imaging Radiometer Suite)
 #/---------------------------------------------------------------------------\
 
@@ -207,90 +251,85 @@ class viirs_03:
 class viirs_l1b:
 
     """
-    Read VIIRS Level 1B file, e.g., VNP02MOD, into an object <viirs_l1b>
+    Read VIIRS Level 1b file, e.g., VNP02MOD, into an object <viirs_l1b>
 
     Input:
         fnames=     : keyword argument, default=None, Python list of the file path of the original netCDF files
-        overwrite=  : keyword argument, default=False, whether to overwrite or not
-        extent=     : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
-        resolution= : keyword argument, default=None, data spatial resolution in km, can be detected from filename
+        f03=        : keyword argument, default=None, class object obtained from `viirs_03` reader for geolocation
         verbose=    : keyword argument, default=False, verbose tag
 
     Output:
         self.data
-                ['lon']
-                ['lat']
+                ['wvl']
                 ['rad']
                 ['ref']
-                ['cnt']
     """
 
 
-    ID = 'VIIRS Level 1B Calibrated Radiance'
+    ID = 'VIIRS Level 1b Calibrated Radiance'
 
 
     def __init__(self, \
-                 fnames    = None,  \
-                 f03       = None,  \
-                 band      = 'M04', \
-                 resolution= None,  \
-                 overwrite = False, \
-                 quiet     = True,  \
-                 verbose   = False):
+                 fnames     = None,  \
+                 f03        = None,  \
+                 extent     = None,  \
+                 bands      = None,  \
+                 verbose    = False):
 
-        self.fnames     = fnames      # file name of the netCDF files
-        self.f03        = f03         # geolocation file
-        self.band       = band.upper()# band
-        self.verbose    = verbose     # verbose tag
-        self.quiet      = quiet       # quiet tag
+        self.fnames     = fnames      # Python list of netCDF filenames
+        self.f03        = f03         # geolocation class object created using the `viirs_03` reader
+        self.bands      = bands       # Python list of bands to extract information
+            
+        
+        filename = os.path.basename(fnames[0]).lower()
+        if '02img' in filename:
+            self.resolution = 0.375
+            if bands is None:
+                self.bands = list(VIIRS_L1B_IMG_BANDS.keys())
+                if verbose:
+                    msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_IMG_BANDS
+            
+            elif (bands is not None) and (set(bands).issubset(set(VIIRS_L1B_IMG_BANDS.keys()))):
+                msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_IMG_BANDS.keys())
+                raise KeyError(msg)
 
-        wvls = {
-                'I01': 640,
-                'I02': 865,
-                'I03': 1610,
-                'M01': 415,
-                'M02': 445,
-                'M03': 490,
-                'M04': 555,
-                'M05': 673,
-                'M07': 865,
-                'M08': 1240,
-                'M10': 1610,
-                'M11': 2250,
-                }
-        self.wvl = wvls[self.band]
-
-        if resolution is None:
-            filename = os.path.basename(fnames[0]).lower()
-            if '02img' in filename:
-                self.resolution = 0.375
-            elif ('02mod' in filename) or ('02dnb' in filename):
-                self.resolution = 0.75
-            else:
-                msg = 'Error [viirs_l1b]: Resolution (in km) is not defined.'
-                raise ValueError(msg)
+        elif ('02mod' in filename) or ('02dnb' in filename):
+            self.resolution = 0.75
+            if bands is None:
+                self.bands = list(VIIRS_L1B_MOD_BANDS.keys())
+                if verbose:
+                    msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_MOD_BANDS
+            
+            elif (bands is not None) and (set(bands).issubset(set(VIIRS_L1B_MOD_BANDS.keys()))):
+                msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_MOD_BANDS.keys())
+                raise KeyError(msg)  
         else:
+            msg = 'Error [viirs_l1b]: Currently, only IMG (0.375km) and MOD (0.75km) products are supported.'
+            raise ValueError(msg)
 
-            if resolution not in [0.375, 0.75]:
-                msg = 'Error [viirs_l1b]: Resolution of %f km is invalid.' % resolution
-                raise ValueError(msg)
+            
+        if extent is not None and verbose:
+            msg = '\nMessage [viirs_l1b]: The `extent` argument will be ignored as it is only available for consistency.\n' \
+                  'If only region of interest is needed, please use `viirs_03` reader and pass the class object here via `f03=`.\n'
+            print(msg)
+            
+        if f03 is None and verbose:
+            msg = '\nMessage [viirs_l1b]: Geolocation data not provided. File will be read without geolocation.\n'
+            print(msg)
 
-            self.resolution = resolution
-
-        for fname in self.fnames:
-            self.read(fname, self.band)
-
-
-    def read(self, fname, band):
+        for i in range(len(fnames)):
+            self.read(fnames[i])
+                
+            
+    
+    def read(self, fname):
 
         """
-        Read radiance/reflectance/corrected counts from the VIIRS L1B data
+        Read radiance and reflectance from the VIIRS L1b data
         self.data
-            ['lon']
-            ['lat']
+            ['wvl']
             ['rad']
             ['ref']
-            ['cnt']
         """
 
         try:
@@ -298,49 +337,65 @@ class viirs_l1b:
         except ImportError:
             msg = 'Error [viirs_l1b]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
+        
+        
+        f   = Dataset(fname, 'r')
 
-        f = Dataset(fname, 'r')
-
-        raw0 = f.groups['observation_data'].variables[band]
-        raw0.set_auto_scale(False)
-
-        # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
+        # Calculate 1. radiance, 2. reflectance from the raw data
         #/-----------------------------------------------------------------------------\
+        
         if self.f03 is not None:
-            raw = raw0[:][self.f03.logic[get_fname_pattern(fname)]['mask']]
+            mask = self.f03.logic[get_fname_pattern(fname)]['mask']
+            rad  = np.zeros((len(self.bands), mask[mask==True].size))
+            ref  = np.zeros((len(self.bands), mask[mask==True].size))
+        
         else:
-            raw = raw0[:]
+            rad = np.zeros((len(self.bands), 
+                           f.groups['observation_data'].variables[self.bands[0]].shape[0], 
+                           f.groups['observation_data'].variables[self.bands[0]].shape[1]))
+            ref = np.zeros((len(self.bands), 
+                           f.groups['observation_data'].variables[self.bands[0]].shape[0], 
+                           f.groups['observation_data'].variables[self.bands[0]].shape[1]))
+        
+        wvl = np.zeros(len(self.bands), dtype='uint16')
 
-        rad = np.zeros(raw.shape, dtype=np.float64)
-        ref = np.zeros(raw.shape, dtype=np.float64)
+        # Calculate 1. radiance, 2. reflectance from the raw data
+        #\-----------------------------------------------------------------------------/
+        for i in range(len(self.bands)):
+            
+            nc_dset = f.groups['observation_data'].variables[self.bands[i]]
+            nc_dset.set_auto_scale(False)
+            data = nc_dset[:]
+            if self.f03 is not None:
+                data = data[mask]
+            
+            # convert to float to use nan filling
+            data = data.astype('float')
+            data.filled(fill_value=np.nan)
 
-        rad = raw*raw0.getncattr('radiance_scale_factor') + raw0.getncattr('radiance_add_offset')
-        rad /= 1000.0 # from <per micron> to <per nm>
-        rad.filled(fill_value=np.nan)
-        ref = raw*raw0.getncattr('scale_factor') + raw0.getncattr('add_offset')
-
+            # apply scaling and offset 
+            rad0 = (data * nc_dset.getncattr('radiance_scale_factor')) + nc_dset.getncattr('radiance_add_offset')
+            if nc_dset.getncattr('radiance_units').endswith('micrometer'):
+                rad0 /= 1000. # from <per micron> to <per nm>
+            
+            rad[i] = rad0
+            ref[i] = (data * nc_dset.getncattr('scale_factor')) + nc_dset.getncattr('add_offset')
+            wvl[i] = VIIRS_ALL_BANDS[self.bands[i]]
+        
         f.close()
         #\-----------------------------------------------------------------------------/
 
         if hasattr(self, 'data'):
-
+            
             self.data['rad'] = dict(name='Radiance'   , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
-
-            if self.f03 is not None:
-                for vname in self.f03.data.keys():
-                    self.data[vname] = self.f03.data[vname]
 
         else:
 
             self.data = {}
-            self.data['wvl'] = dict(name='Wavelength' , data=self.wvl, units='nm')
-            self.data['rad'] = dict(name='Radiance'   , data=rad     , units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance', data=ref     , units='N/A')
-
-            if self.f03 is not None:
-                for vname in self.f03.data.keys():
-                    self.data[vname] = self.f03.data[vname]
+            self.data['wvl'] = dict(name='Wavelengths', data=wvl       , units='nm')
+            self.data['rad'] = dict(name='Radiance'   , data=rad       , units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance', data=ref       , units='N/A')
 
 
     def save_h5(self, fname):
@@ -350,8 +405,6 @@ class viirs_l1b:
             f[key] = self.data[key]['data']
         f.close()
 
-        if not self.quiet:
-            print('Message [viirs_l1b]: File <%s> is created.' % fname)
 
 
 

@@ -6,6 +6,8 @@ import warnings
 
 import er3t.common
 
+import er3t.common
+EARTH_RADIUS = er3t.common.params['earth_radius']
 
 
 __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
@@ -549,7 +551,7 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
 
 
 
-def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', mode='min', fill_value=0.0, Ngrid_limit=1, R_earth=er3t.common.params['earth_radius']):
+def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', mode='min', fill_value=0.0, Ngrid_limit=1, R_earth=EARTH_RADIUS):
 
     """
     Grid irregular data into a regular xy grid by input 'extent' (westmost, eastmost, southmost, northmost)
