@@ -15,6 +15,31 @@ __all__ = ['modis_l1b', 'modis_l2', 'modis_35_l2', 'modis_03', 'modis_04', 'modi
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag']
 
 
+MODIS_L1B_1KM_BANDS = {    
+                        0: 650, 
+                        1: 860,
+                        2: 470, 
+                        3: 555, 
+                        4: 1240, 
+                        5: 1640, 
+                        6: 2130
+                      }
+
+
+MODIS_L1B_QKM_BANDS = {    
+                        0: 650, 
+                        1: 860,
+                      }
+
+
+MODIS_L1B_HKM_BANDS = {    
+                        2: 470, 
+                        3: 555, 
+                        4: 1240, 
+                        5: 1640, 
+                        6: 2130
+                      }
+
 # reader for MODIS (Moderate Resolution Imaging Spectroradiometer)
 #/-----------------------------------------------------------------------------\
 
@@ -33,25 +58,29 @@ class modis_l1b:
         self.data
                 ['lon']
                 ['lat']
+                ['wvl']
                 ['rad']
                 ['ref']
                 ['cnt']
+                ['uct']
     """
 
 
-    ID = 'MODIS Level 1B Calibrated Radiance'
+    ID = 'MODIS Level 1b Calibrated Radiance'
 
 
     def __init__(self, \
                  fnames    = None, \
                  f03       = None, \
                  extent    = None, \
+                 bands     = None, \
                  resolution= None, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the hdf files
         self.f03        = f03         # geolocation class object created using the `modis_03` reader
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
+        self.bands      = bands       # Python list of bands that need to be extracted
         self.verbose    = verbose     # verbose tag
 
 
@@ -59,12 +88,30 @@ class modis_l1b:
             filename = os.path.basename(fnames[0]).lower()
             if 'qkm' in filename:
                 self.resolution = 0.25
+                if bands is None:
+                    self.bands = list(MODIS_L1B_QKM_BANDS.keys())
+                elif bands is not None and bands not in list(MODIS_L1B_QKM_BANDS.keys()):
+                    msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_QKM_BANDS.keys())
+                    raise KeyError(msg)
+                                    
             elif 'hkm' in filename:
                 self.resolution = 0.5
+                if bands is None:
+                    self.bands = list(MODIS_L1B_HKM_BANDS.keys())
+                elif bands is not None and bands not in list(MODIS_L1B_HKM_BANDS.keys()):
+                    msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_BANDS.keys())
+                    raise KeyError(msg)
+                    
             elif '1km' in filename:
                 self.resolution = 1.0
+                if bands is None:
+                    self.bands = list(MODIS_L1B_1KM_BANDS.keys())
+                elif bands is not None and bands not in list(MODIS_L1B_1KM_BANDS.keys()):
+                    msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_1KM_BANDS.keys())
+                    raise KeyError(msg)
+                    
             else:
-                sys.exit('Error   [modis_l1b]: Resolution (in km) is not defined.')
+                sys.exit('Error [modis_l1b]: Resolution (in km) is not defined.')
         else:
             self.resolution = resolution
 
@@ -77,12 +124,13 @@ class modis_l1b:
         """
         Read radiance/reflectance/corrected counts along with their uncertainties from the MODIS L1B data
         self.data
-            ['lon']
-            ['lat']
-            ['rad']
-            ['ref']
-            ['cnt']
-            ['uct']
+                ['lon']
+                ['lat']
+                ['wvl']
+                ['rad']
+                ['ref']
+                ['cnt']
+                ['uct']
         """
 
         try:
@@ -100,7 +148,7 @@ class modis_l1b:
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
             raw0      = f.select('EV_250_RefSB')
             uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
-            wvl       = np.array([650.0, 860.0])
+            wvl       = np.array([650, 860], dtype='uint16')
             do_region = True
 
         # when resolution equals to 500 m
@@ -110,7 +158,7 @@ class modis_l1b:
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
             raw0      = f.select('EV_500_RefSB')
             uct0      = f.select('EV_500_RefSB_Uncert_Indexes')
-            wvl       = np.array([470.0, 555.0, 1240.0, 1640.0, 2130.0])
+            wvl       = np.array([470, 555, 1240, 1640, 2130], dtype='uint16')
             do_region = True
 
         # when resolution equals to 1000 m
@@ -134,7 +182,7 @@ class modis_l1b:
                 # combine visible and near infrared bands
                 raw0      = np.vstack([raw0_250, raw0_500])
                 uct0      = np.vstack([uct0_250, uct0_500])
-                wvl       = np.array([650.0, 860.0, 470.0, 555.0, 1240.0, 1640.0, 2130.0])
+                wvl       = np.array([650, 860, 470, 555, 1240, 1640, 2130], dtype='uint16')
                 do_region = False
                 lon       = self.f03.data['lon']['data']
                 lat       = self.f03.data['lat']['data']
@@ -168,7 +216,7 @@ class modis_l1b:
                 lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
                 lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
-            logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+            logic     = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
             lon       = lon[logic]
             lat       = lat[logic]
 
@@ -197,15 +245,18 @@ class modis_l1b:
         # Calculate uncertainty
         uct     = uct0[:][:, logic]
         uct_pct = np.zeros(uct.shape, dtype=np.float64)
+        
+        wvl = np.zeros(len(self.bands), dtype='uint16')
 
-        for i in range(raw.shape[0]):
+        for i in range(len(self.bands)):
 
-            rad[i, ...]       = (raw[i, ...] - rad_off[i]) * rad_sca[i]
-            rad[i, ...]      /= 1000.0 # convert to W/m^2/nm/sr
+            rad0              = (raw[i, ...] - rad_off[i]) * rad_sca[i]
+            rad[i, ...]       = rad0/1000.0 # convert to W/m^2/nm/sr
             ref[i, ...]       = (raw[i, ...] - ref_off[i]) * ref_sca[i]
             cnt[i, ...]       = (raw[i, ...] - cnt_off[i]) * cnt_sca[i]
             uct_pct[i, ...]   = uct_spc[i] * np.exp(uct[i] / uct_sca[i]) # convert to percentage
-
+            wvl[i]            = MODIS_L1B_1KM_BANDS[self.bands[i]]
+            
         f.end()
         # -------------------------------------------------------------------------------------------------
 
