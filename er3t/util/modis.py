@@ -51,7 +51,6 @@ class modis_l1b:
     Input:
         fnames=     : keyword argument, default=None, Python list of the file path of the original HDF4 files
         extent=     : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
-        resolution= : keyword argument, default=None, data spatial resolution in km, can be detected from filename
         verbose=    : keyword argument, default=False, verbose tag
 
     Output:
@@ -74,46 +73,45 @@ class modis_l1b:
                  f03       = None, \
                  extent    = None, \
                  bands     = None, \
-                 resolution= None, \
                  verbose   = False):
 
-        self.fnames     = fnames      #  Python list of the file path of the original HDF4 files
+        self.fnames     = fnames      # Python list of the file path of the original HDF4 files
         self.f03        = f03         # geolocation class object created using the `modis_03` reader
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.bands      = bands       # Python list of bands that need to be extracted
         self.verbose    = verbose     # verbose tag
 
 
-        if resolution is None:
-            filename = os.path.basename(fnames[0]).lower()
-            if 'qkm' in filename:
-                self.resolution = 0.25
-                if bands is None:
-                    self.bands = list(MODIS_L1B_QKM_BANDS.keys())
-                elif bands is not None and bands not in list(MODIS_L1B_QKM_BANDS.keys()):
-                    msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_QKM_BANDS.keys())
-                    raise KeyError(msg)
-                                    
-            elif 'hkm' in filename:
-                self.resolution = 0.5
-                if bands is None:
-                    self.bands = list(MODIS_L1B_HKM_BANDS.keys())
-                elif bands is not None and bands not in list(MODIS_L1B_HKM_BANDS.keys()):
-                    msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_BANDS.keys())
-                    raise KeyError(msg)
-                    
-            elif '1km' in filename:
-                self.resolution = 1.0
-                if bands is None:
-                    self.bands = list(MODIS_L1B_1KM_BANDS.keys())
-                elif bands is not None and bands not in list(MODIS_L1B_1KM_BANDS.keys()):
-                    msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_1KM_BANDS.keys())
-                    raise KeyError(msg)
-                    
-            else:
-                sys.exit('Error [modis_l1b]: Resolution (in km) is not defined.')
+        filename = os.path.basename(fnames[0]).lower()
+        if 'qkm' in filename:
+            self.resolution = 0.25
+            if bands is None:
+                self.bands = list(MODIS_L1B_QKM_BANDS.keys())
+            
+            elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_QKM_BANDS.keys()))):
+                msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_QKM_BANDS.keys())
+                raise KeyError(msg)
+                                
+        elif 'hkm' in filename:
+            self.resolution = 0.5
+            if bands is None:
+                self.bands = list(MODIS_L1B_HKM_BANDS.keys())
+            
+            elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_HKM_BANDS.keys()))):
+                msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_BANDS.keys())
+                raise KeyError(msg)
+                
+        elif '1km' in filename:
+            self.resolution = 1.0
+            if bands is None:
+                self.bands = list(MODIS_L1B_1KM_BANDS.keys())
+            
+            elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_1KM_BANDS.keys()))):
+                msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_1KM_BANDS.keys())
+                raise KeyError(msg)
+                
         else:
-            self.resolution = resolution
+            sys.exit('Error [modis_l1b]: Currently, only QKM (0.25km), HKM (0.5km), and 1KM products are supported.')
 
         for fname in self.fnames:
             self.read(fname)

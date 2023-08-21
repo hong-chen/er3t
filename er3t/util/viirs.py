@@ -256,7 +256,6 @@ class viirs_l1b:
     Input:
         fnames=     : keyword argument, default=None, Python list of the file path of the original netCDF files
         f03=        : keyword argument, default=None, class object obtained from `viirs_03` reader for geolocation
-        resolution= : keyword argument, default=None, data spatial resolution in km, can be detected from filename
         verbose=    : keyword argument, default=False, verbose tag
 
     Output:
@@ -275,7 +274,6 @@ class viirs_l1b:
                  f03        = None,  \
                  extent     = None,  \
                  bands      = None,  \
-                 resolution = None,  \
                  verbose    = False):
 
         self.fnames     = fnames      # Python list of netCDF filenames
@@ -283,32 +281,32 @@ class viirs_l1b:
         self.bands      = bands       # Python list of bands to extract information
             
         
-        if resolution is None:
-            filename = os.path.basename(fnames[0]).lower()
-            if '02img' in filename:
-                self.resolution = 0.375
-                if bands is None:
-                    if verbose:
-                        msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_IMG_BANDS
+        filename = os.path.basename(fnames[0]).lower()
+        if '02img' in filename:
+            self.resolution = 0.375
+            if bands is None:
+                self.bands = list(VIIRS_L1B_IMG_BANDS.keys())
+                if verbose:
+                    msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_IMG_BANDS
+            
+            elif (bands is not None) and (set(bands).issubset(set(VIIRS_L1B_IMG_BANDS.keys()))):
+                msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_IMG_BANDS.keys())
+                raise KeyError(msg)
 
-                    self.bands = list(VIIRS_L1B_IMG_BANDS.keys())
-            elif ('02mod' in filename) or ('02dnb' in filename):
-                self.resolution = 0.75
-                if bands is None:
-                    if verbose:
-                        msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_MOD_BANDS
-
-                    self.bands = list(VIIRS_L1B_MOD_BANDS.keys())
-            else:
-                msg = 'Error [viirs_l1b]: Resolution (in km) is not defined.'
-                raise ValueError(msg)
+        elif ('02mod' in filename) or ('02dnb' in filename):
+            self.resolution = 0.75
+            if bands is None:
+                self.bands = list(VIIRS_L1B_MOD_BANDS.keys())
+                if verbose:
+                    msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_MOD_BANDS
+            
+            elif (bands is not None) and (set(bands).issubset(set(VIIRS_L1B_MOD_BANDS.keys()))):
+                msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_MOD_BANDS.keys())
+                raise KeyError(msg)  
         else:
+            msg = 'Error [viirs_l1b]: Currently, only IMG (0.375km) and MOD (0.75km) products are supported.'
+            raise ValueError(msg)
 
-            if resolution not in [0.375, 0.75]:
-                msg = 'Error [viirs_l1b]: Resolution of %f km is invalid.' % resolution
-                raise ValueError(msg)
-
-            self.resolution = resolution
             
         if extent is not None and verbose:
             msg = '\nMessage [viirs_l1b]: The `extent` argument will be ignored as it is only available for consistency.\n' \
