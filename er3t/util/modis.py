@@ -32,6 +32,7 @@ MODIS_L1B_HKM_1KM_BANDS = {
                         7: 2130
                       }
 
+
 # reader for MODIS (Moderate Resolution Imaging Spectroradiometer)
 #/-----------------------------------------------------------------------------\
 
@@ -80,7 +81,7 @@ class modis_l1b:
             if bands is None:
                 self.bands = list(MODIS_L1B_QKM_BANDS.keys())
             
-            elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_QKM_BANDS.keys()))):
+            elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_QKM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_QKM_BANDS.keys())
                 raise KeyError(msg)
                                 
@@ -89,7 +90,7 @@ class modis_l1b:
             if bands is None:
                 self.bands = list(MODIS_L1B_HKM_1KM_BANDS.keys())
             
-            elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
+            elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_1KM_BANDS.keys())
                 raise KeyError(msg)
                 
@@ -98,7 +99,7 @@ class modis_l1b:
             if bands is None:
                 self.bands = list(MODIS_L1B_HKM_1KM_BANDS.keys())
             
-            elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
+            elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_1KM_BANDS.keys())
                 raise KeyError(msg)
                 
@@ -278,26 +279,26 @@ class modis_l1b:
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
         #/----------------------------------------------------------------------------\#
         raw = raw0[:][:, logic]
-        rad = np.zeros(raw.shape, dtype=np.float64)
-        ref = np.zeros(raw.shape, dtype=np.float64)
-        cnt = np.zeros(raw.shape, dtype=np.float64)
+        rad = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+        ref = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+        cnt = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
 
         # Calculate uncertainty
         uct     = uct0[:][:, logic]
-        uct_pct = np.zeros(uct.shape, dtype=np.float64)
+        uct_pct = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
         
         wvl = np.zeros(len(self.bands), dtype='uint16')
 
         band_counter = 0
-        for i in range(raw.shape[0]):
-            if list(MODIS_L1B_HKM_1KM_BANDS.keys())[i] in self.bands: # only get the required bands
-                rad0                         = (raw[i, ...] - rad_off[i]) * rad_sca[i]
-                rad[band_counter, ...]       = rad0/1000.0 # convert to W/m^2/nm/sr
-                ref[band_counter, ...]       = (raw[i, ...] - ref_off[i]) * ref_sca[i]
-                cnt[band_counter, ...]       = (raw[i, ...] - cnt_off[i]) * cnt_sca[i]
-                uct_pct[band_counter, ...]   = uct_spc[i] * np.exp(uct[i] / uct_sca[i]) # convert to percentage
-                wvl[band_counter]            = MODIS_L1B_HKM_1KM_BANDS[self.bands[band_counter]]
-                band_counter                += 1
+        for i in self.bands:
+            band_idx                     = i - 1 # band indexing in Python starts from 0
+            rad0                         = (raw[band_idx, ...] - rad_off[band_idx]) * rad_sca[band_idx]
+            rad[band_counter, ...]       = rad0/1000.0 # convert to W/m^2/nm/sr
+            ref[band_counter, ...]       = (raw[band_idx, ...] - ref_off[band_idx]) * ref_sca[band_idx]
+            cnt[band_counter, ...]       = (raw[band_idx, ...] - cnt_off[band_idx]) * cnt_sca[band_idx]
+            uct_pct[band_counter, ...]   = uct_spc[band_idx] * np.exp(uct[band_idx] / uct_sca[band_idx]) # convert to percentage
+            wvl[band_counter]            = MODIS_L1B_HKM_1KM_BANDS[self.bands[band_counter]]
+            band_counter                += 1
             
         f.end()
         # -------------------------------------------------------------------------------------------------
