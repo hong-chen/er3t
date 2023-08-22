@@ -291,6 +291,7 @@ class viirs_l1b:
                     msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_IMG_BANDS
 
             elif (bands is not None) and not (set(bands).issubset(set(VIIRS_L1B_IMG_BANDS.keys()))):
+
                 msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_IMG_BANDS.keys())
                 raise KeyError(msg)
 
@@ -302,6 +303,7 @@ class viirs_l1b:
                     msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_MOD_BANDS
 
             elif (bands is not None) and not (set(bands).issubset(set(VIIRS_L1B_MOD_BANDS.keys()))):
+
                 msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_MOD_BANDS.keys())
                 raise KeyError(msg)
         else:

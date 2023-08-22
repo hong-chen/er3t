@@ -15,7 +15,6 @@ __all__ = ['modis_l1b', 'modis_l2', 'modis_35_l2', 'modis_03', 'modis_04', 'modi
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag']
 
 
-
 MODIS_L1B_QKM_BANDS = {
                         1: 650,
                         2: 860,
@@ -82,6 +81,7 @@ class modis_l1b:
                 self.bands = list(MODIS_L1B_QKM_BANDS.keys())
 
             elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_QKM_BANDS.keys()))):
+
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_QKM_BANDS.keys())
                 raise KeyError(msg)
 

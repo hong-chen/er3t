@@ -4,6 +4,7 @@ import datetime
 import numpy as np
 import warnings
 
+import er3t.common
 
 import er3t.common
 EARTH_RADIUS = er3t.common.params['earth_radius']
@@ -22,7 +23,6 @@ __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
 
 # tools
 #/---------------------------------------------------------------------------\
-
 def all_files(root_dir):
 
     """

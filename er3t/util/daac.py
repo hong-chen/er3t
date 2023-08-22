@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import datetime
 import time
 import requests
 import urllib.request
@@ -153,7 +154,7 @@ def get_satfile_tag(
             content = r.content.decode('utf-8')
         else:
             msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
-            raise OSError(msg)
+            warnings.warn(msg)
         #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -179,7 +180,8 @@ def get_satfile_tag(
     #/----------------------------------------------------------------------------\#
     try:
         data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
-    except ValueError:
+    # except ValueError or UnboundLocalError:
+    except:
 
         msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
         print(msg)
@@ -297,7 +299,7 @@ def get_nrt_satfile_tag(
         msg = '\nError [get_satfile_tag]: Please install <matplotlib> to proceed.'
         raise ImportError(msg)
     #\----------------------------------------------------------------------------/#
-    
+
     from er3t.common import fdir_data_tmp
 
     # check satellite and instrument
@@ -391,7 +393,7 @@ def get_nrt_satfile_tag(
             content = r.content.decode('utf-8')
         else:
             msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
-            raise OSError(msg)
+            warnings.warn(msg)
         #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -417,7 +419,8 @@ def get_nrt_satfile_tag(
     #/----------------------------------------------------------------------------\#
     try:
         data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
-    except ValueError:
+    # except ValueError:
+    except:
 
         msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
         print(msg)
@@ -880,10 +883,12 @@ def download_worldview_rgb(
         instrument='modis',
         satellite='aqua',
         wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi',
+        layer_name0=None,
         proj=None,
         coastline=False,
         fmt='png',
-        run=True
+        dpi=300,
+        run=True,
         ):
 
     """
@@ -909,15 +914,53 @@ def download_worldview_rgb(
     if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
         instrument = instrument.upper()
         satellite  = satellite.lower().title()
+        sat_kind = 'polar-orbiting'
     elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp']):
         instrument = instrument.upper()
         satellite  = satellite.upper()
+        sat_kind = 'polar-orbiting'
+    elif instrument.lower() == 'abi' and (satellite.lower() in ['goes-east', 'goes-west']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper().replace('WEST', 'West').replace('EAST', 'East')
+        sat_kind = 'geostationary'
     else:
         msg = 'Error [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
         raise NameError(msg)
 
-    date_s = date.strftime('%Y-%m-%d')
-    fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+    if sat_kind == 'polar-orbiting':
+        date_s = date.strftime('%Y-%m-%d')
+        if layer_name0 is None:
+            layer_name0='CorrectedReflectance_TrueColor'
+        layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
+
+        try:
+            lon__ = np.arange(extent[0], extent[1], 500.0/111000.0)
+            lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
+            lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
+
+            try:
+                satfile_tag = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+            except:
+                satfile_tag = get_nrt_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+
+            date0 = datetime.datetime.strptime(satfile_tag, 'A%Y%j.%H%M')
+            date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        except:
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+
+    elif sat_kind == 'geostationary':
+        date += datetime.timedelta(minutes=5)
+        date -= datetime.timedelta(minutes=date.minute % 10,
+                                   seconds=date.second)
+        date_s = date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        if layer_name0 is None:
+            layer_name0='GeoColor'
+        layer_name = '%s_%s_%s' % (satellite, instrument, layer_name0)
+
+        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+
     fname  = os.path.abspath(fname)
 
     if run:
@@ -940,21 +983,25 @@ def download_worldview_rgb(
         if not os.path.exists(fdir_out):
             os.makedirs(fdir_out)
 
-        layer_name = '%s_%s_CorrectedReflectance_TrueColor' % (instrument, satellite)
-
         if proj is None:
             proj=ccrs.PlateCarree()
 
-        fig = plt.figure(figsize=(12, 6))
-        ax1 = fig.add_subplot(111, projection=proj)
-        ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
-        if coastline:
-            ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
-        ax1.set_extent(extent, crs=ccrs.PlateCarree())
-        ax1.outline_patch.set_visible(False)
-        ax1.axis('off')
-        plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
-        plt.close(fig)
+        try:
+        # if True:
+            fig = plt.figure(figsize=(12, 6))
+            ax1 = fig.add_subplot(111, projection=proj)
+            ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
+            if coastline:
+                ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
+            ax1.set_extent(extent, crs=ccrs.PlateCarree())
+            # ax1.outline_patch.set_visible(False) # changed according to DeprecationWarning
+            ax1.spines['geo'].set_visible(False)
+            ax1.axis('off')
+            plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=dpi)
+            plt.close(fig)
+        except:
+            msg = '\nError [download_wordview_rgb]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
+            warnings.warn(msg)
 
     if fmt == 'png':
 
@@ -1045,7 +1092,7 @@ def download_oco2_https(
     doy_str  = str(dtime.timetuple().tm_yday).zfill(3)
 
     if dataset_tag in ['OCO2_L2_Met.10', 'OCO2_L2_Met.10r', 'OCO2_L2_Standard.10', 'OCO2_L2_Standard.10r',
-                       'OCO2_L1B_Science.10', 'OCO2_L1B_Science.10r', 'OCO2_L1B_Calibration.10', 'OCO2_L1B_Calibration.10r', 
+                       'OCO2_L1B_Science.10', 'OCO2_L1B_Science.10r', 'OCO2_L1B_Calibration.10', 'OCO2_L1B_Calibration.10r',
                        'OCO2_L2_CO2Prior.10r', 'OCO2_L2_CO2Prior.10', 'OCO2_L2_IMAPDOAS.10r', 'OCO2_L2_IMAPDOAS.10',
                        'OCO2_L2_Diagnostic.10r', 'OCO2_L2_Diagnostic.10']:
         fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
@@ -1107,10 +1154,10 @@ def download_oco2_https(
     else:
 
         for i, command in enumerate(commands):
-            
+
             if verbose:
                 print('Message [download_oco2_https]: Downloading %s ...' % fnames_local[i])
-            
+
             os.system(command)
 
             fname_local = fnames_local[i]
@@ -1146,4 +1193,9 @@ def download_oco2_https(
                 print('Warning [download_oco2_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
 
     return fnames_local
-#\---------------------------------------------------------------------------/
+
+
+
+if __name__ == '__main__':
+
+    pass
