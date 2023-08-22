@@ -15,30 +15,22 @@ __all__ = ['modis_l1b', 'modis_l2', 'modis_35_l2', 'modis_03', 'modis_04', 'modi
            'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag']
 
 
-MODIS_L1B_1KM_BANDS = {
-                        1: 650,
-                        2: 860,
-                        3: 470,
-                        4: 555,
-                        5: 1240,
-                        6: 1640,
-                        7: 2130
-                      }
-
-
 MODIS_L1B_QKM_BANDS = {
                         1: 650,
                         2: 860,
                       }
 
 
-MODIS_L1B_HKM_BANDS = {
+MODIS_L1B_HKM_1KM_BANDS = {
+                        1: 650,
+                        2: 860,
                         3: 470,
                         4: 555,
                         5: 1240,
                         6: 1640,
                         7: 2130
                       }
+
 
 # reader for MODIS (Moderate Resolution Imaging Spectroradiometer)
 #/-----------------------------------------------------------------------------\
@@ -88,26 +80,27 @@ class modis_l1b:
             if bands is None:
                 self.bands = list(MODIS_L1B_QKM_BANDS.keys())
 
-            elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_QKM_BANDS.keys()))):
+            elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_QKM_BANDS.keys()))):
+
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_QKM_BANDS.keys())
                 raise KeyError(msg)
 
         elif 'hkm' in filename:
             self.resolution = 0.5
             if bands is None:
-                self.bands = list(MODIS_L1B_HKM_BANDS.keys())
+                self.bands = list(MODIS_L1B_HKM_1KM_BANDS.keys())
 
-            elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_HKM_BANDS.keys()))):
-                msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_BANDS.keys())
+            elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
+                msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_1KM_BANDS.keys())
                 raise KeyError(msg)
 
         elif '1km' in filename:
             self.resolution = 1.0
             if bands is None:
-                self.bands = list(MODIS_L1B_1KM_BANDS.keys())
+                self.bands = list(MODIS_L1B_HKM_1KM_BANDS.keys())
 
-            elif (bands is not None) and (set(bands).issubset(set(MODIS_L1B_1KM_BANDS.keys()))):
-                msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_1KM_BANDS.keys())
+            elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
+                msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_1KM_BANDS.keys())
                 raise KeyError(msg)
 
         else:
@@ -115,6 +108,22 @@ class modis_l1b:
 
         for fname in self.fnames:
             self.read(fname)
+
+
+    def _get_250_500_attrs(self, hdf_dset_250, hdf_dset_500):
+        rad_off = hdf_dset_250.attributes()['radiance_offsets']         + hdf_dset_500.attributes()['radiance_offsets']
+        rad_sca = hdf_dset_250.attributes()['radiance_scales']          + hdf_dset_500.attributes()['radiance_scales']
+        ref_off = hdf_dset_250.attributes()['reflectance_offsets']      + hdf_dset_500.attributes()['reflectance_offsets']
+        ref_sca = hdf_dset_250.attributes()['reflectance_scales']       + hdf_dset_500.attributes()['reflectance_scales']
+        cnt_off = hdf_dset_250.attributes()['corrected_counts_offsets'] + hdf_dset_500.attributes()['corrected_counts_offsets']
+        cnt_sca = hdf_dset_250.attributes()['corrected_counts_scales']  + hdf_dset_500.attributes()['corrected_counts_scales']
+        return rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca
+
+
+    def _get_250_500_uct(self, hdf_uct_250, hdf_uct_500):
+        uct_spc = hdf_uct_250.attributes()['specified_uncertainty'] + hdf_uct_500.attributes()['specified_uncertainty']
+        uct_sca = hdf_uct_250.attributes()['scaling_factor']        + hdf_uct_500.attributes()['scaling_factor']
+        return uct_spc, uct_sca
 
 
     def read(self, fname):
@@ -141,76 +150,34 @@ class modis_l1b:
 
         # when resolution equals to 250 m
         if check_equal(self.resolution, 0.25):
-            lat0      = f.select('Latitude')
-            lon0      = f.select('Longitude')
+            if self.f03 is not None:
+                lon0  = self.f03.data['lon']['data']
+                lat0  = self.f03.data['lat']['data']
+            else:
+                lat0  = f.select('Latitude')
+                lon0  = f.select('Longitude')
+
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
             raw0      = f.select('EV_250_RefSB')
             uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
-            wvl       = np.array([650, 860], dtype='uint16')
-            do_region = True
+            # wvl       = np.array([650, 860], dtype='uint16') # QKM bands
 
-        # when resolution equals to 500 m
-        elif check_equal(self.resolution, 0.5):
-            lat0      = f.select('Latitude')
-            lon0      = f.select('Longitude')
-            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
-            raw0      = f.select('EV_500_RefSB')
-            uct0      = f.select('EV_500_RefSB_Uncert_Indexes')
-            wvl       = np.array([470, 555, 1240, 1640, 2130], dtype='uint16')
-            do_region = True
+            # if self.extent is None:
+            #     if 'actual_range' in lon0.attributes().keys():
+            #         lon_range = lon0.attributes()['actual_range']
+            #         lat_range = lat0.attributes()['actual_range']
+            #     elif 'valid_range' in lon0.attributes().keys():
+            #         lon_range = lon0.attributes()['valid_range']
+            #         lat_range = lat0.attributes()['valid_range']
+            #     else:
+            #         lon_range = [-180.0, 180.0]
+            #         lat_range = [-90.0 , 90.0]
 
-        # when resolution equals to 1000 m
-        elif check_equal(self.resolution, 1.0):
-            if self.f03 is not None:
-                raw0_250  = f.select('EV_250_Aggr1km_RefSB')
-                uct0_250  = f.select('EV_250_Aggr1km_RefSB_Uncert_Indexes')
-                raw0_500  = f.select('EV_500_Aggr1km_RefSB')
-                uct0_500  = f.select('EV_500_Aggr1km_RefSB_Uncert_Indexes')
-
-                # save offsets and scaling factors (from both visible and near infrared bands)
-                rad_off = raw0_250.attributes()['radiance_offsets'] + raw0_500.attributes()['radiance_offsets']
-                rad_sca = raw0_250.attributes()['radiance_scales'] + raw0_500.attributes()['radiance_scales']
-                ref_off = raw0_250.attributes()['reflectance_offsets'] + raw0_500.attributes()['reflectance_offsets']
-                ref_sca = raw0_250.attributes()['reflectance_scales'] + raw0_500.attributes()['reflectance_scales']
-                cnt_off = raw0_250.attributes()['corrected_counts_offsets'] + raw0_500.attributes()['corrected_counts_offsets']
-                cnt_sca = raw0_250.attributes()['corrected_counts_scales'] + raw0_500.attributes()['corrected_counts_scales']
-                uct_spc = uct0_250.attributes()['specified_uncertainty'] + uct0_500.attributes()['specified_uncertainty']
-                uct_sca = uct0_250.attributes()['scaling_factor'] + uct0_500.attributes()['scaling_factor']
-
-                # combine visible and near infrared bands
-                raw0      = np.vstack([raw0_250, raw0_500])
-                uct0      = np.vstack([uct0_250, uct0_500])
-                wvl       = np.array([650, 860, 470, 555, 1240, 1640, 2130], dtype='uint16')
-                do_region = False
-                lon       = self.f03.data['lon']['data']
-                lat       = self.f03.data['lat']['data']
-                logic     = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
-            else:
-                sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented without geolocation file being specified.' % self.resolution)
-
-        else:
-            sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
-
-
-        # 1. If region (extent=) is specified, filter data within the specified region
-        # 2. If region (extent=) is not specified, filter invalid data
-        #/----------------------------------------------------------------------------\#
-
-        if do_region: # applied only for QKM (250m) or HKM (500m) products
             if self.extent is None:
-
-                if 'actual_range' in lon0.attributes().keys():
-                    lon_range = lon0.attributes()['actual_range']
-                    lat_range = lat0.attributes()['actual_range']
-                elif 'valid_range' in lon0.attributes().keys():
-                    lon_range = lon0.attributes()['valid_range']
-                    lat_range = lat0.attributes()['valid_range']
-                else:
-                    lon_range = [-180.0, 180.0]
-                    lat_range = [-90.0 , 90.0]
+                lon_range = [-180.0, 180.0]
+                lat_range = [-90.0 , 90.0]
 
             else:
-
                 lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
                 lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
@@ -230,30 +197,108 @@ class modis_l1b:
 
             uct_spc = uct0.attributes()['specified_uncertainty']
             uct_sca = uct0.attributes()['scaling_factor']
-        # -------------------------------------------------------------------------------------------------
+            do_region = True
+
+        # when resolution equals to 500 m
+        elif check_equal(self.resolution, 0.5):
+            if self.f03 is not None:
+                lon0  = self.f03.data['lon']['data']
+                lat0  = self.f03.data['lat']['data']
+            else:
+                lat0  = f.select('Latitude')
+                lon0  = f.select('Longitude')
+
+
+            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
+            raw0_250  = f.select('EV_250_Aggr500_RefSB')
+            uct0_250  = f.select('EV_250_Aggr500_RefSB_Uncert_Indexes')
+            raw0_500  = f.select('EV_500_RefSB')
+            uct0_500  = f.select('EV_500_RefSB_Uncert_Indexes')
+
+            # save offsets and scaling factors (from both QKM and HKM bands)
+            rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca = self._get_250_500_attrs(raw0_250, raw0_500)
+            uct_spc, uct_sca                                     = self._get_250_500_uct(uct0_250, uct0_500)
+
+            # combine QKM and HKM bands
+            raw0      = np.vstack([raw0_250, raw0_500])
+            uct0      = np.vstack([uct0_250, uct0_500])
+
+            # wvl       = np.array([470, 555, 1240, 1640, 2130], dtype='uint16') # HKM bands
+            do_region = True
+
+            # if self.extent is None:
+            #     if 'actual_range' in lon0.attributes().keys():
+            #         lon_range = lon0.attributes()['actual_range']
+            #         lat_range = lat0.attributes()['actual_range']
+            #     elif 'valid_range' in lon0.attributes().keys():
+            #         lon_range = lon0.attributes()['valid_range']
+            #         lat_range = lat0.attributes()['valid_range']
+            #     else:
+            #         lon_range = [-180.0, 180.0]
+            #         lat_range = [-90.0 , 90.0]
+
+            if self.extent is None:
+                lon_range = [-180.0, 180.0]
+                lat_range = [-90.0 , 90.0]
+
+            else:
+                lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+                lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
+
+            logic     = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
+            lon       = lon[logic]
+            lat       = lat[logic]
+
+        # when resolution equals to 1000 m
+        elif check_equal(self.resolution, 1.0):
+            if self.f03 is not None:
+                raw0_250  = f.select('EV_250_Aggr1km_RefSB')
+                uct0_250  = f.select('EV_250_Aggr1km_RefSB_Uncert_Indexes')
+                raw0_500  = f.select('EV_500_Aggr1km_RefSB')
+                uct0_500  = f.select('EV_500_Aggr1km_RefSB_Uncert_Indexes')
+
+                # save offsets and scaling factors (from both QKM and HKM bands)
+                rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca = self._get_250_500_attrs(raw0_250, raw0_500)
+                uct_spc, uct_sca                                     = self._get_250_500_uct(uct0_250, uct0_500)
+
+                # combine QKM and HKM bands
+                raw0      = np.vstack([raw0_250, raw0_500])
+                uct0      = np.vstack([uct0_250, uct0_500])
+                # wvl       = np.array([650, 860, 470, 555, 1240, 1640, 2130], dtype='uint16')
+                do_region = False
+                lon       = self.f03.data['lon']['data']
+                lat       = self.f03.data['lat']['data']
+                logic     = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
+            else:
+                sys.exit('Error   [modis_l1b]: 1KM product reader has not been implemented without geolocation file being specified.')
+
+        else:
+            sys.exit('Error   [modis_l1b]: \'resolution=%f\' has not been implemented.' % self.resolution)
 
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
         #/----------------------------------------------------------------------------\#
         raw = raw0[:][:, logic]
-        rad = np.zeros(raw.shape, dtype=np.float64)
-        ref = np.zeros(raw.shape, dtype=np.float64)
-        cnt = np.zeros(raw.shape, dtype=np.float64)
+        rad = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+        ref = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+        cnt = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
 
         # Calculate uncertainty
         uct     = uct0[:][:, logic]
-        uct_pct = np.zeros(uct.shape, dtype=np.float64)
+        uct_pct = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
 
         wvl = np.zeros(len(self.bands), dtype='uint16')
 
-        for i in range(len(self.bands)):
-
-            rad0              = (raw[i, ...] - rad_off[i]) * rad_sca[i]
-            rad[i, ...]       = rad0/1000.0 # convert to W/m^2/nm/sr
-            ref[i, ...]       = (raw[i, ...] - ref_off[i]) * ref_sca[i]
-            cnt[i, ...]       = (raw[i, ...] - cnt_off[i]) * cnt_sca[i]
-            uct_pct[i, ...]   = uct_spc[i] * np.exp(uct[i] / uct_sca[i]) # convert to percentage
-            wvl[i]            = MODIS_L1B_1KM_BANDS[self.bands[i]]
+        band_counter = 0
+        for i in self.bands:
+            band_idx                     = i - 1 # band indexing in Python starts from 0
+            rad0                         = (raw[band_idx, ...] - rad_off[band_idx]) * rad_sca[band_idx]
+            rad[band_counter, ...]       = rad0/1000.0 # convert to W/m^2/nm/sr
+            ref[band_counter, ...]       = (raw[band_idx, ...] - ref_off[band_idx]) * ref_sca[band_idx]
+            cnt[band_counter, ...]       = (raw[band_idx, ...] - cnt_off[band_idx]) * cnt_sca[band_idx]
+            uct_pct[band_counter, ...]   = uct_spc[band_idx] * np.exp(uct[band_idx] / uct_sca[band_idx]) # convert to percentage
+            wvl[band_counter]            = MODIS_L1B_HKM_1KM_BANDS[self.bands[band_counter]]
+            band_counter                += 1
 
         f.end()
         # -------------------------------------------------------------------------------------------------
@@ -262,24 +307,25 @@ class modis_l1b:
 
         if hasattr(self, 'data'):
             if do_region:
-                self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
-                self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+                self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)),     units='degrees')
+                self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)),     units='degrees')
 
-            self.data['rad'] = dict(name='Radiance'                , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
-            self.data['cnt'] = dict(name='Corrected Counts'        , data=np.hstack((self.data['cnt']['data'], cnt)), units='N/A')
+            self.data['rad'] = dict(name='Radiance'                , data=np.hstack((self.data['rad']['data'], rad)),     units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=np.hstack((self.data['ref']['data'], ref)),     units='N/A')
+            self.data['cnt'] = dict(name='Corrected Counts'        , data=np.hstack((self.data['cnt']['data'], cnt)),     units='N/A')
             self.data['uct'] = dict(name='Uncertainty Percentage'  , data=np.hstack((self.data['uct']['data'], uct_pct)), units='N/A')
 
         else:
 
             self.data = {}
-            self.data['lon'] = dict(name='Longitude'               , data=lon, units='degrees')
-            self.data['lat'] = dict(name='Latitude'                , data=lat, units='degrees')
-            self.data['wvl'] = dict(name='Wavelength'              , data=wvl, units='nm')
-            self.data['rad'] = dict(name='Radiance'                , data=rad, units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=ref, units='N/A')
-            self.data['cnt'] = dict(name='Corrected Counts'        , data=cnt, units='N/A')
+            self.data['lon'] = dict(name='Longitude'               , data=lon,     units='degrees')
+            self.data['lat'] = dict(name='Latitude'                , data=lat,     units='degrees')
+            self.data['wvl'] = dict(name='Wavelength'              , data=wvl,     units='nm')
+            self.data['rad'] = dict(name='Radiance'                , data=rad,     units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=ref,     units='N/A')
+            self.data['cnt'] = dict(name='Corrected Counts'        , data=cnt,     units='N/A')
             self.data['uct'] = dict(name='Uncertainty Percentage'  , data=uct_pct, units='N/A')
+
 
     def save_h5(self, fname):
 
