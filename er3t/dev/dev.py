@@ -12,102 +12,158 @@ from scipy import interpolate, stats
 from scipy.spatial import KDTree
 import warnings
 
+from pyhdf.SD import SD, SDC
+
+
+
 import er3t
 
 
 
 
-__all__ = ['grid_nearest_fast']
+__all__ = ['cal_dtime_fast']
 
 
 
+def cal_dtime_fast(corners, extent):
 
-def grid_nearest_fast(x, y, data, x_2d, y_2d, Ngrid_limit=1, fill_value=np.nan):
+    pass
 
-    """
-    Use scipy.spatial.KDTree to perform fast nearest gridding
 
-    References:
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.KDTree.html
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.KDTree.query.html
+def read_geometa_txt(content, sname='Aqua|MODIS'):
 
-    Inputs:
-        x: x position of raw data
-        y: y position of raw data
-        data: value of raw data
-        x_2d: x position of the data (to be gridded)
-        y_2d: y position of the data (to be gridded)
-        Ngrid_limit=<1>=: number of grids for defining "too far"
-        fill_value=<np.nan>: fill-in value for the data that is "too far" away from raw data
+    if sname in ['Aqua|MODIS', 'Terra|MODIS']:
+        dtype = ['|S41', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
+    elif sname in ['NOAA20|VIIRS', 'SNPP|VIIRS']:
+        dtype = ['|S43', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
+    usecols = (0, 4, 9, 10, 11, 12, 13, 14, 15, 16)
 
-    Output:
-        data_2d: gridded data
-    """
+    data = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
 
-    # check equidistant
+    return data
+
+def test():
+
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    import matplotlib.path as mpl_path
+    import matplotlib.image as mpl_img
+    import matplotlib.patches as mpatches
+    import matplotlib.gridspec as gridspec
+    from matplotlib import rcParams, ticker
+    from matplotlib.ticker import FixedLocator
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    # import cartopy.crs as ccrs
+    # mpl.use('Agg')
+
+    # proj_ori = ccrs.PlateCarree()
+    # for i in range(Ndata):
+
+    #     line = data[i]
+    #     xx0  = np.array([line['GRingLongitude1'], line['GRingLongitude2'], line['GRingLongitude3'], line['GRingLongitude4'], line['GRingLongitude1']])
+    #     yy0  = np.array([line['GRingLatitude1'] , line['GRingLatitude2'] , line['GRingLatitude3'] , line['GRingLatitude4'] , line['GRingLatitude1']])
+
+    #     if (abs(xx0[0]-xx0[1])>180.0) | (abs(xx0[0]-xx0[2])>180.0) | \
+    #        (abs(xx0[0]-xx0[3])>180.0) | (abs(xx0[1]-xx0[2])>180.0) | \
+    #        (abs(xx0[1]-xx0[3])>180.0) | (abs(xx0[2]-xx0[3])>180.0):
+
+    #         xx0[xx0<0.0] += 360.0
+
+    #     # roughly determine the center of granule
+    #     #/----------------------------------------------------------------------------\#
+    #     xx = xx0[:-1]
+    #     yy = yy0[:-1]
+    #     center_lon = xx.mean()
+    #     center_lat = yy.mean()
+    #     #\----------------------------------------------------------------------------/#
+
+    #     # find the precise center point of MODIS granule
+    #     #/----------------------------------------------------------------------------\#
+    #     proj_tmp   = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
+    #     LonLat_tmp = proj_tmp.transform_points(proj_ori, xx, yy)[:, [0, 1]]
+    #     center_xx  = LonLat_tmp[:, 0].mean(); center_yy = LonLat_tmp[:, 1].mean()
+    #     center_lon, center_lat = proj_ori.transform_point(center_xx, center_yy, proj_tmp)
+    #     #\----------------------------------------------------------------------------/#
+
+    #     proj_new = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
+    #     LonLat_in = proj_new.transform_points(proj_ori, lon, lat)[:, [0, 1]]
+    #     LonLat_modis  = proj_new.transform_points(proj_ori, xx0, yy0)[:, [0, 1]]
+
+    #     modis_granule  = mpl_path.Path(LonLat_modis, closed=True)
+    #     pointsIn       = modis_granule.contains_points(LonLat_in)
+    #     percentIn      = float(pointsIn.sum()) * 100.0 / float(pointsIn.size)
+    #     # if pointsIn.sum()>0 and percentIn>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
+    #     if pointsIn.sum()>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
+    #         filename = data[i]['GranuleID'].decode('UTF-8')
+    #         filename_tag = '.'.join(filename.split('.')[1:3])
+    #         filename_tags.append(filename_tag)
+
+
+    # target region
     #/----------------------------------------------------------------------------\#
-    if er3t.util.check_equidistant(x_2d[:, 0]) and er3t.util.check_equidistant(x_2d[:, -1]) and \
-       er3t.util.check_equidistant(y_2d[0, :]) and er3t.util.check_equidistant(y_2d[-1, :]):
-
-        dx = x_2d[1, 0] - x_2d[0, 0]
-        dy = y_2d[0, 1] - y_2d[0, 0]
-
-    else:
-
-        msg = '\nError [grid_nearest_fast]: Do not support non-equidistant gridding.'
-        raise ValueError(msg)
+    extent = [-109.1, -106.9, 36.9, 39.1]
     #\----------------------------------------------------------------------------/#
 
 
-    # preprocess raw data
+    # deal with geoMeta data
     #/----------------------------------------------------------------------------\#
-    x = np.array(x).ravel()
-    y = np.array(y).ravel()
-    data = np.array(data).ravel()
+    fname_txt = 'MYD03_2019-09-02.txt'
+    with open(fname_txt, 'r') as f_:
+        content = f_.read()
+    data = read_geometa_txt(content, sname='Aqua|MODIS')
     #\----------------------------------------------------------------------------/#
 
 
-    # check whether raw data is contained within the gridded region
+    # actual 03 file
     #/----------------------------------------------------------------------------\#
-    logic_in  = (x>=x_2d[0, 0]) & (x<=x_2d[-1, 0]) & (y>=y_2d[0, 0]) & (y<=y_2d[0, -1])
-
-    x = x[logic_in]
-    y = y[logic_in]
-    data = data[logic_in]
+    fname = '%s/data/02_modis_rad-sim/download/MYD03.A2019245.2025.061.2019246155053.hdf' % er3t.common.fdir_examples
+    f = SD(fname, SDC.READ)
+    lat0 = f.select('Latitude')[:]
+    lon0 = f.select('Longitude')[:]
+    f.end()
     #\----------------------------------------------------------------------------/#
 
 
-    # create KDTree
+
+
+
+    print(lon0.shape)
+    print(lat0.shape)
+
+    # figure
     #/----------------------------------------------------------------------------\#
-    points = np.transpose(np.vstack((x, y)))
-    tree_xy = KDTree(points, leafsize=50)
+    if True:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111)
+        # cs = ax1.imshow(.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        ax1.scatter(lon0, lat0, s=1, c='k', lw=0.0)
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.plot([0, 1], [0, 1], color='k', ls='--')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
     #\----------------------------------------------------------------------------/#
-
-
-    # search KDTree for the nearest neighbor
-    #/----------------------------------------------------------------------------\#
-    points_query = np.transpose(np.vstack((x_2d.ravel(), y_2d.ravel())))
-    dist_xy, indices_xy = tree_xy.query(points_query, workers=-1)
-
-    dist_2d = dist_xy.reshape(x_2d.shape)
-    data_2d = data[indices_xy].reshape(x_2d.shape)
-    #\----------------------------------------------------------------------------/#
-
-
-    # use fill value to fill in grids that are "two far"* away from raw data
-    #   * by default 1 grid away is defined as "too far"
-    #/----------------------------------------------------------------------------\#
-    dist_limit = np.sqrt((dx*Ngrid_limit)**2+(dy*Ngrid_limit)**2)
-    logic_out = (dist_2d>dist_limit)
-
-    data_2d[logic_out] = fill_value
-    #\----------------------------------------------------------------------------/#
-
-    return data_2d
-
 
 
 
 if __name__ == '__main__':
 
+    test()
     pass
