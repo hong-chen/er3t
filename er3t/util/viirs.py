@@ -12,6 +12,7 @@ from er3t.util.modis import cal_sinusoidal_grid
 __all__ = ['viirs_03', 'viirs_l1b', 'viirs_09a1', 'viirs_43ma3', 'viirs_43ma4']
 
 
+
 VIIRS_ALL_BANDS = {
                     'I01': 640,
                     'I02': 865,
@@ -289,7 +290,7 @@ class viirs_l1b:
                 if verbose:
                     msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_IMG_BANDS
             
-            elif (bands is not None) and (set(bands).issubset(set(VIIRS_L1B_IMG_BANDS.keys()))):
+            elif (bands is not None) and not (set(bands).issubset(set(VIIRS_L1B_IMG_BANDS.keys()))):
                 msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_IMG_BANDS.keys())
                 raise KeyError(msg)
 
@@ -300,7 +301,7 @@ class viirs_l1b:
                 if verbose:
                     msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_MOD_BANDS
             
-            elif (bands is not None) and (set(bands).issubset(set(VIIRS_L1B_MOD_BANDS.keys()))):
+            elif (bands is not None) and not (set(bands).issubset(set(VIIRS_L1B_MOD_BANDS.keys()))):
                 msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_MOD_BANDS.keys())
                 raise KeyError(msg)  
         else:
@@ -319,8 +320,42 @@ class viirs_l1b:
 
         for i in range(len(fnames)):
             self.read(fnames[i])
-                
+    
+    
+    def _remove_flags(self, nc_dset, fill_value=np.nan):
+        """ 
+        Method to remove all flags without masking.
+        This could remove a significant portion of the image.
+        """
+        nc_dset.set_auto_scale(False)
+        nc_dset.set_auto_mask(False)
+        data = nc_dset[:]
+        data = data.astype('float') # convert to float to use nan
+        flags = nc_dset.getncattr('flag_values')
+        
+        for flag in flags:
+            data[np.where(data == flag)] = fill_value
             
+        return data
+            
+        
+    def _mask_flags(self, nc_dset, fill_value=np.nan):
+        """ 
+        Method to keep all flags by masking them with NaN.
+        This retains the full image but artifacts exist.
+        """
+        nc_dset.set_auto_scale(False)
+        nc_dset.set_auto_mask(True)
+        data = nc_dset[:]
+        data = np.ma.masked_array(data.data, data.mask, fill_value=fill_value, dtype='float64')
+        flags = nc_dset.getncattr('flag_values')
+
+        for flag in flags:
+            data = np.ma.masked_equal(data.data, flag, copy=False)
+            
+        data.filled(fill_value=fill_value)
+        return data
+    
     
     def read(self, fname):
 
@@ -364,19 +399,14 @@ class viirs_l1b:
         for i in range(len(self.bands)):
             
             nc_dset = f.groups['observation_data'].variables[self.bands[i]]
-            nc_dset.set_auto_scale(False)
-            data = nc_dset[:]
+            data = self._mask_flags(nc_dset)
             if self.f03 is not None:
                 data = data[mask]
-            
-            # convert to float to use nan filling
-            data = data.astype('float')
-            data.filled(fill_value=np.nan)
 
-            # apply scaling and offset 
+            # apply scaling, offset, and unit conversions
             rad0 = (data * nc_dset.getncattr('radiance_scale_factor')) + nc_dset.getncattr('radiance_add_offset')
-            if nc_dset.getncattr('radiance_units').endswith('micrometer'):
-                rad0 /= 1000. # from <per micron> to <per nm>
+            # if nc_dset.getncattr('radiance_units').endswith('micrometer'):
+            rad0 /= 1000. # from <per micron> to <per nm>
             
             rad[i] = rad0
             ref[i] = (data * nc_dset.getncattr('scale_factor')) + nc_dset.getncattr('add_offset')
