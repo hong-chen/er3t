@@ -16,19 +16,19 @@ __all__ = ['modis_l1b', 'modis_l2', 'modis_35_l2', 'modis_03', 'modis_04', 'modi
 
 
 
-MODIS_L1B_QKM_BANDS = {    
-                        1: 650, 
+MODIS_L1B_QKM_BANDS = {
+                        1: 650,
                         2: 860,
                       }
 
 
-MODIS_L1B_HKM_1KM_BANDS = {    
-                        1: 650, 
+MODIS_L1B_HKM_1KM_BANDS = {
+                        1: 650,
                         2: 860,
-                        3: 470, 
-                        4: 555, 
-                        5: 1240, 
-                        6: 1640, 
+                        3: 470,
+                        4: 555,
+                        5: 1240,
+                        6: 1640,
                         7: 2130
                       }
 
@@ -80,29 +80,29 @@ class modis_l1b:
             self.resolution = 0.25
             if bands is None:
                 self.bands = list(MODIS_L1B_QKM_BANDS.keys())
-            
+
             elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_QKM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_QKM_BANDS.keys())
                 raise KeyError(msg)
-                                
+
         elif 'hkm' in filename:
             self.resolution = 0.5
             if bands is None:
                 self.bands = list(MODIS_L1B_HKM_1KM_BANDS.keys())
-            
+
             elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_1KM_BANDS.keys())
                 raise KeyError(msg)
-                
+
         elif '1km' in filename:
             self.resolution = 1.0
             if bands is None:
                 self.bands = list(MODIS_L1B_HKM_1KM_BANDS.keys())
-            
+
             elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_1KM_BANDS.keys())
                 raise KeyError(msg)
-                
+
         else:
             sys.exit('Error [modis_l1b]: Currently, only QKM (0.25km), HKM (0.5km), and 1KM products are supported.')
 
@@ -118,7 +118,7 @@ class modis_l1b:
         cnt_off = hdf_dset_250.attributes()['corrected_counts_offsets'] + hdf_dset_500.attributes()['corrected_counts_offsets']
         cnt_sca = hdf_dset_250.attributes()['corrected_counts_scales']  + hdf_dset_500.attributes()['corrected_counts_scales']
         return rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca
-        
+
 
     def _get_250_500_uct(self, hdf_uct_250, hdf_uct_500):
         uct_spc = hdf_uct_250.attributes()['specified_uncertainty'] + hdf_uct_500.attributes()['specified_uncertainty']
@@ -156,7 +156,7 @@ class modis_l1b:
             else:
                 lat0  = f.select('Latitude')
                 lon0  = f.select('Longitude')
-                
+
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
             raw0      = f.select('EV_250_RefSB')
             uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
@@ -207,7 +207,7 @@ class modis_l1b:
             else:
                 lat0  = f.select('Latitude')
                 lon0  = f.select('Longitude')
-                
+
 
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
             raw0_250  = f.select('EV_250_Aggr500_RefSB')
@@ -286,7 +286,7 @@ class modis_l1b:
         # Calculate uncertainty
         uct     = uct0[:][:, logic]
         uct_pct = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
-        
+
         wvl = np.zeros(len(self.bands), dtype='uint16')
 
         band_counter = 0
@@ -299,7 +299,7 @@ class modis_l1b:
             uct_pct[band_counter, ...]   = uct_spc[band_idx] * np.exp(uct[band_idx] / uct_sca[band_idx]) # convert to percentage
             wvl[band_counter]            = MODIS_L1B_HKM_1KM_BANDS[self.bands[band_counter]]
             band_counter                += 1
-            
+
         f.end()
         # -------------------------------------------------------------------------------------------------
 

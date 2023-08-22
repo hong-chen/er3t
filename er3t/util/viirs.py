@@ -280,8 +280,8 @@ class viirs_l1b:
         self.fnames     = fnames      # Python list of netCDF filenames
         self.f03        = f03         # geolocation class object created using the `viirs_03` reader
         self.bands      = bands       # Python list of bands to extract information
-            
-        
+
+
         filename = os.path.basename(fnames[0]).lower()
         if '02img' in filename:
             self.resolution = 0.375
@@ -289,7 +289,7 @@ class viirs_l1b:
                 self.bands = list(VIIRS_L1B_IMG_BANDS.keys())
                 if verbose:
                     msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_IMG_BANDS
-            
+
             elif (bands is not None) and not (set(bands).issubset(set(VIIRS_L1B_IMG_BANDS.keys()))):
                 msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_IMG_BANDS.keys())
                 raise KeyError(msg)
@@ -300,30 +300,30 @@ class viirs_l1b:
                 self.bands = list(VIIRS_L1B_MOD_BANDS.keys())
                 if verbose:
                     msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_MOD_BANDS
-            
+
             elif (bands is not None) and not (set(bands).issubset(set(VIIRS_L1B_MOD_BANDS.keys()))):
                 msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_MOD_BANDS.keys())
-                raise KeyError(msg)  
+                raise KeyError(msg)
         else:
             msg = 'Error [viirs_l1b]: Currently, only IMG (0.375km) and MOD (0.75km) products are supported.'
             raise ValueError(msg)
 
-            
+
         if extent is not None and verbose:
             msg = '\nMessage [viirs_l1b]: The `extent` argument will be ignored as it is only available for consistency.\n' \
                   'If only region of interest is needed, please use `viirs_03` reader and pass the class object here via `f03=`.\n'
             print(msg)
-            
+
         if f03 is None and verbose:
             msg = '\nMessage [viirs_l1b]: Geolocation data not provided. File will be read without geolocation.\n'
             print(msg)
 
         for i in range(len(fnames)):
             self.read(fnames[i])
-    
-    
+
+
     def _remove_flags(self, nc_dset, fill_value=np.nan):
-        """ 
+        """
         Method to remove all flags without masking.
         This could remove a significant portion of the image.
         """
@@ -332,15 +332,15 @@ class viirs_l1b:
         data = nc_dset[:]
         data = data.astype('float') # convert to float to use nan
         flags = nc_dset.getncattr('flag_values')
-        
+
         for flag in flags:
             data[np.where(data == flag)] = fill_value
-            
+
         return data
-            
-        
+
+
     def _mask_flags(self, nc_dset, fill_value=np.nan):
-        """ 
+        """
         Method to keep all flags by masking them with NaN.
         This retains the full image but artifacts exist.
         """
@@ -352,11 +352,11 @@ class viirs_l1b:
 
         for flag in flags:
             data = np.ma.masked_equal(data.data, flag, copy=False)
-            
+
         data.filled(fill_value=fill_value)
         return data
-    
-    
+
+
     def read(self, fname):
 
         """
@@ -372,32 +372,32 @@ class viirs_l1b:
         except ImportError:
             msg = 'Error [viirs_l1b]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
-        
-        
+
+
         f   = Dataset(fname, 'r')
 
         # Calculate 1. radiance, 2. reflectance from the raw data
         #/-----------------------------------------------------------------------------\
-        
+
         if self.f03 is not None:
             mask = self.f03.logic[get_fname_pattern(fname)]['mask']
             rad  = np.zeros((len(self.bands), mask[mask==True].size))
             ref  = np.zeros((len(self.bands), mask[mask==True].size))
-        
+
         else:
-            rad = np.zeros((len(self.bands), 
-                           f.groups['observation_data'].variables[self.bands[0]].shape[0], 
+            rad = np.zeros((len(self.bands),
+                           f.groups['observation_data'].variables[self.bands[0]].shape[0],
                            f.groups['observation_data'].variables[self.bands[0]].shape[1]))
-            ref = np.zeros((len(self.bands), 
-                           f.groups['observation_data'].variables[self.bands[0]].shape[0], 
+            ref = np.zeros((len(self.bands),
+                           f.groups['observation_data'].variables[self.bands[0]].shape[0],
                            f.groups['observation_data'].variables[self.bands[0]].shape[1]))
-        
+
         wvl = np.zeros(len(self.bands), dtype='uint16')
 
         # Calculate 1. radiance, 2. reflectance from the raw data
         #\-----------------------------------------------------------------------------/
         for i in range(len(self.bands)):
-            
+
             nc_dset = f.groups['observation_data'].variables[self.bands[i]]
             data = self._mask_flags(nc_dset)
             if self.f03 is not None:
@@ -407,16 +407,16 @@ class viirs_l1b:
             rad0 = (data * nc_dset.getncattr('radiance_scale_factor')) + nc_dset.getncattr('radiance_add_offset')
             # if nc_dset.getncattr('radiance_units').endswith('micrometer'):
             rad0 /= 1000. # from <per micron> to <per nm>
-            
+
             rad[i] = rad0
             ref[i] = (data * nc_dset.getncattr('scale_factor')) + nc_dset.getncattr('add_offset')
             wvl[i] = VIIRS_ALL_BANDS[self.bands[i]]
-        
+
         f.close()
         #\-----------------------------------------------------------------------------/
 
         if hasattr(self, 'data'):
-            
+
             self.data['rad'] = dict(name='Radiance'   , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
 
