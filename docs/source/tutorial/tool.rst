@@ -94,14 +94,14 @@ Satellite Products Download Tool - ``sdown``
   LAADS DAAC and LANCE, and satellite RGB imageries from NASA WorldView) for a user specified
   date and region. The development of ``sdown`` is led by Vikas Nataraja.
 
-  Setup may be required to start using ``sdown``: 
+  Setup may be required to start using ``sdown``:
 
   .. code-block:: bash
 
     python setup.py develop
 
   Once setup, sdown should be available via Terminal. To test if setup is correct, use:
-  
+
   .. code-block:: bash
 
     sdown --run_demo
@@ -116,38 +116,38 @@ Satellite Products Download Tool - ``sdown``
     sdown --date 20230326 --lons 127 132 --lats -14 -10 --products mod021km vnp02mod modrgb vnprgb --verbose
 
   The following command line arguments are available to customize (use ``sdown --help`` to view all options in detail):
-  
+
   .. code-block:: bash
-    
+
     -f , --fdir           Directory where the files will be downloaded
                           By default, files will be downloaded to 'sat-data/'
-                          
+
     -v, --verbose         Pass --verbose if status of your request should be reported frequently.
 
     -d , --date           Date for which you would like to download data. Use yyyymmdd format.
                           Example: --date 20210404
-                          
+
     -t , --start_date     The start date of the range of dates for which you would like to download data. Use yyyymmdd format.
                           Example: --start_date 20210404
-                          
+
     -u , --end_date       The end date of the range of dates for which you would like to download data. Use yyyymmdd format.
                           Example: --end_date 20210414
-                          
+
     -e  [ ...], --extent  [ ...]
-                          Extent of region of interest 
+                          Extent of region of interest
                           lon1 lon2 lat1 lat2 in West East South North format.
                           Example:  --extent -10 -5 25 30
-                          
+
     -x  [ ...], --lons  [ ...]
                           The west-most and east-most longitudes of the region.
                           Alternative to providing the first two terms in `extent`.
                           Example:  --lons -10 -5
-                          
+
     -y  [ ...], --lats  [ ...]
                           The south-most and north-most latitudes of the region.
                           Alternative to providing the last two terms in `extent`.
                           Example:  --lats 25 30
-                          
+
     -n, --nrt             Pass --nrt if Near Real Time products should be downloaded.
                           This is disabled by default to automatically download standard products.
                           Currently, only MODIS NRT products can be downloaded.
@@ -155,7 +155,7 @@ Satellite Products Download Tool - ``sdown``
                           Short prefix (case insensitive) for the product name.
                           Example:  --products MOD02QKM
 
-  
+
   We currently support the download of the following products:
 
   .. code-block:: bash
@@ -190,8 +190,8 @@ Satellite Products Download Tool - ``sdown``
 
   We are working on supporting more products via this tool.
 
-  
-  
+
+
 
 
 
