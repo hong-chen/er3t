@@ -38,18 +38,18 @@ import sys
 import pickle
 import warnings
 import h5py
-from pyhdf.SD import SD, SDC
+# from pyhdf.SD import SD, SDC
 import numpy as np
 import datetime
 from scipy.io import readsav
-from scipy import interpolate, stats
+# from scipy import interpolate, stats
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.path as mpl_path
+# import matplotlib.path as mpl_path
 import matplotlib.image as mpl_img
-import matplotlib.patches as mpatches
-import matplotlib.gridspec as gridspec
+# import matplotlib.patches as mpatches
+# import matplotlib.gridspec as gridspec
 from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -158,21 +158,21 @@ class satellite_download:
         self.fnames = {}
 
         # MODIS RGB imagery
-        self.fnames['mod_rgb'] = [er3t.util.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.util.daac.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
 
-        filename_tags_03 = er3t.util.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
+        filename_tags_03 = er3t.util.daac.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
         if self.verbose:
            print('Message [satellite_download]: Found %s %s overpasses' % (len(filename_tags_03), self.satellite))
 
         for filename_tag in filename_tags_03:
-            fnames_03     = er3t.util.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = er3t.util.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = er3t.util.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = er3t.util.daac.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = er3t.util.daac.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = er3t.util.daac.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
 
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02
@@ -180,9 +180,9 @@ class satellite_download:
 
         # MODIS surface product
         self.fnames['mod_43'] = []
-        filename_tags_43 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
+        filename_tags_43 = er3t.util.modis.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_43:
-            fnames_43 = er3t.util.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_43 = er3t.util.daac.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_43'] += fnames_43
 
     def dump(self, fname):
@@ -192,6 +192,8 @@ class satellite_download:
             if self.verbose:
                 print('Message [satellite_download]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
+
+
 
 def cdata_sat_raw(
         wvl=params['wavelength'],

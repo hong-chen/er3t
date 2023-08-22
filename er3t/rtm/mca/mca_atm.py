@@ -87,7 +87,7 @@ class mca_atm_1d:
             self.nml[ig]['Atm_abs1d(1:, 1)'] = {'data':atm_abs, 'units':'/m' , 'name':'Absorption coefficients'}
 
             # Extinction coefficient
-            # Use Bodhaine formula to calculate Rayleigh Optical Deption
+            # Use Bodhaine formula to calculate Rayleigh Optical Depth
             atm_ext = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:]) \
                      / (self.atm.lay['thickness']['data']*1000.0)
             self.nml[ig]['Atm_ext1d(1:, 1)'] = {'data':atm_ext, 'units':'/m' , 'name':'Extinction coefficients'}

@@ -5,23 +5,21 @@ Purpose:
 
 import os
 import sys
-import time
-import glob
 import datetime
 import multiprocessing as mp
 
 import numpy as np
-from scipy import interpolate
+# from scipy import interpolate
 
-import matplotlib as mpl
+# import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.image as mpl_img
 # mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator
-from matplotlib import rcParams
-import matplotlib.gridspec as gridspec
-import matplotlib.patches as mpatches
+# from matplotlib import rcParams
+# import matplotlib.gridspec as gridspec
+# import matplotlib.patches as mpatches
 # import cartopy.crs as ccrs
 
 import er3t
@@ -30,7 +28,7 @@ from er3t.util import grid_by_extent
 
 def test_download_worldview():
 
-    from er3t.util import download_worldview_rgb
+    from er3t.util.daac import download_worldview_rgb
 
     date = datetime.datetime(2022, 5, 18)
     extent = [-94.2607, -87.2079, 31.8594, 38.9122]

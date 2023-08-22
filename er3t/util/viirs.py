@@ -1,22 +1,60 @@
 import os
-import sys
-import datetime
-from io import StringIO
 import numpy as np
 import h5py
-from scipy import interpolate
-import shutil
-from http.cookiejar import CookieJar
-import urllib.request
-import requests
+
 
 import er3t.common
-from er3t.util import check_equal, get_data_nc
+from er3t.util import get_data_nc
 from er3t.util.modis import cal_sinusoidal_grid
 
 
 
 __all__ = ['viirs_03', 'viirs_l1b', 'viirs_09a1', 'viirs_43ma3', 'viirs_43ma4']
+
+
+
+VIIRS_ALL_BANDS = {
+                    'I01': 640,
+                    'I02': 865,
+                    'I03': 1610,
+                    'I04': 3740,
+                    'I05': 11450,
+                    'M01': 415,
+                    'M02': 445,
+                    'M03': 490,
+                    'M04': 555,
+                    'M05': 673,
+                    'M06': 746,
+                    'M07': 865,
+                    'M08': 1240,
+                    'M09': 1378,
+                    'M10': 1610,
+                    'M11': 2250,
+                    'M12': 3700,
+                    'M13': 4050,
+                    'M14': 8550,
+                    'M15': 12013
+                    }
+
+
+VIIRS_L1B_MOD_BANDS = {
+                    'M01': 415,
+                    'M02': 445,
+                    'M03': 490,
+                    'M04': 555,
+                    'M05': 673,
+                    'M06': 746,
+                    'M07': 865,
+                    'M08': 1240,
+                    'M10': 1610,
+                    'M11': 2250
+                    }
+
+VIIRS_L1B_IMG_BANDS = {
+                    'I01': 640,
+                    'I02': 865,
+                    'I03': 1610
+                    }
 
 
 # reader for VIIRS (Visible Infrared Imaging Radiometer Suite)
@@ -214,90 +252,121 @@ class viirs_03:
 class viirs_l1b:
 
     """
-    Read VIIRS Level 1B file, e.g., VNP02MOD, into an object <viirs_l1b>
+    Read VIIRS Level 1b file, e.g., VNP02MOD, into an object <viirs_l1b>
 
     Input:
         fnames=     : keyword argument, default=None, Python list of the file path of the original netCDF files
-        overwrite=  : keyword argument, default=False, whether to overwrite or not
-        extent=     : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
-        resolution= : keyword argument, default=None, data spatial resolution in km, can be detected from filename
+        f03=        : keyword argument, default=None, class object obtained from `viirs_03` reader for geolocation
         verbose=    : keyword argument, default=False, verbose tag
 
     Output:
         self.data
-                ['lon']
-                ['lat']
+                ['wvl']
                 ['rad']
                 ['ref']
-                ['cnt']
     """
 
 
-    ID = 'VIIRS Level 1B Calibrated Radiance'
+    ID = 'VIIRS Level 1b Calibrated Radiance'
 
 
     def __init__(self, \
-                 fnames    = None,  \
-                 f03       = None,  \
-                 band      = 'M04', \
-                 resolution= None,  \
-                 overwrite = False, \
-                 quiet     = True,  \
-                 verbose   = False):
+                 fnames     = None,  \
+                 f03        = None,  \
+                 extent     = None,  \
+                 bands      = None,  \
+                 verbose    = False):
 
-        self.fnames     = fnames      # file name of the netCDF files
-        self.f03        = f03         # geolocation file
-        self.band       = band.upper()# band
-        self.verbose    = verbose     # verbose tag
-        self.quiet      = quiet       # quiet tag
+        self.fnames     = fnames      # Python list of netCDF filenames
+        self.f03        = f03         # geolocation class object created using the `viirs_03` reader
+        self.bands      = bands       # Python list of bands to extract information
 
-        wvls = {
-                'I01': 640,
-                'I02': 865,
-                'I03': 1610,
-                'M01': 415,
-                'M02': 445,
-                'M03': 490,
-                'M04': 555,
-                'M05': 673,
-                'M07': 865,
-                'M08': 1240,
-                'M10': 1610,
-                'M11': 2250,
-                }
-        self.wvl = wvls[self.band]
 
-        if resolution is None:
-            filename = os.path.basename(fnames[0]).lower()
-            if '02img' in filename:
-                self.resolution = 0.375
-            elif ('02mod' in filename) or ('02dnb' in filename):
-                self.resolution = 0.75
-            else:
-                msg = 'Error [viirs_l1b]: Resolution (in km) is not defined.'
-                raise ValueError(msg)
+        filename = os.path.basename(fnames[0]).lower()
+        if '02img' in filename:
+            self.resolution = 0.375
+            if bands is None:
+                self.bands = list(VIIRS_L1B_IMG_BANDS.keys())
+                if verbose:
+                    msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_IMG_BANDS
+
+            elif (bands is not None) and not (set(bands).issubset(set(VIIRS_L1B_IMG_BANDS.keys()))):
+
+                msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_IMG_BANDS.keys())
+                raise KeyError(msg)
+
+        elif ('02mod' in filename) or ('02dnb' in filename):
+            self.resolution = 0.75
+            if bands is None:
+                self.bands = list(VIIRS_L1B_MOD_BANDS.keys())
+                if verbose:
+                    msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_MOD_BANDS
+
+            elif (bands is not None) and not (set(bands).issubset(set(VIIRS_L1B_MOD_BANDS.keys()))):
+
+                msg = 'Error [viirs_l1b]: Bands must be one or more of %s' % list(VIIRS_L1B_MOD_BANDS.keys())
+                raise KeyError(msg)
         else:
-
-            if resolution not in [0.375, 0.75]:
-                msg = 'Error [viirs_l1b]: Resolution of %f km is invalid.' % resolution
-                raise ValueError(msg)
-
-            self.resolution = resolution
-
-        for fname in self.fnames:
-            self.read(fname, self.band)
+            msg = 'Error [viirs_l1b]: Currently, only IMG (0.375km) and MOD (0.75km) products are supported.'
+            raise ValueError(msg)
 
 
-    def read(self, fname, band):
+        if extent is not None and verbose:
+            msg = '\nMessage [viirs_l1b]: The `extent` argument will be ignored as it is only available for consistency.\n' \
+                  'If only region of interest is needed, please use `viirs_03` reader and pass the class object here via `f03=`.\n'
+            print(msg)
+
+        if f03 is None and verbose:
+            msg = '\nMessage [viirs_l1b]: Geolocation data not provided. File will be read without geolocation.\n'
+            print(msg)
+
+        for i in range(len(fnames)):
+            self.read(fnames[i])
+
+
+    def _remove_flags(self, nc_dset, fill_value=np.nan):
+        """
+        Method to remove all flags without masking.
+        This could remove a significant portion of the image.
+        """
+        nc_dset.set_auto_scale(False)
+        nc_dset.set_auto_mask(False)
+        data = nc_dset[:]
+        data = data.astype('float') # convert to float to use nan
+        flags = nc_dset.getncattr('flag_values')
+
+        for flag in flags:
+            data[np.where(data == flag)] = fill_value
+
+        return data
+
+
+    def _mask_flags(self, nc_dset, fill_value=np.nan):
+        """
+        Method to keep all flags by masking them with NaN.
+        This retains the full image but artifacts exist.
+        """
+        nc_dset.set_auto_scale(False)
+        nc_dset.set_auto_mask(True)
+        data = nc_dset[:]
+        data = np.ma.masked_array(data.data, data.mask, fill_value=fill_value, dtype='float64')
+        flags = nc_dset.getncattr('flag_values')
+
+        for flag in flags:
+            data = np.ma.masked_equal(data.data, flag, copy=False)
+
+        data.filled(fill_value=fill_value)
+        return data
+
+
+    def read(self, fname):
 
         """
-        Read radiance/reflectance/corrected counts from the VIIRS L1B data
+        Read radiance and reflectance from the VIIRS L1b data
         self.data
-            ['lon']
-            ['lat']
+            ['wvl']
             ['rad']
             ['ref']
-            ['cnt']
         """
 
         try:
@@ -306,25 +375,44 @@ class viirs_l1b:
             msg = 'Error [viirs_l1b]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
-        f = Dataset(fname, 'r')
 
-        raw0 = f.groups['observation_data'].variables[band]
-        raw0.set_auto_scale(False)
+        f   = Dataset(fname, 'r')
 
-        # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
+        # Calculate 1. radiance, 2. reflectance from the raw data
         #/-----------------------------------------------------------------------------\
+
         if self.f03 is not None:
-            raw = raw0[:][self.f03.logic[get_fname_pattern(fname)]['mask']]
+            mask = self.f03.logic[get_fname_pattern(fname)]['mask']
+            rad  = np.zeros((len(self.bands), mask[mask==True].size))
+            ref  = np.zeros((len(self.bands), mask[mask==True].size))
+
         else:
-            raw = raw0[:]
+            rad = np.zeros((len(self.bands),
+                           f.groups['observation_data'].variables[self.bands[0]].shape[0],
+                           f.groups['observation_data'].variables[self.bands[0]].shape[1]))
+            ref = np.zeros((len(self.bands),
+                           f.groups['observation_data'].variables[self.bands[0]].shape[0],
+                           f.groups['observation_data'].variables[self.bands[0]].shape[1]))
 
-        rad = np.zeros(raw.shape, dtype=np.float64)
-        ref = np.zeros(raw.shape, dtype=np.float64)
+        wvl = np.zeros(len(self.bands), dtype='uint16')
 
-        rad = raw*raw0.getncattr('radiance_scale_factor') + raw0.getncattr('radiance_add_offset')
-        rad /= 1000.0 # from <per micron> to <per nm>
-        rad.filled(fill_value=np.nan)
-        ref = raw*raw0.getncattr('scale_factor') + raw0.getncattr('add_offset')
+        # Calculate 1. radiance, 2. reflectance from the raw data
+        #\-----------------------------------------------------------------------------/
+        for i in range(len(self.bands)):
+
+            nc_dset = f.groups['observation_data'].variables[self.bands[i]]
+            data = self._mask_flags(nc_dset)
+            if self.f03 is not None:
+                data = data[mask]
+
+            # apply scaling, offset, and unit conversions
+            rad0 = (data * nc_dset.getncattr('radiance_scale_factor')) + nc_dset.getncattr('radiance_add_offset')
+            # if nc_dset.getncattr('radiance_units').endswith('micrometer'):
+            rad0 /= 1000. # from <per micron> to <per nm>
+
+            rad[i] = rad0
+            ref[i] = (data * nc_dset.getncattr('scale_factor')) + nc_dset.getncattr('add_offset')
+            wvl[i] = VIIRS_ALL_BANDS[self.bands[i]]
 
         f.close()
         #\-----------------------------------------------------------------------------/
@@ -334,20 +422,12 @@ class viirs_l1b:
             self.data['rad'] = dict(name='Radiance'   , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
 
-            if self.f03 is not None:
-                for vname in self.f03.data.keys():
-                    self.data[vname] = self.f03.data[vname]
-
         else:
 
             self.data = {}
-            self.data['wvl'] = dict(name='Wavelength' , data=self.wvl, units='nm')
-            self.data['rad'] = dict(name='Radiance'   , data=rad     , units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance', data=ref     , units='N/A')
-
-            if self.f03 is not None:
-                for vname in self.f03.data.keys():
-                    self.data[vname] = self.f03.data[vname]
+            self.data['wvl'] = dict(name='Wavelengths', data=wvl       , units='nm')
+            self.data['rad'] = dict(name='Radiance'   , data=rad       , units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance', data=ref       , units='N/A')
 
 
     def save_h5(self, fname):
@@ -357,8 +437,174 @@ class viirs_l1b:
             f[key] = self.data[key]['data']
         f.close()
 
-        if not self.quiet:
-            print('Message [viirs_l1b]: File <%s> is created.' % fname)
+
+
+
+
+class viirs_cldprop_l2:
+    """
+    Read VIIRS Level 2 cloud properties file, e.g., CLDPROP_L2_VIIRS_SNPP..., into an object <viirs_cldprop>
+
+    Input:
+        fnames=     : keyword argument, default=None, Python list of the file path of the original netCDF files
+        extent=     : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+
+    Output:
+        self.data
+                ['lon']
+                ['lat']
+                ['ctp']
+                ['cth']
+                ['cot']
+                ['cer']
+                ['cwp']
+                ['cot_uct']
+                ['cer_uct']
+                ['cer_uct']
+                ['pcl']
+    """
+
+
+    ID = 'VIIRS Level 2 Cloud Properties'
+
+    def __init__(self, fnames=None, extent=None):
+
+        self.fnames = fnames
+        self.extent = extent
+
+        for fname in self.fnames:
+            self.read(fname)
+
+
+    def read(self, fname):
+
+        try:
+            from netCDF4 import Dataset
+        except ImportError:
+            msg = 'Error [viirs_cldprop_l2]: Please install <netCDF4> to proceed.'
+            raise ImportError(msg)
+
+        # ------------------------------------------------------------------------------------ #
+        f = Dataset(fname, 'r')
+
+        #----------------------------------------lat/lon----------------------------------------#
+
+        lat = f.groups['geolocation_data'].variables['latitude'][...]
+        lon = f.groups['geolocation_data'].variables['longitude'][...]
+
+
+        #------------------------------------Cloud variables------------------------------------#
+        ctp0 = f.groups['geophysical_data'].variables['Cloud_Phase_Optical_Properties']
+        cth0 = f.groups['geophysical_data'].variables['Cloud_Top_Height']
+
+
+        # TODO
+        # Support for cloud mask             (byte format)
+        cot0 = f.groups['geophysical_data'].variables['Cloud_Optical_Thickness']
+        cer0 = f.groups['geophysical_data'].variables['Cloud_Effective_Radius']
+        cwp0 = f.groups['geophysical_data'].variables['Cloud_Water_Path']
+
+        #-------------------------------------PCL variables-------------------------------------#
+        cot1 = f.groups['geophysical_data'].variables['Cloud_Optical_Thickness_PCL']
+        cer1 = f.groups['geophysical_data'].variables['Cloud_Effective_Radius_PCL']
+        cwp1 = f.groups['geophysical_data'].variables['Cloud_Water_Path_PCL']
+
+        #-------------------------------------Uncertainties-------------------------------------#
+        cot_uct0 = f.groups['geophysical_data'].variables['Cloud_Optical_Thickness_Uncertainty']
+        cer_uct0 = f.groups['geophysical_data'].variables['Cloud_Effective_Radius_Uncertainty']
+        cwp_uct0 = f.groups['geophysical_data'].variables['Cloud_Water_Path_Uncertainty']
+
+
+        if self.extent is None:
+            lon_range = [-180.0, 180.0]
+            lat_range = [-90.0 , 90.0]
+        else:
+            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
+
+        # Select required region only
+        logic_extent  = (lon >= lon_range[0]) & (lon <= lon_range[1]) & \
+                        (lat >= lat_range[0]) & (lat <= lat_range[1])
+        lon           = lon[logic_extent]
+        lat           = lat[logic_extent]
+
+        # Retrieve 1. ctp, 2. cth, 3. cot, 4. cer, 5. cwp, and select regional extent
+        ctp           = get_data_nc(ctp0, nan=False)[logic_extent]
+        cth           = get_data_nc(cth0, nan=False)[logic_extent]
+
+        cot0_data     = get_data_nc(cot0)[logic_extent]
+        cer0_data     = get_data_nc(cer0)[logic_extent]
+        cwp0_data     = get_data_nc(cwp0, nan=False)[logic_extent]
+        cot1_data     = get_data_nc(cot1)[logic_extent]
+        cer1_data     = get_data_nc(cer1)[logic_extent]
+        cwp1_data     = get_data_nc(cwp1, nan=False)[logic_extent]
+        cot_uct0_data = get_data_nc(cot_uct0)[logic_extent]
+        cer_uct0_data = get_data_nc(cer_uct0)[logic_extent]
+        cwp_uct0_data = get_data_nc(cwp_uct0)[logic_extent]
+
+        # Make copies to modify
+        cot     = cot0_data.copy()
+        cer     = cer0_data.copy()
+        cwp     = cwp0_data.copy()
+        cot_uct = cot_uct0_data.copy()
+        cer_uct = cer_uct0_data.copy()
+        cwp_uct = cwp_uct0_data.copy()
+
+        # use the partially cloudy data to fill in potential missed clouds
+        pcl     = np.zeros_like(cot, dtype=np.uint8)
+        logic_pcl = ((cot0_data < 0.0) | (cer0_data <= 0.0) | (cwp0_data < 0.0)) &\
+                    ((cot1_data >= 0.0) & (cer1_data > 0.0) & (cwp1_data >= 0.0))
+
+        pcl[logic_pcl] = 1
+        cot[logic_pcl] = cot1_data[logic_pcl]
+        cer[logic_pcl] = cer1_data[logic_pcl]
+        cwp[logic_pcl] = cwp1_data[logic_pcl]
+
+        # make invalid pixels clear-sky
+        logic_invalid = (cot < 0.0) | (cer <= 0.0) | (cwp < 0.0)
+        cot[logic_invalid]     = 0.0
+        cer[logic_invalid]     = 1.0
+        cwp[logic_invalid]     = 0.0
+        cot_uct[logic_invalid] = 0.0
+        cer_uct[logic_invalid] = 0.0
+        cwp_uct[logic_invalid] = 0.0
+
+        f.close()
+        # ------------------------------------------------------------------------------------ #
+
+        # save the data
+        if hasattr(self, 'data'):
+
+            self.logic[fname] = {'0.75km':logic_extent}
+
+            self.data['lon']      = dict(name='Longitude',                           data=np.hstack((self.data['lon']['data'], lon)),                   units='degrees')
+            self.data['lat']      = dict(name='Latitude',                            data=np.hstack((self.data['lat']['data'], lat)),                   units='degrees')
+            self.data['ctp']      = dict(name='Cloud phase optical proprties',       data=np.hstack((self.data['ctp']['data'], ctp)),                   units='N/A')
+            self.data['cth']      = dict(name='Cloud top height',                    data=np.hstack((self.data['cth']['data'], cth)),                   units='m')
+            self.data['cot']      = dict(name='Cloud optical thickness',             data=np.hstack((self.data['cot']['data'], cot)),                   units='N/A')
+            self.data['cer']      = dict(name='Cloud effective radius',              data=np.hstack((self.data['cer']['data'], cer)),                   units='micron')
+            self.data['cwp']      = dict(name='Cloud water path',                    data=np.hstack((self.data['cwp']['data'], cwp)),                   units='g/m^2')
+            self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_uct']['data'], cot*cot_uct/100.0)), units='N/A')
+            self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_uct']['data'], cer*cer_uct/100.0)), units='micron')
+            self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=np.hstack((self.data['cwp_uct']['data'], cwp*cwp_uct/100.0)), units='g/m^2')
+            self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
+
+        else:
+            self.logic = {}
+            self.logic[fname] = {'0.75km':logic_extent}
+            self.data  = {}
+
+            self.data['lon']      = dict(name='Longitude',                           data=lon,               units='degrees')
+            self.data['lat']      = dict(name='Latitude',                            data=lat,               units='degrees')
+            self.data['ctp']      = dict(name='Cloud phase optical properties',      data=ctp,               units='N/A')
+            self.data['cth']      = dict(name='Cloud top height',                    data=cth,               units='m')
+            self.data['cot']      = dict(name='Cloud optical thickness',             data=cot,               units='N/A')
+            self.data['cer']      = dict(name='Cloud effective radius',              data=cer,               units='micron')
+            self.data['cwp']      = dict(name='Cloud water path',                    data=cwp,               units='g/m^2')
+            self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=cot*cot_uct/100.0, units='N/A')
+            self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=cer*cer_uct/100.0, units='micron')
+            self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=cwp*cwp_uct/100.0, units='g/m^2')
+            self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=pcl,               units='N/A')
 
 
 
