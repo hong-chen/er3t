@@ -354,6 +354,7 @@ class modis_l2:
                 ['lat']
                 ['cot']
                 ['cer']
+                ['cwp']
     """
 
 
@@ -378,10 +379,10 @@ class modis_l2:
             self.read(fname, cop_flag=cop_flag)
 
             if len(vnames) > 0:
-                self.read_vars(fname, vnames=vnames)
+                self.read_vars(fname, vnames=vnames, cop_flag=cop_flag)
 
 
-    def read(self, fname, cop_flag=''):
+    def read(self, fname, cop_flag):
 
         """
         Read cloud optical properties
@@ -391,6 +392,7 @@ class modis_l2:
             ['lat']
             ['cot']
             ['cer']
+            ['cwp']
             ['pcl']
             ['lon_5km']
             ['lat_5km']
@@ -444,7 +446,6 @@ class modis_l2:
         # 2. If region (extent=) is not specified, filter invalid data
         # ----------------------------------------------------------------------------
 
-
         if self.extent is None:
 
             if 'actual_range' in lon0.attributes().keys():
@@ -483,6 +484,7 @@ class modis_l2:
         # Calculate 1. cot, 2. cer, 3. ctp
         #/--------------------------------\#
         ctp           = get_data_h4(ctp0)[logic_1km]
+        
         cot0_data     = get_data_h4(cot0)[logic_1km]
         cer0_data     = get_data_h4(cer0)[logic_1km]
         cwp0_data     = get_data_h4(cwp0)[logic_1km]

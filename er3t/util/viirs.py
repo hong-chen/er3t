@@ -510,7 +510,7 @@ class viirs_cldprop_l2:
 
         if self.extent is None:
             lon_range = [-180.0, 180.0]
-            lat_range = [-90.0 , 90.0]
+            lat_range = [-90.0, 90.0]
         else:
             lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
             lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
@@ -538,9 +538,11 @@ class viirs_cldprop_l2:
         cot0_data     = get_data_nc(cot0)[logic_extent]
         cer0_data     = get_data_nc(cer0)[logic_extent]
         cwp0_data     = get_data_nc(cwp0, nan=False)[logic_extent]
+        
         cot1_data     = get_data_nc(cot1)[logic_extent]
         cer1_data     = get_data_nc(cer1)[logic_extent]
         cwp1_data     = get_data_nc(cwp1, nan=False)[logic_extent]
+        
         cot_uct0_data = get_data_nc(cot_uct0)[logic_extent]
         cer_uct0_data = get_data_nc(cer_uct0)[logic_extent]
         cwp_uct0_data = get_data_nc(cwp_uct0)[logic_extent]
@@ -549,6 +551,7 @@ class viirs_cldprop_l2:
         cot     = cot0_data.copy()
         cer     = cer0_data.copy()
         cwp     = cwp0_data.copy()
+        
         cot_uct = cot_uct0_data.copy()
         cer_uct = cer_uct0_data.copy()
         cwp_uct = cwp_uct0_data.copy()
