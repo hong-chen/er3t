@@ -327,14 +327,13 @@ class viirs_l1b:
         Method to remove all flags without masking.
         This could remove a significant portion of the image.
         """
-        nc_dset.set_auto_scale(False)
-        nc_dset.set_auto_mask(False)
+        nc_dset.set_auto_maskandscale(False)
         data = nc_dset[:]
         data = data.astype('float') # convert to float to use nan
         flags = nc_dset.getncattr('flag_values')
 
         for flag in flags:
-            data[np.where(data == flag)] = fill_value
+            data[data == flag] = fill_value
 
         return data
 
@@ -342,12 +341,12 @@ class viirs_l1b:
     def _mask_flags(self, nc_dset, fill_value=np.nan):
         """
         Method to keep all flags by masking them with NaN.
-        This retains the full image but artifacts exist.
+        This retains the full image but artifacts exist at extreme swath edges.
         """
         nc_dset.set_auto_scale(False)
         nc_dset.set_auto_mask(True)
         data = nc_dset[:]
-        data = np.ma.masked_array(data.data, data.mask, fill_value=fill_value, dtype='float64')
+        data = np.ma.masked_array(data.data, data.mask, fill_value=fill_value, dtype='float')
         flags = nc_dset.getncattr('flag_values')
 
         for flag in flags:
@@ -559,7 +558,7 @@ class viirs_cldprop_l2:
         pcl = np.zeros_like(cot, dtype=np.uint8)
 
         # Mark negative (invalid) retrievals with clear-sky values
-        logic_invalid = (cot < 0.0) | (cer < 0.0) | (cwp < 0.0)
+        logic_invalid = (cot0_data < 0.0) | (cer0_data < 0.0) | (cwp0_data < 0.0) | (ctp == 0)
         cot[logic_invalid]     = 0.0
         cer[logic_invalid]     = 0.0
         cwp[logic_invalid]     = 0.0
@@ -567,10 +566,18 @@ class viirs_cldprop_l2:
         cer_err[logic_invalid] = 0.0
         cwp_err[logic_invalid] = 0.0
 
+        # Mark clear-sky pixels using phase as an additional
+        logic_clear          = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & (ctp == 1)
+        cot[logic_clear]     = 0.0
+        cer[logic_clear]     = 0.0
+        cwp[logic_clear]     = 0.0
+
         # Use partially cloudy retrieval to fill in clouds:
         # When the standard retrieval identifies a pixel as being clear-sky AND the corresponding PCL retrieval says it is cloudy,
-        # we give credence to the PCL retrieval
-        logic_pcl = ((cot0_data == 0.0) | (cer0_data == 0.0) | cwp0_data == 0.0) & ((cot1_data > 0.0) & (cer1_data > 0.0) & (cwp1_data > 0.0))
+        # AND the phase is determined to be either liquid, mixed-, ice, or undetermined, 
+        # we give credence to the PCL retrieval and mark the pixel with PCL-retrieved values
+
+        logic_pcl = ((cot0_data == 0.0) | (cer0_data == 0.0) | cwp0_data == 0.0) & ((cot1_data > 0.0) & (cer1_data > 0.0) & (cwp1_data > 0.0) & (ctp > 1))
         pcl[logic_pcl] = 1
         cot[logic_pcl] = cot1_data[logic_pcl]
         cer[logic_pcl] = cer1_data[logic_pcl]
@@ -594,7 +601,7 @@ class viirs_cldprop_l2:
             self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_uct']['data'], cot*cot_uct/100.0)), units='N/A')
             self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_uct']['data'], cer*cer_uct/100.0)), units='micron')
             self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=np.hstack((self.data['cwp_uct']['data'], cwp*cwp_uct/100.0)), units='g/m^2')
-            self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
+            self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Clear)',            data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
 
         else:
             self.logic = {}
@@ -611,7 +618,7 @@ class viirs_cldprop_l2:
             self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=cot*cot_uct/100.0, units='N/A')
             self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=cer*cer_uct/100.0, units='micron')
             self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=cwp*cwp_uct/100.0, units='g/m^2')
-            self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=pcl,               units='N/A')
+            self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Clear)',            data=pcl,               units='N/A')
 
 
 
