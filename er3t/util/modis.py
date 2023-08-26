@@ -430,7 +430,8 @@ class modis_l2:
         lat0       = f.select('Latitude')
         lon0       = f.select('Longitude')
 
-        ctp0       = f.select(vname_ctp)
+        ctp        = f.select(vname_ctp)
+        
         cot0       = f.select(vname_cot)
         cer0       = f.select(vname_cer)
         cwp0       = f.select(vname_cwp)
@@ -483,7 +484,7 @@ class modis_l2:
 
         # Calculate 1. cot, 2. cer, 3. ctp
         #/--------------------------------\#
-        ctp_data      = get_data_h4(ctp0)[logic_1km]
+        ctp           = get_data_h4(ctp)[logic_1km]
         
         cot0_data     = get_data_h4(cot0)[logic_1km]
         cer0_data     = get_data_h4(cer0)[logic_1km]
@@ -497,7 +498,7 @@ class modis_l2:
         cer_err0_data = get_data_h4(cer_err0)[logic_1km]
         cwp_err0_data = get_data_h4(cwp_err0)[logic_1km]
         
-        ctp     = ctp_data.copy()
+        # Make copies to modify
         cot     = cot0_data.copy()
         cer     = cer0_data.copy()
         cwp     = cer0_data.copy()
@@ -508,7 +509,7 @@ class modis_l2:
         pcl = np.zeros_like(cot, dtype=np.uint8)
 
         # Mark negative (invalid) retrievals with clear-sky values
-        logic_invalid = (cot0_data < 0.0) | (cer0_data < 0.0) | (cwp0_data < 0.0) | (ctp_data == 0)
+        logic_invalid = (cot0_data < 0.0) | (cer0_data < 0.0) | (cwp0_data < 0.0) | (ctp == 0)
         cot[logic_invalid]     = 0.0
         cer[logic_invalid]     = 0.0
         cwp[logic_invalid]     = 0.0
@@ -516,8 +517,8 @@ class modis_l2:
         cer_err[logic_invalid] = 0.0
         cwp_err[logic_invalid] = 0.0
 
-        # Mark clear-sky pixels using phase as an additional
-        logic_clear          = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & (ctp_data == 1)
+        # Mark clear-sky pixels using phase as an additional important input
+        logic_clear          = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & (ctp == 1)
         cot[logic_clear]     = 0.0
         cer[logic_clear]     = 0.0
         cwp[logic_clear]     = 0.0
