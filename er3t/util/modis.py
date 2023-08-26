@@ -534,7 +534,6 @@ class modis_l2:
         cer[logic_pcl] = cer1_data[logic_pcl]
         cwp[logic_pcl] = cwp1_data[logic_pcl]
 
-
         f.end()
         # -------------------------------------------------------------------------------------------------
 
@@ -551,7 +550,7 @@ class modis_l2:
             self.data['cer']       = dict(name='Cloud effective radius',              data=np.hstack((self.data['cer']['data'], cer)),                   units='micron')
             self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_err']['data'], cot*cot_err/100.0)), units='N/A')
             self.data['cer_err']   = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_err']['data'], cer*cer_err/100.0)), units='micron')
-            self.data['pcl']       = dict(name='PCL tag (1:PCL, 0:Clear)',            data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
+            self.data['pcl']       = dict(name='PCL tag (1:PCL)',                     data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
             self.data['lon_5km']   = dict(name='Longitude at 5km',                    data=np.hstack((self.data['lon_5km']['data'], lon_5km)),           units='degrees')
             self.data['lat_5km']   = dict(name='Latitude at 5km',                     data=np.hstack((self.data['lat_5km']['data'], lat_5km)),           units='degrees')
 
@@ -567,7 +566,7 @@ class modis_l2:
             self.data['cer']       = dict(name='Cloud effective radius',              data=cer,               units='micron')
             self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty', data=cot*cot_err/100.0, units='N/A')
             self.data['cer_err']   = dict(name='Cloud effective radius uncertainty',  data=cer*cer_err/100.0, units='micron')
-            self.data['pcl']       = dict(name='PCL tag (1:PCL, 0:Clear)',            data=pcl,               units='N/A')
+            self.data['pcl']       = dict(name='PCL tag (1:PCL)',                     data=pcl,               units='N/A')
             self.data['lon_5km']   = dict(name='Longitude at 5km',                    data=lon_5km,           units='degrees')
             self.data['lat_5km']   = dict(name='Latitude at 5km',                     data=lat_5km,           units='degrees')
 
