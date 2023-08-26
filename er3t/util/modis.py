@@ -525,10 +525,11 @@ class modis_l2:
 
         # Use partially cloudy retrieval to fill in clouds:
         # When the standard retrieval identifies a pixel as being clear-sky AND the corresponding PCL retrieval says it is cloudy,
-        # AND the phase is determined to be either liquid, mixed-, ice, or undetermined, 
         # we give credence to the PCL retrieval and mark the pixel with PCL-retrieved values
 
-        logic_pcl = ((cot0_data == 0.0) | (cer0_data == 0.0) | cwp0_data == 0.0) & ((cot1_data > 0.0) & (cer1_data > 0.0) & (cwp1_data > 0.0) & (ctp > 1))
+        logic_pcl      = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & \
+                         ((cot1_data > 0.0)  & (cer1_data > 0.0)  & (cwp1_data > 0.0))
+
         pcl[logic_pcl] = 1
         cot[logic_pcl] = cot1_data[logic_pcl]
         cer[logic_pcl] = cer1_data[logic_pcl]
