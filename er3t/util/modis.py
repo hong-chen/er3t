@@ -483,7 +483,7 @@ class modis_l2:
 
         # Calculate 1. cot, 2. cer, 3. ctp
         #/--------------------------------\#
-        ctp           = get_data_h4(ctp0)[logic_1km]
+        ctp_data      = get_data_h4(ctp0)[logic_1km]
         
         cot0_data     = get_data_h4(cot0)[logic_1km]
         cer0_data     = get_data_h4(cer0)[logic_1km]
@@ -496,7 +496,8 @@ class modis_l2:
         cot_err0_data = get_data_h4(cot_err0)[logic_1km]
         cer_err0_data = get_data_h4(cer_err0)[logic_1km]
         cwp_err0_data = get_data_h4(cwp_err0)[logic_1km]
-
+        
+        ctp     = ctp_data.copy()
         cot     = cot0_data.copy()
         cer     = cer0_data.copy()
         cwp     = cer0_data.copy()
@@ -507,7 +508,7 @@ class modis_l2:
         pcl = np.zeros_like(cot, dtype=np.uint8)
 
         # Mark negative (invalid) retrievals with clear-sky values
-        logic_invalid = (cot < 0.0) | (cer < 0.0) | (cwp < 0.0)
+        logic_invalid = (cot0_data < 0.0) | (cer0_data < 0.0) | (cwp0_data < 0.0) | (ctp_data == 0)
         cot[logic_invalid]     = 0.0
         cer[logic_invalid]     = 0.0
         cwp[logic_invalid]     = 0.0
@@ -515,10 +516,18 @@ class modis_l2:
         cer_err[logic_invalid] = 0.0
         cwp_err[logic_invalid] = 0.0
 
+        # Mark clear-sky pixels using phase as an additional
+        logic_clear          = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & (ctp_data == 1)
+        cot[logic_clear]     = 0.0
+        cer[logic_clear]     = 0.0
+        cwp[logic_clear]     = 0.0
+
         # Use partially cloudy retrieval to fill in clouds:
         # When the standard retrieval identifies a pixel as being clear-sky AND the corresponding PCL retrieval says it is cloudy,
-        # we give credence to the PCL retrieval
-        logic_pcl = ((cot0_data == 0.0) | (cer0_data == 0.0) | cwp0_data == 0.0) & ((cot1_data > 0.0) & (cer1_data > 0.0) & (cwp1_data > 0.0))
+        # AND the phase is determined to be either liquid, mixed-, ice, or undetermined, 
+        # we give credence to the PCL retrieval and mark the pixel with PCL-retrieved values
+
+        logic_pcl = ((cot0_data == 0.0) | (cer0_data == 0.0) | cwp0_data == 0.0) & ((cot1_data > 0.0) & (cer1_data > 0.0) & (cwp1_data > 0.0) & (ctp > 1))
         pcl[logic_pcl] = 1
         cot[logic_pcl] = cot1_data[logic_pcl]
         cer[logic_pcl] = cer1_data[logic_pcl]
@@ -541,7 +550,7 @@ class modis_l2:
             self.data['cer']       = dict(name='Cloud effective radius',              data=np.hstack((self.data['cer']['data'], cer)),                   units='micron')
             self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_err']['data'], cot*cot_err/100.0)), units='N/A')
             self.data['cer_err']   = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_err']['data'], cer*cer_err/100.0)), units='micron')
-            self.data['pcl']       = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
+            self.data['pcl']       = dict(name='PCL tag (1:PCL, 0:Clear)',            data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
             self.data['lon_5km']   = dict(name='Longitude at 5km',                    data=np.hstack((self.data['lon_5km']['data'], lon_5km)),           units='degrees')
             self.data['lat_5km']   = dict(name='Latitude at 5km',                     data=np.hstack((self.data['lat_5km']['data'], lat_5km)),           units='degrees')
 
@@ -557,7 +566,7 @@ class modis_l2:
             self.data['cer']       = dict(name='Cloud effective radius',              data=cer,               units='micron')
             self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty', data=cot*cot_err/100.0, units='N/A')
             self.data['cer_err']   = dict(name='Cloud effective radius uncertainty',  data=cer*cer_err/100.0, units='micron')
-            self.data['pcl']       = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=pcl,               units='N/A')
+            self.data['pcl']       = dict(name='PCL tag (1:PCL, 0:Clear)',            data=pcl,               units='N/A')
             self.data['lon_5km']   = dict(name='Longitude at 5km',                    data=lon_5km,           units='degrees')
             self.data['lat_5km']   = dict(name='Latitude at 5km',                     data=lat_5km,           units='degrees')
 
