@@ -531,16 +531,16 @@ class viirs_cldprop_l2:
 
 
         # Retrieve 1. ctp, 2. cth, 3. cot, 4. cer, 5. cwp, and select regional extent
-        ctp           = get_data_nc(ctp0, nan=False)[logic_extent]
-        cth           = get_data_nc(cth0, nan=False)[logic_extent]
+        ctp           = get_data_nc(ctp0, replace_fill_value=None)[logic_extent]
+        cth           = get_data_nc(cth0, replace_fill_value=None)[logic_extent]
 
         cot0_data     = get_data_nc(cot0)[logic_extent]
         cer0_data     = get_data_nc(cer0)[logic_extent]
-        cwp0_data     = get_data_nc(cwp0, nan=False)[logic_extent]
+        cwp0_data     = get_data_nc(cwp0)[logic_extent]
         
         cot1_data     = get_data_nc(cot1)[logic_extent]
         cer1_data     = get_data_nc(cer1)[logic_extent]
-        cwp1_data     = get_data_nc(cwp1, nan=False)[logic_extent]
+        cwp1_data     = get_data_nc(cwp1)[logic_extent]
         
         cot_uct0_data = get_data_nc(cot_uct0)[logic_extent]
         cer_uct0_data = get_data_nc(cer_uct0)[logic_extent]
@@ -1022,13 +1022,10 @@ class viirs_43ma4:
 #\---------------------------------------------------------------------------/
 
 
-
-
-
 # VIIRS tools
 #/---------------------------------------------------------------------------\
 
-def get_fname_pattern(fname, index_s=1, index_e=3):
+def get_fname_pattern(fname, index_s=1, index_e=2):
 
     filename = os.path.basename(fname)
     pattern  = '.'.join(filename.split('.')[index_s:index_e+1])
@@ -1036,7 +1033,6 @@ def get_fname_pattern(fname, index_s=1, index_e=3):
     return pattern
 
 #\---------------------------------------------------------------------------/
-
 
 if __name__=='__main__':
 

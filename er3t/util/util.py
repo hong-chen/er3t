@@ -235,20 +235,7 @@ def jday_to_dtime(jday):
     return dtime
 
 
-
-def get_data_nc(nc_dset, nan=True):
-
-    nc_dset.set_auto_maskandscale(True)
-    data  = nc_dset[:]
-
-    if nan:
-        data.filled(fill_value=np.nan)
-
-    return data
-
-
-
-def get_data_h4(hdf_dset, nan=True):
+def get_data_h4(hdf_dset, replace_fill_value=np.nan):
 
     attrs = hdf_dset.attributes()
     data  = hdf_dset[:]
@@ -259,12 +246,23 @@ def get_data_h4(hdf_dset, nan=True):
     if 'add_offset' in attrs:
         data = data + attrs['add_offset']
 
-    if '_FillValue' in attrs and nan:
+    if '_FillValue' in attrs and replace_fill_value is not None:
         _FillValue = np.float64(attrs['_FillValue'])
-        data[data == _FillValue] = np.nan
+        data[data == _FillValue] = replace_fill_value
 
     return data
 
+
+def get_data_nc(nc_dset, replace_fill_value=np.nan):
+
+    nc_dset.set_auto_maskandscale(True)
+    data  = nc_dset[:]
+
+    if replace_fill_value is not None:
+        data = data.astype('float64')
+        data.filled(fill_value=replace_fill_value)
+
+    return data
 
 
 def move_correlate(data0, data, Ndx=5, Ndy=5):
