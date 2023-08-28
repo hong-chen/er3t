@@ -260,6 +260,57 @@ def test_allocate_jobs():
     pass
 
 
+def test_viirs_l1b():
+
+    import er3t.util.viirs
+
+    fname_03 = 'tmp-data/VNP03MOD.A2021104.1854.002.2021127091945.nc'
+    fname_l1b = 'tmp-data/VNP02MOD.A2021104.1854.002.2021128230444.nc'
+
+    f03 = er3t.util.viirs.viirs_03(fnames=[fname_03])
+
+    fl1b = er3t.util.viirs.viirs_l1b(fnames=[fname_l1b], f03=f03)
+    Nzero = (fl1b.data['rad']['data'][3, ...]==0.0).sum()
+    Nnan = np.isnan(fl1b.data['rad']['data'][3, ...]).sum()
+    Ntotal = fl1b.data['rad']['data'][3, ...].size
+    print(Nzero)
+
+
+    # figure
+    #/----------------------------------------------------------------------------\#
+    if True:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111)
+        ax1.scatter(f03.data['lon']['data'], f03.data['lat']['data'], s=1, c=fl1b.data['rad']['data'][3, ...], lw=0.0, vmin=0.0, vmax=0.2, cmap='jet')
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.plot([0, 1], [0, 1], color='k', ls='--')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        ax1.set_xlabel('Longitude [$^\circ$]')
+        ax1.set_ylabel('Latitude [$^\circ$]')
+        # ax1.set_title('_remove_flags (%d NaN of %d)' % (Nnan, Ntotal))
+        ax1.set_title('_mask_flags (%d NaN of %d)' % (Nnan, Ntotal))
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+    #\----------------------------------------------------------------------------/#
+
+
+
+    pass
+
+
 if __name__ == '__main__':
 
     # test_modis()
@@ -272,4 +323,6 @@ if __name__ == '__main__':
 
     # test_grid_by_dxdy()
 
-    test_allocate_jobs()
+    # test_allocate_jobs()
+
+    test_viirs_l1b()
