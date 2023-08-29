@@ -678,7 +678,7 @@ if __name__ == '__main__':
     required.add_argument('-n', '--nrt', action='store_true',
                         help='Pass --nrt if Near Real Time products should be downloaded.\n'\
                              'This is disabled by default to automatically download standard products.\n'\
-                             'Currently, only MODIS NRT products can be downloaded.\n')
+                             'Currently, only MODIS and VIIRS NRT products can be downloaded.\n')
     required.add_argument('-p', '--products', type=str, nargs='+', metavar='',
                         help='Short prefix (case insensitive) for the product name.\n'\
                         'Example:  --products MOD02QKM\n'
