@@ -204,9 +204,6 @@ def cal_lon_lat_utc_geometa_line(
 
     if scan == 'ccw':
         jday_out = jday_out[:, ::-1]
-
-    if not ascending:
-        jday_out = jday_out[::-1, :]
     #\----------------------------------------------------------------------------/#
 
 
