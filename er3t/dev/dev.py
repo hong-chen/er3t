@@ -222,7 +222,7 @@ def cal_lon_lat_utc_geometa_line(
         # plot
         #/--------------------------------------------------------------\#
         ax1 = fig.add_subplot(111, projection=proj)
-        cs = ax1.pcolormesh(lon_out, lat_out, utc_sec_out, transform=ccrs.PlateCarree(), vmin=0.0, vmax=delta_t, cmap='jet')
+        cs = ax1.scatter(lon_out, lat_out, c=utc_sec_out, transform=ccrs.PlateCarree(), vmin=0.0, vmax=delta_t, cmap='jet', s=1, lw=0.0)
         cs = ax1.scatter(center_lon, center_lat, s=200, marker='*', lw=0.5, edgecolor='white', facecolor='black', transform=ccrs.PlateCarree())
         ax1.text(lon[0], lat[0], '0-LR', color='black', transform=ccrs.PlateCarree())
         ax1.text(lon[1], lat[1], '1-LL', color='black', transform=ccrs.PlateCarree())
