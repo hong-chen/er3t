@@ -43,13 +43,21 @@ def read_geometa_txt(content, sname='Aqua|MODIS'):
     return data
 
 
-def cal_lon_lat_utc_geometa_line(line, res=1000.0, delta_t=300.0, N_scan=203, ascending=True, rotation='ccw'):
+def cal_lon_lat_utc_geometa_line(
+        geometa_line,
+        delta_t=300.0,
+        scan='cw',
+        N_scan=203,
+        N_cross=1354,
+        N_along=2030,
+        ascending=True,
+        ):
 
     """
-    Aqua    (delta_t=300.0, N_scan=203, ascending=True): ascending orbit
-    Terra   (delta_t=300.0, N_scan=203, ascending=False): descending orbit
-    NOAA-20 (delta_t=360.0, N_scan=203, ascending=True): ascending orbit
-    S-NPP   (delta_t=360.0, N_scan=203, ascending=True): ascending orbit
+    Aqua    (delta_t=300.0, N_scan=203, ascending=True , N_along=2030, N_cross=1354, scan='cw')
+    Terra   (delta_t=300.0, N_scan=203, ascending=False, N_along=2030, N_cross=1354, scan='cw')
+    NOAA-20 (delta_t=360.0, N_scan=203, ascending=True , N_along=3248, N_cross=3200, scan='cw')
+    S-NPP   (delta_t=360.0, N_scan=203, ascending=True , N_along=3248, N_cross=3200, scan='cw')
     """
 
     try:
@@ -66,7 +74,7 @@ def cal_lon_lat_utc_geometa_line(line, res=1000.0, delta_t=300.0, N_scan=203, as
 
     # prep
     #/----------------------------------------------------------------------------\#
-    line = np.squeeze(line)
+    line = np.squeeze(geometa_line)
     proj_lonlat = ccrs.PlateCarree()
     #\----------------------------------------------------------------------------/#
 
@@ -133,17 +141,21 @@ def cal_lon_lat_utc_geometa_line(line, res=1000.0, delta_t=300.0, N_scan=203, as
     dist_c = np.sqrt((x_03_c-x_12_c)**2+(y_03_c-y_12_c)**2)
     slope_c = (y_12_c-y_03_c) / (x_12_c-x_03_c)
 
-    N_a = int(dist_a//res)
-    N_c = int(dist_c//res)
+    N_a = N_along
+    N_c = N_cross
+
     i_a = np.arange(N_a, dtype=np.float64)
     i_c = np.arange(N_c, dtype=np.float64)
     ii_a, ii_c = np.meshgrid(i_a, i_c, indexing='ij')
 
+    res_a = dist_a/N_a
+    res_c = dist_c/N_c
+
     ang_a = np.arctan(slope_a)
     ang_c = np.arctan(slope_c)
 
-    xx = x[0]-res*(ii_c*np.cos(ang_c)+ii_a*np.cos(ang_a))
-    yy = y[0]-res*(ii_c*np.sin(ang_c)+ii_a*np.sin(ang_a))
+    xx = x[0]-res_c*ii_c*np.cos(ang_c)-res_a*ii_a*np.cos(ang_a)
+    yy = y[0]-res_c*ii_c*np.sin(ang_c)-res_a*ii_a*np.sin(ang_a)
     #\----------------------------------------------------------------------------/#
 
 
@@ -166,14 +178,14 @@ def cal_lon_lat_utc_geometa_line(line, res=1000.0, delta_t=300.0, N_scan=203, as
 
     jday_out = np.zeros(lon_out.shape, dtype=np.float64)
     delta_t0 = delta_t / N_scan
-    delta_t0_c = delta_t0/N_c*i_c
+    delta_t0_c = delta_t0/3.0/N_c*i_c[::-1] # 120 degree coverage thus </3.0>, clockwise scanning thus <[::-1]>
 
     N_a0 = int(N_a//N_scan)
 
     for i in range(N_scan):
         index_s = N_a0*i
         index_e = N_a0*(i+1)
-        jday_out0_ = jday0+delta_t0*i+delta_t0_c
+        jday_out0_ = jday0+(delta_t0*i+delta_t0_c)/86400.0
 
         if (i == N_scan-1):
             index_e = N_a
@@ -182,11 +194,11 @@ def cal_lon_lat_utc_geometa_line(line, res=1000.0, delta_t=300.0, N_scan=203, as
         jday_out0 = np.tile(jday_out0_, N_a0).reshape((N_a0, N_c))
         jday_out[index_s:index_e, :] = jday_out0
 
-    if rotation == 'cw':
+    if scan == 'ccw':
         jday_out = jday_out[:, ::-1]
 
     if not ascending:
-        jday_out = jday_out[::-1, :]
+        jday_out = jday_out[::-1, ::-1]
     #\----------------------------------------------------------------------------/#
 
     return lon_out, lat_out, jday_out
@@ -225,7 +237,7 @@ def test():
 
         line = data[i]
 
-        lon1, lat1, jday1 = cal_lon_lat_utc_geometa_line(line, ascending=False, rotation='cw')
+        lon1, lat1, jday1 = cal_lon_lat_utc_geometa_line(line, ascending=True, scan='cw')
 
     # actual 03 file
     #/----------------------------------------------------------------------------\#
@@ -245,28 +257,22 @@ def test():
     #/----------------------------------------------------------------------------\#
     if True:
         plt.close('all')
-        fig = plt.figure(figsize=(12, 5))
+        fig = plt.figure(figsize=(12, 12))
         # fig.suptitle('Figure')
         # plot
         #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(121)
-        ax1.scatter(lon0, lat0, s=10, c='k', lw=0.0)
-        ax1.scatter(lon1, lat1, s=0.1, c='r', lw=0.0)
-        # ax1.imshow(lon0, cmap='jet', origin='lower', aspect='auto', vmin=lon0.min(), vmax=lon0.max())
-        # ax1.scatter(lon1, lat1, s=1, c='r', lw=0.0)
+        ax1 = fig.add_subplot(111)
+        ax1.scatter(lon0, lat0, s=20, c='gray', lw=0.0)
+
+        utc_sec1 = (jday1-jday1.min())*86400.0
+        cs = ax1.scatter(lon1, lat1, s=0.1, c=utc_sec1, lw=0.0, vmin=0.0, vmax=300.0, cmap='jet', alpha=1.0)
         ax1.set_xlabel('Longitude [$^\circ$]')
         ax1.set_ylabel('Latitude [$^\circ$]')
-        ax1.set_title('Original')
-        #\--------------------------------------------------------------/#
+        ax1.set_title('Lon/Lat/UTC')
 
-        #/--------------------------------------------------------------\#
-        ax2 = fig.add_subplot(122)
-        ax2.imshow(jday1, cmap='jet', origin='lower', aspect='auto')
-        # ax2.scatter(lon0, lat0, s=10, c='gray', lw=0.0)
-        # ax2.scatter(lon1, lat1, s=0.1, c='r', lw=0.0)
-        ax2.set_xlabel('Longitude [$^\circ$]')
-        ax2.set_ylabel('Latitude [$^\circ$]')
-        ax2.set_title('New')
+        divider = make_axes_locatable(ax1)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
         #\--------------------------------------------------------------/#
 
         # save figure
