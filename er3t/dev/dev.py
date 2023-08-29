@@ -5,24 +5,29 @@ import shutil
 import datetime
 import time
 import requests
+import warnings
 import urllib.request
 from io import StringIO
 import numpy as np
 from scipy import interpolate, stats
 from scipy.spatial import KDTree
-import warnings
-
 from pyhdf.SD import SD, SDC
-
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import matplotlib.image as mpl_img
+import matplotlib.patches as mpatches
+import matplotlib.gridspec as gridspec
+from matplotlib import rcParams, ticker
+from matplotlib.ticker import FixedLocator
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import cartopy
+mpl.use('Agg')
 
 
 import er3t
 
 
-
-
 # __all__ = ['cal_dtime_fast']
-
 
 
 
@@ -38,7 +43,7 @@ def read_geometa_txt(content, sname='Aqua|MODIS'):
 
     usecols = (0, 4, 9, 10, 11, 12, 13, 14, 15, 16)
 
-    data = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols).reshape((1, -1))
+    data = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols).reshape((-1, 1))
 
     return data
 
@@ -118,7 +123,8 @@ def cal_lon_lat_utc_geometa_line(
     # a: along track
     #/----------------------------------------------------------------------------\#
     proj_xy = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
-    xy = proj_xy.transform_points(proj_lonlat, lon, lat)[:, [0, 1]]
+    xy  = proj_xy.transform_points(proj_lonlat, lon, lat)[:, [0, 1]]
+    xy_ = proj_xy.transform_points(proj_lonlat, lon_, lat_)[:, [0, 1]]
 
     x = xy[:, 0]
     y = xy[:, 1]
@@ -167,6 +173,7 @@ def cal_lon_lat_utc_geometa_line(
     #\----------------------------------------------------------------------------/#
 
 
+
     # calculate utc (jday)
     #/----------------------------------------------------------------------------\#
     filename = np.str_(line['GranuleID'])
@@ -201,20 +208,59 @@ def cal_lon_lat_utc_geometa_line(
         jday_out = jday_out[::-1, ::-1]
     #\----------------------------------------------------------------------------/#
 
+
+    # figure
+    #/----------------------------------------------------------------------------\#
+    if True:
+        utc_sec_out = (jday_out-jday_out.min())*86400.0
+
+        plt.close('all')
+
+        proj = ccrs.NearsidePerspective(central_longitude=center_lon, central_latitude=center_lat)
+
+        fig = plt.figure(figsize=(8, 6))
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111, projection=proj)
+        cs = ax1.pcolormesh(lon_out, lat_out, utc_sec_out, transform=ccrs.PlateCarree(), vmin=0.0, vmax=delta_t, cmap='jet')
+        cs = ax1.scatter(center_lon, center_lat, s=200, marker='*', lw=0.5, edgecolor='white', facecolor='black', transform=ccrs.PlateCarree())
+        ax1.text(lon[0], lat[0], '0-LR', color='black', transform=ccrs.PlateCarree())
+        ax1.text(lon[1], lat[1], '1-LL', color='black', transform=ccrs.PlateCarree())
+        ax1.text(lon[2], lat[2], '2-UL', color='black', transform=ccrs.PlateCarree())
+        ax1.text(lon[3], lat[3], '3-UR', color='black', transform=ccrs.PlateCarree())
+
+        granule  = mpl_path.Path(xy_, closed=True)
+        patch = mpatches.PathPatch(granule, facecolor='none', edgecolor='black', lw=1.0)
+        ax1.add_patch(patch)
+
+
+        # ax1.plot(lon[0:2], lat[0:2], lw=1.0, color='gray', transform=ccrs.PlateCarree())
+        # ax1.plot(lon[1:3], lat[1:3], lw=1.0, color='gray', transform=ccrs.PlateCarree())
+        # ax1.plot(lon[2:4], lat[2:4], lw=1.0, color='gray', transform=ccrs.PlateCarree())
+        # ax1.plot([lon[3], lon[0]], [lat[3], lat[0]], lw=1.0, color='gray', transform=ccrs.PlateCarree())
+
+        ax1.set_title(filename)
+        ax1.set_global()
+        ax1.add_feature(cartopy.feature.OCEAN, zorder=0)
+        ax1.add_feature(cartopy.feature.LAND, zorder=0, edgecolor='none')
+        ax1.coastlines(color='gray', lw=0.5)
+        g3 = ax1.gridlines()
+        g3.xlocator = FixedLocator(np.arange(-180, 181, 60))
+        g3.ylocator = FixedLocator(np.arange(-80, 81, 20))
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        fname_png = 'aqua_%s.png' % dtime0_s
+        fig.savefig(fname_png, bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
     return lon_out, lat_out, jday_out
 
 
 def test():
-
-    import matplotlib as mpl
-    import matplotlib.pyplot as plt
-    import matplotlib.image as mpl_img
-    import matplotlib.patches as mpatches
-    import matplotlib.gridspec as gridspec
-    from matplotlib import rcParams, ticker
-    from matplotlib.ticker import FixedLocator
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    # mpl.use('Agg')
 
 
     # target region
@@ -286,8 +332,32 @@ def test():
     #\----------------------------------------------------------------------------/#
 
 
+def test_aqua_modis():
+
+
+    # deal with geoMeta data
+    #/----------------------------------------------------------------------------\#
+    fname_txt = '%s/satfile/MYD03_2019-09-02.txt' % er3t.common.fdir_data_tmp
+    with open(fname_txt, 'r') as f_:
+        content = f_.read()
+    data = read_geometa_txt(content, sname='Aqua|MODIS')
+    #\----------------------------------------------------------------------------/#
+
+    Ndata = data.size
+
+    for i in range(Ndata):
+
+        line = data[i]
+
+        print(i)
+        print(line)
+        print()
+
+        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, ascending=True, scan='cw')
+
 
 if __name__ == '__main__':
 
-    test()
+    # test()
+    test_aqua_modis()
     pass
