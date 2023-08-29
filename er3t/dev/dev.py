@@ -206,7 +206,7 @@ def cal_lon_lat_utc_geometa_line(
         jday_out = jday_out[:, ::-1]
 
     if not ascending:
-        jday_out = jday_out[::-1, ::-1]
+        jday_out = jday_out[::-1, :]
     #\----------------------------------------------------------------------------/#
 
 
@@ -253,7 +253,7 @@ def cal_lon_lat_utc_geometa_line(
         #/--------------------------------------------------------------\#
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        fname_png = 'aqua_%s.png' % dtime0_s
+        fname_png = 'terra_%s.png' % dtime0_s
         fig.savefig(fname_png, bbox_inches='tight', metadata=_metadata)
         #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
@@ -346,7 +346,7 @@ def test_aqua_modis():
 
     Ndata = data.size
 
-    for i in range(Ndata):
+    for i in range(20):
 
         line = data[i]
 
@@ -357,8 +357,33 @@ def test_aqua_modis():
         lon, lat, jday = cal_lon_lat_utc_geometa_line(line, ascending=True, scan='cw')
 
 
+def test_terra_modis():
+
+
+    # deal with geoMeta data
+    #/----------------------------------------------------------------------------\#
+    fname_txt = '%s/satfile/MOD03_2023-08-18.txt' % er3t.common.fdir_data_tmp
+    with open(fname_txt, 'r') as f_:
+        content = f_.read()
+    data = read_geometa_txt(content, sname='Aqua|MODIS')
+    #\----------------------------------------------------------------------------/#
+
+    Ndata = data.size
+
+    for i in range(20):
+
+        line = data[i]
+
+        print(i)
+        print(line)
+        print()
+
+        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, ascending=False, scan='cw')
+
+
 if __name__ == '__main__':
 
     # test()
-    test_aqua_modis()
+    # test_aqua_modis()
+    test_terra_modis()
     pass
