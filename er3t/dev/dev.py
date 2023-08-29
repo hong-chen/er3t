@@ -160,8 +160,9 @@ def cal_lon_lat_utc_geometa_line(
     ang_a = np.arctan(slope_a)
     ang_c = np.arctan(slope_c)
 
-    xx = x[0]-res_c*ii_c*np.cos(ang_c)-res_a*ii_a*np.cos(ang_a)
-    yy = y[0]-res_c*ii_c*np.sin(ang_c)-res_a*ii_a*np.sin(ang_a)
+    index0 = np.argmax(x)
+    xx = x[index0]-res_c*ii_c*np.cos(ang_c)-res_a*ii_a*np.cos(ang_a)
+    yy = y[index0]-res_c*ii_c*np.sin(ang_c)-res_a*ii_a*np.sin(ang_a)
     #\----------------------------------------------------------------------------/#
 
 
