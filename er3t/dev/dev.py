@@ -54,7 +54,6 @@ def cal_lon_lat_utc_geometa_line(
         N_scan=203,
         N_cross=1354,
         N_along=2030,
-        ascending=True,
         ):
 
     """
@@ -172,7 +171,6 @@ def cal_lon_lat_utc_geometa_line(
     ang_c = np.arctan(slope_c)
 
     index0 = np.argmax(x)
-    print('x index:', index0)
     xx = x[index0]-res_c*ii_c*np.cos(ang_c)-res_a*ii_a*np.cos(ang_a)
     yy = y[index0]-res_c*ii_c*np.sin(ang_c)-res_a*ii_a*np.sin(ang_a)
     #\----------------------------------------------------------------------------/#
@@ -199,7 +197,6 @@ def cal_lon_lat_utc_geometa_line(
     jday_out = np.zeros(lon_out.shape, dtype=np.float64)
     delta_t0 = delta_t / N_scan
 
-    # if inorder_x and inorder_y:
     if index0 in [0, 2]:
         delta_t0_c = delta_t0/3.0/N_c*i_c       # 120 degree coverage thus </3.0>
     else:
@@ -218,10 +215,6 @@ def cal_lon_lat_utc_geometa_line(
 
         jday_out0 = np.tile(jday_out0_, N_a0).reshape((N_a0, N_c))
         jday_out[index_s:index_e, :] = jday_out0
-
-    # if ((jday_out[-1, 0] >= jday_out[0, 0]) & (jday_out[0, -1]  > jday_out[0, 0])) or \
-    #    ((jday_out[-1, 0]  < jday_out[0, 0]) & (jday_out[0, -1] <= jday_out[0, 0])):
-    #     jday_out = jday_out[:, ::-1]
 
     if scan == 'ccw':
         jday_out = jday_out[:, ::-1]
@@ -302,7 +295,7 @@ def test():
 
         line = data[i]
 
-        lon1, lat1, jday1 = cal_lon_lat_utc_geometa_line(line, ascending=True, scan='cw')
+        lon1, lat1, jday1 = cal_lon_lat_utc_geometa_line(line, scan='cw')
 
     # actual 03 file
     #/----------------------------------------------------------------------------\#
@@ -372,7 +365,7 @@ def test_aqua_modis():
         print(line)
         print()
 
-        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, ascending=True, scan='cw')
+        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, scan='cw')
 
 
 def test_terra_modis():
@@ -396,7 +389,7 @@ def test_terra_modis():
         print(line)
         print()
 
-        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, ascending=False, scan='cw')
+        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, scan='cw')
 
 
 def test_noaa20_viirs():
@@ -420,7 +413,7 @@ def test_noaa20_viirs():
         print(line)
         print()
 
-        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, ascending=True, N_along=3248, N_cross=3200, scan='cw')
+        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, N_along=3248, N_cross=3200, scan='cw')
 
 
 def test_snpp_viirs():
@@ -444,7 +437,7 @@ def test_snpp_viirs():
         print(line)
         print()
 
-        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, ascending=True, N_along=3248, N_cross=3200, scan='cw')
+        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, N_along=3248, N_cross=3200, scan='cw')
 
 
 if __name__ == '__main__':
@@ -452,6 +445,6 @@ if __name__ == '__main__':
     # test()
     # test_aqua_modis()
     # test_terra_modis()
-    test_noaa20_viirs()
-    test_snpp_viirs()
+    # test_noaa20_viirs()
+    # test_snpp_viirs()
     pass
