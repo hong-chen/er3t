@@ -1,5 +1,6 @@
 import os
 import sys
+import glob
 import copy
 import shutil
 import datetime
@@ -12,6 +13,7 @@ import numpy as np
 from scipy import interpolate, stats
 from scipy.spatial import KDTree
 from pyhdf.SD import SD, SDC
+from netCDF4 import Dataset
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.image as mpl_img
@@ -268,13 +270,11 @@ def cal_lon_lat_utc_geometa_line(
 
     # figure
     #/----------------------------------------------------------------------------\#
-    if True:
+    if False:
         utc_sec_out = (jday_out-jday_out.min())*86400.0
-
-        plt.close('all')
-
         proj = ccrs.NearsidePerspective(central_longitude=center_lon, central_latitude=center_lat)
 
+        plt.close('all')
         fig = plt.figure(figsize=(8, 6))
         # plot
         #/--------------------------------------------------------------\#
@@ -405,10 +405,101 @@ def test_snpp_viirs():
         lon, lat, jday = cal_lon_lat_utc_geometa_line(line, N_along=3248, N_cross=3200, scan='cw')
 
 
+def test_noaa20_viirs_extra():
+
+    # deal with geoMeta data
+    #/----------------------------------------------------------------------------\#
+    fname_txt = '/data/hong/2023/work/01_libera/03_demo/data_l1b/VJ103MOD_2021-05-18.txt'
+    with open(fname_txt, 'r') as f_:
+        content = f_.read()
+    data = read_geometa_txt(content)
+    #\----------------------------------------------------------------------------/#
+
+    Ndata = len(data)
+    for i in range(Ndata):
+
+        line = data[i]
+
+        pattern = '.'.join(line['GranuleID'].split('.')[:3])
+        fnames = glob.glob('/data/hong/2023/work/01_libera/03_demo/data_l1b/VJ103MOD/2021/138/*%s*.nc' % pattern)
+        if len(fnames) == 1:
+            fname = fnames[0]
+            f = Dataset(fname, 'r')
+            lon0 = f.groups['geolocation_data'].variables['longitude'][...]
+            lat0 = f.groups['geolocation_data'].variables['latitude'][...]
+            f.close()
+
+            N_along, N_cross = lon0.shape
+
+            lon1, lat1, jday1 = cal_lon_lat_utc_geometa_line(line, N_along=N_along, N_cross=N_cross, scan='cw')
+
+            filename = os.path.basename(fname)
+
+            # figure
+            #/----------------------------------------------------------------------------\#
+            if True:
+                plt.close('all')
+                fig = plt.figure(figsize=(12, 12))
+                fig.suptitle(filename)
+                # plot
+                #/--------------------------------------------------------------\#
+                ax1 = fig.add_subplot(221)
+                cs = ax1.imshow(lon0, origin='lower', cmap='jet', zorder=0)
+                ax1.set_title('Longitude (Original)')
+                divider = make_axes_locatable(ax1)
+                cax = divider.append_axes('right', '5%', pad='3%')
+                cbar = fig.colorbar(cs, cax=cax)
+                ax1.set_xlabel('N (along track)')
+                ax1.set_ylabel('N (cross track)')
+
+                ax2 = fig.add_subplot(222)
+                cs = ax2.imshow(lat0, origin='lower', cmap='jet', zorder=0)
+                ax2.set_title('Latitude (Original)')
+                divider = make_axes_locatable(ax2)
+                cax = divider.append_axes('right', '5%', pad='3%')
+                cbar = fig.colorbar(cs, cax=cax)
+                ax2.set_xlabel('N (along track)')
+                ax2.set_ylabel('N (cross track)')
+
+                ax3 = fig.add_subplot(223)
+                cs = ax3.imshow(lon1, origin='lower', cmap='jet', zorder=0)
+                ax3.set_title('Longitude (Estimated)')
+                divider = make_axes_locatable(ax3)
+                cax = divider.append_axes('right', '5%', pad='3%')
+                cbar = fig.colorbar(cs, cax=cax)
+                ax3.set_xlabel('N (along track)')
+                ax3.set_ylabel('N (cross track)')
+
+                ax4 = fig.add_subplot(224)
+                cs = ax4.imshow(lat1, origin='lower', cmap='jet', zorder=0)
+                ax4.set_title('Latitude (Estimated)')
+                divider = make_axes_locatable(ax4)
+                cax = divider.append_axes('right', '5%', pad='3%')
+                cbar = fig.colorbar(cs, cax=cax)
+                ax4.set_xlabel('N (along track)')
+                ax4.set_ylabel('N (cross track)')
+                #\--------------------------------------------------------------/#
+                # save figure
+                #/--------------------------------------------------------------\#
+                fig.subplots_adjust(hspace=0.3, wspace=0.3)
+                _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                fname_png = filename.replace('.nc', '.png')
+                fig.savefig(fname_png, bbox_inches='tight', metadata=_metadata)
+                #\--------------------------------------------------------------/#
+            #\----------------------------------------------------------------------------/#
+
+            print(i)
+            print(line)
+            print()
+
+
+
 if __name__ == '__main__':
 
-    test_aqua_modis()
-    test_terra_modis()
-    test_noaa20_viirs()
-    test_snpp_viirs()
+    # test_aqua_modis()
+    # test_terra_modis()
+    # test_noaa20_viirs()
+    # test_snpp_viirs()
+
+    test_noaa20_viirs_extra()
     pass
