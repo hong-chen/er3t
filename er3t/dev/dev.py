@@ -15,6 +15,7 @@ from scipy.spatial import KDTree
 from pyhdf.SD import SD, SDC
 from netCDF4 import Dataset
 import matplotlib as mpl
+import matplotlib.path as mpl_path
 import matplotlib.pyplot as plt
 import matplotlib.image as mpl_img
 import matplotlib.patches as mpatches
@@ -22,6 +23,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import cartopy.crs as ccrs
 import cartopy
 mpl.use('Agg')
 
@@ -32,7 +34,39 @@ import er3t
 # __all__ = ['cal_dtime_fast']
 
 
-def read_geometa_txt(content):
+def read_geometa(content):
+
+    """
+    Parse geometa data in a list of Python dictionaries that contain information such as "GranuleID", "GRingLongitude1" etc.
+
+    Input:
+        content: a long string that contains the whole content of the geometa txt file
+
+    Output:
+        data: a list of Python dictionaries.
+
+              An example,
+              {'GranuleID': 'MYD03.A2019245.0000.061.2019245151541.hdf',
+               'StartDateTime': '2019-09-02 00:00',
+               'ArchiveSet': '61',
+               'OrbitNumber': '92177',
+               'DayNightFlag': 'N',
+               'EastBoundingCoord': '40.0756634630551',
+               'NorthBoundingCoord': '-57.0356008659127',
+               'SouthBoundingCoord': '-81.1407080607332',
+               'WestBoundingCoord': '-42.1164863420172',
+               'GRingLongitude1': '-10.7904979067681',
+               'GRingLongitude2': '32.4557535169638',
+               'GRingLongitude3': '40.6409172253246',
+               'GRingLongitude4': '-42.4223934777823',
+               'GRingLatitude1': '-57.0310011746246',
+               'GRingLatitude2': '-63.1593513428869',
+               'GRingLatitude3': '-81.224336567583',
+               'GRingLatitude4': '-68.7511407602523',
+               'Satellite': 'Aqua',
+               'Instrument': 'MODIS',
+               'Orbit': 'Ascending'}
+    """
 
     lines = content.split('\n')
 
@@ -43,7 +77,7 @@ def read_geometa_txt(content):
     index_header -= 1
 
     if index_header == -1:
-        msg = '\nError [read_geometa_txt]: Cannot locate header in the provided content.'
+        msg = '\nError [read_geometa]: Cannot locate header in the provided content.'
         raise OSError(msg)
 
     header_line = lines[index_header]
@@ -83,39 +117,26 @@ def read_geometa_txt(content):
     return data
 
 
-def cal_lon_lat_utc_geometa_line(
-        line_data,
-        delta_t=300.0,
-        scan='cw',
-        N_scan=203,
-        N_cross=1354,
-        N_along=2030,
-        ):
+def cal_proj_xy_geometa(line_data, closed=True):
 
     """
-    Aqua    (delta_t=300.0, N_scan=203, N_along=2030, N_cross=1354, scan='cw')
-    Terra   (delta_t=300.0, N_scan=203, N_along=2030, N_cross=1354, scan='cw')
-    NOAA-20 (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
-    S-NPP   (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
-    """
+    Calculate globe map projection <ccrs.Orthographic> centered at the center of the granule defined by corner points
 
-    try:
-        import matplotlib.path as mpl_path
-    except ImportError:
-        msg = '\nError [cal_lonlat_geometa]: Needs <matplotlib> to be installed before proceeding.'
-        raise ImportError(msg)
+    Input:
+        line_data: Python dictionary (details see <read_geo_meta>)
+        closed=: default is True, if True, return five corner points with the last point repeating the first point,
+                 if False, return four corner points
+
+    Output:
+        proj_xy: globe map projection <ccrs.Orthographic> centered at the center of the granule defined by corner points
+        xy: dimension of (5, 2) if <closed=True> and (4, 2) if <closed=False>
+    """
 
     try:
         import cartopy.crs as ccrs
     except ImportError:
-        msg = '\nError [cal_lonlat_geometa]: Needs <cartopy> to be installed before proceeding.'
+        msg = '\nError [cal_proj_xy_geometa]: Needs <cartopy> to be installed before proceeding.'
         raise ImportError(msg)
-
-    # prep
-    #/----------------------------------------------------------------------------\#
-    proj_lonlat = ccrs.PlateCarree()
-    #\----------------------------------------------------------------------------/#
-
 
     # get corner points
     #/----------------------------------------------------------------------------\#
@@ -154,6 +175,8 @@ def cal_lon_lat_utc_geometa_line(
 
     # find the true center
     #/----------------------------------------------------------------------------\#
+    proj_lonlat = ccrs.PlateCarree()
+
     proj_xy_ = ccrs.Orthographic(central_longitude=center_lon_, central_latitude=center_lat_)
     xy_ = proj_xy_.transform_points(proj_lonlat, lon, lat)[:, [0, 1]]
 
@@ -163,11 +186,68 @@ def cal_lon_lat_utc_geometa_line(
     #\----------------------------------------------------------------------------/#
 
 
-    # get lon/lat corner points into xy and get orientation
+    # convert lon/lat corner points into xy
     #/----------------------------------------------------------------------------\#
     proj_xy = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
-    xy  = proj_xy.transform_points(proj_lonlat, lon, lat)[:, [0, 1]]
-    xy_ = proj_xy.transform_points(proj_lonlat, lon_, lat_)[:, [0, 1]]
+    xy_  = proj_xy.transform_points(proj_lonlat, lon_, lat_)[:, [0, 1]]
+    #\----------------------------------------------------------------------------/#
+
+
+    if closed:
+        return proj_xy, xy_
+    else:
+        return proj_xy, xy_[:-1, :]
+
+
+def cal_lon_lat_utc_geometa(
+        line_data,
+        delta_t=300.0,
+        N_along=2030,
+        N_cross=1354,
+        N_scan=203,
+        scan='cw',
+        testing=False,
+        ):
+
+    """
+    Calculate (more of an estimation) longitude, latitude, and utc time (julian day) from corner points provided by geometa
+
+    Input:
+        line_data: Python dictionary (details see <read_geo_meta>)
+        delta_t=300.0: time span of the given granule in seconds, e.g., 5 minutes for MODIS granule
+        N_along=2030: number of pixels along the satellite track
+        N_cross=1354: number of pixels across the satellite track
+        N_scan=203: number of rotatory scans
+        scan='cw': direction of the rotatory scan (viewing along the satellite travel direction)
+        testing=False: testing mode, if True, a figure will be generated
+
+    Output:
+        lon_out: longitude, dimension of (N_along, N_cross)
+        lat_out: latitude, dimension of (N_along, N_cross)
+        jday_out: julian day, dimension of (N_along, N_cross)
+
+    Notes:
+    Aqua    (delta_t=300.0, N_scan=203, N_along=2030, N_cross=1354, scan='cw')
+    Terra   (delta_t=300.0, N_scan=203, N_along=2030, N_cross=1354, scan='cw')
+    NOAA-20 (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
+    S-NPP   (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
+    """
+
+    # check if delta_t is correct
+    #/----------------------------------------------------------------------------\#
+    if line_data['Instrument'].lower() == 'modis' and delta_t != 300.0:
+        msg = '\nWarning [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t=%.1f>, please double-check.' % delta_t
+        warning.warn(msg)
+    elif line_data['Instrument'].lower() == 'viirs' and delta_t != 360.0:
+        msg = '\nWarning [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t=%.1f>, please double-check.' % delta_t
+        warning.warn(msg)
+    #\----------------------------------------------------------------------------/#
+
+
+    # get lon/lat corner points into xy
+    #/----------------------------------------------------------------------------\#
+    proj_xy, xy_ = cal_proj_xy_geometa(line_data, closed=True)
+    xy  = xy_[:-1, :]
     x = xy[:, 0]
     y = xy[:, 1]
     #\----------------------------------------------------------------------------/#
@@ -208,6 +288,8 @@ def cal_lon_lat_utc_geometa_line(
     ang_a = np.arctan(slope_a)
     ang_c = np.arctan(slope_c)
 
+    # this is experimental, might cause some problem in the future
+    #/--------------------------------------------------------------\#
     if   ((x[0]>x[1]) or (x[3]>x[2])) or ((y[2]>y[1]) or (y[3]>y[0])):
         if ((x[0]>x[3]) or (x[1]>x[2])):
             index0 = 0
@@ -218,6 +300,7 @@ def cal_lon_lat_utc_geometa_line(
             index0 = 1
         else:
             index0 = 2
+    #\--------------------------------------------------------------/#
 
     xx = x[index0]-res_c*ii_c*np.cos(ang_c)-res_a*ii_a*np.cos(ang_a)
     yy = y[index0]-res_c*ii_c*np.sin(ang_c)-res_a*ii_a*np.sin(ang_a)
@@ -226,11 +309,11 @@ def cal_lon_lat_utc_geometa_line(
 
     # calculate lon lat
     #/----------------------------------------------------------------------------\#
+    proj_lonlat = ccrs.PlateCarree()
     lonlat_out = proj_lonlat.transform_points(proj_xy, xx, yy)[..., [0, 1]]
     lon_out = lonlat_out[..., 0]
     lat_out = lonlat_out[..., 1]
     #\----------------------------------------------------------------------------/#
-
 
 
     # calculate utc (jday)
@@ -248,10 +331,12 @@ def cal_lon_lat_utc_geometa_line(
         delta_t0_c = delta_t0_c[::-1]
 
     # this is experimental, might cause some problem in the future
+    #/--------------------------------------------------------------\#
     if index0 in [1, 3]:
         lon_out = lon_out[:, ::-1]
         lat_out = lat_out[:, ::-1]
         delta_t0_c = delta_t0_c[::-1]
+    #\--------------------------------------------------------------/#
 
     N_a0 = int(N_a//N_scan)
 
@@ -271,21 +356,19 @@ def cal_lon_lat_utc_geometa_line(
 
     # figure
     #/----------------------------------------------------------------------------\#
-    if True:
+    if testing:
         utc_sec_out = (jday_out-jday_out.min())*86400.0
-        proj = ccrs.NearsidePerspective(central_longitude=center_lon, central_latitude=center_lat)
 
         plt.close('all')
         fig = plt.figure(figsize=(8, 6))
         # plot
         #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111, projection=proj)
+        ax1 = fig.add_subplot(111, projection=proj_xy)
         cs = ax1.scatter(lon_out[::5, ::5], lat_out[::5, ::5], c=utc_sec_out[::5, ::5], transform=ccrs.PlateCarree(), vmin=0.0, vmax=delta_t, cmap='jet', s=1, lw=0.0)
-        cs = ax1.scatter(center_lon, center_lat, s=200, marker='*', lw=0.5, edgecolor='white', facecolor='black', transform=ccrs.PlateCarree())
-        ax1.text(lon[0], lat[0], '0-LR', color='black', transform=ccrs.PlateCarree())
-        ax1.text(lon[1], lat[1], '1-LL', color='black', transform=ccrs.PlateCarree())
-        ax1.text(lon[2], lat[2], '2-UL', color='black', transform=ccrs.PlateCarree())
-        ax1.text(lon[3], lat[3], '3-UR', color='black', transform=ccrs.PlateCarree())
+        ax1.text(x[0], y[0], '0-LR', color='black')
+        ax1.text(x[1], y[1], '1-LL', color='black')
+        ax1.text(x[2], y[2], '2-UL', color='black')
+        ax1.text(x[3], y[3], '3-UR', color='black')
 
         granule  = mpl_path.Path(xy_, closed=True)
         patch = mpatches.PathPatch(granule, facecolor='none', edgecolor='black', lw=1.0)
@@ -325,7 +408,7 @@ def test_aqua_modis():
     fname_txt = '%s/satfile/MYD03_2019-09-02.txt' % er3t.common.fdir_data_tmp
     with open(fname_txt, 'r') as f_:
         content = f_.read()
-    data = read_geometa_txt(content)
+    data = read_geometa(content)
     #\----------------------------------------------------------------------------/#
 
     Ndata = len(data)
@@ -337,7 +420,7 @@ def test_aqua_modis():
         print(line)
         print()
 
-        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, scan='cw')
+        lon, lat, jday = cal_lon_lat_utc_geometa(line, delta_t=300.0, N_cross=1354, N_along=2030, scan='cw', testing=True)
 
 
 def test_terra_modis():
@@ -347,7 +430,7 @@ def test_terra_modis():
     fname_txt = '%s/satfile/MOD03_2023-08-18.txt' % er3t.common.fdir_data_tmp
     with open(fname_txt, 'r') as f_:
         content = f_.read()
-    data = read_geometa_txt(content)
+    data = read_geometa(content)
     #\----------------------------------------------------------------------------/#
 
     Ndata = len(data)
@@ -359,7 +442,7 @@ def test_terra_modis():
         print(line)
         print()
 
-        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, scan='cw')
+        lon, lat, jday = cal_lon_lat_utc_geometa(line, delta_t=300.0, N_cross=1354, N_along=2030, scan='cw', testing=True)
 
 
 def test_snpp_viirs():
@@ -369,7 +452,7 @@ def test_snpp_viirs():
     fname_txt = '%s/satfile/VNP03MOD_2023-08-05.txt' % er3t.common.fdir_data_tmp
     with open(fname_txt, 'r') as f_:
         content = f_.read()
-    data = read_geometa_txt(content)
+    data = read_geometa(content)
     #\----------------------------------------------------------------------------/#
 
     Ndata = len(data)
@@ -381,7 +464,7 @@ def test_snpp_viirs():
         print(line)
         print()
 
-        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, N_along=3248, N_cross=3200, scan='cw')
+        lon, lat, jday = cal_lon_lat_utc_geometa(line, delta_t=360.0, N_along=3248, N_cross=3200, scan='cw', testing=True)
 
 
 def test_noaa20_viirs_extra():
@@ -391,7 +474,7 @@ def test_noaa20_viirs_extra():
     fname_txt = '/data/hong/2023/work/01_libera/03_demo/data_l1b/VJ103MOD_2021-05-18.txt'
     with open(fname_txt, 'r') as f_:
         content = f_.read()
-    data = read_geometa_txt(content)
+    data = read_geometa(content)
     #\----------------------------------------------------------------------------/#
 
     Ndata = len(data)
@@ -410,7 +493,7 @@ def test_noaa20_viirs_extra():
 
             N_along, N_cross = lon0.shape
 
-            lon1, lat1, jday1 = cal_lon_lat_utc_geometa_line(line, N_along=N_along, N_cross=N_cross, scan='cw')
+            lon1, lat1, jday1 = cal_lon_lat_utc_geometa(line, delta_t=360.0, N_along=N_along, N_cross=N_cross, scan='cw', testing=True)
 
             filename = os.path.basename(fname)
 
@@ -470,7 +553,6 @@ def test_noaa20_viirs_extra():
             print(i)
             print(line)
             print()
-
 
 
 if __name__ == '__main__':
