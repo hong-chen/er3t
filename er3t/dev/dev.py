@@ -243,11 +243,13 @@ def cal_lon_lat_utc_geometa_line(
     jday_out = np.zeros(lon_out.shape, dtype=np.float64)
     delta_t0 = delta_t / N_scan
 
+    delta_t0_c = delta_t0/3.0/N_c*i_c  # 120 degree coverage thus </3.0>
+
     # this is experimental, might cause some problem in the future
-    if index0 in [0, 2]:
-        delta_t0_c = delta_t0/3.0/N_c*i_c       # 120 degree coverage thus </3.0>
-    else:
-        delta_t0_c = delta_t0/3.0/N_c*i_c[::-1] # 120 degree coverage thus </3.0>
+    if index0 in [1, 3]:
+        lon_out = lon_out[:, ::-1]
+        lat_out = lat_out[:, ::-1]
+        delta_t0_c = delta_t0_c[::-1]
 
     N_a0 = int(N_a//N_scan)
 
@@ -270,7 +272,7 @@ def cal_lon_lat_utc_geometa_line(
 
     # figure
     #/----------------------------------------------------------------------------\#
-    if False:
+    if True:
         utc_sec_out = (jday_out-jday_out.min())*86400.0
         proj = ccrs.NearsidePerspective(central_longitude=center_lon, central_latitude=center_lat)
 
@@ -310,7 +312,7 @@ def cal_lon_lat_utc_geometa_line(
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         fname_png = filename.replace('.hdf', '.png').replace('.nc', '.png')
-        fig.savefig(fname_png, bbox_inches='tight', metadata=_metadata)
+        fig.savefig('globe-view_%s' % fname_png, bbox_inches='tight', metadata=_metadata)
         #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -359,28 +361,6 @@ def test_terra_modis():
         print()
 
         lon, lat, jday = cal_lon_lat_utc_geometa_line(line, scan='cw')
-
-
-def test_noaa20_viirs():
-
-    # deal with geoMeta data
-    #/----------------------------------------------------------------------------\#
-    fname_txt = '%s/satfile/VJ103MOD_2023-08-27.txt' % er3t.common.fdir_data_tmp
-    with open(fname_txt, 'r') as f_:
-        content = f_.read()
-    data = read_geometa_txt(content)
-    #\----------------------------------------------------------------------------/#
-
-    Ndata = len(data)
-    for i in range(Ndata):
-
-        line = data[i]
-
-        print(i)
-        print(line)
-        print()
-
-        lon, lat, jday = cal_lon_lat_utc_geometa_line(line, N_along=3248, N_cross=3200, scan='cw')
 
 
 def test_snpp_viirs():
@@ -496,10 +476,8 @@ def test_noaa20_viirs_extra():
 
 if __name__ == '__main__':
 
-    # test_aqua_modis()
-    # test_terra_modis()
-    # test_noaa20_viirs()
-    # test_snpp_viirs()
-
+    test_aqua_modis()
+    test_terra_modis()
+    test_snpp_viirs()
     test_noaa20_viirs_extra()
     pass
