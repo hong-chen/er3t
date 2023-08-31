@@ -55,7 +55,7 @@ Dependencies
 
     **Unavailable yet (under development)**
 
-5. `NASA EARTHDATA <https://urs.earthdata.nasa.gov>`_ Setup
+5. Set up `NASA EARTHDATA <https://urs.earthdata.nasa.gov>`_
 
     * Register an account at https://urs.earthdata.nasa.gov;
 
@@ -87,6 +87,9 @@ EaR³T Python Package - ``er3t``
 .. warning::
 
     You will need to have the dependency steps 1 and 2 completed for running radiative transfer simulations.
+
+.. warning::
+
     You will need to have the dependency steps 1 and 5 completed for accessing/processing satellite data.
 
 
