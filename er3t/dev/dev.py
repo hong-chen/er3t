@@ -30,25 +30,59 @@ import er3t
 # __all__ = ['cal_dtime_fast']
 
 
-def read_geometa_txt(content, sname='Aqua|MODIS'):
+def read_geometa_txt(content):
 
-    if sname in ['Aqua|MODIS', 'Terra|MODIS']:
-        dtype = ['|S41', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
-    elif sname in ['NOAA20|VIIRS', 'SNPP|VIIRS']:
-        dtype = ['|S43', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
-    else:
-        msg = '\nError [read_geometra_txt]: Cannot recognize <%s>.' % sname
+    lines = content.split('\n')
+
+    index_header = 0
+    while (len(lines[index_header]) > 0) and lines[index_header][0] == '#':
+        index_header += 1
+
+    index_header -= 1
+
+    if index_header == -1:
+        msg = '\nError [read_geometa_txt]: Cannot locate header in the provided content.'
         raise OSError(msg)
 
-    usecols = (0, 4, 9, 10, 11, 12, 13, 14, 15, 16)
+    header_line = lines[index_header]
+    vnames = [word.strip() for word in header_line[1:].split(',')]
 
-    data = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols).reshape((-1, 1))
+    Nvar = len(vnames)
+
+    data = []
+    for line_data in lines[index_header+1:]:
+        if len(line_data) > 0:
+            data0_ = [word.strip() for word in line_data.split(',')]
+            data0 = {vnames[i]:data0_[i] for i in range(Nvar)}
+
+            if 'MYD03' in data0_[0].split('.')[0]:
+                data0['Satellite']  = 'Aqua'
+                data0['Instrument'] = 'MODIS'
+                data0['Orbit']      = 'Ascending'
+            elif 'MOD03' in data0_[0].split('.')[0]:
+                data0['Satellite']  = 'Terra'
+                data0['Instrument'] = 'MODIS'
+                data0['Orbit']      = 'Descending'
+            elif 'VJ103' in data0_[0].split('.')[0]:
+                data0['Satellite']  = 'NOAA-20'
+                data0['Instrument'] = 'VIIRS'
+                data0['Orbit']      = 'Ascending'
+            elif 'VNP03' in data0_[0].split('.')[0]:
+                data0['Satellite']  = 'S-NPP'
+                data0['Instrument'] = 'VIIRS'
+                data0['Orbit']      = 'Ascending'
+            else:
+                data0['Satellite']  = 'Unknown'
+                data0['Instrument'] = 'Unknown'
+                data0['Orbit']      = 'Unknown'
+
+            data.append(data0)
 
     return data
 
 
 def cal_lon_lat_utc_geometa_line(
-        geometa_line,
+        line_data,
         delta_t=300.0,
         scan='cw',
         N_scan=203,
@@ -57,10 +91,10 @@ def cal_lon_lat_utc_geometa_line(
         ):
 
     """
-    Aqua    (delta_t=300.0, N_scan=203, ascending=True , N_along=2030, N_cross=1354, scan='cw')
-    Terra   (delta_t=300.0, N_scan=203, ascending=False, N_along=2030, N_cross=1354, scan='cw')
-    NOAA-20 (delta_t=360.0, N_scan=203, ascending=True , N_along=3248, N_cross=3200, scan='cw')
-    S-NPP   (delta_t=360.0, N_scan=203, ascending=True , N_along=3248, N_cross=3200, scan='cw')
+    Aqua    (delta_t=300.0, N_scan=203, N_along=2030, N_cross=1354, scan='cw')
+    Terra   (delta_t=300.0, N_scan=203, N_along=2030, N_cross=1354, scan='cw')
+    NOAA-20 (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
+    S-NPP   (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
     """
 
     try:
@@ -77,15 +111,27 @@ def cal_lon_lat_utc_geometa_line(
 
     # prep
     #/----------------------------------------------------------------------------\#
-    line = np.squeeze(geometa_line)
     proj_lonlat = ccrs.PlateCarree()
     #\----------------------------------------------------------------------------/#
 
 
     # get corner points
     #/----------------------------------------------------------------------------\#
-    lon_  = np.array([line['GRingLongitude1'], line['GRingLongitude2'], line['GRingLongitude3'], line['GRingLongitude4'], line['GRingLongitude1']])
-    lat_  = np.array([line['GRingLatitude1'] , line['GRingLatitude2'] , line['GRingLatitude3'] , line['GRingLatitude4'] , line['GRingLatitude1']])
+    lon_  = np.array([
+        float(line_data['GRingLongitude1']),
+        float(line_data['GRingLongitude2']),
+        float(line_data['GRingLongitude3']),
+        float(line_data['GRingLongitude4']),
+        float(line_data['GRingLongitude1'])
+        ])
+
+    lat_  = np.array([
+        float(line_data['GRingLatitude1']),
+        float(line_data['GRingLatitude2']),
+        float(line_data['GRingLatitude3']),
+        float(line_data['GRingLatitude4']),
+        float(line_data['GRingLatitude1'])
+        ])
 
     if (abs(lon_[0]-lon_[1])>180.0) | (abs(lon_[0]-lon_[2])>180.0) | \
        (abs(lon_[0]-lon_[3])>180.0) | (abs(lon_[1]-lon_[2])>180.0) | \
@@ -122,16 +168,6 @@ def cal_lon_lat_utc_geometa_line(
     xy_ = proj_xy.transform_points(proj_lonlat, lon_, lat_)[:, [0, 1]]
     x = xy[:, 0]
     y = xy[:, 1]
-
-    if (x[0] >= x[1]) or (x[3] >= x[2]):
-        inorder_x = True
-    else:
-        inorder_x = False
-
-    if (y[2] >= y[1]) or (y[3] >= y[0]):
-        inorder_y = True
-    else:
-        inorder_y = False
     #\----------------------------------------------------------------------------/#
 
 
@@ -173,6 +209,7 @@ def cal_lon_lat_utc_geometa_line(
     index0 = np.argmax(x)
     xx = x[index0]-res_c*ii_c*np.cos(ang_c)-res_a*ii_a*np.cos(ang_a)
     yy = y[index0]-res_c*ii_c*np.sin(ang_c)-res_a*ii_a*np.sin(ang_a)
+    print(index0)
     #\----------------------------------------------------------------------------/#
 
 
@@ -187,9 +224,7 @@ def cal_lon_lat_utc_geometa_line(
 
     # calculate utc (jday)
     #/----------------------------------------------------------------------------\#
-    filename = np.str_(line['GranuleID'])
-    if filename[0] == 'b':
-        filename = filename[1:]
+    filename = line_data['GranuleID']
     dtime0_s = '.'.join(filename.split('.')[1:3])
     dtime0 = datetime.datetime.strptime(dtime0_s, 'A%Y%j.%H%M')
     jday0 = er3t.util.dtime_to_jday(dtime0)
@@ -197,6 +232,7 @@ def cal_lon_lat_utc_geometa_line(
     jday_out = np.zeros(lon_out.shape, dtype=np.float64)
     delta_t0 = delta_t / N_scan
 
+    # this is experimental, might cause some problem in the future
     if index0 in [0, 2]:
         delta_t0_c = delta_t0/3.0/N_c*i_c       # 120 degree coverage thus </3.0>
     else:
@@ -264,7 +300,7 @@ def cal_lon_lat_utc_geometa_line(
         #/--------------------------------------------------------------\#
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        fname_png = '%s.png' % dtime0_s
+        fname_png = filename.replace('.hdf', '.png').replace('.nc', '.png')
         fig.savefig(fname_png, bbox_inches='tight', metadata=_metadata)
         #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
@@ -272,92 +308,18 @@ def cal_lon_lat_utc_geometa_line(
     return lon_out, lat_out, jday_out
 
 
-def test():
-
-
-    # target region
-    #/----------------------------------------------------------------------------\#
-    extent = [-109.1, -106.9, 36.9, 39.1]
-    #\----------------------------------------------------------------------------/#
-
-
-    # deal with geoMeta data
-    #/----------------------------------------------------------------------------\#
-    fname_txt = 'MYD03_2019-09-02.txt'
-    with open(fname_txt, 'r') as f_:
-        content = f_.read()
-    data = read_geometa_txt(content, sname='Aqua|MODIS')
-    #\----------------------------------------------------------------------------/#
-
-    Ndata = data.size
-
-    for i in range(Ndata):
-
-        line = data[i]
-
-        lon1, lat1, jday1 = cal_lon_lat_utc_geometa_line(line, scan='cw')
-
-    # actual 03 file
-    #/----------------------------------------------------------------------------\#
-    fname = '%s/data/02_modis_rad-sim/download/MYD03.A2019245.2025.061.2019246155053.hdf' % er3t.common.fdir_examples
-    f = SD(fname, SDC.READ)
-    lat0 = f.select('Latitude')[:]
-    lon0 = f.select('Longitude')[:]
-    f.end()
-    #\----------------------------------------------------------------------------/#
-
-    print(lon0.shape)
-    print(lat0.shape)
-    print(lon1.shape)
-    print(lat1.shape)
-
-    # figure
-    #/----------------------------------------------------------------------------\#
-    if True:
-        plt.close('all')
-        fig = plt.figure(figsize=(12, 12))
-        # fig.suptitle('Figure')
-        # plot
-        #/--------------------------------------------------------------\#
-        ax1 = fig.add_subplot(111)
-        ax1.scatter(lon0, lat0, s=20, c='gray', lw=0.0)
-
-        utc_sec1 = (jday1-jday1.min())*86400.0
-        cs = ax1.scatter(lon1, lat1, s=0.1, c=utc_sec1, lw=0.0, vmin=0.0, vmax=300.0, cmap='jet', alpha=1.0)
-        ax1.set_xlabel('Longitude [$^\circ$]')
-        ax1.set_ylabel('Latitude [$^\circ$]')
-        ax1.set_title('Lon/Lat/UTC')
-
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-        #\--------------------------------------------------------------/#
-
-        # save figure
-        #/--------------------------------------------------------------\#
-        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
-        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        # fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
-        plt.show()
-        sys.exit()
-    #\----------------------------------------------------------------------------/#
-
-
 def test_aqua_modis():
-
 
     # deal with geoMeta data
     #/----------------------------------------------------------------------------\#
     fname_txt = '%s/satfile/MYD03_2019-09-02.txt' % er3t.common.fdir_data_tmp
     with open(fname_txt, 'r') as f_:
         content = f_.read()
-    data = read_geometa_txt(content, sname='Aqua|MODIS')
+    data = read_geometa_txt(content)
     #\----------------------------------------------------------------------------/#
 
-    Ndata = data.size
-
-    for i in range(20):
+    Ndata = len(data)
+    for i in range(Ndata):
 
         line = data[i]
 
@@ -370,18 +332,16 @@ def test_aqua_modis():
 
 def test_terra_modis():
 
-
     # deal with geoMeta data
     #/----------------------------------------------------------------------------\#
     fname_txt = '%s/satfile/MOD03_2023-08-18.txt' % er3t.common.fdir_data_tmp
     with open(fname_txt, 'r') as f_:
         content = f_.read()
-    data = read_geometa_txt(content, sname='Aqua|MODIS')
+    data = read_geometa_txt(content)
     #\----------------------------------------------------------------------------/#
 
-    Ndata = data.size
-
-    for i in range(20):
+    Ndata = len(data)
+    for i in range(Ndata):
 
         line = data[i]
 
@@ -394,18 +354,16 @@ def test_terra_modis():
 
 def test_noaa20_viirs():
 
-
     # deal with geoMeta data
     #/----------------------------------------------------------------------------\#
     fname_txt = '%s/satfile/VJ103MOD_2023-08-27.txt' % er3t.common.fdir_data_tmp
     with open(fname_txt, 'r') as f_:
         content = f_.read()
-    data = read_geometa_txt(content, sname='NOAA20|VIIRS')
+    data = read_geometa_txt(content)
     #\----------------------------------------------------------------------------/#
 
-    Ndata = data.size
-
-    for i in range(20):
+    Ndata = len(data)
+    for i in range(Ndata):
 
         line = data[i]
 
@@ -418,18 +376,17 @@ def test_noaa20_viirs():
 
 def test_snpp_viirs():
 
-
     # deal with geoMeta data
     #/----------------------------------------------------------------------------\#
     fname_txt = '%s/satfile/VNP03MOD_2023-08-05.txt' % er3t.common.fdir_data_tmp
     with open(fname_txt, 'r') as f_:
         content = f_.read()
-    data = read_geometa_txt(content, sname='SNPP|VIIRS')
+    data = read_geometa_txt(content)
     #\----------------------------------------------------------------------------/#
 
-    Ndata = data.size
-
-    for i in range(20):
+    Ndata = len(data)
+    # for i in range(Ndata):
+    for i in [29, 30, 31]:
 
         line = data[i]
 
@@ -442,9 +399,8 @@ def test_snpp_viirs():
 
 if __name__ == '__main__':
 
-    # test()
     # test_aqua_modis()
     # test_terra_modis()
     # test_noaa20_viirs()
-    # test_snpp_viirs()
+    test_snpp_viirs()
     pass
