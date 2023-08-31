@@ -465,10 +465,10 @@ def get_satfile_tag(
     vname  = '%s|%s' % (satellite, instrument)
     date_s = date.strftime('%Y-%m-%d')
     fnames_server = {
-        'Aqua|MODIS'  : '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'           % (server, date.year, date_s),
-        'Terra|MODIS' : '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'          % (server, date.year, date_s),
+        'Aqua|MODIS'  : '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
+        'Terra|MODIS' : '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
         'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-        'SNPP|VIIRS'  : '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'   % (server, date.year, date_s),
+        'SNPP|VIIRS'  : '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
         }
     fname_server = fnames_server[vname]
     #\----------------------------------------------------------------------------/#
@@ -563,7 +563,7 @@ def get_satfile_tag(
             raise OSError(msg)
 
     #\----------------------------------------------------------------------------/#
-    # loop through all the "MODIS granules" constructed through four corner points
+    # loop through all the satellite "granules" constructed through four corner points
     # and find which granules contain the input data
     #/----------------------------------------------------------------------------\#
     Ndata = len(data)
@@ -573,16 +573,16 @@ def get_satfile_tag(
 
         line = data[i]
 
-        proj_xy, xy = cal_proj_xy_geometa(line, closed=True)
+        proj_xy, xy_granule = cal_proj_xy_geometa(line, closed=True)
+        sat_granule  = mpl_path.Path(xy_granule, closed=True)
 
         xy_in = proj_xy.transform_points(proj_lonlat, lon, lat)[:, [0, 1]]
 
-        sat_granule  = mpl_path.Path(xy, closed=True)
         pointsIn       = sat_granule.contains_points(xy_in)
         percentIn      = float(pointsIn.sum()) * 100.0 / float(pointsIn.size)
-        # if pointsIn.sum()>0 and percentIn>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
-        if pointsIn.sum()>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
-            filename = data[i]['GranuleID'].decode('UTF-8')
+        # if pointsIn.sum()>0 and percentIn>0 and data[i]['DayNightFlag']=='D':
+        if pointsIn.sum()>0 and data[i]['DayNightFlag']=='D':
+            filename = data[i]['GranuleID']
             filename_tag = '.'.join(filename.split('.')[1:3])
             filename_tags.append(filename_tag)
     #\----------------------------------------------------------------------------/#
