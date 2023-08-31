@@ -206,10 +206,19 @@ def cal_lon_lat_utc_geometa_line(
     ang_a = np.arctan(slope_a)
     ang_c = np.arctan(slope_c)
 
-    index0 = np.argmax(x)
+    if   ((x[0]>x[1]) or (x[3]>x[2])) or ((y[2]>y[1]) or (y[3]>y[0])):
+        if ((x[0]>x[3]) or (x[1]>x[2])):
+            index0 = 0
+        else:
+            index0 = 3
+    else:
+        if ((x[0]>x[3]) or (x[1]>x[2])):
+            index0 = 1
+        else:
+            index0 = 2
+
     xx = x[index0]-res_c*ii_c*np.cos(ang_c)-res_a*ii_a*np.cos(ang_a)
     yy = y[index0]-res_c*ii_c*np.sin(ang_c)-res_a*ii_a*np.sin(ang_a)
-    print(index0)
     #\----------------------------------------------------------------------------/#
 
 
@@ -399,8 +408,8 @@ def test_snpp_viirs():
 
 if __name__ == '__main__':
 
-    # test_aqua_modis()
-    # test_terra_modis()
-    # test_noaa20_viirs()
+    test_aqua_modis()
+    test_terra_modis()
+    test_noaa20_viirs()
     test_snpp_viirs()
     pass
