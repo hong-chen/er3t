@@ -455,7 +455,7 @@ def get_local_geometa(
 
 
 def get_online_geometa(
-        fname_server=,
+        fname_server='',
         download=True
         ):
 
