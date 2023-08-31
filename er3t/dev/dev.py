@@ -123,9 +123,9 @@ def cal_proj_xy_geometa(line_data, closed=True):
     Calculate globe map projection <ccrs.Orthographic> centered at the center of the granule defined by corner points
 
     Input:
-        line_data: Python dictionary (details see <read_geo_meta>)
-        closed=: default is True, if True, return five corner points with the last point repeating the first point,
-                 if False, return four corner points
+        line_data: Python dictionary (details see <read_geo_meta>) that contains basic information of a satellite granule
+        closed=True: if True, return five corner points with the last point repeating the first point;
+                     if False, return four corner points
 
     Output:
         proj_xy: globe map projection <ccrs.Orthographic> centered at the center of the granule defined by corner points
@@ -213,12 +213,12 @@ def cal_lon_lat_utc_geometa(
     Calculate (more of an estimation) longitude, latitude, and utc time (julian day) from corner points provided by geometa
 
     Input:
-        line_data: Python dictionary (details see <read_geo_meta>)
+        line_data: Python dictionary (details see <read_geo_meta>) that contains basic information of a satellite granule
         delta_t=300.0: time span of the given granule in seconds, e.g., 5 minutes for MODIS granule
         N_along=2030: number of pixels along the satellite track
         N_cross=1354: number of pixels across the satellite track
-        N_scan=203: number of rotatory scans
-        scan='cw': direction of the rotatory scan (viewing along the satellite travel direction)
+        N_scan=203: number of rotatory scans, MODIS and VIIRS both have N_scan=203
+        scan='cw': direction of the rotatory scan (viewing along the satellite travel direction), MODIS and VIIRS both rotate clockwise
         testing=False: testing mode, if True, a figure will be generated
 
     Output:
@@ -422,7 +422,6 @@ def test_aqua_modis():
 
         lon, lat, jday = cal_lon_lat_utc_geometa(line, delta_t=300.0, N_cross=1354, N_along=2030, scan='cw', testing=True)
 
-
 def test_terra_modis():
 
     # deal with geoMeta data
@@ -444,7 +443,6 @@ def test_terra_modis():
 
         lon, lat, jday = cal_lon_lat_utc_geometa(line, delta_t=300.0, N_cross=1354, N_along=2030, scan='cw', testing=True)
 
-
 def test_snpp_viirs():
 
     # deal with geoMeta data
@@ -465,7 +463,6 @@ def test_snpp_viirs():
         print()
 
         lon, lat, jday = cal_lon_lat_utc_geometa(line, delta_t=360.0, N_along=3248, N_cross=3200, scan='cw', testing=True)
-
 
 def test_noaa20_viirs_extra():
 
