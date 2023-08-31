@@ -55,6 +55,30 @@ Dependencies
 
     **Unavailable yet (under development)**
 
+5. `NASA EARTHDATA <https://urs.earthdata.nasa.gov>`_ Setup
+
+    * Register an account at https://urs.earthdata.nasa.gov;
+
+    * Create a ``.netrc`` file under your home directory, e.g., type in ``touch ~/.netrc``;
+
+    * Assume you have registered with an username ``abc`` and a password ``123``, in the ``~/.netrc`` file, put in
+
+      .. code-block:: bash
+
+         machine urs.earthdata.nasa.gov
+         login abc
+         password 123
+
+    * Request a token (instructions `here <https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens/>`_)
+      for your EARTHDATA account and assign it to environment variable ``EARTHDATA_TOKEN``.
+
+      For example, if you are using ``bash`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc``):
+
+      .. code-block:: bash
+
+         export EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
 |
 
 EaR³T Python Package - ``er3t``
@@ -62,7 +86,8 @@ EaR³T Python Package - ``er3t``
 
 .. warning::
 
-    You will need to have the dependencies 1 and 2 installed first.
+    You will need to have the dependency steps 1 and 2 completed for running radiative transfer simulations.
+    You will need to have the dependency steps 1 and 5 completed for accessing/processing satellite data.
 
 
 1. Open a terminal, type in the following
