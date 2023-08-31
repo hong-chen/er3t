@@ -244,6 +244,8 @@ def cal_lon_lat_utc_geometa_line(
     delta_t0 = delta_t / N_scan
 
     delta_t0_c = delta_t0/3.0/N_c*i_c  # 120 degree coverage thus </3.0>
+    if scan == 'ccw':
+        delta_t0_c = delta_t0_c[::-1]
 
     # this is experimental, might cause some problem in the future
     if index0 in [1, 3]:
@@ -264,9 +266,6 @@ def cal_lon_lat_utc_geometa_line(
 
         jday_out0 = np.tile(jday_out0_, N_a0).reshape((N_a0, N_c))
         jday_out[index_s:index_e, :] = jday_out0
-
-    if scan == 'ccw':
-        jday_out = jday_out[:, ::-1]
     #\----------------------------------------------------------------------------/#
 
 
