@@ -394,8 +394,7 @@ def test_snpp_viirs():
     #\----------------------------------------------------------------------------/#
 
     Ndata = len(data)
-    # for i in range(Ndata):
-    for i in [29, 30, 31]:
+    for i in range(Ndata):
 
         line = data[i]
 
