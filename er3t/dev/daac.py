@@ -41,7 +41,10 @@ def get_satname(satellite, instrument):
         satellite  = satellite.lower().title()
     elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
         instrument = instrument.upper()
-        satellite  = satellite.upper()
+        satellite  = satellite.replace('-', '').upper()
+    elif instrument.lower() == 'abi' and (satellite.lower() in ['goes-east', 'goes-west']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper().replace('WEST', 'West').replace('EAST', 'East')
     else:
         msg = '\nError [get_satname]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
         raise NameError(msg)
@@ -498,6 +501,8 @@ def cal_lon_lat_utc_geometa(
     S-NPP   (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
     """
 
+    import cartopy.crs as ccrs
+
     # check if delta_t is correct
     #/----------------------------------------------------------------------------\#
     if line_data['Instrument'].lower() == 'modis' and delta_t != 300.0:
@@ -676,7 +681,9 @@ def get_satfile_tag(
              server='https://ladsweb.modaps.eosdis.nasa.gov',
              fdir_local='./',
              fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
-             verbose=False):
+             geometa=False,
+             verbose=False
+             ):
 
     """
     Get filename tag/overpass information for standard products.
@@ -766,9 +773,12 @@ def get_satfile_tag(
         percent_in = float(Npoint_in) * 100.0 / float(Npoint_tot)
 
         if (Npoint_in>0) and (data[i]['DayNightFlag']=='D'):
-            filename = data[i]['GranuleID']
-            filename_tag = '.'.join(filename.split('.')[1:3])
-            filename_tags.append(filename_tag)
+            if geometa:
+                filename_tags.append(line)
+            else:
+                filename = data[i]['GranuleID']
+                filename_tag = '.'.join(filename.split('.')[1:3])
+                filename_tags.append(filename_tag)
     #\----------------------------------------------------------------------------/#
 
     return filename_tags
@@ -1483,46 +1493,38 @@ def download_worldview_image(
         fname = download_wordview_image(datetime.datetime(2022, 5, 18), [-94.26,-87.21,31.86,38.91], instrument='modis', satellite='aqua')
     """
 
-    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
-        instrument = instrument.upper()
-        satellite  = satellite.lower().title()
-        sat_kind = 'polar-orbiting'
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper()
-        sat_kind = 'polar-orbiting'
-    elif instrument.lower() == 'abi' and (satellite.lower() in ['goes-east', 'goes-west']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper().replace('WEST', 'West').replace('EAST', 'East')
-        sat_kind = 'geostationary'
-    else:
-        msg = 'Error [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
-        raise NameError(msg)
+    satname = get_satname(satellite, instrument)
+    satellite, instrument = satname.split('|')
 
-    if sat_kind == 'polar-orbiting':
-        date_s = date.strftime('%Y-%m-%d')
+    if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP']:
         if layer_name0 is None:
             layer_name0='CorrectedReflectance_TrueColor'
         layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
+
+        date_s = date.strftime('%Y-%m-%d')
 
         try:
             lon__ = np.arange(extent[0], extent[1], 500.0/111000.0)
             lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
-            try:
-                satfile_tag = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
-            except:
-                satfile_tag = get_nrt_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+            line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True)[-1]
+            if satellite in ['Aqua', 'Terra']:
+                lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=300.0, N_along=2030, N_cross=1354, scan='cw', testing=False)
+            else:
+                lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=360.0, N_along=3248, N_cross=3200, scan='cw', testing=False)
 
-            date0 = datetime.datetime.strptime(satfile_tag, 'A%Y%j.%H%M')
+            logic_in = (lon0_>=extent[0]) & (lon0_<=extent[1]) & (lat0_>=extent[2]) & (lat0_<=extent[3])
+            jday0 = np.nanmean(jday0_[logic_in])
+            date0 = er3t.util.jday_to_dtime(jday0)
             date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
 
             fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+
         except:
             fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
 
-    elif sat_kind == 'geostationary':
+    elif satellite in ['GOES-West', 'GOES-East']:
         date += datetime.timedelta(minutes=5)
         date -= datetime.timedelta(minutes=date.minute % 10,
                                    seconds=date.second)
@@ -1551,18 +1553,20 @@ def download_worldview_image(
             proj=ccrs.PlateCarree()
 
         try:
+
             fig = plt.figure(figsize=(12, 6))
             ax1 = fig.add_subplot(111, projection=proj)
             ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
             if coastline:
                 ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
             ax1.set_extent(extent, crs=ccrs.PlateCarree())
-            # ax1.outline_patch.set_visible(False) # changed according to DeprecationWarning
             ax1.spines['geo'].set_visible(False)
             ax1.axis('off')
             plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=dpi)
             plt.close(fig)
+
         except:
+
             msg = '\nError [download_wordview_image]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
             warnings.warn(msg)
 

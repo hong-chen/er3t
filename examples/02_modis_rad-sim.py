@@ -158,7 +158,7 @@ class satellite_download:
         self.fnames = {}
 
         # MODIS RGB imagery
-        self.fnames['mod_rgb'] = [er3t.util.daac.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.dev.download_worldview_image(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
@@ -182,7 +182,7 @@ class satellite_download:
         self.fnames['mod_43'] = []
         filename_tags_43 = er3t.util.modis.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_43:
-            fnames_43 = er3t.util.daac.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_43 = er3t.dev.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_43'] += fnames_43
 
     def dump(self, fname):
@@ -228,7 +228,7 @@ def cdata_sat_raw(
     # download satellite data based on given date and region
     #/----------------------------------------------------------------------------\#
     fname_sat = '%s/sat.pk' % fdir_data
-    sat0 = satellite_download(date=params['date'], fdir_out=fdir_data, extent=params['region'], fname=fname_sat, overwrite=True)
+    sat0 = satellite_download(date=params['date'], fdir_out=fdir_data, extent=params['region'], fname=fname_sat, overwrite=False)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1435,6 +1435,7 @@ def main_pre(wvl=params['wavelength'], plot=True):
     if plot:
         plot_sat_raw()
     #\----------------------------------------------------------------------------/#
+    sys.exit()
 
 
     # apply IPA method to retrieve cloud optical thickness (COT) from MODIS radiance
