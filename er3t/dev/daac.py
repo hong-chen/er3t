@@ -144,65 +144,71 @@ def get_local_geometa(
 
 
 
-def get_online_geometa(
-        fname_server='',
-        download=True
+def get_command_download(
+        fname_target,
+        tools=['curl', 'wget'],
+        token=get_token_earthdata(),
+        fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
         ):
 
-    # get login info
-    #/----------------------------------------------------------------------------\#
-    username, password = get_login_earthdata()
-    #\----------------------------------------------------------------------------/#
+    fname_saved = '%s/%s' % (fdir_saved, os.path.basename(fname_target))
+
+    header = '"Authorization: Bearer %s"' % token
+
+    options = {
+            'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output %s %s' % (header, fname_saved, fname_target),
+            'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document=%s --quiet %s' % (header, fname_saved, fname_target),
+            }
+
+    command = None
+
+    for command_line_tool in tools:
+
+        if shutil.which(command_line_tool):
+
+            command = 'mkdir -p %s && %s %s' % (fdir_saved, command_line_tool, options[command_line_tool])
+
+            if command is not None:
+
+                return command
+
+    return command
+
+
+
+def get_online_geometa(
+        fname_geometa,
+        download=True,
+        fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
+        ):
 
     if download:
-        token = get_token_earthdata()
-        command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
+        fname_saved = '%s/%s' % (fdir_saved, os.path.basename(fname_geometa))
+        command = get_command_download(fname_geometa, fdir_saved=fdir_saved)
+        os.system(command)
+
+        content = get_local_geometa(fname_geometa, fdir_saved=fdir_saved)
+
+        return content
 
 
     # get information from server
     #/--------------------------------------------------------------\#
-    try:
-        with requests.Session() as session:
-            session.auth = (username, password)
-            r1     = session.request('get', fname_server)
-            r      = session.get(r1.url, auth=(username, password))
-    except:
-        msg = '\nError [get_online_geometa]: cannot access <%s>.' % fname_server
-        raise OSError(msg)
+    # try:
+    #     with requests.Session() as session:
+    #         session.auth = (username, password)
+    #         r1     = session.request('get', fname_server)
+    #         r      = session.get(r1.url, auth=(username, password))
+    # except:
+    #     msg = '\nError [get_online_geometa]: cannot access <%s>.' % fname_server
+    #     raise OSError(msg)
 
-    if r.ok:
-        content = r.content.decode('utf-8')
-    else:
-        msg = '\nError [get_online_geometa]: failed to retrieve information from <%s>.' % fname_server
-        warnings.warn(msg)
+    # if r.ok:
+    #     content = r.content.decode('utf-8')
+    # else:
+    #     msg = '\nError [get_online_geometa]: failed to retrieve information from <%s>.' % fname_server
+    #     warnings.warn(msg)
     #\--------------------------------------------------------------/#
-
-    # LAADS DAAC servers are known to cause some issues occasionally while
-    # accessing the metadata. We will attempt to read the txt file online directly
-    # on the server but as a backup, we will download the txt file locally and
-    # access the data there
-    #/----------------------------------------------------------------------------\#
-    try:
-        data  = read_geometa(content)
-    except:
-
-        msg = '\nWarning [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
-        warnings.warn(msg)
-
-        token = get_token_earthdata()
-
-        try:
-            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
-            os.system(command)
-            with open(fname_local1, 'r') as f_:
-                content = f_.read()
-            data = read_geometa(content)
-        except ValueError:
-            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nThis is likely an issue with LAADS DAAC servers, please try downloading the files manually or try again later.\n' % fname_server
-            raise OSError(msg)
-    #\----------------------------------------------------------------------------/#
-
-    pass
 
 
 
@@ -580,6 +586,7 @@ def get_satfile_tag(
              instrument='modis',
              server='https://ladsweb.modaps.eosdis.nasa.gov',
              fdir_local='./',
+             fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
              verbose=False):
 
     """
@@ -632,11 +639,11 @@ def get_satfile_tag(
     # get geometa info
     #/----------------------------------------------------------------------------\#
     # try to get geometa information from local
-    content = get_local_geometa(fname_geometa, fdir_local=fdir_local, fdir_data_tmp=er3t.common.fdir_data_tmp)
+    content = get_local_geometa(fname_geometa, fdir_local=fdir_local, fdir_saved=fdir_saved)
 
     # try to get geometa information online
     if content is None:
-        content = get_online_geometa(fname_geometa, download=True)
+        content = get_online_geometa(fname_geometa, fdir_saved=fdir_saved)
     #\----------------------------------------------------------------------------/#
 
 
