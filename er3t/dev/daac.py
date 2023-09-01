@@ -420,9 +420,55 @@ def get_login_earthdata():
 
 
 
-def get_local_geometa(
+def get_satname(satellite, instrument):
+
+    # check satellite and instrument
+    #/----------------------------------------------------------------------------\#
+    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
+        instrument = instrument.upper()
+        satellite  = satellite.lower().title()
+    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper()
+    else:
+        msg = '\nError [get_satname]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        raise NameError(msg)
+    #\----------------------------------------------------------------------------/#
+
+    satname = '%s|%s' % (satellite, instrument)
+
+    return satname
+
+
+
+def get_fname_geometa(
+        date,
+        satname='Aqua|MODIS',
+        server='https://ladsweb.modaps.eosdis.nasa.gov',
+        ):
+
+    # generate satellite filename on LAADS DAAC server
+    #/----------------------------------------------------------------------------\#
+    date_s = date.strftime('%Y-%m-%d')
+    fnames_geometa = {
+           'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
+          'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
+         'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
+           'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
+        'NOAA-20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
+          'S-NPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
+        }
+    fname_geometa = fnames_geometa[satname]
+    #\----------------------------------------------------------------------------/#
+
+    return fname_geometa
+
+
+
+def get_file_local_geometa(
+        fname_geometa,
         fdir_local='./',
-        fdir_data_tmp=er3t.common.fdir_data_tmp,
+        fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
         ):
 
     # try to get information from local
@@ -430,23 +476,25 @@ def get_local_geometa(
     #   1) <tmp-data/satfile> directory under er3t main directory
     #   2) current directory;
     #/--------------------------------------------------------------\#
-    fdir_satfile_tmp = '%s/satfile' % fdir_data_tmp
-    if not os.path.exists(fdir_satfile_tmp):
-        os.makedirs(fdir_satfile_tmp)
+    if not os.path.exists(fdir_saved):
+        os.makedirs(fdir_saved)
 
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_satfile_tmp, os.path.basename(fname_server)))
-    fname_local2 = os.path.abspath('%s/%s' % (local           , os.path.basename(fname_server)))
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_saved, os.path.basename(fname_geometa)))
+    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, os.path.basename(fname_geometa)))
 
     if os.path.exists(fname_local1):
+
         with open(fname_local1, 'r') as f_:
             content = f_.read()
 
     elif os.path.exists(fname_local2):
+
         os.system('cp %s %s' % (fname_local2, fname_local1))
         with open(fname_local2, 'r') as f_:
             content = f_.read()
 
     else:
+
         content = None
     #\--------------------------------------------------------------/#
 
@@ -454,7 +502,7 @@ def get_local_geometa(
 
 
 
-def get_online_geometa(
+def get_file_online_geometa(
         fname_server='',
         download=True
         ):
@@ -544,8 +592,6 @@ def get_satfile_tag(
         filename_tags: Python list of file name tags
     """
 
-    from er3t.common import fdir_data_tmp
-
     # check cartopy and matplotlib
     #/----------------------------------------------------------------------------\#
     try:
@@ -562,33 +608,15 @@ def get_satfile_tag(
     #\----------------------------------------------------------------------------/#
 
 
-    # check satellite and instrument
+    # get formatted satellite tag
     #/----------------------------------------------------------------------------\#
-    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
-        instrument = instrument.upper()
-        satellite  = satellite.lower().title()
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper()
-    else:
-        msg = '\nError [get_satfile_tag]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
-        raise NameError(msg)
+    satname = get_satname(satellite, instrument)
     #\----------------------------------------------------------------------------/#
 
 
-    # generate satellite filename on LAADS DAAC server
+    # get satellite geometa filename on LAADS DAAC server
     #/----------------------------------------------------------------------------\#
-    vname  = '%s|%s' % (satellite, instrument)
-    date_s = date.strftime('%Y-%m-%d')
-    fnames_server = {
-           'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
-          'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
-         'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-           'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
-        'NOAA-20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-          'S-NPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
-        }
-    fname_server = fnames_server[vname]
+    fname_geometa = get_fname_geometa(date, satname, server=server)
     #\----------------------------------------------------------------------------/#
 
 
@@ -605,11 +633,11 @@ def get_satfile_tag(
     # get geometa info
     #/----------------------------------------------------------------------------\#
     # try to get geometa information from local
-    content = get_geometa_local(fdir_local=fdir_local, fdir_data_tmp=er3t.common.fdir_data_tmp)
+    content = get_local_geometa(fname_geometa, fdir_local=fdir_local, fdir_data_tmp=er3t.common.fdir_data_tmp)
 
     # try to get geometa information online
     if content is None:
-        content = get_geometa_online(download=True)
+        content = get_online_geometa(fname_geometa, download=True)
     #\----------------------------------------------------------------------------/#
 
 
