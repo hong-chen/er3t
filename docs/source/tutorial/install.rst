@@ -15,15 +15,16 @@ Dependencies
 
     * Register an account at https://urs.earthdata.nasa.gov.
 
-    * Create a ``.netrc`` file under your home directory, e.g., type in ``touch ~/.netrc``.
+    * After registration, please specify environment variable ``EARTHDATA_USERNAME`` and ``EARTHDATA_PASSWORD``
+      (assume you had a username of ``abc`` with password of ``123``).
 
-    * Assume you have registered with an username ``abc`` and a password ``123``, in the ``~/.netrc`` file, put in
+      For example, if you are using ``bash`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc``):
 
       .. code-block:: bash
 
-         machine urs.earthdata.nasa.gov
-         login abc
-         password 123
+         export EARTHDATA_USERNAME="abc"
+         export EARTHDATA_PASSWORD="123"
 
     * Request a token (instructions `here <https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens/>`_)
       for your EARTHDATA account and assign it to environment variable ``EARTHDATA_TOKEN``.
