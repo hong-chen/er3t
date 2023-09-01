@@ -158,7 +158,7 @@ class satellite_download:
         self.fnames = {}
 
         # MODIS RGB imagery
-        # self.fnames['mod_rgb'] = [er3t.util.daac.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.util.daac.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
@@ -168,13 +168,11 @@ class satellite_download:
         filename_tags_03 = er3t.dev.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
         if self.verbose:
            print('Message [satellite_download]: Found %s %s overpasses' % (len(filename_tags_03), self.satellite))
-        print(filename_tags_03)
-        sys.exit()
 
         for filename_tag in filename_tags_03:
-            fnames_03     = er3t.util.daac.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = er3t.util.daac.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = er3t.util.daac.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = er3t.dev.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = er3t.dev.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = er3t.dev.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
 
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02

@@ -18,8 +18,8 @@ __all__ = [
         'get_token_earthdata', \
         'get_login_earthdata', \
         'get_fname_geometa', \
-        'get_local_geometa', \
-        'get_online_geometa', \
+        'get_local_file', \
+        'get_online_file', \
         'read_geometa', \
         'cal_proj_xy_geometa', \
         'cal_lon_lat_utc_geometa', \
@@ -85,18 +85,22 @@ def get_login_earthdata():
 
 def get_command_earthdata(
         fname_target,
+        filename=None,
         tools=['curl', 'wget'],
         token=get_token_earthdata(),
-        fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
+        fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
         ):
 
-    fname_saved = '%s/%s' % (fdir_saved, os.path.basename(fname_target))
+    if filename is None:
+        filename = os.path.basename(fname_target)
+
+    fname_save = '%s/%s' % (fdir_save, filename)
 
     header = '"Authorization: Bearer %s"' % token
 
     options = {
-            'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output %s %s' % (header, fname_saved, fname_target),
-            'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document=%s --quiet %s' % (header, fname_saved, fname_target),
+            'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output %s %s' % (header, fname_save, fname_target),
+            'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document=%s --quiet %s' % (header, fname_save, fname_target),
             }
 
     command = None
@@ -105,7 +109,7 @@ def get_command_earthdata(
 
         if shutil.which(command_line_tool):
 
-            command = 'mkdir -p %s && %s %s' % (fdir_saved, command_line_tool, options[command_line_tool])
+            command = 'mkdir -p %s && %s %s' % (fdir_save, command_line_tool, options[command_line_tool])
 
             if command is not None:
 
@@ -139,22 +143,26 @@ def get_fname_geometa(
 
 
 
-def get_local_geometa(
-        fname_geometa,
+def get_local_file(
+        fname_file,
+        filename=None,
         fdir_local='./',
-        fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
+        fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
         ):
+
+    if filename is None:
+        filename = os.path.basename(fname_file)
 
     # try to get information from local
     # check two locations:
     #   1) <tmp-data/satfile> directory under er3t main directory
     #   2) current directory;
     #/--------------------------------------------------------------\#
-    if not os.path.exists(fdir_saved):
-        os.makedirs(fdir_saved)
+    if not os.path.exists(fdir_save):
+        os.makedirs(fdir_save)
 
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_saved, os.path.basename(fname_geometa)))
-    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, os.path.basename(fname_geometa)))
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_save, filename))
+    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, filename))
 
     if os.path.exists(fname_local1):
 
@@ -176,19 +184,23 @@ def get_local_geometa(
 
 
 
-def get_online_geometa(
-        fname_geometa,
+def get_online_file(
+        fname_file,
+        filename=None,
         download=True,
-        fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
+        fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
         ):
+
+    if filename is None:
+        filename = os.path.basename(fname_file)
 
     if download:
 
-        fname_saved = '%s/%s' % (fdir_saved, os.path.basename(fname_geometa))
-        command = get_command_earthdata(fname_geometa, fdir_saved=fdir_saved)
+        fname_save = '%s/%s' % (fdir_save, filename)
+        command = get_command_earthdata(fname_file, filename=filename, fdir_save=fdir_save)
         os.system(command)
 
-        content = get_local_geometa(fname_geometa, fdir_saved=fdir_saved)
+        content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
 
     else:
 
@@ -200,19 +212,75 @@ def get_online_geometa(
         #         r1     = session.request('get', fname_server)
         #         r      = session.get(r1.url, auth=(username, password))
         # except:
-        #     msg = '\nError [get_online_geometa]: cannot access <%s>.' % fname_server
+        #     msg = '\nError [get_online_file]: cannot access <%s>.' % fname_server
         #     raise OSError(msg)
 
         # if r.ok:
         #     content = r.content.decode('utf-8')
         # else:
-        #     msg = '\nError [get_online_geometa]: failed to retrieve information from <%s>.' % fname_server
+        #     msg = '\nError [get_online_file]: failed to retrieve information from <%s>.' % fname_server
         #     warnings.warn(msg)
         #\--------------------------------------------------------------/#
 
         content = None
 
     return content
+
+
+
+def final_file_check(fname_local, data_format=None, verbose=False):
+
+    if data_format is None:
+        data_format = os.path.basename(fname_local).split('.')[-1].lower()
+
+    checked = False
+
+    if data_format in ['hdf', 'hdf4', 'h4']:
+
+        try:
+            import pyhdf
+            from pyhdf.SD import SD, SDC
+            f = SD(fname_local, SDC.READ)
+            f.end()
+
+            checked = True
+        except:
+            pass
+
+    elif data_format in ['nc', 'nc4', 'netcdf', 'netcdf4']:
+        try:
+            from netCDF4 import Dataset
+            f = Dataset(fname_local, 'r')
+            f.close()
+
+            checked = True
+        except:
+            pass
+
+    elif data_format in ['h5', 'hdf5']:
+
+        try:
+            import h5py
+            f = h5py.File(fname_local, 'r')
+            f.close()
+
+            checked = True
+        except:
+            pass
+
+    else:
+
+        msg = '\nWarning [final_file_check]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
+        warnings.warn(msg)
+
+    if checked:
+        if verbose:
+            msg = '\nMessage [final_file_check]: <%s> has been successfully downloaded.\n' % fname_local
+            print(msg)
+
+    else:
+        msg = '\nWarning [final_file_check]: Do not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
+        warnings.warn(msg)
 
 
 
@@ -590,7 +658,7 @@ def get_satfile_tag(
              instrument='modis',
              server='https://ladsweb.modaps.eosdis.nasa.gov',
              fdir_local='./',
-             fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
+             fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
              verbose=False):
 
     """
@@ -643,11 +711,11 @@ def get_satfile_tag(
     # get geometa info
     #/----------------------------------------------------------------------------\#
     # try to get geometa information from local
-    content = get_local_geometa(fname_geometa, fdir_local=fdir_local, fdir_saved=fdir_saved)
+    content = get_local_file(fname_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
 
     # try to get geometa information online
     if content is None:
-        content = get_online_geometa(fname_geometa, fdir_saved=fdir_saved)
+        content = get_online_file(fname_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -698,6 +766,7 @@ def download_laads_https(
              fdir_prefix='/archive/allData',
              day_interval=1,
              fdir_out='tmp-data',
+             fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
              data_format=None,
              run=True,
              verbose=True):
@@ -722,16 +791,8 @@ def download_laads_https(
         fnames_local: Python list that contains downloaded satellite data file paths
     """
 
-    token = get_token_earthdata()
-
-    if shutil.which('curl'):
-        command_line_tool = 'curl'
-    elif shutil.which('wget'):
-        command_line_tool = 'wget'
-    else:
-        msg = '\nError [download_laads_https]: <download_laads_https> needs <curl> or <wget> to be installed.'
-        raise OSError(msg)
-
+    # retrieve the directory where satellite data is stored for picked date
+    #/----------------------------------------------------------------------------\#
     year_str = str(date.timetuple().tm_year).zfill(4)
     if day_interval == 1:
         doy_str  = str(date.timetuple().tm_yday).zfill(3)
@@ -739,130 +800,82 @@ def download_laads_https(
         doy_str = get_doy_tag(date, day_interval=day_interval)
 
     fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
-
     fdir_server = server + fdir_data
-
     #\----------------------------------------------------------------------------/#
+
+
+    # get csv info
+    #/----------------------------------------------------------------------------\#
+    fname_csv = '%s.csv' % fdir_server
+    filename_csv = '_'.join(fname_csv.replace('%s/' % server, '').split('/'))
+
+    # try to get geometa information from local
+    content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+
+    # try to get geometa information online
+    if content is None:
+        content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+    #\----------------------------------------------------------------------------/#
+
+
+    # this can be revisited, disabling it for now
     # Use error handling to overcome occasional issues with LAADS DAAC servers
     #/----------------------------------------------------------------------------\#
-    try:
-        webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-    except urllib.error.HTTPError:
-        msg = "The LAADS DAAC servers appear to be down. Attempting again in 10 seconds..."
-        print(msg)
-        time.sleep(10)
-        try:
-            webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-        except urllib.error.HTTPError:
-            msg = '\nError [download_laads_https]: cannot access <%s>.' % fdir_server
-            raise OSError(msg)
-    content  = webpage.read().decode('utf-8')
+    # try:
+    #     webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
+    # except urllib.error.HTTPError:
+    #     msg = "The LAADS DAAC servers appear to be down. Attempting again in 10 seconds..."
+    #     print(msg)
+    #     time.sleep(10)
+    #     try:
+    #         webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
+    #     except urllib.error.HTTPError:
+    #         msg = '\nError [download_laads_https]: cannot access <%s>.' % fdir_server
+    #         raise OSError(msg)
+    # content  = webpage.read().decode('utf-8')
+    #\----------------------------------------------------------------------------/#
+
+
+    # get download commands
+    #/----------------------------------------------------------------------------\#
     lines    = content.split('\n')
 
     commands = []
     fnames_local = []
     for line in lines:
         filename = line.strip().split(',')[0]
+
         if filename_tag in filename:
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            if command_line_tool == 'curl':
-                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
-            elif command_line_tool == 'wget':
-                command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
-            else:
-                msg = '\nError [download_laads_https]: command line tool %s is not currently supported. Please use one of `curl` or `wget`.' % command_line_tool
-                raise OSError(msg)
+            command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out)
             commands.append(command)
+    #\----------------------------------------------------------------------------/#
 
-    if not run:
-        print('Message [download_laads_https]: The commands to run are:')
-        for command in commands:
-            print(command)
 
-    else:
+    # run/print command
+    #/----------------------------------------------------------------------------\#
+    if run:
 
         for i, command in enumerate(commands):
 
-            if verbose:
-                print('Message [download_laads_https]: Downloading %s ...' % fnames_local[i])
-            os.system(command)
-
             fname_local = fnames_local[i]
 
-            if data_format is None:
-                data_format = os.path.basename(fname_local).split('.')[-1]
+            if verbose:
+                print('Message [download_laads_https]: Downloading %s ...' % fname_local)
+            os.system(command)
 
-            if data_format == 'hdf':
+            final_file_check(fname_local, data_format=data_format, verbose=verbose)
 
-                try:
-                    from pyhdf.SD import SD, SDC
-                    import pyhdf
-                except ImportError:
-                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
-                    raise ImportError(msg)
+    else:
 
-                #\----------------------------------------------------------------------------/#
-                # Attempt to download files. In case of an HDF4Error, attempt to re-download
-                # afer a time period as this could be caused by an internal timeout at
-                # the server side
-                #/----------------------------------------------------------------------------\#
-                try:
-                    if verbose:
-                        print('Message [download_laads_https]: Reading \'%s\' ...\n' % fname_local)
-                    f = SD(fname_local, SDC.READ)
-                    f.end()
-                    if verbose:
-                        print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+        print('Message [download_laads_https]: The commands to run are:')
+        for command in commands:
+            print(command)
+    #\----------------------------------------------------------------------------/#
 
-                except pyhdf.error.HDF4Error:
-                    print('Message [download_laads_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
-                    try:
-                        os.remove(fname_local)
-                        time.sleep(10) # wait 10 seconds
-                        os.system(command) # re-download
-                        f = SD(fname_local, SDC.READ)
-                        f.end()
-                        if verbose:
-                            print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
-                    except pyhdf.error.HDF4Error:
-                        print('Message [download_laads_https]: WARNING: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local)
-                        fnames_local.remove(fname_local)
-                        os.remove(fname_local)
-                        continue
-
-
-            elif data_format == 'nc':
-
-                try:
-                    from netCDF4 import Dataset
-                    f = Dataset(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-
-            elif data_format == 'h5':
-
-                try:
-                    import h5py
-                    f = h5py.File(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-            else:
-
-                msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                warnings.warn(msg)
 
     return fnames_local
 
