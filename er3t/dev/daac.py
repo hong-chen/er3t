@@ -465,7 +465,7 @@ def get_fname_geometa(
 
 
 
-def get_file_local_geometa(
+def get_local_geometa(
         fname_geometa,
         fdir_local='./',
         fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
@@ -502,7 +502,7 @@ def get_file_local_geometa(
 
 
 
-def get_file_online_geometa(
+def get_online_geometa(
         fname_server='',
         download=True
         ):
@@ -525,13 +525,13 @@ def get_file_online_geometa(
             r1     = session.request('get', fname_server)
             r      = session.get(r1.url, auth=(username, password))
     except:
-        msg = '\nError [get_satfile_tag]: cannot access <%s>.' % fname_server
+        msg = '\nError [get_online_geometa]: cannot access <%s>.' % fname_server
         raise OSError(msg)
 
     if r.ok:
         content = r.content.decode('utf-8')
     else:
-        msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
+        msg = '\nError [get_online_geometa]: failed to retrieve information from <%s>.' % fname_server
         warnings.warn(msg)
     #\--------------------------------------------------------------/#
 
