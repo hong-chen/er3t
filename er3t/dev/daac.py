@@ -13,10 +13,196 @@ import warnings
 import er3t
 
 
-__all__ = ['read_geometa', 'cal_proj_xy_geometa', 'cal_lon_lat_utc_geometa', \
-           'get_satfile_tag', 'get_nrt_satfile_tag', \
-           'download_laads_https', 'download_lance_https',\
-           'download_worldview_rgb', 'download_oco2_https']
+__all__ = [
+        'get_satname', \
+        'get_token_earthdata', \
+        'get_login_earthdata', \
+        'get_fname_geometa', \
+        'get_local_geometa', \
+        'get_online_geometa', \
+        'read_geometa', \
+        'cal_proj_xy_geometa', \
+        'cal_lon_lat_utc_geometa', \
+        'get_satfile_tag', \
+        'get_nrt_satfile_tag', \
+        'download_laads_https', \
+        'download_lance_https',\
+        'download_worldview_rgb', \
+        'download_oco2_https', \
+        ]
+
+
+def get_satname(satellite, instrument):
+
+    # check satellite and instrument
+    #/----------------------------------------------------------------------------\#
+    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
+        instrument = instrument.upper()
+        satellite  = satellite.lower().title()
+    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper()
+    else:
+        msg = '\nError [get_satname]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        raise NameError(msg)
+    #\----------------------------------------------------------------------------/#
+
+    satname = '%s|%s' % (satellite, instrument)
+
+    return satname
+
+
+
+def get_token_earthdata():
+
+    try:
+        token = os.environ['EARTHDATA_TOKEN']
+    except KeyError:
+        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
+
+        msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+        warnings.warn(msg)
+
+    return token
+
+
+
+def get_login_earthdata():
+
+    try:
+        username = os.environ['EARTHDATA_USERNAME']
+        password = os.environ['EARTHDATA_PASSWORD']
+
+        return username, password
+
+    except:
+        msg = '\nError [get_earthdata_login]: cannot find environment variables \'EARTHDATA_USERNAME\' and \'EARTHDATA_PASSWORD\'.'
+        raise OSError(msg)
+
+        return
+
+
+
+def get_fname_geometa(
+        date,
+        satname='Aqua|MODIS',
+        server='https://ladsweb.modaps.eosdis.nasa.gov',
+        ):
+
+    # generate satellite filename on LAADS DAAC server
+    #/----------------------------------------------------------------------------\#
+    date_s = date.strftime('%Y-%m-%d')
+    fnames_geometa = {
+           'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
+          'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
+         'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
+           'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
+        'NOAA-20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
+          'S-NPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
+        }
+    fname_geometa = fnames_geometa[satname]
+    #\----------------------------------------------------------------------------/#
+
+    return fname_geometa
+
+
+
+def get_local_geometa(
+        fname_geometa,
+        fdir_local='./',
+        fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
+        ):
+
+    # try to get information from local
+    # check two locations:
+    #   1) <tmp-data/satfile> directory under er3t main directory
+    #   2) current directory;
+    #/--------------------------------------------------------------\#
+    if not os.path.exists(fdir_saved):
+        os.makedirs(fdir_saved)
+
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_saved, os.path.basename(fname_geometa)))
+    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, os.path.basename(fname_geometa)))
+
+    if os.path.exists(fname_local1):
+
+        with open(fname_local1, 'r') as f_:
+            content = f_.read()
+
+    elif os.path.exists(fname_local2):
+
+        os.system('cp %s %s' % (fname_local2, fname_local1))
+        with open(fname_local2, 'r') as f_:
+            content = f_.read()
+
+    else:
+
+        content = None
+    #\--------------------------------------------------------------/#
+
+    return content
+
+
+
+def get_online_geometa(
+        fname_server='',
+        download=True
+        ):
+
+    # get login info
+    #/----------------------------------------------------------------------------\#
+    username, password = get_login_earthdata()
+    #\----------------------------------------------------------------------------/#
+
+    if download:
+        token = get_token_earthdata()
+        command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
+
+
+    # get information from server
+    #/--------------------------------------------------------------\#
+    try:
+        with requests.Session() as session:
+            session.auth = (username, password)
+            r1     = session.request('get', fname_server)
+            r      = session.get(r1.url, auth=(username, password))
+    except:
+        msg = '\nError [get_online_geometa]: cannot access <%s>.' % fname_server
+        raise OSError(msg)
+
+    if r.ok:
+        content = r.content.decode('utf-8')
+    else:
+        msg = '\nError [get_online_geometa]: failed to retrieve information from <%s>.' % fname_server
+        warnings.warn(msg)
+    #\--------------------------------------------------------------/#
+
+    # LAADS DAAC servers are known to cause some issues occasionally while
+    # accessing the metadata. We will attempt to read the txt file online directly
+    # on the server but as a backup, we will download the txt file locally and
+    # access the data there
+    #/----------------------------------------------------------------------------\#
+    try:
+        data  = read_geometa(content)
+    except:
+
+        msg = '\nWarning [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
+        warnings.warn(msg)
+
+        token = get_token_earthdata()
+
+        try:
+            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
+            os.system(command)
+            with open(fname_local1, 'r') as f_:
+                content = f_.read()
+            data = read_geometa(content)
+        except ValueError:
+            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nThis is likely an issue with LAADS DAAC servers, please try downloading the files manually or try again later.\n' % fname_server
+            raise OSError(msg)
+    #\----------------------------------------------------------------------------/#
+
+    pass
 
 
 
@@ -119,11 +305,7 @@ def cal_proj_xy_geometa(line_data, closed=True):
         xy: dimension of (5, 2) if <closed=True> and (4, 2) if <closed=False>
     """
 
-    try:
-        import cartopy.crs as ccrs
-    except ImportError:
-        msg = '\nError [cal_proj_xy_geometa]: Needs <cartopy> to be installed before proceeding.'
-        raise ImportError(msg)
+    import cartopy.crs as ccrs
 
     # get corner points
     #/----------------------------------------------------------------------------\#
@@ -390,180 +572,6 @@ def cal_lon_lat_utc_geometa(
 
 
 
-def get_token_earthdata():
-
-    try:
-        token = os.environ['EARTHDATA_TOKEN']
-    except KeyError:
-        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
-
-        msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
-        warnings.warn(msg)
-
-    return token
-
-
-
-def get_login_earthdata():
-
-    try:
-        username = os.environ['EARTHDATA_USERNAME']
-        password = os.environ['EARTHDATA_PASSWORD']
-
-        return username, password
-
-    except:
-        msg = '\nError [get_earthdata_login]: cannot find environment variables \'EARTHDATA_USERNAME\' and \'EARTHDATA_PASSWORD\'.'
-        raise OSError(msg)
-
-        return
-
-
-
-def get_satname(satellite, instrument):
-
-    # check satellite and instrument
-    #/----------------------------------------------------------------------------\#
-    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
-        instrument = instrument.upper()
-        satellite  = satellite.lower().title()
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper()
-    else:
-        msg = '\nError [get_satname]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
-        raise NameError(msg)
-    #\----------------------------------------------------------------------------/#
-
-    satname = '%s|%s' % (satellite, instrument)
-
-    return satname
-
-
-
-def get_fname_geometa(
-        date,
-        satname='Aqua|MODIS',
-        server='https://ladsweb.modaps.eosdis.nasa.gov',
-        ):
-
-    # generate satellite filename on LAADS DAAC server
-    #/----------------------------------------------------------------------------\#
-    date_s = date.strftime('%Y-%m-%d')
-    fnames_geometa = {
-           'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
-          'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
-         'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-           'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
-        'NOAA-20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-          'S-NPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
-        }
-    fname_geometa = fnames_geometa[satname]
-    #\----------------------------------------------------------------------------/#
-
-    return fname_geometa
-
-
-
-def get_local_geometa(
-        fname_geometa,
-        fdir_local='./',
-        fdir_saved='%s/satfile' % er3t.common.fdir_data_tmp,
-        ):
-
-    # try to get information from local
-    # check two locations:
-    #   1) <tmp-data/satfile> directory under er3t main directory
-    #   2) current directory;
-    #/--------------------------------------------------------------\#
-    if not os.path.exists(fdir_saved):
-        os.makedirs(fdir_saved)
-
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_saved, os.path.basename(fname_geometa)))
-    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, os.path.basename(fname_geometa)))
-
-    if os.path.exists(fname_local1):
-
-        with open(fname_local1, 'r') as f_:
-            content = f_.read()
-
-    elif os.path.exists(fname_local2):
-
-        os.system('cp %s %s' % (fname_local2, fname_local1))
-        with open(fname_local2, 'r') as f_:
-            content = f_.read()
-
-    else:
-
-        content = None
-    #\--------------------------------------------------------------/#
-
-    return content
-
-
-
-def get_online_geometa(
-        fname_server='',
-        download=True
-        ):
-
-    # get login info
-    #/----------------------------------------------------------------------------\#
-    username, password = get_login_earthdata()
-    #\----------------------------------------------------------------------------/#
-
-    if download:
-        token = get_token_earthdata()
-        command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
-
-
-    # get information from server
-    #/--------------------------------------------------------------\#
-    try:
-        with requests.Session() as session:
-            session.auth = (username, password)
-            r1     = session.request('get', fname_server)
-            r      = session.get(r1.url, auth=(username, password))
-    except:
-        msg = '\nError [get_online_geometa]: cannot access <%s>.' % fname_server
-        raise OSError(msg)
-
-    if r.ok:
-        content = r.content.decode('utf-8')
-    else:
-        msg = '\nError [get_online_geometa]: failed to retrieve information from <%s>.' % fname_server
-        warnings.warn(msg)
-    #\--------------------------------------------------------------/#
-
-    # LAADS DAAC servers are known to cause some issues occasionally while
-    # accessing the metadata. We will attempt to read the txt file online directly
-    # on the server but as a backup, we will download the txt file locally and
-    # access the data there
-    #/----------------------------------------------------------------------------\#
-    try:
-        data  = read_geometa(content)
-    except:
-
-        msg = '\nWarning [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
-        warnings.warn(msg)
-
-        token = get_token_earthdata()
-
-        try:
-            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
-            os.system(command)
-            with open(fname_local1, 'r') as f_:
-                content = f_.read()
-            data = read_geometa(content)
-        except ValueError:
-            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nThis is likely an issue with LAADS DAAC servers, please try downloading the files manually or try again later.\n' % fname_server
-            raise OSError(msg)
-    #\----------------------------------------------------------------------------/#
-
-    pass
-
-
-
 def get_satfile_tag(
              date,
              lon,
@@ -594,17 +602,8 @@ def get_satfile_tag(
 
     # check cartopy and matplotlib
     #/----------------------------------------------------------------------------\#
-    try:
-        import cartopy.crs as ccrs
-    except ImportError:
-        msg = '\nError [get_satfile_tag]: Please install <cartopy> to proceed.'
-        raise ImportError(msg)
-
-    try:
-        import matplotlib.path as mpl_path
-    except ImportError:
-        msg = '\nError [get_satfile_tag]: Please install <matplotlib> to proceed.'
-        raise ImportError(msg)
+    import cartopy.crs as ccrs
+    import matplotlib.path as mpl_path
     #\----------------------------------------------------------------------------/#
 
 
