@@ -24,11 +24,11 @@ __all__ = [
         'cal_proj_xy_geometa', \
         'cal_lon_lat_utc_geometa', \
         'get_satfile_tag', \
-        'get_nrt_satfile_tag', \
         'download_laads_https', \
+        'get_nrt_satfile_tag', \
         'download_lance_https',\
-        'download_worldview_rgb', \
         'download_oco2_https', \
+        'download_worldview_image', \
         ]
 
 
@@ -221,6 +221,23 @@ def get_online_file(
         #     msg = '\nError [get_online_file]: failed to retrieve information from <%s>.' % fname_server
         #     warnings.warn(msg)
         #\--------------------------------------------------------------/#
+
+        # this can be revisited, disabling it for now
+        # Use error handling to overcome occasional issues with LAADS DAAC servers
+        #/----------------------------------------------------------------------------\#
+        # try:
+        #     webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
+        # except urllib.error.HTTPError:
+        #     msg = "The LAADS DAAC servers appear to be down. Attempting again in 10 seconds..."
+        #     print(msg)
+        #     time.sleep(10)
+        #     try:
+        #         webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
+        #     except urllib.error.HTTPError:
+        #         msg = '\nError [get_online_file]: cannot access <%s>.' % fdir_server
+        #         raise OSError(msg)
+        # content  = webpage.read().decode('utf-8')
+        #\----------------------------------------------------------------------------/#
 
         content = None
 
@@ -771,7 +788,6 @@ def download_laads_https(
              run=True,
              verbose=True):
 
-
     """
     Downloads products from the LAADS Data Archive (DAAC).
 
@@ -815,24 +831,6 @@ def download_laads_https(
     # try to get geometa information online
     if content is None:
         content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
-    #\----------------------------------------------------------------------------/#
-
-
-    # this can be revisited, disabling it for now
-    # Use error handling to overcome occasional issues with LAADS DAAC servers
-    #/----------------------------------------------------------------------------\#
-    # try:
-    #     webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-    # except urllib.error.HTTPError:
-    #     msg = "The LAADS DAAC servers appear to be down. Attempting again in 10 seconds..."
-    #     print(msg)
-    #     time.sleep(10)
-    #     try:
-    #         webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-    #     except urllib.error.HTTPError:
-    #         msg = '\nError [download_laads_https]: cannot access <%s>.' % fdir_server
-    #         raise OSError(msg)
-    # content  = webpage.read().decode('utf-8')
     #\----------------------------------------------------------------------------/#
 
 
@@ -1299,175 +1297,6 @@ def download_lance_https(
 
 
 
-def download_worldview_rgb(
-        date,
-        extent,
-        fdir_out='tmp-data',
-        instrument='modis',
-        satellite='aqua',
-        wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi',
-        layer_name0=None,
-        proj=None,
-        coastline=False,
-        fmt='png',
-        dpi=300,
-        run=True,
-        ):
-
-    """
-    Purpose: download satellite RGB imagery from NASA Worldview for a user-specified date and region
-    Inputs:
-        date: date object of <datetime.datetime>
-        extent: rectangular region, Python list of [west_most_longitude, east_most_longitude, south_most_latitude, north_most_latitude]
-        fdir_out=: directory to store RGB imagery from NASA Worldview
-        instrument=: satellite instrument, currently only supports 'modis' and 'viirs'
-        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis', and 'snpp' and 'noaa20' for 'viirs'
-        wmts_cgi=: cgi link to NASA Worldview GIBS (Global Imagery Browse Services)
-        proj=: map projection for plotting the RGB imagery
-        coastline=: boolen type, whether to plot coastline
-        fmt=: can be either 'png' or 'h5'
-        run=: boolen type, whether to plot
-    Output:
-        fname: file name of the saved RGB file (png format)
-    Usage example:
-        import datetime
-        fname = download_wordview_rgb(datetime.datetime(2022, 5, 18), [-94.26,-87.21,31.86,38.91], instrument='modis', satellite='aqua')
-    """
-
-    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
-        instrument = instrument.upper()
-        satellite  = satellite.lower().title()
-        sat_kind = 'polar-orbiting'
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper()
-        sat_kind = 'polar-orbiting'
-    elif instrument.lower() == 'abi' and (satellite.lower() in ['goes-east', 'goes-west']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper().replace('WEST', 'West').replace('EAST', 'East')
-        sat_kind = 'geostationary'
-    else:
-        msg = 'Error [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
-        raise NameError(msg)
-
-    if sat_kind == 'polar-orbiting':
-        date_s = date.strftime('%Y-%m-%d')
-        if layer_name0 is None:
-            layer_name0='CorrectedReflectance_TrueColor'
-        layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
-
-        try:
-            lon__ = np.arange(extent[0], extent[1], 500.0/111000.0)
-            lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
-            lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
-
-            try:
-                satfile_tag = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
-            except:
-                satfile_tag = get_nrt_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
-
-            date0 = datetime.datetime.strptime(satfile_tag, 'A%Y%j.%H%M')
-            date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
-        except:
-            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
-
-    elif sat_kind == 'geostationary':
-        date += datetime.timedelta(minutes=5)
-        date -= datetime.timedelta(minutes=date.minute % 10,
-                                   seconds=date.second)
-        date_s = date.strftime('%Y-%m-%dT%H:%M:%SZ')
-        if layer_name0 is None:
-            layer_name0='GeoColor'
-        layer_name = '%s_%s_%s' % (satellite, instrument, layer_name0)
-
-        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
-
-    fname  = os.path.abspath(fname)
-
-    if run:
-
-        try:
-            import matplotlib as mpl
-            mpl.use('Agg')
-            import matplotlib.pyplot as plt
-            import matplotlib.image as mpl_img
-        except ImportError:
-            msg = 'Error [download_worldview_rgb]: Please install <matplotlib> to proceed.'
-            raise ImportError(msg)
-
-        try:
-            import cartopy.crs as ccrs
-        except ImportError:
-            msg = 'Error [download_worldview_rgb]: Please install <cartopy> to proceed.'
-            raise ImportError(msg)
-
-        if not os.path.exists(fdir_out):
-            os.makedirs(fdir_out)
-
-        if proj is None:
-            proj=ccrs.PlateCarree()
-
-        try:
-        # if True:
-            fig = plt.figure(figsize=(12, 6))
-            ax1 = fig.add_subplot(111, projection=proj)
-            ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
-            if coastline:
-                ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
-            ax1.set_extent(extent, crs=ccrs.PlateCarree())
-            # ax1.outline_patch.set_visible(False) # changed according to DeprecationWarning
-            ax1.spines['geo'].set_visible(False)
-            ax1.axis('off')
-            plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=dpi)
-            plt.close(fig)
-        except:
-            msg = '\nError [download_wordview_rgb]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
-            warnings.warn(msg)
-
-    if fmt == 'png':
-
-        pass
-
-    elif fmt == 'h5':
-
-        try:
-            import h5py
-        except ImportError:
-            msg = 'Error [download_worldview_rgb]: Please install <h5py> to proceed.'
-            raise ImportError(msg)
-
-        data = mpl_img.imread(fname)
-
-        lon  = np.linspace(extent[0], extent[1], data.shape[1])
-        lat  = np.linspace(extent[2], extent[3], data.shape[0])
-
-        fname = fname.replace('.png', '.h5')
-
-        f = h5py.File(fname, 'w')
-
-        f['extent'] = extent
-
-        f['lon'] = lon
-        f['lon'].make_scale('Longitude')
-
-        f['lat'] = lat
-        f['lat'].make_scale('Latitude')
-
-        f['rgb'] = np.swapaxes(data[::-1, :, :3], 0, 1)
-        f['rgb'].dims[0].label = 'Longitude'
-        f['rgb'].dims[0].attach_scale(f['lon'])
-        f['rgb'].dims[1].label = 'Latitude'
-        f['rgb'].dims[1].attach_scale(f['lat'])
-        f['rgb'].dims[2].label = 'RGB'
-
-        f.close()
-
-    return fname
-
-
-
 def download_oco2_https(
              dtime,
              dataset_tag,
@@ -1616,6 +1445,156 @@ def download_oco2_https(
                 print('Warning [download_oco2_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
 
     return fnames_local
+
+
+
+def download_worldview_image(
+        date,
+        extent,
+        fdir_out='tmp-data',
+        instrument='modis',
+        satellite='aqua',
+        wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi',
+        layer_name0=None,
+        proj=None,
+        coastline=False,
+        fmt='png',
+        dpi=300,
+        run=True,
+        ):
+
+    """
+    Purpose: download satellite RGB imagery from NASA Worldview for a user-specified date and region
+    Inputs:
+        date: date object of <datetime.datetime>
+        extent: rectangular region, Python list of [west_most_longitude, east_most_longitude, south_most_latitude, north_most_latitude]
+        fdir_out=: directory to store RGB imagery from NASA Worldview
+        instrument=: satellite instrument, currently only supports 'modis' and 'viirs'
+        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis', and 'snpp' and 'noaa20' for 'viirs'
+        wmts_cgi=: cgi link to NASA Worldview GIBS (Global Imagery Browse Services)
+        proj=: map projection for plotting the RGB imagery
+        coastline=: boolen type, whether to plot coastline
+        fmt=: can be either 'png' or 'h5'
+        run=: boolen type, whether to plot
+    Output:
+        fname: file name of the saved RGB file (png format)
+    Usage example:
+        import datetime
+        fname = download_wordview_image(datetime.datetime(2022, 5, 18), [-94.26,-87.21,31.86,38.91], instrument='modis', satellite='aqua')
+    """
+
+    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
+        instrument = instrument.upper()
+        satellite  = satellite.lower().title()
+        sat_kind = 'polar-orbiting'
+    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper()
+        sat_kind = 'polar-orbiting'
+    elif instrument.lower() == 'abi' and (satellite.lower() in ['goes-east', 'goes-west']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper().replace('WEST', 'West').replace('EAST', 'East')
+        sat_kind = 'geostationary'
+    else:
+        msg = 'Error [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        raise NameError(msg)
+
+    if sat_kind == 'polar-orbiting':
+        date_s = date.strftime('%Y-%m-%d')
+        if layer_name0 is None:
+            layer_name0='CorrectedReflectance_TrueColor'
+        layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
+
+        try:
+            lon__ = np.arange(extent[0], extent[1], 500.0/111000.0)
+            lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
+            lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
+
+            try:
+                satfile_tag = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+            except:
+                satfile_tag = get_nrt_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+
+            date0 = datetime.datetime.strptime(satfile_tag, 'A%Y%j.%H%M')
+            date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        except:
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+
+    elif sat_kind == 'geostationary':
+        date += datetime.timedelta(minutes=5)
+        date -= datetime.timedelta(minutes=date.minute % 10,
+                                   seconds=date.second)
+        date_s = date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        if layer_name0 is None:
+            layer_name0='GeoColor'
+        layer_name = '%s_%s_%s' % (satellite, instrument, layer_name0)
+
+        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+
+    fname  = os.path.abspath(fname)
+
+    if run:
+
+        import h5py
+        import matplotlib as mpl
+        mpl.use('Agg')
+        import matplotlib.pyplot as plt
+        import matplotlib.image as mpl_img
+        import cartopy.crs as ccrs
+
+        if not os.path.exists(fdir_out):
+            os.makedirs(fdir_out)
+
+        if proj is None:
+            proj=ccrs.PlateCarree()
+
+        try:
+            fig = plt.figure(figsize=(12, 6))
+            ax1 = fig.add_subplot(111, projection=proj)
+            ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
+            if coastline:
+                ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
+            ax1.set_extent(extent, crs=ccrs.PlateCarree())
+            # ax1.outline_patch.set_visible(False) # changed according to DeprecationWarning
+            ax1.spines['geo'].set_visible(False)
+            ax1.axis('off')
+            plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=dpi)
+            plt.close(fig)
+        except:
+            msg = '\nError [download_wordview_image]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
+            warnings.warn(msg)
+
+        if fmt == 'h5':
+
+            data = mpl_img.imread(fname)
+
+            lon  = np.linspace(extent[0], extent[1], data.shape[1])
+            lat  = np.linspace(extent[2], extent[3], data.shape[0])
+
+            fname = fname.replace('.png', '.h5')
+
+            f = h5py.File(fname, 'w')
+
+            f['extent'] = extent
+
+            f['lon'] = lon
+            f['lon'].make_scale('Longitude')
+
+            f['lat'] = lat
+            f['lat'].make_scale('Latitude')
+
+            f['rgb'] = np.swapaxes(data[::-1, :, :3], 0, 1)
+            f['rgb'].dims[0].label = 'Longitude'
+            f['rgb'].dims[0].attach_scale(f['lon'])
+            f['rgb'].dims[1].label = 'Latitude'
+            f['rgb'].dims[1].attach_scale(f['lat'])
+            f['rgb'].dims[2].label = 'RGB'
+
+            f.close()
+
+    return fname
 
 
 
