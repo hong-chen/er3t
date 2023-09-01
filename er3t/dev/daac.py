@@ -1493,14 +1493,27 @@ def download_worldview_image(
         fname = download_wordview_image(datetime.datetime(2022, 5, 18), [-94.26,-87.21,31.86,38.91], instrument='modis', satellite='aqua')
     """
 
+    # get formatted satellite and instrument name
+    #/----------------------------------------------------------------------------\#
     satname = get_satname(satellite, instrument)
     satellite, instrument = satname.split('|')
+    #\----------------------------------------------------------------------------/#
 
+
+    # time stamping the satellite imagery (contained in file name)
+    #/----------------------------------------------------------------------------\#
     if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP']:
+
+        # pick layer
+        #/--------------------------------------------------------------\#
         if layer_name0 is None:
             layer_name0='CorrectedReflectance_TrueColor'
         layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
+        #\--------------------------------------------------------------/#
 
+        # calculate time based on the relative location of
+        # selected region to satellite granule
+        #/--------------------------------------------------------------\#
         date_s = date.strftime('%Y-%m-%d')
 
         try:
@@ -1523,19 +1536,29 @@ def download_worldview_image(
 
         except:
             fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        #\--------------------------------------------------------------/#
 
     elif satellite in ['GOES-West', 'GOES-East']:
-        date += datetime.timedelta(minutes=5)
-        date -= datetime.timedelta(minutes=date.minute % 10,
-                                   seconds=date.second)
+
+        # pick layer
+        #/--------------------------------------------------------------\#
         date_s = date.strftime('%Y-%m-%dT%H:%M:%SZ')
         if layer_name0 is None:
             layer_name0='GeoColor'
         layer_name = '%s_%s_%s' % (satellite, instrument, layer_name0)
+        #\--------------------------------------------------------------/#
+
+        # every 10 minutes, e.g., 10:10, 10:20, 10:30 ...
+        #/--------------------------------------------------------------\#
+        date += datetime.timedelta(minutes=5)
+        date -= datetime.timedelta(minutes=date.minute % 10,
+                                   seconds=date.second)
 
         fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        #\--------------------------------------------------------------/#
 
     fname  = os.path.abspath(fname)
+    #\----------------------------------------------------------------------------/#
 
     if run:
 
