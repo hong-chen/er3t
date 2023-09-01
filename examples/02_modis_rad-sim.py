@@ -158,16 +158,18 @@ class satellite_download:
         self.fnames = {}
 
         # MODIS RGB imagery
-        self.fnames['mod_rgb'] = [er3t.util.daac.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
+        # self.fnames['mod_rgb'] = [er3t.util.daac.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
 
-        filename_tags_03 = er3t.util.daac.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
+        filename_tags_03 = er3t.dev.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
         if self.verbose:
            print('Message [satellite_download]: Found %s %s overpasses' % (len(filename_tags_03), self.satellite))
+        print(filename_tags_03)
+        sys.exit()
 
         for filename_tag in filename_tags_03:
             fnames_03     = er3t.util.daac.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
@@ -228,7 +230,7 @@ def cdata_sat_raw(
     # download satellite data based on given date and region
     #/----------------------------------------------------------------------------\#
     fname_sat = '%s/sat.pk' % fdir_data
-    sat0 = satellite_download(date=params['date'], fdir_out=fdir_data, extent=params['region'], fname=fname_sat, overwrite=False)
+    sat0 = satellite_download(date=params['date'], fdir_out=fdir_data, extent=params['region'], fname=fname_sat, overwrite=True)
     #\----------------------------------------------------------------------------/#
 
 

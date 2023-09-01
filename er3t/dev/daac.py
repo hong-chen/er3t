@@ -183,32 +183,36 @@ def get_online_geometa(
         ):
 
     if download:
+
         fname_saved = '%s/%s' % (fdir_saved, os.path.basename(fname_geometa))
         command = get_command_download(fname_geometa, fdir_saved=fdir_saved)
         os.system(command)
 
         content = get_local_geometa(fname_geometa, fdir_saved=fdir_saved)
 
-        return content
+    else:
 
+        # this can be revisited, disabling it for now
+        #/--------------------------------------------------------------\#
+        # try:
+        #     with requests.Session() as session:
+        #         session.auth = (username, password)
+        #         r1     = session.request('get', fname_server)
+        #         r      = session.get(r1.url, auth=(username, password))
+        # except:
+        #     msg = '\nError [get_online_geometa]: cannot access <%s>.' % fname_server
+        #     raise OSError(msg)
 
-    # get information from server
-    #/--------------------------------------------------------------\#
-    # try:
-    #     with requests.Session() as session:
-    #         session.auth = (username, password)
-    #         r1     = session.request('get', fname_server)
-    #         r      = session.get(r1.url, auth=(username, password))
-    # except:
-    #     msg = '\nError [get_online_geometa]: cannot access <%s>.' % fname_server
-    #     raise OSError(msg)
+        # if r.ok:
+        #     content = r.content.decode('utf-8')
+        # else:
+        #     msg = '\nError [get_online_geometa]: failed to retrieve information from <%s>.' % fname_server
+        #     warnings.warn(msg)
+        #\--------------------------------------------------------------/#
 
-    # if r.ok:
-    #     content = r.content.decode('utf-8')
-    # else:
-    #     msg = '\nError [get_online_geometa]: failed to retrieve information from <%s>.' % fname_server
-    #     warnings.warn(msg)
-    #\--------------------------------------------------------------/#
+        content = None
+
+    return content
 
 
 
