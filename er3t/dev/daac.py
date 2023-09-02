@@ -197,7 +197,6 @@ def get_online_file(
 
         fname_save = '%s/%s' % (fdir_save, filename)
         command = get_command_earthdata(fname_file, filename=filename, fdir_save=fdir_save, tools=tools)
-        print(command)
         os.system(command)
 
         content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
