@@ -129,16 +129,11 @@ def get_command_earthdata(
 
     else:
 
-
-        # if command_line_tool == 'curl':
-        #     command = 'mkdir -p %s && curl -n -c ~/.urs_cookies -b ~/.urs_cookies -L -C - \'%s\' -o \'%s\'' % (fdir_out, fname_server, fname_local)
-        # elif command_line_tool == 'wget':
-        #     command = 'mkdir -p %s && wget -c "%s" --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies --content-disposition -O %s' % (fdir_out, fname_server, fname_local)
         secret = gen_file_earthdata()
 
         options = {
                 'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
-                'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge=on --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="%s" --quiet "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="%s" --quiet "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                 }
 
     command = None
