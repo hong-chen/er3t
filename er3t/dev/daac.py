@@ -1191,7 +1191,11 @@ def download_worldview_image(
             lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
-            line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True)[-1]
+            if satellite in ['Terra']:
+                line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True)[-1]
+            else:
+                line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True)[0]
+
             if satellite in ['Aqua', 'Terra']:
                 lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=300.0, N_along=2030, N_cross=1354, scan='cw', testing=False)
             else:
