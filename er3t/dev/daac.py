@@ -16,10 +16,10 @@ import er3t
 __all__ = [
         'get_satname', \
         'get_token_earthdata', \
-        'get_login_earthdata', \
         'get_fname_geometa', \
         'get_local_file', \
         'get_online_file', \
+        'final_file_check', \
         'read_geometa', \
         'cal_proj_xy_geometa', \
         'cal_lon_lat_utc_geometa', \
@@ -66,22 +66,6 @@ def get_token_earthdata():
         warnings.warn(msg)
 
     return token
-
-
-
-def get_login_earthdata():
-
-    try:
-        username = os.environ['EARTHDATA_USERNAME']
-        password = os.environ['EARTHDATA_PASSWORD']
-
-        return username, password
-
-    except:
-        msg = '\nError [get_earthdata_login]: cannot find environment variables \'EARTHDATA_USERNAME\' and \'EARTHDATA_PASSWORD\'.'
-        raise OSError(msg)
-
-        return
 
 
 
@@ -1023,7 +1007,7 @@ def download_oco2_https(
              fnames=None,
              server='https://oco2.gesdisc.eosdis.nasa.gov',
              fdir_prefix='/data/OCO2_DATA',
-             fdir_out='data',
+             fdir_out='tmp-data',
              data_format=None,
              run=True,
              verbose=False):
@@ -1042,36 +1026,43 @@ def download_oco2_https(
     Output:
         fnames_local: Python list that contains downloaded OCO2 file paths
     """
+
     from er3t.util.oco2 import get_fnames_from_web, get_dtime_from_xml
-
-    fname_login = '~/.netrc'
-    if not os.path.exists(os.path.expanduser(fname_login)):
-        sys.exit('Error [download_oco2_https]: Please follow the instructions at \nhttps://disc.gsfc.nasa.gov/data-access\nto register a login account and create a \'~/.netrc\' file.')
-
-    fname_cookies = '~/.urs_cookies'
-    if not os.path.exists(os.path.expanduser(fname_cookies)):
-        print('Message [download_modis_https]: Creating ~/.urs_cookies ...')
-        os.system('touch ~/.urs_cookies')
-
-    if shutil.which('curl'):
-        command_line_tool = 'curl'
-    elif shutil.which('wget'):
-        command_line_tool = 'wget'
-    else:
-        sys.exit('Error [download_oco2_https]: \'download_oco2_https\' needs \'curl\' or \'wget\' to be installed.')
 
     year_str = str(dtime.timetuple().tm_year).zfill(4)
     doy_str  = str(dtime.timetuple().tm_yday).zfill(3)
 
-    if dataset_tag in ['OCO2_L2_Met.10', 'OCO2_L2_Met.10r', 'OCO2_L2_Standard.10', 'OCO2_L2_Standard.10r',
-                       'OCO2_L1B_Science.10', 'OCO2_L1B_Science.10r', 'OCO2_L1B_Calibration.10', 'OCO2_L1B_Calibration.10r',
-                       'OCO2_L2_CO2Prior.10r', 'OCO2_L2_CO2Prior.10', 'OCO2_L2_IMAPDOAS.10r', 'OCO2_L2_IMAPDOAS.10',
-                       'OCO2_L2_Diagnostic.10r', 'OCO2_L2_Diagnostic.10']:
+    if dataset_tag in [
+            'OCO2_L2_Met.10',
+            'OCO2_L2_Met.10r',
+            'OCO2_L2_Standard.10',
+            'OCO2_L2_Standard.10r',
+            'OCO2_L1B_Science.10',
+            'OCO2_L1B_Science.10r',
+            'OCO2_L1B_Calibration.10',
+            'OCO2_L1B_Calibration.10r',
+            'OCO2_L2_CO2Prior.10r',
+            'OCO2_L2_CO2Prior.10',
+            'OCO2_L2_IMAPDOAS.10r',
+            'OCO2_L2_IMAPDOAS.10',
+            'OCO2_L2_Diagnostic.10r',
+            'OCO2_L2_Diagnostic.10'
+            ]:
+
         fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
-    elif dataset_tag in ['OCO2_L2_Lite_FP.9r', 'OCO2_L2_Lite_FP.10r', 'OCO2_L2_Lite_SIF.10r']:
+
+    elif dataset_tag in [
+            'OCO2_L2_Lite_FP.9r',
+            'OCO2_L2_Lite_FP.10r',
+            'OCO2_L2_Lite_SIF.10r'
+            ]:
+
         fdir_data = '%s/%s/%s' % (fdir_prefix, dataset_tag, year_str)
+
     else:
-        sys.exit('Error   [download_oco2_https]: Do not support downloading \'%s\'.' % dataset_tag)
+
+        msg = '\nError [download_oco2_https]: Currently do not support downloading <%s>.' % dataset_tag
+        raise OSError(msg)
 
     fdir_server = server + fdir_data
 
@@ -1079,8 +1070,8 @@ def download_oco2_https(
     if len(fnames_xml) > 0:
         data_format = fnames_xml[0].split('.')[-2]
     else:
-        sys.exit('Error   [download_oco2_https]: XML files are not available at %s.' % fdir_server)
-
+        msg = '\nError [download_oco2_https]: XML files are not available at <%s>.' % fdir_server
+        raise OSError(msg)
 
     fnames_server = []
 
@@ -1093,10 +1084,11 @@ def download_oco2_https(
     else:
 
         fnames_dat  = get_fnames_from_web(fdir_server, data_format)
-        Nfile      = len(fnames_dat)
+        Nfile = len(fnames_dat)
 
         if not all([fnames_dat[i] in fnames_xml[i] for i in range(Nfile)]):
-            sys.exit('Error   [download_oco2_https]: The description files [xml] do not match with data files.')
+            msg = '\nError [download_oco2_https]: The description files [xml] do not match with data files.'
+            raise OSError(msg)
 
         for i in range(Nfile):
             dtime_s, dtime_e = get_dtime_from_xml('%s/%s' % (fdir_server, fnames_xml[i]))
@@ -1111,10 +1103,7 @@ def download_oco2_https(
         fname_local  = '%s/%s' % (fdir_out, filename)
         fnames_local.append(fname_local)
 
-        if command_line_tool == 'curl':
-            command = 'mkdir -p %s && curl -n -c ~/.urs_cookies -b ~/.urs_cookies -L -C - \'%s\' -o \'%s\'' % (fdir_out, fname_server, fname_local)
-        elif command_line_tool == 'wget':
-            command = 'mkdir -p %s && wget -c "%s" --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies --content-disposition -O %s' % (fdir_out, fname_server, fname_local)
+        command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out)
         commands.append(command)
 
     if not run and len(commands)>0:
@@ -1127,42 +1116,14 @@ def download_oco2_https(
 
         for i, command in enumerate(commands):
 
+            fname_local = fnames_local[i]
+
             if verbose:
-                print('Message [download_oco2_https]: Downloading %s ...' % fnames_local[i])
+                print('Message [download_oco2_https]: Downloading %s ...' % fname_local)
 
             os.system(command)
 
-            fname_local = fnames_local[i]
-
-            if data_format == 'h5':
-
-                try:
-                    import h5py
-                except ImportError:
-                    msg = 'Warning [downlad_oco2_https]: To use \'download_oco2_https\', \'h5py\' needs to be installed.'
-                    raise ImportError(msg)
-
-                f = h5py.File(fname_local, 'r')
-                f.close()
-                if verbose:
-                    print('Message [download_oco2_https]: \'%s\' has been downloaded.\n' % fname_local)
-
-            elif data_format == 'nc':
-
-                try:
-                    import netCDF4 as nc4
-                except ImportError:
-                    msg = 'Warning [downlad_oco2_https]: To use \'download_oco2_https\', \'netCDF4\' needs to be installed.'
-                    raise ImportError(msg)
-
-                f = nc4.Dataset(fname_local, 'r')
-                f.close()
-                if verbose:
-                    print('Message [download_oco2_https]: \'%s\' has been downloaded.\n' % fname_local)
-
-            else:
-
-                print('Warning [download_oco2_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
+            final_file_check(fname_local, data_format=data_format, verbose=verbose)
 
     return fnames_local
 
