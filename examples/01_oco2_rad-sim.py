@@ -181,7 +181,6 @@ class satellite_download:
             self.fnames['oco_met'] += fnames_met
             self.fnames['oco_l1b'] += fnames_l1b
 
-        sys.exit()
 
     def dump(self, fname):
 

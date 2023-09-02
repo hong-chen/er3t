@@ -69,11 +69,46 @@ def get_token_earthdata():
 
 
 
+def gen_file_earthdata(
+        fname_login = '~/.netrc',
+        fname_cookies = '~/.urs_cookies',
+        ):
+
+    secret = {}
+
+    fname_login = os.path.abspath(os.path.expanduser(fname_login))
+    if not os.path.exists(fname_login):
+
+        try:
+            username = os.environ['EARTHDATA_USERNAME']
+            password = os.environ['EARTHDATA_PASSWORD']
+        except:
+            msg = '\nError [gen_file_earthdata]: Please follow the instructions at \nhttps://disc.gsfc.nasa.gov/data-access\nto register a login account and create a <~/.netrc> file.'
+            raise OSError(msg)
+
+        content = 'machine urs.earthdata.nasa.gov login %s password %s' % (username, password)
+        print('Message [gen_file_earthdata]: Creating <~/.netrc> ...')
+        with open(fname_login, 'w') as f:
+            f.write(content)
+
+    secret['netrc'] = fname_login
+
+    fname_cookies = os.path.abspath(os.path.expanduser(fname_cookies))
+    if not os.path.exists(fname_cookies):
+        print('Message [gen_file_earthdata]: Creating <~/.urs_cookies> ...')
+        os.system('touch ~/.urs_cookies')
+
+    secret['cookies'] = fname_cookies
+
+    return secret
+
+
+
 def get_command_earthdata(
         fname_target,
         filename=None,
+        token_mode=True,
         tools=['curl', 'wget'],
-        token=get_token_earthdata(),
         fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
         ):
 
@@ -82,12 +117,29 @@ def get_command_earthdata(
 
     fname_save = '%s/%s' % (fdir_save, filename)
 
-    header = '"Authorization: Bearer %s"' % token
 
-    options = {
-            'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
-            'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document="%s" --quiet "%s"' % (header, fname_save, fname_target),
-            }
+    if token_mode:
+
+        token=get_token_earthdata()
+        header = '"Authorization: Bearer %s"' % token
+        options = {
+                'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document="%s" --quiet "%s"' % (header, fname_save, fname_target),
+                }
+
+    else:
+
+
+        # if command_line_tool == 'curl':
+        #     command = 'mkdir -p %s && curl -n -c ~/.urs_cookies -b ~/.urs_cookies -L -C - \'%s\' -o \'%s\'' % (fdir_out, fname_server, fname_local)
+        # elif command_line_tool == 'wget':
+        #     command = 'mkdir -p %s && wget -c "%s" --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies --content-disposition -O %s' % (fdir_out, fname_server, fname_local)
+        secret = gen_file_earthdata()
+
+        options = {
+                'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge=on --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="%s" --quiet "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                }
 
     command = None
 
@@ -1009,7 +1061,7 @@ def download_oco2_https(
              fdir_out='tmp-data',
              data_format=None,
              run=True,
-             verbose=False):
+             verbose=True):
 
     """
     Input:
@@ -1102,7 +1154,7 @@ def download_oco2_https(
         fname_local  = '%s/%s' % (fdir_out, filename)
         fnames_local.append(fname_local)
 
-        command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out)
+        command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False)
         commands.append(command)
 
     if not run and len(commands)>0:
