@@ -37,6 +37,7 @@ To see a demonstration of how this tool works, use:
 """
 
 import os
+import shutil
 import sys
 from argparse import ArgumentParser, RawTextHelpFormatter
 import numpy as np
@@ -46,7 +47,7 @@ import datetime
 import er3t.util.daac
 
 # get width for stdout statements
-_width_ = os.get_terminal_size().columns
+_width_, _ = shutil.get_terminal_size()
 
 # set welcome text
 _description_ = '=' * _width_ + '\n\n' + \
