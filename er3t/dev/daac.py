@@ -1244,9 +1244,9 @@ def download_worldview_image(
                 line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True)[0]
 
             if satellite in ['Aqua', 'Terra']:
-                lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=300.0, N_along=2030, N_cross=1354, scan='cw', testing=False)
+                lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=300.0, N_along=1015, N_cross=677, scan='cw', testing=False)
             else:
-                lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=360.0, N_along=3248, N_cross=3200, scan='cw', testing=False)
+                lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=360.0, N_along=1624, N_cross=1600, scan='cw', testing=False)
 
             logic_in = (lon0_>=extent[0]) & (lon0_<=extent[1]) & (lat0_>=extent[2]) & (lat0_<=extent[3])
             jday0 = np.nanmean(jday0_[logic_in])
