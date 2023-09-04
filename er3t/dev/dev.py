@@ -401,6 +401,150 @@ def cal_lon_lat_utc_geometa(
     return lon_out, lat_out, jday_out
 
 
+def cal_sec_offset_abi(extent, satname='GEOS-East|ABI', sec_per_scan=30.0):
+
+    """
+    Details see https://www.goes-r.gov/users/abiScanModeInfo.html
+    """
+
+    import cartopy.crs as ccrs
+
+    satellite, instrument = satname.split('|')
+
+    if satname == 'GEOS-East|ABI':
+
+        full_disk_time_span = {
+                0: [[19.8, 26.6]],
+                1: [[3.7, 12.4], [12.9, 23.0]],
+                2: [[4.5, 15.7]],
+                3: [[3.0, 15.1]],
+                4: [[2.7, 15.4]],
+                5: [[2.5, 15.6]],
+                6: [[2.3, 15.8]],
+                7: [[2.1, 16.0]],
+                8: [[2.0, 16.0]],
+                9: [[2.0, 16.1]],
+               10: [[2.0, 16.1]],
+               11: [[2.0, 16.0]],
+               12: [[2.1, 16.0]],
+               13: [[2.3, 15.8]],
+               14: [[2.4, 15.6]],
+               15: [[2.7, 15.4]],
+               16: [[3.0, 15.0]],
+               17: [[3.5, 14.6]],
+               18: [[4.0, 14.1]],
+               19: [[4.7, 13.4], [13.9, 20.7]],
+                }
+
+        center_lon = -75.0
+        center_lat = 0.0
+
+    elif satname == 'GEOS-West|ABI':
+
+        full_disk_time_span = {
+                0: None,
+                1: [[1.4,  8.2], [ 8.7, 17.4], [18.0, 28.1]],
+                2: [[5.1, 16.3]],
+                3: [[2.3, 14.4]],
+                4: [[2.0, 14.7]],
+                5: [[1.8, 14.9]],
+                6: [[1.6, 15.1]],
+                7: [[1.4, 15.3]],
+                8: [[1.3, 15.3]],
+                9: [[1.3, 15.4]],
+               10: [[1.3, 15.4]],
+               11: [[1.3, 15.3]],
+               12: [[1.4, 15.3]],
+               13: [[1.6, 15.1]],
+               14: [[1.8, 14.9]],
+               15: [[2.0, 14.7]],
+               16: [[2.3, 14.4]],
+               17: [[2.8, 13.9]],
+               18: [[3.3, 13.4], [14.0, 22.7]],
+               19: [[1.4,  8.2]],
+                }
+
+        center_lon = -137.0
+        center_lat = 0.0
+
+    else:
+
+        msg = '\nError [cal_utc_abi]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        raise NameError(msg)
+
+
+    # define projections
+    #/----------------------------------------------------------------------------\#
+    proj_lonlat = ccrs.PlateCarree()
+    proj_xy = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
+    #\----------------------------------------------------------------------------/#
+
+    # get scan stripe edges in y
+    #/----------------------------------------------------------------------------\#
+    Nscan = len(full_disk_time_span.keys())
+
+    lat_scan_edges = np.linspace(90.0, -90.0, Nscan+1)
+    lon_scan_edges = np.repeat(center_lon, Nscan+1)
+    xy = proj_xy.transform_points(proj_lonlat, lon_scan_edges, lat_scan_edges)[:, [0, 1]]
+
+    y_scan_edges = xy[:, 1]
+    #\----------------------------------------------------------------------------/#
+
+
+    # calculate corner points from <extent>
+    #/----------------------------------------------------------------------------\#
+    lon_in_ = np.arange(extent[0], extent[1], 0.001)
+    lat_in_ = np.arange(extent[2], extent[3], 0.001)
+    lon_in, lat_in = np.meshgrid(lon_in_, lat_in_, indexing='ij')
+
+    xy_in = proj_xy.transform_points(proj_lonlat, lon_in.ravel(), lat_in.ravel())[:, [0, 1]]
+    x_in = xy_in[:, 0]
+    y_in = xy_in[:, 1]
+
+    y_min = np.nanmin(y_in)
+    y_max = np.nanmax(y_in)
+    #\----------------------------------------------------------------------------/#
+
+    Ns = max(np.argmin(np.abs(y_scan_edges-y_max))-1, 0)
+    Ne = min(np.argmin(np.abs(y_scan_edges-y_min))+1, Nscan)
+
+    sec_offset = np.zeros_like(x_in)
+    sec_offset[...] = np.nan
+
+    for i in range(Ns, Ne):
+        span_time0 = full_disk_time_span[i]
+        if span_time0 is not None:
+            span_time0 = span_time0[-1]
+            time_s = span_time0[0] + i * sec_per_scan
+            time_e = span_time0[1] + i * sec_per_scan
+            y_edge_min = y_scan_edges[i+1]
+            y_edge_max = y_scan_edges[i]
+            logic_in = (y_in>=y_edge_min) & (y_in<y_edge_max)
+
+            if logic_in.sum() > 0:
+
+                # calculate time offset
+                #/----------------------------------------------------------------------------\#
+                R_earth = np.nanmax(y_scan_edges)
+                delta_scan_x_half = R_earth * np.sin(np.arccos(((y_edge_min+y_edge_max)/2.0)/R_earth))
+                delta_x = delta_scan_x_half*2.0
+                x_s = -delta_scan_x_half
+
+                delta_t = time_e-time_s
+                slope = delta_t/delta_x
+
+                x_min = np.nanmin(x_in[logic_in])
+
+                time0 = time_s + ((x_min-x_s)/delta_x)*delta_t
+                sec_offset[logic_in] = time0 + slope*(x_in[logic_in]-x_min)
+                #\----------------------------------------------------------------------------/#
+
+
+    return sec_offset
+
+
+
+
 def test_aqua_modis():
 
     # deal with geoMeta data
@@ -554,8 +698,12 @@ def test_noaa20_viirs_extra():
 
 if __name__ == '__main__':
 
-    test_aqua_modis()
-    test_terra_modis()
-    test_snpp_viirs()
-    test_noaa20_viirs_extra()
+    # test_aqua_modis()
+    # test_terra_modis()
+    # test_snpp_viirs()
+    # test_noaa20_viirs_extra()
+    # extent = [-60.0, -59.0, 12.5, 13.5]
+    # extent = [-110.0, -109.0, 31.0, 32.0]
+    # extent = [-60.0, -59.0, -53.5, -52.5]
+    sec_offset = cal_sec_offset_abi(extent, satname='GEOS-East|ABI')
     pass
