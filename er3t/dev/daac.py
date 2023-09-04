@@ -716,7 +716,7 @@ def cal_lon_lat_utc_geometa(
 
 
 
-def cal_sec_offset_abi(extent, satname='GEOS-East|ABI', sec_per_scan=30.0):
+def cal_sec_offset_abi(extent, satname='GOES-East|ABI', sec_per_scan=30.0):
 
     """
     Details see https://www.goes-r.gov/users/abiScanModeInfo.html
@@ -726,7 +726,7 @@ def cal_sec_offset_abi(extent, satname='GEOS-East|ABI', sec_per_scan=30.0):
 
     satellite, instrument = satname.split('|')
 
-    if satname == 'GEOS-East|ABI':
+    if satname == 'GOES-East|ABI':
 
         full_disk_time_span = {
                 0: [[19.8, 26.6]],
@@ -754,7 +754,7 @@ def cal_sec_offset_abi(extent, satname='GEOS-East|ABI', sec_per_scan=30.0):
         center_lon = -75.0
         center_lat = 0.0
 
-    elif satname == 'GEOS-West|ABI':
+    elif satname == 'GOES-West|ABI':
 
         full_disk_time_span = {
                 0: None,
