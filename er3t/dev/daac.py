@@ -869,6 +869,7 @@ def get_satfile_tag(
              fdir_local='./',
              fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
              geometa=False,
+             percent0=0.0,
              verbose=False
              ):
 
@@ -960,10 +961,10 @@ def get_satfile_tag(
         Npoint_in  = points_in.sum()
         Npoint_tot = points_in.size
 
-        # placeholder for percentage threshold
         percent_in = float(Npoint_in) * 100.0 / float(Npoint_tot)
 
-        if (Npoint_in>0) and (data[i]['DayNightFlag']=='D'):
+        if (Npoint_in>0) and (data[i]['DayNightFlag']=='D') and (percent_in>=percent0):
+
             if geometa:
                 filename_tags.append(line)
             else:
@@ -1383,9 +1384,9 @@ def download_worldview_image(
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
             if satellite in ['Terra']:
-                line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True)[-1]
+                line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True, percent0=25.0)[-1]
             else:
-                line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True)[0]
+                line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True, percent0=25.0)[0]
 
             if satellite in ['Aqua', 'Terra']:
                 lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=300.0, N_along=1015, N_cross=677, scan='cw', testing=False)
