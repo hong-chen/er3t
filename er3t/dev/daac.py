@@ -997,11 +997,17 @@ def get_satfile_tag(
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
     if (percent0 > 0.0 ) | worldview:
-        indices_sort_p = np.argsort(percent_all)[::-1]
+        indices_sort_p = np.argsort(percent_all)
         if satellite != 'Terra':
             indices_sort_i = i_all[::-1]
+        else:
+            indices_sort_i = i_all
 
-        indices_sort = np.lexsort((indices_sort_i, indices_sort_p))
+        if all(percent_i>97.0 for percent_i in percent_all):
+            indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
+        else:
+            indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
+
         filename_tags = [filename_tags[i] for i in indices_sort]
     #\----------------------------------------------------------------------------/#
 
@@ -1430,7 +1436,7 @@ def download_worldview_image(
             fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
 
         except Exception as error:
-            warnings.warn(error)
+            print(error)
             fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
         #\--------------------------------------------------------------/#
 
@@ -1527,7 +1533,10 @@ def download_worldview_image(
 
 if __name__ == '__main__':
 
+    date = datetime.datetime(2023, 8, 23)
+    extent = [-59.79,-58.80,12.64,13.63]
+    download_worldview_image(date, extent, satellite='snpp', instrument='viirs')
     date = datetime.datetime(2023, 8, 26)
-    extent = [-59.81, -58.77, 12.64, 13.68]
+    extent = [-59.81,-58.77,12.64,13.68]
     download_worldview_image(date, extent, satellite='noaa20', instrument='viirs')
     pass
