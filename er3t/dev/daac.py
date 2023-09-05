@@ -83,7 +83,8 @@ def gen_file_earthdata(
         try:
             username = os.environ['EARTHDATA_USERNAME']
             password = os.environ['EARTHDATA_PASSWORD']
-        except:
+        except Exception as error:
+            warnings.warn(error)
             msg = '\nError [gen_file_earthdata]: Please follow the instructions at \nhttps://disc.gsfc.nasa.gov/data-access\nto register a login account and create a <~/.netrc> file.'
             raise OSError(msg)
 
@@ -308,7 +309,8 @@ def final_file_check(fname_local, data_format=None, verbose=False):
             f.end()
 
             checked = True
-        except:
+        except Exception as error:
+            warnings.warn(error)
             pass
 
     elif data_format in ['nc', 'nc4', 'netcdf', 'netcdf4']:
@@ -318,7 +320,8 @@ def final_file_check(fname_local, data_format=None, verbose=False):
             f.close()
 
             checked = True
-        except:
+        except Exception as error:
+            warnings.warn(error)
             pass
 
     elif data_format in ['h5', 'hdf5']:
@@ -329,7 +332,8 @@ def final_file_check(fname_local, data_format=None, verbose=False):
             f.close()
 
             checked = True
-        except:
+        except Exception as error:
+            warnings.warn(error)
             pass
 
     else:
@@ -545,7 +549,9 @@ def cal_lon_lat_utc_geometa(
     S-NPP   (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
     """
 
+    import cartopy
     import cartopy.crs as ccrs
+
 
     # check if delta_t is correct
     #/----------------------------------------------------------------------------\#
@@ -671,6 +677,13 @@ def cal_lon_lat_utc_geometa(
     # figure
     #/----------------------------------------------------------------------------\#
     if testing:
+        import matplotlib as mpl
+        mpl.use('Agg')
+        import matplotlib.pyplot as plt
+        import matplotlib.path as mpl_path
+        import matplotlib.patches as mpatches
+        from matplotlib.ticker import FixedLocator
+
         utc_sec_out = (jday_out-jday_out.min())*86400.0
 
         plt.close('all')
@@ -870,6 +883,7 @@ def get_satfile_tag(
              fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
              geometa=False,
              percent0=0.0,
+             worldview=False,
              verbose=False
              ):
 
@@ -903,6 +917,7 @@ def get_satfile_tag(
     # get formatted satellite tag
     #/----------------------------------------------------------------------------\#
     satname = get_satname(satellite, instrument)
+    satellite, instrument = satname.split('|')
     #\----------------------------------------------------------------------------/#
 
 
@@ -948,6 +963,9 @@ def get_satfile_tag(
 
     Ndata = len(data)
     filename_tags = []
+
+    percent_all   = np.array([], dtype=np.float64)
+    i_all         = []
     for i in range(Ndata):
 
         line = data[i]
@@ -971,6 +989,20 @@ def get_satfile_tag(
                 filename = data[i]['GranuleID']
                 filename_tag = '.'.join(filename.split('.')[1:3])
                 filename_tags.append(filename_tag)
+            percent_all = np.append(percent_all, percent_in)
+            i_all.append(i)
+    #\----------------------------------------------------------------------------/#
+
+
+    # sort by percentage-in and time if <percent0> is specified or <wordview=True>
+    #/----------------------------------------------------------------------------\#
+    if (percent0 > 0.0 ) | worldview:
+        indices_sort_p = np.argsort(percent_all)[::-1]
+        if satellite != 'Terra':
+            indices_sort_i = i_all[::-1]
+
+        indices_sort = np.lexsort((indices_sort_i, indices_sort_p))
+        filename_tags = [filename_tags[i] for i in indices_sort]
     #\----------------------------------------------------------------------------/#
 
     return filename_tags
@@ -1383,10 +1415,7 @@ def download_worldview_image(
             lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
-            if satellite in ['Terra']:
-                line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True, percent0=25.0)[-1]
-            else:
-                line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True, percent0=25.0)[0]
+            line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True, percent0=25.0, worldview=True)[0]
 
             if satellite in ['Aqua', 'Terra']:
                 lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=300.0, N_along=1015, N_cross=677, scan='cw', testing=False)
@@ -1400,7 +1429,8 @@ def download_worldview_image(
 
             fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
 
-        except:
+        except Exception as error:
+            warnings.warn(error)
             fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
         #\--------------------------------------------------------------/#
 
@@ -1457,8 +1487,9 @@ def download_worldview_image(
             plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=dpi)
             plt.close(fig)
 
-        except:
+        except Exception as error:
 
+            warnings.warn(error)
             msg = '\nError [download_wordview_image]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
             warnings.warn(msg)
 
@@ -1496,4 +1527,7 @@ def download_worldview_image(
 
 if __name__ == '__main__':
 
+    date = datetime.datetime(2023, 8, 26)
+    extent = [-59.81, -58.77, 12.64, 13.68]
+    download_worldview_image(date, extent, satellite='noaa20', instrument='viirs')
     pass
