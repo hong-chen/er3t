@@ -84,7 +84,7 @@ def gen_file_earthdata(
             username = os.environ['EARTHDATA_USERNAME']
             password = os.environ['EARTHDATA_PASSWORD']
         except Exception as error:
-            warnings.warn(error)
+            print(error)
             msg = '\nError [gen_file_earthdata]: Please follow the instructions at \nhttps://disc.gsfc.nasa.gov/data-access\nto register a login account and create a <~/.netrc> file.'
             raise OSError(msg)
 
@@ -310,7 +310,7 @@ def final_file_check(fname_local, data_format=None, verbose=False):
 
             checked = True
         except Exception as error:
-            warnings.warn(error)
+            print(error)
             pass
 
     elif data_format in ['nc', 'nc4', 'netcdf', 'netcdf4']:
@@ -321,7 +321,7 @@ def final_file_check(fname_local, data_format=None, verbose=False):
 
             checked = True
         except Exception as error:
-            warnings.warn(error)
+            print(error)
             pass
 
     elif data_format in ['h5', 'hdf5']:
@@ -333,7 +333,7 @@ def final_file_check(fname_local, data_format=None, verbose=False):
 
             checked = True
         except Exception as error:
-            warnings.warn(error)
+            print(error)
             pass
 
     else:
