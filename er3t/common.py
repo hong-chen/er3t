@@ -28,7 +28,7 @@ fdir_tests       = os.path.join(fdir_er3t, 'tests')
 
 params = {
                  'wavelength': 650.0,
-                       'date': datetime.datetime.now(),
+                       'date': datetime.datetime(2023, 9, 6),
          'solar_zenith_angle': 0.0,
         'solar_azimuth_angle': 0.0,
         'sensor_zenith_angle': 0.0,
