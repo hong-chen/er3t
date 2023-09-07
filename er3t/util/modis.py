@@ -11,8 +11,22 @@ from er3t.util import check_equal, get_doy_tag, get_data_h4
 
 
 
-__all__ = ['modis_l1b', 'modis_l2', 'modis_35_l2', 'modis_03', 'modis_04', 'modis_09a1', 'modis_43a3', 'modis_tiff', 'upscale_modis_lonlat', \
-           'download_modis_rgb', 'download_modis_https', 'cal_sinusoidal_grid', 'get_sinusoidal_grid_tag']
+__all__ = [
+        'modis_l1b', \
+        'modis_l2', \
+        'modis_35_l2', \
+        'modis_03', \
+        'modis_04', \
+        'modis_09a1', \
+        'modis_43a1', \
+        'modis_43a3', \
+        'modis_tiff', \
+        'upscale_modis_lonlat', \
+        'download_modis_rgb', \
+        'download_modis_https', \
+        'cal_sinusoidal_grid', \
+        'get_sinusoidal_grid_tag', \
+        ]
 
 
 MODIS_L1B_QKM_BANDS = {
@@ -1242,6 +1256,132 @@ class modis_09a1:
             self.data['x']   = dict(name='X of sinusoidal grid', data=x  , units='m')
             self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
             self.data['ref'] = dict(name='Surface reflectance' , data=ref, units='N/A')
+
+
+
+class modis_43a1:
+
+    """
+    Read MCD43A1 product (surface BRDF [Ross-Thick-Li-Sparse-Reciprocal model]in sinusoidal projection)
+
+    Input:
+        fnames=   : keyword argument, default=None, a Python list of the file path of the files
+        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        Nx=       : keyword argument, default=2400, number of points along x direction
+        Ny=       : keyword argument, default=2400, number of points along y direction
+        verbose=  : keyword argument, default=False, verbose tag
+
+    Output:
+        self.data
+                ['f_iso']: Isotropic (iso), all 7 channels
+                ['f_vol']: RossThick (vol), all 7 channels
+                ['f_geo']: LiSparseR (geo), all 7 channels
+                ['lon']: longitude
+                ['lat']: latitude
+                ['x']  : sinusoidal x
+                ['y']  : sinusoidal y
+    """
+
+
+    ID = 'MODIS surface BRDF (500 m)'
+
+
+    def __init__(self,
+                 fnames=None,
+                 extent=None,
+                 Nx=2400,
+                 Ny=2400,
+                 verbose=False):
+
+        self.fnames = fnames
+        self.extent = extent
+        self.Nx = Nx
+        self.Ny = Ny
+
+        for fname in self.fnames:
+            self.read(fname)
+
+
+    def read(self, fname):
+
+        import cartopy.crs as ccrs
+        from pyhdf.SD import SD, SDC
+
+        filename     = os.path.basename(fname)
+        index_str    = filename.split('.')[2]
+        index_h = int(index_str[1:3])
+        index_v = int(index_str[4:])
+
+        # grid boxes
+        proj_xy     = ccrs.Sinusoidal.MODIS
+        proj_lonlat = ccrs.PlateCarree()
+
+        x0, y0 = cal_sinusoidal_grid()
+
+        box = [x0[index_h], x0[index_h+1], y0[index_v], y0[index_v+1]]
+
+        # Lon, Lat for the tile
+        x_tmp = np.linspace(box[0], box[1], self.Nx+1)
+        y_tmp = np.linspace(box[2], box[3], self.Ny+1)
+        x_mid = (x_tmp[1:]+x_tmp[:-1])/2.0
+        y_mid = (y_tmp[1:]+y_tmp[:-1])/2.0
+        XX, YY = np.meshgrid(x_mid, y_mid)
+
+        LonLat = proj_lonlat.transform_points(proj_xy, XX, YY)
+
+        if self.extent is None:
+            lon_range = [-180.0, 180.0]
+            lat_range = [-90.0 , 90.0]
+        else:
+            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
+
+        lon   = LonLat[..., 0]
+        lat   = LonLat[..., 1]
+
+        logic = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+
+        lon = lon[logic]
+        lat = lat[logic]
+        x   = XX[logic]
+        y   = YY[logic]
+
+        if self.extent is None:
+            self.extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+
+        f     = SD(fname, SDC.READ)
+
+        Nchan = 7 # wavelengths are 0:620-670nm, 1:841-876nm, 2:459-479nm, 3:545-565nm, 4:1230-1250nm, 5:1628-1652nm, 6:2105-2155nm
+        f_iso = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        f_vol = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        f_geo = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+
+        for ichan in range(Nchan):
+            data0 = f.select('BRDF_Albedo_Parameters_Band%d' % (ichan+1))
+            data  = get_data_h4(data0)[logic, :]
+            f_iso[ichan, :] = data[..., 0]
+            f_vol[ichan, :] = data[..., 1]
+            f_geo[ichan, :] = data[..., 2]
+
+        f.end()
+
+        if hasattr(self, 'data'):
+            self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)), units='degrees')
+            self.data['x']   = dict(name='X of sinusoidal grid', data=np.hstack((self.data['x']['data'], x))    , units='m')
+            self.data['y']   = dict(name='Y of sinusoidal grid', data=np.hstack((self.data['y']['data'], y))    , units='m')
+            self.data['f_iso'] = dict(name='Isotropic coefficient'           , data=np.hstack((self.data['f_iso']['data'], f_iso)), units='N/A')
+            self.data['f_vol'] = dict(name='Ross-Thick coefficient'          , data=np.hstack((self.data['f_vol']['data'], f_vol)), units='N/A')
+            self.data['f_geo'] = dict(name='Li-Sparse-Reciprocal coefficient', data=np.hstack((self.data['f_geo']['data'], f_geo)), units='N/A')
+        else:
+            self.data = {}
+            self.data['lon'] = dict(name='Longitude'           , data=lon, units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=lat, units='degrees')
+            self.data['x']   = dict(name='X of sinusoidal grid', data=x  , units='m')
+            self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
+            self.data['f_iso'] = dict(name='Isotropic coefficient'           , data=f_iso, units='N/A')
+            self.data['f_vol'] = dict(name='Ross-Thick coefficient'          , data=f_vol, units='N/A')
+            self.data['f_geo'] = dict(name='Li-Sparse-Reciprocal coefficient', data=f_geo, units='N/A')
 
 
 
