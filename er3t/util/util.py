@@ -251,7 +251,7 @@ def get_data_nc(nc_dset, nan=True):
 def get_data_h4(hdf_dset, nan=True):
 
     attrs = hdf_dset.attributes()
-    data  = np.float_(hdf_dset[:])
+    data  = hdf_dset[:]
 
     if 'scale_factor' in attrs:
         data = data * attrs['scale_factor']
@@ -260,8 +260,9 @@ def get_data_h4(hdf_dset, nan=True):
         data = data + attrs['add_offset']
 
     if '_FillValue' in attrs and nan:
-        _FillValue = np.float64(attrs['_FillValue'])
-        data[data == _FillValue] = np.nan
+        _FillValue = attrs['_FillValue']
+        logic_fill = (data==_FillValue)
+        data.astype(np.float64)[logic_fill] = np.nan
 
     return data
 
