@@ -785,7 +785,6 @@ class modis_35_l2:
 
 
 
-
 class modis_03:
 
     """
@@ -958,7 +957,6 @@ class modis_03:
 
 
 
-
 class modis_04:
 
     """
@@ -1117,6 +1115,7 @@ class modis_04:
                 self.data[vname.lower()] = dict(name=vname, data=data, units=data0.attributes()['units'])
 
         f.end()
+
 
 
 class modis_09a1:
