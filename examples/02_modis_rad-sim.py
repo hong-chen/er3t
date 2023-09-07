@@ -360,7 +360,6 @@ def cdata_sat_raw(
 
     f0.close()
     #/----------------------------------------------------------------------------\#
-    sys.exit()
 
 def plot_sat_raw():
 
@@ -386,7 +385,9 @@ def plot_sat_raw():
     cth = f0['mod/cld/cth_l2'][...]
     sfh = f0['mod/geo/sfh'][...]
 
-    alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
+    fiso = f0['mod/sfc/fiso_43_%4.4d' % wvl][...]
+    fvol = f0['mod/sfc/fvol_43_%4.4d' % wvl][...]
+    fgeo = f0['mod/sfc/fgeo_43_%4.4d' % wvl][...]
 
     f0.close()
 
@@ -563,17 +564,47 @@ def plot_sat_raw():
     cbar = fig.colorbar(cs, cax=cax)
     #\----------------------------------------------------------------------------/#
 
-    # surface albedo (MYD43A3, white sky albedo)
+    # surface BRDF (Isotropic)
     #/----------------------------------------------------------------------------\#
     ax13 = fig.add_subplot(4, 4, 13)
-    cs = ax13.pcolormesh(lon, lat, alb43, cmap='jet', zorder=0, vmin=0.0, vmax=0.4)
+    cs = ax13.pcolormesh(lon, lat, fiso, cmap='jet', zorder=0, vmin=0.0, vmax=0.5)
     ax13.set_xlim((extent[:2]))
     ax13.set_ylim((extent[2:]))
     ax13.set_xlabel('Longitude [$^\circ$]')
     ax13.set_ylabel('Latitude [$^\circ$]')
-    ax13.set_title('43A3 WSA')
+    ax13.set_title('43A1 Isotropic')
 
     divider = make_axes_locatable(ax13)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # surface BRDF (Ross-Thick)
+    #/----------------------------------------------------------------------------\#
+    ax14 = fig.add_subplot(4, 4, 14)
+    cs = ax14.pcolormesh(lon, lat, fvol, cmap='jet', zorder=0, vmin=0.0, vmax=0.1)
+    ax14.set_xlim((extent[:2]))
+    ax14.set_ylim((extent[2:]))
+    ax14.set_xlabel('Longitude [$^\circ$]')
+    ax14.set_ylabel('Latitude [$^\circ$]')
+    ax14.set_title('43A1 Ross-Thick')
+
+    divider = make_axes_locatable(ax14)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # surface BRDF (Li-Sparse-Reciprocal)
+    #/----------------------------------------------------------------------------\#
+    ax15 = fig.add_subplot(4, 4, 15)
+    cs = ax15.pcolormesh(lon, lat, fgeo, cmap='jet', zorder=0, vmin=0.0, vmax=0.1)
+    ax15.set_xlim((extent[:2]))
+    ax15.set_ylim((extent[2:]))
+    ax15.set_xlabel('Longitude [$^\circ$]')
+    ax15.set_ylabel('Latitude [$^\circ$]')
+    ax15.set_title('43A1 Li-Sparse-Reciprocal')
+
+    divider = make_axes_locatable(ax15)
     cax = divider.append_axes('right', '5%', pad='3%')
     cbar = fig.colorbar(cs, cax=cax)
     #\----------------------------------------------------------------------------/#
@@ -1434,7 +1465,7 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # mod/sfc/lat ------------ : Dataset  (472, 472)
     # mod/sfc/lon ------------ : Dataset  (472, 472)
     #/----------------------------------------------------------------------------\#
-    cdata_sat_raw(wvl=wvl)
+    # cdata_sat_raw(wvl=wvl)
     if plot:
         plot_sat_raw()
     #\----------------------------------------------------------------------------/#
