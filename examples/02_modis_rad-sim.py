@@ -182,7 +182,7 @@ class satellite_download:
         self.fnames['mod_43'] = []
         filename_tags_43 = er3t.util.modis.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_43:
-            fnames_43 = er3t.dev.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_43 = er3t.dev.download_laads_https(self.date, '61/MCD43A1', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_43'] += fnames_43
 
     def dump(self, fname):
@@ -346,12 +346,12 @@ def cdata_sat_raw(
     #   band 5: 1230 - 1250 nm, index 4
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
-    mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
-    sfc_43[sfc_43<0.0] = 0.0
-    sfc_43[sfc_43>1.0] = 1.0
+    # mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
+    # lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    # sfc_43[sfc_43<0.0] = 0.0
+    # sfc_43[sfc_43>1.0] = 1.0
 
-    g3['alb_43_%4.4d' % wvl] = sfc_43
+    # g3['alb_43_%4.4d' % wvl] = sfc_43
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
     #\--------------------------------------------------------------/#
@@ -1673,6 +1673,9 @@ def main_post(wvl=params['wavelength'], plot=False):
 
 if __name__ == '__main__':
 
+    msg = '\nUnder test (implementing BRDF support) ...'
+    warnings.warn(msg)
+
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim_<plot_sat_raw>.png> will be created under current directory
@@ -1688,14 +1691,14 @@ if __name__ == '__main__':
     #   require a lot of photons (thus long computational time) to achieve relatively
     #   high accuracy
     #/----------------------------------------------------------------------------\#
-    main_sim(run_ipa=False)
+    # main_sim(run_ipa=False)
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
     #   a. <post-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    main_post(plot=True)
+    # main_post(plot=True)
     #\----------------------------------------------------------------------------/#
 
     pass

@@ -251,7 +251,7 @@ def get_data_nc(nc_dset, nan=True):
 def get_data_h4(hdf_dset, nan=True):
 
     attrs = hdf_dset.attributes()
-    data  = hdf_dset[:]
+    data  = np.float_(hdf_dset[:])
 
     if 'scale_factor' in attrs:
         data = data * attrs['scale_factor']
