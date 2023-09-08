@@ -392,7 +392,7 @@ class mcarats_ng:
 
             if isinstance(surface_albedo, float):
 
-                self.nml[ig]['Sfc_mbrdf'] = np.array([1, 0, 0, 0])
+                self.nml[ig]['Sfc_mbrdf'] = np.array([1, 1, 1, 1])
                 self.nml[ig]['Sfc_mtype'] = 1
                 self.nml[ig]['Sfc_param(1)'] = surface_albedo
 

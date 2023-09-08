@@ -100,22 +100,27 @@ class sfc_2d_gen:
         if isinstance(self.alb, np.ndarray):
 
             Nx, Ny = self.alb.shape
+            alb = np.zeros((Nx, Ny, 1), dtype=np.float64)
+            alb[:, :, 0] = self.alb
 
-            self.data['nx']   = {'data':Nx             , 'name':'Nx'            , 'units':'N/A'}
-            self.data['ny']   = {'data':Ny             , 'name':'Ny'            , 'units':'N/A'}
-            self.data['alb']  = {'data':self.alb.copy(), 'name':'Surface albedo', 'units':'N/A'}
+            self.data['nx']   = {'data':Nx , 'name':'Nx'            , 'units':'N/A'}
+            self.data['ny']   = {'data':Ny , 'name':'Ny'            , 'units':'N/A'}
+            self.data['alb']  = {'data':alb, 'name':'Surface albedo (Lambertian)', 'units':'N/A'}
 
         elif isinstance(self.alb, dict):
 
-            if sorted([key for key in self.alb.keys()]) == ['fgeo', 'fiso', 'fvol']:
+            keys = [key.lower().replace('_', '') for key in self.alb.keys()]
+            if ('fiso' in keys) and ('fvol' in keys) and ('fgeo' in keys):
 
                 Nx, Ny = self.alb['fiso'].shape
+                alb = np.zeros((Nx, Ny, 3), dtype=np.float64)
+                alb[:, :, 0] = self.alb['fiso']
+                alb[:, :, 1] = self.alb['fgeo']
+                alb[:, :, 2] = self.alb['fvol']
 
-                self.data['nx']   = {'data':Nx             , 'name':'Nx'            , 'units':'N/A'}
-                self.data['ny']   = {'data':Ny             , 'name':'Ny'            , 'units':'N/A'}
-                self.data['fiso']  = {'data':self.alb['fiso'].copy(), 'name':'BRDF (Isotropic)', 'units':'N/A'}
-                self.data['fvol']  = {'data':self.alb['fvol'].copy(), 'name':'BRDF (RossThick)', 'units':'N/A'}
-                self.data['fgeo']  = {'data':self.alb['fgeo'].copy(), 'name':'BRDF (LiSparseR)', 'units':'N/A'}
+                self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
+                self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
+                self.data['alb']  = {'data':alb, 'name':'Surface BRDF-LSRT (Isotropic, LiSparseR, RossThick)', 'units':'N/A'}
 
             else:
 
