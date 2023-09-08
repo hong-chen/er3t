@@ -85,24 +85,34 @@ class mca_sfc_2d:
         self.nml['Sfc_nyb'] = copy.deepcopy(self.sfc.data['ny'])
 
         self.nml['Sfc_tmps2d'] = dict(data=np.zeros_like(self.sfc.data['alb']['data']), name='Temperature anomalies'    , units='K')    # temperature anomaly
-        self.nml['Sfc_jsfc2d'] = dict(data=np.ones_like(self.sfc.data['alb']['data']) , name='Surface distribution type', units='N/A')  # lambertian
 
-        sfc_psfc         = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=np.float64)
         if ('lambertian' in self.sfc.data['alb']['name'].lower()) or (np.squeeze(self.sfc.data['alb']['data']).ndim == 2):
+            sfc_psfc         = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=np.float64)
             sfc_psfc[..., 0] = np.squeeze(self.sfc.data['alb']['data'])
-            self.nml['Sfc_mtype'] = {'data': 1}
-            # self.nml['Sfc_mbrdf'] = {'data':np.array([1, 1, 1, 1])}
+            self.nml['Sfc_psfc2d'] = dict(data=sfc_psfc, name='Surface distribution parameters', units='N/A')
+
+            sfc_jsfc = np.ones((self.sfc.Nx, self.sfc.Ny), dtype=np.int16)
+            self.nml['Sfc_jsfc2d'] = dict(data=sfc_jsfc, name='Surface distribution type', units='N/A')  # lambertian
+            # self.nml['Sfc_mtype'] = {'data': 1}
+            # self.nml['Sfc_mbrdf'] = {'data':np.array([1, 0, 0, 0])}
+
         elif ('brdf-lsrt' in self.sfc.data['alb']['name'].lower()) or (self.sfc.data['alb']['data'].shape[-1] == 3):
+            sfc_psfc         = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=np.float64)
             sfc_psfc[..., 0] = self.sfc.data['alb']['data'][..., 0]
             sfc_psfc[..., 1] = self.sfc.data['alb']['data'][..., 1]
             sfc_psfc[..., 2] = self.sfc.data['alb']['data'][..., 2]
-            self.nml['Sfc_mtype'] = {'data': 4}
-            # self.nml['Sfc_mbrdf'] = {'data':np.array([1, 1, 1, 1])}
+            self.nml['Sfc_psfc2d'] = dict(data=sfc_psfc, name='Surface distribution parameters', units='N/A')
+
+            sfc_jsfc = np.ones((self.sfc.Nx, self.sfc.Ny), dtype=np.int16)
+            sfc_jsfc[...] = 4
+            self.nml['Sfc_jsfc2d'] = dict(data=sfc_jsfc, name='Surface distribution type', units='N/A')
+            # self.nml['Sfc_mtype'] = {'data': 4}
+            # self.nml['Sfc_mbrdf'] = {'data':np.array([0, 0, 0, 1])}
         else:
             msg = '\nError [mca_sfc_2d]: Cannot determine surface type - currently only supports Lambertian surface and LSRT BRDF surface (e.g., MCD43A1).'
             raise OSError(msg)
 
-        self.nml['Sfc_psfc2d'] = dict(data=sfc_psfc, name='Surface distribution parameters', units='N/A')  # lambertian
+        # self.nml['Sfc_psfc2d'] = dict(data=sfc_psfc, name='Surface distribution parameters', units='N/A')
 
 
     def gen_mca_2d_sfc_file(self, fname):
