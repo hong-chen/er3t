@@ -179,11 +179,14 @@ class satellite_download:
             self.fnames['mod_03'] += fnames_03
 
         # MODIS surface product
-        self.fnames['mod_43'] = []
+        self.fnames['mod_43a1'] = []
+        self.fnames['mod_43a3'] = []
         filename_tags_43 = er3t.util.modis.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_43:
-            fnames_43 = er3t.dev.download_laads_https(self.date, '61/MCD43A1', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            self.fnames['mod_43'] += fnames_43
+            fnames_43a1 = er3t.dev.download_laads_https(self.date, '61/MCD43A1', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            self.fnames['mod_43a1'] += fnames_43a1
+            fnames_43a3 = er3t.dev.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            self.fnames['mod_43a3'] += fnames_43a3
 
     def dump(self, fname):
 
@@ -346,14 +349,18 @@ def cdata_sat_raw(
     #   band 5: 1230 - 1250 nm, index 4
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
-    mod43 = er3t.util.modis_43a1(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, fiso = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['f_iso']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
-    lon_2d_sfc, lat_2d_sfc, fvol = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['f_vol']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
-    lon_2d_sfc, lat_2d_sfc, fgeo = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['f_geo']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    mod43a1 = er3t.util.modis_43a1(fnames=sat0.fnames['mod_43a1'], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, fiso = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_iso']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    lon_2d_sfc, lat_2d_sfc, fvol = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_vol']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    lon_2d_sfc, lat_2d_sfc, fgeo = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_geo']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
 
     g3['fiso_43_%4.4d' % wvl] = fiso
     g3['fvol_43_%4.4d' % wvl] = fvol
     g3['fgeo_43_%4.4d' % wvl] = fgeo
+
+    mod43a3 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43a3'], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, alb = er3t.util.grid_by_dxdy(mod43a3.data['lon']['data'], mod43a3.data['lat']['data'], mod43a3.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    g3['alb_43_%4.4d' % wvl] = alb
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
     #\--------------------------------------------------------------/#
@@ -388,6 +395,8 @@ def plot_sat_raw():
     fiso = f0['mod/sfc/fiso_43_%4.4d' % wvl][...]
     fvol = f0['mod/sfc/fvol_43_%4.4d' % wvl][...]
     fgeo = f0['mod/sfc/fgeo_43_%4.4d' % wvl][...]
+
+    alb  = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
 
     f0.close()
 
@@ -609,6 +618,21 @@ def plot_sat_raw():
     cbar = fig.colorbar(cs, cax=cax)
     #\----------------------------------------------------------------------------/#
 
+    # surface albedo
+    #/----------------------------------------------------------------------------\#
+    ax16 = fig.add_subplot(4, 4, 16)
+    cs = ax16.pcolormesh(lon, lat, alb, cmap='jet', zorder=0, vmin=0.0, vmax=0.5)
+    ax16.set_xlim((extent[:2]))
+    ax16.set_ylim((extent[2:]))
+    ax16.set_xlabel('Longitude [$^\circ$]')
+    ax16.set_ylabel('Latitude [$^\circ$]')
+    ax16.set_title('43A3 Albedo')
+
+    divider = make_axes_locatable(ax16)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
     # save figure
     #/--------------------------------------------------------------\#
     plt.subplots_adjust(hspace=0.4, wspace=0.4)
@@ -709,6 +733,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     vza = f0['mod/geo/vza'][...]
     vaa = f0['mod/geo/vaa'][...]
     alb = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
+
     f0.close()
     #\----------------------------------------------------------------------------/#
 
@@ -1465,11 +1490,10 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # mod/sfc/lat ------------ : Dataset  (472, 472)
     # mod/sfc/lon ------------ : Dataset  (472, 472)
     #/----------------------------------------------------------------------------\#
-    # cdata_sat_raw(wvl=wvl)
+    cdata_sat_raw(wvl=wvl)
     if plot:
         plot_sat_raw()
     #\----------------------------------------------------------------------------/#
-    sys.exit()
 
 
     # apply IPA method to retrieve cloud optical thickness (COT) from MODIS radiance
