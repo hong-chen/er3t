@@ -91,13 +91,13 @@ class mca_sfc_2d:
         if ('lambertian' in self.sfc.data['alb']['name'].lower()) or (np.squeeze(self.sfc.data['alb']['data']).ndim == 2):
             sfc_psfc[..., 0] = np.squeeze(self.sfc.data['alb']['data'])
             self.nml['Sfc_mtype'] = {'data': 1}
-            self.nml['Sfc_mbrdf'] = {'data':np.array([1, 0, 0, 0])}
+            # self.nml['Sfc_mbrdf'] = {'data':np.array([1, 1, 1, 1])}
         elif ('brdf-lsrt' in self.sfc.data['alb']['name'].lower()) or (self.sfc.data['alb']['data'].shape[-1] == 3):
             sfc_psfc[..., 0] = self.sfc.data['alb']['data'][..., 0]
             sfc_psfc[..., 1] = self.sfc.data['alb']['data'][..., 1]
             sfc_psfc[..., 2] = self.sfc.data['alb']['data'][..., 2]
             self.nml['Sfc_mtype'] = {'data': 4}
-            self.nml['Sfc_mbrdf'] = {'data':np.array([0, 0, 0, 1])}
+            # self.nml['Sfc_mbrdf'] = {'data':np.array([1, 1, 1, 1])}
         else:
             msg = '\nError [mca_sfc_2d]: Cannot determine surface type - currently only supports Lambertian surface and LSRT BRDF surface (e.g., MCD43A1).'
             raise OSError(msg)
