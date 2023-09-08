@@ -1352,14 +1352,31 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
 
     # sfc object
     #/----------------------------------------------------------------------------\#
+    # f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
+    # alb_2d = f['mod/sfc/alb_43_%4.4d' % wavelength][...]
+    # f.close()
+
+    # fname_sfc = '%s/sfc.pk' % fdir
+    # sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc)
+    # sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
+    # sfc object (brdf)
+    #/----------------------------------------------------------------------------\#
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    alb_2d = f['mod/sfc/alb_43_%4.4d' % wavelength][...]
+    fiso = f['mod/sfc/fiso_43_%4.4d' % wavelength][...]
+    fvol = f['mod/sfc/fvol_43_%4.4d' % wavelength][...]
+    fgeo = f['mod/sfc/fgeo_43_%4.4d' % wavelength][...]
     f.close()
 
     fname_sfc = '%s/sfc.pk' % fdir
-    sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc)
-    sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
+    # sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc)
+    print('haha')
+    # sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
+
+    sys.exit()
 
 
     # cld object
@@ -1739,7 +1756,7 @@ if __name__ == '__main__':
     #   b. <02_modis_rad-sim_<plot_sat_raw>.png> will be created under current directory
     #   c. <02_modis_rad-sim_<plot_cld_ipa>.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
@@ -1749,7 +1766,7 @@ if __name__ == '__main__':
     #   require a lot of photons (thus long computational time) to achieve relatively
     #   high accuracy
     #/----------------------------------------------------------------------------\#
-    # main_sim(run_ipa=False)
+    main_sim(run_ipa=False)
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
