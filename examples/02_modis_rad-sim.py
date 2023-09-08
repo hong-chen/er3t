@@ -1370,9 +1370,15 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     fgeo = f['mod/sfc/fgeo_43_%4.4d' % wavelength][...]
     f.close()
 
+    coef_dict = {
+            'fiso': fiso,
+            'fvol': fvol,
+            'fgeo': fgeo,
+            }
+
     fname_sfc = '%s/sfc.pk' % fdir
-    # sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc)
-    print('haha')
+    sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=coef_dict, fname=fname_sfc, overwrite=True)
+
     # sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 

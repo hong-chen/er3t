@@ -97,11 +97,36 @@ class sfc_2d_gen:
 
         self.data = {}
 
-        Nx, Ny = self.alb.shape
+        if isinstance(self.alb, np.ndarray):
 
-        self.data['nx']   = {'data':Nx             , 'name':'Nx'            , 'units':'N/A'}
-        self.data['ny']   = {'data':Ny             , 'name':'Ny'            , 'units':'N/A'}
-        self.data['alb']  = {'data':self.alb.copy(), 'name':'Surface albedo', 'units':'N/A'}
+            Nx, Ny = self.alb.shape
+
+            self.data['nx']   = {'data':Nx             , 'name':'Nx'            , 'units':'N/A'}
+            self.data['ny']   = {'data':Ny             , 'name':'Ny'            , 'units':'N/A'}
+            self.data['alb']  = {'data':self.alb.copy(), 'name':'Surface albedo', 'units':'N/A'}
+
+        elif isinstance(self.alb, dict):
+
+            if sorted([key for key in self.alb.keys()]) == ['fgeo', 'fiso', 'fvol']:
+
+                Nx, Ny = self.alb['fiso'].shape
+
+                self.data['nx']   = {'data':Nx             , 'name':'Nx'            , 'units':'N/A'}
+                self.data['ny']   = {'data':Ny             , 'name':'Ny'            , 'units':'N/A'}
+                self.data['fiso']  = {'data':self.alb['fiso'].copy(), 'name':'BRDF (Isotropic)', 'units':'N/A'}
+                self.data['fvol']  = {'data':self.alb['fvol'].copy(), 'name':'BRDF (RossThick)', 'units':'N/A'}
+                self.data['fgeo']  = {'data':self.alb['fgeo'].copy(), 'name':'BRDF (LiSparseR)', 'units':'N/A'}
+
+            else:
+
+                msg = '\nError [sfc_2d_gen]: Currently we only support 2D surface albedo or BRDF [RossThickLiSparseReciprocal].'
+                raise OSError(msg)
+
+        else:
+
+            msg = '\nError [sfc_2d_gen]: Currently we only support 2D surface albedo or BRDF [RossThickLiSparseReciprocal].'
+            raise OSError(msg)
+
 
         self.Nx = Nx
         self.Ny = Ny
