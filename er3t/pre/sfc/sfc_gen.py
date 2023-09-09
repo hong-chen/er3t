@@ -101,10 +101,10 @@ class sfc_2d_gen:
 
             Nx, Ny = self.alb.shape
             alb = np.zeros((Nx, Ny, 1), dtype=np.float64)
-            alb[:, :, 0] = self.alb
+            alb[:, :, 0] = self.alb[:, :].copy()
 
-            self.data['nx']   = {'data':Nx , 'name':'Nx'            , 'units':'N/A'}
-            self.data['ny']   = {'data':Ny , 'name':'Ny'            , 'units':'N/A'}
+            self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
+            self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
             self.data['alb']  = {'data':alb, 'name':'Surface albedo (Lambertian)', 'units':'N/A'}
 
         elif isinstance(self.alb, dict):
@@ -114,9 +114,9 @@ class sfc_2d_gen:
 
                 Nx, Ny = self.alb['fiso'].shape
                 alb = np.zeros((Nx, Ny, 3), dtype=np.float64)
-                alb[:, :, 0] = self.alb['fiso']
-                alb[:, :, 1] = self.alb['fgeo']
-                alb[:, :, 2] = self.alb['fvol']
+                alb[:, :, 0] = self.alb['fiso'][:, :].copy()
+                alb[:, :, 1] = self.alb['fgeo'][:, :].copy()
+                alb[:, :, 2] = self.alb['fvol'][:, :].copy()
 
                 self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
                 self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}

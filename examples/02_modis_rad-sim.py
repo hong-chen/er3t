@@ -1510,6 +1510,18 @@ def cal_mca_rad_brdf_test(sat, wavelength, photon, fdir='tmp-data', solver='3D',
     #\----------------------------------------------------------------------------/#
 
 
+    # sfc object
+    #/----------------------------------------------------------------------------\#
+    # f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
+    # alb_2d = f['mod/sfc/alb_43_%4.4d' % wavelength][...]
+    # f.close()
+
+    # fname_sfc = '%s/sfc.pk' % fdir
+    # sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc, overwrite=overwrite)
+    # sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
+    #\----------------------------------------------------------------------------/#
+
+
     # sfc object (brdf)
     #/----------------------------------------------------------------------------\#
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
@@ -1517,6 +1529,18 @@ def cal_mca_rad_brdf_test(sat, wavelength, photon, fdir='tmp-data', solver='3D',
     fvol = f['mod/sfc/fvol_43_%4.4d' % wavelength][...]
     fgeo = f['mod/sfc/fgeo_43_%4.4d' % wavelength][...]
     f.close()
+
+    fiso[fiso<0.0] = 0.0
+    fiso[fiso>1.0] = 1.0
+    fiso[np.isnan(fiso)|np.isinf(fiso)] = 0.0
+
+    fvol[fvol<0.0] = 0.0
+    fvol[fvol>1.0] = 1.0
+    fvol[np.isnan(fvol)|np.isinf(fvol)] = 0.0
+
+    fgeo[fgeo<0.0] = 0.0
+    fgeo[fgeo>1.0] = 1.0
+    fgeo[np.isnan(fgeo)|np.isinf(fgeo)] = 0.0
 
     coef_dict = {
             'fiso': fiso,
@@ -1586,10 +1610,10 @@ def cal_mca_rad_brdf_test(sat, wavelength, photon, fdir='tmp-data', solver='3D',
     #\----------------------------------------------------------------------------/#
 
 
-    # sza = 30.0; saa = 0.0
-    # vza = 30.0; vaa = 180.0
     sza = 30.0; saa = 0.0
-    vza = 30.0; vaa = 0.0
+    vza = 30.0; vaa = 180.0
+    # sza = 30.0; saa = 0.0
+    # vza = 30.0; vaa = 0.0
     # run mcarats
     #/----------------------------------------------------------------------------\#
     mca0 = er3t.rtm.mca.mcarats_ng(
@@ -1632,7 +1656,7 @@ def cal_mca_rad_brdf_test(sat, wavelength, photon, fdir='tmp-data', solver='3D',
         fig = plt.figure(figsize=(7, 6))
         ax1 = fig.add_subplot(111)
         # cs = ax1.imshow(rad.T, cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower', aspect='auto')
-        cs = ax1.imshow(rad.T, cmap='jet', origin='lower', aspect='auto', vmin=0.0, vmax=0.02)
+        cs = ax1.imshow(rad.T, cmap='jet', origin='lower', aspect='auto', vmin=0.0, vmax=0.1)
         ax1.set_xlabel('X Index')
         ax1.set_ylabel('Y Index')
         ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
