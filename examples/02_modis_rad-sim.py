@@ -68,7 +68,7 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 1e7,
+           'photon' : 1e9,
              'Ncpu' : 12,
        'photon_ipa' : 2e7,
           'cot_ipa' : np.concatenate((       \
@@ -354,6 +354,10 @@ def cdata_sat_raw(
     lon_2d_sfc, lat_2d_sfc, fvol = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_vol']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     lon_2d_sfc, lat_2d_sfc, fgeo = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_geo']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
 
+    fiso[np.isnan(fiso)|np.isinf(fiso)|(fiso<0.0)|(fiso>1.0)] = 0.0
+    fvol[np.isnan(fvol)|np.isinf(fvol)|(fvol<0.0)|(fvol>1.0)] = 0.0
+    fgeo[np.isnan(fgeo)|np.isinf(fgeo)|(fgeo<0.0)|(fgeo>1.0)] = 0.0
+
     g3['fiso_43_%4.4d' % wvl] = fiso
     g3['fvol_43_%4.4d' % wvl] = fvol
     g3['fgeo_43_%4.4d' % wvl] = fgeo
@@ -361,6 +365,8 @@ def cdata_sat_raw(
     mod43a3 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43a3'], extent=sat0.extent)
     lon_2d_sfc, lat_2d_sfc, alb = er3t.util.grid_by_dxdy(mod43a3.data['lon']['data'], mod43a3.data['lat']['data'], mod43a3.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     g3['alb_43_%4.4d' % wvl] = alb
+
+    alb[np.isnan(alb)|np.isinf(alb)|(alb<0.0)|(alb>1.0)] = 0.0
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
     #\--------------------------------------------------------------/#
@@ -1485,193 +1491,6 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
 
 
 
-def cal_mca_rad_brdf_test(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite=False):
-
-    """
-    Simulate MODIS radiance
-    """
-
-    if not os.path.exists(fdir):
-        os.makedirs(fdir)
-
-    # atm object
-    #/----------------------------------------------------------------------------\#
-    levels = np.arange(0.0, 20.1, 0.5)
-    fname_atm  = '%s/atm.pk' % fdir
-    fname_prof = '%s/afglus.dat' % er3t.common.fdir_data_atmmod
-    atm0       = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=fname_prof, overwrite=overwrite)
-    #\----------------------------------------------------------------------------/#
-
-
-    # abs object
-    #/----------------------------------------------------------------------------\#
-    fname_abs = '%s/abs.pk' % fdir
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    #\----------------------------------------------------------------------------/#
-
-
-    # sfc object
-    #/----------------------------------------------------------------------------\#
-    # f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    # alb_2d = f['mod/sfc/alb_43_%4.4d' % wavelength][...]
-    # f.close()
-
-    # fname_sfc = '%s/sfc.pk' % fdir
-    # sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc, overwrite=overwrite)
-    # sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
-    #\----------------------------------------------------------------------------/#
-
-
-    # sfc object (brdf)
-    #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    fiso = f['mod/sfc/fiso_43_%4.4d' % wavelength][...]
-    fvol = f['mod/sfc/fvol_43_%4.4d' % wavelength][...]
-    fgeo = f['mod/sfc/fgeo_43_%4.4d' % wavelength][...]
-    f.close()
-
-    fiso[fiso<0.0] = 0.0
-    fiso[fiso>1.0] = 1.0
-    fiso[np.isnan(fiso)|np.isinf(fiso)] = 0.0
-
-    fvol[fvol<0.0] = 0.0
-    fvol[fvol>1.0] = 1.0
-    fvol[np.isnan(fvol)|np.isinf(fvol)] = 0.0
-
-    fgeo[fgeo<0.0] = 0.0
-    fgeo[fgeo>1.0] = 1.0
-    fgeo[np.isnan(fgeo)|np.isinf(fgeo)] = 0.0
-
-    coef_dict = {
-            'fiso': fiso,
-            'fvol': fvol,
-            'fgeo': fgeo,
-            }
-
-    fname_sfc = '%s/sfc.pk' % fdir
-    sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=coef_dict, fname=fname_sfc, overwrite=overwrite)
-    sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
-    #\----------------------------------------------------------------------------/#
-
-
-    # cld object
-    #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    if solver.lower() == 'ipa':
-        cot_2d = f['mod/cld/cot_ipa0'][...]
-        cer_2d = f['mod/cld/cer_ipa0'][...]
-        cth_2d = f['mod/cld/cth_ipa0'][...]
-    elif solver.lower() == '3d':
-        cot_2d = f['mod/cld/cot_ipa'][...]
-        cer_2d = f['mod/cld/cer_ipa'][...]
-        cth_2d = f['mod/cld/cth_ipa'][...]
-    f.close()
-
-    # cloud geometrical thickness
-    #/--------------------------------------------------------------\#
-    cgt_2d = np.zeros_like(cth_2d)
-    cgt_2d[cth_2d>0.0] = 1.0                      # all clouds have geometrical thickness of 1 km
-    cgt_2d[cth_2d>4.0] = cth_2d[cth_2d>4.0]-3.0   # high clouds (cth>4km) has cloud base at 3 km
-    #\--------------------------------------------------------------/#
-
-    Nx, Ny = cot_2d.shape
-    extent_xy = [0.0, params['dx']*Nx/1000.0, 0.0, params['dy']*Ny/1000.0]
-
-    cot_2d[...] = 0.0
-
-    fname_cld = '%s/cld.pk' % fdir
-    cld0 = er3t.pre.cld.cld_gen_cop(
-            fname=fname_cld,
-            cot=cot_2d,
-            cer=cer_2d,
-            cth=cth_2d,
-            cgt=cgt_2d,
-            dz=atm0.lay['thickness']['data'][0],
-            extent_xy=extent_xy,
-            atm_obj=atm0,
-            overwrite=overwrite
-            )
-    #\----------------------------------------------------------------------------/#
-
-
-    # mca_sca object
-    #/----------------------------------------------------------------------------\#
-    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength, overwrite=overwrite)
-    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    #\----------------------------------------------------------------------------/#
-
-
-    # mca_cld object
-    #/----------------------------------------------------------------------------\#
-    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir)
-    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-    atm_1ds = [atm1d0]
-    atm_3ds = [atm3d0]
-    #\----------------------------------------------------------------------------/#
-
-
-    sza = 30.0; saa = 0.0
-    vza = 30.0; vaa = 180.0
-    # sza = 30.0; saa = 0.0
-    # vza = 30.0; vaa = 0.0
-    # run mcarats
-    #/----------------------------------------------------------------------------\#
-    mca0 = er3t.rtm.mca.mcarats_ng(
-            date=sat.date,
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            sca=sca,
-            surface_albedo=sfc_2d,
-            Ng=abs0.Ng,
-            target='radiance',
-            solar_zenith_angle   = sza,
-            solar_azimuth_angle  = saa,
-            sensor_zenith_angle  = vza,
-            sensor_azimuth_angle = vaa,
-            fdir='%s/%.4fnm/rad_%s' % (fdir, wavelength, solver.lower()),
-            Nrun=3,
-            weights=abs0.coef['weight']['data'],
-            photons=photon,
-            solver=solver,
-            Ncpu=params['Ncpu'],
-            mp_mode='py',
-            overwrite=overwrite
-            )
-    #\----------------------------------------------------------------------------/#
-
-
-    # mcarats output
-    #/----------------------------------------------------------------------------\#
-    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-modis-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
-    #\----------------------------------------------------------------------------/#
-
-    # plot
-    #/-----------------------------------------------------------------------------\
-    if True:
-        fname_png = 'brdf_test_sza%05.1f_saa%05.1f_vza%05.1f_vaa%05.1f.png' % (sza, saa, vza, vaa)
-        rad = out0.data['rad']['data']
-        print(rad.min())
-        print(rad.max())
-
-        fig = plt.figure(figsize=(7, 6))
-        ax1 = fig.add_subplot(111)
-        # cs = ax1.imshow(rad.T, cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower', aspect='auto')
-        cs = ax1.imshow(rad.T, cmap='jet', origin='lower', aspect='auto', vmin=0.0, vmax=0.1)
-        ax1.set_xlabel('X Index')
-        ax1.set_ylabel('Y Index')
-        ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
-
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        cbar = fig.colorbar(cs, cax=cax)
-
-        plt.savefig(fname_png, bbox_inches='tight')
-        plt.close(fig)
-    #\-----------------------------------------------------------------------------/
-
-
-
-
 
 def main_pre(wvl=params['wavelength'], plot=True):
 
@@ -1753,8 +1572,7 @@ def main_sim(wvl=params['wavelength'], run_ipa=False):
 
     # run radiance simulations under both 3D mode
     #/----------------------------------------------------------------------------\#
-    # cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
-    cal_mca_rad_brdf_test(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
+    cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
     if run_ipa:
         cal_mca_rad(sat0, wvl, 1e9, fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
     #\----------------------------------------------------------------------------/#
@@ -1947,7 +1765,7 @@ if __name__ == '__main__':
     #   b. <02_modis_rad-sim_<plot_sat_raw>.png> will be created under current directory
     #   c. <02_modis_rad-sim_<plot_cld_ipa>.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    # main_pre()
+    main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
@@ -1964,7 +1782,7 @@ if __name__ == '__main__':
     #   a. <post-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    # main_post(plot=True)
+    main_post(plot=True)
     #\----------------------------------------------------------------------------/#
 
     pass
