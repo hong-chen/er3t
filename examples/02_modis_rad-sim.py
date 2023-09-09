@@ -1356,18 +1356,6 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     #\----------------------------------------------------------------------------/#
 
 
-    # sfc object
-    #/----------------------------------------------------------------------------\#
-    # f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    # alb_2d = f['mod/sfc/alb_43_%4.4d' % wavelength][...]
-    # f.close()
-
-    # fname_sfc = '%s/sfc.pk' % fdir
-    # sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc)
-    # sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
-    #\----------------------------------------------------------------------------/#
-
-
     # sfc object (brdf)
     #/----------------------------------------------------------------------------\#
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
@@ -1756,9 +1744,6 @@ def main_post(wvl=params['wavelength'], plot=False):
 
 
 if __name__ == '__main__':
-
-    msg = '\nUnder test (implementing BRDF support) ...'
-    warnings.warn(msg)
 
     # Step 1. Download and Pre-process data, after run
     #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
