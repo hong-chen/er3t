@@ -85,13 +85,13 @@ class mca_sfc_2d:
         self.nml['Sfc_nyb'] = copy.deepcopy(self.sfc.data['ny'])
 
 
-        if ('lambertian' in self.sfc.data['alb']['name'].lower()) or (np.squeeze(self.sfc.data['alb']['data']).ndim == 2):
+        if ('lambertian' in self.sfc.data['alb']['name'].lower()) and (np.squeeze(self.sfc.data['alb']['data']).ndim == 2):
 
             sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=np.float64)
             self.nml['Sfc_tmps2d'] = dict(data=sfc_tmps, name='Temperature anomalies', units='K')    # temperature anomaly
 
-            sfc_jsfc = np.ones((self.sfc.Nx, self.sfc.Ny), dtype=np.int16)
-            self.nml['Sfc_jsfc2d'] = dict(data=sfc_jsfc, name='Surface distribution type', units='N/A')  # lambertian
+            sfc_jsfc = np.ones((self.sfc.Nx, self.sfc.Ny), dtype=np.int16) # Lambertian
+            self.nml['Sfc_jsfc2d'] = dict(data=sfc_jsfc, name='Surface distribution type', units='N/A')
 
             sfc_psfc = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=np.float64)
             sfc_alb  = np.squeeze(self.sfc.data['alb']['data'])
@@ -106,7 +106,7 @@ class mca_sfc_2d:
             self.nml['Sfc_tmps2d'] = dict(data=sfc_tmps, name='Temperature anomalies', units='K')    # temperature anomaly
 
             sfc_jsfc = np.ones((self.sfc.Nx, self.sfc.Ny), dtype=np.int16)
-            sfc_jsfc[...] = 4
+            sfc_jsfc[...] = 4 # LSRT model
             self.nml['Sfc_jsfc2d'] = dict(data=sfc_jsfc, name='Surface distribution type', units='N/A')
 
             sfc_psfc          = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=np.float64)
@@ -114,6 +114,17 @@ class mca_sfc_2d:
             sfc_psfc[:, :, 1] = self.sfc.data['alb']['data'][:, :, 1]
             sfc_psfc[:, :, 2] = self.sfc.data['alb']['data'][:, :, 2]
             self.nml['Sfc_psfc2d'] = dict(data=sfc_psfc, name='Surface distribution parameters', units='N/A')
+
+        elif ('cox-munk' in self.sfc.data['alb']['name'].lower()) or (self.sfc.data['alb']['data'].shape[-1] == 5):
+
+            sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=np.float64)
+            self.nml['Sfc_tmps2d'] = dict(data=sfc_tmps, name='Temperature anomalies', units='K')    # temperature anomaly
+
+            sfc_jsfc = np.ones((self.sfc.Nx, self.sfc.Ny), dtype=np.int16)
+            sfc_jsfc[...] = 2 # DSM model
+            self.nml['Sfc_jsfc2d'] = dict(data=sfc_jsfc, name='Surface distribution type', units='N/A')
+
+            self.nml['Sfc_psfc2d'] = dict(data=self.sfc.data['alb']['data'], name='Surface distribution parameters', units='N/A')
 
         else:
 
