@@ -99,14 +99,31 @@ def cal_cox_munk_brdf(
     slope = 0.00512*u10 + 0.003
     #\----------------------------------------------------------------------------/#
 
+    if ndim == 0:
 
-    alb = {
-             'refrac_r': refrac_r,
-             'refrac_i': refrac_i,
-                'slope': slope,
-            }
+        params = {
+              'diffuse_alb': 0.0,
+             'diffuse_frac': 0.0,
+                 'refrac_r': refrac_r,
+                 'refrac_i': refrac_i,
+                    'slope': slope,
+                }
 
-    pass
+    elif ndim == 2:
+
+        params = {
+              'diffuse_alb': np.zeros_like(slope),
+             'diffuse_frac': np.zeros_like(slope),
+                 'refrac_r': refrac_r,
+                 'refrac_i': refrac_i,
+                    'slope': slope,
+                }
+
+    else:
+
+        params = None
+
+    return params
 
 
 class sfc_2d_gen:
@@ -207,18 +224,36 @@ class sfc_2d_gen:
 
         elif isinstance(self.alb, dict):
 
-            keys = [key.lower().replace('_', '') for key in self.alb.keys()]
-            if ('fiso' in keys) and ('fvol' in keys) and ('fgeo' in keys):
+            keys = {key.lower().replace('_', ''):key for key in self.alb.keys()}
+            keys_check = [key for key in keys.keys()]
 
-                Nx, Ny = self.alb['fiso'].shape
+            if ('fiso' in keys_check) and ('fvol' in keys_check) and ('fgeo' in keys_check):
+
+                Nx, Ny = self.alb[keys['fiso']].shape
                 alb = np.zeros((Nx, Ny, 3), dtype=np.float64)
-                alb[:, :, 0] = self.alb['fiso'][:, :]
-                alb[:, :, 1] = self.alb['fgeo'][:, :]
-                alb[:, :, 2] = self.alb['fvol'][:, :]
+                alb[:, :, 0] = self.alb[keys['fiso']][:, :]
+                alb[:, :, 1] = self.alb[keys['fgeo']][:, :]
+                alb[:, :, 2] = self.alb[keys['fvol']][:, :]
 
                 self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
                 self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
                 self.data['alb']  = {'data':alb, 'name':'Surface BRDF-LSRT (Isotropic, LiSparseR, RossThick)', 'units':'N/A'}
+
+            if ('diffusealb' in keys_check) and ('diffusefrac' in keys_check) and \
+               ('refracr'    in keys_check) and ('refraci'     in keys_check) and \
+               ('slope'      in keys_check):
+
+                Nx, Ny = self.alb[keys['slope']].shape
+                alb = np.zeros((Nx, Ny, 5), dtype=np.float64)
+                alb[:, :, 0] = self.alb[keys['diffusealb']][:, :]
+                alb[:, :, 1] = self.alb[keys['diffusefrac']][:, :]
+                alb[:, :, 2] = self.alb[keys['refracr']][:, :]
+                alb[:, :, 3] = self.alb[keys['refraci']][:, :]
+                alb[:, :, 4] = self.alb[keys['slope']][:, :]
+
+                self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
+                self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
+                self.data['alb']  = {'data':alb, 'name':'Surface BRDF-DSM (Diffuse-Specular Mixture)', 'units':'N/A'}
 
             else:
 
@@ -237,4 +272,6 @@ class sfc_2d_gen:
 
 if __name__ == '__main__':
 
+    brdf = cal_cox_munk_brdf(u10=1.0)
+    brdf = cal_cox_munk_brdf(u10=np.ones((10, 10), dtype=np.float64))
     pass
