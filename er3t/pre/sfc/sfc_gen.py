@@ -22,7 +22,7 @@ def cal_cox_munk_brdf(
     This code is adapted from <libRadtran/libsrc_f/oceabrdf.f>
 
     Input parameters:
-        u10: 10m wind speed, units: m/s, default=1.0
+        u10: 10m wind speed, units: m/s, default=1.0, can be either value or 2D array for a domain
         sal: salinity, units: per mille [0.1% or ppt or psu], default=34.3
         pcl: pigment concentration, units: mg/m^3, default=0.01
     """
@@ -237,6 +237,4 @@ class sfc_2d_gen:
 
 if __name__ == '__main__':
 
-    cal_cox_munk_brdf(u10=np.ones((10, 10), dtype=np.float64))
-    cal_cox_munk_brdf(u10=1.0)
     pass
