@@ -8,10 +8,10 @@ import er3t
 
 
 
-__all__ = ['sfc_2d_gen', 'cal_cox_munk_brdf']
+__all__ = ['cal_ocean_brdf', 'sfc_2d_gen']
 
 
-def cal_cox_munk_brdf(
+def cal_ocean_brdf(
         wvl=500.0,
         u10=1.0,
         sal=34.3,
@@ -287,6 +287,4 @@ class sfc_2d_gen:
 
 if __name__ == '__main__':
 
-    brdf = cal_cox_munk_brdf(u10=1.0, whitecap=False)
-    brdf = cal_cox_munk_brdf(u10=np.ones((10, 10), dtype=np.float64), whitecap=False)
     pass
