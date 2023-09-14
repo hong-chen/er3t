@@ -16,6 +16,7 @@ def cal_cox_munk_brdf(
         u10=1.0,
         sal=34.3,
         pcl=0.01,
+        whitecaps=True,
         ):
 
     """
@@ -49,7 +50,8 @@ def cal_cox_munk_brdf(
     #\----------------------------------------------------------------------------/#
 
 
-    # get refractive index of water as a function of wavelength and salinity
+    # refractive index of water as a function of wavelength and salinity
+    # Hale and Querry, 1973 - Optical Constants of Water in the 200-nm to 200-μm Wavelength Region
     #/----------------------------------------------------------------------------\#
     refractive_index_water = {
             'wvl': np.array([ \
@@ -87,10 +89,16 @@ def cal_cox_munk_brdf(
                  }
 
     refrac_r = np.interp(wvl, refractive_index_water['wvl'], refractive_index_water['real'])
-    refrac_r += 0.006*(sal/34.3)
-
     refrac_i = np.interp(wvl, refractive_index_water['wvl'], refractive_index_water['imaginary'])
+
+    # salinity corrections
+    #   - Friedman, 1969 - Infrared Characteristics of Ocean Water (1.5-15μ)
+    #   - McLellan, 1965 - Elements of Physical Oceanography
+    #   - Sverdrup et al., 1942 - The Oceans
+    #/--------------------------------------------------------------\#
+    refrac_r += 0.006*(sal/34.3)
     # refrac_i += 0.000*(sal/34.3)
+    #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
 
@@ -100,33 +108,34 @@ def cal_cox_munk_brdf(
     #\----------------------------------------------------------------------------/#
 
 
-    # placeholder for whitecaps treatment
+    # whitecaps treatment
+    #   - Koepke, 1984 - Effective reflectance of oceanic whitecaps
     #/----------------------------------------------------------------------------\#
+    if whitecaps:
+        reflectance_whitecaps = {
+                'wvl': np.arange(200.0, 4001.0, 100.0),
+                'ref': np.array([
+                       0.220,0.220,0.220,0.220,0.220,0.220,0.215,0.210,0.200,0.190,
+                       0.175,0.155,0.130,0.080,0.100,0.105,0.100,0.080,0.045,0.055,
+                       0.065,0.060,0.055,0.040,0.000,0.000,0.000,0.000,0.000,0.000,
+                       0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000
+                       ]),
+                }
+
+        diffuse_frac = 2.95e-06 * (u10**3.52)
+        diffuse_alb  = np.interp(wvl, reflectance_whitecaps['wvl'], reflectance_whitecaps['ref'])
+    else:
+        diffuse_frac = 0.0*u10
+        diffuse_alb  = 0.0*u10
     #\----------------------------------------------------------------------------/#
 
-    if ndim == 0:
-
-        params = {
-              'diffuse_alb': 0.0,
-             'diffuse_frac': 0.0,
-                 'refrac_r': refrac_r,
-                 'refrac_i': refrac_i,
-                    'slope': slope,
-                }
-
-    elif ndim == 2:
-
-        params = {
-              'diffuse_alb': np.zeros_like(slope),
-             'diffuse_frac': np.zeros_like(slope),
-                 'refrac_r': refrac_r,
-                 'refrac_i': refrac_i,
-                    'slope': slope,
-                }
-
-    else:
-
-        params = None
+    params = {
+          'diffuse_alb': diffuse_alb,
+         'diffuse_frac': diffuse_frac,
+             'refrac_r': refrac_r,
+             'refrac_i': refrac_i,
+                'slope': slope,
+            }
 
     return params
 
@@ -277,6 +286,6 @@ class sfc_2d_gen:
 
 if __name__ == '__main__':
 
-    brdf = cal_cox_munk_brdf(u10=1.0)
-    brdf = cal_cox_munk_brdf(u10=np.ones((10, 10), dtype=np.float64))
+    brdf = cal_cox_munk_brdf(u10=1.0, whitecap=False)
+    brdf = cal_cox_munk_brdf(u10=np.ones((10, 10), dtype=np.float64), whitecap=False)
     pass
