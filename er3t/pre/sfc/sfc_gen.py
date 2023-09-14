@@ -51,7 +51,7 @@ def cal_cox_munk_brdf(
 
 
     # refractive index of water as a function of wavelength and salinity
-    # Hale and Querry, 1973 - Optical Constants of Water in the 200-nm to 200-μm Wavelength Region
+    # Hale and Querry, 1973: Optical Constants of Water in the 200-nm to 200-μm Wavelength Region
     #/----------------------------------------------------------------------------\#
     refractive_index_water = {
             'wvl': np.array([ \
@@ -92,8 +92,8 @@ def cal_cox_munk_brdf(
     refrac_i = np.interp(wvl, refractive_index_water['wvl'], refractive_index_water['imaginary'])
 
     # salinity corrections
-    #   - Friedman, 1969 - Infrared Characteristics of Ocean Water (1.5-15μ)
-    #   - McLellan, 1965 - Elements of Physical Oceanography
+    #   - Friedman, 1969: Infrared Characteristics of Ocean Water (1.5-15μ)
+    #   - McLellan, 1965: Elements of Physical Oceanography
     #   - Sverdrup et al., 1942 - The Oceans
     #/--------------------------------------------------------------\#
     refrac_r += 0.006*(sal/34.3)
@@ -103,6 +103,7 @@ def cal_cox_munk_brdf(
 
 
     # variance of micro-scopic surface slope
+    #   - Cox and Munk, 1954: Measurement of the roughness of the sea surface from photographs of the sun’s glitter
     #/----------------------------------------------------------------------------\#
     slope = 0.00512*u10 + 0.003
     #\----------------------------------------------------------------------------/#
