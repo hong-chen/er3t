@@ -260,8 +260,9 @@ def get_data_h4(hdf_dset, nan=True):
         data = data + attrs['add_offset']
 
     if '_FillValue' in attrs and nan:
-        _FillValue = np.float64(attrs['_FillValue'])
-        data[data == _FillValue] = np.nan
+        _FillValue = attrs['_FillValue']
+        logic_fill = (data==_FillValue)
+        data.astype(np.float64)[logic_fill] = np.nan
 
     return data
 

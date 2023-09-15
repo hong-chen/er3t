@@ -13,10 +13,342 @@ import warnings
 import er3t
 
 
-__all__ = ['read_geometa', 'cal_proj_xy_geometa', 'cal_lon_lat_utc_geometa', \
-           'get_satfile_tag', 'get_nrt_satfile_tag', \
-           'download_laads_https', 'download_lance_https',\
-           'download_worldview_rgb', 'download_oco2_https']
+__all__ = [
+        'get_satname', \
+        'get_token_earthdata', \
+        'get_fname_geometa', \
+        'get_local_file', \
+        'get_online_file', \
+        'final_file_check', \
+        'read_geometa', \
+        'cal_proj_xy_geometa', \
+        'cal_lon_lat_utc_geometa', \
+        'cal_sec_offset_abi', \
+        'get_satfile_tag', \
+        'download_laads_https', \
+        'download_lance_https',\
+        'download_oco2_https', \
+        'download_worldview_image', \
+        ]
+
+
+def get_satname(satellite, instrument):
+
+    # check satellite and instrument
+    #/----------------------------------------------------------------------------\#
+    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
+        instrument = instrument.upper()
+        satellite  = satellite.lower().title()
+    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
+        instrument = instrument.upper()
+        satellite  = satellite.replace('-', '').upper()
+    elif instrument.lower() == 'abi' and (satellite.lower() in ['goes-east', 'goes-west']):
+        instrument = instrument.upper()
+        satellite  = satellite.upper().replace('WEST', 'West').replace('EAST', 'East')
+    else:
+        msg = '\nError [get_satname]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        raise NameError(msg)
+    #\----------------------------------------------------------------------------/#
+
+    satname = '%s|%s' % (satellite, instrument)
+
+    return satname
+
+
+
+def get_token_earthdata():
+
+    try:
+        token = os.environ['EARTHDATA_TOKEN']
+    except KeyError:
+        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
+
+        msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+        warnings.warn(msg)
+
+    return token
+
+
+
+def gen_file_earthdata(
+        fname_login = '~/.netrc',
+        fname_cookies = '~/.urs_cookies',
+        ):
+
+    secret = {}
+
+    fname_login = os.path.abspath(os.path.expanduser(fname_login))
+    if not os.path.exists(fname_login):
+
+        try:
+            username = os.environ['EARTHDATA_USERNAME']
+            password = os.environ['EARTHDATA_PASSWORD']
+        except Exception as error:
+            print(error)
+            msg = '\nError [gen_file_earthdata]: Please follow the instructions at \nhttps://disc.gsfc.nasa.gov/data-access\nto register a login account and create a <~/.netrc> file.'
+            raise OSError(msg)
+
+        content = 'machine urs.earthdata.nasa.gov login %s password %s' % (username, password)
+        print('Message [gen_file_earthdata]: Creating <~/.netrc> ...')
+        with open(fname_login, 'w') as f:
+            f.write(content)
+
+    secret['netrc'] = fname_login
+
+    fname_cookies = os.path.abspath(os.path.expanduser(fname_cookies))
+    if not os.path.exists(fname_cookies):
+        print('Message [gen_file_earthdata]: Creating <~/.urs_cookies> ...')
+        os.system('touch ~/.urs_cookies')
+
+    secret['cookies'] = fname_cookies
+
+    return secret
+
+
+
+def get_command_earthdata(
+        fname_target,
+        filename=None,
+        token_mode=True,
+        tools=['curl', 'wget'],
+        fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
+        ):
+
+    if filename is None:
+        filename = os.path.basename(fname_target)
+
+    fname_save = '%s/%s' % (fdir_save, filename)
+
+
+    if token_mode:
+
+        token=get_token_earthdata()
+        header = '"Authorization: Bearer %s"' % token
+        options = {
+                'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document="%s" --quiet "%s"' % (header, fname_save, fname_target),
+                }
+
+    else:
+
+        secret = gen_file_earthdata()
+
+        options = {
+                'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="%s" --quiet "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                }
+
+    command = None
+
+    for command_line_tool in tools:
+
+        if shutil.which(command_line_tool):
+
+            command = 'mkdir -p %s && %s %s' % (fdir_save, command_line_tool, options[command_line_tool])
+
+            if command is not None:
+
+                return command
+
+    return command
+
+
+
+def get_fname_geometa(
+        date,
+        satname='Aqua|MODIS',
+        server='https://ladsweb.modaps.eosdis.nasa.gov',
+        ):
+
+    # generate satellite filename on LAADS DAAC server
+    #/----------------------------------------------------------------------------\#
+    date_s = date.strftime('%Y-%m-%d')
+
+    if server == 'https://ladsweb.modaps.eosdis.nasa.gov':
+        fnames_geometa = {
+               'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
+              'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
+             'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
+               'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
+            }
+
+    elif server == 'https://nrt3.modaps.eosdis.nasa.gov':
+        fnames_geometa = {
+               'Aqua|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt'             % (server, date.year, date_s),
+              'Terra|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt'            % (server, date.year, date_s),
+             'NOAA20|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
+               'SNPP|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt'     % (server, date.year, date_s),
+            }
+    else:
+        msg = '\nError [get_fname_geometa]: Currently do not support accessing geometa data from <%s>.' % server
+        raise OSError(msg)
+
+    fname_geometa = fnames_geometa[satname]
+    #\----------------------------------------------------------------------------/#
+
+    return fname_geometa
+
+
+
+def get_local_file(
+        fname_file,
+        filename=None,
+        fdir_local='./',
+        fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
+        ):
+
+    if filename is None:
+        filename = os.path.basename(fname_file)
+
+    # try to get information from local
+    # check two locations:
+    #   1) <tmp-data/satfile> directory under er3t main directory
+    #   2) current directory;
+    #/--------------------------------------------------------------\#
+    if not os.path.exists(fdir_save):
+        os.makedirs(fdir_save)
+
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_save, filename))
+    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, filename))
+
+    if os.path.exists(fname_local1):
+
+        with open(fname_local1, 'r') as f_:
+            content = f_.read()
+
+    elif os.path.exists(fname_local2):
+
+        os.system('cp %s %s' % (fname_local2, fname_local1))
+        with open(fname_local2, 'r') as f_:
+            content = f_.read()
+
+    else:
+
+        content = None
+    #\--------------------------------------------------------------/#
+
+    return content
+
+
+
+def get_online_file(
+        fname_file,
+        filename=None,
+        download=True,
+        tools=['curl', 'wget'],
+        fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
+        ):
+
+    if filename is None:
+        filename = os.path.basename(fname_file)
+
+    if download:
+
+        fname_save = '%s/%s' % (fdir_save, filename)
+        command = get_command_earthdata(fname_file, filename=filename, fdir_save=fdir_save, tools=tools)
+        os.system(command)
+
+        content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
+
+    else:
+
+        # this can be revisited, disabling it for now
+        #/--------------------------------------------------------------\#
+        # try:
+        #     with requests.Session() as session:
+        #         session.auth = (username, password)
+        #         r1     = session.request('get', fname_server)
+        #         r      = session.get(r1.url, auth=(username, password))
+        # except:
+        #     msg = '\nError [get_online_file]: cannot access <%s>.' % fname_server
+        #     raise OSError(msg)
+
+        # if r.ok:
+        #     content = r.content.decode('utf-8')
+        # else:
+        #     msg = '\nError [get_online_file]: failed to retrieve information from <%s>.' % fname_server
+        #     warnings.warn(msg)
+        #\--------------------------------------------------------------/#
+
+        # this can be revisited, disabling it for now
+        # Use error handling to overcome occasional issues with LAADS DAAC servers
+        #/----------------------------------------------------------------------------\#
+        # try:
+        #     webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
+        # except urllib.error.HTTPError:
+        #     msg = "The LAADS DAAC servers appear to be down. Attempting again in 10 seconds..."
+        #     print(msg)
+        #     time.sleep(10)
+        #     try:
+        #         webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
+        #     except urllib.error.HTTPError:
+        #         msg = '\nError [get_online_file]: cannot access <%s>.' % fdir_server
+        #         raise OSError(msg)
+        # content  = webpage.read().decode('utf-8')
+        #\----------------------------------------------------------------------------/#
+
+        content = None
+
+    return content
+
+
+
+def final_file_check(fname_local, data_format=None, verbose=False):
+
+    if data_format is None:
+        data_format = os.path.basename(fname_local).split('.')[-1].lower()
+
+    checked = False
+
+    if data_format in ['hdf', 'hdf4', 'h4']:
+
+        try:
+            import pyhdf
+            from pyhdf.SD import SD, SDC
+            f = SD(fname_local, SDC.READ)
+            f.end()
+
+            checked = True
+        except Exception as error:
+            print(error)
+            pass
+
+    elif data_format in ['nc', 'nc4', 'netcdf', 'netcdf4']:
+        try:
+            from netCDF4 import Dataset
+            f = Dataset(fname_local, 'r')
+            f.close()
+
+            checked = True
+        except Exception as error:
+            print(error)
+            pass
+
+    elif data_format in ['h5', 'hdf5']:
+
+        try:
+            import h5py
+            f = h5py.File(fname_local, 'r')
+            f.close()
+
+            checked = True
+        except Exception as error:
+            print(error)
+            pass
+
+    else:
+
+        msg = '\nWarning [final_file_check]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
+        warnings.warn(msg)
+
+    if checked:
+        if verbose:
+            msg = '\nMessage [final_file_check]: <%s> has been successfully downloaded.\n' % fname_local
+            print(msg)
+
+    else:
+        msg = '\nWarning [final_file_check]: Do not know whether <%s> has been successfully downloaded.\n' % (fname_local)
+        warnings.warn(msg)
 
 
 
@@ -119,11 +451,7 @@ def cal_proj_xy_geometa(line_data, closed=True):
         xy: dimension of (5, 2) if <closed=True> and (4, 2) if <closed=False>
     """
 
-    try:
-        import cartopy.crs as ccrs
-    except ImportError:
-        msg = '\nError [cal_proj_xy_geometa]: Needs <cartopy> to be installed before proceeding.'
-        raise ImportError(msg)
+    import cartopy.crs as ccrs
 
     # get corner points
     #/----------------------------------------------------------------------------\#
@@ -220,6 +548,10 @@ def cal_lon_lat_utc_geometa(
     NOAA-20 (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
     S-NPP   (delta_t=360.0, N_scan=203, N_along=3248, N_cross=3200, scan='cw')
     """
+
+    import cartopy
+    import cartopy.crs as ccrs
+
 
     # check if delta_t is correct
     #/----------------------------------------------------------------------------\#
@@ -345,6 +677,13 @@ def cal_lon_lat_utc_geometa(
     # figure
     #/----------------------------------------------------------------------------\#
     if testing:
+        import matplotlib as mpl
+        mpl.use('Agg')
+        import matplotlib.pyplot as plt
+        import matplotlib.path as mpl_path
+        import matplotlib.patches as mpatches
+        from matplotlib.ticker import FixedLocator
+
         utc_sec_out = (jday_out-jday_out.min())*86400.0
 
         plt.close('all')
@@ -390,129 +729,146 @@ def cal_lon_lat_utc_geometa(
 
 
 
-def get_token_earthdata():
+def cal_sec_offset_abi(extent, satname='GOES-East|ABI', sec_per_scan=30.0):
 
-    try:
-        token = os.environ['EARTHDATA_TOKEN']
-    except KeyError:
-        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
+    """
+    Details see https://www.goes-r.gov/users/abiScanModeInfo.html
+    """
 
-        msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
-        warnings.warn(msg)
+    import cartopy.crs as ccrs
 
-    return token
+    satellite, instrument = satname.split('|')
 
+    if satname == 'GOES-East|ABI':
 
+        full_disk_time_span = {
+                0: [[19.8, 26.6]],
+                1: [[3.7, 12.4], [12.9, 23.0]],
+                2: [[4.5, 15.7]],
+                3: [[3.0, 15.1]],
+                4: [[2.7, 15.4]],
+                5: [[2.5, 15.6]],
+                6: [[2.3, 15.8]],
+                7: [[2.1, 16.0]],
+                8: [[2.0, 16.0]],
+                9: [[2.0, 16.1]],
+               10: [[2.0, 16.1]],
+               11: [[2.0, 16.0]],
+               12: [[2.1, 16.0]],
+               13: [[2.3, 15.8]],
+               14: [[2.4, 15.6]],
+               15: [[2.7, 15.4]],
+               16: [[3.0, 15.0]],
+               17: [[3.5, 14.6]],
+               18: [[4.0, 14.1]],
+               19: [[4.7, 13.4], [13.9, 20.7]],
+                }
 
-def get_login_earthdata():
+        center_lon = -75.0
+        center_lat = 0.0
 
-    try:
-        username = os.environ['EARTHDATA_USERNAME']
-        password = os.environ['EARTHDATA_PASSWORD']
+    elif satname == 'GOES-West|ABI':
 
-        return username, password
+        full_disk_time_span = {
+                0: None,
+                1: [[1.4,  8.2], [ 8.7, 17.4], [18.0, 28.1]],
+                2: [[5.1, 16.3]],
+                3: [[2.3, 14.4]],
+                4: [[2.0, 14.7]],
+                5: [[1.8, 14.9]],
+                6: [[1.6, 15.1]],
+                7: [[1.4, 15.3]],
+                8: [[1.3, 15.3]],
+                9: [[1.3, 15.4]],
+               10: [[1.3, 15.4]],
+               11: [[1.3, 15.3]],
+               12: [[1.4, 15.3]],
+               13: [[1.6, 15.1]],
+               14: [[1.8, 14.9]],
+               15: [[2.0, 14.7]],
+               16: [[2.3, 14.4]],
+               17: [[2.8, 13.9]],
+               18: [[3.3, 13.4], [14.0, 22.7]],
+               19: [[1.4,  8.2]],
+                }
 
-    except:
-        msg = '\nError [get_earthdata_login]: cannot find environment variables \'EARTHDATA_USERNAME\' and \'EARTHDATA_PASSWORD\'.'
-        raise OSError(msg)
-
-        return
-
-
-
-def get_local_geometa(
-        fdir_local='./',
-        fdir_data_tmp=er3t.common.fdir_data_tmp,
-        ):
-
-    # try to get information from local
-    # check two locations:
-    #   1) <tmp-data/satfile> directory under er3t main directory
-    #   2) current directory;
-    #/--------------------------------------------------------------\#
-    fdir_satfile_tmp = '%s/satfile' % fdir_data_tmp
-    if not os.path.exists(fdir_satfile_tmp):
-        os.makedirs(fdir_satfile_tmp)
-
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_satfile_tmp, os.path.basename(fname_server)))
-    fname_local2 = os.path.abspath('%s/%s' % (local           , os.path.basename(fname_server)))
-
-    if os.path.exists(fname_local1):
-        with open(fname_local1, 'r') as f_:
-            content = f_.read()
-
-    elif os.path.exists(fname_local2):
-        os.system('cp %s %s' % (fname_local2, fname_local1))
-        with open(fname_local2, 'r') as f_:
-            content = f_.read()
+        center_lon = -137.0
+        center_lat = 0.0
 
     else:
-        content = None
-    #\--------------------------------------------------------------/#
 
-    return content
-
+        msg = '\nError [cal_utc_abi]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
+        raise NameError(msg)
 
 
-def get_online_geometa(
-        fname_server='',
-        download=True
-        ):
-
-    # get login info
+    # define projections
     #/----------------------------------------------------------------------------\#
-    username, password = get_login_earthdata()
+    proj_lonlat = ccrs.PlateCarree()
+    proj_xy = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
     #\----------------------------------------------------------------------------/#
 
-    if download:
-        token = get_token_earthdata()
-        command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
-
-
-    # get information from server
-    #/--------------------------------------------------------------\#
-    try:
-        with requests.Session() as session:
-            session.auth = (username, password)
-            r1     = session.request('get', fname_server)
-            r      = session.get(r1.url, auth=(username, password))
-    except:
-        msg = '\nError [get_satfile_tag]: cannot access <%s>.' % fname_server
-        raise OSError(msg)
-
-    if r.ok:
-        content = r.content.decode('utf-8')
-    else:
-        msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
-        warnings.warn(msg)
-    #\--------------------------------------------------------------/#
-
-    # LAADS DAAC servers are known to cause some issues occasionally while
-    # accessing the metadata. We will attempt to read the txt file online directly
-    # on the server but as a backup, we will download the txt file locally and
-    # access the data there
+    # get scan stripe edges in y
     #/----------------------------------------------------------------------------\#
-    try:
-        data  = read_geometa(content)
-    except:
+    Nscan = len(full_disk_time_span.keys())
 
-        msg = '\nWarning [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
-        warnings.warn(msg)
+    lat_scan_edges = np.linspace(90.0, -90.0, Nscan+1)
+    lon_scan_edges = np.repeat(center_lon, Nscan+1)
+    xy = proj_xy.transform_points(proj_lonlat, lon_scan_edges, lat_scan_edges)[:, [0, 1]]
 
-        token = get_token_earthdata()
-
-        try:
-            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
-            os.system(command)
-            with open(fname_local1, 'r') as f_:
-                content = f_.read()
-            data = read_geometa(content)
-        except ValueError:
-            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nThis is likely an issue with LAADS DAAC servers, please try downloading the files manually or try again later.\n' % fname_server
-            raise OSError(msg)
+    y_scan_edges = xy[:, 1]
     #\----------------------------------------------------------------------------/#
 
-    pass
+
+    # calculate corner points from <extent>
+    #/----------------------------------------------------------------------------\#
+    lon_in_ = np.arange(extent[0], extent[1], 0.001)
+    lat_in_ = np.arange(extent[2], extent[3], 0.001)
+    lon_in, lat_in = np.meshgrid(lon_in_, lat_in_, indexing='ij')
+
+    xy_in = proj_xy.transform_points(proj_lonlat, lon_in.ravel(), lat_in.ravel())[:, [0, 1]]
+    x_in = xy_in[:, 0]
+    y_in = xy_in[:, 1]
+
+    y_min = np.nanmin(y_in)
+    y_max = np.nanmax(y_in)
+    #\----------------------------------------------------------------------------/#
+
+    Ns = max(np.argmin(np.abs(y_scan_edges-y_max))-1, 0)
+    Ne = min(np.argmin(np.abs(y_scan_edges-y_min))+1, Nscan)
+
+    sec_offset = np.zeros_like(x_in)
+    sec_offset[...] = np.nan
+
+    for i in range(Ns, Ne):
+        span_time0 = full_disk_time_span[i]
+        if span_time0 is not None:
+            span_time0 = span_time0[-1]
+            time_s = span_time0[0] + i * sec_per_scan
+            time_e = span_time0[1] + i * sec_per_scan
+            y_edge_min = y_scan_edges[i+1]
+            y_edge_max = y_scan_edges[i]
+            logic_in = (y_in>=y_edge_min) & (y_in<y_edge_max)
+
+            if logic_in.sum() > 0:
+
+                # calculate time offset
+                #/----------------------------------------------------------------------------\#
+                R_earth = np.nanmax(y_scan_edges)
+                delta_scan_x_half = R_earth * np.sin(np.arccos(((y_edge_min+y_edge_max)/2.0)/R_earth))
+                delta_x = delta_scan_x_half*2.0
+                x_s = -delta_scan_x_half
+
+                delta_t = time_e-time_s
+                slope = delta_t/delta_x
+
+                x_min = np.nanmin(x_in[logic_in])
+
+                time0 = time_s + ((x_min-x_s)/delta_x)*delta_t
+                sec_offset[logic_in] = time0 + slope*(x_in[logic_in]-x_min)
+                #\----------------------------------------------------------------------------/#
+
+
+    return sec_offset
 
 
 
@@ -524,7 +880,12 @@ def get_satfile_tag(
              instrument='modis',
              server='https://ladsweb.modaps.eosdis.nasa.gov',
              fdir_local='./',
-             verbose=False):
+             fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
+             geometa=False,
+             percent0=0.0,
+             worldview=False,
+             verbose=False
+             ):
 
     """
     Get filename tag/overpass information for standard products.
@@ -538,57 +899,31 @@ def get_satfile_tag(
         satellite=: default "aqua", can also change to "terra", 'snpp', 'noaa20'
         instrument=: default "modis", can also change to "viirs"
         server=: string, data server
+                 LAADS: https://ladsweb.modaps.eosdis.nasa.gov
+                 NRT: https://nrt3.modaps.eosdis.nasa.gov
         fdir_prefix=: string, data directory on NASA server
         verbose=: Boolen type, verbose tag
     output:
         filename_tags: Python list of file name tags
     """
 
-    from er3t.common import fdir_data_tmp
-
     # check cartopy and matplotlib
     #/----------------------------------------------------------------------------\#
-    try:
-        import cartopy.crs as ccrs
-    except ImportError:
-        msg = '\nError [get_satfile_tag]: Please install <cartopy> to proceed.'
-        raise ImportError(msg)
-
-    try:
-        import matplotlib.path as mpl_path
-    except ImportError:
-        msg = '\nError [get_satfile_tag]: Please install <matplotlib> to proceed.'
-        raise ImportError(msg)
+    import cartopy.crs as ccrs
+    import matplotlib.path as mpl_path
     #\----------------------------------------------------------------------------/#
 
 
-    # check satellite and instrument
+    # get formatted satellite tag
     #/----------------------------------------------------------------------------\#
-    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
-        instrument = instrument.upper()
-        satellite  = satellite.lower().title()
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper()
-    else:
-        msg = '\nError [get_satfile_tag]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
-        raise NameError(msg)
+    satname = get_satname(satellite, instrument)
+    satellite, instrument = satname.split('|')
     #\----------------------------------------------------------------------------/#
 
 
-    # generate satellite filename on LAADS DAAC server
+    # get satellite geometa filename on LAADS DAAC server
     #/----------------------------------------------------------------------------\#
-    vname  = '%s|%s' % (satellite, instrument)
-    date_s = date.strftime('%Y-%m-%d')
-    fnames_server = {
-           'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
-          'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
-         'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-           'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
-        'NOAA-20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-          'S-NPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
-        }
-    fname_server = fnames_server[vname]
+    fname_geometa = get_fname_geometa(date, satname, server=server)
     #\----------------------------------------------------------------------------/#
 
 
@@ -604,12 +939,14 @@ def get_satfile_tag(
 
     # get geometa info
     #/----------------------------------------------------------------------------\#
+    filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
+
     # try to get geometa information from local
-    content = get_geometa_local(fdir_local=fdir_local, fdir_data_tmp=er3t.common.fdir_data_tmp)
+    content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
 
     # try to get geometa information online
     if content is None:
-        content = get_geometa_online(download=True)
+        content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -626,6 +963,9 @@ def get_satfile_tag(
 
     Ndata = len(data)
     filename_tags = []
+
+    percent_all   = np.array([], dtype=np.float64)
+    i_all         = []
     for i in range(Ndata):
 
         line = data[i]
@@ -639,243 +979,38 @@ def get_satfile_tag(
         Npoint_in  = points_in.sum()
         Npoint_tot = points_in.size
 
-        # placeholder for percentage threshold
         percent_in = float(Npoint_in) * 100.0 / float(Npoint_tot)
 
-        if (Npoint_in>0) and (data[i]['DayNightFlag']=='D'):
-            filename = data[i]['GranuleID']
-            filename_tag = '.'.join(filename.split('.')[1:3])
-            filename_tags.append(filename_tag)
-    #\----------------------------------------------------------------------------/#
+        if (Npoint_in>0) and (data[i]['DayNightFlag']=='D') and (percent_in>=percent0):
 
-    return filename_tags
-
-
-
-def get_nrt_satfile_tag(
-             date,
-             lon,
-             lat,
-             satellite='aqua',
-             instrument='modis',
-             server='https://nrt3.modaps.eosdis.nasa.gov/api/v2/content',
-             local='./',
-             verbose=False):
-
-    """
-    Get filename tag/overpass information for Near Real Time (NRT) products.
-    Currently supported satellites/instruments are:
-    Aqua/MODIS, Terra/MODIS, SNPP/VIIRS, NOAA-20/VIIRS.
-
-    Input:
-        date: Python datetime.datetime object
-        lon : longitude of, e.g. flight track
-        lat : latitude of, e.g. flight track
-        satellite=: default "aqua", can also change to "terra", 'snpp', 'noaa20'
-        instrument=: default "modis", can also change to "viirs"
-        server=: string, data server
-        fdir_prefix=: string, data directory on NASA server
-        verbose=: Boolen type, verbose tag
-    output:
-        filename_tags: Python list of file name tags
-    """
-
-    # check cartopy and matplotlib
-    #/----------------------------------------------------------------------------\#
-    try:
-        import cartopy.crs as ccrs
-    except ImportError:
-        msg = '\nError [get_satfile_tag]: Please install <cartopy> to proceed.'
-        raise ImportError(msg)
-
-    try:
-        import matplotlib.path as mpl_path
-    except ImportError:
-        msg = '\nError [get_satfile_tag]: Please install <matplotlib> to proceed.'
-        raise ImportError(msg)
-    #\----------------------------------------------------------------------------/#
-
-    from er3t.common import fdir_data_tmp
-
-    # check satellite and instrument
-    #/----------------------------------------------------------------------------\#
-    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
-        instrument = instrument.upper()
-        satellite  = satellite.lower().title()
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper()
-    else:
-        msg = 'Error [get_satfile_tag]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
-        raise NameError(msg)
+            if geometa:
+                filename_tags.append(line)
+            else:
+                filename = data[i]['GranuleID']
+                filename_tag = '.'.join(filename.split('.')[1:3])
+                filename_tags.append(filename_tag)
+            percent_all = np.append(percent_all, percent_in)
+            i_all.append(i)
     #\----------------------------------------------------------------------------/#
 
 
-    # check login
+    # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
-    username, password = get_login_earthdata()
-    #\----------------------------------------------------------------------------/#
-
-
-    # generate satellite filename on LAADS DAAC server
-    #/----------------------------------------------------------------------------\#
-    vname  = '%s|%s' % (satellite, instrument)
-    date_s = date.strftime('%Y-%m-%d')
-    fnames_server = {
-        'Aqua|MODIS'  : '%s/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt'             % (server, date.year, date_s),
-        'Terra|MODIS' : '%s/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt'            % (server, date.year, date_s),
-        'NOAA20|VIIRS': '%s/archives/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
-        'SNPP|VIIRS'  : '%s/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt'     % (server, date.year, date_s),
-        }
-    fname_server = fnames_server[vname]
-    #\----------------------------------------------------------------------------/#
-
-
-    # convert longitude in [-180, 180] range
-    # since the longitude in GeoMeta dataset is in the range of [-180, 180]
-    #/----------------------------------------------------------------------------\#
-    lon[lon>180.0] -= 360.0
-    logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
-    lon   = lon[logic]
-    lat   = lat[logic]
-    #\----------------------------------------------------------------------------/#
-
-
-    # try to access the server
-    #/----------------------------------------------------------------------------\#
-
-    # try to get information from local
-    # check two locations:
-    #   1) <tmp-data/satfile> directory under er3t main directory
-    #   2) current directory;
-    #/--------------------------------------------------------------\#
-    fdir_satfile_tmp = '%s/satfile' % fdir_data_tmp
-    if not os.path.exists(fdir_satfile_tmp):
-        os.makedirs(fdir_satfile_tmp)
-
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_satfile_tmp, os.path.basename(fname_server)))
-    fname_local2 = os.path.abspath('%s/%s' % (local           , os.path.basename(fname_server)))
-
-    if os.path.exists(fname_local1):
-        with open(fname_local1, 'r') as f_:
-            content = f_.read()
-
-    elif os.path.exists(fname_local2):
-        os.system('cp %s %s' % (fname_local2, fname_local1))
-        with open(fname_local2, 'r') as f_:
-            content = f_.read()
-    #\--------------------------------------------------------------/#
-
-    else:
-
-        # get information from server
-        #/--------------------------------------------------------------\#
-        try:
-            with requests.Session() as session:
-                session.auth = (username, password)
-                r1     = session.request('get', fname_server)
-                r      = session.get(r1.url, auth=(username, password))
-        except:
-            msg = '\nError [get_satfile_tag]: cannot access <%s>.' % fname_server
-            raise OSError(msg)
-
-        if r.ok:
-            content = r.content.decode('utf-8')
+    if (percent0 > 0.0 ) | worldview:
+        indices_sort_p = np.argsort(percent_all)
+        if satellite != 'Terra':
+            indices_sort_i = i_all[::-1]
         else:
-            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
-            warnings.warn(msg)
-        #\--------------------------------------------------------------/#
+            indices_sort_i = i_all
+
+        if all(percent_i>97.0 for percent_i in percent_all):
+            indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
+        else:
+            indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
+
+        filename_tags = [filename_tags[i] for i in indices_sort]
     #\----------------------------------------------------------------------------/#
 
-    # extract granule information from <content>
-    # after the following session, granule information will be stored under <data>
-    # data['GranuleID'].decode('UTF-8') to get the file name of MODIS granule
-    # data['StartDateTime'].decode('UTF-8') to get the time stamp of MODIS granule
-    # variable names can be found through
-    # print(data.dtype.names)
-    #/----------------------------------------------------------------------------\#
-
-    if vname in ['Aqua|MODIS', 'Terra|MODIS']:
-        dtype = ['|S41', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
-    elif vname in ['NOAA20|VIIRS', 'SNPP|VIIRS']:
-        dtype = ['|S43', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
-    usecols = (0, 4, 9, 10, 11, 12, 13, 14, 15, 16)
-
-    #\----------------------------------------------------------------------------/#
-    # LAADS DAAC servers are known to cause some issues occasionally while
-    # accessing the metadata. We will attempt to read the txt file online directly
-    # on the server but as a backup, we will download the txt file locally and
-    # access the data there
-    #/----------------------------------------------------------------------------\#
-    try:
-        data  = read_geometa(content)
-    # except ValueError:
-    except:
-
-        msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
-        print(msg)
-
-        token = get_token_earthdata()
-
-        try:
-            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
-            os.system(command)
-            with open(fname_local1, 'r') as f_:
-                content = f_.read()
-            data  = read_geometa(content)
-        except ValueError:
-            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nThis is likely an issue with LAADS DAAC servers, please try downloading the files manually or try again later.\n' % fname_server
-            raise OSError(msg)
-
-    #\----------------------------------------------------------------------------/#
-    # loop through all the "MODIS granules" constructed through four corner points
-    # and find which granules contain the input data
-    #/----------------------------------------------------------------------------\#
-    Ndata = data.size
-    filename_tags = []
-    proj_ori = ccrs.PlateCarree()
-    for i in range(Ndata):
-
-        line = data[i]
-        xx0  = np.array([line['GRingLongitude1'], line['GRingLongitude2'], line['GRingLongitude3'], line['GRingLongitude4'], line['GRingLongitude1']])
-        yy0  = np.array([line['GRingLatitude1'] , line['GRingLatitude2'] , line['GRingLatitude3'] , line['GRingLatitude4'] , line['GRingLatitude1']])
-
-        if (abs(xx0[0]-xx0[1])>180.0) | (abs(xx0[0]-xx0[2])>180.0) | \
-           (abs(xx0[0]-xx0[3])>180.0) | (abs(xx0[1]-xx0[2])>180.0) | \
-           (abs(xx0[1]-xx0[3])>180.0) | (abs(xx0[2]-xx0[3])>180.0):
-
-            xx0[xx0<0.0] += 360.0
-
-        # roughly determine the center of granule
-        #/----------------------------------------------------------------------------\#
-        xx = xx0[:-1]
-        yy = yy0[:-1]
-        center_lon = xx.mean()
-        center_lat = yy.mean()
-        #\----------------------------------------------------------------------------/#
-
-        # find the precise center point of MODIS granule
-        #/----------------------------------------------------------------------------\#
-        proj_tmp   = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
-        LonLat_tmp = proj_tmp.transform_points(proj_ori, xx, yy)[:, [0, 1]]
-        center_xx  = LonLat_tmp[:, 0].mean(); center_yy = LonLat_tmp[:, 1].mean()
-        center_lon, center_lat = proj_ori.transform_point(center_xx, center_yy, proj_tmp)
-        #\----------------------------------------------------------------------------/#
-
-        proj_new = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
-        LonLat_in = proj_new.transform_points(proj_ori, lon, lat)[:, [0, 1]]
-        LonLat_modis  = proj_new.transform_points(proj_ori, xx0, yy0)[:, [0, 1]]
-
-        modis_granule  = mpl_path.Path(LonLat_modis, closed=True)
-        pointsIn       = modis_granule.contains_points(LonLat_in)
-        percentIn      = float(pointsIn.sum()) * 100.0 / float(pointsIn.size)
-        # if pointsIn.sum()>0 and percentIn>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
-        if pointsIn.sum()>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
-            filename = data[i]['GranuleID'].decode('UTF-8')
-            filename_tag = '.'.join(filename.split('.')[1:3])
-            filename_tags.append(filename_tag)
-
-    #\----------------------------------------------------------------------------/#
     return filename_tags
 
 
@@ -888,10 +1023,10 @@ def download_laads_https(
              fdir_prefix='/archive/allData',
              day_interval=1,
              fdir_out='tmp-data',
+             fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
              data_format=None,
              run=True,
              verbose=True):
-
 
     """
     Downloads products from the LAADS Data Archive (DAAC).
@@ -912,16 +1047,8 @@ def download_laads_https(
         fnames_local: Python list that contains downloaded satellite data file paths
     """
 
-    token = get_token_earthdata()
-
-    if shutil.which('curl'):
-        command_line_tool = 'curl'
-    elif shutil.which('wget'):
-        command_line_tool = 'wget'
-    else:
-        msg = '\nError [download_laads_https]: <download_laads_https> needs <curl> or <wget> to be installed.'
-        raise OSError(msg)
-
+    # retrieve the directory where satellite data is stored for picked date
+    #/----------------------------------------------------------------------------\#
     year_str = str(date.timetuple().tm_year).zfill(4)
     if day_interval == 1:
         doy_str  = str(date.timetuple().tm_yday).zfill(3)
@@ -929,130 +1056,64 @@ def download_laads_https(
         doy_str = get_doy_tag(date, day_interval=day_interval)
 
     fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
-
     fdir_server = server + fdir_data
-
     #\----------------------------------------------------------------------------/#
-    # Use error handling to overcome occasional issues with LAADS DAAC servers
+
+
+    # get csv info
     #/----------------------------------------------------------------------------\#
-    try:
-        webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-    except urllib.error.HTTPError:
-        msg = "The LAADS DAAC servers appear to be down. Attempting again in 10 seconds..."
-        print(msg)
-        time.sleep(10)
-        try:
-            webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-        except urllib.error.HTTPError:
-            msg = '\nError [download_laads_https]: cannot access <%s>.' % fdir_server
-            raise OSError(msg)
-    content  = webpage.read().decode('utf-8')
+    fname_csv = '%s.csv' % fdir_server
+    filename_csv = server.replace('https://', '').split('.')[0] + '_'.join(('%s.csv' % fdir_data).split('/'))
+
+    # try to get geometa information from local
+    content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+
+    # try to get geometa information online
+    if content is None:
+        content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+    #\----------------------------------------------------------------------------/#
+
+
+    # get download commands
+    #/----------------------------------------------------------------------------\#
     lines    = content.split('\n')
 
     commands = []
     fnames_local = []
     for line in lines:
         filename = line.strip().split(',')[0]
+
         if filename_tag in filename:
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            if command_line_tool == 'curl':
-                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
-            elif command_line_tool == 'wget':
-                command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
-            else:
-                msg = '\nError [download_laads_https]: command line tool %s is not currently supported. Please use one of `curl` or `wget`.' % command_line_tool
-                raise OSError(msg)
+            command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out)
             commands.append(command)
+    #\----------------------------------------------------------------------------/#
 
-    if not run:
-        print('Message [download_laads_https]: The commands to run are:')
-        for command in commands:
-            print(command)
 
-    else:
+    # run/print command
+    #/----------------------------------------------------------------------------\#
+    if run:
 
         for i, command in enumerate(commands):
 
-            if verbose:
-                print('Message [download_laads_https]: Downloading %s ...' % fnames_local[i])
-            os.system(command)
-
             fname_local = fnames_local[i]
 
-            if data_format is None:
-                data_format = os.path.basename(fname_local).split('.')[-1]
+            if verbose:
+                print('Message [download_laads_https]: Downloading %s ...' % fname_local)
+            os.system(command)
 
-            if data_format == 'hdf':
+            final_file_check(fname_local, data_format=data_format, verbose=verbose)
 
-                try:
-                    from pyhdf.SD import SD, SDC
-                    import pyhdf
-                except ImportError:
-                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
-                    raise ImportError(msg)
+    else:
 
-                #\----------------------------------------------------------------------------/#
-                # Attempt to download files. In case of an HDF4Error, attempt to re-download
-                # afer a time period as this could be caused by an internal timeout at
-                # the server side
-                #/----------------------------------------------------------------------------\#
-                try:
-                    if verbose:
-                        print('Message [download_laads_https]: Reading \'%s\' ...\n' % fname_local)
-                    f = SD(fname_local, SDC.READ)
-                    f.end()
-                    if verbose:
-                        print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
+        print('Message [download_laads_https]: The commands to run are:')
+        for command in commands:
+            print(command)
+    #\----------------------------------------------------------------------------/#
 
-                except pyhdf.error.HDF4Error:
-                    print('Message [download_laads_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
-                    try:
-                        os.remove(fname_local)
-                        time.sleep(10) # wait 10 seconds
-                        os.system(command) # re-download
-                        f = SD(fname_local, SDC.READ)
-                        f.end()
-                        if verbose:
-                            print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
-                    except pyhdf.error.HDF4Error:
-                        print('Message [download_laads_https]: WARNING: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local)
-                        fnames_local.remove(fname_local)
-                        os.remove(fname_local)
-                        continue
-
-
-            elif data_format == 'nc':
-
-                try:
-                    from netCDF4 import Dataset
-                    f = Dataset(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-
-            elif data_format == 'h5':
-
-                try:
-                    import h5py
-                    f = h5py.File(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-            else:
-
-                msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                warnings.warn(msg)
 
     return fnames_local
 
@@ -1062,17 +1123,17 @@ def download_lance_https(
              date,
              dataset_tag,
              filename_tag,
-             server='https://nrt3.modaps.eosdis.nasa.gov/api/v2/content',
+             server='https://nrt3.modaps.eosdis.nasa.gov',
              fdir_prefix='/archives/allData',
              day_interval=1,
              fdir_out='tmp-data',
+             fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
              data_format=None,
              run=True,
              verbose=True):
 
-
     """
-    Downloads products from the LANCE Near Real Time (NRT) Data Archive (DAAC).
+    Downloads products from the LAADS Data Archive (DAAC).
 
     Input:
         date: Python datetime object
@@ -1090,74 +1151,193 @@ def download_lance_https(
         fnames_local: Python list that contains downloaded satellite data file paths
     """
 
-    token = get_token_earthdata()
+    # VIIRS NRT is labeled differently from the standard product.
+    # Therefore, the dataset_tag needs to be updated only for VIIRS NRT products.
+    #/----------------------------------------------------------------------------\#
+    if dataset_tag.split('/')[-1].upper().startswith(('VNP', 'VJ1', 'VJ2')):
+        dataset_tag = dataset_tag + '_NRT'
+    #\----------------------------------------------------------------------------/#
 
-    if shutil.which('curl'):
-        command_line_tool = 'curl'
-    elif shutil.which('wget'):
-        command_line_tool = 'wget'
-    else:
-        msg = '\nError [download_lance_https]: <download_lance_https> needs <curl> or <wget> to be installed.'
-        raise OSError(msg)
 
+    # retrieve the directory where satellite data is stored for picked date
+    #/----------------------------------------------------------------------------\#
     year_str = str(date.timetuple().tm_year).zfill(4)
     if day_interval == 1:
         doy_str  = str(date.timetuple().tm_yday).zfill(3)
     else:
         doy_str = get_doy_tag(date, day_interval=day_interval)
 
+    fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
     #\----------------------------------------------------------------------------/#
-    # VIIRS NRT is labeled differently from the standard product.
-    # Therefore, the dataset_tag needs to be updated only for VIIRS NRT products.
+
+
+    # get csv info
     #/----------------------------------------------------------------------------\#
-    if dataset_tag.split('/')[-1].upper().startswith(('VNP', 'VJ1', 'VJ2')):
-        dataset_tag = dataset_tag + '_NRT'
+    fname_csv = '%s/api/v2/content/details/allData/%s/%s/%s?fields=all&formats=csv' % (server, dataset_tag, year_str, doy_str)
+    filename_csv = server.replace('https://', '').split('.')[0] + '_'.join(('%s.csv' % fdir_data).split('/'))
 
-    fdir_csv_prefix = '/details/allData'
-    fdir_csv_format = '?fields=all&formats=csv'
-    fdir_csv_data   = '%s/%s/%s/%s%s' % (fdir_csv_prefix, dataset_tag, year_str, doy_str, fdir_csv_format)
+    # try to get geometa information from local
+    content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
 
-    fdir_data       = '%s/%s/%s/%s.csv' % (fdir_prefix, dataset_tag, year_str, doy_str)
-    fdir_server     = server + fdir_data
-    fdir_csv_server = server + fdir_csv_data
-
+    # try to get geometa information online
+    if content is None:
+        content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
-    # Use error handling to overcome occasional issues with LANCE DAAC servers
-    #/----------------------------------------------------------------------------\#
-    try:
-        webpage = urllib.request.urlopen(fdir_csv_server)
-    except urllib.error.HTTPError:
-        msg = "The LANCE DAAC servers appear to be down or there could be an error with the fetch request. Attempting again in 10 seconds..."
-        print(msg)
-        time.sleep(10)
-        try:
-            webpage = urllib.request.urlopen(fdir_csv_server)
-        except urllib.error.HTTPError:
-            msg = '\nError [download_lance_https]: cannot access <%s>.' % fdir_csv_server
-            raise OSError(msg)
 
-    content  = webpage.read().decode('utf-8')
+
+    # get download commands
+    #/----------------------------------------------------------------------------\#
     lines    = content.split('\n')
 
     commands = []
     fnames_local = []
     for line in lines:
         filename = line.strip().split(',')[0]
-        if filename_tag in filename and (filename.endswith('.hdf') or filename.endswith('.nc')):
-            fname_server = '%s/%s' % (fdir_server, filename)
+
+        if (filename_tag in filename) and ('.met' not in filename):
+            fname_server = '%s/api/v2/content%s/%s' % (server, fdir_data, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
-            if command_line_tool == 'curl':
-                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
-            elif command_line_tool == 'wget':
-                command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
-            else:
-                msg = '\nError [download_lance_https]: command line tool %s is not currently supported. Please use one of `curl` or `wget`.' % command_line_tool
-                raise OSError(msg)
-            commands.append(command)
 
-    if not run:
-        print('Message [download_lance_https]: The commands to run are:')
+            command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out)
+            commands.append(command)
+    #\----------------------------------------------------------------------------/#
+
+
+    # run/print command
+    #/----------------------------------------------------------------------------\#
+    if run:
+
+        for i, command in enumerate(commands):
+
+            fname_local = fnames_local[i]
+
+            if verbose:
+                print('Message [download_laads_https]: Downloading %s ...' % fname_local)
+            os.system(command)
+
+            final_file_check(fname_local, data_format=data_format, verbose=verbose)
+
+    else:
+
+        print('Message [download_laads_https]: The commands to run are:')
+        for command in commands:
+            print(command)
+    #\----------------------------------------------------------------------------/#
+
+
+    return fnames_local
+
+
+
+def download_oco2_https(
+             dtime,
+             dataset_tag,
+             fnames=None,
+             server='https://oco2.gesdisc.eosdis.nasa.gov',
+             fdir_prefix='/data/OCO2_DATA',
+             fdir_out='tmp-data',
+             data_format=None,
+             run=True,
+             verbose=True):
+
+    """
+    Input:
+        dtime: Python datetime object
+        dataset_tag: string, e.g. 'OCO2_L2_Standard.8r'
+        server=: string, data server
+        fdir_prefix=: string, data directory on NASA server
+        fdir_out=: string, output data directory
+        data_format=None: e.g., 'h5'
+        run=: boolen type, if true, the command will only be displayed but not run
+        verbose=: Boolen type, verbose tag
+
+    Output:
+        fnames_local: Python list that contains downloaded OCO2 file paths
+    """
+
+    from er3t.util.oco2 import get_fnames_from_web, get_dtime_from_xml
+
+    year_str = str(dtime.timetuple().tm_year).zfill(4)
+    doy_str  = str(dtime.timetuple().tm_yday).zfill(3)
+
+    if dataset_tag in [
+            'OCO2_L2_Met.10',
+            'OCO2_L2_Met.10r',
+            'OCO2_L2_Standard.10',
+            'OCO2_L2_Standard.10r',
+            'OCO2_L1B_Science.10',
+            'OCO2_L1B_Science.10r',
+            'OCO2_L1B_Calibration.10',
+            'OCO2_L1B_Calibration.10r',
+            'OCO2_L2_CO2Prior.10r',
+            'OCO2_L2_CO2Prior.10',
+            'OCO2_L2_IMAPDOAS.10r',
+            'OCO2_L2_IMAPDOAS.10',
+            'OCO2_L2_Diagnostic.10r',
+            'OCO2_L2_Diagnostic.10'
+            ]:
+
+        fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
+
+    elif dataset_tag in [
+            'OCO2_L2_Lite_FP.9r',
+            'OCO2_L2_Lite_FP.10r',
+            'OCO2_L2_Lite_SIF.10r'
+            ]:
+
+        fdir_data = '%s/%s/%s' % (fdir_prefix, dataset_tag, year_str)
+
+    else:
+
+        msg = '\nError [download_oco2_https]: Currently do not support downloading <%s>.' % dataset_tag
+        raise OSError(msg)
+
+    fdir_server = server + fdir_data
+
+    fnames_xml = get_fnames_from_web(fdir_server, 'xml')
+    if len(fnames_xml) > 0:
+        data_format = fnames_xml[0].split('.')[-2]
+    else:
+        msg = '\nError [download_oco2_https]: XML files are not available at <%s>.' % fdir_server
+        raise OSError(msg)
+
+    fnames_server = []
+
+    if fnames is not None:
+
+        for fname in fnames:
+            fname_server = '%s/%s' % (fdir_server, fname)
+            fnames_server.append(fname_server)
+
+    else:
+
+        fnames_dat  = get_fnames_from_web(fdir_server, data_format)
+        Nfile = len(fnames_dat)
+
+        if not all([fnames_dat[i] in fnames_xml[i] for i in range(Nfile)]):
+            msg = '\nError [download_oco2_https]: The description files [xml] do not match with data files.'
+            raise OSError(msg)
+
+        for i in range(Nfile):
+            dtime_s, dtime_e = get_dtime_from_xml('%s/%s' % (fdir_server, fnames_xml[i]))
+            if (dtime >= dtime_s) & (dtime <= dtime_e):
+                fname_server = '%s/%s' % (fdir_server, fnames_dat[i])
+                fnames_server.append(fname_server)
+
+    commands = []
+    fnames_local = []
+    for fname_server in fnames_server:
+        filename     = os.path.basename(fname_server)
+        fname_local  = '%s/%s' % (fdir_out, filename)
+        fnames_local.append(fname_local)
+
+        command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False)
+        commands.append(command)
+
+    if not run and len(commands)>0:
+
+        print('Message [download_oco2_https]: The commands to run are:')
         for command in commands:
             print(command)
 
@@ -1165,90 +1345,20 @@ def download_lance_https(
 
         for i, command in enumerate(commands):
 
-            if verbose:
-                print('Message [download_lance_https]: Downloading %s ...' % fnames_local[i])
-            os.system(command)
-
             fname_local = fnames_local[i]
 
-            if data_format is None:
-                data_format = os.path.basename(fname_local).split('.')[-1]
+            if verbose:
+                print('Message [download_oco2_https]: Downloading %s ...' % fname_local)
 
-            if data_format == 'hdf':
+            os.system(command)
 
-                try:
-                    from pyhdf.SD import SD, SDC
-                    import pyhdf
-                except ImportError:
-                    msg = '\nError [download_lance_https]: To use \'download_lance_https\', \'pyhdf\' needs to be installed.'
-                    raise ImportError(msg)
-
-                #\----------------------------------------------------------------------------/#
-                # Attempt to download files. In case of an HDF4Error, attempt to re-download
-                # afer a time period as this could be caused by an internal timeout at
-                # the server side
-                #/----------------------------------------------------------------------------\#
-                try:
-                    if verbose:
-                        print('Message [download_lance_https]: Reading \'%s\' ...\n' % fname_local)
-                    f = SD(fname_local, SDC.READ)
-                    f.end()
-                    if verbose:
-                        print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
-
-                except pyhdf.error.HDF4Error:
-                    print('Message [download_lance_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
-                    try:
-                        os.remove(fname_local)
-                        time.sleep(10) # wait 10 seconds
-                        os.system(command) # re-download
-                        f = SD(fname_local, SDC.READ)
-                        f.end()
-                        if verbose:
-                            print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
-                    except pyhdf.error.HDF4Error:
-                        msg = 'Warning [download_lance_https]: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local
-                        warnings.warn(msg)
-                        fnames_local.remove(fname_local)
-                        os.remove(fname_local)
-                        continue
-
-
-            elif data_format == 'nc':
-
-                try:
-                    from netCDF4 import Dataset
-                    f = Dataset(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-
-            elif data_format == 'h5':
-
-                try:
-                    import h5py
-                    f = h5py.File(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-            else:
-
-                msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                warnings.warn(msg)
+            final_file_check(fname_local, data_format=data_format, verbose=verbose)
 
     return fnames_local
 
 
 
-def download_worldview_rgb(
+def download_worldview_image(
         date,
         extent,
         fdir_out='tmp-data',
@@ -1280,77 +1390,89 @@ def download_worldview_rgb(
         fname: file name of the saved RGB file (png format)
     Usage example:
         import datetime
-        fname = download_wordview_rgb(datetime.datetime(2022, 5, 18), [-94.26,-87.21,31.86,38.91], instrument='modis', satellite='aqua')
+        fname = download_wordview_image(datetime.datetime(2022, 5, 18), [-94.26,-87.21,31.86,38.91], instrument='modis', satellite='aqua')
     """
 
-    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
-        instrument = instrument.upper()
-        satellite  = satellite.lower().title()
-        sat_kind = 'polar-orbiting'
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper()
-        sat_kind = 'polar-orbiting'
-    elif instrument.lower() == 'abi' and (satellite.lower() in ['goes-east', 'goes-west']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper().replace('WEST', 'West').replace('EAST', 'East')
-        sat_kind = 'geostationary'
-    else:
-        msg = 'Error [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
-        raise NameError(msg)
+    # get formatted satellite and instrument name
+    #/----------------------------------------------------------------------------\#
+    satname = get_satname(satellite, instrument)
+    satellite, instrument = satname.split('|')
+    #\----------------------------------------------------------------------------/#
 
-    if sat_kind == 'polar-orbiting':
-        date_s = date.strftime('%Y-%m-%d')
+
+    # time stamping the satellite imagery (contained in file name)
+    #/----------------------------------------------------------------------------\#
+    if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP']:
+
+        # pick layer
+        #/--------------------------------------------------------------\#
         if layer_name0 is None:
             layer_name0='CorrectedReflectance_TrueColor'
         layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
+        #\--------------------------------------------------------------/#
+
+        # calculate time based on the relative location of
+        # selected region to satellite granule
+        #/--------------------------------------------------------------\#
+        date_s = date.strftime('%Y-%m-%d')
 
         try:
             lon__ = np.arange(extent[0], extent[1], 500.0/111000.0)
             lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
-            try:
-                satfile_tag = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
-            except:
-                satfile_tag = get_nrt_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument)[-1]
+            line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True, percent0=25.0, worldview=True)[0]
 
-            date0 = datetime.datetime.strptime(satfile_tag, 'A%Y%j.%H%M')
+            if satellite in ['Aqua', 'Terra']:
+                lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=300.0, N_along=1015, N_cross=677, scan='cw', testing=False)
+            else:
+                lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=360.0, N_along=1624, N_cross=1600, scan='cw', testing=False)
+
+            logic_in = (lon0_>=extent[0]) & (lon0_<=extent[1]) & (lat0_>=extent[2]) & (lat0_<=extent[3])
+            jday0 = np.nanmean(jday0_[logic_in])
+            date0 = er3t.util.jday_to_dtime(jday0)
             date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
 
             fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
-        except:
-            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
 
-    elif sat_kind == 'geostationary':
-        date += datetime.timedelta(minutes=5)
-        date -= datetime.timedelta(minutes=date.minute % 10,
-                                   seconds=date.second)
-        date_s = date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        except Exception as error:
+            print(error)
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        #\--------------------------------------------------------------/#
+
+    elif satellite in ['GOES-West', 'GOES-East']:
+
+        # pick layer
+        #/--------------------------------------------------------------\#
         if layer_name0 is None:
             layer_name0='GeoColor'
         layer_name = '%s_%s_%s' % (satellite, instrument, layer_name0)
+        #\--------------------------------------------------------------/#
 
-        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        # every 10 minutes, e.g., 10:10, 10:20, 10:30 ...
+        #/--------------------------------------------------------------\#
+        delta = datetime.timedelta(minutes=10)
+        date = datetime.datetime.min + round((date-datetime.datetime.min)/delta) * delta
+        date_s = date.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        sec_offset = np.nanmean(cal_sec_offset_abi(extent, satname=satname))
+        date0 = date + datetime.timedelta(seconds=sec_offset)
+        date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        #\--------------------------------------------------------------/#
 
     fname  = os.path.abspath(fname)
+    #\----------------------------------------------------------------------------/#
 
     if run:
 
-        try:
-            import matplotlib as mpl
-            mpl.use('Agg')
-            import matplotlib.pyplot as plt
-            import matplotlib.image as mpl_img
-        except ImportError:
-            msg = 'Error [download_worldview_rgb]: Please install <matplotlib> to proceed.'
-            raise ImportError(msg)
-
-        try:
-            import cartopy.crs as ccrs
-        except ImportError:
-            msg = 'Error [download_worldview_rgb]: Please install <cartopy> to proceed.'
-            raise ImportError(msg)
+        import h5py
+        import matplotlib as mpl
+        mpl.use('Agg')
+        import matplotlib.pyplot as plt
+        import matplotlib.image as mpl_img
+        import cartopy.crs as ccrs
 
         if not os.path.exists(fdir_out):
             os.makedirs(fdir_out)
@@ -1359,215 +1481,62 @@ def download_worldview_rgb(
             proj=ccrs.PlateCarree()
 
         try:
-        # if True:
+
             fig = plt.figure(figsize=(12, 6))
             ax1 = fig.add_subplot(111, projection=proj)
             ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
             if coastline:
                 ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
             ax1.set_extent(extent, crs=ccrs.PlateCarree())
-            # ax1.outline_patch.set_visible(False) # changed according to DeprecationWarning
             ax1.spines['geo'].set_visible(False)
             ax1.axis('off')
             plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=dpi)
             plt.close(fig)
-        except:
-            msg = '\nError [download_wordview_rgb]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
+
+        except Exception as error:
+
+            print(error)
+            msg = '\nError [download_wordview_image]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
             warnings.warn(msg)
 
-    if fmt == 'png':
+        if fmt == 'h5':
 
-        pass
+            data = mpl_img.imread(fname)
 
-    elif fmt == 'h5':
+            lon  = np.linspace(extent[0], extent[1], data.shape[1])
+            lat  = np.linspace(extent[2], extent[3], data.shape[0])
 
-        try:
-            import h5py
-        except ImportError:
-            msg = 'Error [download_worldview_rgb]: Please install <h5py> to proceed.'
-            raise ImportError(msg)
+            fname = fname.replace('.png', '.h5')
 
-        data = mpl_img.imread(fname)
+            f = h5py.File(fname, 'w')
 
-        lon  = np.linspace(extent[0], extent[1], data.shape[1])
-        lat  = np.linspace(extent[2], extent[3], data.shape[0])
+            f['extent'] = extent
 
-        fname = fname.replace('.png', '.h5')
+            f['lon'] = lon
+            f['lon'].make_scale('Longitude')
 
-        f = h5py.File(fname, 'w')
+            f['lat'] = lat
+            f['lat'].make_scale('Latitude')
 
-        f['extent'] = extent
+            f['rgb'] = np.swapaxes(data[::-1, :, :3], 0, 1)
+            f['rgb'].dims[0].label = 'Longitude'
+            f['rgb'].dims[0].attach_scale(f['lon'])
+            f['rgb'].dims[1].label = 'Latitude'
+            f['rgb'].dims[1].attach_scale(f['lat'])
+            f['rgb'].dims[2].label = 'RGB'
 
-        f['lon'] = lon
-        f['lon'].make_scale('Longitude')
-
-        f['lat'] = lat
-        f['lat'].make_scale('Latitude')
-
-        f['rgb'] = np.swapaxes(data[::-1, :, :3], 0, 1)
-        f['rgb'].dims[0].label = 'Longitude'
-        f['rgb'].dims[0].attach_scale(f['lon'])
-        f['rgb'].dims[1].label = 'Latitude'
-        f['rgb'].dims[1].attach_scale(f['lat'])
-        f['rgb'].dims[2].label = 'RGB'
-
-        f.close()
+            f.close()
 
     return fname
 
 
 
-def download_oco2_https(
-             dtime,
-             dataset_tag,
-             fnames=None,
-             server='https://oco2.gesdisc.eosdis.nasa.gov',
-             fdir_prefix='/data/OCO2_DATA',
-             fdir_out='data',
-             data_format=None,
-             run=True,
-             verbose=False):
-
-    """
-    Input:
-        dtime: Python datetime object
-        dataset_tag: string, e.g. 'OCO2_L2_Standard.8r'
-        server=: string, data server
-        fdir_prefix=: string, data directory on NASA server
-        fdir_out=: string, output data directory
-        data_format=None: e.g., 'h5'
-        run=: boolen type, if true, the command will only be displayed but not run
-        verbose=: Boolen type, verbose tag
-
-    Output:
-        fnames_local: Python list that contains downloaded OCO2 file paths
-    """
-    from er3t.util.oco2 import get_fnames_from_web, get_dtime_from_xml
-
-    fname_login = '~/.netrc'
-    if not os.path.exists(os.path.expanduser(fname_login)):
-        sys.exit('Error [download_oco2_https]: Please follow the instructions at \nhttps://disc.gsfc.nasa.gov/data-access\nto register a login account and create a \'~/.netrc\' file.')
-
-    fname_cookies = '~/.urs_cookies'
-    if not os.path.exists(os.path.expanduser(fname_cookies)):
-        print('Message [download_modis_https]: Creating ~/.urs_cookies ...')
-        os.system('touch ~/.urs_cookies')
-
-    if shutil.which('curl'):
-        command_line_tool = 'curl'
-    elif shutil.which('wget'):
-        command_line_tool = 'wget'
-    else:
-        sys.exit('Error [download_oco2_https]: \'download_oco2_https\' needs \'curl\' or \'wget\' to be installed.')
-
-    year_str = str(dtime.timetuple().tm_year).zfill(4)
-    doy_str  = str(dtime.timetuple().tm_yday).zfill(3)
-
-    if dataset_tag in ['OCO2_L2_Met.10', 'OCO2_L2_Met.10r', 'OCO2_L2_Standard.10', 'OCO2_L2_Standard.10r',
-                       'OCO2_L1B_Science.10', 'OCO2_L1B_Science.10r', 'OCO2_L1B_Calibration.10', 'OCO2_L1B_Calibration.10r',
-                       'OCO2_L2_CO2Prior.10r', 'OCO2_L2_CO2Prior.10', 'OCO2_L2_IMAPDOAS.10r', 'OCO2_L2_IMAPDOAS.10',
-                       'OCO2_L2_Diagnostic.10r', 'OCO2_L2_Diagnostic.10']:
-        fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
-    elif dataset_tag in ['OCO2_L2_Lite_FP.9r', 'OCO2_L2_Lite_FP.10r', 'OCO2_L2_Lite_SIF.10r']:
-        fdir_data = '%s/%s/%s' % (fdir_prefix, dataset_tag, year_str)
-    else:
-        sys.exit('Error   [download_oco2_https]: Do not support downloading \'%s\'.' % dataset_tag)
-
-    fdir_server = server + fdir_data
-
-    fnames_xml = get_fnames_from_web(fdir_server, 'xml')
-    if len(fnames_xml) > 0:
-        data_format = fnames_xml[0].split('.')[-2]
-    else:
-        sys.exit('Error   [download_oco2_https]: XML files are not available at %s.' % fdir_server)
-
-
-    fnames_server = []
-
-    if fnames is not None:
-
-        for fname in fnames:
-            fname_server = '%s/%s' % (fdir_server, fname)
-            fnames_server.append(fname_server)
-
-    else:
-
-        fnames_dat  = get_fnames_from_web(fdir_server, data_format)
-        Nfile      = len(fnames_dat)
-
-        if not all([fnames_dat[i] in fnames_xml[i] for i in range(Nfile)]):
-            sys.exit('Error   [download_oco2_https]: The description files [xml] do not match with data files.')
-
-        for i in range(Nfile):
-            dtime_s, dtime_e = get_dtime_from_xml('%s/%s' % (fdir_server, fnames_xml[i]))
-            if (dtime >= dtime_s) & (dtime <= dtime_e):
-                fname_server = '%s/%s' % (fdir_server, fnames_dat[i])
-                fnames_server.append(fname_server)
-
-    commands = []
-    fnames_local = []
-    for fname_server in fnames_server:
-        filename     = os.path.basename(fname_server)
-        fname_local  = '%s/%s' % (fdir_out, filename)
-        fnames_local.append(fname_local)
-
-        if command_line_tool == 'curl':
-            command = 'mkdir -p %s && curl -n -c ~/.urs_cookies -b ~/.urs_cookies -L -C - \'%s\' -o \'%s\'' % (fdir_out, fname_server, fname_local)
-        elif command_line_tool == 'wget':
-            command = 'mkdir -p %s && wget -c "%s" --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies --content-disposition -O %s' % (fdir_out, fname_server, fname_local)
-        commands.append(command)
-
-    if not run and len(commands)>0:
-
-        print('Message [download_oco2_https]: The commands to run are:')
-        for command in commands:
-            print(command)
-
-    else:
-
-        for i, command in enumerate(commands):
-
-            if verbose:
-                print('Message [download_oco2_https]: Downloading %s ...' % fnames_local[i])
-
-            os.system(command)
-
-            fname_local = fnames_local[i]
-
-            if data_format == 'h5':
-
-                try:
-                    import h5py
-                except ImportError:
-                    msg = 'Warning [downlad_oco2_https]: To use \'download_oco2_https\', \'h5py\' needs to be installed.'
-                    raise ImportError(msg)
-
-                f = h5py.File(fname_local, 'r')
-                f.close()
-                if verbose:
-                    print('Message [download_oco2_https]: \'%s\' has been downloaded.\n' % fname_local)
-
-            elif data_format == 'nc':
-
-                try:
-                    import netCDF4 as nc4
-                except ImportError:
-                    msg = 'Warning [downlad_oco2_https]: To use \'download_oco2_https\', \'netCDF4\' needs to be installed.'
-                    raise ImportError(msg)
-
-                f = nc4.Dataset(fname_local, 'r')
-                f.close()
-                if verbose:
-                    print('Message [download_oco2_https]: \'%s\' has been downloaded.\n' % fname_local)
-
-            else:
-
-                print('Warning [download_oco2_https]: Do not support check for \'%s\'. Do not know whether \'%s\' has been successfully downloaded.\n' % (data_format, fname_local))
-
-    return fnames_local
-
-
-
 if __name__ == '__main__':
 
+    date = datetime.datetime(2023, 8, 23)
+    extent = [-59.79,-58.80,12.64,13.63]
+    download_worldview_image(date, extent, satellite='snpp', instrument='viirs')
+    date = datetime.datetime(2023, 8, 26)
+    extent = [-59.81,-58.77,12.64,13.68]
+    download_worldview_image(date, extent, satellite='noaa20', instrument='viirs')
     pass

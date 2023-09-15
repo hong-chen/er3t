@@ -158,32 +158,35 @@ class satellite_download:
         self.fnames = {}
 
         # MODIS RGB imagery
-        self.fnames['mod_rgb'] = [er3t.util.daac.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.dev.download_worldview_image(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
 
-        filename_tags_03 = er3t.util.daac.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
+        filename_tags_03 = er3t.dev.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
         if self.verbose:
            print('Message [satellite_download]: Found %s %s overpasses' % (len(filename_tags_03), self.satellite))
 
         for filename_tag in filename_tags_03:
-            fnames_03     = er3t.util.daac.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = er3t.util.daac.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = er3t.util.daac.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = er3t.dev.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = er3t.dev.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = er3t.dev.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
 
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02
             self.fnames['mod_03'] += fnames_03
 
         # MODIS surface product
-        self.fnames['mod_43'] = []
+        self.fnames['mod_43a1'] = []
+        self.fnames['mod_43a3'] = []
         filename_tags_43 = er3t.util.modis.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_43:
-            fnames_43 = er3t.util.daac.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            self.fnames['mod_43'] += fnames_43
+            fnames_43a1 = er3t.dev.download_laads_https(self.date, '61/MCD43A1', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            self.fnames['mod_43a1'] += fnames_43a1
+            fnames_43a3 = er3t.dev.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            self.fnames['mod_43a3'] += fnames_43a3
 
     def dump(self, fname):
 
@@ -346,12 +349,24 @@ def cdata_sat_raw(
     #   band 5: 1230 - 1250 nm, index 4
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
-    mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
-    sfc_43[sfc_43<0.0] = 0.0
-    sfc_43[sfc_43>1.0] = 1.0
+    mod43a1 = er3t.util.modis_43a1(fnames=sat0.fnames['mod_43a1'], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, fiso = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_iso']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    lon_2d_sfc, lat_2d_sfc, fvol = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_vol']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    lon_2d_sfc, lat_2d_sfc, fgeo = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_geo']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
 
-    g3['alb_43_%4.4d' % wvl] = sfc_43
+    fiso[np.isnan(fiso)|np.isinf(fiso)|(fiso<0.0)|(fiso>1.0)] = 0.0
+    fvol[np.isnan(fvol)|np.isinf(fvol)|(fvol<0.0)|(fvol>1.0)] = 0.0
+    fgeo[np.isnan(fgeo)|np.isinf(fgeo)|(fgeo<0.0)|(fgeo>1.0)] = 0.0
+
+    g3['fiso_43_%4.4d' % wvl] = fiso
+    g3['fvol_43_%4.4d' % wvl] = fvol
+    g3['fgeo_43_%4.4d' % wvl] = fgeo
+
+    mod43a3 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43a3'], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, alb = er3t.util.grid_by_dxdy(mod43a3.data['lon']['data'], mod43a3.data['lat']['data'], mod43a3.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    g3['alb_43_%4.4d' % wvl] = alb
+
+    alb[np.isnan(alb)|np.isinf(alb)|(alb<0.0)|(alb>1.0)] = 0.0
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
     #\--------------------------------------------------------------/#
@@ -383,7 +398,11 @@ def plot_sat_raw():
     cth = f0['mod/cld/cth_l2'][...]
     sfh = f0['mod/geo/sfh'][...]
 
-    alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
+    fiso = f0['mod/sfc/fiso_43_%4.4d' % wvl][...]
+    fvol = f0['mod/sfc/fvol_43_%4.4d' % wvl][...]
+    fgeo = f0['mod/sfc/fgeo_43_%4.4d' % wvl][...]
+
+    alb  = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
 
     f0.close()
 
@@ -560,17 +579,62 @@ def plot_sat_raw():
     cbar = fig.colorbar(cs, cax=cax)
     #\----------------------------------------------------------------------------/#
 
-    # surface albedo (MYD43A3, white sky albedo)
+    # surface BRDF (Isotropic)
     #/----------------------------------------------------------------------------\#
     ax13 = fig.add_subplot(4, 4, 13)
-    cs = ax13.pcolormesh(lon, lat, alb43, cmap='jet', zorder=0, vmin=0.0, vmax=0.4)
+    cs = ax13.pcolormesh(lon, lat, fiso, cmap='jet', zorder=0, vmin=0.0, vmax=0.5)
     ax13.set_xlim((extent[:2]))
     ax13.set_ylim((extent[2:]))
     ax13.set_xlabel('Longitude [$^\circ$]')
     ax13.set_ylabel('Latitude [$^\circ$]')
-    ax13.set_title('43A3 WSA')
+    ax13.set_title('43A1 Isotropic')
 
     divider = make_axes_locatable(ax13)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # surface BRDF (Ross-Thick)
+    #/----------------------------------------------------------------------------\#
+    ax14 = fig.add_subplot(4, 4, 14)
+    cs = ax14.pcolormesh(lon, lat, fvol, cmap='jet', zorder=0, vmin=0.0, vmax=0.1)
+    ax14.set_xlim((extent[:2]))
+    ax14.set_ylim((extent[2:]))
+    ax14.set_xlabel('Longitude [$^\circ$]')
+    ax14.set_ylabel('Latitude [$^\circ$]')
+    ax14.set_title('43A1 Ross-Thick')
+
+    divider = make_axes_locatable(ax14)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # surface BRDF (Li-Sparse-Reciprocal)
+    #/----------------------------------------------------------------------------\#
+    ax15 = fig.add_subplot(4, 4, 15)
+    cs = ax15.pcolormesh(lon, lat, fgeo, cmap='jet', zorder=0, vmin=0.0, vmax=0.1)
+    ax15.set_xlim((extent[:2]))
+    ax15.set_ylim((extent[2:]))
+    ax15.set_xlabel('Longitude [$^\circ$]')
+    ax15.set_ylabel('Latitude [$^\circ$]')
+    ax15.set_title('43A1 Li-Sparse-Reciprocal')
+
+    divider = make_axes_locatable(ax15)
+    cax = divider.append_axes('right', '5%', pad='3%')
+    cbar = fig.colorbar(cs, cax=cax)
+    #\----------------------------------------------------------------------------/#
+
+    # surface albedo
+    #/----------------------------------------------------------------------------\#
+    ax16 = fig.add_subplot(4, 4, 16)
+    cs = ax16.pcolormesh(lon, lat, alb, cmap='jet', zorder=0, vmin=0.0, vmax=0.5)
+    ax16.set_xlim((extent[:2]))
+    ax16.set_ylim((extent[2:]))
+    ax16.set_xlabel('Longitude [$^\circ$]')
+    ax16.set_ylabel('Latitude [$^\circ$]')
+    ax16.set_title('43A3 Albedo')
+
+    divider = make_axes_locatable(ax16)
     cax = divider.append_axes('right', '5%', pad='3%')
     cbar = fig.colorbar(cs, cax=cax)
     #\----------------------------------------------------------------------------/#
@@ -675,6 +739,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     vza = f0['mod/geo/vza'][...]
     vaa = f0['mod/geo/vaa'][...]
     alb = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
+
     f0.close()
     #\----------------------------------------------------------------------------/#
 
@@ -1291,14 +1356,22 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     #\----------------------------------------------------------------------------/#
 
 
-    # sfc object
+    # sfc object (brdf)
     #/----------------------------------------------------------------------------\#
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    alb_2d = f['mod/sfc/alb_43_%4.4d' % wavelength][...]
+    fiso = f['mod/sfc/fiso_43_%4.4d' % wavelength][...]
+    fvol = f['mod/sfc/fvol_43_%4.4d' % wavelength][...]
+    fgeo = f['mod/sfc/fgeo_43_%4.4d' % wavelength][...]
     f.close()
 
+    coef_dict = {
+            'fiso': fiso,
+            'fvol': fvol,
+            'fgeo': fgeo,
+            }
+
     fname_sfc = '%s/sfc.pk' % fdir
-    sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=alb_2d, fname=fname_sfc)
+    sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=coef_dict, fname=fname_sfc, overwrite=overwrite)
     sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
