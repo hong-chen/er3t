@@ -98,9 +98,9 @@ Gallery
 
 .. list-table::
 
-    * - Multi-Angle (space view)
+    * - Multi-Angle (space view [land BRDF])
 
-      - Sunrise to Sunset (space view)
+      - Sunrise to Sunset (space view [ocean BRDF])
 
     * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_space.gif
             :width: 400
