@@ -168,7 +168,10 @@ def test_abs_reptran(fdir='tmp-data'):
     #\----------------------------------------------------------------------------/#
 
     # abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis')
-    abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis', atm_obj=atm0, band_name='modis_terra_b15')
+    # abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis', atm_obj=atm0)
+    # abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis', atm_obj=atm0, band_name='modis_terra_b15')
+    # abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis', atm_obj=atm0, band_name='modis_terra_b15')
+    # abs0 = er3t.pre.abs.abs_rep(wavelength=760.0, target='coarse', atm_obj=atm0)
 
     # for gas_type in atm0.gases:
     #     vmrs_atm = atm0.lay[gas_type.lower()]['data']/atm0.lay['factor']['data']

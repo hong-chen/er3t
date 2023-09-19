@@ -1,39 +1,16 @@
-# import os
-# import sys
-# import pickle
-# import multiprocessing as mp
-# import h5py
-# import copy
-# import numpy as np
-
-import er3t.common
-from er3t.pre.atm import atm_atmmod
-from er3t.util import all_files
-
 import os
 import sys
 import glob
 import datetime
-import h5py
-from pyhdf.SD import SD, SDC
 from netCDF4 import Dataset
 import numpy as np
 from scipy import interpolate
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.path as mpl_path
-import matplotlib.image as mpl_img
-import matplotlib.patches as mpatches
-import matplotlib.gridspec as gridspec
-from matplotlib import rcParams, ticker
-from matplotlib.ticker import FixedLocator
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-# import cartopy.crs as ccrs
-# mpl.use('Agg')
+
+import er3t.common
+
 
 
 __all__ = ['abs_rep']
-
 
 
 
@@ -709,7 +686,6 @@ class abs_rep_old:
 
 
 
-
 class abs_rep:
 
     fdir_data = '%s/reptran' % er3t.common.fdir_data_abs
@@ -768,8 +744,6 @@ class abs_rep:
             else:
                 index_band = bands.index(band_name)
                 self.band_name  = band_name
-                # self.band_range = (wvl_min[index_band], wvl_max[index_band])
-                # self.wavelength = sum(self.band_range)/2.0
         else:
 
             logic = (wavelength>wvl_min) & (wavelength<wvl_max)
@@ -786,8 +760,6 @@ class abs_rep:
             elif N_ == 1:
                 index_band = indices[0]
                 self.band_name  = bands[index_band]
-                # self.band_range = (wvl_min[index_band], wvl_max[index_band])
-                # self.wavelength = sum(self.band_range)/2.0
         #\----------------------------------------------------------------------------/#
 
 
@@ -812,7 +784,7 @@ class abs_rep:
         #\----------------------------------------------------------------------------/#
 
 
-        # get correlated-k information
+        # get representative wavelength information
         #/----------------------------------------------------------------------------\#
         wvl_indices0 = f0.variables['iwvl'][:][:, index_band]
         wvl_indices = wvl_indices0[wvl_indices0>0] - 1
@@ -827,6 +799,7 @@ class abs_rep:
         gas_indices = np.unique(np.where(f0.variables['cross_section_source'][:][wvl_indices, :]>0)[0])
 
         self.wvl   = wvl
+        self.wvl_all = f0.variables['wvl'][:].data
         self.sol   = sol
         self.wgt   = wvl_weights
         self.gases = [gases[index] for index in gas_indices]
@@ -852,6 +825,7 @@ class abs_rep:
                 'data': self.sol.data
                 }
 
+        # this is actually number of wavelength, use Ng for consistency
         self.coef['weight'] = {
                 'name': 'Weight (Ng)',
                 'data': self.wgt.data
@@ -862,33 +836,53 @@ class abs_rep:
                 'data': np.ones((Nz, Ng), dtype=np.float64)
                 }
 
-        self.coef['abso_coef'] = {
-                'name':'Absorption Coefficient (Nz, Ng)',
-                # 'data':abso_coef
-                }
 
         abso_coef = np.zeros((Nz, Ng), dtype=np.float64)
 
-        for ig in range(Ng):
-            for gas0 in self.gases:
+        for gas_type in self.gases:
 
-                self.load_gas(gas0)
-                # stopped here
+            if gas_type.lower() in self.atm_obj.lay.keys():
 
-    def load_gas(self, gas_type):
+                f0 = Dataset('%s/reptran_%s_%s.lookup.%s.cdf' % (self.fdir_data, self.source, self.target, gas_type), 'r')
+                xsec     = np.squeeze(f0.variables['xsec'][:])
+                t_ref    = f0.variables['t_ref'][:]
+                dt_ref   = f0.variables['t_pert'][:]
+                vmr_ref  = f0.variables['vmrs'][:]
+                wvl_ref  = f0.variables['wvl'][:]
+                logp_ref = np.log(f0.variables['pressure'][:])
+                f0.close()
 
-        f0 = Dataset('%s/reptran_%s_%s.lookup.%s.cdf' % (self.fdir_data, self.source, self.target, gas_type), 'r')
-        xsec  = f0.variables['xsec'][:]
-        p     = f0.variables['pressure'][:]
-        t_ref = f0.variables['t_ref'][:]
-        dt    = f0.variables['t_pert'][:]
-        vmrs  = f0.variables['vmrs'][:]
-        wvl   = f0.variables['wvl'][:]
-        iwvl  = f0.variables['wvl_index'][:]
-        f0.close()
 
-        print(xsec.shape)
+                logp_ = np.log(self.atm_obj.lay['pressure']['data']*100.0)
+                i_sort_logp = np.argsort(logp_ref)
+                dt_ = self.atm_obj.lay['temperature']['data'] - np.interp(logp_, logp_ref[i_sort_logp], t_ref[i_sort_logp])
 
+                for i, wvl0 in enumerate(self.wvl):
+
+                    iwvl = np.argmin(np.abs(wvl_ref-wvl0))
+
+                    # for water vapor (H2O)
+                    #/--------------------------------------------------------------\#
+                    if xsec.ndim == 4:
+                        points = (dt_ref, vmr_ref, logp_ref[i_sort_logp])
+                        f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_logp])
+
+                        vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
+                        f_points = np.transpose(np.vstack((dt_, vmr_, logp_)))
+
+                    else:
+                        points = (dt_ref, logp_ref[i_sort_logp])
+                        f_interp = interpolate.RegularGridInterpolator(points, xsec[:, iwvl, i_sort_logp])
+                        f_points = np.transpose(np.vstack((dt_, logp_)))
+                    #\--------------------------------------------------------------/#
+
+                    abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] / 1e6 / (self.atm_obj.lay['thickness']['data']*1000.0)
+                    abso_coef[:, i] += abso_coef0
+
+        self.coef['abso_coef'] = {
+                'name':'Absorption Coefficient (Nz, Ng)',
+                'data':abso_coef
+                }
 
 
 if __name__ == '__main__':
