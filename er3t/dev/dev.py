@@ -14,18 +14,6 @@ from scipy import interpolate, stats
 from scipy.spatial import KDTree
 from pyhdf.SD import SD, SDC
 from netCDF4 import Dataset
-import matplotlib as mpl
-import matplotlib.path as mpl_path
-import matplotlib.pyplot as plt
-import matplotlib.image as mpl_img
-import matplotlib.patches as mpatches
-import matplotlib.gridspec as gridspec
-from matplotlib import rcParams, ticker
-from matplotlib.ticker import FixedLocator
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import cartopy.crs as ccrs
-import cartopy
-mpl.use('Agg')
 
 
 import er3t
@@ -697,6 +685,19 @@ def test_noaa20_viirs_extra():
 
 
 if __name__ == '__main__':
+
+    import matplotlib as mpl
+    import matplotlib.path as mpl_path
+    import matplotlib.pyplot as plt
+    import matplotlib.image as mpl_img
+    import matplotlib.patches as mpatches
+    import matplotlib.gridspec as gridspec
+    from matplotlib import rcParams, ticker
+    from matplotlib.ticker import FixedLocator
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    import cartopy.crs as ccrs
+    import cartopy
+    # mpl.use('Agg')
 
     # test_aqua_modis()
     # test_terra_modis()
