@@ -791,15 +791,16 @@ class abs_rep:
         wvl_weights0 = f0.variables['iwvl_weight'][:][:, index_band]
         wvl_weights = wvl_weights0[wvl_weights0>0]
 
+        # this is actually number of wavelength, use Ng for consistency
         self.Ng = wvl_weights.size
 
         wvl = f0.variables['wvl'][:][wvl_indices]
-        sol = f0.variables['extra'][:][wvl_indices]
+        sol = f0.variables['extra'][:][wvl_indices] / 1000.0 # convert units to Wm^-2nm^-1
 
-        gas_indices = np.unique(np.where(f0.variables['cross_section_source'][:][wvl_indices, :]>0)[0])
+        gas_indices = np.where(np.sum(f0.variables['cross_section_source'][:][wvl_indices, :], axis=0)>0)[0]
 
-        self.wvl   = wvl
         self.wvl_all = f0.variables['wvl'][:].data
+        self.wvl   = wvl
         self.sol   = sol
         self.wgt   = wvl_weights
         self.gases = [gases[index] for index in gas_indices]
@@ -849,6 +850,7 @@ class abs_rep:
                 dt_ref   = f0.variables['t_pert'][:]
                 vmr_ref  = f0.variables['vmrs'][:]
                 wvl_ref  = f0.variables['wvl'][:]
+                # wvl_ref = self.wvl_all[f0.variables['wvl_index'][:]-1]
                 logp_ref = np.log(f0.variables['pressure'][:])
                 f0.close()
 
@@ -876,13 +878,14 @@ class abs_rep:
                         f_points = np.transpose(np.vstack((dt_, logp_)))
                     #\--------------------------------------------------------------/#
 
-                    abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] / 1e6 / (self.atm_obj.lay['thickness']['data']*1000.0)
+                    abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-12
                     abso_coef[:, i] += abso_coef0
 
         self.coef['abso_coef'] = {
                 'name':'Absorption Coefficient (Nz, Ng)',
                 'data':abso_coef
                 }
+
 
 
 if __name__ == '__main__':
