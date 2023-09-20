@@ -125,6 +125,8 @@ class abs_rep:
         self.sol   = sol
         self.wgt   = wvl_weights
         self.gases = [gases[index] for index in gas_indices]
+
+        self.wvl_info  = '%.2f nm (REPTRAN %d-wvl [%s])' % (wavelength, wvl.size, ','.join(self.gases))
         #\----------------------------------------------------------------------------/#
 
         f0.close()
@@ -203,7 +205,7 @@ class abs_rep:
                         f_points = np.transpose(np.vstack((dt_, logp_)))
                     #\--------------------------------------------------------------/#
 
-                    abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-12
+                    abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-11 * self.atm_obj.lay['thickness']['data']
                     abso_coef[:, i] += abso_coef0
 
         self.coef['abso_coef'] = {
