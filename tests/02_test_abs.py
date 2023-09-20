@@ -182,13 +182,14 @@ def test_abs_reptran(fdir='tmp-data'):
 
     # reptran
     #/----------------------------------------------------------------------------\#
-    wvls  = np.arange(300.0, 2401.0, 2.0)
+    wvls  = np.arange(300.0, 2401.0, 5.0)
     coef1 = np.zeros((wvls.size, alt0.size), dtype=np.float64)
     for i, wavelength in enumerate(wvls):
         try:
-            print(i, wavelength)
             # abs1 = er3t.pre.abs.abs_rep(wavelength=wavelength, target='modis', atm_obj=atm0, band_name='modis_aqua_b01')
-            abs1 = er3t.pre.abs.abs_rep(wavelength=wavelength, target='coarse', atm_obj=atm0)
+            abs1 = er3t.pre.abs.abs_rep(wavelength=wavelength, target='fine', atm_obj=atm0)
+            print(i, wavelength)
+            print(abs1.gases)
             for j in range(alt0.size):
                 coef1[i, j] = (abs1.coef['abso_coef']['data'][j, :] * abs1.coef['weight']['data']).sum()
         except Exception as error:

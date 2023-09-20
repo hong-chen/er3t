@@ -721,11 +721,7 @@ class abs_rep:
         #/----------------------------------------------------------------------------\#
         band_bytes = f0.variables['band_name'][:]
         Nband, Nchar = band_bytes.shape
-        bands = []
-        for i in range(Nband):
-            logic = (band_bytes[i, :] != band_bytes[0, -1])
-            band_name0 = ''.join([j.decode('utf-8') for j in band_bytes[i, logic]]).strip()
-            bands.append(band_name0)
+        bands = [band.decode('utf-8').replace(' ', '') for band in band_bytes.view('S%d' % Nchar).ravel()]
         #\----------------------------------------------------------------------------/#
 
 
@@ -767,10 +763,7 @@ class abs_rep:
         #/----------------------------------------------------------------------------\#
         gas_bytes = f0.variables['species_name'][:]
         Ngas, Nchar = gas_bytes.shape
-        gases = []
-        for i in range(Ngas):
-            gas_name0 = ''.join([j.decode('utf-8') for j in gas_bytes[i, :]]).strip()
-            gases.append(gas_name0)
+        gases = [gas.decode('utf-8').replace(' ', '') for gas in gas_bytes.view('S%d' % Nchar).ravel()]
         #\----------------------------------------------------------------------------/#
 
 
