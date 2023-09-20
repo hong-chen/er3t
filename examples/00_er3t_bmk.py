@@ -90,8 +90,8 @@ def mca_flux_one_clear(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = '%s/abs.pk' % fdir
-    # abs0      = er3t.pre.abs.abs_16g(wavelength=params['wavelength'], fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], target='fine', atm_obj=atm0)
+    abs0      = er3t.pre.abs.abs_16g(wavelength=params['wavelength'], fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    # abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], target='fine', atm_obj=atm0)
     # print(abs0.coef['weight']['data'])
     # print(abs0.coef['solar']['data'])
     # print((abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum())
@@ -160,6 +160,7 @@ def test_01_flux_one_clear(plot=True):
         ax1.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax1.set_xlabel('Flux Density [$\mathrm{W m^{-2} nm^{-1}}$]')
         ax1.set_ylabel('Altitude [km]')
+        ax1.set_xlim((0.0, 0.5))
 
         ax2 = fig.add_subplot(122)
         ax2.plot(data_lrt['f_down']       , params['output_altitude'], color='blue', lw=3.0, alpha=0.6, ls='--')
@@ -168,6 +169,7 @@ def test_01_flux_one_clear(plot=True):
         ax2.errorbar(data_mca['f_down_direct'], params['output_altitude'], xerr=data_mca['f_down_direct_std'], color='cyan', lw=1.0, alpha=1.0)
         ax2.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax2.set_xlabel('Flux Density [$\mathrm{W m^{-2} nm^{-1}}$]')
+        ax2.set_xlim((0.0, 2.5))
         #\--------------------------------------------------------------/#
         # save figure
         #/--------------------------------------------------------------\#

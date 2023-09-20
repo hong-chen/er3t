@@ -177,7 +177,6 @@ class abs_rep:
                 logp_ref = np.log(f0.variables['pressure'][:])
                 f0.close()
 
-
                 logp_ = np.log(self.atm_obj.lay['pressure']['data']*100.0)
                 i_sort_logp = np.argsort(logp_ref)
                 dt_ = self.atm_obj.lay['temperature']['data'] - np.interp(logp_, logp_ref[i_sort_logp], t_ref[i_sort_logp])
@@ -205,7 +204,11 @@ class abs_rep:
                         f_points = np.transpose(np.vstack((dt_, logp_)))
                     #\--------------------------------------------------------------/#
 
-                    abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-11 * self.atm_obj.lay['thickness']['data']
+                    # abso_coef0 = f_interp(f_points) * 1e11 * self.atm_obj.lay['thickness']['data']
+                    abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-6 * self.atm_obj.lay['thickness']['data']
+                    # abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-6
+                    # abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-11 * self.atm_obj.lay['thickness']['data']
+                    # abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-15 * self.atm_obj.lay['thickness']['data']
                     abso_coef[:, i] += abso_coef0
 
         self.coef['abso_coef'] = {
