@@ -45,6 +45,7 @@ def lrt_flux_one_clear(params):
 
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
+    lrt_cfg['mol_abs_param'] = 'reptran fine'
 
     init = er3t.rtm.lrt.lrt_init_mono_flx(
             input_file  = '%s/input.txt' % fdir_tmp,
@@ -55,6 +56,7 @@ def lrt_flux_one_clear(params):
             wavelength         = params['wavelength'],
             output_altitude    = params['output_altitude'],
             lrt_cfg            = lrt_cfg,
+            mute_list = ['slit_function_file', 'spline'],
             )
     er3t.rtm.lrt.lrt_run(init)
 
@@ -88,7 +90,11 @@ def mca_flux_one_clear(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = '%s/abs.pk' % fdir
-    abs0      = er3t.pre.abs.abs_16g(wavelength=params['wavelength'], fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    # abs0      = er3t.pre.abs.abs_16g(wavelength=params['wavelength'], fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], target='fine', atm_obj=atm0)
+    # print(abs0.coef['weight']['data'])
+    # print(abs0.coef['solar']['data'])
+    # print((abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum())
 
     atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm_1ds   = [atm1d0]
@@ -132,7 +138,7 @@ def test_01_flux_one_clear(plot=True):
          'atmosphere_file': '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
           'surface_albedo': 0.03,
       'solar_zenith_angle': 0.0,
-              'wavelength': 500.0,
+              'wavelength': 555.0,
          'output_altitude': np.arange(0.0, 35.1, 0.5),
          }
 
