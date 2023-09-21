@@ -90,8 +90,8 @@ def mca_flux_one_clear(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = '%s/abs.pk' % fdir
-    abs0      = er3t.pre.abs.abs_16g(wavelength=params['wavelength'], fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    # abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], target='fine', atm_obj=atm0)
+    # abs0      = er3t.pre.abs.abs_16g(wavelength=params['wavelength'], fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], target='fine', atm_obj=atm0)
     # print(abs0.coef['weight']['data'])
     # print(abs0.coef['solar']['data'])
     # print((abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum())

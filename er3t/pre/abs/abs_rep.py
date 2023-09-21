@@ -103,6 +103,9 @@ class abs_rep:
         avg_err0 = f0.variables['avg_error'][:][index_band]
         nwvl0    = f0.variables['nwvl_in_band'][:][index_band]
         #\----------------------------------------------------------------------------/#
+        print(self.band_name)
+        print(wvl_min0, wvl_max0)
+        sys.exit()
 
 
         # get representative wavelength information
@@ -126,7 +129,7 @@ class abs_rep:
         self.wgt   = wvl_weights
         self.gases = [gases[index] for index in gas_indices]
 
-        self.wvl_info  = '%.2f nm (REPTRAN %d-wvl [%s])' % (wavelength, wvl.size, ','.join(self.gases))
+        self.wvl_info  = '%.2f nm (REPTRAN [Nwvl=%d|%s])' % (wavelength, wvl.size, ','.join(self.gases))
         #\----------------------------------------------------------------------------/#
 
         f0.close()
@@ -176,6 +179,9 @@ class abs_rep:
                 # wvl_ref = self.wvl_all[f0.variables['wvl_index'][:]-1]
                 logp_ref = np.log(f0.variables['pressure'][:])
                 f0.close()
+                if vmr_ref[0] < 1e-10:
+                    vmr_ref[0] = 1e-10
+                vmr_ref = np.log(vmr_ref)
 
                 logp_ = np.log(self.atm_obj.lay['pressure']['data']*100.0)
                 i_sort_logp = np.argsort(logp_ref)
@@ -191,7 +197,8 @@ class abs_rep:
                         points = (dt_ref, vmr_ref, logp_ref[i_sort_logp])
                         f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_logp])
 
-                        vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
+                        # vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
+                        vmr_ = np.log(self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data'])
                         f_points = np.transpose(np.vstack((dt_, vmr_, logp_)))
                     #\--------------------------------------------------------------/#
 
@@ -205,6 +212,7 @@ class abs_rep:
                     #\--------------------------------------------------------------/#
 
                     # abso_coef0 = f_interp(f_points) * 1e11 * self.atm_obj.lay['thickness']['data']
+                    # print(self.atm_obj.lay[gas_type.lower()]['data'] * 1e-15 * self.atm_obj.lay['thickness']['data'])
                     abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-6 * self.atm_obj.lay['thickness']['data']
                     # abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-6
                     # abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-11 * self.atm_obj.lay['thickness']['data']
