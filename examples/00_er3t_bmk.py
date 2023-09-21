@@ -189,7 +189,6 @@ def test_01_flux_one_clear(wavelengh, plot=True):
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         fig.savefig('%s_%05.1fnm.png' % (_metadata['Function'], params['wavelength']), bbox_inches='tight', metadata=_metadata)
         #\--------------------------------------------------------------/#
-        plt.show()
     #\----------------------------------------------------------------------------/#
 
     pass
