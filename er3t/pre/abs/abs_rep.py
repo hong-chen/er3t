@@ -22,10 +22,9 @@ class abs_rep:
     def __init__(
             self,
             wavelength=650.0,
-            target='MODIS',
+            target='coarse',
             atm_obj=None,
             band_name=None,
-            band='B01',
             ):
 
         if wavelength < 5025.0:
@@ -75,7 +74,7 @@ class abs_rep:
             N_ = logic.sum()
             if N_ == 0:
                 msg = '\nError [abs_rep]: %.4f nm is outside REPTRAN-%s-%s supported wavelength range.' % (wavelength, self.source, self.target)
-                raise OSError(msg)
+                self.run_reptran = False
             elif N_ > 1:
                 bands_ = [bands[i] for i in indices]
                 bands_info_ = '\n'.join(bands_)
@@ -84,6 +83,7 @@ class abs_rep:
             elif N_ == 1:
                 index_band = indices[0]
                 self.band_name  = bands[index_band]
+                self.run_reptran = True
         #\----------------------------------------------------------------------------/#
 
 
@@ -103,9 +103,27 @@ class abs_rep:
         avg_err0 = f0.variables['avg_error'][:][index_band]
         nwvl0    = f0.variables['nwvl_in_band'][:][index_band]
         #\----------------------------------------------------------------------------/#
-        print(self.band_name)
-        print(wvl_min0, wvl_max0)
-        sys.exit()
+
+
+        # select wavelength
+        #/----------------------------------------------------------------------------\#
+        # wvl_indices0 = f0.variables['iwvl'][:][:, index_band]
+        # wvl_indices = wvl_indices0[wvl_indices0>0] - 1
+        # wvl_indices = wvl_indices0 - 1
+        # wvl_weights0 = f0.variables['iwvl_weight'][:][:, index_band]
+        # wvl_weights = wvl_weights0[wvl_weights0>0]
+        # wvl_weights = wvl_weights0
+
+        # wvl = f0.variables['wvl'][:]
+        # wvl_indices = np.where((wvl>=wvl_min0)&(wvl<=wvl_max0))[0]
+        #\----------------------------------------------------------------------------/#
+        # print(self.band_name)
+        # print(wvl_min0, wvl_max0)
+        # print(wvl_indices)
+        # print(wvl_weights)
+        # print(nwvl0)
+        # print(wvl_int0)
+        # sys.exit()
 
 
         # get representative wavelength information
@@ -124,7 +142,8 @@ class abs_rep:
         gas_indices = np.where(np.sum(f0.variables['cross_section_source'][:][wvl_indices, :], axis=0)>0)[0]
 
         self.wvl_all = f0.variables['wvl'][:].data
-        self.wvl   = wvl
+        self.wvl   = wavelength
+        self.wvl_  = wvl
         self.sol   = sol
         self.wgt   = wvl_weights
         self.gases = [gases[index] for index in gas_indices]
@@ -134,17 +153,24 @@ class abs_rep:
 
         f0.close()
 
-    def cal_coef(self):
+    def cal_coef(self, logp=False):
 
         Nz = self.atm_obj.lay['altitude']['data'].size
         Ng = self.Ng
+
+        if logp:
+            p_ = np.log(self.atm_obj.lay['pressure']['data']*100.0) # from hPa to Pa (log-scale pressure)
+        else:
+            p_ = self.atm_obj.lay['pressure']['data']*100.0 # from hPa to Pa
+
+        t_ = self.atm_obj.lay['temperature']['data']
 
         self.coef = {}
 
         self.coef['wvl'] = {
                 'name': 'Wavelength',
                 'units': 'nm',
-                'data': self.wvl.data
+                'data': self.wvl_.data
                 }
 
         self.coef['solar'] = {
@@ -163,66 +189,66 @@ class abs_rep:
                 'data': np.ones((Nz, Ng), dtype=np.float64)
                 }
 
-
-        abso_coef = np.zeros((Nz, Ng), dtype=np.float64)
-
-        for gas_type in self.gases:
-
-            if gas_type.lower() in self.atm_obj.lay.keys():
-
-                f0 = Dataset('%s/reptran_%s_%s.lookup.%s.cdf' % (self.fdir_data, self.source, self.target, gas_type), 'r')
-                xsec     = np.squeeze(f0.variables['xsec'][:])
-                t_ref    = f0.variables['t_ref'][:]
-                dt_ref   = f0.variables['t_pert'][:]
-                vmr_ref  = f0.variables['vmrs'][:]
-                wvl_ref  = f0.variables['wvl'][:]
-                # wvl_ref = self.wvl_all[f0.variables['wvl_index'][:]-1]
-                logp_ref = np.log(f0.variables['pressure'][:])
-                f0.close()
-                if vmr_ref[0] < 1e-10:
-                    vmr_ref[0] = 1e-10
-                vmr_ref = np.log(vmr_ref)
-
-                logp_ = np.log(self.atm_obj.lay['pressure']['data']*100.0)
-                i_sort_logp = np.argsort(logp_ref)
-                dt_ = self.atm_obj.lay['temperature']['data'] - np.interp(logp_, logp_ref[i_sort_logp], t_ref[i_sort_logp])
-
-                for i, wvl0 in enumerate(self.wvl):
-
-                    iwvl = np.argmin(np.abs(wvl_ref-wvl0))
-
-                    # for water vapor (H2O)
-                    #/--------------------------------------------------------------\#
-                    if xsec.ndim == 4:
-                        points = (dt_ref, vmr_ref, logp_ref[i_sort_logp])
-                        f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_logp])
-
-                        # vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
-                        vmr_ = np.log(self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data'])
-                        f_points = np.transpose(np.vstack((dt_, vmr_, logp_)))
-                    #\--------------------------------------------------------------/#
-
-                    # for other gases (CH4, CO2, CO, N2, N2O, O2, O3)
-                    #/--------------------------------------------------------------\#
-                    else:
-                        points = (dt_ref, logp_ref[i_sort_logp])
-                        f_interp = interpolate.RegularGridInterpolator(points, xsec[:, iwvl, i_sort_logp])
-
-                        f_points = np.transpose(np.vstack((dt_, logp_)))
-                    #\--------------------------------------------------------------/#
-
-                    # abso_coef0 = f_interp(f_points) * 1e11 * self.atm_obj.lay['thickness']['data']
-                    # print(self.atm_obj.lay[gas_type.lower()]['data'] * 1e-15 * self.atm_obj.lay['thickness']['data'])
-                    abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-6 * self.atm_obj.lay['thickness']['data']
-                    # abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-6
-                    # abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-11 * self.atm_obj.lay['thickness']['data']
-                    # abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-15 * self.atm_obj.lay['thickness']['data']
-                    abso_coef[:, i] += abso_coef0
-
         self.coef['abso_coef'] = {
                 'name':'Absorption Coefficient (Nz, Ng)',
-                'data':abso_coef
+                'data': np.zeros((Nz, Ng), dtype=np.float64)
                 }
+
+
+        if self.run_reptran:
+
+            for gas_type in self.gases:
+
+                if gas_type.lower() in self.atm_obj.lay.keys():
+
+                    f0 = Dataset('%s/reptran_%s_%s.lookup.%s.cdf' % (self.fdir_data, self.source, self.target, gas_type), 'r')
+                    xsec     = np.squeeze(f0.variables['xsec'][:])
+                    t_ref    = f0.variables['t_ref'][:]
+                    dt_ref   = f0.variables['t_pert'][:]
+                    vmr_ref  = f0.variables['vmrs'][:]
+                    wvl_ref  = f0.variables['wvl'][:]
+                    if logp:
+                        p_ref = np.log(f0.variables['pressure'][:]) # log-scale pressure
+                    else:
+                        p_ref = f0.variables['pressure'][:]
+                    f0.close()
+
+                    i_sort_p = np.argsort(p_ref)
+                    dt_ = t_ - np.interp(p_, p_ref[i_sort_p], t_ref[i_sort_p])
+
+                    for i, wvl0 in enumerate(self.wvl_):
+
+                        iwvl = np.argmin(np.abs(wvl_ref-wvl0))
+
+                        # for water vapor (H2O)
+                        #/--------------------------------------------------------------\#
+                        if xsec.ndim == 4:
+                            points = (dt_ref, vmr_ref, p_ref[i_sort_p])
+                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_p])
+
+                            # vmr_ = np.log(self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data'])
+                            vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
+                            f_points = np.transpose(np.vstack((dt_, vmr_, p_)))
+                        #\--------------------------------------------------------------/#
+
+                        # for other gases (CH4, CO2, CO, N2, N2O, O2, O3)
+                        #/--------------------------------------------------------------\#
+                        else:
+                            points = (dt_ref, p_ref[i_sort_p])
+                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, iwvl, i_sort_p])
+
+                            f_points = np.transpose(np.vstack((dt_, p_)))
+                        #\--------------------------------------------------------------/#
+
+                        # from <libRadtran>/src/molecular.c: <The lookup table file contains the cross sections in units of 10^(-20)m^2; here we need cm^2, thus we multiply with 10^(-16)>
+                        # first factor: 10^(-16) for converting units from m^-2 to cm^-2
+                        # second factor: 10^(5) for converting km to cm by timing layer thickness <final output is absorption optical depth>
+                        # thus 10^(-11) as scale factor
+                        abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-11 * self.atm_obj.lay['thickness']['data']
+                        abso_coef0[abso_coef0<0.0] = 0.0
+
+                        self.coef['abso_coef']['data'][:, i] += abso_coef0
+
 
 
 

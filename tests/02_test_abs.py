@@ -189,12 +189,14 @@ def test_abs_reptran(fdir='tmp-data'):
             # abs1 = er3t.pre.abs.abs_rep(wavelength=wavelength, target='modis', atm_obj=atm0, band_name='modis_aqua_b01')
             abs1 = er3t.pre.abs.abs_rep(wavelength=wavelength, target='fine', atm_obj=atm0)
             print(i, wavelength)
-            print(abs1.gases)
+            print(abs1.wvl_info)
             for j in range(alt0.size):
                 coef1[i, j] = (abs1.coef['abso_coef']['data'][j, :] * abs1.coef['weight']['data']).sum()
         except Exception as error:
             print(error)
     #\----------------------------------------------------------------------------/#
+
+    sys.exit()
 
     # figure
     #/----------------------------------------------------------------------------\#
@@ -278,10 +280,62 @@ def test_abs_reptran(fdir='tmp-data'):
 
 
 
+def test_abs_16g_solar(fdir):
+
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
+    # create atm file
+    levels = np.linspace(0.0, 35.0, 71)
+    fname_atm  = '%s/atm.pk' % fdir
+    atm0 = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=True)
+
+    wvls = np.arange(300.0, 2500.1, 1.0)
+    solar = np.zeros_like(wvls)
+    for i, wavelength in enumerate(wvls):
+        print(wavelength)
+        abs_obj = er3t.pre.abs.abs_16g(wavelength=wavelength, atm_obj=atm0, verbose=True)
+        solar[i] = np.sum(abs_obj.coef['solar']['data'] * abs_obj.coef['weight']['data'])
+
+    # figure
+    #/----------------------------------------------------------------------------\#
+    if True:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111)
+        # cs = ax1.imshow(.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        ax1.scatter(wvls, solar, s=6, c='k', lw=0.0)
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.plot([0, 1], [0, 1], color='k', ls='--')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
+    #\----------------------------------------------------------------------------/#
+
+
+
 if __name__ == '__main__':
 
-    # test_abs_16g('tmp-data/abs_16g')
+    fdir = 'tmp-data/abs_16g'
+    # test_abs_16g(fdir)
 
     # test_abs_rrtmg()
 
-    test_abs_reptran()
+    # test_abs_reptran()
+    test_abs_16g_solar(fdir)

@@ -56,7 +56,8 @@ def lrt_flux_one_clear(params):
             wavelength         = params['wavelength'],
             output_altitude    = params['output_altitude'],
             lrt_cfg            = lrt_cfg,
-            mute_list = ['slit_function_file', 'spline'],
+            # mute_list = ['slit_function_file', 'spline', 'source solar', 'wavelength'],
+            mute_list = ['slit_function_file', 'spline', 'source solar'],
             )
     er3t.rtm.lrt.lrt_run(init)
 
@@ -92,6 +93,7 @@ def mca_flux_one_clear(
     fname_abs = '%s/abs.pk' % fdir
     # abs0      = er3t.pre.abs.abs_16g(wavelength=params['wavelength'], fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
     abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], target='fine', atm_obj=atm0)
+    # abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], target='modis', atm_obj=atm0, band_name='modis_aqua_b01')
     # print(abs0.coef['weight']['data'])
     # print(abs0.coef['solar']['data'])
     # print((abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum())
@@ -138,7 +140,10 @@ def test_01_flux_one_clear(plot=True):
          'atmosphere_file': '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
           'surface_albedo': 0.03,
       'solar_zenith_angle': 0.0,
-              'wavelength': 555.0,
+              # 'wavelength': 650.0,
+              'wavelength': 772.0,
+              # 'wavelength': 1621.0,
+              # 'wavelength': 2079.0,
          'output_altitude': np.arange(0.0, 35.1, 0.5),
          }
 
@@ -146,11 +151,20 @@ def test_01_flux_one_clear(plot=True):
 
     data_mca = mca_flux_one_clear(params)
 
+    # diff = data_mca['f_down'][-1] - data_lrt['f_down'][-1]
+    # print(diff)
+    # for key in data_mca.keys():
+    #     if key in ['f_down', 'f_down_direct']:
+    #         data_mca[key] -= diff
+
+    print((data_mca['f_down']-data_lrt['f_down'])/data_lrt['f_down']*100.0)
+
     # figure
     #/----------------------------------------------------------------------------\#
     if plot:
         plt.close('all')
         fig = plt.figure(figsize=(8, 6))
+        fig.suptitle('Wavelength %.1f nm' %params['wavelength'])
         #/--------------------------------------------------------------\#
         ax1 = fig.add_subplot(121)
         ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=3.0, alpha=0.6, ls='--')
@@ -160,7 +174,7 @@ def test_01_flux_one_clear(plot=True):
         ax1.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax1.set_xlabel('Flux Density [$\mathrm{W m^{-2} nm^{-1}}$]')
         ax1.set_ylabel('Altitude [km]')
-        ax1.set_xlim((0.0, 0.5))
+        # ax1.set_xlim((0.0, 0.5))
 
         ax2 = fig.add_subplot(122)
         ax2.plot(data_lrt['f_down']       , params['output_altitude'], color='blue', lw=3.0, alpha=0.6, ls='--')
@@ -169,7 +183,7 @@ def test_01_flux_one_clear(plot=True):
         ax2.errorbar(data_mca['f_down_direct'], params['output_altitude'], xerr=data_mca['f_down_direct_std'], color='cyan', lw=1.0, alpha=1.0)
         ax2.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax2.set_xlabel('Flux Density [$\mathrm{W m^{-2} nm^{-1}}$]')
-        ax2.set_xlim((0.0, 2.5))
+        # ax2.set_xlim((0.0, 2.5))
         #\--------------------------------------------------------------/#
         # save figure
         #/--------------------------------------------------------------\#
