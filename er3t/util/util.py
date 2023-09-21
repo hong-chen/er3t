@@ -853,9 +853,11 @@ def cal_sol_fac(dtime):
     """
 
     doy = dtime.timetuple().tm_yday
-    eps = 0.01673
-    perh= 2.0
-    rsun = (1.0 - eps*np.cos(2.0*np.pi*(doy-perh)/365.0))
+    eps = 0.01672
+    perh= 4.0
+    rsun = (1.0 - 0.0167086*np.cos(0.017202124161707175*(doy-perh)))
+    # rsun = (1.0 - eps*np.cos(0.017202124161707175*(doy-perh)))
+    # rsun = (1.0 - eps*np.cos(2.0*np.pi*(doy-perh)/365.0))
     solfac = 1.0/(rsun**2)
 
     return solfac

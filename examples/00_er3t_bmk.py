@@ -11,6 +11,7 @@ from matplotlib.ticker import FixedLocator
 from matplotlib import rcParams
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
+mpl.use('Agg')
 
 
 import er3t
@@ -133,17 +134,14 @@ def mca_flux_one_clear(
 
     return data
 
-def test_01_flux_one_clear(plot=True):
+def test_01_flux_one_clear(wavelengh, plot=True):
 
     params = {
                     'date': datetime.datetime(2023, 5, 26),
          'atmosphere_file': '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
           'surface_albedo': 0.03,
       'solar_zenith_angle': 0.0,
-              'wavelength': 555.0,
-              # 'wavelength': 772.0,
-              # 'wavelength': 1621.0,
-              # 'wavelength': 2079.0,
+              'wavelength': wavelength,
          'output_altitude': np.arange(0.0, 35.1, 0.5),
          }
 
@@ -157,14 +155,14 @@ def test_01_flux_one_clear(plot=True):
     #     if key in ['f_down', 'f_down_direct']:
     #         data_mca[key] -= diff
 
-    print((data_mca['f_down']-data_lrt['f_down'])/data_lrt['f_down']*100.0)
+    error = np.abs(data_mca['f_down']-data_lrt['f_down'])/data_lrt['f_down']*100.0
 
     # figure
     #/----------------------------------------------------------------------------\#
     if plot:
         plt.close('all')
         fig = plt.figure(figsize=(8, 6))
-        fig.suptitle('Wavelength %.1f nm' %params['wavelength'])
+        fig.suptitle('Wavelength %.1f nm [Error %.1f%%]' % (params['wavelength'], error.mean()))
         #/--------------------------------------------------------------\#
         ax1 = fig.add_subplot(121)
         ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=3.0, alpha=0.6, ls='--')
@@ -189,7 +187,7 @@ def test_01_flux_one_clear(plot=True):
         #/--------------------------------------------------------------\#
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        fig.savefig('%s_%05.1fnm.png' % (_metadata['Function'], params['wavelength']), bbox_inches='tight', metadata=_metadata)
         #\--------------------------------------------------------------/#
         plt.show()
     #\----------------------------------------------------------------------------/#
@@ -205,7 +203,11 @@ if __name__ == '__main__':
 
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
-        test_01_flux_one_clear()
+        for wavelength in np.arange(300.0, 2500.1, 0.1):
+            try:
+                test_01_flux_one_clear(wavelength)
+            except Exception as error:
+                print(error)
 
     else:
 
