@@ -140,7 +140,7 @@ def test_01_flux_one_clear(plot=True):
          'atmosphere_file': '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
           'surface_albedo': 0.03,
       'solar_zenith_angle': 0.0,
-              'wavelength': 650.0,
+              'wavelength': 555.0,
               # 'wavelength': 772.0,
               # 'wavelength': 1621.0,
               # 'wavelength': 2079.0,

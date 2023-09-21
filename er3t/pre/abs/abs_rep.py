@@ -179,22 +179,18 @@ class abs_rep:
                 abso_coef0 = xsec * self.atm_obj.lay['o3']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
-                print('o3:\n', abso_coef0)
 
             if (wvl0 >= 301.4) & (wvl0 <= 1338.2):
                 xsec = cal_xsec_o4_greenblatt(wvl0)
                 abso_coef0 = xsec * self.atm_obj.lay['o2']['data'] * 1e-41 * self.atm_obj.lay['thickness']['data']
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
-                print('o4:\n', abso_coef0)
 
             if (wvl0 >= 230.91383) & (wvl0 <= 794.04565):
                 xsec = cal_xsec_no2_burrows(wvl0)
                 abso_coef0 = xsec * self.atm_obj.lay['no2']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
-                print('no2:\n', abso_coef0)
-
 
             if self.run_reptran:
 
