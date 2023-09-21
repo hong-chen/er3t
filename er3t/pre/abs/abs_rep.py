@@ -74,7 +74,7 @@ class abs_rep:
             N_ = logic.sum()
             if N_ == 0:
                 msg = '\nError [abs_rep]: %.4f nm is outside REPTRAN-%s-%s supported wavelength range.' % (wavelength, self.source, self.target)
-                self.run_reptran = False
+                raise OSError(msg)
             elif N_ > 1:
                 bands_ = [bands[i] for i in indices]
                 bands_info_ = '\n'.join(bands_)
@@ -85,7 +85,6 @@ class abs_rep:
                 self.band_name  = bands[index_band]
                 self.run_reptran = True
         #\----------------------------------------------------------------------------/#
-
 
         # read out gases
         #/----------------------------------------------------------------------------\#
@@ -103,28 +102,6 @@ class abs_rep:
         avg_err0 = f0.variables['avg_error'][:][index_band]
         nwvl0    = f0.variables['nwvl_in_band'][:][index_band]
         #\----------------------------------------------------------------------------/#
-
-
-        # select wavelength
-        #/----------------------------------------------------------------------------\#
-        # wvl_indices0 = f0.variables['iwvl'][:][:, index_band]
-        # wvl_indices = wvl_indices0[wvl_indices0>0] - 1
-        # wvl_indices = wvl_indices0 - 1
-        # wvl_weights0 = f0.variables['iwvl_weight'][:][:, index_band]
-        # wvl_weights = wvl_weights0[wvl_weights0>0]
-        # wvl_weights = wvl_weights0
-
-        # wvl = f0.variables['wvl'][:]
-        # wvl_indices = np.where((wvl>=wvl_min0)&(wvl<=wvl_max0))[0]
-        #\----------------------------------------------------------------------------/#
-        # print(self.band_name)
-        # print(wvl_min0, wvl_max0)
-        # print(wvl_indices)
-        # print(wvl_weights)
-        # print(nwvl0)
-        # print(wvl_int0)
-        # sys.exit()
-
 
         # get representative wavelength information
         #/----------------------------------------------------------------------------\#
@@ -195,28 +172,50 @@ class abs_rep:
                 }
 
 
-        if self.run_reptran:
+        for i, wvl0 in enumerate(self.wvl_):
 
-            for gas_type in self.gases:
+            if (wvl0 >= 116.0) & (wvl0 <= 850.0):
+                xsec = cal_xsec_o3_molina(wvl0, self.atm_obj.lay['temperature']['data'])
+                abso_coef0 = xsec * self.atm_obj.lay['o3']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
+                abso_coef0[abso_coef0<0.0] = 0.0
+                self.coef['abso_coef']['data'][:, i] += abso_coef0
+                print('o3:\n', abso_coef0)
 
-                if gas_type.lower() in self.atm_obj.lay.keys():
+            if (wvl0 >= 301.4) & (wvl0 <= 1338.2):
+                xsec = cal_xsec_o4_greenblatt(wvl0)
+                abso_coef0 = xsec * self.atm_obj.lay['o2']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
+                abso_coef0[abso_coef0<0.0] = 0.0
+                self.coef['abso_coef']['data'][:, i] += abso_coef0
+                print('o4:\n', abso_coef0)
 
-                    f0 = Dataset('%s/reptran_%s_%s.lookup.%s.cdf' % (self.fdir_data, self.source, self.target, gas_type), 'r')
-                    xsec     = np.squeeze(f0.variables['xsec'][:])
-                    t_ref    = f0.variables['t_ref'][:]
-                    dt_ref   = f0.variables['t_pert'][:]
-                    vmr_ref  = f0.variables['vmrs'][:]
-                    wvl_ref  = f0.variables['wvl'][:]
-                    if logp:
-                        p_ref = np.log(f0.variables['pressure'][:]) # log-scale pressure
-                    else:
-                        p_ref = f0.variables['pressure'][:]
-                    f0.close()
+            if (wvl0 >= 230.91383) & (wvl0 <= 794.04565):
+                xsec = cal_xsec_no2_burrows(wvl0)
+                abso_coef0 = xsec * self.atm_obj.lay['no2']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
+                abso_coef0[abso_coef0<0.0] = 0.0
+                self.coef['abso_coef']['data'][:, i] += abso_coef0
+                print('no2:\n', abso_coef0)
 
-                    i_sort_p = np.argsort(p_ref)
-                    dt_ = t_ - np.interp(p_, p_ref[i_sort_p], t_ref[i_sort_p])
 
-                    for i, wvl0 in enumerate(self.wvl_):
+            if self.run_reptran:
+
+                for gas_type in self.gases:
+
+                    if gas_type.lower() in self.atm_obj.lay.keys():
+
+                        f0 = Dataset('%s/reptran_%s_%s.lookup.%s.cdf' % (self.fdir_data, self.source, self.target, gas_type), 'r')
+                        xsec     = np.squeeze(f0.variables['xsec'][:])
+                        t_ref    = f0.variables['t_ref'][:]
+                        dt_ref   = f0.variables['t_pert'][:]
+                        vmr_ref  = f0.variables['vmrs'][:]
+                        wvl_ref  = f0.variables['wvl'][:]
+                        if logp:
+                            p_ref = np.log(f0.variables['pressure'][:]) # log-scale pressure
+                        else:
+                            p_ref = f0.variables['pressure'][:]
+                        f0.close()
+
+                        i_sort_p = np.argsort(p_ref)
+                        dt_ = t_ - np.interp(p_, p_ref[i_sort_p], t_ref[i_sort_p])
 
                         iwvl = np.argmin(np.abs(wvl_ref-wvl0))
 
@@ -249,6 +248,38 @@ class abs_rep:
 
                         self.coef['abso_coef']['data'][:, i] += abso_coef0
 
+
+def cal_xsec_o3_molina(wvl0, t, t_ref=273.13, fname='%s/crs/crs_o3_mol_cf.dat' % er3t.common.fdir_data_abs):
+
+    data_ = np.loadtxt(fname)
+
+    c0 = np.interp(wvl0, data_[:, 0], data_[:, 1])
+    c1 = np.interp(wvl0, data_[:, 0], data_[:, 2])
+    c2 = np.interp(wvl0, data_[:, 0], data_[:, 3])
+
+    sigma = 1e-20 * (c0 + c1*(t-t_ref) + c2*(t-t_ref)**2)
+
+    return sigma
+
+def cal_xsec_o4_greenblatt(wvl0, fname='%s/crs/crs_o4_greenblatt.dat' % er3t.common.fdir_data_abs):
+
+    data_ = np.loadtxt(fname)
+
+    c0 = np.interp(wvl0, data_[:, 0], data_[:, 1])
+
+    sigma = 1e-20 * c0
+
+    return sigma
+
+def cal_xsec_no2_burrows(wvl0, fname='%s/crs/crs_no2_gom.dat' % er3t.common.fdir_data_abs):
+
+    data_ = np.loadtxt(fname)
+
+    c0 = np.interp(wvl0, data_[:, 0], data_[:, 1])
+
+    sigma = c0 * 1.0
+
+    return sigma
 
 
 
