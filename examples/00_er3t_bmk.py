@@ -193,7 +193,15 @@ def test_01_flux_one_clear(wavelengh, plot=True):
         # plt.show()
     #\----------------------------------------------------------------------------/#
 
-    pass
+    # References
+    #/-----------------------------------------------------------------------------\
+    print('\nReferences:')
+    print('-'*80)
+    for reference in er3t.common.references:
+        print(reference)
+    print('-'*80)
+    print()
+    #\-----------------------------------------------------------------------------/
 
 
 
@@ -209,6 +217,7 @@ if __name__ == '__main__':
                 test_01_flux_one_clear(wavelength)
             except Exception as error:
                 print(error)
+            sys.exit()
 
     else:
 

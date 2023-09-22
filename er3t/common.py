@@ -29,7 +29,7 @@ fdir_tests       = os.path.join(fdir_er3t, 'tests')
 
 params = {
                  'wavelength': 650.0,
-                       'date': datetime.datetime(2023, 9, 6),
+                       'date': datetime.datetime.now(),
          'solar_zenith_angle': 0.0,
         'solar_azimuth_angle': 0.0,
         'sensor_zenith_angle': 0.0,
@@ -51,5 +51,6 @@ params = {
         }
 
 references = [
-        'Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech., 16, 1971–2000, https://doi.org/10.5194/amt-16-1971-2023, 2023'
+'EaR³T (Chen et al., 2023):\n\
+- Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech., 16, 1971–2000, https://doi.org/10.5194/amt-16-1971-2023, 2023.\n'
         ]

@@ -7,6 +7,7 @@ import warnings
 from scipy import interpolate
 
 import er3t.common
+import er3t.util
 
 
 
@@ -90,7 +91,8 @@ class pha_mie_wc:
 
     fname_coef = '%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha
 
-    reference = 'Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, 1980.'
+    reference = 'Mie Scattering (Wiscombe, 1980):\n\
+- Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, 1980.\n'
 
     ID = 'Mie (Water Clouds)'
 
@@ -109,13 +111,11 @@ class pha_mie_wc:
                  overwrite=True,
                  verbose=False):
 
+        er3t.util.add_reference(self.reference)
 
         self.interpolate = interpolate
         self.overwrite   = overwrite
         self.verbose     = verbose
-
-        if self.reference not in er3t.common.references:
-            er3t.common.references.append(self.reference)
 
         self.get_data(wavelength, angles, fdir=fdir_pha_mie)
 

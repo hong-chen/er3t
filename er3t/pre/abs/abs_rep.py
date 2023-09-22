@@ -7,6 +7,7 @@ import numpy as np
 from scipy import interpolate
 
 import er3t.common
+import er3t.util
 
 
 from .util import *
@@ -20,7 +21,8 @@ __all__ = ['abs_rep']
 class abs_rep:
 
     fdir_data = '%s/reptran' % er3t.common.fdir_data_abs
-    reference = 'Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler,  S.A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014.'
+    reference = 'REPTRAN (Gasteiger et al., 2014):\n\
+- Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler,  S.A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014.\n'
 
     def __init__(
             self,
@@ -31,10 +33,13 @@ class abs_rep:
             slit_func=None,
             ):
 
+        er3t.util.add_reference(self.reference)
+
         if wavelength < 5025.0:
             source = 'solar'
         else:
             source = 'thermal'
+
 
         self.target     = target.lower()
         self.source     = source.lower()
@@ -155,19 +160,21 @@ class abs_rep:
                 'data': self.wvl_.data
                 }
 
-        self.coef['solar'] = {
-                'name': 'Solar Factor (Ng)',
-                'data': self.sol.data
-                }
-
-        if self.source == 'solar':
-            self.coef['solar']['data'][...] = cal_solar_kurudz(self.wvl, slit_func=self.slit_func)
-
         # this is actually number of wavelength, use Ng for consistency
         self.coef['weight'] = {
                 'name': 'Weight (Ng)',
                 'data': self.wgt.data
                 }
+
+        self.coef['solar'] = {
+                'name': 'Solar Factor (Ng)',
+                'data': self.sol.data
+                }
+
+        if (self.source == 'solar') and (self.target in ['fine', 'medium', 'coarse']):
+            self.coef['solar']['data'][...] = cal_solar_kurudz(self.wvl, slit_func=self.slit_func)
+        else:
+            self.coef['solar']['data'][...] = np.sum(self.sol.data*self.wgt.data)
 
         self.coef['slit_func'] = {
                 'name': 'Slit Function (Nz, Ng)',
