@@ -212,7 +212,7 @@ if __name__ == '__main__':
 
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
-        for wavelength in np.arange(300.0, 2500.1, 5.0):
+        for wavelength in np.arange(555.0, 2500.1, 5.0):
             try:
                 test_01_flux_one_clear(wavelength)
             except Exception as error:
