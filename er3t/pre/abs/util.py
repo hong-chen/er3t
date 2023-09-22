@@ -18,11 +18,17 @@ def cal_xsec_o3_molina(wvl0, t, t_ref=273.13, fname='%s/crs/crs_o3_mol_cf.dat' %
 
     data_ = np.loadtxt(fname)
 
-    f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='cubic')
+    if (wvl0 <= data_[5, 0]) | (wvl0 >= data_[-5, 0]):
+        f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='linear')
+        f1 = interpolate.interp1d(data_[:, 0], data_[:, 2], kind='linear')
+        f2 = interpolate.interp1d(data_[:, 0], data_[:, 3], kind='linear')
+    else:
+        f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='cubic')
+        f1 = interpolate.interp1d(data_[:, 0], data_[:, 2], kind='cubic')
+        f2 = interpolate.interp1d(data_[:, 0], data_[:, 3], kind='cubic')
+
     c0 = f0(wvl0)
-    f1 = interpolate.interp1d(data_[:, 0], data_[:, 2], kind='cubic')
     c1 = f1(wvl0)
-    f2 = interpolate.interp1d(data_[:, 0], data_[:, 3], kind='cubic')
     c2 = f2(wvl0)
 
     sigma = 1e-20 * (c0 + c1*(t-t_ref) + c2*(t-t_ref)**2)
@@ -35,7 +41,10 @@ def cal_xsec_o4_greenblatt(wvl0, fname='%s/crs/crs_o4_greenblatt.dat' % er3t.com
 
     data_ = np.loadtxt(fname)
 
-    f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='cubic')
+    if (wvl0 <= data_[5, 0]) | (wvl0 >= data_[-5, 0]):
+        f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='linear')
+    else:
+        f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='cubic')
     c0 = f0(wvl0)
 
     sigma = 1e-20 * c0
@@ -48,7 +57,10 @@ def cal_xsec_no2_burrows(wvl0, fname='%s/crs/crs_no2_gom.dat' % er3t.common.fdir
 
     data_ = np.loadtxt(fname)
 
-    f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='cubic')
+    if (wvl0 <= data_[5, 0]) | (wvl0 >= data_[-5, 0]):
+        f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='linear')
+    else:
+        f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='cubic')
     c0 = f0(wvl0)
 
     sigma = c0 * 1.0
@@ -62,7 +74,11 @@ def cal_solar_kurudz(wvl0, slit_func=None, kurudz_file='%s/kurudz_0.1nm.dat' % e
     data_= np.loadtxt(kurudz_file)
     data_[:, 1] /= 1000.0
 
-    f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='cubic')
+    if (wvl0 <= data_[5, 0]) | (wvl0 >= data_[-5, 0]):
+        f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='linear')
+    else:
+        f0 = interpolate.interp1d(data_[:, 0], data_[:, 1], kind='cubic')
+
     if slit_func is None:
         c0 = f0(wvl0)
     else:
