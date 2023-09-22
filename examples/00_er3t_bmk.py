@@ -11,7 +11,7 @@ from matplotlib.ticker import FixedLocator
 from matplotlib import rcParams
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
-# mpl.use('Agg')
+mpl.use('Agg')
 
 
 import er3t
@@ -204,7 +204,7 @@ if __name__ == '__main__':
 
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
-        for wavelength in np.arange(300.0, 2500.1, 1.0):
+        for wavelength in np.arange(300.0, 2500.1, 5.0):
             try:
                 test_01_flux_one_clear(wavelength)
             except Exception as error:
