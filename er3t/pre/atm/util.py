@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from scipy import interpolate
 
@@ -112,6 +113,104 @@ def modify_h2o(date, tmhr_range, levels, fname_atmmod='/Users/hoch4240/Chen/soft
         new_data[:, i] = atm0[vname]['data'][::-1]
 
     np.savetxt('ARISE_ATM_%s.txt' % date.strftime('%Y%m%d'), new_data)
+
+
+
+def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
+
+    """
+    Use Barometric formula (https://en.wikipedia.org/wiki/Barometric_formula)
+    to interpolate pressure from height and temperature
+
+    Input:
+        pressure: numpy array, original pressure in hPa
+        altitude: numpy array, original altitude in km
+        temperature: numpy array, original temperature in K
+        altitude_to_interp: numpy array, altitude to be interpolate
+        temperature_interp: numpy array, temperature to be interpolate
+
+    Output:
+        pn: interpolated pressure based on the input
+    """
+
+    indices = np.argsort(alt)
+    h = np.float_(alt[indices])
+    p = np.float_(pres[indices])
+    t = np.float_(temp[indices])
+
+    indices = np.argsort(alt_inp)
+    hn = np.float_(alt_inp[indices])
+    tn = np.float_(temp_inp[indices])
+
+    n = p.size - 1
+    a = 0.5*(t[1:]+t[:-1]) / (h[:-1]-h[1:]) * np.log(p[1:]/p[:-1])
+    z = 0.5*(h[1:]+h[:-1])
+
+    z0  = np.min(z) ; z1  = np.max(z)
+    hn0 = np.min(hn); hn1 = np.max(hn)
+
+    if hn0 < z0:
+        a = np.hstack((a[0], a))
+        z = np.hstack((hn0, z))
+        if z0 - hn0 > 2.0:
+            msg = '\nWarning [interp_pres_from_alt_temp]: Standard atmosphere not sufficient (lower boundary).'
+            warnings.warn(msg)
+
+    if hn1 > z1:
+        a = np.hstack((a, z[n-1]))
+        z = np.hstack((z, hn1))
+        if hn1-z1 > 10.0:
+            msg = '\nWarning [interp_pres_from_alt_temp]: Standard atmosphere not sufficient (upper boundary).'
+            warnings.warn(msg)
+
+    an = np.interp(hn, z, a)
+    pn = np.zeros_like(hn)
+
+    if hn.size == 1:
+        hi = np.argmin(np.abs(hn-h))
+        pn = p[hi]*np.exp(-an*(hn-h[hi])/tn)
+        return pn
+
+    for i in range(pn.size):
+        hi = np.argmin(np.abs(hn[i]-h))
+        pn[i] = p[hi]*np.exp(-an[i]*(hn[i]-h[hi])/tn[i])
+
+    dp = pn[:-1] - pn[1:]
+    pl = 0.5 * (pn[1:]+pn[:-1])
+    zl = 0.5 * (hn[1:]+hn[:-1])
+
+    for i in range(n-2):
+        indices = (zl >= h[i]) & (zl < h[i+1])
+        ind = np.where(indices==True)[0]
+        ni  = indices.sum()
+        if ni >= 2:
+            dpm = dp[ind].sum()
+
+            i0 = np.min(ind)
+            i1 = np.max(ind)
+
+            x1 = pl[i0]
+            x2 = pl[i1]
+            y1 = dp[i0]
+            y2 = dp[i1]
+
+            bb = (y2-y1) / (x2-x1)
+            aa = y1 - bb*x1
+            rescale = dpm / (aa+bb*pl[indices]).sum()
+
+            if np.abs(rescale-1.0) > 0.1:
+                print('------------------------------------------------------------------------------')
+                print('Warning [atm_interp_pressure]:')
+                print('Warning: pressure smoothing failed at ', h[i], '...', h[i+1])
+                print('rescale=', rescale)
+                print('------------------------------------------------------------------------------')
+            else:
+                dp[indices] = rescale*(aa+bb*pl[indices])
+
+    for i in range(dp.size):
+        pn[i+1] = pn[i] - dp[i]
+
+    return pn
 
 
 
