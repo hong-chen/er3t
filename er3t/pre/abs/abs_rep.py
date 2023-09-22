@@ -160,6 +160,9 @@ class abs_rep:
                 'data': self.sol.data
                 }
 
+        if self.source == 'solar':
+            self.coef['solar']['data'][...] = cal_solar_kurudz(self.wvl, slit_func=self.slit_func)
+
         # this is actually number of wavelength, use Ng for consistency
         self.coef['weight'] = {
                 'name': 'Weight (Ng)',
@@ -178,11 +181,6 @@ class abs_rep:
 
 
         for i, wvl0 in enumerate(self.wvl_):
-
-            print(self.coef['solar']['data'])
-            if self.source == 'solar':
-                self.coef['solar']['data'][i] = cal_solar_kurudz(wvl0, slit_func=self.slit_func)
-            print(self.coef['solar']['data'])
 
             if (wvl0 >= 116.0) & (wvl0 <= 850.0):
                 xsec = cal_xsec_o3_molina(wvl0, self.atm_obj.lay['temperature']['data'])
