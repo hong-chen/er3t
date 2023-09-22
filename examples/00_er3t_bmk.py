@@ -188,7 +188,7 @@ def test_01_flux_one_clear(wavelengh, plot=True):
         #/--------------------------------------------------------------\#
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        fig.savefig('%s_%05.1fnm.png' % (_metadata['Function'], params['wavelength']), bbox_inches='tight', metadata=_metadata)
+        fig.savefig('%s_%06.1fnm.png' % (_metadata['Function'], params['wavelength']), bbox_inches='tight', metadata=_metadata)
         #\--------------------------------------------------------------/#
         # plt.show()
     #\----------------------------------------------------------------------------/#
