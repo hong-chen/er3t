@@ -52,6 +52,25 @@ Applications
 * Novel retrieval algorithm development (e.g., CNN-based).
 
 
+Features
+--------
+:Radiative Transfer:
+
+  * **solver**: MCARaTS (3D&IPA) | libRadtran (IPA)
+
+  * **absorption model**: Correlated-k | REPTRAN
+
+  * **cloud model**: Henyey-Greensstein | Mie
+
+  * **surface model**: Lambertian | Cox-Munk | LSRT Model
+
+:Satellite Remote Sensing:
+
+  * **data downloader**: Worldview | LAADS DAAC | GES DISC | LANCE
+
+  * **product reader**: MODIS | VIIRS | OCO-2 | AHI
+
+
 Resources
 ---------
 
