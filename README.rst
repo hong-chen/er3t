@@ -64,7 +64,7 @@ Features
 
   * **surface model**: Lambertian | Cox-Munk | LSRT Model
 
-:Satellite Remote Sensing:
+:Remote Sensing:
 
   * **data downloader**: Worldview | LAADS DAAC | GES DISC | LANCE
 
