@@ -16,6 +16,7 @@ has_mpi         = False
 fdir_er3t        = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
 
 fdir_data        = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
+fdir_data_solar  = os.path.join(fdir_data, 'solar')
 fdir_data_abs    = os.path.join(fdir_data, 'abs')
 fdir_data_pha    = os.path.join(fdir_data, 'pha')
 fdir_data_atmmod = os.path.join(fdir_data, 'atmmod')
