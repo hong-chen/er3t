@@ -92,13 +92,9 @@ def mca_flux_one_clear(
     fname_atm = '%s/atm.pk' % fdir
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
-    fname_abs = '%s/abs.pk' % fdir
+    fname_abs = '%s/abs_%06.1fnm.pk' % (fdir, params['wavelength'])
     # abs0      = er3t.pre.abs.abs_16g(wavelength=params['wavelength'], fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], target='fine', atm_obj=atm0)
-    # abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], target='modis', atm_obj=atm0, band_name='modis_aqua_b01')
-    # print(abs0.coef['weight']['data'])
-    # print(abs0.coef['solar']['data'])
-    # print((abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum())
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
 
     atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm_1ds   = [atm1d0]
@@ -149,12 +145,6 @@ def test_01_flux_one_clear(wavelengh, plot=True):
     data_lrt = lrt_flux_one_clear(params)
 
     data_mca = mca_flux_one_clear(params)
-
-    # diff = data_mca['f_down'][-1] - data_lrt['f_down'][-1]
-    # print(diff)
-    # for key in data_mca.keys():
-    #     if key in ['f_down', 'f_down_direct']:
-    #         data_mca[key] -= diff
 
     error = np.abs(data_mca['f_down']-data_lrt['f_down'])/data_lrt['f_down']*100.0
 
@@ -212,8 +202,7 @@ if __name__ == '__main__':
 
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
-        # for wavelength in np.arange(555.0, 2500.1, 5.0):
-        for wavelength in [500.0, 555.0, 649.0, 772.0, 1621.0, 2079.0]:
+        for wavelength in [470.0, 555.0, 659.0, 772.0, 1621.0, 2079.0]:
             test_01_flux_one_clear(wavelength)
 
     else:

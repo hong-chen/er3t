@@ -69,7 +69,7 @@ class abs_16g:
                  fname      = None,  \
                  atm_obj    = None,  \
                  overwrite  = False, \
-                 verbose    = False):
+                 verbose    = er3t.common.params['verbose']):
 
         self.verbose   = verbose
         self.wvl       = wavelength
@@ -106,6 +106,7 @@ class abs_16g:
                 self.fname = obj.fname
                 self.wvl   = obj.wvl
                 self.nwl   = obj.nwl
+                self.Ng    = obj.Ng
                 self.coef  = obj.coef
                 self.wvl_info = obj.wvl_info
             else:
