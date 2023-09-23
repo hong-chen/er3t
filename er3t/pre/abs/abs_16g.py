@@ -55,8 +55,7 @@ class abs_16g:
     Ng       = 16
     group_s  = '/solar_v1.3'
     fname_h5 = '%s/abs_16g.h5' % er3t.common.fdir_data_abs
-    reference = '\nSSFR Correlated-k Absorption Database (Coddington et al., 2008):\n\
-- Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R., Roman, M., Redemann, J., Russell, P. B., Liu, J., and Schaaf, C. C.: Aircraft measurements of spectral surface albedo and its consistency with ground based and space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089, 2008.'
+    reference = '\nSSFR Correlated-k Absorption Database (Coddington et al., 2008):\n- Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R., Roman, M., Redemann, J., Russell, P. B., Liu, J., and Schaaf, C. C.: Aircraft measurements of spectral surface albedo and its consistency with ground based and space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089, 2008.'
 
     def __init__(self, \
                  wavelength = er3t.common.params['wavelength'],  \

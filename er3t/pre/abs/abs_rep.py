@@ -38,8 +38,7 @@ class abs_rep:
     """
 
     fdir_data = '%s/reptran' % er3t.common.fdir_data_abs
-    reference = '\nREPTRAN (Gasteiger et al., 2014):\n\
-- Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler, S. A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014.'
+    reference = '\nREPTRAN (Gasteiger et al., 2014):\n- Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler, S. A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014.'
 
     def __init__(
             self,
