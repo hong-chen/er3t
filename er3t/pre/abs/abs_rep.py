@@ -20,6 +20,23 @@ __all__ = ['abs_rep']
 
 class abs_rep:
 
+    """
+    This module is based on the REPTRAN database developed by Gasteiger et al., 2014.
+    Database can be downloaded at http://www.meteo.physik.uni-muenchen.de/~libradtran/lib/exe/fetch.php?media=download:reptran_2017_all.tar.gz
+
+    Input:
+        wavelength: wavelength in nm
+        fname     : file path for the correlated-k coefficients (in pickle format)
+        atm_obj   : atmosphere object, e.g., atm_obj = atm_atmmod(levels=np.arange(21))
+
+    Output:
+        self.coef['wavelength']
+        self.coef['abso_coef']
+        self.coef['slit_func']
+        self.coef['solar']
+        self.coef['weight']
+    """
+
     fdir_data = '%s/reptran' % er3t.common.fdir_data_abs
     reference = 'REPTRAN (Gasteiger et al., 2014):\n\
 - Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler,  S.A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014.\n'
