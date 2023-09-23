@@ -12,11 +12,11 @@ __all__ = [
 
 
 def cal_ocean_brdf(
-        wvl=500.0,
-        u10=1.0,
-        sal=34.3,
-        pcl=0.01,
-        whitecaps=True,
+        wvl=er3t.common.params['wavelength'],\
+        u10=1.0,\
+        sal=34.3,\
+        pcl=0.01,\
+        whitecaps=True,\
         ):
 
     """
