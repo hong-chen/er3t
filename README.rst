@@ -35,9 +35,9 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 `EaR³T <https://er3t.readthedocs.io/en/latest/>`_ (pronounced /ɜːt/) is a Python software package
 developed for cutting-edge radiative transfer and remote sensing applications. It provides high-level
 interfaces to automate the process of performing IPA/3D radiative transfer calculations for measured
-or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer models
-including `MCARaTS <https://sites.google.com/site/mcarats/>`_, `libRadtran <http://www.libradtran.org/>`_
-(*IPA only*), and `SHDOM <https://coloradolinux.com/shdom/>`_ (*under development*).
+or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer solvers. The
+automation capability covers the downloading and processing of satellite data, the setup of radiative
+properties and model, and the simulation of radiometric quantities such as radiance and irradiance.
 
 
 Applications
@@ -56,11 +56,11 @@ Features
 --------
 :Radiative Transfer:
 
-  * **solver**: MCARaTS (3D&IPA) | libRadtran (IPA)
+  * **solver**: `MCARaTS <https://sites.google.com/site/mcarats/>`_ (3D&IPA) | `libRadtran <http://www.libradtran.org/>`_ (IPA)
 
   * **absorption model**: Correlated-k | REPTRAN
 
-  * **cloud model**: Henyey-Greensstein | Mie
+  * **cloud model**: Henyey-Greenstein | Mie
 
   * **surface model**: Lambertian | Cox-Munk | LSRT Model
 
