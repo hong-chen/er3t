@@ -120,8 +120,11 @@ class mca_run:
             self.save(fname=fname_sh)
 
 
-
     def run(self):
+
+        if self.verbose:
+            for command in self.commands:
+                print('Message [mca_run]: Executing <%s> ...' % command)
 
         if self.mp_mode == 'mpi':
 
@@ -129,7 +132,6 @@ class mca_run:
                 from tqdm import tqdm
 
                 with tqdm(total=len(self.commands)) as pbar:
-
                     for command in self.commands:
                         execute_command(command)
                         pbar.update(1)
@@ -138,7 +140,6 @@ class mca_run:
 
                 for command in self.commands:
                     execute_command(command)
-
 
         elif self.mp_mode == 'py':
 
@@ -158,7 +159,6 @@ class mca_run:
                     pool.join()
 
 
-
     def save(self, fname=None):
 
         if fname is None:
@@ -176,10 +176,8 @@ class mca_run:
 
 
 
-def execute_command(command, verbose=er3t.common.params['verbose']):
+def execute_command(command):
 
-    if verbose:
-        print('Message [mca_run]: Executing <%s> ...' % command)
     os.system(command)
 
 
