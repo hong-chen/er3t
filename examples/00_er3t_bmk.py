@@ -173,7 +173,7 @@ def test_01_flux_one_clear(wavelengh, plot=True):
         ax1.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax1.set_xlabel('Flux Density [$\mathrm{W m^{-2} nm^{-1}}$]')
         ax1.set_ylabel('Altitude [km]')
-        # ax1.set_xlim((0.0, 0.5))
+        ax1.set_xlim(0.0,)
 
         ax2 = fig.add_subplot(122)
         ax2.plot(data_lrt['f_down']       , params['output_altitude'], color='blue', lw=3.0, alpha=0.6, ls='--')
@@ -182,7 +182,7 @@ def test_01_flux_one_clear(wavelengh, plot=True):
         ax2.errorbar(data_mca['f_down_direct'], params['output_altitude'], xerr=data_mca['f_down_direct_std'], color='cyan', lw=1.0, alpha=1.0)
         ax2.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax2.set_xlabel('Flux Density [$\mathrm{W m^{-2} nm^{-1}}$]')
-        # ax2.set_xlim((0.0, 2.5))
+        ax2.set_xlim(0.0,)
         #\--------------------------------------------------------------/#
         # save figure
         #/--------------------------------------------------------------\#

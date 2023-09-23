@@ -96,7 +96,7 @@ class abs_rep:
                 self.band_name  = band_name
         else:
 
-            logic = (wavelength>wvl_min) & (wavelength<wvl_max)
+            logic = (wavelength>=wvl_min) & (wavelength<wvl_max)
             indices = np.where(logic)[0]
             N_ = logic.sum()
             if N_ == 0:
