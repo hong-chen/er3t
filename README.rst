@@ -58,11 +58,11 @@ Features
 
   * **solver**: `MCARaTS <https://sites.google.com/site/mcarats/>`_ (3D&IPA) | `libRadtran <http://www.libradtran.org/>`_ (IPA)
 
-  * **absorption model**: Correlated-k | REPTRAN
+  * **absorption model**: `Correlated-k <https://doi.org/10.1029/90JD01945>`_ | `REPTRAN <https://doi.org/10.1016/j.jqsrt.2014.06.024>`_
 
-  * **cloud model**: Henyey-Greenstein | Mie
+  * **cloud model**: Henyey-Greenstein | `Mie <https://doi.org/10.1364/AO.19.001505>`_
 
-  * **surface model**: Lambertian | Cox-Munk | LSRT Model
+  * **surface model**: Lambertian | `Cox-Munk <https://doi.org/10.1364/JOSA.44.000838>`_ | LSRT Model
 
 :Remote Sensing:
 
