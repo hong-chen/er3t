@@ -7,7 +7,7 @@ import er3t.common
 import er3t.util
 
 
-__all__ = ['cal_num_den_from_rel_hum', 'cal_num_den_from_mix_rat']
+__all__ = ['cal_num_den_from_rel_hum', 'cal_num_den_from_mix_rat', 'interp_pres_from_alt_temp']
 
 
 
@@ -199,11 +199,8 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
             rescale = dpm / (aa+bb*pl[indices]).sum()
 
             if np.abs(rescale-1.0) > 0.1:
-                print('------------------------------------------------------------------------------')
-                print('Warning [atm_interp_pressure]:')
-                print('Warning: pressure smoothing failed at ', h[i], '...', h[i+1])
-                print('rescale=', rescale)
-                print('------------------------------------------------------------------------------')
+                msg = '\nWarning [interp_pres_from_alt_temp]: Pressure smoothing failed at %.1f to %.1f km, rescaled with %f ...' % (h[i], h[i+1], rescale)
+                warnings.warn(msg)
             else:
                 dp[indices] = rescale*(aa+bb*pl[indices])
 
