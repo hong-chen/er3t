@@ -179,7 +179,7 @@ class abs_16g:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [abs_16g]: Saving object into %s ...' % fname)
+                print('Message [abs_16g]: Saving object into <%s> ...' % fname)
             pickle.dump(self, f)
 
 
@@ -847,7 +847,7 @@ class abs_16g_txt:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [abs_16g_txt]: saving object into %s ...' % fname)
+                print('Message [abs_16g_txt]: saving object into <%s> ...' % fname)
             pickle.dump(self, f)
 
 
