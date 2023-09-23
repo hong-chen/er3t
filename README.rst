@@ -60,15 +60,17 @@ Features
 
   * **absorption model**: `Correlated-k <https://doi.org/10.1029/90JD01945>`_ | `REPTRAN <https://doi.org/10.1016/j.jqsrt.2014.06.024>`_
 
-  * **cloud model**: Henyey-Greenstein | `Mie <https://doi.org/10.1364/AO.19.001505>`_
+  * **cloud model**: `Mie <https://doi.org/10.1364/AO.19.001505>`_
 
-  * **surface model**: Lambertian | `Cox-Munk <https://doi.org/10.1364/JOSA.44.000838>`_ | LSRT Model
+  * **surface model**: `Cox-Munk <https://doi.org/10.1364/JOSA.44.000838>`_ | `LSRT Model <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
 
 :Remote Sensing:
 
-  * **data downloader**: Worldview | LAADS DAAC | GES DISC | LANCE
+  * **data downloader**: `Worldview <https://worldview.earthdata.nasa.gov>`_ | `LAADS DAAC <https://ladsweb.modaps.eosdis.nasa.gov/archive/>`_ | `GES DISC <https://oco2.gesdisc.eosdis.nasa.gov/data/>`_ | `LANCE <https://nrt3.modaps.eosdis.nasa.gov/archive>`_
 
-  * **product reader**: MODIS | VIIRS | OCO-2 | AHI
+  * **product reader**: `MODIS <https://modis.gsfc.nasa.gov>`_ | `VIIRS <https://ncc.nesdis.noaa.gov/VIIRS/>`_ | `OCO-2 <https://ocov2.jpl.nasa.gov>`_ | `AHI <https://www.data.jma.go.jp/mscweb/en/index.html>`_
+
+  * **flight simulator**: `ARISE <https://zenodo.org/record/4029241>`_ | `CAMP²Ex <https://zenodo.org/record/7358509>`_ | MAGPIE
 
 
 Resources
