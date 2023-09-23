@@ -116,6 +116,75 @@ def cal_solar_kurudz(wvl0, slit_func=None, method='auto', kurudz_file='%s/kurudz
 
 
 
+def gen_h5_abs_ssfr(fname_h5):
+
+    fdir0 = '/argus/seven2/hofmann'
+
+    if True:
+
+        f = h5py.File(fname_h5, 'w')
+
+        for sub in ['O3', 'CO2', 'CH4', 'H2O', 'O2_cont5']:
+
+            fdir = '%s/%s' % (fdir0, sub)
+
+            fnames = er3t.util.all_files(fdir)
+            print(len(fnames))
+
+            for fname in fnames:
+
+                vname = fname.split('/')[-1]
+
+                if ('temperature' in fname) and ('pressure' in fname) and (vname.split('.')[0] in ['kgo2', 'kgo3', 'kgh2o', 'kgco2', 'kgch4']) and ('old' not in fname) and ('test' not in fname):
+
+                    group = fname.replace(fdir0, '').replace('/%s' % os.path.basename(fname), '')
+                    if group not in f:
+                        g = f.create_group(group)
+                        print(group)
+                    g[vname] = np.loadtxt(fname)
+
+        f.close()
+
+    if True:
+
+        f = h5py.File(fname_h5, 'r+')
+
+        fdir = '%s/solar_v1.3' % fdir0
+        fnames = er3t.util.all_files(fdir)
+
+        for fname in fnames:
+
+            if ('solar_taug' in fname) and ('~' not in fname):
+
+                group = fname.replace(fdir0, '')
+
+                if group not in f:
+                    g = f.create_group(group)
+                    print(group)
+
+                try:
+                    with open(fname) as f0:
+                        v1, v2, dv, npts, sol_min, sol_max = np.fromstring(f0.readline(), sep=' ', dtype=np.float64)
+                        sol_int, = np.fromstring(f0.readline(), sep=' ', dtype=np.float64)
+
+                    params = np.array([v1, v2, dv, npts, sol_min, sol_max, sol_int])
+                    data   = np.genfromtxt(fname, skip_header=2)
+
+                except:
+                    with open(fname) as f0:
+                        v1, v2, dv, npts, sol_min, sol_max, sol_int = np.fromstring(f0.readline(), sep=' ', dtype=np.float64)
+
+                    params = np.array([v1, v2, dv, npts, sol_min, sol_max, sol_int])
+                    data   = np.genfromtxt(fname, skip_header=1)
+
+                if data.size > 0:
+                    g['params'] = params
+                    g['data']   = data
+
+        f.close()
+
+
+
 if __name__ == '__main__':
 
      pass
