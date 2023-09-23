@@ -91,8 +91,8 @@ class pha_mie_wc:
 
     fname_coef = '%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha
 
-    reference = 'Mie Scattering (Wiscombe, 1980):\n\
-- Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, 1980.\n'
+    reference = '\nMie Scattering (Wiscombe, 1980):\n\
+- Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, 1980.'
 
     ID = 'Mie (Water Clouds)'
 

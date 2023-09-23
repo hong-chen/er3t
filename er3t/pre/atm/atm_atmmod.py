@@ -61,8 +61,8 @@ class atm_atmmod:
 
     gases  = ['o3', 'o2', 'h2o', 'co2', 'no2', 'ch4']
 
-    reference = 'AFGL Atmospheric Profile (Anderson et al., 1986):\n\
-- Anderson, G. P., Clough, S. A., Kneizys, F. X., Chetwynd, J. H., and Shettle, E. P.: AFGL atmospheric constituent profiles (0–120 km), Tech. Rep. AFGL-TR-86–0110, Air Force Geophys. Lab., Hanscom Air Force Base, Bedford, Massachusetts, USA, 1986.\n'
+    reference = '\nAFGL Atmospheric Profile (Anderson et al., 1986):\n\
+- Anderson, G. P., Clough, S. A., Kneizys, F. X., Chetwynd, J. H., and Shettle, E. P.: AFGL atmospheric constituent profiles (0–120 km), Tech. Rep. AFGL-TR-86–0110, Air Force Geophys. Lab., Hanscom Air Force Base, Bedford, Massachusetts, USA, 1986.'
 
     def __init__(self,                \
                  levels       = None, \
