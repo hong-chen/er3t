@@ -93,7 +93,8 @@ class abs_16g:
 
         else:
 
-            sys.exit('Error   [abs_16g]: Please provide \'wavelength\' to proceed.')
+            msg = '\nError [abs_16g]: Please provide <wavelength> to proceed.'
+            raise OSError(msg)
 
 
     def load(self, fname):
@@ -102,7 +103,8 @@ class abs_16g:
             obj = pickle.load(f)
             if hasattr(obj, 'coef'):
                 if self.verbose:
-                    print('Message [abs_16g]: Loading %s ...' % fname)
+                    msg = 'Message [abs_16g]: Loading <%s> ...' % fname
+                    print(msg)
                 self.fname = obj.fname
                 self.wvl   = obj.wvl
                 self.nwl   = obj.nwl
@@ -110,7 +112,8 @@ class abs_16g:
                 self.coef  = obj.coef
                 self.wvl_info = obj.wvl_info
             else:
-                sys.exit('Error   [abs_16g]: \'%s\' is not the correct pickle file to load.' % fname)
+                msg = '\nError [abs_16g]: <%s> is not the correct pickle file to load.' % fname
+                raise OSError(msg)
 
 
     def run(self, atm_obj):
@@ -118,7 +121,8 @@ class abs_16g:
         self.wvl_info  = '%.2f nm (applied SSFR slit)' % self.wvl
 
         if not os.path.exists(self.fname_h5):
-            sys.exit('Error   [abs_16g]: Missing HDF5 database.')
+            msg = '\nError [abs_16g]: Missing HDF5 database.'
+            raise OSError(msg)
 
         f_h5 = h5py.File(self.fname_h5, 'r')
 
@@ -137,7 +141,8 @@ class abs_16g:
         if atm_obj is not None:
             self.prep_atmosphere(atm_obj)
         else:
-            sys.exit('Error   [abs_16g]: \'atm_obj\' needs to be provided.')
+            msg = '\nError [abs_16g]: <atm_obj> needs to be provided.'
+            raise OSError(msg)
 
         # self.fac
         #   self.fac['jpd']    : Python dictionary, contain 'name', 'data' etc
@@ -286,7 +291,8 @@ class abs_16g:
         abso_ref['jwu']      = copy.deepcopy(self.fac['jwu'])
 
         if self.wvl < 300.0:
-            sys.exit('Error   [abs_16g]: Wavelength too short - no absorption data available.')
+            msg = '\nError [abs_16g]: Wavelength too short - no absorption data available.'
+            raise OSError(msg)
 
         elif (300.0 <= self.wvl < 448.0):
             abso0             = copy.deepcopy(abso_ref)
@@ -468,7 +474,8 @@ class abs_16g:
             self.abso[0]      = abso0
 
         elif self.wvl > 2500.0:
-            sys.exit('Error   [abs_16g]: Wavelength too large - no absorption data available.')
+            msg = '\nError [abs_16g]: Wavelength too long - no absorption data available.'
+            raise OSError(msg)
 
 
     def get_coefficient(self, f_h5):
