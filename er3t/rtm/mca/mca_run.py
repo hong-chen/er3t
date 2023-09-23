@@ -5,6 +5,7 @@ import datetime
 import warnings
 import multiprocessing as mp
 import numpy as np
+
 import er3t.common
 
 
@@ -48,7 +49,7 @@ class mca_run:
                  optimize   = True,   \
                  has_mpi    = er3t.common.has_mpi, \
                  fname_sh   = None,   \
-                 verbose    = True,   \
+                 verbose    = er3t.common.params['verbose'],   \
                  quiet      = False   \
                 ):
 
@@ -56,12 +57,12 @@ class mca_run:
             if er3t.common.has_mcarats:
                 executable = os.environ['MCARATS_V010_EXE']
             else:
-                msg = 'Error [mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>.'
+                msg = '\nError [mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>.'
                 raise OSError(msg)
 
         Nfile = len(fnames_inp)
         if len(fnames_out) != Nfile:
-            msg = 'Error [mca_run]: Inconsistent input and output files.'
+            msg = '\nError [mca_run]: Inconsistent input and output files.'
             raise OSError(msg)
 
         self.Ncpu    = Ncpu
@@ -86,7 +87,7 @@ class mca_run:
         elif mp_mode in ['batch', 'shell', 'bash', 'hpc', 'sh']:
             mp_mode = 'sh'
         else:
-            msg = 'Error [mca_run]: Cannot understand input <mp_mode=\'%s\'>.' % mp_mode
+            msg = '\nError [mca_run]: Cannot understand input <mp_mode=\'%s\'>.' % mp_mode
             raise OSError(msg)
         self.mp_mode = mp_mode
 
@@ -175,7 +176,7 @@ class mca_run:
 
 
 
-def execute_command(command, verbose=False):
+def execute_command(command, verbose=er3t.common.params['verbose']):
 
     if verbose:
         print('Message [mca_run]: Executing <%s> ...' % command)
