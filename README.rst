@@ -36,8 +36,9 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 developed for cutting-edge radiative transfer and remote sensing applications. It provides high-level
 interfaces to automate the process of performing IPA/3D radiative transfer calculations for measured
 or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer solvers. The
-automation capability covers the downloading and processing of satellite data, the setup of radiative
-properties and model, and the simulation of radiometric quantities such as radiance and irradiance.
+automation capability covers the downloading and processing of satellite data, the setup of atmospheric
+radiative properties and radiative transfer model, and the simulation of radiometric quantities such
+as radiance and irradiance.
 
 
 Applications
@@ -70,7 +71,7 @@ Features
 
   * **product reader**: `MODIS <https://modis.gsfc.nasa.gov>`_ | `VIIRS <https://ncc.nesdis.noaa.gov/VIIRS/>`_ | `OCO-2 <https://ocov2.jpl.nasa.gov>`_ | `AHI <https://www.data.jma.go.jp/mscweb/en/index.html>`_
 
-  * **flight simulator**: `ARISE <https://zenodo.org/record/4029241>`_ | `CAMP²Ex <https://zenodo.org/record/7358509>`_ | MAGPIE
+  * **airborne simulator**: `ARISE <https://zenodo.org/record/4029241>`_ | `CAMP²Ex <https://zenodo.org/record/7358509>`_
 
 
 Resources
