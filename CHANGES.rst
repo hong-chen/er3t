@@ -1,3 +1,20 @@
+Version 0.2.0 (in plan)
+-----------------------
+Important updates from previous version (v0.1.1):
+
+* Initiates documentation at https://er3t.readthedocs.io/;
+
+* Adds command line tool ``sdown`` for effortlessly downloading satellite data;
+
+* Adds satellite data download support for NASA LANCE;
+
+* Adds time estimation and stamping (accuracy within seconds) for NASA Worldview imagery;
+
+* Implements BRDF surface support for Cox-Munk (ocean) and LSRT (land, e.g., MCD43A1 product);
+
+* Implements gas absorption support for REPTRAN.
+
+
 Version 0.1.1
 -------------
 Important updates from previous version (v0.1.0):
@@ -7,8 +24,6 @@ Important updates from previous version (v0.1.0):
 * Updates example code under ``examples``;
 
 * Improves satellite data download process.
-
-
 
 
 Version 0.1.0
@@ -28,9 +43,6 @@ Important updates from previous version (v0.0.1):
 * includes support for libRadtran (``er3t.rtm.lrt``) in addition to MCARaTS (``er3t.rtm.mca``).
 
 
-
-
 Version 0.0.1
 -------------
-
 First public pre-release (DOI:10.5281/zenodo.4110565).
