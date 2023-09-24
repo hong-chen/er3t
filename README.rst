@@ -57,13 +57,13 @@ Features
 --------
 :Radiative Transfer:
 
-  * **solver**: `MCARaTS <https://sites.google.com/site/mcarats/>`_ (3D&IPA) | `libRadtran <http://www.libradtran.org/>`_ (IPA)
+  * **solver**: `MCARaTS <https://sites.google.com/site/mcarats/>`_ | `libRadtran <http://www.libradtran.org/>`_
 
   * **absorption model**: `Correlated-k <https://doi.org/10.1029/90JD01945>`_ | `REPTRAN <https://doi.org/10.1016/j.jqsrt.2014.06.024>`_
 
-  * **cloud model**: `Mie <https://doi.org/10.1364/AO.19.001505>`_
+  * **cloud model**: `Mie (water) <https://doi.org/10.1364/AO.19.001505>`_
 
-  * **surface model**: `Cox-Munk <https://doi.org/10.1364/JOSA.44.000838>`_ | `LSRT Model <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
+  * **surface model**: `Cox-Munk (ocean) <https://doi.org/10.1364/JOSA.44.000838>`_ | `LSRT Model (land) <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
 
 :Remote Sensing:
 
