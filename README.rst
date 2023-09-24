@@ -35,10 +35,10 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 `EaR³T <https://er3t.readthedocs.io/en/latest/>`_ (pronounced /ɜːt/) is a Python software package
 developed for cutting-edge radiative transfer and remote sensing applications. It provides high-level
 interfaces to automate the process of performing IPA/3D radiative transfer calculations for measured
-or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer solvers. The
-automation capability covers the downloading and processing of satellite data, the setup of atmospheric
-radiative properties and radiative transfer model, and the simulation of radiometric quantities such
-as radiance and irradiance.
+or modeled cloud/aerosol fields using publicly available radiative transfer solvers. The automation
+capability covers not only the simulation of radiometric quantities such as radiance and irradiance,
+but also the downloading/processing of satellite data and the setup of atmospheric radiative properties,
+which are essential for an end-to-end simulation pipeline.
 
 
 Applications
