@@ -3,6 +3,7 @@ import sys
 import pickle
 import copy
 import h5py
+from netCDF4 import Dataset
 import numpy as np
 from scipy.io import readsav
 from scipy.interpolate import interp2d
@@ -1871,13 +1872,10 @@ class abs_rrtmg_sw:
         # read out gas names
         #   <gases>
         #/----------------------------------------------------------------------------\#
-        gas_bytes = f0.variables['AbsorberNames'][:]
+        gas_bytes = f0.variables['AbsorberNames'][:].data
         Ngas, Nchar = gas_bytes.shape
-        gases = []
-        for i in range(Ngas):
-            gas_name0 = ''.join([j.decode('utf-8') for j in gas_bytes[i, :]]).strip().lower()
-            if len(gas_name0) > 0:
-                gases.append(gas_name0)
+        gases = [gas.decode('utf-8').replace(' ', '').lower() for gas in gas_bytes.view('S%d' % Nchar).ravel()]
+        print(gases)
         #\----------------------------------------------------------------------------/#
 
 
@@ -1885,8 +1883,8 @@ class abs_rrtmg_sw:
         #   <key_gas_low>
         #   <key_gas_upp>
         #/----------------------------------------------------------------------------\#
-        key_gas_low_bytes = f0.variables['KeySpeciesNamesLowerAtmos'][:][:, iband, :]
-        key_gas_upp_bytes = f0.variables['KeySpeciesNamesUpperAtmos'][:][:, iband, :]
+        key_gas_low_bytes = f0.variables['KeySpeciesNamesLowerAtmos'][:][:, iband, :].data
+        key_gas_upp_bytes = f0.variables['KeySpeciesNamesUpperAtmos'][:][:, iband, :].data
         Nkey, Nchar = key_gas_upp_bytes.shape
         ikey_gas_low = []
         ikey_gas_upp = []

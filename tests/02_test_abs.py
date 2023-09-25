@@ -332,10 +332,10 @@ def test_abs_16g_solar(fdir):
 
 if __name__ == '__main__':
 
-    fdir = 'tmp-data/abs_16g'
+    # fdir = 'tmp-data/abs_16g'
     # test_abs_16g(fdir)
 
-    # test_abs_rrtmg()
+    test_abs_rrtmg()
 
     # test_abs_reptran()
-    test_abs_16g_solar(fdir)
+    # test_abs_16g_solar(fdir)
