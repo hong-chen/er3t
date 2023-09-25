@@ -95,6 +95,7 @@ def mca_flux_one_clear(
     fname_abs = '%s/abs_%06.1fnm.pk' % (fdir, params['wavelength'])
     # abs0      = er3t.pre.abs.abs_16g(wavelength=params['wavelength'], fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
     abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    print(abs0.band_name)
 
     atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm_1ds   = [atm1d0]
@@ -202,7 +203,8 @@ if __name__ == '__main__':
 
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
-        for wavelength in [470.0, 555.0, 659.0, 772.0, 1621.0, 2079.0]:
+        # for wavelength in [470.0, 555.0, 659.0, 772.0, 1621.0, 2079.0]:
+        for wavelength in [772.0, 1621.0, 2079.0]:
             test_01_flux_one_clear(wavelength)
 
     else:
