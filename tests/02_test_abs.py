@@ -69,6 +69,7 @@ def test_abs_16g(fdir):
     abs_obj = er3t.pre.abs.abs_16g(fname=fname_abs, atm_obj=atm0, verbose=True)
 
 
+
 def test_abs_rrtmg(fdir='tmp-data'):
 
     if not os.path.exists(fdir):
@@ -84,15 +85,15 @@ def test_abs_rrtmg(fdir='tmp-data'):
     # read out abs coef for USSA (US standard atmosphere)
     # provided by Xiuhong Chen, gives <alt_ref> and <coef_ref>
     #/----------------------------------------------------------------------------\#
-    Nz = 39; Nb = 14; Ng = 16
-    fname    = 'data/coef_sw_ussa.txt'
-    data     = np.genfromtxt(fname)
-    alt_ref0  = data[:, 0]
-    coef_ref0 = data[:, 1:].reshape((Nz, Nb, Ng))
+    # Nz = 39; Nb = 14; Ng = 16
+    # fname    = 'data/coef_sw_ussa.txt'
+    # data     = np.genfromtxt(fname)
+    # alt_ref0  = data[:, 0]
+    # coef_ref0 = data[:, 1:].reshape((Nz, Nb, Ng))
 
-    logic = (alt_ref0>=atm0.lay['altitude']['data'][0]) & (alt_ref0<=atm0.lay['altitude']['data'][-1])
-    alt_ref  = alt_ref0[logic]
-    coef_ref = coef_ref0[logic, ...]
+    # logic = (alt_ref0>=atm0.lay['altitude']['data'][0]) & (alt_ref0<=atm0.lay['altitude']['data'][-1])
+    # alt_ref  = alt_ref0[logic]
+    # coef_ref = coef_ref0[logic, ...]
     #\----------------------------------------------------------------------------/#
 
 
@@ -153,6 +154,7 @@ def test_abs_rrtmg(fdir='tmp-data'):
     # abs_obj = abs_16g(wavelength=wavelength, atm_obj=atm0, verbose=True)
     #\----------------------------------------------------------------------------/#
     sys.exit()
+
 
 
 def test_abs_reptran(fdir='tmp-data'):

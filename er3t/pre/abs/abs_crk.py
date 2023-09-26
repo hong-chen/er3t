@@ -1899,6 +1899,9 @@ class abs_rrtmg_sw:
         key_gas_low = [gases[i] for i in ikey_gas_low]
         key_gas_upp = [gases[i] for i in ikey_gas_upp]
         #\----------------------------------------------------------------------------/#
+        print(key_gas_low)
+        print(key_gas_upp)
+        sys.exit()
 
 
         # Gs, Nz
