@@ -249,8 +249,8 @@ class abs_rep:
 
         if (self.source == 'solar') and (self.target in ['fine', 'medium', 'coarse']):
             self.coef['solar']['data'][...] = cal_solar_kurudz(self.wvl, slit_func=self.slit_func)
-        else:
-            self.coef['solar']['data'][...] = np.sum(self.sol.data*self.wgt.data)
+        # else:
+        #     self.coef['solar']['data'][...] = np.sum(self.sol.data*self.wgt.data)
 
         self.coef['slit_func'] = {
                 'name': 'Slit Function (Nz, Ng)',
