@@ -154,6 +154,7 @@ class abs_rep:
             else:
                 index_band = bands.index(band_name)
                 self.band_name  = band_name
+                self.run_reptran = True
         else:
 
             logic = (wavelength>=wvl_min) & (wavelength<wvl_max)
