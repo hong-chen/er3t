@@ -38,18 +38,13 @@ import sys
 import pickle
 import warnings
 import h5py
-# from pyhdf.SD import SD, SDC
 import numpy as np
 import datetime
 from scipy.io import readsav
-# from scipy import interpolate, stats
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-# import matplotlib.path as mpl_path
 import matplotlib.image as mpl_img
-# import matplotlib.patches as mpatches
-# import matplotlib.gridspec as gridspec
 from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -68,8 +63,8 @@ params = {
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
            'region' : [-109.1, -106.9, 36.9, 39.1],
-           'photon' : 1e9,
-             'Ncpu' : 12,
+           'photon' : 1e8,
+             'Ncpu' : 2,
        'photon_ipa' : 2e7,
           'cot_ipa' : np.concatenate((       \
                np.arange(0.0, 2.0, 0.5),     \
@@ -1352,7 +1347,8 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
     # abs object
     #/----------------------------------------------------------------------------\#
     fname_abs = '%s/abs.pk' % fdir
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    # abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='modis', band_name='modis_aqua_b01', atm_obj=atm0, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1371,7 +1367,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
             }
 
     fname_sfc = '%s/sfc.pk' % fdir
-    sfc0      = er3t.pre.sfc.sfc_2d_gen(alb_2d=coef_dict, fname=fname_sfc, overwrite=overwrite)
+    sfc0      = er3t.pre.sfc.sfc_2d_gen(sfc_2d=coef_dict, fname=fname_sfc, overwrite=overwrite)
     sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
@@ -1465,7 +1461,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
             photons=photon,
             solver=solver,
             Ncpu=params['Ncpu'],
-            mp_mode='py',
+            mp_mode='mpi',
             overwrite=overwrite
             )
     #\----------------------------------------------------------------------------/#
@@ -1750,7 +1746,7 @@ if __name__ == '__main__':
     #   b. <02_modis_rad-sim_<plot_sat_raw>.png> will be created under current directory
     #   c. <02_modis_rad-sim_<plot_cld_ipa>.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
