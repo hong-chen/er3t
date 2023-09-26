@@ -128,7 +128,7 @@ class sfc_2d_gen:
                 self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
                 self.data['sfc']  = {'data':sfc, 'name':'Surface BRDF-LSRT (Isotropic, LiSparseR, RossThick)', 'units':'N/A'}
 
-            if ('diffusealb' in keys_check) and ('diffusefrac' in keys_check) and \
+            elif ('diffusealb' in keys_check) and ('diffusefrac' in keys_check) and \
                ('refracr'    in keys_check) and ('refraci'     in keys_check) and \
                ('slope'      in keys_check):
 
@@ -146,12 +146,12 @@ class sfc_2d_gen:
 
             else:
 
-                msg = '\nError [sfc_2d_gen]: Currently we only support 2D surface albedo or BRDF [RossThickLiSparseReciprocal].'
+                msg = '\nError [sfc_2d_gen]: Currently we only support 2D surface albedo or BRDF.'
                 raise OSError(msg)
 
         else:
 
-            msg = '\nError [sfc_2d_gen]: Currently we only support 2D surface albedo or BRDF [RossThickLiSparseReciprocal].'
+            msg = '\nError [sfc_2d_gen]: Currently we only support 2D numpy array or Python dictionary.'
             raise OSError(msg)
 
 
