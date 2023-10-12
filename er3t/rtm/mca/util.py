@@ -37,6 +37,7 @@ class func_ref_vs_cot:
             Ncpu=er3t.common.params['Ncpu'],
             output_tag=er3t.common.params['output_tag'],
             overwrite=er3t.common.params['overwrite'],
+            atm0=None,
             ):
 
 
@@ -58,6 +59,7 @@ class func_ref_vs_cot:
         self.cpu0 = Ncpu
         self.date0 = date
         self.fname_atm = atmospheric_profile
+        self.atm0 = atm0
 
         self.mu0  = np.cos(np.deg2rad(self.sza0))
         self.ref_2s = er3t.util.cal_r_twostream(cot, a=self.alb0, mu=self.mu0)
@@ -105,17 +107,20 @@ class func_ref_vs_cot:
         os.makedirs(self.fdir)
 
         for cot0 in self.cot:
-            self.run_one(cot0, self.cer0, cbh0=self.cbh0, cth0=self.cth0)
+            self.run_one(cot0, self.cer0, cbh0=self.cbh0, cth0=self.cth0, atm0=self.atm0)
 
-    def run_one(self, cot0, cer0, cbh0=1.0, cth0=2.0):
+    def run_one(self, cot0, cer0, cbh0=1.0, cth0=2.0, atm0=None):
 
         name_tag = 'cot-%05.1f_cer-%04.1f' % (cot0, cer0)
 
         # atm object
         #/----------------------------------------------------------------------------\#
-        levels = np.arange(0.0, 20.1, 0.1)
-        fname_atm = '%s/atm_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
-        atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=self.fname_atm, overwrite=False)
+        if atm0 is None:
+            levels = np.arange(0.0, 20.1, 0.1)
+            fname_atm = '%s/atm_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
+            atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=self.fname_atm, overwrite=False)
+        else:
+            atm0 = atm0
         #\----------------------------------------------------------------------------/#
 
         # abs object

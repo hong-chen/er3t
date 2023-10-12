@@ -360,6 +360,7 @@ class abs_oco_h5:
 
         self.verbose   = verbose
         self.wvl       = wavelength
+        self.wvl_info  = '%.4f nm (applied OCO-2 slit)' % wavelength
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -392,6 +393,7 @@ class abs_oco_h5:
                 self.nwl   = obj.nwl
                 self.coef  = obj.coef
                 self.Ng    = obj.Ng
+                self.wvl_info   = obj.wvl_info
             else:
                 sys.exit('Error   [abs_oco_h5]: \'%s\' is not the correct pickle file to load.' % fname)
 
@@ -430,7 +432,7 @@ class abs_oco_h5:
                     print('Message [abs_oco_h5]: Picked wvl=%.2f from \'%s\' for input wavelength %.2fnm.' % (wvl_center_oco[index_wvl], self.fname_h5, self.wvl))
                 self.wvl = wvl_center_oco[index_wvl]
 
-            Ng              = f['absgn'][...][index_wvl]
+            Ng              = int(f['absgn'][...][index_wvl])
             wvls            = f['absgx'][...][index_wvl, :Ng].T * 1000.0
             abso_coef       = f['absgl'][...][:, index_wvl, :Ng].T
             slit_func0      = f['absgy'][...][index_wvl, :Ng].T

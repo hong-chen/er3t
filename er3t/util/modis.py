@@ -1076,7 +1076,7 @@ class modis_04:
         Deep_Blue_Angstrom_Exponent_land    = get_data_h4(Deep_Blue_Angstrom_Exponent_land_0)[logic]
         Deep_Blue_Aerosol_type_land         = get_data_h4(Deep_Blue_Aerosol_type_land_0)[logic]
         Deep_Blue_Aerosol_cloud_frac_land   = get_data_h4(Deep_Blue_Aerosol_cloud_frac_land_0)[logic]
-        Deep_Blue_SSA_land                  = get_data_h4(Deep_Blue_SSA_land_0)[logic]
+        Deep_Blue_SSA_land                  = get_data_h4(Deep_Blue_SSA_land_0)[:, logic] #0.412, 0.47, and 0.66 micron
 
         f.end()
         # -------------------------------------------------------------------------------------------------

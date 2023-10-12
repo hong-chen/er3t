@@ -87,7 +87,7 @@ class mca_atm_1d:
             self.nml[ig]['Atm_abs1d(1:, 1)'] = {'data':atm_abs, 'units':'/m' , 'name':'Absorption coefficients'}
 
             # Extinction coefficient
-            # Use Bodhaine formula to calculate Rayleigh Optical Depth
+            # Use Bodhaine formula to calculate Rayleigh Optical Deption
             atm_ext = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:]) \
                      / (self.atm.lay['thickness']['data']*1000.0)
             self.nml[ig]['Atm_ext1d(1:, 1)'] = {'data':atm_ext, 'units':'/m' , 'name':'Extinction coefficients'}
@@ -308,11 +308,11 @@ class mca_atm_3d:
         self.nml['Atm_ny']     = copy.deepcopy(self.cld.lay['ny'])
 
         self.nml['Atm_dx']     = copy.deepcopy(self.cld.lay['dx'])
-        self.nml['Atm_dx']['data']  *= 1000.0
+        #self.nml['Atm_dx']['data']  *= 1000.0
         self.nml['Atm_dx']['units']  = 'm'
 
         self.nml['Atm_dy']     = copy.deepcopy(self.cld.lay['dy'])
-        self.nml['Atm_dy']['data']  *= 1000.0
+        #self.nml['Atm_dy']['data']  *= 1000.0
         self.nml['Atm_dy']['units']  = 'm'
 
         self.nml['Atm_nz3']    = {'data':nz3   , 'unit':'N/A', 'name':'number of 3D layer'}
