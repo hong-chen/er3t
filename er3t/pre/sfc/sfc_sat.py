@@ -104,7 +104,8 @@ class sfc_sat:
 
         self.data['nx']   = {'data':Nx       , 'name':'Nx'         , 'units':'N/A'}
         self.data['ny']   = {'data':Ny       , 'name':'Ny'         , 'units':'N/A'}
-        self.data['alb']  = copy.deepcopy(self.sat.data['alb_2d'])
+        # self.data['alb']  = copy.deepcopy(self.sat.data['alb_2d'])
+        self.data['sfc']  = copy.deepcopy(self.sat.data['alb_2d'])
         self.data['lon']  = copy.deepcopy(self.sat.data['lon_2d'])
         self.data['lat']  = copy.deepcopy(self.sat.data['lat_2d'])
 
