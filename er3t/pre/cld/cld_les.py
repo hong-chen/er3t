@@ -225,6 +225,7 @@ class cld_les:
         self.lay['temperature'] = {'data':t_3d  , 'name':'Temperature (3D)'            , 'units':'K'}
         self.lay['extinction']  = {'data':ext_3d, 'name':'Extinction coefficients (3D)', 'units':'m^-1'}
         self.lay['cer']         = {'data':cer_3d, 'name':'Cloud effective radius (3D)' , 'units':'mm'}
+        self.lay['lwc']         = {'data':lwc_3d, 'name':'Liquid water content (3D)'   , 'units':'kg m^-3'}
         #\--------------------------------------------------------------/#
 
 
