@@ -11,7 +11,7 @@ from scipy.interpolate import interp2d
 
 import er3t.common
 import er3t.util
-from .util import *
+# from .util import *
 
 
 __all__ = [
@@ -2087,6 +2087,22 @@ class abs_rrtmg_sw:
         # -
 
         f0.close()
+
+
+
+def export_solar_16g():
+
+    wvls = np.arange(300.0, 2501.0, 1.0)
+
+    levels = np.linspace(0.0, 20.0, 41)
+    atm0 = er3t.pre.atm.atm_atmmod(levels=levels)
+
+    for wvl in wvls:
+
+        abs_obj = er3t.pre.abs.abs_16g(wavelength=wvl, atm_obj=atm0)
+        toa = np.sum(abs_obj.coef['solar']['data'] * abs_obj.coef['weight']['data']) * 1000.0
+
+        print('%5d %.6e' % (wvl, toa))
 
 
 
