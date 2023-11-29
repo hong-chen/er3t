@@ -202,6 +202,9 @@ class mca_out_ng:
         if self.mca.target in ['flux', 'flux0']: # ['f', 'flux', 'irradiance', 'heating rate', 'hr']:
             self.data = read_flux_mca_out(self.mca, self.abs, mode=self.mode, squeeze=self.squeeze)
 
+        elif self.mca.target in ['heating rate']: # ['f', 'flux', 'irradiance', 'heating rate', 'hr']:
+            self.data = read_hrt_mca_out(self.mca, self.abs, mode=self.mode, squeeze=self.squeeze)
+
         elif self.mca.target == 'radiance':
             self.data = read_radiance_mca_out(self.mca, self.abs, mode=self.mode, squeeze=self.squeeze)
 
@@ -390,6 +393,163 @@ def read_flux_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
         data_dict['f_up_std']            = {'data':np.std(f_up                , axis=-1), 'name':'Global upwelling flux (standard deviation)'   , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
         data_dict['f_down_direct_std']   = {'data':np.std(f_down_direct       , axis=-1), 'name':'Direct downwelling flux (standard deviation)' , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
         data_dict['f_down_diffuse_std']  = {'data':np.std(f_down-f_down_direct, axis=-1), 'name':'Diffuse downwelling flux (standard deviation)', 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
+
+        data_dict['N_photon']        = {'data':mca_obj.photons     , 'name': 'Number of photons'      , 'units': 'N/A'}
+        data_dict['N_run']           = {'data':mca_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
+
+    else:
+
+        msg = 'Error [read_flux_mca_out]: Do not support <mode=%s>.' % mode
+        raise OSError(msg)
+
+    return data_dict
+    # -
+
+def read_hrt_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
+
+    """
+    Read fluxes from MCARaTS output files
+    Input:
+        mca_obj : positional argument, mca object, e.g., mca_obj = mcarats(...)
+        abs_obj : positional argument, abs object, e.g., abs_obj = abs_16g(...)
+        mode=   : keyword argument, string, default='mean', can be 'mean', 'all'
+        squeeze=: keyword argument, boolen, default=True, whether to keep axis that has dimension of 1 or not, True:remove, False:keep
+
+    Output:
+        data: Python dictionary
+            data['f_up']            : Global upwelling irradiance (mean/std/raw)
+            data['f_down']          : Global downwelling irradiance (mean/std/raw)
+            data['f_down_direct']   : Direct downwelling irradiance (mean/std/raw)
+            data['f_down_diffuse']  : Diffuse downwelling irradiance (mean/std/raw)
+            data['hrt']             : Heating rate (mean/std/raw)
+    """
+
+    mode = mode.lower()
+
+    # +
+    # read one file to get the information of dataset dimension
+    out0      = mca_out_raw(mca_obj.fnames_out[0][0])
+    dims_info = out0.data[0]['dims_info']
+    dims      = out0.data[0]['dims']
+    # -
+
+
+    # +
+    # calculate factors using sol_fac (sun-earth distance, weight, slit functions etc.)
+    Nz = dims[dims_info.index('Nz')]
+
+    zz     = np.arange(Nz)
+    if Nz > 1:
+        zz[-1] = zz[-2]
+
+    sol_fac = cal_sol_fac(mca_obj.date)
+
+    norm    = np.zeros(Nz, dtype=np.float64)
+    factors = np.zeros((Nz, mca_obj.Ng), dtype=np.float64)
+
+    for iz in range(Nz):
+        norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
+        for ig in range(mca_obj.Ng):
+            factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
+    
+    if Nz > 1:
+        norm_half    = np.zeros(Nz - 1, dtype=np.float64)
+        factors_half = np.zeros((Nz - 1, mca_obj.Ng), dtype=np.float64)
+
+        for iz in range(Nz - 1):
+            norm_half[iz] = sol_fac/(abs_obj.coef['weight']['data'] * 0.5 * (abs_obj.coef['slit_func']['data'][zz[iz], :] + abs_obj.coef['slit_func']['data'][zz[iz + 1], :])).sum()
+            for ig in range(mca_obj.Ng):
+                factors_half[iz, ig] = norm_half[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*0.5*(abs_obj.coef['slit_func']['data'][zz[iz], ig] + abs_obj.coef['slit_func']['data'][zz[iz + 1], ig])
+    else:
+        norm_half    = np.zeros(1, dtype=np.float64)
+        factors_half = np.zeros((1, mca_obj.Ng), dtype=np.float64)
+        norm_half[0] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[0], :]).sum()
+        for ig in range(mca_obj.Ng):
+            factors_half[0, ig] = norm_half[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[0], ig]
+
+    # -
+
+
+    # +
+    # calculate fluxes
+    if squeeze:
+        dims_info  = [dims_info[i] for i in range(len(dims)) if dims[i] > 1]
+        dims       = [i for i in dims if i>1]
+
+    dims_info += ['Nr']
+    dims      += [mca_obj.Nrun]
+
+    dims_hrt      = dims.copy()
+    dims_hrt[dims_info.index('Nz')] -= 1
+
+    f_down_direct = np.zeros(dims, dtype=np.float64)
+    f_down        = np.zeros(dims, dtype=np.float64)
+    f_up          = np.zeros(dims, dtype=np.float64)
+    hrt           = np.zeros(dims_hrt, dtype=np.float64)
+
+    for ir in range(mca_obj.Nrun):
+        for ig in range(mca_obj.Ng):
+
+            fname0         = mca_obj.fnames_out[ir][ig]
+
+            out0           = mca_out_raw(fname0)
+            f_down_direct0 = out0.data[0]['data']
+            f_down0        = out0.data[1]['data']
+            f_up0          = out0.data[2]['data']
+            hrt0           = out0.data[3]['data']
+
+            for iz in range(Nz):
+                f_down_direct0[:, :, iz, :] *= factors[iz, ig]
+                f_down0[:, :, iz, :]        *= factors[iz, ig]
+                f_up0[:, :, iz, :]          *= factors[iz, ig]
+            
+            for iz in range(Nz - 1):
+                hrt0[:, :, iz, :]           *= factors_half[iz, ig]
+
+            if squeeze:
+                f_down_direct[..., ir] += np.squeeze(f_down_direct0)
+                f_down[..., ir]        += np.squeeze(f_down0)
+                f_up[..., ir]          += np.squeeze(f_up0)
+                hrt[..., ir]           += np.squeeze(hrt0)
+            else:
+                f_down_direct[..., ir] += f_down_direct0
+                f_down[..., ir]        += f_down0
+                f_up[..., ir]          += f_up0
+                hrt[..., ir]           += hrt0
+    # -
+
+
+    # +
+    # store data into Python dictionary
+    data_dict = {}
+
+    toa = np.sum(sol_fac * abs_obj.coef['solar']['data'] * abs_obj.coef['weight']['data'])
+    data_dict['toa'] = {'data':toa, 'name':'TOA without SZA' , 'units':'W/m^2/nm'}
+
+    if mode == 'all':
+
+        data_dict['f_down']          = {'data':f_down              , 'name':'Global downwelling flux' , 'units':'W/m^2/nm', 'dims_info':dims_info}
+        data_dict['f_up']            = {'data':f_up                , 'name':'Global upwelling flux'   , 'units':'W/m^2/nm', 'dims_info':dims_info}
+        data_dict['f_down_direct']   = {'data':f_down_direct       , 'name':'Direct downwelling flux' , 'units':'W/m^2/nm', 'dims_info':dims_info}
+        data_dict['f_down_diffuse']  = {'data':f_down-f_down_direct, 'name':'Diffuse downwelling flux', 'units':'W/m^2/nm', 'dims_info':dims_info}
+        data_dict['hrt']             = {'data':hrt                 , 'name':'Heating rate (flux convergence)', 'units':'W/m^3/nm', 'dims_info':dims_info}
+
+        data_dict['N_photon']        = {'data':mca_obj.photons     , 'name': 'Number of photons'      , 'units': 'N/A'}
+        data_dict['N_run']           = {'data':mca_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
+
+    elif mode == 'mean':
+
+        data_dict['f_down']          = {'data':np.mean(f_down              , axis=-1), 'name':'Global downwelling flux (mean)' , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
+        data_dict['f_up']            = {'data':np.mean(f_up                , axis=-1), 'name':'Global upwelling flux (mean)'   , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
+        data_dict['f_down_direct']   = {'data':np.mean(f_down_direct       , axis=-1), 'name':'Direct downwelling flux (mean)' , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
+        data_dict['f_down_diffuse']  = {'data':np.mean(f_down-f_down_direct, axis=-1), 'name':'Diffuse downwelling flux (mean)', 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
+        data_dict['hrt']             = {'data':np.mean(hrt                 , axis=-1), 'name':'Heating rate (flux convergence, mean)', 'units':'W/m^3/nm', 'dims_info':dims_info[:-1]}
+
+        data_dict['f_down_std']          = {'data':np.std(f_down              , axis=-1), 'name':'Global downwelling flux (standard deviation)' , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
+        data_dict['f_up_std']            = {'data':np.std(f_up                , axis=-1), 'name':'Global upwelling flux (standard deviation)'   , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
+        data_dict['f_down_direct_std']   = {'data':np.std(f_down_direct       , axis=-1), 'name':'Direct downwelling flux (standard deviation)' , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
+        data_dict['f_down_diffuse_std']  = {'data':np.std(f_down-f_down_direct, axis=-1), 'name':'Diffuse downwelling flux (standard deviation)', 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
+        data_dict['hrt_std']             = {'data':np.std(hrt                 , axis=-1), 'name':'Heating rate (flux convergence, standard deviation)', 'units':'W/m^3/nm', 'dims_info':dims_info[:-1]}
 
         data_dict['N_photon']        = {'data':mca_obj.photons     , 'name': 'Number of photons'      , 'units': 'N/A'}
         data_dict['N_run']           = {'data':mca_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
