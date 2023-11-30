@@ -168,6 +168,8 @@ class lrt_init_mono_rad:
         day_of_year = date.timetuple().tm_yday
         wavelength_s  = np.round(wavelength-wavelength_half_width-spectral_resolution, decimals=int(-math.log10(spectral_resolution)))
         wavelength_e  = np.round(wavelength+wavelength_half_width+spectral_resolution, decimals=int(-math.log10(spectral_resolution)))
+        # wavelength_s  = np.round(wavelength, decimals=int(-math.log10(spectral_resolution)))
+        # wavelength_e  = np.round(wavelength, decimals=int(-math.log10(spectral_resolution)))
 
         self.input_dict = OD([
                             ('atmosphere_file'   , lrt_cfg['atmosphere_file']),
