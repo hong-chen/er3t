@@ -79,7 +79,7 @@ class cld_les:
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
             try:
-                file_correct = (obj.ID == 'LES Cloud 3D')
+                file_correct = (('3d' in obj.ID.lower()) and 'cloud' in obj.ID.lower())
             except:
                 file_correct = False
 
