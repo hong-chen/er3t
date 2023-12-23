@@ -69,7 +69,6 @@ class viirs_03:
         fnames=   : keyword argument, default=None, Python list of the file path of the original netCDF file
         extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
         vnames=   : keyword argument, default=[], additional variable names to be read in to self.data
-        overwrite=: keyword argument, default=False, whether to overwrite or not
         verbose=  : keyword argument, default=False, verbose tag
 
     Output:
@@ -90,7 +89,6 @@ class viirs_03:
                  fnames    = None,  \
                  extent    = None,  \
                  vnames    = [],    \
-                 overwrite = False, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the raw netCDF files
@@ -155,20 +153,20 @@ class viirs_03:
 
             if 'valid_min' in lon0.ncattrs():
                 lon_range = [lon0.getncattr('valid_min'), lon0.getncattr('valid_max')]
-                lat_range = [lon0.getncattr('valid_min'), lon0.getncattr('valid_max')]
+                lat_range = [lat0.getncattr('valid_min'), lat0.getncattr('valid_max')]
             else:
                 lon_range = [-180.0, 180.0]
-                lat_range = [-90.0 , 90.0]
+                lat_range = [-90.0, 90.0]
 
         else:
 
-            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
-            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
+            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
+            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
         lon = get_data_nc(lon0)
         lat = get_data_nc(lat0)
 
-        logic = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+        logic = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
         lon   = lon[logic]
         lat   = lat[logic]
         #\-----------------------------------------------------------------------------/
@@ -329,14 +327,13 @@ class viirs_l1b:
         Method to remove all flags without masking.
         This could remove a significant portion of the image.
         """
-        nc_dset.set_auto_scale(False)
-        nc_dset.set_auto_mask(False)
+        nc_dset.set_auto_maskandscale(False)
         data = nc_dset[:]
         data = data.astype('float') # convert to float to use nan
         flags = nc_dset.getncattr('flag_values')
 
         for flag in flags:
-            data[np.where(data == flag)] = fill_value
+            data[data == flag] = fill_value
 
         return data
 
@@ -344,12 +341,12 @@ class viirs_l1b:
     def _mask_flags(self, nc_dset, fill_value=np.nan):
         """
         Method to keep all flags by masking them with NaN.
-        This retains the full image but artifacts exist.
+        This retains the full image but artifacts exist at extreme swath edges.
         """
         nc_dset.set_auto_scale(False)
         nc_dset.set_auto_mask(True)
         data = nc_dset[:]
-        data = np.ma.masked_array(data.data, data.mask, fill_value=fill_value, dtype='float64')
+        data = np.ma.masked_array(data.data, data.mask, fill_value=fill_value, dtype='float')
         flags = nc_dset.getncattr('flag_values')
 
         for flag in flags:
@@ -467,9 +464,10 @@ class viirs_cldprop_l2:
 
     ID = 'VIIRS Level 2 Cloud Properties'
 
-    def __init__(self, fnames=None, extent=None):
+    def __init__(self, fnames=None, f03=None, extent=None):
 
         self.fnames = fnames
+        self.f03    = f03
         self.extent = extent
 
         for fname in self.fnames:
@@ -486,12 +484,6 @@ class viirs_cldprop_l2:
 
         # ------------------------------------------------------------------------------------ #
         f = Dataset(fname, 'r')
-
-        #----------------------------------------lat/lon----------------------------------------#
-
-        lat = f.groups['geolocation_data'].variables['latitude'][...]
-        lon = f.groups['geolocation_data'].variables['longitude'][...]
-
 
         #------------------------------------Cloud variables------------------------------------#
         ctp0 = f.groups['geophysical_data'].variables['Cloud_Phase_Optical_Properties']
@@ -517,27 +509,39 @@ class viirs_cldprop_l2:
 
         if self.extent is None:
             lon_range = [-180.0, 180.0]
-            lat_range = [-90.0 , 90.0]
+            lat_range = [-90.0, 90.0]
         else:
             lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
             lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
         # Select required region only
-        logic_extent  = (lon >= lon_range[0]) & (lon <= lon_range[1]) & \
-                        (lat >= lat_range[0]) & (lat <= lat_range[1])
-        lon           = lon[logic_extent]
-        lat           = lat[logic_extent]
+        if self.f03 is None:
+
+            lat           = f.groups['geolocation_data'].variables['latitude'][...]
+            lon           = f.groups['geolocation_data'].variables['longitude'][...]
+            logic_extent  = (lon >= lon_range[0]) & (lon <= lon_range[1]) & \
+                            (lat >= lat_range[0]) & (lat <= lat_range[1])
+            lon           = lon[logic_extent]
+            lat           = lat[logic_extent]
+
+        else:
+            lon          = self.f03.data['lon']['data']
+            lat          = self.f03.data['lat']['data']
+            logic_extent = self.f03.logic[get_fname_pattern(fname)]['mask']
+
 
         # Retrieve 1. ctp, 2. cth, 3. cot, 4. cer, 5. cwp, and select regional extent
-        ctp           = get_data_nc(ctp0, nan=False)[logic_extent]
-        cth           = get_data_nc(cth0, nan=False)[logic_extent]
+        ctp           = get_data_nc(ctp0, replace_fill_value=None)[logic_extent]
+        cth           = get_data_nc(cth0, replace_fill_value=None)[logic_extent]
 
         cot0_data     = get_data_nc(cot0)[logic_extent]
         cer0_data     = get_data_nc(cer0)[logic_extent]
-        cwp0_data     = get_data_nc(cwp0, nan=False)[logic_extent]
+        cwp0_data     = get_data_nc(cwp0)[logic_extent]
+        
         cot1_data     = get_data_nc(cot1)[logic_extent]
         cer1_data     = get_data_nc(cer1)[logic_extent]
-        cwp1_data     = get_data_nc(cwp1, nan=False)[logic_extent]
+        cwp1_data     = get_data_nc(cwp1)[logic_extent]
+        
         cot_uct0_data = get_data_nc(cot_uct0)[logic_extent]
         cer_uct0_data = get_data_nc(cer_uct0)[logic_extent]
         cwp_uct0_data = get_data_nc(cwp_uct0)[logic_extent]
@@ -546,31 +550,44 @@ class viirs_cldprop_l2:
         cot     = cot0_data.copy()
         cer     = cer0_data.copy()
         cwp     = cwp0_data.copy()
+        
         cot_uct = cot_uct0_data.copy()
         cer_uct = cer_uct0_data.copy()
         cwp_uct = cwp_uct0_data.copy()
 
-        # use the partially cloudy data to fill in potential missed clouds
-        pcl     = np.zeros_like(cot, dtype=np.uint8)
-        logic_pcl = ((cot0_data < 0.0) | (cer0_data <= 0.0) | (cwp0_data < 0.0)) &\
-                    ((cot1_data >= 0.0) & (cer1_data > 0.0) & (cwp1_data >= 0.0))
+        pcl = np.zeros_like(cot, dtype=np.uint8)
+
+        # Mark negative (invalid) retrievals with clear-sky values
+        logic_invalid          = (cot0_data < 0.0) | (cer0_data < 0.0) | (cwp0_data < 0.0) | (ctp == 0)
+        cot[logic_invalid]     = 0.0
+        cer[logic_invalid]     = 0.0
+        cwp[logic_invalid]     = 0.0
+        cot_err[logic_invalid] = 0.0
+        cer_err[logic_invalid] = 0.0
+        cwp_err[logic_invalid] = 0.0
+
+        # Mark clear-sky pixels using phase as an additional important input
+        logic_clear          = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & (ctp == 1)
+        cot[logic_clear]     = 0.0
+        cer[logic_clear]     = 0.0
+        cwp[logic_clear]     = 0.0
+
+        # Use partially cloudy retrieval to fill in clouds:
+        # When the standard retrieval identifies a pixel as being clear-sky AND the corresponding PCL retrieval says it is cloudy,
+        # we give credence to the PCL retrieval and mark the pixel with PCL-retrieved values
+
+        logic_pcl      = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & \
+                         ((cot1_data > 0.0)  & (cer1_data > 0.0)  & (cwp1_data > 0.0))
 
         pcl[logic_pcl] = 1
         cot[logic_pcl] = cot1_data[logic_pcl]
         cer[logic_pcl] = cer1_data[logic_pcl]
         cwp[logic_pcl] = cwp1_data[logic_pcl]
 
-        # make invalid pixels clear-sky
-        logic_invalid = (cot < 0.0) | (cer <= 0.0) | (cwp < 0.0)
-        cot[logic_invalid]     = 0.0
-        cer[logic_invalid]     = 1.0
-        cwp[logic_invalid]     = 0.0
-        cot_uct[logic_invalid] = 0.0
-        cer_uct[logic_invalid] = 0.0
-        cwp_uct[logic_invalid] = 0.0
-
         f.close()
         # ------------------------------------------------------------------------------------ #
+        
+        pcl = pcl[logic_extent]
 
         # save the data
         if hasattr(self, 'data'):
@@ -587,7 +604,7 @@ class viirs_cldprop_l2:
             self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_uct']['data'], cot*cot_uct/100.0)), units='N/A')
             self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_uct']['data'], cer*cer_uct/100.0)), units='micron')
             self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=np.hstack((self.data['cwp_uct']['data'], cwp*cwp_uct/100.0)), units='g/m^2')
-            self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
+            self.data['pcl']      = dict(name='PCL tag (1:PCL)',                     data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
 
         else:
             self.logic = {}
@@ -604,7 +621,7 @@ class viirs_cldprop_l2:
             self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=cot*cot_uct/100.0, units='N/A')
             self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=cer*cer_uct/100.0, units='micron')
             self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=cwp*cwp_uct/100.0, units='g/m^2')
-            self.data['pcl']      = dict(name='PCL tag (1:PCL, 0:Cloudy)',           data=pcl,               units='N/A')
+            self.data['pcl']      = dict(name='PCL tag (1:PCL)',                     data=pcl,               units='N/A')
 
 
 
@@ -1005,13 +1022,10 @@ class viirs_43ma4:
 #\---------------------------------------------------------------------------/
 
 
-
-
-
 # VIIRS tools
 #/---------------------------------------------------------------------------\
 
-def get_fname_pattern(fname, index_s=1, index_e=3):
+def get_fname_pattern(fname, index_s=1, index_e=2):
 
     filename = os.path.basename(fname)
     pattern  = '.'.join(filename.split('.')[index_s:index_e+1])
@@ -1019,7 +1033,6 @@ def get_fname_pattern(fname, index_s=1, index_e=3):
     return pattern
 
 #\---------------------------------------------------------------------------/
-
 
 if __name__=='__main__':
 

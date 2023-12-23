@@ -368,6 +368,7 @@ class modis_l2:
                 ['lat']
                 ['cot']
                 ['cer']
+                ['cwp']
     """
 
 
@@ -376,12 +377,14 @@ class modis_l2:
 
     def __init__(self, \
                  fnames    = None,  \
+                 f03       = None,  \
                  extent    = None,  \
                  vnames    = [],    \
                  cop_flag  = '',    \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the pickle file
+        self.f03        = f03         # geolocation class object created using the `modis_03` reader
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
 
@@ -390,10 +393,10 @@ class modis_l2:
             self.read(fname, cop_flag=cop_flag)
 
             if len(vnames) > 0:
-                self.read_vars(fname, vnames=vnames)
+                self.read_vars(fname, vnames=vnames, cop_flag=cop_flag)
 
 
-    def read(self, fname, cop_flag=''):
+    def read(self, fname, cop_flag):
 
         """
         Read cloud optical properties
@@ -403,6 +406,7 @@ class modis_l2:
             ['lat']
             ['cot']
             ['cer']
+            ['cwp']
             ['pcl']
             ['lon_5km']
             ['lat_5km']
@@ -421,14 +425,18 @@ class modis_l2:
             vname_ctp     = 'Cloud_Phase_Optical_Properties'
             vname_cot     = 'Cloud_Optical_Thickness'
             vname_cer     = 'Cloud_Effective_Radius'
+            vname_cwp     = 'Cloud_Water_Path'
             vname_cot_err = 'Cloud_Optical_Thickness_Uncertainty'
             vname_cer_err = 'Cloud_Effective_Radius_Uncertainty'
+            vname_cwp_err = 'Cloud_Water_Path_Uncertainty'
         else:
             vname_ctp     = 'Cloud_Phase_Optical_Properties'
             vname_cot     = 'Cloud_Optical_Thickness_%s' % cop_flag
             vname_cer     = 'Cloud_Effective_Radius_%s'  % cop_flag
+            vname_cwp     = 'Cloud_Water_Path_%s'  % cop_flag
             vname_cot_err = 'Cloud_Optical_Thickness_Uncertainty_%s' % cop_flag
             vname_cer_err = 'Cloud_Effective_Radius_Uncertainty_%s' % cop_flag
+            vname_cwp_err = 'Cloud_Water_Path_Uncertainty_%s'  % cop_flag
 
         f     = SD(fname, SDC.READ)
 
@@ -436,19 +444,22 @@ class modis_l2:
         lat0       = f.select('Latitude')
         lon0       = f.select('Longitude')
 
-        ctp0       = f.select(vname_ctp)
+        ctp        = f.select(vname_ctp)
+        
         cot0       = f.select(vname_cot)
         cer0       = f.select(vname_cer)
+        cwp0       = f.select(vname_cwp)
         cot1       = f.select('%s_PCL' % vname_cot)
         cer1       = f.select('%s_PCL' % vname_cer)
+        cwp1       = f.select('%s_PCL' % vname_cwp)
         cot_err0   = f.select(vname_cot_err)
         cer_err0   = f.select(vname_cer_err)
+        cwp_err0   = f.select(vname_cwp_err)
 
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        #/----------------------------------------------------------------------------\#
-        lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=True)
+        # ----------------------------------------------------------------------------
 
         if self.extent is None:
 
@@ -467,87 +478,112 @@ class modis_l2:
             lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
             lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
-        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
-        lon       = lon[logic]
-        lat       = lat[logic]
+        if self.f03 is None:
+            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=True)
+            logic_1km = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
+            lon       = lon[logic_1km]
+            lat       = lat[logic_1km]
+        else:
+            lon       = self.f03.data['lon']['data']
+            lat       = self.f03.data['lat']['data']
+            logic_1km = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
+
 
         lon_5km   = lon0[:]
         lat_5km   = lat0[:]
-        logic_5km = (lon_5km>=lon_range[0]) & (lon_5km<=lon_range[1]) & (lat_5km>=lat_range[0]) & (lat_5km<=lat_range[1])
+        logic_5km = (lon_5km >= lon_range[0]) & (lon_5km <= lon_range[1]) & (lat_5km >= lat_range[0]) & (lat_5km <= lat_range[1])
         lon_5km   = lon_5km[logic_5km]
         lat_5km   = lat_5km[logic_5km]
         # -------------------------------------------------------------------------------------------------
 
-
         # Calculate 1. cot, 2. cer, 3. ctp
         #/--------------------------------\#
-        ctp0_data     = get_data_h4(ctp0)
-        cot0_data     = get_data_h4(cot0)
-        cer0_data     = get_data_h4(cer0)
-        cot1_data     = get_data_h4(cot1)
-        cer1_data     = get_data_h4(cer1)
-        cot_err0_data = get_data_h4(cot_err0)
-        cer_err0_data = get_data_h4(cer_err0)
+        ctp           = get_data_h4(ctp)[logic_1km]
+        
+        cot0_data     = get_data_h4(cot0)[logic_1km]
+        cer0_data     = get_data_h4(cer0)[logic_1km]
+        cwp0_data     = get_data_h4(cwp0)[logic_1km]
 
-        ctp     = ctp0_data.copy()
+        cot1_data     = get_data_h4(cot1)[logic_1km]
+        cer1_data     = get_data_h4(cer1)[logic_1km]
+        cwp1_data     = get_data_h4(cwp1)[logic_1km]
+
+        cot_err0_data = get_data_h4(cot_err0)[logic_1km]
+        cer_err0_data = get_data_h4(cer_err0)[logic_1km]
+        cwp_err0_data = get_data_h4(cwp_err0)[logic_1km]
+        
+        # Make copies to modify
         cot     = cot0_data.copy()
         cer     = cer0_data.copy()
+        cwp     = cer0_data.copy()
         cot_err = cot_err0_data.copy()
         cer_err = cer_err0_data.copy()
+        cwp_err = cwp_err0_data.copy()
 
-        pcl_tag = np.zeros_like(cot, dtype=np.int32)
+        pcl = np.zeros_like(cot, dtype=np.uint8)
 
-        logic_pcl = ((cot0_data<0.0) | (cer0_data<=0.0)) & ((cot1_data>=0.0) & (cer1_data>0.0))
-        pcl_tag[logic_pcl] = 1
-        cot[logic_pcl] = cot1_data[logic_pcl]
-        cer[logic_pcl] = cer1_data[logic_pcl]
-
-        logic_invalid = (cot<0.0) | (cer<=0.0)
+        # Mark negative (invalid) retrievals with clear-sky values
+        logic_invalid = (cot0_data < 0.0) | (cer0_data < 0.0) | (cwp0_data < 0.0) | (ctp == 0)
         cot[logic_invalid]     = 0.0
-        cer[logic_invalid]     = 1.0
+        cer[logic_invalid]     = 0.0
+        cwp[logic_invalid]     = 0.0
         cot_err[logic_invalid] = 0.0
         cer_err[logic_invalid] = 0.0
+        cwp_err[logic_invalid] = 0.0
+
+        # Mark clear-sky pixels using phase as an additional important input
+        logic_clear          = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & (ctp == 1)
+        cot[logic_clear]     = 0.0
+        cer[logic_clear]     = 0.0
+        cwp[logic_clear]     = 0.0
+
+        # Use partially cloudy retrieval to fill in clouds:
+        # When the standard retrieval identifies a pixel as being clear-sky AND the corresponding PCL retrieval says it is cloudy,
+        # we give credence to the PCL retrieval and mark the pixel with PCL-retrieved values
+
+        logic_pcl      = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & \
+                         ((cot1_data > 0.0)  & (cer1_data > 0.0)  & (cwp1_data > 0.0))
+
+        pcl[logic_pcl] = 1
+        cot[logic_pcl] = cot1_data[logic_pcl]
+        cer[logic_pcl] = cer1_data[logic_pcl]
+        cwp[logic_pcl] = cwp1_data[logic_pcl]
 
         f.end()
         # -------------------------------------------------------------------------------------------------
 
-        ctp = ctp[logic]
-        cot = cot[logic]
-        cer = cer[logic]
-        cot_err = cot_err[logic]
-        cer_err = cer_err[logic]
-        pcl_tag = pcl_tag[logic]
+        pcl = pcl[logic_1km]
 
         if hasattr(self, 'data'):
 
-            self.logic[fname] = {'1km':logic, '5km':logic_5km}
+            self.logic[fname]      = {'1km':logic_1km, '5km':logic_5km}
 
-            self.data['lon']   = dict(name='Longitude'                 , data=np.hstack((self.data['lon']['data'], lon    )), units='degrees')
-            self.data['lat']   = dict(name='Latitude'                  , data=np.hstack((self.data['lat']['data'], lat    )), units='degrees')
-            self.data['ctp']   = dict(name='Cloud thermodynamic phase' , data=np.hstack((self.data['ctp']['data'], ctp    )), units='N/A')
-            self.data['cot']   = dict(name='Cloud optical thickness'   , data=np.hstack((self.data['cot']['data'], cot    )), units='N/A')
-            self.data['cer']   = dict(name='Cloud effective radius'    , data=np.hstack((self.data['cer']['data'], cer    )), units='micron')
+            self.data['lon']       = dict(name='Longitude',                           data=np.hstack((self.data['lon']['data'], lon)),                   units='degrees')
+            self.data['lat']       = dict(name='Latitude',                            data=np.hstack((self.data['lat']['data'], lat)),                   units='degrees')
+            self.data['ctp']       = dict(name='Cloud thermodynamic phase',           data=np.hstack((self.data['ctp']['data'], ctp)),                   units='N/A')
+            self.data['cot']       = dict(name='Cloud optical thickness',             data=np.hstack((self.data['cot']['data'], cot)),                   units='N/A')
+            self.data['cer']       = dict(name='Cloud effective radius',              data=np.hstack((self.data['cer']['data'], cer)),                   units='micron')
             self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_err']['data'], cot*cot_err/100.0)), units='N/A')
-            self.data['cer_err']   = dict(name='Cloud effective radius uncertainty' , data=np.hstack((self.data['cer_err']['data'], cer*cer_err/100.0)), units='micron')
-            self.data['pcl']       = dict(name='PCL tag (1:PCL, 0:Cloudy)' , data=np.hstack((self.data['pcl']['data'], pcl_tag)), units='N/A')
-            self.data['lon_5km']   = dict(name='Longitude at 5km', data=np.hstack((self.data['lon_5km']['data'], lon_5km)), units='degrees')
-            self.data['lat_5km']   = dict(name='Latitude at 5km' , data=np.hstack((self.data['lat_5km']['data'], lat_5km)), units='degrees')
+            self.data['cer_err']   = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_err']['data'], cer*cer_err/100.0)), units='micron')
+            self.data['pcl']       = dict(name='PCL tag (1:PCL)',                     data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
+            self.data['lon_5km']   = dict(name='Longitude at 5km',                    data=np.hstack((self.data['lon_5km']['data'], lon_5km)),           units='degrees')
+            self.data['lat_5km']   = dict(name='Latitude at 5km',                     data=np.hstack((self.data['lat_5km']['data'], lat_5km)),           units='degrees')
 
         else:
             self.logic = {}
-            self.logic[fname] = {'1km':logic, '5km':logic_5km}
+            self.logic[fname] = {'1km':logic_1km, '5km':logic_5km}
 
             self.data  = {}
-            self.data['lon']   = dict(name='Longitude'                 , data=lon    , units='degrees')
-            self.data['lat']   = dict(name='Latitude'                  , data=lat    , units='degrees')
-            self.data['ctp']   = dict(name='Cloud thermodynamic phase' , data=ctp    , units='N/A')
-            self.data['cot']   = dict(name='Cloud optical thickness'   , data=cot    , units='N/A')
-            self.data['cer']   = dict(name='Cloud effective radius'    , data=cer    , units='micron')
-            self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty' , data=cot*cot_err/100.0, units='N/A')
-            self.data['cer_err']   = dict(name='Cloud effective radius uncertainty'  , data=cer*cer_err/100.0, units='micron')
-            self.data['pcl']       = dict(name='PCL tag (1:PCL, 0:Cloudy)' , data=pcl_tag, units='N/A')
-            self.data['lon_5km']   = dict(name='Longitude at 5km', data=lon_5km, units='degrees')
-            self.data['lat_5km']   = dict(name='Latitude at 5km' , data=lat_5km, units='degrees')
+            self.data['lon']       = dict(name='Longitude',                           data=lon,               units='degrees')
+            self.data['lat']       = dict(name='Latitude',                            data=lat,               units='degrees')
+            self.data['ctp']       = dict(name='Cloud thermodynamic phase',           data=ctp,               units='N/A')
+            self.data['cot']       = dict(name='Cloud optical thickness',             data=cot,               units='N/A')
+            self.data['cer']       = dict(name='Cloud effective radius',              data=cer,               units='micron')
+            self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty', data=cot*cot_err/100.0, units='N/A')
+            self.data['cer_err']   = dict(name='Cloud effective radius uncertainty',  data=cer*cer_err/100.0, units='micron')
+            self.data['pcl']       = dict(name='PCL tag (1:PCL)',                     data=pcl,               units='N/A')
+            self.data['lon_5km']   = dict(name='Longitude at 5km',                    data=lon_5km,           units='degrees')
+            self.data['lat_5km']   = dict(name='Latitude at 5km',                     data=lat_5km,           units='degrees')
 
 
     def read_vars(self, fname, vnames=[]):
