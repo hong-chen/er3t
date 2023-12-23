@@ -1,17 +1,27 @@
 import os
 import sys
 import pickle
-import multiprocessing as mp
-import h5py
 import copy
+import h5py
+from netCDF4 import Dataset
 import numpy as np
+from scipy.io import readsav
+from scipy.interpolate import interp2d
 
-import er3t
+
+import er3t.common
+import er3t.util
+# from .util import *
 
 
-
-__all__ = ['abs_16g', 'abs_16g_txt', 'gen_h5_abs_16g']
-
+__all__ = [
+        'abs_16g',\
+        'abs_16g_txt',\
+        'abs_oco',\
+        'abs_oco_idl',\
+        'abs_oco_h5',\
+        'abs_rrtmg_sw',\
+        ]
 
 
 class abs_16g:
@@ -53,21 +63,20 @@ class abs_16g:
     Ng       = 16
     group_s  = '/solar_v1.3'
     fname_h5 = '%s/abs_16g.h5' % er3t.common.fdir_data_abs
-    reference = 'Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R., Roman, M., Redemann, J., Russell, P. B., Liu, J., and Schaaf, C. C.: Aircraft measurements of spectral surface albedo and its consistency with ground based and space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089, 2008.'
+    reference = '\nSSFR Correlated-k Absorption Database (Coddington et al., 2008):\n- Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R., Roman, M., Redemann, J., Russell, P. B., Liu, J., and Schaaf, C. C.: Aircraft measurements of spectral surface albedo and its consistency with ground based and space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089, 2008.'
 
     def __init__(self, \
                  wavelength = er3t.common.params['wavelength'],  \
                  fname      = None,  \
                  atm_obj    = None,  \
                  overwrite  = False, \
-                 verbose    = False):
+                 verbose    = er3t.common.params['verbose']):
 
         self.verbose   = verbose
         self.wvl       = wavelength
         self.nwl       = 1
 
-        if self.reference not in er3t.common.references:
-            er3t.common.references.append(self.reference)
+        er3t.util.add_reference(self.reference)
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -85,7 +94,8 @@ class abs_16g:
 
         else:
 
-            sys.exit('Error   [abs_16g]: Please provide \'wavelength\' to proceed.')
+            msg = '\nError [abs_16g]: Please provide <wavelength> to proceed.'
+            raise OSError(msg)
 
 
     def load(self, fname):
@@ -94,14 +104,17 @@ class abs_16g:
             obj = pickle.load(f)
             if hasattr(obj, 'coef'):
                 if self.verbose:
-                    print('Message [abs_16g]: Loading %s ...' % fname)
+                    msg = 'Message [abs_16g]: Loading <%s> ...' % fname
+                    print(msg)
                 self.fname = obj.fname
                 self.wvl   = obj.wvl
                 self.nwl   = obj.nwl
+                self.Ng    = obj.Ng
                 self.coef  = obj.coef
                 self.wvl_info = obj.wvl_info
             else:
-                sys.exit('Error   [abs_16g]: \'%s\' is not the correct pickle file to load.' % fname)
+                msg = '\nError [abs_16g]: <%s> is not the correct pickle file to load.' % fname
+                raise OSError(msg)
 
 
     def run(self, atm_obj):
@@ -109,7 +122,8 @@ class abs_16g:
         self.wvl_info  = '%.2f nm (applied SSFR slit)' % self.wvl
 
         if not os.path.exists(self.fname_h5):
-            sys.exit('Error   [abs_16g]: Missing HDF5 database.')
+            msg = '\nError [abs_16g]: Missing HDF5 database.'
+            raise OSError(msg)
 
         f_h5 = h5py.File(self.fname_h5, 'r')
 
@@ -128,7 +142,8 @@ class abs_16g:
         if atm_obj is not None:
             self.prep_atmosphere(atm_obj)
         else:
-            sys.exit('Error   [abs_16g]: \'atm_obj\' needs to be provided.')
+            msg = '\nError [abs_16g]: <atm_obj> needs to be provided.'
+            raise OSError(msg)
 
         # self.fac
         #   self.fac['jpd']    : Python dictionary, contain 'name', 'data' etc
@@ -165,7 +180,7 @@ class abs_16g:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [abs_16g]: Saving object into %s ...' % fname)
+                print('Message [abs_16g]: Saving object into <%s> ...' % fname)
             pickle.dump(self, f)
 
 
@@ -277,7 +292,8 @@ class abs_16g:
         abso_ref['jwu']      = copy.deepcopy(self.fac['jwu'])
 
         if self.wvl < 300.0:
-            sys.exit('Error   [abs_16g]: Wavelength too short - no absorption data available.')
+            msg = '\nError [abs_16g]: Wavelength too short - no absorption data available.'
+            raise OSError(msg)
 
         elif (300.0 <= self.wvl < 448.0):
             abso0             = copy.deepcopy(abso_ref)
@@ -459,7 +475,8 @@ class abs_16g:
             self.abso[0]      = abso0
 
         elif self.wvl > 2500.0:
-            sys.exit('Error   [abs_16g]: Wavelength too large - no absorption data available.')
+            msg = '\nError [abs_16g]: Wavelength too long - no absorption data available.'
+            raise OSError(msg)
 
 
     def get_coefficient(self, f_h5):
@@ -831,7 +848,7 @@ class abs_16g_txt:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [abs_16g_txt]: saving object into %s ...' % fname)
+                print('Message [abs_16g_txt]: saving object into <%s> ...' % fname)
             pickle.dump(self, f)
 
 
@@ -1359,72 +1376,733 @@ class abs_16g_txt:
 
 
 
-def gen_h5_abs_16g(fname_h5):
+class abs_oco:
 
-    fdir0 = '/argus/seven2/hofmann'
+    """
+    1. Process the atmospheric gases profile (self.lay)
+    2. Calculate the factors (self.fac)
+    3. From the input wavelength, prepare variables for getting absorption coefficient (self.abso)
+    4: Get absorption coefficient, SSFR slit function, and solar constant from Correlated-K database (self.coef)
 
-    if True:
+    Input:
+        wavelength: wavelength in nm
+        fname     : file path for the correlated-k coefficients (in pickle format)
+        atm_obj   : atmosphere object, e.g., atm_obj = atm_atmmod(levels=np.arange(21))
 
-        f = h5py.File(fname_h5, 'w')
+    Note:
+        If wavelength is provided but fname does not exisit:
+            calculate correlated-k coefficients and save data into fname
 
-        for sub in ['O3', 'CO2', 'CH4', 'H2O', 'O2_cont5']:
+        If wavelength is provided but fname is None:
+            calculate correlated-k coefficients without saving the data
 
-            fdir = '%s/%s' % (fdir0, sub)
+        if wavelength is not provided but fname is provided (also existed):
+            read out the data from fname
 
-            fnames = er3t.util.all_files(fdir)
-            print(len(fnames))
+        if wavelength and fname are neither provided:
+            exit with error message
 
-            for fname in fnames:
+    Output:
+        self.coef['wavelength']
+        self.coef['abso_coef']
+        self.coef['slit_func']
+        self.coef['solar']
+        self.coef['weight']
+    """
 
-                vname = fname.split('/')[-1]
 
-                if ('temperature' in fname) and ('pressure' in fname) and (vname.split('.')[0] in ['kgo2', 'kgo3', 'kgh2o', 'kgco2', 'kgch4']) and ('old' not in fname) and ('test' not in fname):
+    def __init__(self, \
+                 fname       = None,  \
+                 fname_idl   = None,  \
+                 atm_obj     = None,  \
+                 overwrite   = False, \
+                 verbose     = False):
 
-                    group = fname.replace(fdir0, '').replace('/%s' % os.path.basename(fname), '')
-                    if group not in f:
-                        g = f.create_group(group)
-                        print(group)
-                    g[vname] = np.loadtxt(fname)
+        self.verbose   = verbose
+        self.fname_idl = fname_idl
 
-        f.close()
+        if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
-    if True:
+            self.load(fname)
 
-        f = h5py.File(fname_h5, 'r+')
+        elif ((fname_idl is not None) and (fname is not None) and (os.path.exists(fname)) and (overwrite)) or \
+             ((fname_idl is not None) and (fname is not None) and (not os.path.exists(fname))):
 
-        fdir = '%s/solar_v1.3' % fdir0
-        fnames = er3t.util.all_files(fdir)
+            self.run(atm_obj)
+            self.dump(fname)
 
-        for fname in fnames:
+        elif ((fname_idl is not None) and (fname is None)):
 
-            if ('solar_taug' in fname) and ('~' not in fname):
+            self.run(atm_obj)
 
-                group = fname.replace(fdir0, '')
+        else:
 
-                if group not in f:
-                    g = f.create_group(group)
-                    print(group)
+            sys.exit('Error   [abs_oco_idl]: Please provide \'fname_idl\' to proceed.')
 
-                try:
-                    with open(fname) as f0:
-                        v1, v2, dv, npts, sol_min, sol_max = np.fromstring(f0.readline(), sep=' ', dtype=np.float64)
-                        sol_int, = np.fromstring(f0.readline(), sep=' ', dtype=np.float64)
 
-                    params = np.array([v1, v2, dv, npts, sol_min, sol_max, sol_int])
-                    data   = np.genfromtxt(fname, skip_header=2)
+    def load(self, fname):
 
-                except:
-                    with open(fname) as f0:
-                        v1, v2, dv, npts, sol_min, sol_max, sol_int = np.fromstring(f0.readline(), sep=' ', dtype=np.float64)
+        with open(fname, 'rb') as f:
+            obj = pickle.load(f)
+            if hasattr(obj, 'coef'):
+                if self.verbose:
+                    print('Message [abs_oco_idl]: Loading %s ...' % fname)
+                self.fname = obj.fname
+                self.wvl   = obj.wvl
+                self.nwl   = obj.nwl
+                self.coef  = obj.coef
+                self.Ng    = obj.Ng
+            else:
+                sys.exit('Error   [abs_oco_idl]: \'%s\' is not the correct pickle file to load.' % fname)
 
-                    params = np.array([v1, v2, dv, npts, sol_min, sol_max, sol_int])
-                    data   = np.genfromtxt(fname, skip_header=1)
 
-                if data.size > 0:
-                    g['params'] = params
-                    g['data']   = data
+    def run(self, atm_obj):
 
-        f.close()
+        if self.fname_idl is None:
+            sys.exit('Error   [abs_oco]: Please provide \'fname_idl\' (IDL gas absorption file) to proceed.')
+
+        if not os.path.exists(self.fname_idl):
+            sys.exit('Error   [abs_oco]: Failed to locate \'fname_idl=%s\'.' % self.fname_idl)
+
+        # self.coef
+        #     self.coef['wvl']
+        #     self.coef['abso_coef']
+        #     self.coef['slit_func']
+        #     self.coef['solar']
+        self.get_coefficient(atm_obj)
+
+
+    def dump(self, fname):
+
+        self.fname = fname
+        with open(fname, 'wb') as f:
+            if self.verbose:
+                print('Message [abs_oco_idl]: Saving object into %s ...' % fname)
+            pickle.dump(self, f)
+
+
+    def get_coefficient(self, atm_obj, wvl_threshold=1.0):
+
+        f = readsav(self.fname_idl)
+
+        wvls      = f.lamx*1000.0
+        abso_coef = f.absgl
+        Ng        = abso_coef.shape[0]
+
+        slit_func0     = f.absgy
+        slit_func      = np.empty(abso_coef.shape, dtype=slit_func0.dtype)
+        slit_func[...] = slit_func0[..., None]
+
+        solar     = f.solx
+
+        weight    = np.zeros_like(solar)
+        for i in range(wvls.size):
+            weight[:, i] = slit_func0[:, i] / (slit_func0[:, i].sum())
+
+        self.Ng   = Ng
+        self.nwl  = wvl.size
+        self.coef = {
+                'wvls'       : {'name':'Wavelengths (Nwl)'                    , 'data':wvls, 'units':'nm'},
+                'abso_coef'  : {'name':'Absorption Coefficient (Nwl, Nz, Ng)' , 'data':np.swapaxes(np.transpose(abso_coef), 0, 1)},
+                'slit_func'  : {'name':'Slit Function (Nwl, Nz, Ng)'          , 'data':np.swapaxes(np.transpose(slit_func), 0, 1)},
+                'solar'      : {'name':'Solar Factor (Nwl, Ng)'               , 'data':np.transpose(solar)},
+                'weight'     : {'name':'Weight (Nwl, Ng)'                     , 'data':np.transpose(weight)}
+                     }
+
+
+
+class abs_oco_idl:
+
+    """
+    This module is based on the database developed by Odele Coddington (Odele.Coddington@lasp.colorado.edu).
+
+    1. Process the atmospheric gases profile (self.lay)
+    2. Calculate the factors (self.fac)
+    3. From the input wavelength, prepare variables for getting absorption coefficient (self.abso)
+    4: Get absorption coefficient, SSFR slit function, and solar constant from Correlated-K database (self.coef)
+
+    Input:
+        wavelength: wavelength in nm
+        fname     : file path for the correlated-k coefficients (in pickle format)
+        atm_obj   : atmosphere object, e.g., atm_obj = atm_atmmod(levels=np.arange(21))
+
+    Note:
+        If wavelength is provided but fname does not exisit:
+            calculate correlated-k coefficients and save data into fname
+
+        If wavelength is provided but fname is None:
+            calculate correlated-k coefficients without saving the data
+
+        if wavelength is not provided but fname is provided (also existed):
+            read out the data from fname
+
+        if wavelength and fname are neither provided:
+            exit with error message
+
+    Output:
+        self.coef['wvl']
+        self.coef['abso_coef']
+        self.coef['slit_func']
+        self.coef['solar']
+        self.coef['weight']
+    """
+
+
+
+
+    def __init__(self, \
+                 wavelength  = None,  \
+                 fname       = None,  \
+                 fname_idl   = None,  \
+                 atm_obj     = None,  \
+                 overwrite   = False, \
+                 verbose     = False):
+
+        if fname_idl is None:
+            self.fname_idl = '%s/abs/abs_oco_11.sav' % er3t.common.fdir_data
+        else:
+            self.fname_idl = fname_idl
+
+        self.verbose   = verbose
+        self.wvl       = wavelength
+        self.wvl_info  = '%.4f nm (applied OCO-2 slit)' % wavelength
+
+        if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
+
+            self.load(fname)
+
+        elif ((wavelength is not None) and (fname is not None) and (os.path.exists(fname)) and (overwrite)) or \
+             ((wavelength is not None) and (fname is not None) and (not os.path.exists(fname))):
+
+            self.run(atm_obj)
+            self.dump(fname)
+
+        elif ((wavelength is not None) and (fname is None)):
+
+            self.run(atm_obj)
+
+        else:
+
+            sys.exit('Error   [abs_oco_idl]: Please provide \'wavelength\' to proceed.')
+
+
+    def load(self, fname):
+
+        with open(fname, 'rb') as f:
+            obj = pickle.load(f)
+            if hasattr(obj, 'coef'):
+                if self.verbose:
+                    print('Message [abs_oco_idl]: Loading %s ...' % fname)
+                self.fname = obj.fname
+                self.wvl   = obj.wvl
+                self.nwl   = obj.nwl
+                self.coef  = obj.coef
+                self.Ng    = obj.Ng
+                self.wvl_info   = obj.wvl_info
+            else:
+                sys.exit('Error   [abs_oco_idl]: \'%s\' is not the correct pickle file to load.' % fname)
+
+
+    def run(self, atm_obj):
+
+        if not os.path.exists(self.fname_idl):
+            sys.exit('Error   [abs_oco_idl]: Missing IDL database.')
+
+        # self.coef
+        #     self.coef['wvl']
+        #     self.coef['abso_coef']
+        #     self.coef['slit_func']
+        #     self.coef['solar']
+        self.get_coefficient(atm_obj)
+
+
+    def dump(self, fname):
+
+        self.fname = fname
+        with open(fname, 'wb') as f:
+            if self.verbose:
+                print('Message [abs_oco_idl]: Saving object into %s ...' % fname)
+            pickle.dump(self, f)
+
+
+    def get_coefficient(self, atm_obj, wvl_threshold=1.0):
+
+        f = readsav(self.fname_idl)
+
+        wvl_center_oco = f.lamx*1000.0
+
+        index_wvl = np.argmin(np.abs(wvl_center_oco-self.wvl))
+        if abs(wvl_center_oco[index_wvl]-self.wvl) >= wvl_threshold:
+            sys.exit('Error [abs_oco_idl]: Cannot pick a close wavelength for %.2fnm from \'%s\'.' % (self.wvl, self.fname_idl))
+        else:
+            if self.verbose:
+                print('Message [abs_oco_idl]: Picked wvl=%.2f from \'%s\' for input wavelength %.2fnm.' % (wvl_center_oco[index_wvl], self.fname_idl, self.wvl))
+            self.wvl = wvl_center_oco[index_wvl]
+
+        Ng        = f.absgn[index_wvl]
+        wvls      = f.absgx[:Ng, index_wvl] * 1000.0
+
+        abso_coef0 = f.absgl[:Ng, index_wvl, :]
+        alt0       = (f.atm_zgrd[1:]+f.atm_zgrd[:-1])/2000.0
+        alt        = atm_obj.lay['altitude']['data']
+        x_         = np.arange(abso_coef0.shape[0])
+
+        f_interp = interp2d(alt0, x_, abso_coef0)
+        abso_coef = f_interp(alt, x_)
+
+        slit_func0     = f.absgy[:Ng, index_wvl]
+        slit_func      = np.empty(abso_coef.shape, dtype=slit_func0.dtype)
+        slit_func[...] = slit_func0[:, None]
+
+        solar     = f.solx[:Ng, index_wvl]
+        weight    = slit_func0/slit_func0.sum()
+
+        self.Ng   = Ng
+        self.nwl  = wvls.size
+        self.coef = {
+                'wvl'       : {'name':'Wavelength'                     , 'data':self.wvl, 'units':'nm'},
+                'abso_coef' : {'name':'Absorption Coefficient (Nz, Ng)', 'data':np.transpose(abso_coef)},
+                'slit_func' : {'name':'Slit Function (Nz, Ng)'         , 'data':np.transpose(slit_func)},
+                'solar'     : {'name':'Solar Factor (Ng)'              , 'data':solar},
+                'weight'    : {'name':'Weight (Ng)'                    , 'data':weight}
+                     }
+
+
+
+class abs_oco_h5:
+
+    """
+    Added by Yu-Wen Chen (Yu-Wen.Chen@colorado.edu)
+    Date: 2023.06.20
+
+    This part is modified from abs_oco_idl but read a self-defined absorption coefficient output.
+
+    Input:
+        wavelength: wavelength in nm
+        fname     : file path for the correlated-k coefficients (in pickle format)
+        atm_obj   : atmosphere object, e.g., atm_obj = atm_atmmod(levels=np.arange(21))
+
+    Note:
+        If wavelength is provided but fname does not exisit:
+            calculate correlated-k coefficients and save data into fname
+
+        If wavelength is provided but fname is None:
+            calculate correlated-k coefficients without saving the data
+
+        if wavelength is not provided but fname is provided (also existed):
+            read out the data from fname
+
+        if wavelength and fname are neither provided:
+            exit with error message
+
+    Output:
+        self.coef['wvl']
+        self.coef['abso_coef']
+        self.coef['slit_func']
+        self.coef['solar']
+        self.coef['weight']
+    """
+
+    def __init__(self, \
+                 wavelength  = None,  \
+                 fname       = None,  \
+                 fname_h5   = None,  \
+                 atm_obj     = None,  \
+                 overwrite   = False, \
+                 verbose     = False):
+
+        if fname_h5 is None:
+            self.fname_h5 = '%s/abs/abs_oco_11.h5' % er3t.common.fdir_data
+        else:
+            self.fname_h5 = fname_h5
+
+        self.verbose   = verbose
+        self.wvl       = wavelength
+
+        if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
+
+            self.load(fname)
+
+        elif ((wavelength is not None) and (fname is not None) and (os.path.exists(fname)) and (overwrite)) or \
+             ((wavelength is not None) and (fname is not None) and (not os.path.exists(fname))):
+
+            self.run(atm_obj)
+            self.dump(fname)
+
+        elif ((wavelength is not None) and (fname is None)):
+
+            self.run(atm_obj)
+
+        else:
+
+            sys.exit('Error   [abs_oco_h5]: Please provide \'wavelength\' to proceed.')
+
+
+    def load(self, fname):
+
+        with open(fname, 'rb') as f:
+            obj = pickle.load(f)
+            if hasattr(obj, 'coef'):
+                if self.verbose:
+                    print('Message [abs_oco_h5]: Loading %s ...' % fname)
+                self.fname = obj.fname
+                self.wvl   = obj.wvl
+                self.nwl   = obj.nwl
+                self.coef  = obj.coef
+                self.Ng    = obj.Ng
+            else:
+                sys.exit('Error   [abs_oco_h5]: \'%s\' is not the correct pickle file to load.' % fname)
+
+
+    def run(self, atm_obj):
+
+        if not os.path.exists(self.fname_h5):
+            sys.exit('Error   [abs_oco_h5]: Missing IDL database.')
+
+        # self.coef
+        #     self.coef['wvl']
+        #     self.coef['abso_coef']
+        #     self.coef['slit_func']
+        #     self.coef['solar']
+        self.get_coefficient()
+
+
+    def dump(self, fname):
+
+        self.fname = fname
+        with open(fname, 'wb') as f:
+            if self.verbose:
+                print('Message [abs_oco_h5]: Saving object into %s ...' % fname)
+            pickle.dump(self, f)
+
+
+    def get_coefficient(self, wvl_threshold=1.0):
+        with h5py.File(self.fname_h5, 'r') as f:
+            wvl_center_oco = f['lamx'][...]*1000.0
+
+            index_wvl = np.argmin(np.abs(wvl_center_oco-self.wvl))
+            if abs(wvl_center_oco[index_wvl]-self.wvl) >= wvl_threshold:
+                sys.exit('Error   [abs_oco_h5]: Cannot pick a close wavelength for %.2fnm from \'%s\'.' % (self.wvl, self.fname_h5))
+            else:
+                if self.verbose:
+                    print('Message [abs_oco_h5]: Picked wvl=%.2f from \'%s\' for input wavelength %.2fnm.' % (wvl_center_oco[index_wvl], self.fname_h5, self.wvl))
+                self.wvl = wvl_center_oco[index_wvl]
+
+            Ng              = f['absgn'][...][index_wvl]
+            wvls            = f['absgx'][...][index_wvl, :Ng].T * 1000.0
+            abso_coef       = f['absgl'][...][:, index_wvl, :Ng].T
+            slit_func0      = f['absgy'][...][index_wvl, :Ng].T
+            slit_func       = np.empty(abso_coef.shape, dtype=slit_func0.dtype)
+            slit_func[...]  = slit_func0[:, None]
+            solar           = f['solx'][index_wvl, :Ng].T
+            weight          = slit_func0/slit_func0.sum()
+            
+            self.Ng         = Ng
+            self.nwl        = wvls.size
+            self.coef = {'wvl'       : {'name':'Wavelength'                     , 'data':self.wvl, 'units':'nm'},
+                        'abso_coef' : {'name':'Absorption Coefficient (Nz, Ng)', 'data':np.transpose(abso_coef)},
+                        'slit_func' : {'name':'Slit Function (Nz, Ng)'         , 'data':np.transpose(slit_func)},
+                        'solar'     : {'name':'Solar Factor (Ng)'              , 'data':solar},
+                        'weight'    : {'name':'Weight (Ng)'                    , 'data':weight}
+                        }
+
+
+
+class abs_rrtmg_sw:
+
+    """
+    This module is based on the RRTMG shortwave database
+    publicly avaiable at
+    https://github.com/AER-RC/RRTMG_SW
+
+    Output:
+        self.coef['wavelength']
+        self.coef['abso_coef']
+        self.coef['slit_func']
+        self.coef['solar']
+        self.coef['weight']
+    """
+
+    fname = '%s/rrtmg/rrtmg_sw.nc' % er3t.common.fdir_data_abs
+    reference = '\nRRTMG Shortwave Absorption Database (Iacono et al., 2008):\nIacono, M.J., Delamere, J.S., Mlawer, E.J., Shephard, M.W., Clough, S.A., and Collins, W.D.: Radiative forcing by long-lived greenhouse gases: Calculations with the AER radiative transfer models, J. Geophys. Res., 113, D13103, https://doi.org/10.1029/2008JD009944, 2008.'
+
+    def __init__(self, \
+                 iband  = 0,
+                 g_mode = 0,
+                 wavelength = None,  \
+                 fname      = None,  \
+                 atm_obj    = None,  \
+                 overwrite  = False, \
+                 verbose    = False):
+
+        er3t.util.add_reference(self.reference)
+
+        if g_mode != 0:
+            msg = '\nError [abs_rrtmg_sw]: currently only <g_mode=0> is supported.'
+            raise OSError(msg)
+
+        self.iband   = iband
+        self.g_mode  = g_mode
+        self.atm_obj = atm_obj
+
+        self.get_coef(iband, g_mode, atm_obj)
+
+    def get_coef(self, iband, g_mode, atm_obj):
+
+        self.coef = {}
+
+        f0 = Dataset(self.fname, 'r')
+
+        # band info
+        #   <self.wavelength>
+        #   <self.band_range>
+        #/----------------------------------------------------------------------------\#
+        wvln_min = f0.variables['BandWavenumberLowerLimit'][:][iband]
+        wvln_max = f0.variables['BandWavenumberUpperLimit'][:][iband]
+        wvl_min = 1.0e7/wvln_max
+        wvl_max = 1.0e7/wvln_min
+
+        band_range = (wvl_min, wvl_max)
+
+        self.wavelength = 2.0e7/(wvln_min+wvln_max)
+        self.band_range = band_range
+        #\----------------------------------------------------------------------------/#
+
+
+        # read out gas names
+        #   <gases>
+        #/----------------------------------------------------------------------------\#
+        gas_bytes = f0.variables['AbsorberNames'][:].data
+        Ngas, Nchar = gas_bytes.shape
+        gases = [gas.decode('utf-8').replace(' ', '').lower() for gas in gas_bytes.view('S%d' % Nchar).ravel()]
+        print(gases)
+        #\----------------------------------------------------------------------------/#
+
+
+        # read out key gas names
+        #   <key_gas_low>
+        #   <key_gas_upp>
+        #/----------------------------------------------------------------------------\#
+        key_gas_low_bytes = f0.variables['KeySpeciesNamesLowerAtmos'][:][:, iband, :].data
+        key_gas_upp_bytes = f0.variables['KeySpeciesNamesUpperAtmos'][:][:, iband, :].data
+        Nkey, Nchar = key_gas_upp_bytes.shape
+        ikey_gas_low = []
+        ikey_gas_upp = []
+        for i in range(Nkey):
+            key_gas_low_name0 = ''.join([j.decode('utf-8') for j in key_gas_low_bytes[i, :]]).strip().lower()
+            key_gas_upp_name0 = ''.join([j.decode('utf-8') for j in key_gas_upp_bytes[i, :]]).strip().lower()
+            if len(key_gas_low_name0) > 0:
+                ikey_gas_low.append(gases.index(key_gas_low_name0))
+            if len(key_gas_upp_name0) > 0:
+                ikey_gas_upp.append(gases.index(key_gas_upp_name0))
+
+        key_gas_low = [gases[i] for i in ikey_gas_low]
+        key_gas_upp = [gases[i] for i in ikey_gas_upp]
+        #\----------------------------------------------------------------------------/#
+        print(key_gas_low)
+        print(key_gas_upp)
+        sys.exit()
+
+
+        # Gs, Nz
+        #/----------------------------------------------------------------------------\#
+        Ng = f0.variables['NumGPoints'][:][g_mode, iband]
+        Nz = atm_obj.lay['pressure']['data'].size
+        #\----------------------------------------------------------------------------/#
+
+
+        # solar
+        #/----------------------------------------------------------------------------\#
+        sol_upp = f0['SolarSourceFunctionUpperAtmos'][:][g_mode, iband, :, :Ng]
+        sol_low = f0['SolarSourceFunctionLowerAtmos'][:][g_mode, iband, :, :Ng]
+
+        self.coef['solar'] = {
+                'name': 'Solar Factor (Ng)',
+                'data': sol_upp[0, :],
+                }
+        #\----------------------------------------------------------------------------/#
+
+
+        # slit function
+        #/----------------------------------------------------------------------------\#
+        self.coef['slit_func'] = {
+                'name': 'Slit Function (Nz, Ng)',
+                'data': np.ones((Nz, Ng), dtype=np.float64),
+                }
+        #\----------------------------------------------------------------------------/#
+
+
+        # weights
+        #/----------------------------------------------------------------------------\#
+        weight =  np.array([ \
+              0.1527534276, 0.1491729617, 0.1420961469, \
+              0.1316886544, 0.1181945205, 0.1019300893, \
+              0.0832767040, 0.0626720116, 0.0424925000, \
+              0.0046269894, 0.0038279891, 0.0030260086, \
+              0.0022199750, 0.0014140010, 0.0005330000, \
+              0.0000750000 \
+              ])
+
+        weight *= 1.0/weight.sum() # make sure weights can add up to 1.0
+
+        self.coef['weight'] = {
+                'name': 'Weight (Ng)',
+                'data': weight,
+                }
+        #\----------------------------------------------------------------------------/#
+
+
+        # coef
+        #/----------------------------------------------------------------------------\#
+        abso_coef = np.zeros((Nz, Ng), dtype=np.float64)
+
+        # read data from RRTMG SW
+        #/--------------------------------------------------------------\#
+        # coef
+        coef_low = f0.variables['AbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :, :Ng, :, :]
+        coef_upp = f0.variables['AbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :, :Ng, :, :]
+        coef_key_low = f0.variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :Ng, :, :, :]
+        coef_key_upp = f0.variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :Ng, :, :, :]
+        coef_h2o_fore_low = f0.variables['H2OForeignAbsorptionCoefficientsLowerAtmos'][:][g_mode, iband, :Ng, :]
+        coef_h2o_fore_upp = f0.variables['H2OForeignAbsorptionCoefficientsUpperAtmos'][:][g_mode, iband, :Ng, :]
+        coef_h2o_self     = f0.variables['H2OSelfAbsorptionCoefficients'][:][g_mode, iband, :Ng, :]
+
+        # axes
+        # mr_low  = f0.variables['KeySpeciesRatioLowerAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
+        # mr_upp  = f0.variables['KeySpeciesRatioUpperAtmos'][:] # for some reason, Python netCDF4 library cannot read the value for this variable correctly
+        mr_low  = np.linspace(0.0, 1.0, coef_key_low.shape[-1])
+        mr_upp  = np.linspace(0.0, 1.0, coef_key_upp.shape[-1])
+        p_upp   = f0.variables['PressureUpperAtmos'][:]
+        p_low   = f0.variables['PressureLowerAtmos'][:]
+        t       = f0.variables['Temperature'][:]
+        dt      = f0.variables['TemperatureDiffFromMLS'][:]
+        #\--------------------------------------------------------------/#
+
+        for ig in range(Ng):
+            for gas0 in atm_obj.gases:
+                if gas0 != 'no2':
+                    igas = gases.index(gas0)
+                    # coef0_low = coef_low[igas, ig, :, :]
+                    # coef0_upp = coef_upp[igas, ig, :, :]
+
+                    coef0_key_low = coef_key_low[ig, :, :, :]
+                    coef0_key_upp = coef_key_upp[ig, :, :, :]
+
+                    print(gas0, ig)
+                    print(coef0_low)
+
+
+
+        self.coef['abso_coef'] = {
+                'name': 'Absorption Coefficient (Nz, Ng)',
+                'data': abso_coef,
+                }
+        #\----------------------------------------------------------------------------/#
+        sys.exit()
+
+
+
+        # profile
+        #/----------------------------------------------------------------------------\#
+        t_ref = f0.variables['ReferenceTemperature'][:]
+        p     = f0.variables['Pressure'][:]
+        #\----------------------------------------------------------------------------/#
+
+
+
+        # Coef    :  ('Absorber', 'GPoint', 'Temperature', 'KeySpeciesRatioLowerAtmos')
+        # Coef Key:  ('GPoint', 'PressureLowerAtmos', 'TemperatureDiffFromMLS', 'KeySpeciesRatioLowerAtmos')
+
+        print('-'*80)
+        print('Band #%d' % (iband+1))
+        print('Center wavelength: %.4fnm' % self.wavelength)
+        print('Wavelength range: %.4f - %.4fnm' % self.band_range)
+        print('Number of Gs: ', Ng)
+        print()
+        print('Lower Atmosphere:')
+        print('Key species: ', key_gas_low)
+        print('Pressure: %s\n%s' % (p_low.shape, er3t.util.nice_array_str(p_low)))
+        print('Mixing Ratio: %s\n%s' % (mr_low.shape, er3t.util.nice_array_str(mr_low)))
+        print('Temperature Diff.: %s\n%s' % (dt.shape, er3t.util.nice_array_str(dt)))
+        print('Coef.: %s\n' % str(coef_low.shape))
+        print('Coef. Key: %s\n' % str(coef_key_low.shape))
+        print()
+        print('Upper Atmosphere:')
+        print('Key species: ', key_gas_upp)
+        print('Pressure: %s\n%s' % (p_upp.shape, er3t.util.nice_array_str(p_upp)))
+        print('Mixing Ratio: %s\n%s' % (mr_upp.shape, er3t.util.nice_array_str(mr_upp)))
+        print('Temperature Diff.: %s\n%s' % (dt.shape, er3t.util.nice_array_str(dt)))
+        print('Coef.: %s\n' % str(coef_upp.shape))
+        print('Coef. Key: %s\n' % str(coef_key_upp.shape))
+        print('-'*80)
+
+
+        # + netCDF
+        # variables['BandWavenumberLowerLimit'] -------------------- : Dataset  (14,)
+        # variables['BandWavenumberUpperLimit'] -------------------- : Dataset  (14,)
+        # variables['RRTMBandNumber'] ------------------------------ : Dataset  (14,)
+
+        # variables['NumGPoints'] ---------------------------------- : Dataset  (2, 14)
+        # variables['AbsorberNames'] ------------------------------- : Dataset  (12, 5)
+        # variables['Temperature'] --------------------------------- : Dataset  (19,)
+        # variables['TemperatureDiffFromMLS'] ---------------------- : Dataset  (5,)
+        # variables['PressureH2OForeign'] -------------------------- : Dataset  (4,)
+
+
+
+        # variables['ReferenceTemperature'] ------------------------ : Dataset  (59,)
+        # variables['Pressure'] ------------------------------------ : Dataset  (59,)
+        # variables['LogPressure'] --------------------------------- : Dataset  (59,)
+
+        # variables['SolarSourceFunctionUpperAtmos'] --------------- : Dataset  (2, 14, 5, 16)
+        # variables['NRLSSI2SSFFacularUpperAtmos'] ----------------- : Dataset  (2, 14, 5, 16)
+        # variables['NRLSSI2SSFQuietSunUpperAtmos'] ---------------- : Dataset  (2, 14, 5, 16)
+        # variables['NRLSSI2SSFSunspotUpperAtmos'] ----------------- : Dataset  (2, 14, 5, 16)
+
+        # variables['SolarSourceFunctionLowerAtmos'] --------------- : Dataset  (2, 14, 9, 16)
+        # variables['NRLSSI2SSFFacularLowerAtmos'] ----------------- : Dataset  (2, 14, 9, 16)
+        # variables['NRLSSI2SSFQuietSunLowerAtmos'] ---------------- : Dataset  (2, 14, 9, 16)
+        # variables['NRLSSI2SSFSunspotLowerAtmos'] ----------------- : Dataset  (2, 14, 9, 16)
+
+        # variables['KeySpeciesRatioUpperAtmos'] ------------------- : Dataset  (5,)
+        # variables['KeySpeciesAbsorptionCoefficientsUpperAtmos'] -- : Dataset  (2, 14, 16, 47, 5, 5)
+        # variables['AbsorptionCoefficientsUpperAtmos'] ------------ : Dataset  (2, 14, 12, 16, 19, 5)
+        # variables['KeySpeciesNamesUpperAtmos'] ------------------- : Dataset  (2, 14, 3)
+        # variables['TemperatureH2OForeignUpperAtmos'] ------------- : Dataset  (2,)
+        # variables['PressureUpperAtmos'] -------------------------- : Dataset  (47,)
+        # variables['H2OForeignAbsorptionCoefficientsUpperAtmos'] -- : Dataset  (2, 14, 16, 2)
+        # variables['RayleighExtinctionCoefficientsUpperAtmos'] ---- : Dataset  (2, 14, 5, 16)
+
+        # varibles['KeySpeciesRatioLowerAtmos'] ------------------- : Dataset  (9,)
+        # variables['KeySpeciesAbsorptionCoefficientsLowerAtmos'] -- : Dataset  (2, 14, 16, 13, 5, 9)
+        # variables['AbsorptionCoefficientsLowerAtmos'] ------------ : Dataset  (2, 14, 12, 16, 19, 9)
+        # variables['KeySpeciesNamesLowerAtmos'] ------------------- : Dataset  (2, 14, 3)
+        # variables['TemperatureH2OForeignLowerAtmos'] ------------- : Dataset  (3,)
+        # variables['PressureLowerAtmos'] -------------------------- : Dataset  (13,)
+        # variables['H2OForeignAbsorptionCoefficientsLowerAtmos'] -- : Dataset  (2, 14, 16, 3)
+        # variables['RayleighExtinctionCoefficientsLowerAtmos'] ---- : Dataset  (2, 14, 9, 16)
+
+        # variables['TemperatureH2OSelf'] -------------------------- : Dataset  (10,)
+        # variables['H2OSelfAbsorptionCoefficients'] --------------- : Dataset  (2, 14, 16, 10)
+        # -
+
+        f0.close()
+
+
+
+def export_solar_16g():
+
+    wvls = np.arange(300.0, 2501.0, 1.0)
+
+    levels = np.linspace(0.0, 20.0, 41)
+    atm0 = er3t.pre.atm.atm_atmmod(levels=levels)
+
+    for wvl in wvls:
+
+        abs_obj = er3t.pre.abs.abs_16g(wavelength=wvl, atm_obj=atm0)
+        toa = np.sum(abs_obj.coef['solar']['data'] * abs_obj.coef['weight']['data']) * 1000.0
+
+        print('%5d %.6e' % (wvl, toa))
 
 
 

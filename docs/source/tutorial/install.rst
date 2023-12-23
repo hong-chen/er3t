@@ -11,8 +11,32 @@ Dependencies
 
     * `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ (compact, more system-friendly).
 
+2. Set up `NASA EARTHDATA <https://urs.earthdata.nasa.gov>`_
 
-2. Install `MCARaTS <https://sites.google.com/site/mcarats>`_ through the `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`__ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`__)
+    * Register an account at https://urs.earthdata.nasa.gov.
+
+    * Create a ``.netrc`` file under your home directory, e.g., type in ``touch ~/.netrc``.
+
+    * Assume you have registered with an username ``abc`` and a password ``123``, in the ``~/.netrc`` file, put in
+
+      .. code-block:: bash
+
+         machine urs.earthdata.nasa.gov
+         login abc
+         password 123
+
+    * Request a token (instructions `here <https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens/>`_)
+      for your EARTHDATA account and assign it to environment variable ``EARTHDATA_TOKEN``.
+
+      For example, if you are using ``bash`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc``):
+
+      .. code-block:: bash
+
+         export EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+
+3. Install `MCARaTS <https://sites.google.com/site/mcarats>`_ through the `official installation guide <https://sites.google.com/site/mcarats/mcarats-users-guide-version-0-10/2-installation>`__ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004093265986986104>`__)
 
     * After installation, please specify environment variable ``MCARATS_V010_EXE``.
 
@@ -32,7 +56,7 @@ Dependencies
        for community support.
 
 
-3. (optional) Install `libRadtran <http://www.libradtran.org/>`_ through the `official installation guide <http://www.libradtran.org/doku.php?id=download>`__ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`__)
+4. (optional) Install `libRadtran <http://www.libradtran.org/>`_ through the `official installation guide <http://www.libradtran.org/doku.php?id=download>`__ (or a step-by-step `informal installation guide <https://discord.com/channels/681619528945500252/1004090233412923544/1004479494343622789>`__)
 
     * After installation, please specify environment variable ``LIBRADTRAN_V2_DIR`` for the directory that contains compiled libRadtran (the directory should contain ``bin/``, ``lib/``, ``src/`` etc.).
 
@@ -51,9 +75,10 @@ Dependencies
        If you encountered any error, please feel free to reach out at `Discord SUPPORT/libradtran <https://discord.com/channels/681619528945500252/1123343342730760222>`__
        for community support.
 
-4. (optional) Install `SHDOM <https://coloradolinux.com/shdom/>`_
+5. (optional) Install `SHDOM <https://coloradolinux.com/shdom/>`_
 
     **Unavailable yet (under development)**
+
 
 |
 
@@ -62,8 +87,11 @@ EaR³T Python Package - ``er3t``
 
 .. warning::
 
-    You will need to have the dependencies 1 and 2 installed first.
+    You will need to have the dependency steps 1 and 2 completed for accessing/processing satellite data.
 
+.. warning::
+
+    You will need to have the dependency steps 1 and 3 completed for running radiative transfer simulations.
 
 1. Open a terminal, type in the following
 

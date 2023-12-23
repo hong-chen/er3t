@@ -16,6 +16,7 @@ has_mpi         = False
 fdir_er3t        = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
 
 fdir_data        = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
+fdir_data_solar  = os.path.join(fdir_data, 'solar')
 fdir_data_abs    = os.path.join(fdir_data, 'abs')
 fdir_data_pha    = os.path.join(fdir_data, 'pha')
 fdir_data_atmmod = os.path.join(fdir_data, 'atmmod')
@@ -50,5 +51,5 @@ params = {
         }
 
 references = [
-        'Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech., 16, 1971–2000, https://doi.org/10.5194/amt-16-1971-2023, 2023'
+'EaR³T (Chen et al., 2023):\n- Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech., 16, 1971–2000, https://doi.org/10.5194/amt-16-1971-2023, 2023.'
         ]

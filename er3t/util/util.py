@@ -15,7 +15,7 @@ __all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
            'get_data_nc', 'get_data_h4', \
            'find_nearest', 'move_correlate', \
            'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
-           'get_doy_tag'] + \
+           'get_doy_tag', 'add_reference'] + \
           ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat']
@@ -692,6 +692,15 @@ def get_doy_tag(date, day_interval=8):
 
 
 
+def add_reference(reference, reference_list=er3t.common.references):
+
+    if reference not in reference_list:
+
+        reference_list.append(reference)
+
+#\---------------------------------------------------------------------------/
+
+
 # physics
 #/---------------------------------------------------------------------------\
 
@@ -851,9 +860,9 @@ def cal_sol_fac(dtime):
     """
 
     doy = dtime.timetuple().tm_yday
-    eps = 0.01673
-    perh= 2.0
-    rsun = (1.0 - eps*np.cos(2.0*np.pi*(doy-perh)/365.0))
+    eps = 0.0167086
+    perh= 4.0
+    rsun = (1.0 - eps*np.cos(0.017202124161707175*(doy-perh)))
     solfac = 1.0/(rsun**2)
 
     return solfac

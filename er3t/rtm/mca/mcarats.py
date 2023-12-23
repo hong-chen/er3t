@@ -8,6 +8,7 @@ import multiprocessing as mp
 import numpy as np
 
 import er3t.common
+import er3t.util
 from er3t.rtm.mca import mca_inp_file
 from er3t.rtm.mca import mca_run
 
@@ -55,7 +56,7 @@ class mcarats_ng:
         MCARaTS output files created under path specified by 'fdir'
     """
 
-    reference = 'Iwabuchi, H.: Efficient Monte Carlo methods for radiative transfer modeling, J. Atmos. Sci., 63, 2324-2339, doi:10.1175/JAS3755.1, 2006.'
+    reference = '\nMCARaTS (Iwabuchi, 2006; Iwabuchi and Okamura, 2017):\n- Iwabuchi, H.: Efficient Monte Carlo methods for radiative transfer modeling, J. Atmos. Sci., 63, 2324-2339, https://doi.org/10.1175/JAS3755.1, 2006.\n- Iwabuchi, H., and Okamura, R.: Multispectral Monte Carlo radiative transfer simulation by using the maximum cross-section method, Journal of Quantitative Spectroscopy and Radiative Transfer, 193, 40-46, https://doi.org/10.1016/j.jqsrt.2017.01.025, 2017.'
 
 
     def __init__(self,                                          \
@@ -97,6 +98,8 @@ class mcarats_ng:
                  quiet               = False                    \
                  ):
 
+        er3t.util.add_reference(self.reference)
+
         fdir = os.path.abspath(fdir)
 
         if not os.path.exists(fdir):
@@ -106,9 +109,6 @@ class mcarats_ng:
         else:
             if verbose:
                 print('Message [mcarats_ng]: Directory <%s> already exists.' % fdir)
-
-        if self.reference not in er3t.common.references:
-            er3t.common.references.append(self.reference)
 
         self.Ng      = Ng
         self.date    = date

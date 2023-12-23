@@ -35,9 +35,10 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 `EaR³T <https://er3t.readthedocs.io/en/latest/>`_ (pronounced /ɜːt/) is a Python software package
 developed for cutting-edge radiative transfer and remote sensing applications. It provides high-level
 interfaces to automate the process of performing IPA/3D radiative transfer calculations for measured
-or modeled cloud/aerosol fields using publicly available IPA/3D radiative transfer models
-including `MCARaTS <https://sites.google.com/site/mcarats/>`_, `libRadtran <http://www.libradtran.org/>`_
-(*IPA only*), and `SHDOM <https://coloradolinux.com/shdom/>`_ (*under development*).
+or modeled cloud/aerosol fields using publicly available radiative transfer solvers. The automation
+capability covers not only the simulation of radiometric quantities such as radiance and irradiance,
+but also the downloading/processing of satellite data and the setup of atmospheric radiative properties,
+which are essential for an end-to-end simulation pipeline.
 
 
 Applications
@@ -50,6 +51,27 @@ Applications
 * Synthetic data generation (for CNN training);
 
 * Novel retrieval algorithm development (e.g., CNN-based).
+
+
+Features
+--------
+:Radiative Transfer:
+
+  * **solver**: `MCARaTS <https://sites.google.com/site/mcarats/>`_ | `libRadtran <http://www.libradtran.org/>`_
+
+  * **absorption**: `Correlated-k <https://doi.org/10.1029/90JD01945>`_ | `REPTRAN <https://doi.org/10.1016/j.jqsrt.2014.06.024>`_
+
+  * **clouds**: `Mie (water) <https://doi.org/10.1364/AO.19.001505>`_
+
+  * **surface**: `Cox-Munk (ocean) <https://doi.org/10.1364/JOSA.44.000838>`_ | `LSRT Model (land) <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
+
+:Remote Sensing:
+
+  * **downloader**: `Worldview <https://worldview.earthdata.nasa.gov>`_ | `LAADS DAAC <https://ladsweb.modaps.eosdis.nasa.gov/archive/>`_ | `GES DISC <https://oco2.gesdisc.eosdis.nasa.gov/data/>`_ | `LANCE <https://nrt3.modaps.eosdis.nasa.gov/archive>`_
+
+  * **reader**: `MODIS <https://modis.gsfc.nasa.gov>`_ | `VIIRS <https://ncc.nesdis.noaa.gov/VIIRS/>`_ | `OCO-2 <https://ocov2.jpl.nasa.gov>`_ | `AHI <https://www.data.jma.go.jp/mscweb/en/index.html>`_
+
+  * **simulator**: `ARISE <https://zenodo.org/record/4029241>`_ | `CAMP²Ex <https://zenodo.org/record/7358509>`_
 
 
 Resources
@@ -98,9 +120,9 @@ Gallery
 
 .. list-table::
 
-    * - Multi-Angle (space view)
+    * - Multi-Angle (space view [land BRDF])
 
-      - Sunrise to Sunset (space view)
+      - Sunrise to Sunset (space view [ocean BRDF])
 
     * - .. image:: https://github.com/hong-chen/er3t/blob/gh-pages/docs/assets/multi-angle_space.gif
             :width: 400

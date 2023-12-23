@@ -9,7 +9,7 @@ with open(os.path.join(current_dir, 'README.rst'), encoding='utf-8') as f:
 
 setup(
      name = 'er3t',
-     version = '0.1.1',
+     version = '0.2.0',
      description = 'Education and Research 3D Radiative Transfer Toolbox',
      long_description = long_description,
      classifiers = [
@@ -20,8 +20,8 @@ setup(
         ],
      keywords = '3D radiation radiative transfer',
      url = 'https://github.com/hong-chen/er3t',
-     author = 'Hong Chen, Sebastian Schmidt',
-     author_email = 'hong.chen.cu@gmail.com, sebastian.schmidt@lasp.colorado.edu',
+     author = 'Hong Chen, Sebastian Schmidt, Vikas Nataraja, Yu-Wen Chen, Ken Hirata',
+     author_email = 'hong.chen@lasp.colorado.edu, sebastian.schmidt@lasp.colorado.edu',
      license = 'GNU GPLv3',
      packages = find_packages(),
      install_requires = [

@@ -82,14 +82,15 @@ class mca_atm_1d:
 
             self.nml[ig]['Atm_nz']    = {'data':nz                                     , 'units':'N/A', 'name':'Number of z grid points'}
 
+            # Use Bodhaine formula to calculate Rayleigh Optical Depth
+            atm_sca = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:]) \
+                     / (self.atm.lay['thickness']['data']*1000.0)
+
             # Absorption coefficient
             atm_abs = self.abs.coef['abso_coef']['data'][:, ig] / (self.atm.lay['thickness']['data']*1000.0)
             self.nml[ig]['Atm_abs1d(1:, 1)'] = {'data':atm_abs, 'units':'/m' , 'name':'Absorption coefficients'}
 
-            # Extinction coefficient
-            # Use Bodhaine formula to calculate Rayleigh Optical Depth
-            atm_ext = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:]) \
-                     / (self.atm.lay['thickness']['data']*1000.0)
+            atm_ext = atm_sca
             self.nml[ig]['Atm_ext1d(1:, 1)'] = {'data':atm_ext, 'units':'/m' , 'name':'Extinction coefficients'}
 
             # Single Scattering Albedo

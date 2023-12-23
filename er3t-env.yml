@@ -19,6 +19,5 @@ dependencies:
   - sphinx=4.4.*
   - sphinx_rtd_theme=0.4.*
   - vim=8.2.*
-  - powerline-status=2.7.*
   - mscorefonts
   - font-ttf-source-code-pro
