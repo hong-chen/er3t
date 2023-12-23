@@ -168,8 +168,8 @@ def get_fname_geometa(
         fnames_geometa = {
                'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
               'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
-             'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-               'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5110/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
+             'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
+               'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
             }
 
     elif server == 'https://nrt3.modaps.eosdis.nasa.gov':
@@ -387,7 +387,6 @@ def read_geometa(content):
     """
 
     lines = content.split('\n')
-
     index_header = 0
     while (len(lines[index_header]) > 0) and lines[index_header][0] == '#':
         index_header += 1
@@ -940,10 +939,10 @@ def get_satfile_tag(
     # get geometa info
     #/----------------------------------------------------------------------------\#
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
-
+    
     # try to get geometa information from local
     content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
-
+    
     # try to get geometa information online
     if content is None:
         content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
