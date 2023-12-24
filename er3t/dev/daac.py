@@ -112,7 +112,7 @@ def get_command_earthdata(
         token_mode=True,
         tools=['curl', 'wget'],
         fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
-        ):
+        verbose=1):
 
     if filename is None:
         filename = os.path.basename(fname_target)
@@ -122,21 +122,33 @@ def get_command_earthdata(
 
     if token_mode:
 
-        token=get_token_earthdata()
+        token = get_token_earthdata()
         header = '"Authorization: Bearer %s"' % token
-        options = {
-                'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
-                'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document="%s" --quiet "%s"' % (header, fname_save, fname_target),
-                }
+        if verbose == 1:
+            options = {
+                    'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                    'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document="%s" "%s"' % (header, fname_save, fname_target),
+                    }
+        else:
+            options = {
+                    'curl': '-s --header %s --connect-timeout 120.0 --retry 3 --location --continue-at - "%s" "%s"' % (header, fname_save, fname_target),
+                    'wget': '--header=%s --continue --timeout=120 --tries=3  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
+                    }
+
 
     else:
 
         secret = gen_file_earthdata()
-
-        options = {
-                'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
-                'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="%s" --quiet "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
-                }
+        if verbose == 1:
+            options = {
+                    'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                    'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                    }
+        else:
+            options = {
+                    'curl': '-s --header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                    'wget': '--header=%s --continue --timeout=120 --tries=3  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
+                    }
 
     command = None
 
@@ -145,7 +157,7 @@ def get_command_earthdata(
         if shutil.which(command_line_tool):
 
             command = 'mkdir -p %s && %s %s' % (fdir_save, command_line_tool, options[command_line_tool])
-
+            
             if command is not None:
 
                 return command
@@ -237,7 +249,7 @@ def get_online_file(
         download=True,
         tools=['curl', 'wget'],
         fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
-        ):
+        verbose=1):
 
     if filename is None:
         filename = os.path.basename(fname_file)
@@ -245,7 +257,7 @@ def get_online_file(
     if download:
 
         fname_save = '%s/%s' % (fdir_save, filename)
-        command = get_command_earthdata(fname_file, filename=filename, fdir_save=fdir_save, tools=tools)
+        command = get_command_earthdata(fname_file, filename=filename, fdir_save=fdir_save, tools=tools, verbose=verbose)
         os.system(command)
 
         content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
@@ -939,10 +951,10 @@ def get_satfile_tag(
     # get geometa info
     #/----------------------------------------------------------------------------\#
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
-    
+
     # try to get geometa information from local
     content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
-    
+
     # try to get geometa information online
     if content is None:
         content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
@@ -1087,7 +1099,7 @@ def download_laads_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out)
+            command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
             commands.append(command)
     #\----------------------------------------------------------------------------/#
 
@@ -1198,7 +1210,7 @@ def download_lance_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out)
+            command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
             commands.append(command)
     #\----------------------------------------------------------------------------/#
 
@@ -1331,7 +1343,7 @@ def download_oco2_https(
         fname_local  = '%s/%s' % (fdir_out, filename)
         fnames_local.append(fname_local)
 
-        command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False)
+        command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False, verbose=verbose)
         commands.append(command)
 
     if not run and len(commands)>0:
