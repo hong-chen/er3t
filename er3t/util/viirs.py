@@ -9,7 +9,7 @@ from er3t.util.modis import cal_sinusoidal_grid
 
 
 
-__all__ = ['viirs_03', 'viirs_l1b', 'viirs_09a1', 'viirs_43ma3', 'viirs_43ma4']
+__all__ = ['viirs_03', 'viirs_l1b', 'viirs_cldprop_l2', 'viirs_09a1', 'viirs_43ma3', 'viirs_43ma4']
 
 
 
