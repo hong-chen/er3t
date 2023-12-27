@@ -110,7 +110,8 @@ def get_command_earthdata(
         fname_target,
         filename=None,
         token_mode=True,
-        tools=['curl', 'wget'],
+        primary_tool='curl',
+        backup_tool='wget',
         fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
         verbose=1):
 
@@ -124,6 +125,7 @@ def get_command_earthdata(
 
         token = get_token_earthdata()
         header = '"Authorization: Bearer %s"' % token
+
         if verbose == 1:
             options = {
                     'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
@@ -139,6 +141,7 @@ def get_command_earthdata(
     else:
 
         secret = gen_file_earthdata()
+
         if verbose == 1:
             options = {
                     'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
@@ -152,17 +155,13 @@ def get_command_earthdata(
 
     command = None
 
-    for command_line_tool in tools:
+    if not os.path.exists(fdir_save):
+        os.makedirs(fdir_save)
 
-        if shutil.which(command_line_tool):
+    primary_command = '%s %s' % (fdir_save, primary_tool, options[primary_tool])
+    backup_command  = '%s %s' % (fdir_save, backup_tool,  options[backup_tool])
 
-            command = 'mkdir -p %s && %s %s' % (fdir_save, command_line_tool, options[command_line_tool])
-            
-            if command is not None:
-
-                return command
-
-    return command
+    return primary_command, backup_command
 
 
 
@@ -202,6 +201,27 @@ def get_fname_geometa(
 
 
 
+def delete_file(
+        fname_file,
+        filename=None,
+        fdir_local='./',
+        fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
+        ):
+
+    if filename is None:
+        filename = os.path.basename(fname_file)
+
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_save,  filename))
+    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, filename))
+
+    if os.path.exists(fname_local):
+        os.remove(fname_local1)
+
+    if os.path.exists(fname_local):
+        os.remove(fname_local2)
+
+
+
 def get_local_file(
         fname_file,
         filename=None,
@@ -220,7 +240,7 @@ def get_local_file(
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_save, filename))
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_save,  filename))
     fname_local2 = os.path.abspath('%s/%s' % (fdir_local, filename))
 
     if os.path.exists(fname_local1):
@@ -247,7 +267,8 @@ def get_online_file(
         fname_file,
         filename=None,
         download=True,
-        tools=['curl', 'wget'],
+        primary_tool='curl',
+        backup_tool='wget',
         fdir_save='%s/satfile' % er3t.common.fdir_data_tmp,
         verbose=1):
 
@@ -256,11 +277,36 @@ def get_online_file(
 
     if download:
 
-        fname_save = '%s/%s' % (fdir_save, filename)
-        command = get_command_earthdata(fname_file, filename=filename, fdir_save=fdir_save, tools=tools, verbose=verbose)
-        os.system(command)
+        # fname_save = '%s/%s' % (fdir_save, filename)
+        primary_command, backup_command = get_command_earthdata(fname_file,
+                                                                filename=filename,
+                                                                fdir_save=fdir_save,
+                                                                primary_tool=primary_tool,
+                                                                backup_tool=backup_tool,
+                                                                verbose=verbose)
+        try:
+            os.system(primary_command)
+            content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
+        except Exception as message:
+            print(message, "\n")
+            print("Message [get_online_file]: Failed to download/read {},\nAttempting again...".format(fname_file))
 
-        content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
+            try:
+                os.system(primary_command)
+                content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
+            except Exception as message:
+                print(message, "\n")
+                print("Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(fname_file))
+                delete_file(name_file, filename=filename, fdir_save=fdir_save)
+
+                try:
+                    os.system(backup_command)
+                    content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
+                except Exception as message:
+                    print(message, "\n")
+                    msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(fname_file)
+                    delete_file(name_file, filename=filename, fdir_save=fdir_save)
+                    raise OSError(msg)
 
     else:
 
@@ -319,8 +365,8 @@ def final_file_check(fname_local, data_format=None, verbose=False):
             from pyhdf.SD import SD, SDC
             f = SD(fname_local, SDC.READ)
             f.end()
-
             checked = True
+
         except Exception as error:
             print(error)
             pass
@@ -330,8 +376,8 @@ def final_file_check(fname_local, data_format=None, verbose=False):
             from netCDF4 import Dataset
             f = Dataset(fname_local, 'r')
             f.close()
-
             checked = True
+
         except Exception as error:
             print(error)
             pass
@@ -342,8 +388,8 @@ def final_file_check(fname_local, data_format=None, verbose=False):
             import h5py
             f = h5py.File(fname_local, 'r')
             f.close()
-
             checked = True
+
         except Exception as error:
             print(error)
             pass
@@ -357,10 +403,12 @@ def final_file_check(fname_local, data_format=None, verbose=False):
         if verbose:
             msg = '\nMessage [final_file_check]: <%s> has been successfully downloaded.\n' % fname_local
             print(msg)
+        return 1
 
     else:
         msg = '\nWarning [final_file_check]: Do not know whether <%s> has been successfully downloaded.\n' % (fname_local)
         warnings.warn(msg)
+        return 0
 
 
 
@@ -1144,7 +1192,7 @@ def download_lance_https(
              verbose=True):
 
     """
-    Downloads products from the LAADS Data Archive (DAAC).
+    Downloads products from the LANCE Data Archive (DAAC).
 
     Input:
         date: Python datetime object
