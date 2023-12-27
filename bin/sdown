@@ -45,6 +45,7 @@ import datetime
 
 
 import er3t.dev.daac
+from er3t.util.logger import Ear3tLogger
 
 # get width for stdout statements
 _width_, _ = shutil.get_terminal_size()
@@ -385,6 +386,10 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
     ############################################ Error handling ############################################
     ########################################################################################################
 
+    # initialize logger
+    logname   = "sdown" # we could change this to give the user the option to input something like `--project`and use that instead
+    satlogger = Ear3tLogger(logname, verbose=verbose, log_dir=er3t.common.fdir_logs)
+
     if products is None:
         sys.exit('\nError [sdown]: Please specify a product to download. \nWe currently support the following:\n%s\n' % ('\n'.join(_sat_tags_support_.keys())))
     else:
@@ -396,7 +401,9 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
 
     if (extent is None) and ((lats is None) or (lons is None)):
-        sys.exit('\nError [sdown]: Must provide either extent or lon/lat coordinates\n')
+        msg = "Error [sdown]: Must provide either extent or lon/lat coordinates"
+        satlogger.error(msg)
+        sys.exit('\n{}\n'.format(msg))
 
     elif (extent is not None) and (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
         sys.exit('\nError [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats\n')
