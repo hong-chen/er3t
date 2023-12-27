@@ -153,13 +153,11 @@ def get_command_earthdata(
                     'wget': '--header=%s --continue --timeout=120 --tries=3  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
                     }
 
-    command = None
-
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
-    primary_command = '%s %s' % (fdir_save, primary_tool, options[primary_tool])
-    backup_command  = '%s %s' % (fdir_save, backup_tool,  options[backup_tool])
+    primary_command = '%s %s' % (primary_tool, options[primary_tool])
+    backup_command  = '%s %s' % (backup_tool,  options[backup_tool])
 
     return primary_command, backup_command
 
