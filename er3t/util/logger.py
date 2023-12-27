@@ -50,7 +50,7 @@ class Ear3tLogger(logging.getLoggerClass()):
         # Create stream handler for logging to stdout (log all five levels)
         self.stdout_handler = logging.StreamHandler(sys.stdout)
         self.stdout_handler.setLevel(logging.DEBUG)
-        self.stdout_handler.setFormatter(logging.Formatter('%(message)s'))
+        self.stdout_handler.setFormatter(logging.Formatter('\n%(message)s'))
         self.enable_console_output()
 
         self.file_handler = None
@@ -65,7 +65,7 @@ class Ear3tLogger(logging.getLoggerClass()):
         formatter = logging.Formatter(fmt)
 
         # Determine log path and file name; create log path if it does not exist
-        dt_now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        dt_now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         log_name = '{}_{}'.format(str(name).replace(" ", "_"), dt_now)
         if not os.path.exists(log_dir):
             try:
@@ -147,26 +147,26 @@ class Ear3tLogger(logging.getLoggerClass()):
         self._custom_log(super().critical, msg, *args, **kwargs)
 
 
-def test_verbose():
-    print('=' * _width_ + '\nVerbose logging (stdout + file)\n' + '=' * _width_)
-    verbose_log = Ear3tLogger('verbose', verbose=True, log_dir='logs')
+# def test_verbose():
+#     print('=' * _width_ + '\nVerbose logging (stdout + file)\n' + '=' * _width_)
+#     verbose_log = Ear3tLogger('verbose', verbose=True, log_dir='logs')
 
-    verbose_log.warning('Logging to both stdout and a file log')
+#     verbose_log.warning('Logging to both stdout and a file log')
 
-    # verbose_log.disable_file_output()
-    verbose_log.enable_file_output()
+#     # verbose_log.disable_file_output()
+#     verbose_log.enable_file_output()
 
-    verbose_log.framework('Logging everywhere irrespective of verbosity')
-
-
-def test_quiet():
-    print('=' * _width_ + '\nQuiet logging (stdout: only FRAMEWORK + file: all levels)\n' + '=' * _width_)
-    quiet_log = Ear3tLogger('quiet', verbose=False, log_dir='logs')
-    quiet_log.warning('We now log only to a file log')
-    quiet_log.framework('We now log everywhere irrespective of verbosity')
+#     verbose_log.framework('Logging everywhere irrespective of verbosity')
 
 
-if __name__ == '__main__':
-    test_verbose()
-    test_quiet()
+# def test_quiet():
+#     print('=' * _width_ + '\nQuiet logging (stdout: only FRAMEWORK + file: all levels)\n' + '=' * _width_)
+#     quiet_log = Ear3tLogger('quiet', verbose=False, log_dir='logs')
+#     quiet_log.warning('We now log only to a file log')
+#     quiet_log.framework('We now log everywhere irrespective of verbosity')
+
+
+# if __name__ == '__main__':
+#     test_verbose()
+#     test_quiet()
 
