@@ -50,7 +50,13 @@ class Ear3tLogger(logging.getLoggerClass()):
         # Create stream handler for logging to stdout (log all five levels)
         self.stdout_handler = logging.StreamHandler(sys.stdout)
         self.stdout_handler.setLevel(logging.DEBUG)
-        self.stdout_handler.setFormatter(logging.Formatter('\n%(message)s'))
+        self.stdout_handler.setFormatter(logging.Formatter('%(message)s'))
+
+        # Create a "blank line" handler
+        self.blank_handler = logging.StreamHandler(sys.stdout)
+        self.blank_handler.setLevel(logging.DEBUG)
+        self.blank_handler.setFormatter(logging.Formatter(fmt=''))
+
         self.enable_console_output()
 
         self.file_handler = None
@@ -82,6 +88,8 @@ class Ear3tLogger(logging.getLoggerClass()):
         self.file_handler.setLevel(logging.DEBUG)
         self.file_handler.setFormatter(formatter)
         self.addHandler(self.file_handler)
+        self.addHandler(self.blank_handler)
+
 
     def has_console_handler(self):
         return len([h for h in self.handlers if type(h) == logging.StreamHandler]) > 0
@@ -93,11 +101,13 @@ class Ear3tLogger(logging.getLoggerClass()):
         if not self.has_console_handler():
             return
         self.removeHandler(self.stdout_handler)
+        self.removeHandler(self.blank_handler)
 
     def enable_console_output(self):
         if self.has_console_handler():
             return
         self.addHandler(self.stdout_handler)
+        self.removeHandler(self.blank_handler)
 
     def disable_file_output(self):
         if not self.has_file_handler():
