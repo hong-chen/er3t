@@ -387,11 +387,13 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
     ########################################################################################################
 
     # initialize logger
-    logname   = "sdown" # we could change this to give the user the option to input something like `--project`and use that instead
+    logname   = 'sdown' # we could change this to give the user the option to input something like `--project`and use that instead
     satlogger = Ear3tLogger(logname, verbose=verbose, log_dir=er3t.common.fdir_logs)
 
     if products is None:
-        sys.exit('\nError [sdown]: Please specify a product to download. \nWe currently support the following:\n%s\n' % ('\n'.join(_sat_tags_support_.keys())))
+        msg = 'Error [sdown]: Please specify a product to download. \nWe currently support the following:'
+        satlogger.error(msg)
+        sys.exit('\n{}\n{}\n'.format(msg, '\n'.join(_sat_tags_support_.keys())))
     else:
         # separate product ids for error handling
         modis_aqua   = list(filter(lambda x: x.upper().startswith('MYD'), products))
@@ -401,7 +403,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
 
     if (extent is None) and ((lats is None) or (lons is None)):
-        msg = "Error [sdown]: Must provide either extent or lon/lat coordinates"
+        msg = 'Error [sdown]: Must provide either extent or lon/lat coordinates'
         satlogger.error(msg)
         sys.exit('\n{}\n'.format(msg))
 
