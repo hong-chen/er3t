@@ -149,17 +149,14 @@ def get_command_earthdata(
                     }
         else:
             options = {
-                    'curl': '-s --header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
-                    'wget': '--header=%s --continue --timeout=120 --tries=3  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
-                    }
-
-    command = None
-
+                'curl': '-s --netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --quiet --keep-session-cookies --content-disposition --timeout=120 --tries=3 --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                }
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
-    primary_command = '%s %s' % (fdir_save, primary_tool, options[primary_tool])
-    backup_command  = '%s %s' % (fdir_save, backup_tool,  options[backup_tool])
+    primary_command = '%s %s' % (primary_tool, options[primary_tool])
+    backup_command  = '%s %s' % (backup_tool,  options[backup_tool])
 
     return primary_command, backup_command
 
@@ -214,10 +211,10 @@ def delete_file(
     fname_local1 = os.path.abspath('%s/%s' % (fdir_save,  filename))
     fname_local2 = os.path.abspath('%s/%s' % (fdir_local, filename))
 
-    if os.path.exists(fname_local):
+    if os.path.exists(fname_local1):
         os.remove(fname_local1)
 
-    if os.path.exists(fname_local):
+    if os.path.exists(fname_local2):
         os.remove(fname_local2)
 
 
@@ -297,7 +294,7 @@ def get_online_file(
             except Exception as message:
                 print(message, "\n")
                 print("Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(fname_file))
-                delete_file(name_file, filename=filename, fdir_save=fdir_save)
+                delete_file(fname_file, filename=filename, fdir_save=fdir_save)
 
                 try:
                     os.system(backup_command)
@@ -305,7 +302,7 @@ def get_online_file(
                 except Exception as message:
                     print(message, "\n")
                     msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(fname_file)
-                    delete_file(name_file, filename=filename, fdir_save=fdir_save)
+                    delete_file(fname_file, filename=filename, fdir_save=fdir_save)
                     raise OSError(msg)
 
     else:
@@ -616,10 +613,10 @@ def cal_lon_lat_utc_geometa(
     #/----------------------------------------------------------------------------\#
     if line_data['Instrument'].lower() == 'modis' and delta_t != 300.0:
         msg = '\nWarning [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t=%.1f>, please double-check.' % delta_t
-        warning.warn(msg)
+        warnings.warn(msg)
     elif line_data['Instrument'].lower() == 'viirs' and delta_t != 360.0:
         msg = '\nWarning [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t=%.1f>, please double-check.' % delta_t
-        warning.warn(msg)
+        warnings.warn(msg)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1137,7 +1134,8 @@ def download_laads_https(
     #/----------------------------------------------------------------------------\#
     lines    = content.split('\n')
 
-    commands = []
+    primary_commands = []
+    backup_commands  = []
     fnames_local = []
     for line in lines:
         filename = line.strip().split(',')[0]
@@ -1147,8 +1145,9 @@ def download_laads_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
-            commands.append(command)
+            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+            primary_commands.append(primary_command)
+            backup_commands.append(backup_command)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1156,20 +1155,21 @@ def download_laads_https(
     #/----------------------------------------------------------------------------\#
     if run:
 
-        for i, command in enumerate(commands):
+        for i in range(len(primary_commands)):
 
             fname_local = fnames_local[i]
 
             if verbose:
                 print('Message [download_laads_https]: Downloading %s ...' % fname_local)
-            os.system(command)
+            os.system(primary_commands[i])
 
-            final_file_check(fname_local, data_format=data_format, verbose=verbose)
+            if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                os.system(backup_commands[i])
 
     else:
 
         print('Message [download_laads_https]: The commands to run are:')
-        for command in commands:
+        for command in primary_commands:
             print(command)
     #\----------------------------------------------------------------------------/#
 
@@ -1248,7 +1248,8 @@ def download_lance_https(
     #/----------------------------------------------------------------------------\#
     lines    = content.split('\n')
 
-    commands = []
+    primary_commands = []
+    backup_commands  = []
     fnames_local = []
     for line in lines:
         filename = line.strip().split(',')[0]
@@ -1258,8 +1259,9 @@ def download_lance_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
-            commands.append(command)
+            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+            primary_commands.append(primary_command)
+            backup_commands.append(backup_command)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1267,20 +1269,21 @@ def download_lance_https(
     #/----------------------------------------------------------------------------\#
     if run:
 
-        for i, command in enumerate(commands):
+        for i in range(len(primary_commands)):
 
             fname_local = fnames_local[i]
 
             if verbose:
                 print('Message [download_laads_https]: Downloading %s ...' % fname_local)
-            os.system(command)
+            os.system(primary_commands[i])
 
-            final_file_check(fname_local, data_format=data_format, verbose=verbose)
+            if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                os.system(backup_commands[i])
 
     else:
 
         print('Message [download_laads_https]: The commands to run are:')
-        for command in commands:
+        for command in primary_commands:
             print(command)
     #\----------------------------------------------------------------------------/#
 
@@ -1384,34 +1387,36 @@ def download_oco2_https(
                 fname_server = '%s/%s' % (fdir_server, fnames_dat[i])
                 fnames_server.append(fname_server)
 
-    commands = []
+    primary_commands = []
+    backup_commands  = []
     fnames_local = []
     for fname_server in fnames_server:
         filename     = os.path.basename(fname_server)
         fname_local  = '%s/%s' % (fdir_out, filename)
         fnames_local.append(fname_local)
 
-        command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False, verbose=verbose)
-        commands.append(command)
+        primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False, verbose=verbose)
+        primary_commands.append(primary_command)
+        backup_commands.append(backup_command)
 
-    if not run and len(commands)>0:
-
-        print('Message [download_oco2_https]: The commands to run are:')
-        for command in commands:
-            print(command)
-
-    else:
-
-        for i, command in enumerate(commands):
+    if run:
+        for i in range(len(primary_commands)):
 
             fname_local = fnames_local[i]
 
             if verbose:
                 print('Message [download_oco2_https]: Downloading %s ...' % fname_local)
 
-            os.system(command)
+            os.system(primary_commands[i])
 
-            final_file_check(fname_local, data_format=data_format, verbose=verbose)
+            if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                os.system(backup_commands[i])
+
+    else:
+        print('Message [download_oco2_https]: The commands to run are:')
+        for command in primary_commands:
+            print(command)
+
 
     return fnames_local
 

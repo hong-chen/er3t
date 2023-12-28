@@ -60,7 +60,7 @@ _description_ = '=' * _width_ + '\n\n' + \
                 'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir sat-data/\n'
 
 # program name
-_prog_        = sys.argv[0]
+_prog_        = os.path.basename(sys.argv[0])
 
 # product tags
 # this <_sat_tags_support_> will be updated over time
@@ -756,7 +756,7 @@ if __name__ == '__main__':
         products   = ['MODRGB', 'VNP02IMG']
         nrt        =  False
         verbose    = 1
-
+        
         # initialize logger
         satlogger = Ear3tLogger(_prog_, verbose=verbose, log_dir=er3t.common.fdir_logs)
 
@@ -771,8 +771,10 @@ if __name__ == '__main__':
                                   products=products,
                                   verbose=verbose)
     else:
+
         # initialize logger
         satlogger = Ear3tLogger(_prog_, verbose=args.verbose, log_dir=er3t.common.fdir_logs)
+
         sat0 = satellite_download(date=args.date,
                                   start_date=args.start_date,
                                   end_date=args.end_date,

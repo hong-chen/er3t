@@ -47,7 +47,7 @@ class Ear3tLogger(logging.getLoggerClass()):
         # Create stream handler for logging to stdout (log all five levels)
         self.stdout_handler = logging.StreamHandler(sys.stdout)
         self.stdout_handler.setLevel(logging.DEBUG)
-        self.stdout_handler.setFormatter(logging.Formatter('\n\n%(message)s\n\n'))
+        self.stdout_handler.setFormatter(logging.Formatter('\n%(message)s\n'))
 
         # Create a "blank line" handler
         self.blank_handler = logging.StreamHandler(sys.stdout)
