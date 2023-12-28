@@ -152,6 +152,7 @@ def get_command_earthdata(
                 'curl': '-s --netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                 'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --quiet --keep-session-cookies --content-disposition --timeout=120 --tries=3 --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                 }
+            
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
