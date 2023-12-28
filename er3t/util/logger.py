@@ -47,7 +47,7 @@ class Ear3tLogger(logging.getLoggerClass()):
         # Create stream handler for logging to stdout (log all five levels)
         self.stdout_handler = logging.StreamHandler(sys.stdout)
         self.stdout_handler.setLevel(logging.DEBUG)
-        self.stdout_handler.setFormatter(logging.Formatter('%(message)s'))
+        self.stdout_handler.setFormatter(logging.Formatter('\n\n%(message)s\n\n'))
 
         # Create a "blank line" handler
         self.blank_handler = logging.StreamHandler(sys.stdout)
@@ -64,7 +64,7 @@ class Ear3tLogger(logging.getLoggerClass()):
         """Add a file handler for this logger with the specified `name` (and store the log file
         under `log_dir`)."""
         # Format for file log
-        fmt = '%(asctime)s | %(levelname)9s | %(filename)s:%(lineno)d | %(message)s'
+        fmt = '\n%(asctime)s | %(levelname)9s | %(filename)s:%(lineno)d\n%(message)s\n'
         formatter = logging.Formatter(fmt)
 
         # Determine log path and file name; create log path if it does not exist

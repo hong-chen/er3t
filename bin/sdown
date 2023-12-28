@@ -48,7 +48,7 @@ import er3t.dev.daac
 from er3t.util.logger import Ear3tLogger
 
 # get width for stdout statements
-_width_, _ = shutil.get_terminal_size()
+_width_, _    = shutil.get_terminal_size()
 
 # set welcome text
 _description_ = '=' * _width_ + '\n\n' + \
@@ -59,6 +59,8 @@ _description_ = '=' * _width_ + '\n\n' + \
                 'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir sat-data/ --verbose\n'\
                 'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir sat-data/\n'
 
+# program name
+_prog_        = sys.argv[0]
 
 # product tags
 # this <_sat_tags_support_> will be updated over time
@@ -386,14 +388,11 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
     ############################################ Error handling ############################################
     ########################################################################################################
 
-    # initialize logger
-    logname   = 'sdown' # we could change this to give the user the option to input something like `--project`and use that instead
-    satlogger = Ear3tLogger(logname, verbose=verbose, log_dir=er3t.common.fdir_logs)
-
     if products is None:
-        msg = 'Error [sdown]: Please specify a product to download. \nWe currently support the following:'
+        msg = 'Error [sdown]: Please specify a product to download. \nWe currently support the following:\n{}'.format('\n'.join(_sat_tags_support_.keys()))
         satlogger.error(msg)
-        sys.exit('\n{}\n{}\n'.format(msg, '\n'.join(_sat_tags_support_.keys())))
+        sys.exit()
+
     else:
         # separate product ids for error handling
         modis_aqua   = list(filter(lambda x: x.upper().startswith('MYD'), products))
@@ -403,12 +402,12 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
 
     if (extent is None) and ((lats is None) or (lons is None)):
-        msg = 'Error [sdown]: Must provide either extent or lon/lat coordinates'
-        satlogger.error(msg)
-        sys.exit('\n{}\n'.format(msg))
+        satlogger.error('Error [sdown]: Must provide either extent or lon/lat coordinates')
+        sys.exit()
 
     elif (extent is not None) and (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
-        sys.exit('\nError [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats\n')
+        satlogger.error('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+        sys.exit()
 
     elif (extent is None) and (lats is not None) and (lons is not None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
         extent = [lons[0], lons[1], lats[0], lats[1]]
@@ -416,48 +415,55 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
     # check to make sure extent is correct
     if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-        msg = '\nError [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.\n' % extent
-        sys.exit(msg)
+        msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
+        satlogger.error(msg)
+        sys.exit()
 
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
         if verbose:
-            print('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
-
+            satlogger.info('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
 
     # error handling for dates
     if (date is None) and ((start_date is None) or (end_date is None)):
-        sys.exit('\nError [sdown]: Please provide a date via --date or date range via --start_date and --end_date\n')
+        satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date')
+        sys.exit()
 
     elif (date is not None) and ((start_date is None) or (end_date is None)):
 
         single_dt = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
 
         if (datetime.timedelta((_today_dt - single_dt).days).days < 0):
-            msg = '\nError [sdown]: Provided date is in the future. Data will only be downloaded until today\'s date.' + \
-                  '\n\nReceived date   : %s\nToday\'s date is : %s\n' % (single_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: Provided date is in the future. Data will only be downloaded until today\'s date.' + \
+                  '\n\nReceived date   : %s\nToday\'s date is : %s' % (single_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         # check if products exist in those date ranges
         if len(modis_aqua) > 0 and single_dt < _aqua_modis_start_date:
-            msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: Received %s as date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.' % (single_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         if len(modis_terra) > 0 and single_dt < _terra_modis_start_date:
-            msg = '\nError [sdown]: Received %s as date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: Received %s as date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.' % (single_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         if len(viirs_snpp) > 0 and single_dt < _snpp_viirs_start_date:
-            msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates.' % (single_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         if len(viirs_noaa20) > 0 and single_dt < _noaa20_viirs_start_date:
             msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            satlogger.error(msg)
+            sys.exit()
 
         # Passed checks, start download
         if verbose:
-            print('\nMessage [sdown]: Data will be downloaded for %s\n' % single_dt.strftime("%d %B, %Y"))
+            msg = 'Message [sdown]: Data will be downloaded for %s' % single_dt.strftime("%d %B, %Y")
+            satlogger.info(msg)
 
         fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y_%m_%d')) # save files in dirs with dates specified
         if not os.path.exists(fdir_out_dt):
@@ -474,38 +480,44 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         start_dt  = datetime.datetime(int(start_date[:4]), int(start_date[4:6]), int(start_date[6:8]))
         end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]))
         if datetime.timedelta((end_dt - start_dt).days).days < 0:
-            msg = '\nError [sdown]: `end_date` must be on or after `start_date`.' + \
-                  '\n\nReceived start date: %s\nReceived end date: %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: `end_date` must be on or after `start_date`.' + \
+                  '\n\nReceived start date: %s\nReceived end date: %s' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         if (datetime.timedelta((_today_dt - start_dt).days).days < 0):
-            msg = '\nError [sdown]: `start_date` cannot be in the future.' + \
-                  '\n\nReceived start date: %s\nToday\'s date is    : %s\n' % (start_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: `start_date` cannot be in the future.' + \
+                  '\n\nReceived start date: %s\nToday\'s date is    : %s' % (start_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         if (datetime.timedelta((_today_dt - end_dt).days).days < 0):
-            msg = '\nWarning [sdown]: End date is in the future. Data will only be downloaded until today\'s date.' + \
-                  '\n\nReceived end date: %s\nToday\'s date is : %s\n' % (end_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
-            print(msg)
+            msg = 'Warning [sdown]: End date is in the future. Data will only be downloaded until today\'s date.' + \
+                  '\n\nReceived end date: %s\nToday\'s date is : %s' % (end_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y"))
+            satlogger.warn(msg)
             end_dt = _today_dt
 
 
         # check if products exist in those date ranges
         if len(modis_aqua) > 0 and start_dt < _aqua_modis_start_date:
-            msg = '\nError [sdown]: Received %s as starting date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: Received %s as starting date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         if len(modis_terra) > 0 and start_dt < _terra_modis_start_date:
-            msg = '\nError [sdown]: Received %s as starting date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: Received %s as starting date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         if len(viirs_snpp) > 0 and start_dt < _snpp_viirs_start_date:
-            msg = '\nError [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         if len(viirs_noaa20) > 0 and start_dt < _noaa20_viirs_start_date:
-            msg = '\nError [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.\n' % (start_dt.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
-            sys.exit(msg)
+            msg = 'Error [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         ########################################################################################################
         ########################################## End error handling ##########################################
@@ -513,7 +525,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         # Passed checks, start download
         if verbose:
-            print('\nMessage [sdown]: Data will be downloaded for dates beginning %s to %s\n' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y")))
+            msg = 'Message [sdown]: Data will be downloaded for dates beginning %s to %s' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y"))
+            satlogger.info(msg)
 
         date_list = [start_dt + datetime.timedelta(days=x) for x in range((end_dt - start_dt).days + 1)]
         for date_x in date_list: # download products date by date
@@ -526,7 +539,10 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 f.write('Date: {}\n'.format(date_x))
                 f.write('Extent: {}\n'.format(extent))
 
-            print("Obtaining data for: ", date_x, extent)
+            if verbose:
+                satlogger.info("Obtaining data for: {} over {}",format(date_x, extent))
+
+
             run(date_x, extent, fdir_out_dt, nrt, products, verbose)
 
 
@@ -581,8 +597,8 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                       'Please note that the standard product processing rules are relaxed to allow '\
                       'for faster generation of products and therefore may not be the same quality. '\
                       'For a complete breakdown of how NASA generates these NRT products, visit:\n'\
-                      ' %s\n\n' % link_to_nrt
-                print(msg)
+                      ' %s' % link_to_nrt
+                satlogger.warn(msg)
 
                 filename_tags_03 = er3t.dev.daac.get_satfile_tag(date=date,
                                                                 lon=lon,
@@ -593,7 +609,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                                                                 verbose=verbose)
 
                 if verbose:
-                    print('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
+                    satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
                 for filename_tag in filename_tags_03:
                     p_fnames = er3t.dev.daac.download_lance_https(date=date,
@@ -610,7 +626,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                                                          instrument=product_info['instrument'],
                                                          verbose=verbose)
                 if verbose:
-                    print('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
+                    satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
                 for filename_tag in filename_tags_03:
                     p_fnames = er3t.dev.daac.download_laads_https(date=date,
@@ -622,13 +638,14 @@ def run(date, extent, fdir_out, nrt, products, verbose):
             fnames[product_info['dict_key']] += p_fnames
 
         else:
-            msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
-            raise OSError(msg)
+            msg = 'Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
+            satlogger.error(msg)
+            raise OSError()
 
         references.append(product_info['reference'])
 
-    print('If you would like to cite the use of this data:\n\n%s' % '\n\n'.join(references))
-    print('\nMessage [sdown]: Finished downloading satellite files! You can find them in %s\n' % fdir_out)
+    satlogger.info('If you would like to cite the use of this data:\n\n%s' % '\n\n'.join(references))
+    satlogger.info('Message [sdown]: Finished downloading satellite files! You can find them in %s' % fdir_out)
 
 
 def get_sat_info_from_product_tag(tag_):
@@ -647,7 +664,8 @@ def get_sat_info_from_product_tag(tag_):
         return tags_support[tag]
     else:
         msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (tag_, '\n'.join(_sat_tags_support_.keys()))
-        raise OSError(msg)
+        satlogger.error(msg)
+        raise OSError()
     #\----------------------------------------------------------------------------/#
 
 
@@ -726,6 +744,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+
     if args.run_demo:
         date       = '20210714'
         start_date = None
@@ -738,6 +757,9 @@ if __name__ == '__main__':
         nrt        =  False
         verbose    = 1
 
+        # initialize logger
+        satlogger = Ear3tLogger(_prog_, verbose=verbose, log_dir=er3t.common.fdir_logs)
+
         sat0 = satellite_download(date=date,
                                   start_date=start_date,
                                   end_date=end_date,
@@ -749,6 +771,8 @@ if __name__ == '__main__':
                                   products=products,
                                   verbose=verbose)
     else:
+        # initialize logger
+        satlogger = Ear3tLogger(_prog_, verbose=args.verbose, log_dir=er3t.common.fdir_logs)
         sat0 = satellite_download(date=args.date,
                                   start_date=args.start_date,
                                   end_date=args.end_date,
