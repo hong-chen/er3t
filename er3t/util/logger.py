@@ -4,12 +4,9 @@ The EaR3T logging system.
 
 import os
 import sys
-import shutil
 
 import datetime
 import logging
-
-_width_, _ = shutil.get_terminal_size()
 
 
 class Ear3tLogger(logging.getLoggerClass()):
