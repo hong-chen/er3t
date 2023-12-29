@@ -642,8 +642,8 @@ class modis_35_l2:
                 ['cloud_mask_flag'] => 0: not determined, 1: determined
                 ['fov_qa_cat']      => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
                 ['day_night_flag']  => 0: night, 1: day
-                ['sunglint_flag']   => 0: not in sunglint path, 1: in sunglint path
-                ['snow_ice_flag']   => 0: no snow/ice processing, 1: snow/ice processing path
+                ['sunglint_flag']   => 0: in sunglint path, 1: not in sunglint path
+                ['snow_ice_flag']   => 0: snow/ice background processing, 1: no snow/ice processing path
                 ['land_water_cat']  => 0: water, 1: coastal, 2: desert, 3: land
                 ['lon_5km']
                 ['lat_5km']
@@ -672,37 +672,41 @@ class modis_35_l2:
             self.read(fname)
 
 
-    def extract_data(self, data):
+    def extract_data(self, dbyte, byte=0):
         """
         Extract cloud mask (in byte format) flags and categories
         """
-        if data.dtype != 'uint8':
-            data = data.astype('uint8')
+        if dbyte.dtype != 'uint8':
+            dbyte = dbyte.astype('uint8')
 
-        data = np.unpackbits(data, bitorder='big', axis=1) # convert to binary
+        data = np.unpackbits(dbyte, bitorder='big', axis=1) # convert to binary
 
-        # extract flags and categories (*_cat) bit by bit
-        land_water_cat  = 2 * data[:, 0] + 1 * data[:, 1] # convert to a value between 0 and 3
-        snow_ice_flag   = data[:, 2]
-        sunglint_flag   = data[:, 3]
-        day_night_flag  = data[:, 4]
-        fov_qa_cat      = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3
-        cloud_mask_flag = data[:, 7]
-        return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat
+        if byte == 0:
+            # extract flags and categories (*_cat) bit by bit
+            land_water_cat  = 2 * data[:, 0] + 1 * data[:, 1] # convert to a value between 0 and 3
+            snow_ice_flag   = data[:, 2]
+            sunglint_flag   = data[:, 3]
+            day_night_flag  = data[:, 4]
+            fov_qa_cat      = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3
+            cloud_mask_flag = data[:, 7]
+            return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat
 
 
-    def quality_assurance(self, data):
+    def quality_assurance(self, dbyte, byte=0):
         """
         Extract cloud mask QA data to determine confidence
         """
-        if data.dtype != 'uint8':
-            data = data.astype('uint8')
+        if dbyte.dtype != 'uint8':
+            dbyte = dbyte.astype('uint8')
+
+        data = np.unpackbits(dbyte, bitorder='big', axis=1)
 
         # process qa flags
-        data = np.unpackbits(data, bitorder='big', axis=1)
-        confidence_qa = 4 * data[:, 4] + 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 7 confidence
-        useful_qa = data[:, 7] # usefulness QA flag
-        return useful_qa, confidence_qa
+        if byte == 0:
+            # Byte 0 only has 4 bits of useful information, other 4 are always 0
+            confidence_qa = 4 * data[:, 4] + 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 7 confidence
+            useful_qa = data[:, 7] # usefulness QA flag
+            return useful_qa, confidence_qa
 
 
     def read(self, fname):
@@ -801,7 +805,7 @@ class modis_35_l2:
         qa = qa[:, :, 0] # read only the first byte for confidence (indexed differently from cloud mask SDS)
         qa = np.array(qa[logic_1km], dtype='uint8')
         qa = qa.reshape((qa.size, 1))
-        use_qa, confidence_qa = self.quality_assurance(qa)
+        use_qa, confidence_qa = self.quality_assurance(qa, byte=0)
 
         f.end()
         # -------------------------------------------------------------------------------------------------
@@ -869,11 +873,10 @@ class modis_03:
     ID = 'MODIS 03 Geolocation Product'
 
 
-    def __init__(self, \
-                 fnames    = None,  \
+    def __init__(self,              \
+                 fnames,            \
                  extent    = None,  \
                  vnames    = [],    \
-                 overwrite = False, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the pickle file
