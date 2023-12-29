@@ -479,7 +479,6 @@ class viirs_cldprop_l2:
 
     References: (Product Page) https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA20
                 (User Guide)   https://ladsweb.modaps.eosdis.nasa.gov/api/v2/content/archives/Document%20Archive/Science%20Data%20Product%20Documentation/L2_Cloud_Properties_UG_v1.2_March_2021.pdf
-                ()
 
     """
 
@@ -610,13 +609,13 @@ class viirs_cldprop_l2:
         cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm0)
 
         qa0 = qa[:, :, 0] # read byte 0 for confidence QA (note that indexing is different from MODIS)
-        qa0 = np.array(qa[logic_extent], dtype='uint8')
-        qa0 = qa.reshape((qa0.size, 1))
+        qa0 = np.array(qa0[logic_extent], dtype='uint8')
+        qa0 = qa0.reshape((qa0.size, 1))
         _, ret_std_conf_qa, _, _, _, _ = self.quality_assurance(qa0, byte=0) # only get confidence
 
         qa1 = qa[:, :, 1] # read byte 1 for confidence QA (note that indexing is different from MODIS)
-        qa1 = np.array(qa[logic_extent], dtype='uint8')
-        qa1 = qa.reshape((qa0.size, 1))
+        qa1 = np.array(qa1[logic_extent], dtype='uint8')
+        qa1 = qa1.reshape((qa1.size, 1))
         cld_type_qa, _, _, _, bowtie_qa = self.quality_assurance(qa1, byte=1)
 
         f.close()
