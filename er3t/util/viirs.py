@@ -85,8 +85,8 @@ class viirs_03:
     ID = 'VIIRS 03 Geolocation Product'
 
 
-    def __init__(self, \
-                 fnames    = None,  \
+    def __init__(self,              \
+                 fnames,            \
                  extent    = None,  \
                  vnames    = [],    \
                  verbose   = False):
@@ -268,8 +268,8 @@ class viirs_l1b:
     ID = 'VIIRS Level 1b Calibrated Radiance'
 
 
-    def __init__(self, \
-                 fnames     = None,  \
+    def __init__(self,               \
+                 fnames,             \
                  f03        = None,  \
                  extent     = None,  \
                  bands      = None,  \
@@ -440,10 +440,10 @@ class viirs_l1b:
 
 class viirs_cldprop_l2:
     """
-    Read VIIRS Level 2 cloud properties file, e.g., CLDPROP_L2_VIIRS_SNPP..., into an object <viirs_cldprop>
+    Read VIIRS Level 2 cloud properties/mask file, e.g., CLDPROP_L2_VIIRS_SNPP..., into an object <viirs_cldprop>
 
     Input:
-        fnames=     : keyword argument, default=None, Python list of the file path of the original netCDF files
+        fnames=     : keyword argument, Python list of the file path of the original netCDF files
         extent=     : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
         maskvars=   : keyword argument, default=False, extracts optical properties by default; set to False to get cloud mask data
 
@@ -465,23 +465,28 @@ class viirs_cldprop_l2:
         self.data
                 ['lon']
                 ['lat']
-                ['use_qa']          => 0: not useful (discard), 1: useful
-                ['confidence_qa']   => 0: no confidence (do not use), 1: low confidence, 2, ... 7: very high confidence
+                ['ret_std_conf_qa'] => 0: no confidence (do not use), 1: marginal, 2: good, 3: very good
+                ['cld_type_qa']     => 0: no cloud mask, 1: no cloud, 2: water cloud, 3: ice cloud, 4: unknown cloud
+                ['bowtie_qa']       => 0: normal pixel, 1: bowtie pixel
                 ['cloud_mask_flag'] => 0: not determined, 1: determined
                 ['fov_qa_cat']      => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
                 ['day_night_flag']  => 0: night, 1: day
-                ['sunglint_flag']   => 0: not in sunglint path, 1: in sunglint path
-                ['snow_ice_flag']   => 0: no snow/ice processing, 1: snow/ice processing path
+                ['sunglint_flag']   => 0: in sunglint path, 1: not in sunglint path
+                ['snow_ice_flag']   => 0: snow/ice background processing, 1: no snow/ice processing path
                 ['land_water_cat']  => 0: water, 1: coastal, 2: desert, 3: land
                 ['lon_5km']
                 ['lat_5km']
 
+    References: (Product Page) https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA20
+                (User Guide)   https://ladsweb.modaps.eosdis.nasa.gov/api/v2/content/archives/Document%20Archive/Science%20Data%20Product%20Documentation/L2_Cloud_Properties_UG_v1.2_March_2021.pdf
+                ()
+
     """
 
 
-    ID = 'VIIRS Level 2 Cloud Properties'
+    ID = 'VIIRS Level 2 Cloud Properties and Mask'
 
-    def __init__(self, fnames=None, f03=None, extent=None, maskvars=False):
+    def __init__(self, fnames, f03=None, extent=None, maskvars=False):
 
         self.fnames = fnames
         self.f03    = f03
@@ -494,37 +499,62 @@ class viirs_cldprop_l2:
                 self.read_cop(fname)
 
 
-    def extract_data(self, data):
+    def extract_data(self, dbyte, byte=0):
         """
         Extract cloud mask (in byte format) flags and categories
         """
-        if data.dtype != 'uint8':
-            data = data.astype('uint8')
+        if dbyte.dtype != 'uint8':
+            dbyte = dbyte.astype('uint8')
 
-        data = np.unpackbits(data, bitorder='big', axis=1) # convert to binary
+        data = np.unpackbits(dbyte, bitorder='big', axis=1) # convert to binary
 
-        # extract flags and categories (*_cat) bit by bit
-        land_water_cat  = 2 * data[:, 0] + 1 * data[:, 1] # convert to a value between 0 and 3
-        snow_ice_flag   = data[:, 2]
-        sunglint_flag   = data[:, 3]
-        day_night_flag  = data[:, 4]
-        fov_qa_cat      = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3
-        cloud_mask_flag = data[:, 7]
-        return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat
+        if byte == 0:
+            # extract flags and categories (*_cat) bit by bit
+            land_water_cat  = 2 * data[:, 0] + 1 * data[:, 1] # convert to a value between 0 and 3
+            snow_ice_flag   = data[:, 2]
+            sunglint_flag   = data[:, 3]
+            day_night_flag  = data[:, 4]
+            fov_qa_cat      = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3
+            cloud_mask_flag = data[:, 7]
+            return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat
 
 
-    def quality_assurance(self, data):
+    def quality_assurance(self, dbyte, byte=0):
         """
-        Extract cloud mask QA data to determine confidence
+        Extract cloud mask QA data to determine quality
+
+        Reference: VIIRS CLDPROP User Guide, Version 2.1, March 2021
+        Filespec:  https://atmosphere-imager.gsfc.nasa.gov/sites/default/files/ModAtmo/dump_CLDPROP_L2_V011.txt
         """
-        if data.dtype != 'uint8':
-            data = data.astype('uint8')
+        if dbyte.dtype != 'uint8':
+            dbyte = dbyte.astype('uint8')
+
+        data = np.unpackbits(dbyte, bitorder='big', axis=1)
 
         # process qa flags
-        data = np.unpackbits(data, bitorder='big', axis=1)
-        confidence_qa = 4 * data[:, 4] + 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 7 confidence
-        useful_qa = data[:, 7] # usefulness QA flag
-        return useful_qa, confidence_qa
+        if byte == 0: # byte 0 has spectral retrieval QA
+
+            # 1.6-2.1 retrieval QA
+            ret_1621      = data[:, 0]
+            ret_1621_conf = 2 * data[:, 1] + 1 * data[:, 2] # convert to a value between 0 and 3 confidence
+            ret_1621_data = data[:, 3]
+
+            # VNSWIR-2.1 or Standard (std) Retrieval QA
+            ret_std      = data[:, 4]
+            ret_std_conf = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3 confidence
+            ret_std_data = data[:, 7]
+
+            return ret_std, ret_std_conf, ret_std_data, ret_1621, ret_1621_conf, ret_1621_data
+
+        elif byte == 1: # byte 1 has cloud QA
+
+            bowtie            = data[:, 0] # bow tie effect
+            cot_oob           = data[:, 1] # cloud optical thickness out of bounds
+            cot_bands         = 2 * data[:, 2] + 1 * data[:, 3] # convert to a value between 0 and 3
+            rayleigh          = data[:, 4] # whether rayleigh correction was applied
+            cld_type_process  = 4 * data[:, 5] + 2 * data[:, 6] + 1 * data[:, 7]
+
+            return cld_type_process, rayleigh, cot_bands, cot_oob, bowtie
 
 
     def read_mask(self, fname):
@@ -540,24 +570,15 @@ class viirs_cldprop_l2:
         # ------------------------------------------------------------------------------------ #
         f = Dataset(fname, 'r')
 
-        cld_msk0   = f.groups['geophysical_data'].variables['Cloud_Mask']
-        qa0        = f.groups['geophysical_data'].variables['Quality_Assurance']
+        cld_msk0       = f.groups['geophysical_data'].variables['Cloud_Mask']
+        qua_assurance0 = f.groups['geophysical_data'].variables['Quality_Assurance']
 
         #/----------------------------------------------------------------------------\#
         if self.extent is None:
-
-            if 'actual_range' in lon0.attributes().keys():
-                lon_range = lon0.attributes()['actual_range']
-                lat_range = lat0.attributes()['actual_range']
-            elif 'valid_range' in lon0.attributes().keys():
-                lon_range = lon0.attributes()['valid_range']
-                lat_range = lat0.attributes()['valid_range']
-            else:
-                lon_range = [-180.0, 180.0]
-                lat_range = [-90.0 , 90.0]
+            lon_range = [-180.0, 180.0]
+            lat_range = [-90.0 , 90.0]
 
         else:
-
             lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
             lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
@@ -578,21 +599,25 @@ class viirs_cldprop_l2:
 
         # Get cloud mask and flag fields
         #/-----------------------------\#
-        cm0_data = get_data_nc(cld_msk0)
-        qa0_data = get_data_nc(qa0)
-        cm = cm0_data.copy()
-        qa = qa0_data.copy()
+        cm_data = get_data_nc(cld_msk0)
+        qa_data = get_data_nc(qua_assurance0)
+        cm = cm_data.copy()
+        qa = qa_data.copy()
 
-        cm = cm[:, :, 0] # read only the first byte; rest will be supported in the future if needed
+        cm0 = cm[:, :, 0] # read only the first byte; rest will be supported in the future if needed
+        cm0 = np.array(cm0[logic_extent], dtype='uint8')
+        cm0 = cm0.reshape((cm0.size, 1))
+        cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm0)
 
-        cm = np.array(cm[logic_extent], dtype='uint8')
-        cm = cm.reshape((cm.size, 1))
-        cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
+        qa0 = qa[:, :, 0] # read byte 0 for confidence QA (note that indexing is different from MODIS)
+        qa0 = np.array(qa[logic_extent], dtype='uint8')
+        qa0 = qa.reshape((qa0.size, 1))
+        _, ret_std_conf_qa, _, _, _, _ = self.quality_assurance(qa0, byte=0) # only get confidence
 
-        qa = qa[:, :, 0] # read only the first byte for confidence (note that indexing is different from MODIS)
-        qa = np.array(qa[logic_extent], dtype='uint8')
-        qa = qa.reshape((qa.size, 1))
-        use_qa, confidence_qa = self.quality_assurance(qa)
+        qa1 = qa[:, :, 1] # read byte 1 for confidence QA (note that indexing is different from MODIS)
+        qa1 = np.array(qa[logic_extent], dtype='uint8')
+        qa1 = qa.reshape((qa0.size, 1))
+        cld_type_qa, _, _, _, bowtie_qa = self.quality_assurance(qa1, byte=1)
 
         f.close()
         # -------------------------------------------------------------------------------------------------
@@ -602,32 +627,34 @@ class viirs_cldprop_l2:
 
             self.logic[fname] = {'0.75km':logic_extent}
 
-            self.data['lon']               = dict(name='Longitude',            data=np.hstack((self.data['lon']['data'], lon)),                         units='degrees')
-            self.data['lat']               = dict(name='Latitude',             data=np.hstack((self.data['lat']['data'], lat)),                         units='degrees')
-            self.data['use_qa']            = dict(name='QA useful',            data=np.hstack((self.data['use_qa']['data'], use_qa)),                   units='N/A')
-            self.data['confidence_qa']     = dict(name='QA Mask confidence',   data=np.hstack((self.data['confidence_qa']['data'], confidence_qa)),     units='N/A')
-            self.data['cloud_mask_flag']   = dict(name='Cloud mask flag',      data=np.hstack((self.data['cloud_mask_flag']['data'], cloud_mask_flag)), units='N/A')
-            self.data['fov_qa_cat']        = dict(name='FOV quality cateogry', data=np.hstack((self.data['fov_qa_cat']['data'], fov_qa_cat)),           units='N/A')
-            self.data['day_night_flag']    = dict(name='Day/night flag',       data=np.hstack((self.data['day_night_flag']['data'], day_night_flag)),   units='N/A')
-            self.data['sunglint_flag']     = dict(name='Sunglint flag',        data=np.hstack((self.data['sunglint_flag']['data'], sunglint_flag)),     units='N/A')
-            self.data['snow_ice_flag']     = dict(name='Snow/ice flag',        data=np.hstack((self.data['snow_flag']['data'], snow_ice_flag)),         units='N/A')
-            self.data['land_water_cat']    = dict(name='Land/water flag',      data=np.hstack((self.data['land_water_cat']['data'], land_water_cat)),   units='N/A')
+            self.data['lon']               = dict(name='Longitude',                        data=np.hstack((self.data['lon']['data'], lon)),                                 units='degrees')
+            self.data['lat']               = dict(name='Latitude',                         data=np.hstack((self.data['lat']['data'], lat)),                                 units='degrees')
+            self.data['ret_std_conf_qa']   = dict(name='QA standard retrieval confidence', data=np.hstack((self.data['ret_std_conf_qa']['data'], ret_std_conf_qa)),         units='N/A')
+            self.data['cld_type_qa']       = dict(name='QA cloud type processing path',    data=np.hstack((self.data['cld_type_qa']['data'], cld_type_qa)),                 units='N/A')
+            self.data['bowtie_qa']         = dict(name='QA bowtie pixel',                  data=np.hstack((self.data['bowtie_qa']['data'], bowtie_qa)),                     units='N/A')
+            self.data['cloud_mask_flag']   = dict(name='Cloud mask flag',                  data=np.hstack((self.data['cloud_mask_flag']['data'], cloud_mask_flag)),         units='N/A')
+            self.data['fov_qa_cat']        = dict(name='FOV quality cateogry',             data=np.hstack((self.data['fov_qa_cat']['data'], fov_qa_cat)),                   units='N/A')
+            self.data['day_night_flag']    = dict(name='Day/night flag',                   data=np.hstack((self.data['day_night_flag']['data'], day_night_flag)),           units='N/A')
+            self.data['sunglint_flag']     = dict(name='Sunglint flag',                    data=np.hstack((self.data['sunglint_flag']['data'], sunglint_flag)),             units='N/A')
+            self.data['snow_ice_flag']     = dict(name='Snow/ice flag',                    data=np.hstack((self.data['snow_flag']['data'], snow_ice_flag)),                 units='N/A')
+            self.data['land_water_cat']    = dict(name='Land/water flag',                  data=np.hstack((self.data['land_water_cat']['data'], land_water_cat)),           units='N/A')
 
         else:
             self.logic = {}
             self.logic[fname] = {'0.75km':logic_extent}
             self.data  = {}
 
-            self.data['lon']             = dict(name='Longitude',            data=lon,             units='degrees')
-            self.data['lat']             = dict(name='Latitude',             data=lat,             units='degrees')
-            self.data['use_qa']          = dict(name='QA useful',            data=use_qa,          units='N/A')
-            self.data['confidence_qa']   = dict(name='QA Mask confidence',   data=confidence_qa,   units='N/A')
-            self.data['cloud_mask_flag'] = dict(name='Cloud mask flag',      data=cloud_mask_flag, units='N/A')
-            self.data['fov_qa_cat']      = dict(name='FOV quality category', data=fov_qa_cat,      units='N/A')
-            self.data['day_night_flag']  = dict(name='Day/night flag',       data=day_night_flag,  units='N/A')
-            self.data['sunglint_flag']   = dict(name='Sunglint flag',        data=sunglint_flag,   units='N/A')
-            self.data['snow_ice_flag']   = dict(name='Snow/ice flag',        data=snow_ice_flag,   units='N/A')
-            self.data['land_water_cat']  = dict(name='Land/water category',  data=land_water_cat,  units='N/A')
+            self.data['lon']             = dict(name='Longitude',                        data=lon,             units='degrees')
+            self.data['lat']             = dict(name='Latitude',                         data=lat,             units='degrees')
+            self.data['ret_std_conf_qa'] = dict(name='QA standard retrieval confidence', data=ret_std_conf_qa, units='N/A')
+            self.data['cld_type_qa']     = dict(name='QA cloud type processing path',    data=cld_type_qa,     units='N/A')
+            self.data['bowtie_qa']       = dict(name='QA bowtie pixel',                  data=bowtie_qa,       units='N/A')
+            self.data['cloud_mask_flag'] = dict(name='Cloud mask flag',                  data=cloud_mask_flag, units='N/A')
+            self.data['fov_qa_cat']      = dict(name='FOV quality category',             data=fov_qa_cat,      units='N/A')
+            self.data['day_night_flag']  = dict(name='Day/night flag',                   data=day_night_flag,  units='N/A')
+            self.data['sunglint_flag']   = dict(name='Sunglint flag',                    data=sunglint_flag,   units='N/A')
+            self.data['snow_ice_flag']   = dict(name='Snow/ice flag',                    data=snow_ice_flag,   units='N/A')
+            self.data['land_water_cat']  = dict(name='Land/water category',              data=land_water_cat,  units='N/A')
 
 
     def read_cop(self, fname):
@@ -715,9 +742,9 @@ class viirs_cldprop_l2:
         cot[logic_invalid]     = 0.0
         cer[logic_invalid]     = 0.0
         cwp[logic_invalid]     = 0.0
-        cot_err[logic_invalid] = 0.0
-        cer_err[logic_invalid] = 0.0
-        cwp_err[logic_invalid] = 0.0
+        cot_uct[logic_invalid] = 0.0
+        cer_uct[logic_invalid] = 0.0
+        cwp_uct[logic_invalid] = 0.0
 
         # Mark clear-sky pixels using phase as an additional important input
         logic_clear          = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & (ctp == 1)
@@ -805,7 +832,7 @@ class viirs_09a1:
 
 
     def __init__(self,
-                 fnames=None,
+                 fnames,
                  extent=None,
                  band='M4',
                  Nx=1200,
