@@ -400,7 +400,7 @@ class viirs_l1b:
         for i in range(len(self.bands)):
 
             nc_dset = f.groups['observation_data'].variables[self.bands[i]]
-            data = self._mask_flags(nc_dset)
+            data = self._remove_flags(nc_dset)
             if self.f03 is not None:
                 data = data[mask]
 
@@ -419,16 +419,15 @@ class viirs_l1b:
         #\-----------------------------------------------------------------------------/
 
         if hasattr(self, 'data'):
-
+            self.data['wvl'] = dict(name='Wavelengths', data=np.hstack((self.data['wvl']['data'], wvl)), units='nm')
             self.data['rad'] = dict(name='Radiance'   , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance', data=np.hstack((self.data['ref']['data'], ref)), units='N/A')
 
         else:
-
             self.data = {}
-            self.data['wvl'] = dict(name='Wavelengths', data=wvl       , units='nm')
-            self.data['rad'] = dict(name='Radiance'   , data=rad       , units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance', data=ref       , units='N/A')
+            self.data['wvl'] = dict(name='Wavelengths', data=wvl, units='nm')
+            self.data['rad'] = dict(name='Radiance'   , data=rad, units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance', data=ref, units='N/A')
 
 
     def save_h5(self, fname):
