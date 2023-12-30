@@ -400,7 +400,7 @@ class viirs_l1b:
         for i in range(len(self.bands)):
 
             nc_dset = f.groups['observation_data'].variables[self.bands[i]]
-            data = self._remove_flags(nc_dset)
+            data = self._mask_flags(nc_dset)
             if self.f03 is not None:
                 data = data[mask]
 

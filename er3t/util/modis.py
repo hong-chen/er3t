@@ -74,8 +74,8 @@ class modis_l1b:
     ID = 'MODIS Level 1b Calibrated Radiance'
 
 
-    def __init__(self, \
-                 fnames    = None, \
+    def __init__(self,             \
+                 fnames,           \
                  f03       = None, \
                  extent    = None, \
                  bands     = None, \
@@ -375,8 +375,8 @@ class modis_l2:
     ID = 'MODIS Level 2 Cloud Product'
 
 
-    def __init__(self, \
-                 fnames    = None,  \
+    def __init__(self,              \
+                 fnames,            \
                  f03       = None,  \
                  extent    = None,  \
                  vnames    = [],    \
@@ -657,8 +657,8 @@ class modis_35_l2:
     ID = 'MODIS Level 2 Cloud Mask Product'
 
 
-    def __init__(self, \
-                 fnames    = None,  \
+    def __init__(self,              \
+                 fnames,            \
                  f03       = None,  \
                  extent    = None,  \
                  verbose   = False):
