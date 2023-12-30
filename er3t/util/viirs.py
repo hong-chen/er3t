@@ -253,9 +253,11 @@ class viirs_l1b:
     Read VIIRS Level 1b file, e.g., VNP02MOD, into an object <viirs_l1b>
 
     Input:
-        fnames=     : keyword argument, default=None, Python list of the file path of the original netCDF files
-        f03=        : keyword argument, default=None, class object obtained from `viirs_03` reader for geolocation
-        verbose=    : keyword argument, default=False, verbose tag
+        fnames=     : list, a Python list of the file paths of the original netCDF files
+        f03=        : class instance, default=None, class instance for geolocation (see `class viirs_03`)
+        extent=     : list, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        bands=      : list, default=None, a Python list of strings of specific band names. By default, all bands are extracted
+        verbose=    : bool, default=False, verbosity tag
 
     Output:
         self.data
@@ -403,12 +405,14 @@ class viirs_l1b:
                 data = data[mask]
 
             # apply scaling, offset, and unit conversions
-            rad0 = (data * nc_dset.getncattr('radiance_scale_factor')) + nc_dset.getncattr('radiance_add_offset')
+            # add_offset is usually 0. for VIIRS solar bands
+            rad0 = (data - nc_dset.getncattr('radiance_add_offset')) * nc_dset.getncattr('radiance_scale_factor')
+
             # if nc_dset.getncattr('radiance_units').endswith('micrometer'):
             rad0 /= 1000. # from <per micron> to <per nm>
-
             rad[i] = rad0
-            ref[i] = (data * nc_dset.getncattr('scale_factor')) + nc_dset.getncattr('add_offset')
+
+            ref[i] = (data - nc_dset.getncattr('add_offset')) * nc_dset.getncattr('scale_factor')
             wvl[i] = VIIRS_ALL_BANDS[self.bands[i]]
 
         f.close()
@@ -443,9 +447,10 @@ class viirs_cldprop_l2:
     Read VIIRS Level 2 cloud properties/mask file, e.g., CLDPROP_L2_VIIRS_SNPP..., into an object <viirs_cldprop>
 
     Input:
-        fnames=     : keyword argument, Python list of the file path of the original netCDF files
-        extent=     : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
-        maskvars=   : keyword argument, default=False, extracts optical properties by default; set to False to get cloud mask data
+        fnames=     : list,  a list of the file paths of the original netCDF files
+        f03=        : class instance, default=None, class instance for geolocation (see `class viirs_03`)
+        extent=     : list, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        maskvars=   : bool, default=False, extracts optical properties by default; set to True to get cloud mask data
 
     Output:
         self.data
@@ -538,7 +543,7 @@ class viirs_cldprop_l2:
             ret_1621_conf = 2 * data[:, 1] + 1 * data[:, 2] # convert to a value between 0 and 3 confidence
             ret_1621_data = data[:, 3]
 
-            # VNSWIR-2.1 or Standard (std) Retrieval QA
+            # VNSWIR-2.1 or Standard (std) retrieval QA
             ret_std      = data[:, 4]
             ret_std_conf = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3 confidence
             ret_std_data = data[:, 7]
@@ -558,7 +563,7 @@ class viirs_cldprop_l2:
 
     def read_mask(self, fname):
         """
-        Function to extract cloud mask variables from the file
+        Extract cloud mask variables from the file
         """
         try:
             from netCDF4 import Dataset
@@ -657,7 +662,12 @@ class viirs_cldprop_l2:
 
 
     def read_cop(self, fname):
-
+        """
+        Extract cloud optical properties including:
+        cloud top height, cloud phase, cloud optical thickness, and cloud effective radius.
+        By default, clear-sky restoral parameters are also extracted to fill in the clouds.
+        Uncertainties associated with these variables are also included.
+        """
         try:
             from netCDF4 import Dataset
         except ImportError:
