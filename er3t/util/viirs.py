@@ -537,11 +537,11 @@ class viirs_cldprop_l2:
         cot0_data     = get_data_nc(cot0)[logic_extent]
         cer0_data     = get_data_nc(cer0)[logic_extent]
         cwp0_data     = get_data_nc(cwp0)[logic_extent]
-        
+
         cot1_data     = get_data_nc(cot1)[logic_extent]
         cer1_data     = get_data_nc(cer1)[logic_extent]
         cwp1_data     = get_data_nc(cwp1)[logic_extent]
-        
+
         cot_uct0_data = get_data_nc(cot_uct0)[logic_extent]
         cer_uct0_data = get_data_nc(cer_uct0)[logic_extent]
         cwp_uct0_data = get_data_nc(cwp_uct0)[logic_extent]
@@ -550,7 +550,7 @@ class viirs_cldprop_l2:
         cot     = cot0_data.copy()
         cer     = cer0_data.copy()
         cwp     = cwp0_data.copy()
-        
+
         cot_uct = cot_uct0_data.copy()
         cer_uct = cer_uct0_data.copy()
         cwp_uct = cwp_uct0_data.copy()
@@ -586,7 +586,7 @@ class viirs_cldprop_l2:
 
         f.close()
         # ------------------------------------------------------------------------------------ #
-        
+
         pcl = pcl[logic_extent]
 
         # save the data
