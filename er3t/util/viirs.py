@@ -273,12 +273,13 @@ class viirs_l1b:
                  f03        = None,  \
                  extent     = None,  \
                  bands      = None,  \
+                 auto_mask  = True,  \
                  verbose    = False):
 
         self.fnames     = fnames      # Python list of netCDF filenames
         self.f03        = f03         # geolocation class object created using the `viirs_03` reader
         self.bands      = bands       # Python list of bands to extract information
-
+        self.auto_mask  = auto_mask   # apply mask to flagged data such as data due to bow-tie effect
 
         filename = os.path.basename(fnames[0]).lower()
         if '02img' in filename:
@@ -398,7 +399,12 @@ class viirs_l1b:
         for i in range(len(self.bands)):
 
             nc_dset = f.groups['observation_data'].variables[self.bands[i]]
-            data = self._mask_flags(nc_dset)
+
+            if self.auto_mask:
+                data = self._mask_flags(nc_dset)
+            else:
+                data = get_data_nc(nc_dset)
+
             if self.f03 is not None:
                 data = data[mask]
 
