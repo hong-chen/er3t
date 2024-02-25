@@ -472,6 +472,9 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
             f.write("Date: {}\n".format(single_dt))
             f.write("Extent: {}\n".format(extent))
+        
+        if verbose:
+            satlogger.info("Obtaining data for: {} over following region:\nwest: {}, east: {}, south: {}, north: {}".format(single_dt.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
 
         run(single_dt, extent, fdir_out_dt, nrt, products, verbose)
 
@@ -538,9 +541,9 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
                 f.write('Date: {}\n'.format(date_x))
                 f.write('Extent: {}\n'.format(extent))
-
+            
             if verbose:
-                satlogger.info("Obtaining data for: {} over {}",format(date_x, extent))
+                satlogger.info("Obtaining data for: {} over following region:\nwest: {}, east: {}, south: {}, north: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3])) 
 
 
             run(date_x, extent, fdir_out_dt, nrt, products, verbose)
