@@ -475,7 +475,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             f.write("Extent: {}\n".format(extent))
 
         if verbose:
-            satlogger.info("Obtaining data for: {} over following region:\nwest: {}, east: {}, south: {}, north: {}".format(single_dt.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
+            satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nwest: {}, east: {}, south: {}, north: {}".format(single_dt.strftime("%d %B, %Y"), extent[0], extent[1], extent[2], extent[3]))
 
         run(single_dt, extent, fdir_out_dt, nrt, products, verbose)
 
@@ -544,7 +544,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 f.write('Extent: {}\n'.format(extent))
 
             if verbose:
-                satlogger.info("Obtaining data for: {} over following region:\nwest: {}, east: {}, south: {}, north: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
+                satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nwest: {}, east: {}, south: {}, north: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
 
 
             run(date_x, extent, fdir_out_dt, nrt, products, verbose)
