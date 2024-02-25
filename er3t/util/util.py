@@ -6,39 +6,18 @@ import warnings
 
 import er3t.common
 
-import er3t.common
+
 EARTH_RADIUS = er3t.common.params['earth_radius']
 
-
-__all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
+__all__ = ['check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'find_nearest', 'move_correlate', \
            'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
-           'get_doy_tag', 'add_reference'] + \
-          ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
+           'get_doy_tag', 'add_reference', \
+           'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat']
-
-
-# tools
-#/---------------------------------------------------------------------------\
-def all_files(root_dir):
-
-    """
-    Go through all the subdirectories of the input directory and return all the file paths
-    Input:
-        root_dir: string, the directory to walk through
-    Output:
-        allfiles: Python list, all the file paths under the 'root_dir'
-    """
-
-    allfiles = []
-    for root_dir, dirs, files in os.walk(root_dir):
-        for f in files:
-            allfiles.append(os.path.join(root_dir, f))
-
-    return sorted(allfiles)
 
 
 
@@ -239,7 +218,7 @@ def get_data_h4(hdf_dset, replace_fill_value=np.nan):
 
     attrs = hdf_dset.attributes()
     data  = hdf_dset[:]
-    
+
     # data = (integer_value - attrs['add_offset']) * attrs['scale_factor']
     if 'add_offset' in attrs:
         data = data - attrs['add_offset']
@@ -604,7 +583,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     lat0 = [extent[2], extent[2]]
     lon1 = [extent[0], extent[1]]
     lat1 = [extent[3], extent[3]]
-    dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
+    dist_y = cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
     #\----------------------------------------------------------------------------/#
 
 
