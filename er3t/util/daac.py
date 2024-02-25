@@ -162,8 +162,8 @@ def get_command_earthdata(
 
 def get_fname_geometa(
         date,
-        satname='Aqua|MODIS',
-        server='https://ladsweb.modaps.eosdis.nasa.gov',
+        satname,
+        server,
         ):
 
 
