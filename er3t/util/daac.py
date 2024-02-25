@@ -112,6 +112,11 @@ def get_command_earthdata(
         fdir_save='%s/satfile' % fdir_data_tmp,
         verbose=1):
 
+    """
+    Get the LINUX/UNIX download command using curl or wget as the download tool.
+    Also returns a backup command.
+    """
+
     if filename is None:
         filename = os.path.basename(fname_target)
 
@@ -123,7 +128,7 @@ def get_command_earthdata(
         token = get_token_earthdata()
         header = '"Authorization: Bearer %s"' % token
 
-        if verbose == 1:
+        if verbose:
             options = {
                     'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
                     'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document="%s" "%s"' % (header, fname_save, fname_target),
@@ -139,7 +144,7 @@ def get_command_earthdata(
 
         secret = gen_file_earthdata()
 
-        if verbose == 1:
+        if verbose:
             options = {
                     'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                     'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
@@ -173,20 +178,20 @@ def get_fname_geometa(
     #/----------------------------------------------------------------------------\#
     if server == 'https://ladsweb.modaps.eosdis.nasa.gov':
         fnames_geometa = {
-               'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
-              'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
-             'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-               'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_%s.txt'     % (server, date.year, date_s),
+               'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'                % (server, date.year, date_s),
+               'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'              % (server, date.year, date_s),
+               'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_%s.txt'       % (server, date.year, date_s),
+               'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
             }
 
     # generate satellite filename on LANCE DAAC server (near real time)
     #/----------------------------------------------------------------------------\#
     elif server == 'https://nrt3.modaps.eosdis.nasa.gov':
         fnames_geometa = {
-               'Aqua|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt'             % (server, date.year, date_s),
-              'Terra|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt'            % (server, date.year, date_s),
-             'NOAA20|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
-               'SNPP|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt'     % (server, date.year, date_s),
+               'Aqua|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt'               % (server, date.year, date_s),
+               'Terra|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
+               'SNPP|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt'       % (server, date.year, date_s),
+               'NOAA20|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
             }
     else:
         msg = '\nError [get_fname_geometa]: Currently do not support accessing geometa data from <%s>.' % server
@@ -205,6 +210,8 @@ def delete_file(
         fdir_local='./',
         fdir_save='%s/satfile' % fdir_data_tmp,
         ):
+
+    """ Delete file (used in case file could not be downloaded correctly)"""
 
     if filename is None:
         filename = os.path.basename(fname_file)
@@ -282,6 +289,9 @@ def get_online_file(
                                                                 primary_tool=primary_tool,
                                                                 backup_tool=backup_tool,
                                                                 verbose=verbose)
+        # attempt to download using primary tool first.
+        # if that does not work, try again with primary tool.
+        # as a last resort, attempt with backup tool.
         try:
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
@@ -349,7 +359,22 @@ def get_online_file(
 
 
 
-def final_file_check(fname_local, data_format=None, verbose=False):
+def final_file_check(fname_local, data_format, verbose):
+    """
+    Check if the file has been successfully downloaded.
+
+    This function currently supports checking for HDF, NetCDF, and HDF5 files.
+    If the file format is not supported, a warning is issued.
+
+    Params:
+        fname_local (str): The local filename to check.
+        data_format (str): The format of the file. If None, the format is inferred from the file extension.
+        verbose (bool): If True, prints a message when the file has been successfully downloaded.
+
+    Returns:
+        Returns 1 if the file has been successfully downloaded and 0 otherwise.
+    """
+
 
     if data_format is None:
         data_format = os.path.basename(fname_local).split('.')[-1].lower()
@@ -359,7 +384,6 @@ def final_file_check(fname_local, data_format=None, verbose=False):
     if data_format in ['hdf', 'hdf4', 'h4']:
 
         try:
-            import pyhdf
             from pyhdf.SD import SD, SDC
             f = SD(fname_local, SDC.READ)
             f.end()
@@ -667,7 +691,7 @@ def cal_lon_lat_utc_geometa(
 
     # TODO: this is experimental, might cause some problem in the future
     #/--------------------------------------------------------------\#
-    if   ((x[0]>x[1]) or (x[3]>x[2])) or ((y[2]>y[1]) or (y[3]>y[0])):
+    if ((x[0]>x[1]) or (x[3]>x[2])) or ((y[2]>y[1]) or (y[3]>y[0])):
         if ((x[0]>x[3]) or (x[1]>x[2])):
             index0 = 0
         else:
@@ -779,7 +803,7 @@ def cal_lon_lat_utc_geometa(
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         fname_png = filename.replace('.hdf', '.png').replace('.nc', '.png')
         fig.savefig('globe-view_%s' % fname_png, bbox_inches='tight', metadata=_metadata)
-        print("Message [cal_lon_lat_utc_geometa]: Figure saved as 'globe-view_%s'" % fname_png)
+        print("\nMessage [cal_lon_lat_utc_geometa]: Figure saved as 'globe-view_%s'" % fname_png)
         #\--------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
@@ -934,8 +958,8 @@ def get_satfile_tag(
              date,
              lon,
              lat,
-             satellite='aqua',
-             instrument='modis',
+             satellite,
+             instrument,
              server='https://ladsweb.modaps.eosdis.nasa.gov',
              fdir_local='./',
              fdir_save='%s/satfile' % fdir_data_tmp,
@@ -1289,9 +1313,7 @@ def download_lance_https(
             print(command)
     #\----------------------------------------------------------------------------/#
 
-
     return fnames_local
-
 
 
 
