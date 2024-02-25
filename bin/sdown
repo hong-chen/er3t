@@ -638,7 +638,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                                                             day_interval=1,
                                                             fdir_out=fdir_out,
                                                             verbose=verbose)
-            fnames[product_info['dict_key']] += p_fnames
+                    fnames[product_info['dict_key']] += p_fnames
 
         else:
             msg = 'Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
