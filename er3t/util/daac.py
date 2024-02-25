@@ -960,7 +960,7 @@ def get_satfile_tag(
              lat,
              satellite,
              instrument,
-             server='https://ladsweb.modaps.eosdis.nasa.gov',
+             nrt=False,
              fdir_local='./',
              fdir_save='%s/satfile' % fdir_data_tmp,
              geometa=False,
@@ -980,9 +980,8 @@ def get_satfile_tag(
         lat : latitude of, e.g. flight track
         satellite=: default "aqua", can also change to "terra", 'snpp', 'noaa20'
         instrument=: default "modis", can also change to "viirs"
-        server=: string, data server
-                 LAADS: https://ladsweb.modaps.eosdis.nasa.gov
-                 NRT: https://nrt3.modaps.eosdis.nasa.gov
+        nrt=: bool, near real time. if True, will access https://nrt3.modaps.eosdis.nasa.gov,
+                                    if False (default) will access https://ladsweb.modaps.eosdis.nasa.gov,
         fdir_prefix=: string, data directory on NASA server
         verbose=: Boolen type, verbose tag
     output:
@@ -1003,8 +1002,12 @@ def get_satfile_tag(
     #\----------------------------------------------------------------------------/#
 
 
-    # get satellite geometa filename on LAADS DAAC server
+    # get satellite geometa filename on the appropriate DAAC server
     #/----------------------------------------------------------------------------\#
+    if nrt:
+        server = 'https://nrt3.modaps.eosdis.nasa.gov'
+    else:
+        server = 'https://ladsweb.modaps.eosdis.nasa.gov'
     fname_geometa = get_fname_geometa(date, satname, server=server)
     #\----------------------------------------------------------------------------/#
 
@@ -1510,7 +1513,7 @@ def download_worldview_image(
             lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
-            line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, geometa=True, percent0=25.0, worldview=True)[0]
+            line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, nrt=False, geometa=True, percent0=25.0, worldview=True)[0]
 
             if satellite in ['Aqua', 'Terra']:
                 lon0_, lat0_, jday0_ = cal_lon_lat_utc_geometa(line_data, delta_t=300.0, N_along=1015, N_cross=677, scan='cw', testing=False)

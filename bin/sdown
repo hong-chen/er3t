@@ -609,7 +609,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                                                                 lat=lat,
                                                                 satellite=product_info['satellite'],
                                                                 instrument=product_info['instrument'],
-                                                                server='https://nrt3.modaps.eosdis.nasa.gov')
+                                                                nrt=True)
 
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
@@ -629,7 +629,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                                                          lat=lat,
                                                          satellite=product_info['satellite'],
                                                          instrument=product_info['instrument'],
-                                                         server='https://ladsweb.modaps.eosdis.nasa.gov')
+                                                         nrt=False)
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
