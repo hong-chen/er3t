@@ -75,6 +75,9 @@ _terra_modis_start_date  = datetime.datetime(2000, 2, 24)
 _snpp_viirs_start_date   = datetime.datetime(2012, 1, 19)
 _noaa20_viirs_start_date = datetime.datetime(2018, 1, 5)
 
+# Near Real Time (NRT) is available only for the most recent ~ 7 days
+_nrt_oldest_dt = _today_dt - datetime.timedelta(days=7)
+
 _sat_tags_support_ = {
 
         'MODRGB': {
@@ -461,6 +464,12 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             satlogger.error(msg)
             sys.exit()
 
+        # NRT data is only available for the most recent ~ 7 days or so
+        if single_dt < _nrt_oldest_dt:
+            msg = 'Error [sdown]: Near Real Time data is only available for dates on or after %s. Given date: %s' % (_nrt_oldest_dt.strftime("%d %B, %Y"), single_dt.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
         # Passed checks, start download
         if verbose:
             msg = 'Message [sdown]: Data will be downloaded for %s' % single_dt.strftime("%d %B, %Y")
@@ -484,6 +493,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         start_dt  = datetime.datetime(int(start_date[:4]), int(start_date[4:6]), int(start_date[6:8]))
         end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]))
+
         if datetime.timedelta((end_dt - start_dt).days).days < 0:
             msg = 'Error [sdown]: `end_date` must be on or after `start_date`.' + \
                   '\n\nReceived start date: %s\nReceived end date: %s' % (start_dt.strftime("%d %B, %Y"), end_dt.strftime("%d %B, %Y"))
@@ -502,6 +512,11 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             satlogger.warn(msg)
             end_dt = _today_dt
 
+        # NRT data is only available for the most recent ~ 7 days or so
+        if start_dt < _nrt_oldest_dt:
+            msg = 'Error [sdown]: Near Real Time data is only available for dates on or after %s. Given start date: %s' % (_nrt_oldest_dt.strftime("%d %B, %Y"), start_dt.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
 
         # check if products exist in those date ranges
         if len(modis_aqua) > 0 and start_dt < _aqua_modis_start_date:
