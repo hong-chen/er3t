@@ -465,7 +465,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             sys.exit()
 
         # NRT data is only available for the most recent ~ 7 days or so
-        if single_dt < _nrt_oldest_dt:
+        if (single_dt < _nrt_oldest_dt) and nrt:
             msg = 'Error [sdown]: Near Real Time data is only available for dates on or after %s. Given date: %s' % (_nrt_oldest_dt.strftime("%d %B, %Y"), single_dt.strftime("%d %B, %Y"))
             satlogger.error(msg)
             sys.exit()
@@ -513,7 +513,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             end_dt = _today_dt
 
         # NRT data is only available for the most recent ~ 7 days or so
-        if start_dt < _nrt_oldest_dt:
+        if (start_dt < _nrt_oldest_dt) and nrt:
             msg = 'Error [sdown]: Near Real Time data is only available for dates on or after %s. Given start date: %s' % (_nrt_oldest_dt.strftime("%d %B, %Y"), start_dt.strftime("%d %B, %Y"))
             satlogger.error(msg)
             sys.exit()
