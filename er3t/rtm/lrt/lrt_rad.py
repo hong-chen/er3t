@@ -71,53 +71,86 @@ class lrt_init_mono_rad:
         # executable file
         self.executable_file = lrt_cfg['executable_file']
 
+
         # input file
+        #/----------------------------------------------------------------------------\#
         if input_file is None:
             dtime_tmp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             input_file = 'lrt_input_%s.txt' % dtime_tmp
             if verbose:
                 print('Message [lrt_init_mono]: <input_file> is missing, assigning input_file = %s.' % input_file)
         self.input_file = input_file
+        #\----------------------------------------------------------------------------/#
+
 
         # output file
+        #/----------------------------------------------------------------------------\#
         if output_file is None:
             output_file = 'lrt_output_%s.txt' % dtime_tmp
             if verbose:
                 print('Message [lrt_init_mono]: <output_file> is missing, assigning output_file = %s.' % output_file)
         self.output_file = output_file
+        #\----------------------------------------------------------------------------/#
+
 
         # date
+        #/----------------------------------------------------------------------------\#
         if date is None:
             date = datetime.date.today()
             if verbose:
                 print('Message [lrt_init_mono]: <date> is missing, assigning date = datetime.date.today().')
+        #\----------------------------------------------------------------------------/#
+
 
         # surface albedo
+        #/----------------------------------------------------------------------------\#
         if surface_albedo is None:
             surface_albedo = 0.03
             if verbose:
                 print('Message [lrt_init_mono]: <surface_albedo> is missing, assigning surface_albedo = 0.03.')
+        #\----------------------------------------------------------------------------/#
+
 
         # solar zenith angle
+        #/----------------------------------------------------------------------------\#
         if solar_zenith_angle is None:
             solar_zenith_angle = 0.0
             if verbose:
                 print('Message [lrt_init_mono]: <solar_zenith_angle> is missing, assigning solar_zenith_angle = 0.0.')
+        #\----------------------------------------------------------------------------/#
+
 
         # solar azimuth angle
+        #/----------------------------------------------------------------------------\#
         if solar_azimuth_angle is None:
             solar_azimuth_angle = 0.0
             if verbose:
                 print('Message [lrt_init_mono]: <solar_azimuth_angle> is missing, assigning solar_azimuth_angle = 0.0.')
         solar_azimuth_angle = convert_azimuth_angle(solar_azimuth_angle)
+        #\----------------------------------------------------------------------------/#
+
 
         # sensor zenith angle
+        #/----------------------------------------------------------------------------\#
         if sensor_zenith_angle is None:
             sensor_zenith_angle = 0.0
             if verbose:
                 print('Message [lrt_init_mono]: <sensor_zenith_angle> is missing, assigning sensor_zenith_angle = 0.0.')
 
+        if not isinstance(sensor_zenith_angle, str):
+            if isinstance(sensor_zenith_angle, (list, np.ndarray)):
+                self.Nvar = len(sensor_zenith_angle) + 1
+                sensor_zenith_angle = ' '.join('{:.8f}'.format(vza0) for vza0 in np.cos(np.deg2rad(sensor_zenith_angle)))
+            else:
+                sensor_zenith_angle = str(sensor_zenith_angle)
+                self.Nvar = 2
+        else:
+            self.Nvar = 2
+        #\----------------------------------------------------------------------------/#
+
+
         # sensor azimuth angle
+        #/----------------------------------------------------------------------------\#
         if sensor_azimuth_angle is None:
             sensor_azimuth_angle = 0.0
             if verbose:
@@ -126,20 +159,24 @@ class lrt_init_mono_rad:
 
         if not isinstance(sensor_azimuth_angle, str):
             if isinstance(sensor_azimuth_angle, (list, np.ndarray)):
-                self.Nvar = len(sensor_azimuth_angle) + 1
+                self.Nvar = 1 + len(sensor_azimuth_angle)*(self.Nvar-1)
                 sensor_azimuth_angle = ' '.join(str(vaa0) for vaa0 in sensor_azimuth_angle)
             else:
                 sensor_azimuth_angle = str(sensor_azimuth_angle)
-                self.Nvar = 2
+                self.Nvar = 1 + (self.Nvar-1)
         else:
-            self.Nvar = 2
+            self.Nvar = 1 + (self.Nvar-1)
+        #\----------------------------------------------------------------------------/#
+
 
         # wavelength
+        #/----------------------------------------------------------------------------\#
         if wavelength is None:
             wavelength = 500.0
             if verbose:
                 print('Message [lrt_init_mono]: <wavelength> is missing, assigning wavelength = 500.0.')
         self.Nx = 1
+        #\----------------------------------------------------------------------------/#
 
         # slit function
         if wavelength < 950.0:
@@ -178,7 +215,7 @@ class lrt_init_mono_rad:
                             ('albedo'            , '%.6f' % surface_albedo),
                             ('sza'               , '%.4f' % solar_zenith_angle),
                             ('phi0'              , '%.4f' % solar_azimuth_angle),
-                            ('umu'               , '%.8f' % np.cos(np.deg2rad(sensor_zenith_angle))),
+                            ('umu'               , sensor_zenith_angle),
                             ('phi'               , sensor_azimuth_angle),
                             ('rte_solver'        , lrt_cfg['rte_solver']),
                             ('number_of_streams' , str(lrt_cfg['number_of_streams'])),
