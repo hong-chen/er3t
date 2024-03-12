@@ -142,7 +142,7 @@ class lrt_init_mono_rad:
                 self.Nvar = len(sensor_zenith_angle) + 1
                 sensor_zenith_angle = ' '.join('{:.8f}'.format(vza0) for vza0 in np.cos(np.deg2rad(sensor_zenith_angle)))
             else:
-                sensor_zenith_angle = str(sensor_zenith_angle)
+                sensor_zenith_angle = '{:.8f}'.format(np.cos(np.deg2rad(sensor_zenith_angle)))
                 self.Nvar = 2
         else:
             self.Nvar = 2
