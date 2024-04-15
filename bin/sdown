@@ -612,6 +612,12 @@ def run(date, extent, fdir_out, nrt, products, verbose):
         # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
         elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2')):
             if nrt:
+                if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2')):
+                    msg = 'Error [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
+                    satlogger.error(msg)
+                    continue
+                # sys.exit()
+                
                 link_to_nrt = 'https://www.earthdata.nasa.gov/learn/find-data/near-real-time/near-real-time-versus-standard-products'
                 msg = 'Warning [sdown]: Downloading Near Real Time (NRT) products. \n'\
                       'Please note that the standard product processing rules are relaxed to allow '\
