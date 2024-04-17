@@ -250,6 +250,15 @@ _sat_tags_support_ = {
                   'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Imagery Resolution 6-Min L1B Swath 375m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102IMG.002',
                 },
 
+         'VJ202IMG': {
+                'dataset_tag': '5200/VJ202IMG',
+                   'dict_key': 'vj2_02',
+                'description': 'JPSS2 (NOAA-21) VIIRS Level 1b (375m) Calibrated Radiances Product',
+                    'website': 'https://doi.org/10.5067/VIIRS/VJ202IMG.021',
+                  'satellite': 'NOAA21',
+                 'instrument': 'VIIRS',
+                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Imagery Resolution 6-Min L1B Swath 375m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102IMG.002',
+                },
 
         'VNP02MOD': {
                 'dataset_tag': '5200/VNP02MOD',
@@ -267,6 +276,16 @@ _sat_tags_support_ = {
                 'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (750m) Calibrated Radiances Product',
                     'website': 'https://doi.org/10.5067/VIIRS/VJ102MOD.021',
                   'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution 6-Min L1B Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102MOD.002',
+                },
+
+        'VJ202MOD': {
+                'dataset_tag': '5200/VJ202MOD',
+                   'dict_key': 'vj2_02',
+                'description': 'JPSS2 (NOAA-21) VIIRS Level 1b (750m) Calibrated Radiances Product',
+                    'website': 'https://doi.org/10.5067/VIIRS/VJ102MOD.021',
+                  'satellite': 'NOAA21',
                  'instrument': 'VIIRS',
                   'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution 6-Min L1B Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102MOD.002',
                 },
@@ -311,6 +330,16 @@ _sat_tags_support_ = {
                   'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103MOD.002',
                 },
 
+         'VJ203MOD': {
+                'dataset_tag': '5200/VJ203MOD',
+                   'dict_key': 'vj2_03',
+                'description': 'JPSS2 (NOAA-21) VIIRS (750m) Geolocation Fields Product',
+                    'website': 'https://doi.org/10.5067/VIIRS/VJ203MOD.021',
+                  'satellite': 'NOAA21',
+                 'instrument': 'VIIRS',
+                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103MOD.002',
+                },
+
         'VNPRGB': {
                 'dataset_tag': '5200/VNPRGB',
                    'dict_key': 'vnp_rgb',
@@ -327,6 +356,16 @@ _sat_tags_support_ = {
                 'description': 'JPSS1 (NOAA-20) VIIRS True Color (RGB) Imagery',
                     'website': 'https://worldview.earthdata.nasa.gov',
                   'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
+                },
+
+        'VJ2RGB': {
+                'dataset_tag': '5200/VJ2RGB',
+                   'dict_key': 'vj2_rgb',
+                'description': 'JPSS2 (NOAA-21) VIIRS True Color (RGB) Imagery',
+                    'website': 'https://worldview.earthdata.nasa.gov',
+                  'satellite': 'NOAA21',
                  'instrument': 'VIIRS',
                   'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
                 },
