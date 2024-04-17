@@ -182,6 +182,7 @@ def get_fname_geometa(
                'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'              % (server, date.year, date_s),
                'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_%s.txt'       % (server, date.year, date_s),
                'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
+               'NOAA21|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-21/%4.4d/VJ203MOD_%s.txt' % (server, date.year, date_s),
             }
 
     # generate satellite filename on LANCE DAAC server (near real time)
@@ -192,6 +193,7 @@ def get_fname_geometa(
                'Terra|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt'             % (server, date.year, date_s),
                'SNPP|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt'       % (server, date.year, date_s),
                'NOAA20|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
+               'NOAA21|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5200/NOAA-21/%4.4d/VJ203MOD_NRT_%s.txt' % (server, date.year, date_s),
             }
     else:
         msg = '\nError [get_fname_geometa]: Currently do not support accessing geometa data from <%s>.' % server
