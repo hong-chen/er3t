@@ -36,7 +36,7 @@ def format_satname(satellite, instrument):
     if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
         instrument = instrument.upper()
         satellite  = satellite.lower().title()
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp']):
+    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp', 'noaa-20', 's-npp', 'noaa21', 'noaa-21']):
         instrument = instrument.upper()
         satellite  = satellite.replace('-', '').upper()
     elif instrument.lower() == 'abi' and (satellite.lower() in ['goes-east', 'goes-west']):
@@ -1008,6 +1008,7 @@ def get_satfile_tag(
         server = 'https://nrt3.modaps.eosdis.nasa.gov'
     else:
         server = 'https://ladsweb.modaps.eosdis.nasa.gov'
+
     fname_geometa = get_fname_geometa(date, satname, server=server)
     #\----------------------------------------------------------------------------/#
 
