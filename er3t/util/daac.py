@@ -295,6 +295,8 @@ def get_online_file(
         # if that does not work, try again with primary tool.
         # as a last resort, attempt with backup tool.
         try:
+            # delete local version first as this seems to cause issues downstream
+            delete_file(fname_file, filename=filename, fdir_save=fdir_save)
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
         except Exception as message:
@@ -1030,11 +1032,14 @@ def get_satfile_tag(
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
 
     # try to get geometa information from local
-    content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
+    # content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
 
     # try to get geometa information online
-    if content is None:
-        content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
+    # if content is None:
+    #     content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
+    
+    # for now, always use online file since local seems to cause downstream issues
+    content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1081,7 +1086,6 @@ def get_satfile_tag(
             i_all.append(i)
     #\----------------------------------------------------------------------------/#
 
-
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
     if (percent0 > 0.0 ) or worldview:
@@ -1098,7 +1102,6 @@ def get_satfile_tag(
 
         filename_tags = [filename_tags[i] for i in indices_sort]
     #\----------------------------------------------------------------------------/#
-
     return filename_tags
 
 
