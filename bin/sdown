@@ -424,7 +424,7 @@ _sat_tags_support_ = {
 #\----------------------------------------------------------------------------/#
 
 
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, products, verbose):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose):
 
 
     ########################################################################################################
@@ -530,8 +530,25 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
     elif (start_date is not None) and (end_date is not None):
 
-        start_dt  = datetime.datetime(int(start_date[:4]), int(start_date[4:6]), int(start_date[6:8]))
-        end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]))
+        # start at 0 UTC unless specified by user
+        start_hr = 0
+        start_min = 0
+        if len(start_date) == 12:
+            start_hr, start_min = int(start_date[8:10]), int(start_date[10:12])
+
+        # look for data until now at the latest
+        end_hr = datetime.datetime.now().hour
+        end_min = datetime.datetime.now().minute
+        if (len(end_date) == 12):
+            if (int(end_date[8:10]) < end_hr): # update only if different
+                end_hr = int(end_date[8:10])
+
+            if (int(end_date[10:12]) < end_min):
+                end_min = int(end_date[10:12])
+
+
+        start_dt  = datetime.datetime(int(start_date[:4]), int(start_date[4:6]), int(start_date[6:8]), start_hr, start_min)
+        end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]), end_hr, end_min)
 
         if datetime.timedelta((end_dt - start_dt).days).days < 0:
             msg = 'Error [sdown]: `end_date` must be on or after `start_date`.' + \
@@ -656,7 +673,7 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                     satlogger.error(msg)
                     continue
                 # sys.exit()
-                
+
                 link_to_nrt = 'https://www.earthdata.nasa.gov/learn/find-data/near-real-time/near-real-time-versus-standard-products'
                 msg = 'Warning [sdown]: Downloading Near Real Time (NRT) products. \n'\
                       'Please note that the standard product processing rules are relaxed to allow '\
@@ -748,6 +765,8 @@ if __name__ == '__main__':
                         'This is disabled by default.\n \n')
     parser.add_argument('-r', '--run_demo', action='store_true',
                         help='Pass --run_demo if you would like to view a demonstration of this tool.\n \n')
+    parser.add_argument('-f', '--focus_extent', nargs='+', type=float, metavar='',
+                        help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
     required = parser.add_argument_group('Required Arguments')
     required.add_argument('-d', '--date', type=str, metavar='', default=None,
                         help='Date for which you would like to download data. '\
@@ -755,12 +774,16 @@ if __name__ == '__main__':
                         'Example: --date 20210404\n \n')
     required.add_argument('-t', '--start_date', type=str, metavar='', default=None,
                         help='The start date of the range of dates for which you would like to download data. '\
-                        'Use yyyymmdd format.\n'\
+                        'Use yyyymmdd or yyyymmddhhmm format.\n'\
                         'Example: --start_date 20210404\n \n')
     required.add_argument('-u', '--end_date', type=str, metavar='', default=None,
                         help='The end date of the range of dates for which you would like to download data. '\
-                        'Use yyyymmdd format.\n'\
+                        'Use yyyymmdd or yyyymmddhhmm format.\n'\
                         'Example: --end_date 20210414\n \n')
+    required.add_argument('--iou', type=int, metavar='', default=0,
+                        help='Percentage of points within the region of interest that must overlap with the satellite granule. \n'\
+                        'If the overlap < iou, then the granule file will not be downloaded.\n'\
+                        'Example:  --iou 60\n \n')
     required.add_argument('-e', '--extent', nargs='+', type=float, metavar='',
                         help='Extent of region of interest \nlon1 lon2 lat1 lat2 in West East South North format.\n'\
                         'Example:  --extent -10 -5 25 30\n \n')
@@ -821,6 +844,8 @@ if __name__ == '__main__':
         fdir       = 'sat-data/'
         products   = ['MODRGB', 'VNP02IMG']
         nrt        = False
+        iou        = 0
+        focus_extent = None
         verbose    = 1
 
         # initialize logger
@@ -834,6 +859,8 @@ if __name__ == '__main__':
                                   lats=lats,
                                   fdir_out=fdir,
                                   nrt=nrt,
+                                  iou=iou,
+                                  focus_extent=focus_extent,
                                   products=products,
                                   verbose=verbose)
     else:
@@ -849,5 +876,7 @@ if __name__ == '__main__':
                                   lats=args.lats,
                                   fdir_out=args.fdir,
                                   nrt=args.nrt,
+                                  iou=iou,
+                                  focus_extent=focus_extent,
                                   products=args.products,
                                   verbose=args.verbose)

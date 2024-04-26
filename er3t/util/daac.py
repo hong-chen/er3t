@@ -965,12 +965,12 @@ def get_satfile_tag(
              satellite,
              instrument,
              nrt=False,
+             focus_extent=None,
              fdir_local='./',
              fdir_save='%s/satfile' % fdir_data_tmp,
              geometa=False,
              percent0=0.0,
              worldview=False,
-             verbose=False
              ):
 
     """
@@ -1019,9 +1019,13 @@ def get_satfile_tag(
 
     # convert longitude in [-180, 180] range
     # since the longitude in GeoMeta dataset is in the range of [-180, 180]
+    # or check overlap within region of interest
     #/----------------------------------------------------------------------------\#
     lon[lon>180.0] -= 360.0
-    logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
+    if focus_extent is None:
+        logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
+    else:
+        logic = (lon>=focus_extent[0])&(lon<=focus_extent[1]) & (lat>=focus_extent[2])&(lat<=focus_extent[3])
     lon   = lon[logic]
     lat   = lat[logic]
     #\----------------------------------------------------------------------------/#
@@ -1037,7 +1041,7 @@ def get_satfile_tag(
     # try to get geometa information online
     # if content is None:
     #     content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
-    
+
     # for now, always use online file since local seems to cause downstream issues
     content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
@@ -1063,9 +1067,11 @@ def get_satfile_tag(
 
         line = data[i]
 
+        # get bounds of the satellite overpass/granule
         proj_xy, xy_granule = cal_proj_xy_geometa(line, closed=True)
         sat_granule  = mpl_path.Path(xy_granule, closed=True)
 
+        # check if the overpass/granule overlaps with region of interest
         xy_in      = proj_xy.transform_points(proj_lonlat, lon, lat)[:, [0, 1]]
         points_in  = sat_granule.contains_points(xy_in)
 
@@ -1088,20 +1094,20 @@ def get_satfile_tag(
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
-    if (percent0 > 0.0 ) or worldview:
-        indices_sort_p = np.argsort(percent_all)
-        if satellite != 'Terra':
-            indices_sort_i = i_all[::-1]
-        else:
-            indices_sort_i = i_all
+    # if (percent0 > 0.0 ) or worldview:
+    #     indices_sort_p = np.argsort(percent_all)
+    #     if satellite != 'Terra':
+    #         indices_sort_i = i_all[::-1]
+    #     else:
+    #         indices_sort_i = i_all
 
-        if all(percent_i>97.0 for percent_i in percent_all):
-            indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
-        else:
-            indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
+    #     if all(percent_i>97.0 for percent_i in percent_all):
+    #         indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
+    #     else:
+    #         indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
 
-        filename_tags = [filename_tags[i] for i in indices_sort]
-    #\----------------------------------------------------------------------------/#
+    #     filename_tags = [filename_tags[i] for i in indices_sort]
+    # #\----------------------------------------------------------------------------/#
     return filename_tags
 
 
