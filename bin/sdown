@@ -624,7 +624,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
 
 
-def run(date, extent, fdir_out, nrt, products, iou, focus_extent, verbose):
+def run(date, extent, fdir_out, nrt, iou, focus_extent, products, verbose):
 
     lon0 = np.linspace(extent[0], extent[1], 100)
     lat0 = np.linspace(extent[2], extent[3], 100)
@@ -769,7 +769,7 @@ if __name__ == '__main__':
                         'This is disabled by default.\n \n')
     parser.add_argument('-r', '--run_demo', action='store_true',
                         help='Pass --run_demo if you would like to view a demonstration of this tool.\n \n')
-    parser.add_argument('-f', '--focus_extent', nargs='+', type=float, metavar='',
+    parser.add_argument('-a', '--focus_extent', nargs='+', type=float, metavar='',
                         help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
     required = parser.add_argument_group('Required Arguments')
     required.add_argument('-d', '--date', type=str, metavar='', default=None,
