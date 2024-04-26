@@ -660,8 +660,13 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
 def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_extent, products, verbose):
 
-    lon0 = np.linspace(extent[0], extent[1], 100)
-    lat0 = np.linspace(extent[2], extent[3], 100)
+    if focus_extent is not None:
+        lon0 = np.linspace(focus_extent[0], focus_extent[1], 100)
+        lat0 = np.linspace(focus_extent[2], focus_extent[3], 100)
+    else:
+        lon0 = np.linspace(extent[0], extent[1], 100)
+        lat0 = np.linspace(extent[2], extent[3], 100)
+
     lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
 
     references = []
@@ -721,7 +726,6 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                                                                   end_dt_hhmm=end_dt_hhmm,
                                                                   lon=lon,
                                                                   lat=lat,
-                                                                  focus_extent=focus_extent,
                                                                   satellite=product_info['satellite'],
                                                                   instrument=product_info['instrument'],
                                                                   percent0=iou,
@@ -745,7 +749,6 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                                                                   end_dt_hhmm=end_dt_hhmm,
                                                                   lon=lon,
                                                                   lat=lat,
-                                                                  focus_extent=focus_extent,
                                                                   satellite=product_info['satellite'],
                                                                   instrument=product_info['instrument'],
                                                                   percent0=iou,

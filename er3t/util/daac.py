@@ -964,7 +964,6 @@ def get_satfile_tag(
              lat,
              satellite,
              instrument,
-             focus_extent,
              nrt=False,
              fdir_local='./',
              fdir_save='%s/satfile' % fdir_data_tmp,
@@ -1024,10 +1023,7 @@ def get_satfile_tag(
     # or check overlap within region of interest
     #/----------------------------------------------------------------------------\#
     lon[lon>180.0] -= 360.0
-    if focus_extent is None:
-        logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
-    else:
-        logic = (lon>=focus_extent[0])&(lon<=focus_extent[1]) & (lat>=focus_extent[2])&(lat<=focus_extent[3])
+    logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
     lon   = lon[logic]
     lat   = lat[logic]
     #\----------------------------------------------------------------------------/#
