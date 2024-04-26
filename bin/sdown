@@ -769,8 +769,6 @@ if __name__ == '__main__':
                         'This is disabled by default.\n \n')
     parser.add_argument('-r', '--run_demo', action='store_true',
                         help='Pass --run_demo if you would like to view a demonstration of this tool.\n \n')
-    parser.add_argument('-a', '--focus_extent', nargs='+', type=float, metavar='',
-                        help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
     required = parser.add_argument_group('Required Arguments')
     required.add_argument('-d', '--date', type=str, metavar='', default=None,
                         help='Date for which you would like to download data. '\
@@ -797,6 +795,8 @@ if __name__ == '__main__':
     required.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
                         help='The south-most and north-most latitudes of the region.\nAlternative to providing the last two terms in `extent`.\n'\
                         'Example:  --lats 25 30\n \n')
+    required.add_argument('-a', '--focus_extent', nargs='+', type=float, metavar='',
+                        help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
     required.add_argument('-n', '--nrt', action='store_true',
                         help='Pass --nrt if Near Real Time products should be downloaded.\n'\
                              'This is disabled by default to automatically download standard products.\n'\
