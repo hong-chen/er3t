@@ -960,8 +960,6 @@ def cal_sec_offset_abi(extent, satname='GOES-East|ABI', sec_per_scan=30.0):
 
 def get_satfile_tag(
              date,
-             start_dt_hhmm,
-             end_dt_hhmm,
              lon,
              lat,
              satellite,
@@ -973,6 +971,8 @@ def get_satfile_tag(
              geometa=False,
              percent0=0.0,
              worldview=False,
+             start_dt_hhmm=None,
+             end_dt_hhmm=None
              ):
 
     """
@@ -1058,6 +1058,13 @@ def get_satfile_tag(
     # loop through all the satellite "granules" constructed through four corner points
     # and find which granules contain the input data
     #/----------------------------------------------------------------------------\#
+
+    if start_dt_hhmm is None:
+        start_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 0, 0)
+
+    if end_dt_hhmm is None:
+        end_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 23, 59)
+
     proj_lonlat = ccrs.PlateCarree()
 
     Ndata = len(data)
