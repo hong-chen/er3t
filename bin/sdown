@@ -525,7 +525,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         if verbose:
             satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(single_dt.strftime("%d %B, %Y"), extent[0], extent[1], extent[2], extent[3]))
 
-        run(single_dt, extent, fdir_out_dt, nrt, products, verbose)
+        run(single_dt, extent, fdir_out_dt, nrt, iou, focus_extent, products, verbose)
 
 
     elif (start_date is not None) and (end_date is not None):
@@ -619,12 +619,12 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
 
 
-            run(date_x, extent, fdir_out_dt, nrt, products, verbose)
+            run(date_x, extent, fdir_out_dt, nrt, iou, focus_extent, products, verbose)
 
 
 
 
-def run(date, extent, fdir_out, nrt, products, verbose):
+def run(date, extent, fdir_out, nrt, products, iou, focus_extent, verbose):
 
     lon0 = np.linspace(extent[0], extent[1], 100)
     lat0 = np.linspace(extent[2], extent[3], 100)
@@ -644,11 +644,11 @@ def run(date, extent, fdir_out, nrt, products, verbose):
         # MODIS RGB imagery
         if 'RGB' in product.upper():
             p_fnames = [er3t.util.daac.download_worldview_image(date=date,
-                                                         extent=extent,
-                                                         fdir_out=fdir_out,
-                                                         satellite=product_info['satellite'],
-                                                         instrument=product_info['instrument'],
-                                                         coastline=False)]
+                                                                extent=extent,
+                                                                fdir_out=fdir_out,
+                                                                satellite=product_info['satellite'],
+                                                                instrument=product_info['instrument'],
+                                                                coastline=False)]
             fnames[product_info['dict_key']] += p_fnames
 
         # MODIS surface product
@@ -658,18 +658,18 @@ def run(date, extent, fdir_out, nrt, products, verbose):
 
             for filename_tag in filename_tags_43:
                 p_fnames = er3t.util.daac.download_laads_https(date=date,
-                                                          dataset_tag=product_info['dataset_tag'],
-                                                          filename_tag=filename_tag,
-                                                          day_interval=1,
-                                                          fdir_out=fdir_out,
-                                                          verbose=verbose)
+                                                               dataset_tag=product_info['dataset_tag'],
+                                                               filename_tag=filename_tag,
+                                                               day_interval=1,
+                                                               fdir_out=fdir_out,
+                                                               verbose=verbose)
                 fnames[product_info['dict_key']] += p_fnames
 
         # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
         elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2')):
             if nrt:
                 if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2')):
-                    msg = 'Error [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
+                    msg = 'Error [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.' % (date.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
                     satlogger.error(msg)
                     continue
                 # sys.exit()
@@ -683,11 +683,13 @@ def run(date, extent, fdir_out, nrt, products, verbose):
                 satlogger.warn(msg)
 
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
-                                                                lon=lon,
-                                                                lat=lat,
-                                                                satellite=product_info['satellite'],
-                                                                instrument=product_info['instrument'],
-                                                                nrt=True)
+                                                                  lon=lon,
+                                                                  lat=lat,
+                                                                  focus_extent=focus_extent,
+                                                                  satellite=product_info['satellite'],
+                                                                  instrument=product_info['instrument'],
+                                                                  percent0=iou,
+                                                                  nrt=True)
 
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
@@ -876,7 +878,7 @@ if __name__ == '__main__':
                                   lats=args.lats,
                                   fdir_out=args.fdir,
                                   nrt=args.nrt,
-                                  iou=iou,
-                                  focus_extent=focus_extent,
+                                  iou=args.iou,
+                                  focus_extent=args.focus_extent,
                                   products=args.products,
                                   verbose=args.verbose)
