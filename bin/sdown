@@ -705,11 +705,13 @@ def run(date, extent, fdir_out, nrt, products, iou, focus_extent, verbose):
 
             else:
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
-                                                         lon=lon,
-                                                         lat=lat,
-                                                         satellite=product_info['satellite'],
-                                                         instrument=product_info['instrument'],
-                                                         nrt=False)
+                                                                  lon=lon,
+                                                                  lat=lat,
+                                                                  focus_extent=focus_extent,
+                                                                  satellite=product_info['satellite'],
+                                                                  instrument=product_info['instrument'],
+                                                                  percent0=iou,
+                                                                  nrt=False)
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
