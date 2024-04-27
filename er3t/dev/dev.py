@@ -687,26 +687,25 @@ def test_noaa20_viirs_extra():
 def segment_label(data_in):
 
     import skimage
-    from skimage.color import label2rgb
-    from skimage.filters import sobel
-    from skimage.measure import label
-    from skimage.segmentation import watershed
+    import skimage.filters
+    import skimage.segmentation
+    import skimage.measure
 
 
-    edges = sobel(data_in)
+    edges = skimage.filters.sobel(data_in)
 
     markers = np.zeros_like(data_in)
     foreground, background = 1, 2
     markers[data_in == 0] = background
     markers[data_in >  0] = foreground
 
-    ws = watershed(edges, markers=markers)
-    seg = label(ws == foreground)
-    print(ws)
-    print(ws.shape)
-    print(seg)
-    print(seg.shape)
+    ws = skimage.segmentation.watershed(edges, markers=markers)
+    seg = skimage.measure.label(ws==foreground)
 
+
+    obj_labels = np.unique(seg)
+    print(obj_labels)
+    print(obj_labels.size)
 
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -732,8 +731,7 @@ def segment_label(data_in):
         cs = ax1.imshow(data_in.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
 
         ax2 = fig.add_subplot(122)
-        # cs = ax2.imshow(label2rgb(seg).T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
-        cs = ax2.imshow(label2rgb(seg.T, image=data_in.T, bg_label=0), origin='lower', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        cs = ax2.imshow(seg.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
         # ax1.scatter(x, y, s=6, c='k', lw=0.0)
         # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
         # ax1.plot([0, 1], [0, 1], color='k', ls='--')
