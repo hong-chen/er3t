@@ -1,6 +1,5 @@
 import os
 import sys
-import logging
 import datetime
 import importlib.util
 
@@ -26,6 +25,7 @@ fdir_data_ssfr   = os.path.join(fdir_data_slit, 'ssfr')
 fdir_data_tmp    = os.path.join(fdir_er3t, 'tmp-data')
 fdir_examples    = os.path.join(fdir_er3t, 'examples')
 fdir_tests       = os.path.join(fdir_er3t, 'tests')
+fdir_logs        = os.path.join(fdir_er3t, 'logs')
 
 params = {
                  'wavelength': 650.0,
