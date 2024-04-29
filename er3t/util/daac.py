@@ -1055,6 +1055,7 @@ def get_satfile_tag(
     # and find which granules contain the input data
     #/----------------------------------------------------------------------------\#
 
+    # by default if no start and end times are given, use 0000 and 2359
     if start_dt_hhmm is None:
         start_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 0, 0)
 
@@ -1087,41 +1088,35 @@ def get_satfile_tag(
 
         if (Npoint_in>0) and (line['DayNightFlag']=='D') and (percent_in>=percent0):
 
-            # if geometa:
-            #     filename_tags.append(line)
-            # else:
-            #     filename = line['GranuleID']
-            #     filename_tag = '.'.join(filename.split('.')[1:3])
-            #     filename_tags.append(filename_tag)
-            # percent_all = np.append(percent_all, percent_in)
-            # i_all.append(i)
+            if geometa:
+                filename_tags.append(line)
+            else:
+                granule_dt = line['StartDateTime']
+                granule_dt = datetime.datetime.strptime(granule_dt, '%Y-%m-%d %H:%M') # format it for processing
 
-            granule_dt = line['StartDateTime']
-            granule_dt = datetime.datetime.strptime(granule_dt, '%Y-%m-%d %H:%M') # format it for processing
-
-            if start_dt_hhmm <= granule_dt <= end_dt_hhmm: # get the filename only if within time bounds
-                filename = line['GranuleID']
-                filename_tag = '.'.join(filename.split('.')[1:3])
-                filename_tags.append(filename_tag)
-                percent_all = np.append(percent_all, percent_in)
-                i_all.append(i)
+                if start_dt_hhmm <= granule_dt <= end_dt_hhmm: # get the filename only if within time bounds
+                    filename = line['GranuleID']
+                    filename_tag = '.'.join(filename.split('.')[1:3])
+                    filename_tags.append(filename_tag)
+                    percent_all = np.append(percent_all, percent_in)
+                    i_all.append(i)
     #\----------------------------------------------------------------------------/#
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
-    # if (percent0 > 0.0 ) or worldview:
-    #     indices_sort_p = np.argsort(percent_all)
-    #     if satellite != 'Terra':
-    #         indices_sort_i = i_all[::-1]
-    #     else:
-    #         indices_sort_i = i_all
+    if (percent0 > 0.0 ) or worldview:
+        indices_sort_p = np.argsort(percent_all)
+        if satellite != 'Terra':
+            indices_sort_i = i_all[::-1]
+        else:
+            indices_sort_i = i_all
 
-    #     if all(percent_i>97.0 for percent_i in percent_all):
-    #         indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
-    #     else:
-    #         indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
+        if all(percent_i>97.0 for percent_i in percent_all):
+            indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
+        else:
+            indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
 
-    #     filename_tags = [filename_tags[i] for i in indices_sort]
+        filename_tags = [filename_tags[i] for i in indices_sort]
     # #\----------------------------------------------------------------------------/#
     return filename_tags
 
