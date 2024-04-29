@@ -153,21 +153,21 @@ class satellite_download:
         self.fnames = {}
 
         # MODIS RGB imagery
-        self.fnames['mod_rgb'] = [er3t.dev.download_worldview_image(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.util.download_worldview_image(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
 
-        filename_tags_03 = er3t.dev.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
+        filename_tags_03 = er3t.util.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
         if self.verbose:
            print('Message [satellite_download]: Found %s %s overpasses' % (len(filename_tags_03), self.satellite))
 
         for filename_tag in filename_tags_03:
-            fnames_03     = er3t.dev.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = er3t.dev.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = er3t.dev.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = er3t.util.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = er3t.util.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = er3t.util.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
 
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02
@@ -178,9 +178,9 @@ class satellite_download:
         self.fnames['mod_43a3'] = []
         filename_tags_43 = er3t.util.modis.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_43:
-            fnames_43a1 = er3t.dev.download_laads_https(self.date, '61/MCD43A1', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_43a1 = er3t.util.download_laads_https(self.date, '61/MCD43A1', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_43a1'] += fnames_43a1
-            fnames_43a3 = er3t.dev.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_43a3 = er3t.util.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_43a3'] += fnames_43a3
 
     def dump(self, fname):
@@ -1531,9 +1531,9 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # mod/cld/cth_ipa0 ------- : Dataset  (846, 846)
     # mod/cld/logic_cld ------ : Dataset  (846, 846)
     #/----------------------------------------------------------------------------\#
-    cdata_cld_ipa(wvl=wvl)
-    if plot:
-        plot_cld_ipa()
+    # cdata_cld_ipa(wvl=wvl)
+    # if plot:
+    #     plot_cld_ipa()
     #\----------------------------------------------------------------------------/#
 
 def main_sim(wvl=params['wavelength'], run_ipa=False):
@@ -1746,7 +1746,7 @@ if __name__ == '__main__':
     #   b. <02_modis_rad-sim_<plot_sat_raw>.png> will be created under current directory
     #   c. <02_modis_rad-sim_<plot_cld_ipa>.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    # main_pre()
+    main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
@@ -1756,14 +1756,14 @@ if __name__ == '__main__':
     #   require a lot of photons (thus long computational time) to achieve relatively
     #   high accuracy
     #/----------------------------------------------------------------------------\#
-    main_sim(run_ipa=False)
+    # main_sim(run_ipa=False)
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run
     #   a. <post-data.h5> will be created under data/02_modis_rad-sim
     #   b. <02_modis_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    main_post(plot=True)
+    # main_post(plot=True)
     #\----------------------------------------------------------------------------/#
 
     pass
