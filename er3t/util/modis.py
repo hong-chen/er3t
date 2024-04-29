@@ -393,7 +393,7 @@ class modis_l2:
             self.read(fname, cop_flag=cop_flag)
 
             if len(vnames) > 0:
-                self.read_vars(fname, vnames=vnames, cop_flag=cop_flag)
+                self.read_vars(fname, vnames=vnames)
 
 
     def read(self, fname, cop_flag):
@@ -552,7 +552,7 @@ class modis_l2:
         f.end()
         # -------------------------------------------------------------------------------------------------
 
-        pcl = pcl[logic_1km]
+        # pcl = pcl[logic_1km]
 
         if hasattr(self, 'data'):
 
