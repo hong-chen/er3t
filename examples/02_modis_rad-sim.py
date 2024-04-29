@@ -1501,9 +1501,9 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # mod/sfc/lat ------------ : Dataset  (472, 472)
     # mod/sfc/lon ------------ : Dataset  (472, 472)
     #/----------------------------------------------------------------------------\#
-    cdata_sat_raw(wvl=wvl)
-    if plot:
-        plot_sat_raw()
+    # cdata_sat_raw(wvl=wvl)
+    # if plot:
+    #     plot_sat_raw()
     #\----------------------------------------------------------------------------/#
 
 
@@ -1532,9 +1532,9 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # mod/cld/cth_ipa0 ------- : Dataset  (846, 846)
     # mod/cld/logic_cld ------ : Dataset  (846, 846)
     #/----------------------------------------------------------------------------\#
-    # cdata_cld_ipa(wvl=wvl)
-    # if plot:
-    #     plot_cld_ipa()
+    cdata_cld_ipa(wvl=wvl)
+    if plot:
+        plot_cld_ipa()
     #\----------------------------------------------------------------------------/#
 
 def main_sim(wvl=params['wavelength'], run_ipa=False):
