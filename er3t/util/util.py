@@ -219,12 +219,13 @@ def get_data_h4(hdf_dset, replace_fill_value=np.nan):
     attrs = hdf_dset.attributes()
     data  = hdf_dset[:]
 
-    # data = (integer_value - attrs['add_offset']) * attrs['scale_factor']
     if 'add_offset' in attrs:
         data = data - attrs['add_offset']
 
     if 'scale_factor' in attrs:
         data = data * attrs['scale_factor']
+    else:
+        data = data * 1.0
 
     if '_FillValue' in attrs and replace_fill_value is not None:
         _FillValue = np.float64(attrs['_FillValue'])
@@ -559,7 +560,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     #/----------------------------------------------------------------------------\#
     lon = np.array(lon).ravel()
     lat = np.array(lat).ravel()
-    data = np.array(data).ravel()
+    data = np.array(data).ravel()*1.0
     #\----------------------------------------------------------------------------/#
 
 
