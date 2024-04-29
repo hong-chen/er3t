@@ -62,7 +62,8 @@ params = {
          'name_tag' : os.path.relpath(__file__).replace('.py', ''),
        'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
-           'region' : [-109.1, -106.9, 36.9, 39.1],
+           # 'region' : [-109.1, -106.9, 36.9, 39.1], # used for paper
+           'region' : [-108.6, -107.4, 37.4, 38.6],
            'photon' : 1e8,
              'Ncpu' : 2,
        'photon_ipa' : 2e7,
@@ -267,7 +268,7 @@ def cdata_sat_raw(
     g1['rad_%4.4d' % wvl] = rad_2d
     g1['ref_%4.4d' % wvl] = ref_2d
 
-    print('Message [cdata_saw_raw]: the processing of MODIS L1B radiance/reflectance at %d nm is complete.' % wvl)
+    print('Message [cdata_sat_raw]: the processing of MODIS L1B radiance/reflectance at %d nm is complete.' % wvl)
 
     f0['lon'] = lon_2d
     f0['lat'] = lat_2d
