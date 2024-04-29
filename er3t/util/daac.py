@@ -1055,6 +1055,7 @@ def get_satfile_tag(
     # and find which granules contain the input data
     #/----------------------------------------------------------------------------\#
 
+    # by default if no start and end times are given, use 0000 and 2359
     if start_dt_hhmm is None:
         start_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 0, 0)
 
