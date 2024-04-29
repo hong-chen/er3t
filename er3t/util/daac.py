@@ -1533,6 +1533,11 @@ def download_worldview_image(
         try:
             lon__ = np.arange(extent[0], extent[1], 500.0/111000.0)
             lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
+
+            if (lon__.size>800) or (lat__.size>800):
+                lon__ = np.linspace(extent[0], extent[1], 800)
+                lat__ = np.linspace(extent[2], extent[3], 800)
+
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
             line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, nrt=False, geometa=True, percent0=25.0, worldview=True)[0]
