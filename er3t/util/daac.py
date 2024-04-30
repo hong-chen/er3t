@@ -27,6 +27,10 @@ __all__ = [
         ]
 
 
+HDF4_FORMATS = ['hdf', 'hdf4', 'h4']
+HDF5_FORMATS = ['h5', 'hdf5']
+NETCDF_FORMATS = ['nc', 'nc4', 'netcdf', 'netcdf4']
+
 
 def format_satname(satellite, instrument):
     """ Format satellite and instrument name """
@@ -110,6 +114,7 @@ def get_command_earthdata(
         primary_tool='curl',
         backup_tool='wget',
         fdir_save='%s/satfile' % fdir_data_tmp,
+        overwrite=False,
         verbose=1):
 
     """
@@ -121,6 +126,20 @@ def get_command_earthdata(
         filename = os.path.basename(fname_target)
 
     fname_save = '%s/%s' % (fdir_save, filename)
+
+    if os.path.exists(fname_save) and (os.path.basename(fname_save)[-3:] != 'txt') and (overwrite):
+        os.remove(fname_save)
+        if verbose:
+            print("Message [get_command_earthdata]: Existing file was removed as overwrite was enabled...\n")
+
+    elif os.path.exists(fname_save) and (os.path.basename(fname_save)[-3:] != 'txt') and (not overwrite):
+        check_ok = final_file_check(fname_save, data_format=None, verbose=verbose)
+
+        if not check_ok:
+            os.remove(fname_save)
+            if verbose:
+                print("Message [get_command_earthdata]: Existing file was removed as it appears to be corrupt or incomplete...\n")
+
 
 
     if token_mode:
@@ -223,9 +242,11 @@ def delete_file(
 
     if os.path.exists(fname_local1):
         os.remove(fname_local1)
+        print("Message [delete_file]: File {} deleted".format(fname_local1))
 
     if os.path.exists(fname_local2):
         os.remove(fname_local2)
+        print("Message [delete_file]: File {} deleted".format(fname_local2))
 
 
 
@@ -277,6 +298,7 @@ def get_online_file(
         primary_tool='curl',
         backup_tool='wget',
         fdir_save='%s/satfile' % fdir_data_tmp,
+        overwrite=False,
         verbose=1):
 
     if filename is None:
@@ -288,8 +310,9 @@ def get_online_file(
         primary_command, backup_command = get_command_earthdata(fname_file,
                                                                 filename=filename,
                                                                 fdir_save=fdir_save,
-                                                                primary_tool=primary_tool,
+                                                                    primary_tool=primary_tool,
                                                                 backup_tool=backup_tool,
+                                                                overwrite=overwrite,
                                                                 verbose=verbose)
         # attempt to download using primary tool first.
         # if that does not work, try again with primary tool.
@@ -301,14 +324,14 @@ def get_online_file(
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
         except Exception as message:
             print(message, "\n")
-            print("Message [get_online_file]: Failed to download/read {},\nAttempting again...".format(fname_file))
+            print("Message [get_online_file]: Failed to download/read {}\nAttempting again...".format(fname_file))
 
             try:
                 os.system(primary_command)
                 content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
             except Exception as message:
                 print(message, "\n")
-                print("Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(fname_file))
+                print("Message [get_online_file]: Failed to download/read {}\nAttempting with backup tool...".format(fname_file))
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
 
                 try:
@@ -385,7 +408,7 @@ def final_file_check(fname_local, data_format, verbose):
 
     checked = False
 
-    if data_format in ['hdf', 'hdf4', 'h4']:
+    if data_format in HDF4_FORMATS:
 
         try:
             from pyhdf.SD import SD, SDC
@@ -397,7 +420,7 @@ def final_file_check(fname_local, data_format, verbose):
             print(error)
             pass
 
-    elif data_format in ['nc', 'nc4', 'netcdf', 'netcdf4']:
+    elif data_format in NETCDF_FORMATS:
         try:
             from netCDF4 import Dataset
             f = Dataset(fname_local, 'r')
@@ -408,7 +431,7 @@ def final_file_check(fname_local, data_format, verbose):
             print(error)
             pass
 
-    elif data_format in ['h5', 'hdf5']:
+    elif data_format in HDF5_FORMATS:
 
         try:
             import h5py
@@ -419,6 +442,9 @@ def final_file_check(fname_local, data_format, verbose):
         except Exception as error:
             print(error)
             pass
+
+    elif data_format in ['txt', 'csv']:
+        checked = True  # don't check....for now TODO: update this
 
     else:
 
@@ -1139,6 +1165,7 @@ def download_laads_https(
              fdir_save='%s/satfile' % fdir_data_tmp,
              data_format=None,
              run=True,
+             overwrite=False,
              verbose=True):
 
     """
@@ -1202,7 +1229,7 @@ def download_laads_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, overwrite=overwrite, verbose=verbose)
             primary_commands.append(primary_command)
             backup_commands.append(backup_command)
     #\----------------------------------------------------------------------------/#
@@ -1246,6 +1273,7 @@ def download_lance_https(
              fdir_save='%s/satfile' % fdir_data_tmp,
              data_format=None,
              run=True,
+             overwrite=False,
              verbose=True):
 
     """
@@ -1316,7 +1344,7 @@ def download_lance_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, overwrite=overwrite, verbose=verbose)
             primary_commands.append(primary_command)
             backup_commands.append(backup_command)
     #\----------------------------------------------------------------------------/#
@@ -1331,7 +1359,7 @@ def download_lance_https(
             fname_local = fnames_local[i]
 
             if verbose:
-                print('Message [download_laads_https]: Downloading %s ...' % fname_local)
+                print('Message [download_lance_https]: Downloading %s ...' % fname_local)
             os.system(primary_commands[i])
 
             if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
@@ -1339,7 +1367,7 @@ def download_lance_https(
 
     else:
 
-        print('Message [download_laads_https]: The commands to run are:')
+        print('Message [download_lance_https]: The commands to run are:')
         for command in primary_commands:
             print(command)
     #\----------------------------------------------------------------------------/#
@@ -1357,6 +1385,7 @@ def download_oco2_https(
              fdir_out='tmp-data',
              data_format=None,
              run=True,
+             overwrite=False,
              verbose=True):
 
     """
@@ -1451,7 +1480,7 @@ def download_oco2_https(
         fname_local  = '%s/%s' % (fdir_out, filename)
         fnames_local.append(fname_local)
 
-        primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False, verbose=verbose)
+        primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False, overwrite=overwrite, verbose=verbose)
         primary_commands.append(primary_command)
         backup_commands.append(backup_command)
 
