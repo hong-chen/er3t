@@ -67,6 +67,7 @@ _prog_        = os.path.basename(sys.argv[0])
 # this <_sat_tags_support_> will be updated over time
 #/----------------------------------------------------------------------------\#
 _today_dt    = datetime.datetime.now(datetime.timezone.utc)
+_today_dt    = _today_dt.replace(tzinfo=None)
 _date_today_ = _today_dt.strftime('%d %B, %Y')
 
 # Production start dates for error handling
