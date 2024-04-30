@@ -67,6 +67,7 @@ _prog_        = os.path.basename(sys.argv[0])
 # this <_sat_tags_support_> will be updated over time
 #/----------------------------------------------------------------------------\#
 _today_dt    = datetime.datetime.now(datetime.timezone.utc)
+_today_dt    = _today_dt.replace(tzinfo=None) # so that timedelta does not raise an error
 _date_today_ = _today_dt.strftime('%d %B, %Y')
 
 # Production start dates for error handling
@@ -468,13 +469,13 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             sys.exit()
 
         if extent is not None:
-            if (focus_extent[0] > extent[0]) or (focus_extent[1] > extent[1]) or (focus_extent[2] > extent[2]) or (focus_extent[3] > extent[3]):
-                satlogger.error('Error [sdown]: `focus_extent` coordinates must be within `extent` coordinates')
+            if (focus_extent[0] < extent[0]) or (focus_extent[1] > extent[1]) or (focus_extent[2] < extent[2]) or (focus_extent[3] > extent[3]):
+                satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within `extent` coordinates {}'.format(focus_extent, extent))
                 sys.exit()
 
         if (lats is not None) and (lons is not None):
-            if (focus_extent[0] > lons[0]) or (focus_extent[1] > lons[1]) or (focus_extent[2] > lats[2]) or (focus_extent[3] > lats[3]):
-                satlogger.error('Error [sdown]: `focus_extent` coordinates must be within the coordinates provided by `lats` and `lons`')
+            if (focus_extent[0] < lons[0]) or (focus_extent[1] > lons[1]) or (focus_extent[2] < lats[2]) or (focus_extent[3] > lats[3]):
+                satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided by `lats` {} and `lons` {}'.format(focus_extent, lats, lons))
                 sys.exit()
 
     if not os.path.exists(fdir_out):
