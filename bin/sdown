@@ -37,6 +37,7 @@ To see a demonstration of how this tool works, use:
 """
 
 import os
+import json
 import shutil
 import sys
 from argparse import ArgumentParser, RawTextHelpFormatter
@@ -423,6 +424,48 @@ _sat_tags_support_ = {
 
         }
 #\----------------------------------------------------------------------------/#
+def parse_geojson(geojson_fpath):
+    with open(geojson_fpath, 'r') as f:
+        data = json.load(f)
+        n_coords = len(data['features'][0]['geometry']['coordinates'][0])
+
+    coords = data['features'][0]['geometry']['coordinates']
+
+    lons = np.array(coords[0])[:, 0]
+    lats = np.array(coords[0])[:, 1]
+
+
+def region_error_handling(extent, lons, lats, geojson_fpath):
+
+    if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
+        satlogger.error('Error [sdown]: Must provide either extent or lon/lat coordinates or a geoJSON file')
+        sys.exit()
+
+    elif (extent is not None) and (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
+        satlogger.error('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+        sys.exit()
+
+    elif (extent is None) and (lats is not None) and (lons is not None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
+        extent = [lons[0], lons[1], lats[0], lats[1]]
+        return extent
+
+    elif (extent is not None):
+
+        if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
+            satlogger.error('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+            sys.exit()
+
+        # check to make sure extent is correct
+        if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
+            msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
+            satlogger.error(msg)
+            sys.exit()
+
+        return extent
+
+    elif (geojson_fpath is not None):
+
+        # attempt to read and parse the json file
 
 
 def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, products, overwrite, verbose):
@@ -445,23 +488,11 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         viirs_noaa20 = list(filter(lambda x: x.upper().startswith('VJ1'), products))
 
 
-    if (extent is None) and ((lats is None) or (lons is None)):
-        satlogger.error('Error [sdown]: Must provide either extent or lon/lat coordinates')
-        sys.exit()
+    if not os.path.exists(fdir_out):
+        os.makedirs(fdir_out)
+        if verbose:
+            satlogger.info('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
 
-    elif (extent is not None) and (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
-        satlogger.error('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
-        sys.exit()
-
-    elif (extent is None) and (lats is not None) and (lons is not None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
-        extent = [lons[0], lons[1], lats[0], lats[1]]
-
-
-    # check to make sure extent is correct
-    if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-        msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
-        satlogger.error(msg)
-        sys.exit()
 
     if focus_extent is not None:
         if len(focus_extent) != 4:
@@ -478,10 +509,6 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided by `lats` {} and `lons` {}'.format(focus_extent, lats, lons))
                 sys.exit()
 
-    if not os.path.exists(fdir_out):
-        os.makedirs(fdir_out)
-        if verbose:
-            satlogger.info('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
 
     # error handling for dates
     if (date is None) and ((start_date is None) or (end_date is None)):
@@ -844,6 +871,9 @@ if __name__ == '__main__':
                         'Example:  --lats 25 30\n \n')
     required.add_argument('-a', '--focus_extent', nargs='+', type=float, metavar='',
                         help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
+    required.add_argument('-g', '--geojson', type=str, metavar='',
+                        help='Path to a geoJSON file containing the extent of interest coordinates\n'\
+                        'Example:  --extent -10 -5 25 30\n \n')
     required.add_argument('-n', '--nrt', action='store_true',
                         help='Pass --nrt if Near Real Time products should be downloaded.\n'\
                              'This is disabled by default to automatically download standard products.\n'\
