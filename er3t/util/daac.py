@@ -983,8 +983,8 @@ def get_satfile_tag(
         date: Python datetime.datetime object
         lon : longitude of, e.g. flight track
         lat : latitude of, e.g. flight track
-        satellite=: default "aqua", can also change to "terra", 'snpp', 'noaa20'
-        instrument=: default "modis", can also change to "viirs"
+        satellite=: one of "aqua", "terra", 'snpp', 'noaa20', 'noaa21'
+        instrument=: "modis" or "viirs" as appropriate
         nrt=: bool, near real time. if True, will access https://nrt3.modaps.eosdis.nasa.gov,
                                     if False (default) will access https://ladsweb.modaps.eosdis.nasa.gov,
         fdir_prefix=: string, data directory on NASA server
@@ -1494,7 +1494,7 @@ def download_worldview_image(
         extent: rectangular region, Python list of [west_most_longitude, east_most_longitude, south_most_latitude, north_most_latitude]
         fdir_out=: directory to store RGB imagery from NASA Worldview
         instrument=: satellite instrument, currently only supports 'modis' and 'viirs'
-        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis', and 'snpp' and 'noaa20' for 'viirs'
+        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis';  'snpp', 'noaa20', 'noaa21' for 'viirs'
         wmts_cgi=: cgi link to NASA Worldview GIBS (Global Imagery Browse Services)
         proj=: map projection for plotting the RGB imagery
         coastline=: boolen type, whether to plot coastline
@@ -1516,7 +1516,7 @@ def download_worldview_image(
 
     # time stamping the satellite imagery (contained in file name)
     #/----------------------------------------------------------------------------\#
-    if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP']:
+    if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP', 'NOAA21']:
 
         # pick layer
         #/--------------------------------------------------------------\#
