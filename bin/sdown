@@ -79,6 +79,7 @@ _aqua_modis_start_date   = datetime.datetime(2002, 7, 4)
 _terra_modis_start_date  = datetime.datetime(2000, 2, 24)
 _snpp_viirs_start_date   = datetime.datetime(2012, 1, 19)
 _noaa20_viirs_start_date = datetime.datetime(2018, 1, 5)
+_noaa21_viirs_start_date = datetime.datetime(2023, 2, 10)
 
 # Near Real Time (NRT) is available only for the most recent ~ 7 days
 _nrt_oldest_dt = _today_dt - datetime.timedelta(days=7)
@@ -468,6 +469,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         modis_terra  = list(filter(lambda x: x.upper().startswith('MOD'), products))
         viirs_snpp   = list(filter(lambda x: x.upper().startswith('VNP'), products))
         viirs_noaa20 = list(filter(lambda x: x.upper().startswith('VJ1'), products))
+        viirs_noaa21 = list(filter(lambda x: x.upper().startswith('VJ2'), products))
 
 
     if (extent is None) and ((lats is None) or (lons is None)):
@@ -543,6 +545,11 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         if len(viirs_noaa20) > 0 and single_dt < _noaa20_viirs_start_date:
             msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(viirs_noaa21) > 0 and single_dt < _noaa21_viirs_start_date:
+            msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _noaa21_viirs_start_date.strftime("%d %B, %Y"))
             satlogger.error(msg)
             sys.exit()
 
@@ -643,6 +650,11 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         if len(viirs_noaa20) > 0 and start_dt < _noaa20_viirs_start_date:
             msg = 'Error [sdown]: Received %s UTC as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y: %H%M"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(viirs_noaa21) > 0 and start_dt < _noaa21_viirs_start_date:
+            msg = 'Error [sdown]: Received %s UTC as starting date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y: %H%M"), _noaa21_viirs_start_date.strftime("%d %B, %Y"))
             satlogger.error(msg)
             sys.exit()
 
@@ -770,6 +782,12 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                     fnames[product_info['dict_key']] += p_fnames
 
             else:
+                #TODO: Keep track of this to remove this if condition once the product goes online
+                if product.upper().endswith(('VJ2_CLDPROP_L2')):
+                    msg = 'Warning [sdown]: Cloud products are not available yet for VIIRS onboard NOAA-21'
+                    satlogger.warn(msg)
+                    continue
+
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
                                                                   end_dt_hhmm=end_dt_hhmm,
