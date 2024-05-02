@@ -783,8 +783,9 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
 
             else:
                 #TODO: Keep track of this to remove this if condition once the product goes online
-                if product.upper().endswith(('VJ2_CLDPROP_L2')):
-                    msg = 'Warning [sdown]: Cloud products are not available yet for VIIRS onboard NOAA-21'
+                if product.upper().startswith(('VJ2')):
+                    msg = 'Warning [sdown]: Standard (non near-real time) products are not available yet for VIIRS onboard NOAA-21\n'\
+                          'This is because geoMetaVIIRS data is still unavailable.\n'
                     satlogger.warn(msg)
                     continue
 
