@@ -13,11 +13,11 @@ Now supports:
                 MOD35_L2, MYD35_L2
                 MCD43
 
-    VIIRS data: VNPRGB,         VJ1RGB
-                VNP03IMG,       VJ103IMG
-                VNP02IMG,       VJ102IMG
-                VNP03MOD,       VJ103MOD
-                VNP02MOD,       VJ102MOD
+    VIIRS data: VNPRGB,         VJ1RGB,         VJ2RGB,
+                VNP03IMG,       VJ103IMG,       VJ203IMG,
+                VNP02IMG,       VJ102IMG,       VJ202IMG,
+                VNP03MOD,       VJ103MOD,       VJ203MOD
+                VNP02MOD,       VJ102MOD,       VJ202MOD
                 VNP_CLDPROP_L2, VJ1_CLDPROP_L2
 
     OCO-2 data: coming soon...
@@ -34,6 +34,10 @@ Example Usage:
 
 To see a demonstration of how this tool works, use:
     sdown --run_demo
+
+To contribute to our Github page with code, issues, bugs, etc. : https://github.com/hong-chen/er3t
+
+EaR3T Documentation: https://er3t.readthedocs.io/
 """
 
 import os
@@ -68,7 +72,7 @@ _prog_        = os.path.basename(sys.argv[0])
 # this <_sat_tags_support_> will be updated over time
 #/----------------------------------------------------------------------------\#
 _today_dt    = datetime.datetime.now(datetime.timezone.utc)
-_today_dt    = _today_dt.replace(tzinfo=None)
+_today_dt    = _today_dt.replace(tzinfo=None) # so that timedelta does not raise an error
 _date_today_ = _today_dt.strftime('%d %B, %Y')
 
 # Production start dates for error handling
@@ -76,6 +80,7 @@ _aqua_modis_start_date   = datetime.datetime(2002, 7, 4)
 _terra_modis_start_date  = datetime.datetime(2000, 2, 24)
 _snpp_viirs_start_date   = datetime.datetime(2012, 1, 19)
 _noaa20_viirs_start_date = datetime.datetime(2018, 1, 5)
+_noaa21_viirs_start_date = datetime.datetime(2023, 2, 10)
 
 # Near Real Time (NRT) is available only for the most recent ~ 7 days
 _nrt_oldest_dt = _today_dt - datetime.timedelta(days=7)
@@ -259,7 +264,7 @@ _sat_tags_support_ = {
                     'website': 'https://doi.org/10.5067/VIIRS/VJ202IMG.021',
                   'satellite': 'NOAA21',
                  'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Imagery Resolution 6-Min L1B Swath 375m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102IMG.002',
+                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS2 Imagery Resolution 6-Min L1B Swath 375m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ202IMG.002',
                 },
 
         'VNP02MOD': {
@@ -286,10 +291,10 @@ _sat_tags_support_ = {
                 'dataset_tag': '5200/VJ202MOD',
                    'dict_key': 'vj2_02',
                 'description': 'JPSS2 (NOAA-21) VIIRS Level 1b (750m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ102MOD.021',
+                    'website': 'https://doi.org/10.5067/VIIRS/VJ202MOD.021',
                   'satellite': 'NOAA21',
                  'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution 6-Min L1B Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102MOD.002',
+                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS2 Moderate Resolution 6-Min L1B Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ202MOD.002',
                 },
 
         'VNP03IMG': {
@@ -310,6 +315,16 @@ _sat_tags_support_ = {
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
                   'reference': 'VCST Team. VIIRS/JPSS1 Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103IMG.021',
+                },
+
+        'VJ203IMG': {
+                'dataset_tag': '5200/VJ203IMG',
+                   'dict_key': 'vj2_03',
+                'description': 'JPSS2 (NOAA-21) VIIRS (375m) Geolocation Fields Product',
+                    'website': 'https://doi.org/10.5067/VIIRS/VJ203IMG.021',
+                  'satellite': 'NOAA21',
+                 'instrument': 'VIIRS',
+                  'reference': 'VCST Team. VIIRS/JPSS2 Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ203IMG.021',
                 },
 
         'VNP03MOD': {
@@ -339,7 +354,7 @@ _sat_tags_support_ = {
                     'website': 'https://doi.org/10.5067/VIIRS/VJ203MOD.021',
                   'satellite': 'NOAA21',
                  'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103MOD.002',
+                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ203MOD.002',
                 },
 
         'VNPRGB': {
@@ -392,6 +407,17 @@ _sat_tags_support_ = {
                   'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/JPSS1 Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
                 },
 
+        ## commenting this out as cloud products for NOAA-21 are not available yet
+        # 'VJ2_CLDPROP_L2': {
+        #         'dataset_tag': '5111/CLDPROP_L2_VIIRS_NOAA21',
+        #            'dict_key': 'vj2_l2',
+        #         'description': 'JPSS2 (NOAA-21) VIIRS Cloud Properties Product',
+        #             'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA21',
+        #           'satellite': 'NOAA21',
+        #          'instrument': 'VIIRS',
+        #           'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/JPSS2 Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
+        #         },
+
         'oco2_L1bScND': {
                 'dataset_tag': 'oco2_L1bScND',
                    'dict_key': 'oco_l1b',
@@ -424,33 +450,35 @@ _sat_tags_support_ = {
 
         }
 #\----------------------------------------------------------------------------/#
+
+
+
 def parse_geojson(geojson_fpath):
     with open(geojson_fpath, 'r') as f:
         data = json.load(f)
-        n_coords = len(data['features'][0]['geometry']['coordinates'][0])
+        # n_coords = len(data['features'][0]['geometry']['coordinates'][0])
 
     coords = data['features'][0]['geometry']['coordinates']
 
     lons = np.array(coords[0])[:, 0]
     lats = np.array(coords[0])[:, 1]
+    return lons, lats
 
 
-def region_error_handling(extent, lons, lats, geojson_fpath):
+def region_parser(extent, lons, lats, geojson_fpath):
 
     if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
         satlogger.error('Error [sdown]: Must provide either extent or lon/lat coordinates or a geoJSON file')
         sys.exit()
 
-    elif (extent is not None) and (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
-        satlogger.error('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
-        sys.exit()
+    if (extent is not None) and ((lats is not None) or (lons is not None)) and (geojson_fpath is not None):
+        satlogger.warn('Warning [sdown]: Received multiple regions of interest. Only `extent` will be used.')
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
 
-    elif (extent is None) and (lats is not None) and (lons is not None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
-        extent = [lons[0], lons[1], lats[0], lats[1]]
-        return extent
 
-    elif (extent is not None):
-
+    if (extent is not None):
         if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
             satlogger.error('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
             sys.exit()
@@ -461,14 +489,26 @@ def region_error_handling(extent, lons, lats, geojson_fpath):
             satlogger.error(msg)
             sys.exit()
 
-        return extent
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
+
+    elif (lats is not None) and (lons is not None):
+        if ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
+            llons = np.linspace(lons[0], lons[1], 100)
+            llats = np.linspace(lats[0], lats[1], 100)
+            return llons, llats
+        else:
+            satlogger.error('Error [sdown]: Must provide two coorect bounds each for `--lons` and `--lats`')
+            sys.exit()
+
 
     elif (geojson_fpath is not None):
+        llons, llats = parse_geojson(geojson_fpath)
+        return llons, llats
 
-        # attempt to read and parse the json file
 
-
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, products, overwrite, verbose):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, geojson_fpath, products, verbose):
 
 
     ########################################################################################################
@@ -486,12 +526,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         modis_terra  = list(filter(lambda x: x.upper().startswith('MOD'), products))
         viirs_snpp   = list(filter(lambda x: x.upper().startswith('VNP'), products))
         viirs_noaa20 = list(filter(lambda x: x.upper().startswith('VJ1'), products))
-
-
-    if not os.path.exists(fdir_out):
-        os.makedirs(fdir_out)
-        if verbose:
-            satlogger.info('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
+        viirs_noaa21 = list(filter(lambda x: x.upper().startswith('VJ2'), products))
 
 
     if focus_extent is not None:
@@ -504,11 +539,24 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within `extent` coordinates {}'.format(focus_extent, extent))
                 sys.exit()
 
-        if (lats is not None) and (lons is not None):
+        elif (lats is not None) and (lons is not None):
             if (focus_extent[0] < lons[0]) or (focus_extent[1] > lons[1]) or (focus_extent[2] < lats[2]) or (focus_extent[3] > lats[3]):
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided by `lats` {} and `lons` {}'.format(focus_extent, lats, lons))
                 sys.exit()
 
+        elif geojson_fpath is not None:
+            lons0, lats0 = parse_geojson(geojson_fpath)
+            if (focus_extent[0] < lons0[0]) or (focus_extent[1] > lons0[1]) or (focus_extent[2] < lats0[2]) or (focus_extent[3] > lats0[3]):
+                satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided in the geojson file {}'.format(focus_extent, geojson_fpath))
+                sys.exit()
+
+
+    llons, llats = region_parser(extent, lons, lats, geojson_fpath)
+
+    if not os.path.exists(fdir_out):
+        os.makedirs(fdir_out)
+        if verbose:
+            satlogger.info('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
 
     # error handling for dates
     if (date is None) and ((start_date is None) or (end_date is None)):
@@ -548,6 +596,11 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             satlogger.error(msg)
             sys.exit()
 
+        if len(viirs_noaa21) > 0 and single_dt < _noaa21_viirs_start_date:
+            msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _noaa21_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
         # NRT data is only available for the most recent ~ 7 days or so
         if (single_dt < _nrt_oldest_dt) and nrt:
             msg = 'Error [sdown]: Near Real Time data is only available for dates on or after %s. Given date: %s' % (_nrt_oldest_dt.strftime("%d %B, %Y"), single_dt.strftime("%d %B, %Y"))
@@ -565,21 +618,21 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
             f.write("Date: {}\n".format(single_dt))
-            f.write("Extent: {}\n".format(extent))
+            f.write("Extent: {}\n".format([llons[0], llons[-1], llats[0], llats[-1]]))
 
         if verbose:
-            satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(single_dt.strftime("%d %B, %Y"), extent[0], extent[1], extent[2], extent[3]))
+            satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(single_dt.strftime("%d %B, %Y"), llons[0], llons[-1], llats[0], llats[-1]))
 
         run(date=single_dt,
             start_dt_hhmm=start_dt_hhmm,
             end_dt_hhmm=end_dt_hhmm,
-            extent=extent,
+            lons=llons,
+            lats=llats,
             fdir_out=fdir_out_dt,
             nrt=nrt,
             iou=iou,
             focus_extent=focus_extent,
             products=products,
-            overwrite=overwrite,
             verbose=verbose)
 
 
@@ -649,6 +702,11 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             satlogger.error(msg)
             sys.exit()
 
+        if len(viirs_noaa21) > 0 and start_dt < _noaa21_viirs_start_date:
+            msg = 'Error [sdown]: Received %s UTC as starting date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y: %H%M"), _noaa21_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
         ########################################################################################################
         ########################################## End error handling ##########################################
         ########################################################################################################
@@ -667,37 +725,37 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             # Save metadata
             with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
                 f.write('Date: {}\n'.format(date_x))
-                f.write('Extent: {}\n'.format(extent))
+                f.write('Extent: {}\n'.format([llons[0], llons[-1], llats[0], llats[-1]]))
 
             if verbose:
-                satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
+                satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), llons[0], llons[-1], llats[0], llats[-1]))
 
 
             run(date=date_x,
                 start_dt_hhmm=start_dt,
                 end_dt_hhmm=end_dt,
-                extent=extent,
+                lons=llons,
+                lats=llats,
                 fdir_out=fdir_out_dt,
                 nrt=nrt,
                 iou=iou,
                 focus_extent=focus_extent,
                 products=products,
-                overwrite=overwrite,
                 verbose=verbose)
 
 
 
 
-def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_extent, products, overwrite, verbose):
+def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose):
 
     if focus_extent is not None:
-        lon0 = np.linspace(focus_extent[0], focus_extent[1], 100)
-        lat0 = np.linspace(focus_extent[2], focus_extent[3], 100)
-    else:
-        lon0 = np.linspace(extent[0], extent[1], 100)
-        lat0 = np.linspace(extent[2], extent[3], 100)
+        lons = np.linspace(focus_extent[0], focus_extent[1], 100)
+        lats = np.linspace(focus_extent[2], focus_extent[3], 100)
+    # else:
+    #     lon0 = np.linspace(extent[0], extent[1], 100)
+    #     lat0 = np.linspace(extent[2], extent[3], 100)
 
-    lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
+    lon, lat = np.meshgrid(lons, lats, indexing='ij')
 
     references = []
     fnames = {}
@@ -731,16 +789,15 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                                                                filename_tag=filename_tag,
                                                                day_interval=1,
                                                                fdir_out=fdir_out,
-                                                               overwrite=overwrite,
                                                                verbose=verbose)
                 fnames[product_info['dict_key']] += p_fnames
 
         # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
-        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2')):
+        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
             if nrt:
-                if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2')):
-                    msg = 'Error [sdown]: Received %s as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.' % (date.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
-                    satlogger.error(msg)
+                if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
+                    msg = 'Warning [sdown]: VIIRS cloud products are not available in near real time (NRT)'
+                    satlogger.warn(msg)
                     continue
                 # sys.exit()
 
@@ -771,11 +828,17 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                                                                    filename_tag=filename_tag,
                                                                    day_interval=1,
                                                                    fdir_out=fdir_out,
-                                                                   overwrite=overwrite,
                                                                    verbose=verbose)
                     fnames[product_info['dict_key']] += p_fnames
 
             else:
+                #TODO: Keep track of this to remove this if condition once the product goes online
+                if product.upper().startswith(('VJ2')):
+                    msg = 'Warning [sdown]: Standard (non near-real time) products are not available yet for VIIRS onboard NOAA-21\n'\
+                          'This is because geoMetaVIIRS data is still unavailable.\n'
+                    satlogger.warn(msg)
+                    continue
+
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
                                                                   end_dt_hhmm=end_dt_hhmm,
@@ -794,7 +857,6 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                                                                    filename_tag=filename_tag,
                                                                    day_interval=1,
                                                                    fdir_out=fdir_out,
-                                                                   overwrite=overwrite,
                                                                    verbose=verbose)
                     fnames[product_info['dict_key']] += p_fnames
 
@@ -869,49 +931,19 @@ if __name__ == '__main__':
     required.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
                         help='The south-most and north-most latitudes of the region.\nAlternative to providing the last two terms in `extent`.\n'\
                         'Example:  --lats 25 30\n \n')
-    required.add_argument('-a', '--focus_extent', nargs='+', type=float, metavar='',
-                        help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
     required.add_argument('-g', '--geojson', type=str, metavar='',
                         help='Path to a geoJSON file containing the extent of interest coordinates\n'\
-                        'Example:  --extent -10 -5 25 30\n \n')
+                        'Example:  --geojson my/path/to/geofile.json\n \n')
+    required.add_argument('-a', '--focus_extent', nargs='+', type=float, metavar='',
+                        help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
     required.add_argument('-n', '--nrt', action='store_true',
                         help='Pass --nrt if Near Real Time products should be downloaded.\n'\
                              'This is disabled by default to automatically download standard products.\n'\
                              'Currently, only MODIS and VIIRS NRT products can be downloaded.\n')
-    required.add_argument('--overwrite', action='store_true',
-                        help='Pass --overwrite if an existing downloaded file can be overwritten.\n'\
-                             'This is disabled by default.\n')
     required.add_argument('-p', '--products', type=str, nargs='+', metavar='',
                         help='Short prefix (case insensitive) for the product name.\n'\
                         'Example:  --products MOD02QKM\n'
-                        '\nCurrently, the following products are supported:\n'\
-                        'MOD02QKM:  Level 1b 250m (Terra) radiance product\n'\
-                        'MYD02QKM:  Level 1b 250m (Aqua)  radiance product\n'\
-                        'MOD02HKM:  Level 1b 500m (Terra) radiance product\n'\
-                        'MYD02HKM:  Level 1b 500m (Aqua)  radiance product\n'\
-                        'MOD021KM:  Level 1b 1km (Terra)  radiance product\n'\
-                        'MYD021KM:  Level 1b 1km (Aqua)   radiance product\n'\
-                        'MOD06_L2:  Level 2 (Terra) cloud product\n'\
-                        'MYD06_L2:  Level 2 (Aqua)  cloud product\n'\
-                        'MOD35_L2:  Level 2 (Terra) cloud mask product\n'\
-                        'MYD35_L2:  Level 2 (Aqua)  cloud mask product\n'\
-                        'MOD03   :  Solar/viewing geometry (Terra) product\n'\
-                        'MYD03   :  Solar/viewing geometry (Aqua)  product\n'\
-                        'MODRGB  :  True-Color RGB (Terra) imagery, useful for visuzliation\n'\
-                        'MYDRGB  :  True-Color RGB (Aqua)  imagery, useful for visuzliation\n'\
-                        'MCD43   :  Level 3 surface product MCD43A3\n'\
-                        'VNPRGB  :  True-Color RGB (S-NPP) imagery, useful for visuzliation\n'\
-                        'VJ1RGB  :  True-Color RGB (NOAA-20) imagery, useful for visuzliation\n'\
-                        'VNP02IMG:  Level 1b 375m (S-NPP) radiance product\n'\
-                        'VJ102IMG:  Level 1b 375m (NOAA-20) radiance product\n'\
-                        'VNP03IMG:  Solar/viewing geometry 375m (S-NPP) product\n'\
-                        'VJ103IMG:  Solar/viewing geometry 375m (NOAA-20) product\n'
-                        'VNP02MOD:  Level 1b 750m (S-NPP) radiance product\n'\
-                        'VJ102MOD:  Level 1b 750m (NOAA-20) radiance product\n'\
-                        'VNP03MOD:  Solar/viewing geometry 750m (S-NPP) product\n'\
-                        'VJ103MOD:  Solar/viewing geometry 750m (NOAA-20) product\n'\
-                        'VNP_CLDPROP_L2: Level 2 (S-NPP) cloud properties product\n'\
-                        'VJ1_CLDPROP_L2: Level 2 (NOAA-20) cloud properties product\n'\
+                        '\nTo see a list of supported products, type --help.\n'\
                         '\nTo download multiple products at a time:\n'\
                         '--products MOD021KM VJ102MOD MYD06_l2\n \n')
 
@@ -930,7 +962,7 @@ if __name__ == '__main__':
         nrt        = False
         iou        = 0
         focus_extent = None
-        overwrite  = False
+        geojson_fpath = None
         verbose    = 1
 
         # initialize logger
@@ -946,8 +978,8 @@ if __name__ == '__main__':
                                   nrt=nrt,
                                   iou=iou,
                                   focus_extent=focus_extent,
+                                  geojson_fpath=geojson_fpath,
                                   products=products,
-                                  overwrite=overwrite,
                                   verbose=verbose)
     else:
 
@@ -964,6 +996,6 @@ if __name__ == '__main__':
                                   nrt=args.nrt,
                                   iou=args.iou,
                                   focus_extent=args.focus_extent,
+                                  geojson_fpath=args.geojson,
                                   products=args.products,
-                                  overwrite=args.overwrite,
                                   verbose=args.verbose)

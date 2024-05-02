@@ -27,10 +27,6 @@ __all__ = [
         ]
 
 
-HDF4_FORMATS = ['hdf', 'hdf4', 'h4']
-HDF5_FORMATS = ['h5', 'hdf5']
-NETCDF_FORMATS = ['nc', 'nc4', 'netcdf', 'netcdf4']
-
 
 def format_satname(satellite, instrument):
     """ Format satellite and instrument name """
@@ -114,7 +110,6 @@ def get_command_earthdata(
         primary_tool='curl',
         backup_tool='wget',
         fdir_save='%s/satfile' % fdir_data_tmp,
-        overwrite=False,
         verbose=1):
 
     """
@@ -126,20 +121,6 @@ def get_command_earthdata(
         filename = os.path.basename(fname_target)
 
     fname_save = '%s/%s' % (fdir_save, filename)
-
-    if os.path.exists(fname_save) and (os.path.basename(fname_save)[-3:] != 'txt') and (overwrite):
-        os.remove(fname_save)
-        if verbose:
-            print("Message [get_command_earthdata]: Existing file was removed as overwrite was enabled...\n")
-
-    elif os.path.exists(fname_save) and (os.path.basename(fname_save)[-3:] != 'txt') and (not overwrite):
-        check_ok = final_file_check(fname_save, data_format=None, verbose=verbose)
-
-        if not check_ok:
-            os.remove(fname_save)
-            if verbose:
-                print("Message [get_command_earthdata]: Existing file was removed as it appears to be corrupt or incomplete...\n")
-
 
 
     if token_mode:
@@ -242,11 +223,9 @@ def delete_file(
 
     if os.path.exists(fname_local1):
         os.remove(fname_local1)
-        print("Message [delete_file]: File {} deleted".format(fname_local1))
 
     if os.path.exists(fname_local2):
         os.remove(fname_local2)
-        print("Message [delete_file]: File {} deleted".format(fname_local2))
 
 
 
@@ -293,12 +272,12 @@ def get_local_file(
 
 def get_online_file(
         fname_file,
+        geometa,
         filename=None,
         download=True,
         primary_tool='curl',
         backup_tool='wget',
         fdir_save='%s/satfile' % fdir_data_tmp,
-        overwrite=False,
         verbose=1):
 
     if filename is None:
@@ -310,28 +289,28 @@ def get_online_file(
         primary_command, backup_command = get_command_earthdata(fname_file,
                                                                 filename=filename,
                                                                 fdir_save=fdir_save,
-                                                                    primary_tool=primary_tool,
+                                                                primary_tool=primary_tool,
                                                                 backup_tool=backup_tool,
-                                                                overwrite=overwrite,
                                                                 verbose=verbose)
         # attempt to download using primary tool first.
         # if that does not work, try again with primary tool.
         # as a last resort, attempt with backup tool.
         try:
-            # delete local version first as this seems to cause issues downstream
-            delete_file(fname_file, filename=filename, fdir_save=fdir_save)
+            # delete local version of the geometa first as this seems to cause issues downstream
+            if geometa:
+                delete_file(fname_file, filename=filename, fdir_save=fdir_save)
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
         except Exception as message:
             print(message, "\n")
-            print("Message [get_online_file]: Failed to download/read {}\nAttempting again...".format(fname_file))
+            print("Message [get_online_file]: Failed to download/read {},\nAttempting again...".format(fname_file))
 
             try:
                 os.system(primary_command)
                 content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
             except Exception as message:
                 print(message, "\n")
-                print("Message [get_online_file]: Failed to download/read {}\nAttempting with backup tool...".format(fname_file))
+                print("Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(fname_file))
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
 
                 try:
@@ -408,7 +387,7 @@ def final_file_check(fname_local, data_format, verbose):
 
     checked = False
 
-    if data_format in HDF4_FORMATS:
+    if data_format in ['hdf', 'hdf4', 'h4']:
 
         try:
             from pyhdf.SD import SD, SDC
@@ -420,7 +399,7 @@ def final_file_check(fname_local, data_format, verbose):
             print(error)
             pass
 
-    elif data_format in NETCDF_FORMATS:
+    elif data_format in ['nc', 'nc4', 'netcdf', 'netcdf4']:
         try:
             from netCDF4 import Dataset
             f = Dataset(fname_local, 'r')
@@ -431,7 +410,7 @@ def final_file_check(fname_local, data_format, verbose):
             print(error)
             pass
 
-    elif data_format in HDF5_FORMATS:
+    elif data_format in ['h5', 'hdf5']:
 
         try:
             import h5py
@@ -442,9 +421,6 @@ def final_file_check(fname_local, data_format, verbose):
         except Exception as error:
             print(error)
             pass
-
-    elif data_format in ['txt', 'csv']:
-        checked = True  # don't check....for now TODO: update this
 
     else:
 
@@ -499,6 +475,11 @@ def read_geometa(content):
     """
 
     lines = content.split('\n')
+
+    if lines[0] == '<!DOCTYPE html>' or lines[1] == '<!DOCTYPE html>':
+        msg = 'Error [read_geometa]: Could not download the geoMeta text file. This could be an issue with either the download tool or the Earthdata token.\n'
+        raise OSError(msg)
+
     index_header = 0
     while (len(lines[index_header]) > 0) and lines[index_header][0] == '#':
         index_header += 1
@@ -506,7 +487,7 @@ def read_geometa(content):
     index_header -= 1
 
     if index_header == -1:
-        msg = '\nError [read_geometa]: Cannot locate header in the provided content.'
+        msg = 'Error [read_geometa]: Cannot locate header in the provided content.\n'
         raise OSError(msg)
 
     header_line = lines[index_header]
@@ -1009,8 +990,8 @@ def get_satfile_tag(
         date: Python datetime.datetime object
         lon : longitude of, e.g. flight track
         lat : latitude of, e.g. flight track
-        satellite=: default "aqua", can also change to "terra", 'snpp', 'noaa20'
-        instrument=: default "modis", can also change to "viirs"
+        satellite=: one of "aqua", "terra", 'snpp', 'noaa20', 'noaa21'
+        instrument=: "modis" or "viirs" as appropriate
         nrt=: bool, near real time. if True, will access https://nrt3.modaps.eosdis.nasa.gov,
                                     if False (default) will access https://ladsweb.modaps.eosdis.nasa.gov,
         fdir_prefix=: string, data directory on NASA server
@@ -1046,7 +1027,6 @@ def get_satfile_tag(
 
     # convert longitude in [-180, 180] range
     # since the longitude in GeoMeta dataset is in the range of [-180, 180]
-    # or check overlap within region of interest
     #/----------------------------------------------------------------------------\#
     lon[lon>180.0] -= 360.0
     logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
@@ -1064,10 +1044,10 @@ def get_satfile_tag(
 
     # try to get geometa information online
     # if content is None:
-    #     content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
+    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
+    content = get_online_file(fname_geometa, geometa-True, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1114,41 +1094,35 @@ def get_satfile_tag(
 
         if (Npoint_in>0) and (line['DayNightFlag']=='D') and (percent_in>=percent0):
 
-            # if geometa:
-            #     filename_tags.append(line)
-            # else:
-            #     filename = line['GranuleID']
-            #     filename_tag = '.'.join(filename.split('.')[1:3])
-            #     filename_tags.append(filename_tag)
-            # percent_all = np.append(percent_all, percent_in)
-            # i_all.append(i)
+            if geometa:
+                filename_tags.append(line)
+            else:
+                granule_dt = line['StartDateTime']
+                granule_dt = datetime.datetime.strptime(granule_dt, '%Y-%m-%d %H:%M') # format it for processing
 
-            granule_dt = line['StartDateTime']
-            granule_dt = datetime.datetime.strptime(granule_dt, '%Y-%m-%d %H:%M') # format it for processing
-
-            if start_dt_hhmm <= granule_dt <= end_dt_hhmm: # get the filename only if within time bounds
-                filename = line['GranuleID']
-                filename_tag = '.'.join(filename.split('.')[1:3])
-                filename_tags.append(filename_tag)
-                percent_all = np.append(percent_all, percent_in)
-                i_all.append(i)
+                if start_dt_hhmm <= granule_dt <= end_dt_hhmm: # get the filename only if within time bounds
+                    filename = line['GranuleID']
+                    filename_tag = '.'.join(filename.split('.')[1:3])
+                    filename_tags.append(filename_tag)
+                    percent_all = np.append(percent_all, percent_in)
+                    i_all.append(i)
     #\----------------------------------------------------------------------------/#
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
-    # if (percent0 > 0.0 ) or worldview:
-    #     indices_sort_p = np.argsort(percent_all)
-    #     if satellite != 'Terra':
-    #         indices_sort_i = i_all[::-1]
-    #     else:
-    #         indices_sort_i = i_all
+    if (percent0 > 0.0 ) or worldview:
+        indices_sort_p = np.argsort(percent_all)
+        if satellite != 'Terra':
+            indices_sort_i = i_all[::-1]
+        else:
+            indices_sort_i = i_all
 
-    #     if all(percent_i>97.0 for percent_i in percent_all):
-    #         indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
-    #     else:
-    #         indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
+        if all(percent_i>97.0 for percent_i in percent_all):
+            indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
+        else:
+            indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
 
-    #     filename_tags = [filename_tags[i] for i in indices_sort]
+        filename_tags = [filename_tags[i] for i in indices_sort]
     # #\----------------------------------------------------------------------------/#
     return filename_tags
 
@@ -1165,7 +1139,6 @@ def download_laads_https(
              fdir_save='%s/satfile' % fdir_data_tmp,
              data_format=None,
              run=True,
-             overwrite=False,
              verbose=True):
 
     """
@@ -1210,7 +1183,7 @@ def download_laads_https(
 
     # try to get geometa information online
     if content is None:
-        content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1229,7 +1202,7 @@ def download_laads_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, overwrite=overwrite, verbose=verbose)
+            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
             primary_commands.append(primary_command)
             backup_commands.append(backup_command)
     #\----------------------------------------------------------------------------/#
@@ -1273,7 +1246,6 @@ def download_lance_https(
              fdir_save='%s/satfile' % fdir_data_tmp,
              data_format=None,
              run=True,
-             overwrite=False,
              verbose=True):
 
     """
@@ -1325,7 +1297,7 @@ def download_lance_https(
 
     # try to get geometa information online
     if content is None:
-        content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1344,7 +1316,7 @@ def download_lance_https(
             fname_local  = '%s/%s' % (fdir_out, filename)
             fnames_local.append(fname_local)
 
-            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, overwrite=overwrite, verbose=verbose)
+            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
             primary_commands.append(primary_command)
             backup_commands.append(backup_command)
     #\----------------------------------------------------------------------------/#
@@ -1359,7 +1331,7 @@ def download_lance_https(
             fname_local = fnames_local[i]
 
             if verbose:
-                print('Message [download_lance_https]: Downloading %s ...' % fname_local)
+                print('Message [download_laads_https]: Downloading %s ...' % fname_local)
             os.system(primary_commands[i])
 
             if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
@@ -1367,7 +1339,7 @@ def download_lance_https(
 
     else:
 
-        print('Message [download_lance_https]: The commands to run are:')
+        print('Message [download_laads_https]: The commands to run are:')
         for command in primary_commands:
             print(command)
     #\----------------------------------------------------------------------------/#
@@ -1385,7 +1357,6 @@ def download_oco2_https(
              fdir_out='tmp-data',
              data_format=None,
              run=True,
-             overwrite=False,
              verbose=True):
 
     """
@@ -1480,7 +1451,7 @@ def download_oco2_https(
         fname_local  = '%s/%s' % (fdir_out, filename)
         fnames_local.append(fname_local)
 
-        primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False, overwrite=overwrite, verbose=verbose)
+        primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, token_mode=False, verbose=verbose)
         primary_commands.append(primary_command)
         backup_commands.append(backup_command)
 
@@ -1529,7 +1500,7 @@ def download_worldview_image(
         extent: rectangular region, Python list of [west_most_longitude, east_most_longitude, south_most_latitude, north_most_latitude]
         fdir_out=: directory to store RGB imagery from NASA Worldview
         instrument=: satellite instrument, currently only supports 'modis' and 'viirs'
-        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis', and 'snpp' and 'noaa20' for 'viirs'
+        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis';  'snpp', 'noaa20', 'noaa21' for 'viirs'
         wmts_cgi=: cgi link to NASA Worldview GIBS (Global Imagery Browse Services)
         proj=: map projection for plotting the RGB imagery
         coastline=: boolen type, whether to plot coastline
@@ -1551,7 +1522,7 @@ def download_worldview_image(
 
     # time stamping the satellite imagery (contained in file name)
     #/----------------------------------------------------------------------------\#
-    if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP']:
+    if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP', 'NOAA21']:
 
         # pick layer
         #/--------------------------------------------------------------\#
