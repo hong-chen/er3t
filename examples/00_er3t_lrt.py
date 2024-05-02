@@ -586,8 +586,8 @@ def example_rad_02_libera_adm(
 
     Gristey, J. J., Schmidt, K. S., Chen, H., Feldman, D. R., Kindel, B. C., Mauss, J., van den Heever,
     M., Hakuba, M. Z., and Pilewskie, P.: Angular Sampling of a Monochromatic, Wide-Field-of-View Camera
-    to Augment Next-Generation Earth Radiation Budget Satellite Observations, Atmos. Meas. Tech. Discuss.
-    [preprint], https://doi.org/10.5194/amt-2023-7, in review, 2023.
+    to Augment Next-Generation Earth Radiation Budget Satellite Observations, Atmos. Meas. Tech., 16,
+    3609–3630, https://doi.org/10.5194/amt-16-3609-2023, 2023.
     """
 
     # create tmp directory
