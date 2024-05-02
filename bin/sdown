@@ -725,10 +725,10 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             # Save metadata
             with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
                 f.write('Date: {}\n'.format(date_x))
-                f.write('Extent: {}\n'.format([llons[0], llons[-1], llats[0], llats[-1]]))
+                f.write('Extent: {}\n'.format([np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)]))
 
             if verbose:
-                satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), llons[0], llons[-1], llats[0], llats[-1]))
+                satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)))
 
 
             run(date=date_x,
