@@ -272,6 +272,7 @@ def get_local_file(
 
 def get_online_file(
         fname_file,
+        geometa,
         filename=None,
         download=True,
         primary_tool='curl',
@@ -295,8 +296,9 @@ def get_online_file(
         # if that does not work, try again with primary tool.
         # as a last resort, attempt with backup tool.
         try:
-            # delete local version first as this seems to cause issues downstream
-            delete_file(fname_file, filename=filename, fdir_save=fdir_save)
+            # delete local version of the geometa first as this seems to cause issues downstream
+            if geometa:
+                delete_file(fname_file, filename=filename, fdir_save=fdir_save)
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
         except Exception as message:
@@ -473,6 +475,11 @@ def read_geometa(content):
     """
 
     lines = content.split('\n')
+
+    if lines[0] == '<!DOCTYPE html>' or lines[1] == '<!DOCTYPE html>':
+        msg = 'Error [read_geometa]: Could not download the geoMeta text file. This could be an issue with either the download tool or the Earthdata token.\n'
+        raise OSError(msg)
+
     index_header = 0
     while (len(lines[index_header]) > 0) and lines[index_header][0] == '#':
         index_header += 1
@@ -480,7 +487,7 @@ def read_geometa(content):
     index_header -= 1
 
     if index_header == -1:
-        msg = '\nError [read_geometa]: Cannot locate header in the provided content.'
+        msg = 'Error [read_geometa]: Cannot locate header in the provided content.\n'
         raise OSError(msg)
 
     header_line = lines[index_header]
@@ -983,8 +990,8 @@ def get_satfile_tag(
         date: Python datetime.datetime object
         lon : longitude of, e.g. flight track
         lat : latitude of, e.g. flight track
-        satellite=: default "aqua", can also change to "terra", 'snpp', 'noaa20'
-        instrument=: default "modis", can also change to "viirs"
+        satellite=: one of "aqua", "terra", 'snpp', 'noaa20', 'noaa21'
+        instrument=: "modis" or "viirs" as appropriate
         nrt=: bool, near real time. if True, will access https://nrt3.modaps.eosdis.nasa.gov,
                                     if False (default) will access https://ladsweb.modaps.eosdis.nasa.gov,
         fdir_prefix=: string, data directory on NASA server
@@ -1038,10 +1045,10 @@ def get_satfile_tag(
 
     # try to get geometa information online
     # if content is None:
-    #     content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
+    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
+    content = get_online_file(fname_geometa, geometa-True, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1177,7 +1184,7 @@ def download_laads_https(
 
     # try to get geometa information online
     if content is None:
-        content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1291,7 +1298,7 @@ def download_lance_https(
 
     # try to get geometa information online
     if content is None:
-        content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1494,7 +1501,7 @@ def download_worldview_image(
         extent: rectangular region, Python list of [west_most_longitude, east_most_longitude, south_most_latitude, north_most_latitude]
         fdir_out=: directory to store RGB imagery from NASA Worldview
         instrument=: satellite instrument, currently only supports 'modis' and 'viirs'
-        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis', and 'snpp' and 'noaa20' for 'viirs'
+        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis';  'snpp', 'noaa20', 'noaa21' for 'viirs'
         wmts_cgi=: cgi link to NASA Worldview GIBS (Global Imagery Browse Services)
         proj=: map projection for plotting the RGB imagery
         coastline=: boolen type, whether to plot coastline
@@ -1516,7 +1523,7 @@ def download_worldview_image(
 
     # time stamping the satellite imagery (contained in file name)
     #/----------------------------------------------------------------------------\#
-    if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP']:
+    if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP', 'NOAA21']:
 
         # pick layer
         #/--------------------------------------------------------------\#
