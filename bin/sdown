@@ -546,7 +546,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         elif geojson_fpath is not None:
             lons0, lats0 = parse_geojson(geojson_fpath)
-            if (focus_extent[0] < lons0[0]) or (focus_extent[1] > lons0[1]) or (focus_extent[2] < lats0[2]) or (focus_extent[3] > lats0[3]):
+            if (focus_extent[0] < np.nanmin(lons0)) or (focus_extent[1] > np.nanmax(lons0)) or (focus_extent[2] < np.nanmin(lats0)) or (focus_extent[3] > np.nanmax(lats0)):
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided in the geojson file {}'.format(focus_extent, geojson_fpath))
                 sys.exit()
 
