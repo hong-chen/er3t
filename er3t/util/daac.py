@@ -473,6 +473,11 @@ def read_geometa(content):
     """
 
     lines = content.split('\n')
+    
+    if lines[0] == '<!DOCTYPE html>' or lines[1] == '<!DOCTYPE html>':
+        msg = 'Error [read_geometa]: Could not download the geoMeta text file. This could be an issue with either the download tool or the Earthdata token.\n'
+        raise OSError(msg)
+
     index_header = 0
     while (len(lines[index_header]) > 0) and lines[index_header][0] == '#':
         index_header += 1
@@ -480,7 +485,7 @@ def read_geometa(content):
     index_header -= 1
 
     if index_header == -1:
-        msg = '\nError [read_geometa]: Cannot locate header in the provided content.'
+        msg = 'Error [read_geometa]: Cannot locate header in the provided content.\n'
         raise OSError(msg)
 
     header_line = lines[index_header]
