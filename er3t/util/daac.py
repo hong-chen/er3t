@@ -272,6 +272,7 @@ def get_local_file(
 
 def get_online_file(
         fname_file,
+        geometa,
         filename=None,
         download=True,
         primary_tool='curl',
@@ -295,8 +296,9 @@ def get_online_file(
         # if that does not work, try again with primary tool.
         # as a last resort, attempt with backup tool.
         try:
-            # delete local version first as this seems to cause issues downstream
-            delete_file(fname_file, filename=filename, fdir_save=fdir_save)
+            # delete local version of the geometa first as this seems to cause issues downstream
+            if geometa:
+                delete_file(fname_file, filename=filename, fdir_save=fdir_save)
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
         except Exception as message:
@@ -473,7 +475,7 @@ def read_geometa(content):
     """
 
     lines = content.split('\n')
-    
+
     if lines[0] == '<!DOCTYPE html>' or lines[1] == '<!DOCTYPE html>':
         msg = 'Error [read_geometa]: Could not download the geoMeta text file. This could be an issue with either the download tool or the Earthdata token.\n'
         raise OSError(msg)
@@ -1043,10 +1045,10 @@ def get_satfile_tag(
 
     # try to get geometa information online
     # if content is None:
-    #     content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
+    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, filename=filename_geometa, fdir_save=fdir_save)
+    content = get_online_file(fname_geometa, geometa-True, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1182,7 +1184,7 @@ def download_laads_https(
 
     # try to get geometa information online
     if content is None:
-        content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1296,7 +1298,7 @@ def download_lance_https(
 
     # try to get geometa information online
     if content is None:
-        content = get_online_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
