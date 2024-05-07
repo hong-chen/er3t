@@ -612,7 +612,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = 'Message [sdown]: Data will be downloaded for %s' % single_dt.strftime("%d %B, %Y")
             satlogger.info(msg)
 
-        fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+        fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y-%m-%d')) # save files in dirs with dates specified
         if not os.path.exists(fdir_out_dt):
             os.makedirs(fdir_out_dt)
 
@@ -718,7 +718,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         date_list = [start_dt + datetime.timedelta(days=x) for x in range((end_dt - start_dt).days + 1)]
         for date_x in date_list: # download products date by date
-            fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+            fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y-%m-%d')) # save files in dirs with dates specified
             if not os.path.exists(fdir_out_dt):
                 os.makedirs(fdir_out_dt)
 
@@ -728,7 +728,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 f.write('Extent: {}\n'.format([np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)]))
 
             if verbose:
-                satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)))
+                satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y-%m-%d'), np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)))
 
 
             run(date=date_x,
