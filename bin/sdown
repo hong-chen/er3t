@@ -569,7 +569,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         end_dt_hhmm    = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]), 23, 59)
         single_dt      = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
 
-        if (datetime.timedelta((_today_dt - single_dt).days).days < 0):
+        if single_dt > end_dt_hhmm:
             msg = 'Error [sdown]: Provided date is in the future. Data will only be downloaded until today\'s date.' + \
                   '\n\nReceived date   : %s\nToday\'s date is : %s UTC' % (single_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.error(msg)
@@ -664,18 +664,18 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             end_dt   = _today_dt - datetime.timedelta(hours=latest_nhours)
 
 
-        if datetime.timedelta((end_dt - start_dt).days).days < 0:
+        if start_dt == end_dt:
             msg = 'Warning [sdown]: `end_date` %s UTC and `start_date` %s UTC are both the same' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.warn(msg)
 
 
-        if (datetime.timedelta((_today_dt - start_dt).days).days < 0):
+        if start_dt > _today_dt:
             msg = 'Error [sdown]: `start_date` cannot be in the future.' + \
                   '\n\nReceived start date: %s UTC \nToday\'s date is    : %s UTC' % (start_dt.strftime("%d %B, %Y: %H%M"), _today_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.error(msg)
             sys.exit()
 
-        if (datetime.timedelta((_today_dt - end_dt).days).days < 0):
+        if end_dt > _today_dt:
             msg = 'Warning [sdown]: End date is in the future. Data will only be downloaded until today\'s date.' + \
                   '\n\nReceived end date: %s UTC\nToday\'s date is : %s UTC' % (end_dt.strftime("%d %B, %Y: %H%M"), _today_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.warn(msg)
@@ -722,7 +722,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = 'Message [sdown]: Data will be downloaded for dates beginning %s UTC to %s UTC' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.info(msg)
 
-        date_list = [start_dt + datetime.timedelta(days=x) for x in range((end_dt - start_dt).days + 1)]
+        date_list = [start_dt.date() + datetime.timedelta(days=x) for x in range((end_dt.date() - start_dt.date()).days + 1)]
         for date_x in date_list: # download products date by date
             fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y-%m-%d')) # save files in dirs with dates specified
             if not os.path.exists(fdir_out_dt):
