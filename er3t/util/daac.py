@@ -1047,7 +1047,7 @@ def get_satfile_tag(
     #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, geometa-True, filename=filename_geometa, fdir_save=fdir_save)
+    content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
