@@ -660,8 +660,12 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]), end_hr, end_min)
 
         else:
-            end_dt     = _today_dt
-            start_dt   = end_dt - datetime.timedelta(hours=latest_nhours)
+            if nrt:
+                end_dt     = _today_dt
+                start_dt   = end_dt - datetime.timedelta(hours=latest_nhours)
+            else:
+                satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date or --latest_nhours. Note that --latest_nhours is only valid for near-real time data')
+        sys.exit()
 
 
         if start_dt == end_dt:
