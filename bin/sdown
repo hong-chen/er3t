@@ -660,8 +660,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]), end_hr, end_min)
 
         else:
-            start_dt = _today_dt
-            end_dt   = _today_dt - datetime.timedelta(hours=latest_nhours)
+            end_dt     = _today_dt
+            start_dt   = end_dt - datetime.timedelta(hours=latest_nhours)
 
 
         if start_dt == end_dt:
@@ -928,7 +928,7 @@ if __name__ == '__main__':
                         help='Percentage of points within the region of interest that must overlap with the satellite granule. \n'\
                         'If the overlap < iou, then the granule file will not be downloaded.\n'\
                         'Example:  --iou 60\n \n')
-    required.add_argument('--latest_nhours', type=int, metavar='', default=24,
+    required.add_argument('--latest_nhours', type=int, metavar='', default=None,
                         help='Time range in hours to use to get near-real time data. Only used if --nrt is enabled and --start_date and --end_date not supplied. \n'\
                         'Example:  --nrt --latest_nhours 6 will download the most recent 6 hours of NRT data\n \n')
     required.add_argument('-e', '--extent', nargs='+', type=float, metavar='',
