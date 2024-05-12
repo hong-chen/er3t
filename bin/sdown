@@ -772,7 +772,10 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
 
     references = []
     fnames = {}
+    download_counter = 0 # overall tracker for all products
     for product in products:
+
+        product_download_counter = 0 # update counter per product
 
         product_info = get_sat_info_from_product_tag(product)
         fnames[product_info['dict_key']] = []
@@ -790,12 +793,14 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                                                                 instrument=product_info['instrument'],
                                                                 coastline=False)]
             fnames[product_info['dict_key']] += p_fnames
+            product_download_counter += 1 # update counter only by 1 since it is always a single RGB image per satellite per date
 
         # MODIS surface product
         elif '43' in product.upper():
             from er3t.util.modis import get_sinusoidal_grid_tag
             filename_tags_43 = get_sinusoidal_grid_tag(lon, lat)
 
+            product_download_counter += len(filename_tags_43) # update counter
             for filename_tag in filename_tags_43:
                 p_fnames = er3t.util.daac.download_laads_https(date=date,
                                                                dataset_tag=product_info['dataset_tag'],
@@ -832,6 +837,8 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                                                                   percent0=iou,
                                                                   nrt=True)
 
+                product_download_counter += len(filename_tags_03) # update counter
+
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
@@ -861,6 +868,9 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                                                                   instrument=product_info['instrument'],
                                                                   percent0=iou,
                                                                   nrt=False)
+
+                product_download_counter += len(filename_tags_03) # update counter
+
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
@@ -879,9 +889,17 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
             raise OSError()
 
         references.append(product_info['reference'])
+        download_counter += product_download_counter
+        if verbose:
+            satlogger.info('Message [sdown]: Downloaded {} files for {} ({} onboard {})'.format(product_download_counter, product_info['dataset_tag'], product_info['instrument'], product_info['satellite']))
 
-    satlogger.info('If you would like to cite the use of this data:\n\n%s' % '\n\n'.join(references))
-    satlogger.info('Message [sdown]: Finished downloading satellite files! You can find them in %s' % fdir_out)
+
+    if download_counter > 0:
+        satlogger.info('If you would like to cite the use of this data:\n\n%s' % '\n\n'.join(references))
+        satlogger.info('Message [sdown]: Finished downloading {} satellite files! You can find them in {}'.format(download_counter, fdir_out))
+
+    else: # could not find suitable downloads so no references needed
+        satlogger.info('Message [sdown]: No satellite files were found for the given parameters')
 
 
 def get_sat_info_from_product_tag(tag_):
