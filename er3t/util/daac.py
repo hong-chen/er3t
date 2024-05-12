@@ -135,7 +135,7 @@ def get_command_earthdata(
                     }
         else:
             options = {
-                    'curl': '-sS --no-progress-bar --header %s --connect-timeout 120.0 --retry 3 --location --continue-at - "%s" "%s"' % (header, fname_save, fname_target),
+                    'curl': '-sS --no-progress-bar --header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
                     'wget': '--header=%s --continue --timeout=120 --tries=3  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
                     }
 
@@ -278,7 +278,7 @@ def get_online_file(
         primary_tool='curl',
         backup_tool='wget',
         fdir_save='%s/satfile' % fdir_data_tmp,
-        verbose=0):
+        verbose=False):
 
     if filename is None:
         filename = os.path.basename(fname_file)
