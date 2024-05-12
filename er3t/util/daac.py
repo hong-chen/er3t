@@ -1110,20 +1110,20 @@ def get_satfile_tag(
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
-    if (percent0 > 0.0 ) or worldview:
-        indices_sort_p = np.argsort(percent_all)
-        if satellite != 'Terra':
-            indices_sort_i = i_all[::-1]
-        else:
-            indices_sort_i = i_all
+    # if (percent0 > 0.0 ) or worldview:
+    #     indices_sort_p = np.argsort(percent_all)
+    #     if satellite != 'Terra':
+    #         indices_sort_i = i_all[::-1]
+    #     else:
+    #         indices_sort_i = i_all
 
-        if all(percent_i>97.0 for percent_i in percent_all):
-            indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
-        else:
-            indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
+    #     if all(percent_i>97.0 for percent_i in percent_all):
+    #         indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
+    #     else:
+    #         indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
 
-        filename_tags = [filename_tags[i] for i in indices_sort]
-    # #\----------------------------------------------------------------------------/#
+    #     filename_tags = [filename_tags[i] for i in indices_sort]
+    # # #\----------------------------------------------------------------------------/#
     return filename_tags
 
 
