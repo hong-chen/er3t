@@ -110,7 +110,7 @@ def get_command_earthdata(
         primary_tool='curl',
         backup_tool='wget',
         fdir_save='%s/satfile' % fdir_data_tmp,
-        verbose=1):
+        verbose=False):
 
     """
     Get the LINUX/UNIX download command using curl or wget as the download tool.
@@ -135,7 +135,7 @@ def get_command_earthdata(
                     }
         else:
             options = {
-                    'curl': '-sS --header %s --connect-timeout 120.0 --retry 3 --location --continue-at - "%s" "%s"' % (header, fname_save, fname_target),
+                    'curl': '-sS --no-progress-bar --header %s --connect-timeout 120.0 --retry 3 --location --continue-at - "%s" "%s" > /dev/null' % (header, fname_save, fname_target),
                     'wget': '--header=%s --continue --timeout=120 --tries=3  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
                     }
 
@@ -278,7 +278,7 @@ def get_online_file(
         primary_tool='curl',
         backup_tool='wget',
         fdir_save='%s/satfile' % fdir_data_tmp,
-        verbose=1):
+        verbose=0):
 
     if filename is None:
         filename = os.path.basename(fname_file)
@@ -1139,7 +1139,7 @@ def download_laads_https(
              fdir_save='%s/satfile' % fdir_data_tmp,
              data_format=None,
              run=True,
-             verbose=True):
+             verbose=False):
 
     """
     Downloads products from the LAADS Data Archive (DAAC).
@@ -1246,7 +1246,7 @@ def download_lance_https(
              fdir_save='%s/satfile' % fdir_data_tmp,
              data_format=None,
              run=True,
-             verbose=True):
+             verbose=False):
 
     """
     Downloads products from the LANCE Data Archive (DAAC).
@@ -1357,7 +1357,7 @@ def download_oco2_https(
              fdir_out='tmp-data',
              data_format=None,
              run=True,
-             verbose=True):
+             verbose=False):
 
     """
     Input:
