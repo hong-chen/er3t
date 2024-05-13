@@ -1040,23 +1040,23 @@ def get_satfile_tag(
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
 
     # try to get geometa information from local if not download
-    try:
-        content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
+    # try:
+    #     content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
 
-    except Exception as err:
-        print(err)
-        content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+    # except Exception as err:
+    #     print(err)
+    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
-    # or try to get geometa information online if content is None
-    if content is None:
-        content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+    # # or try to get geometa information online if content is None
+    # if (content is None) or (isinstance(content, dict)):
+    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
-        if content is None:
-            print("Message [get_satfile_tag]: Could not download the metadata file. Try again at a later time")
-            return [] # empty list since that's what sdown is expecting
+    #     if content is None:
+    #         print("Message [get_satfile_tag]: Could not download the metadata file. Try again at a later time")
+    #         return [] # empty list since that's what sdown is expecting
 
     # for now, always use online file since local seems to cause downstream issues
-    # content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+    content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
