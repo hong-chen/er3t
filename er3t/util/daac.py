@@ -1048,7 +1048,7 @@ def get_satfile_tag(
     #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, geometa-True, filename=filename_geometa, fdir_save=fdir_save)
+    content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1105,9 +1105,11 @@ def get_satfile_tag(
                     filename = line['GranuleID']
                     filename_tag = '.'.join(filename.split('.')[1:3])
                     filename_tags.append(filename_tag)
-                    percent_all = np.append(percent_all, percent_in)
-                    i_all.append(i)
+
+            percent_all = np.append(percent_all, percent_in)
+            i_all.append(i)
     #\----------------------------------------------------------------------------/#
+
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
@@ -1125,6 +1127,7 @@ def get_satfile_tag(
 
         filename_tags = [filename_tags[i] for i in indices_sort]
     # #\----------------------------------------------------------------------------/#
+
     return filename_tags
 
 
