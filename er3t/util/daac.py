@@ -1103,18 +1103,16 @@ def get_satfile_tag(
 
         if (Npoint_in>0) and (line['DayNightFlag']=='D') and (percent_in>=percent0):
 
-            if geometa:
-                filename_tags.append(line)
-            else:
-                granule_dt = line['StartDateTime']
-                granule_dt = datetime.datetime.strptime(granule_dt, '%Y-%m-%d %H:%M') # format it for processing
+            granule_dt = line['StartDateTime']
+            granule_dt = datetime.datetime.strptime(granule_dt, '%Y-%m-%d %H:%M') # format it for processing
 
-                if start_dt_hhmm <= granule_dt <= end_dt_hhmm: # get the filename only if within time bounds
-                    filename = line['GranuleID']
-                    filename_tag = '.'.join(filename.split('.')[1:3])
-                    filename_tags.append(filename_tag)
-                    percent_all = np.append(percent_all, percent_in)
-                    i_all.append(i)
+            if start_dt_hhmm <= granule_dt <= end_dt_hhmm: # get the filename only if within time bounds
+                filename = line['GranuleID']
+                filename_tag = '.'.join(filename.split('.')[1:3])
+                filename_tags.append(filename_tag)
+
+            percent_all = np.append(percent_all, percent_in)
+            i_all.append(i)
     #\----------------------------------------------------------------------------/#
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
