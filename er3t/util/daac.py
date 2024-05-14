@@ -978,7 +978,9 @@ def get_satfile_tag(
              percent0=0.0,
              worldview=False,
              start_dt_hhmm=None,
-             end_dt_hhmm=None
+             end_dt_hhmm=None,
+             fix_dates=True,
+             buffer=datetime.timedelta(hours=1)
              ):
 
     """
@@ -1032,6 +1034,10 @@ def get_satfile_tag(
     logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
     lon   = lon[logic]
     lat   = lat[logic]
+
+    # # testing new feature: use only corner points and close it like a polygon
+    # lon = np.array([lon[0], lon[0],  lon[-1], lon[-1], lon[0]])
+    # lat = np.array([lat[0], lat[-1], lat[-1], lat[0],  lat[0]])
     #\----------------------------------------------------------------------------/#
 
 
@@ -1077,13 +1083,31 @@ def get_satfile_tag(
     if end_dt_hhmm is None:
         end_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 23, 59)
 
+    #/----------------------------------------------------------------------------\#
+    # check if the last available overpass is within the range;
+    # if not, then change start_dt_hhmm and end_dt_hhmm by offsetting them back in time
+    # (but the delta in their time will be preserved)
+    last_sat_dt_hhmm = data[-1]['StartDateTime']
+    last_sat_dt_hhmm = datetime.datetime.strptime(last_sat_dt_hhmm, '%Y-%m-%d %H:%M') # format it for processing
+
+    if ((start_dt_hhmm >= last_sat_dt_hhmm) or ((last_sat_dt_hhmm - start_dt_hhmm) < buffer)) and (fix_dates):
+
+        print("Warning [get_satfile_tag]: The provided start datetime {} UTC is either past or too close to the last available satellite granule {}".format(start_dt_hhmm.strftime('%Y-%m-%d : %H%M'), last_sat_dt_hhmm.strftime('%Y-%m-%d : %H%M')))
+
+        delta_dt = end_dt_hhmm - start_dt_hhmm
+        end_dt_hhmm = last_sat_dt_hhmm
+        start_dt_hhmm = end_dt_hhmm - delta_dt
+
+        print("Message [get_satfile_tag]: New range of datetimes is {} to {}".format(start_dt_hhmm.strftime('%Y-%m-%d : %H%M'), end_dt_hhmm.strftime('%Y-%m-%d : %H%M')))
+    #/----------------------------------------------------------------------------\#
+
     proj_lonlat = ccrs.PlateCarree()
 
     Ndata = len(data)
     filename_tags = []
 
-    percent_all   = np.array([], dtype=np.float64)
-    i_all         = []
+    # percent_all   = np.array([], dtype=np.float64)
+    # i_all         = []
     for i in range(Ndata):
 
         line = data[i]
@@ -1111,8 +1135,8 @@ def get_satfile_tag(
                 filename_tag = '.'.join(filename.split('.')[1:3])
                 filename_tags.append(filename_tag)
 
-            percent_all = np.append(percent_all, percent_in)
-            i_all.append(i)
+            # percent_all = np.append(percent_all, percent_in)
+            # i_all.append(i)
     #\----------------------------------------------------------------------------/#
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
