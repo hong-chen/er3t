@@ -737,8 +737,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 f.write('Date: {}\n'.format(date_x.strftime('%Y-%m-%d')))
                 f.write('Extent: {}\n'.format([np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)]))
                 # TODO: Change below lines since they can be overwritten
-                f.write('Start_Date: {}\n'.format(start_dt.strftime('%Y-%m-%d-%H%M')))
-                f.write('End_Date:   {}\n'.format(end_dt.strftime('%Y-%m-%d-%H%M')))
+                # f.write('Start_Date: {}\n'.format(start_dt.strftime('%Y-%m-%d-%H%M')))
+                # f.write('End_Date:   {}\n'.format(end_dt.strftime('%Y-%m-%d-%H%M')))
 
             if verbose:
                 satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y-%m-%d'), np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)))
@@ -762,8 +762,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose):
 
     if focus_extent is not None:
-        lons = np.linspace(focus_extent[0], focus_extent[1], 100)
-        lats = np.linspace(focus_extent[2], focus_extent[3], 100)
+        lons = np.linspace(focus_extent[0], focus_extent[1], 200)
+        lats = np.linspace(focus_extent[2], focus_extent[3], 200)
     # else:
     #     lon0 = np.linspace(extent[0], extent[1], 100)
     #     lat0 = np.linspace(extent[2], extent[3], 100)
@@ -832,6 +832,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                                                                   end_dt_hhmm=end_dt_hhmm,
                                                                   lon=lon,
                                                                   lat=lat,
+                                                                  fdir_out=fdir_out,
                                                                   satellite=product_info['satellite'],
                                                                   instrument=product_info['instrument'],
                                                                   percent0=iou,
@@ -864,6 +865,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                                                                   end_dt_hhmm=end_dt_hhmm,
                                                                   lon=lon,
                                                                   lat=lat,
+                                                                  fdir_out=fdir_out,
                                                                   satellite=product_info['satellite'],
                                                                   instrument=product_info['instrument'],
                                                                   percent0=iou,

@@ -972,7 +972,7 @@ def get_satfile_tag(
              satellite,
              instrument,
              nrt=False,
-             fdir_local='./',
+             fdir_out='./',
              fdir_save='%s/satfile' % fdir_data_tmp,
              geometa=False,
              percent0=0.0,
@@ -1099,6 +1099,13 @@ def get_satfile_tag(
         start_dt_hhmm = end_dt_hhmm - delta_dt
 
         print("Message [get_satfile_tag]: New range of datetimes is {} to {}".format(start_dt_hhmm.strftime('%Y-%m-%d : %H%M'), end_dt_hhmm.strftime('%Y-%m-%d : %H%M')))
+
+    # Save metadata
+    with open(os.path.join(fdir_out, "metadata.txt"), "a") as f:
+        # TODO: Change below lines since they can be overwritten
+        f.write('Start_Date: {}\n'.format(start_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
+        f.write('End_Date:   {}\n'.format(end_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
+
     #/----------------------------------------------------------------------------\#
 
     proj_lonlat = ccrs.PlateCarree()
