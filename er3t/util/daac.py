@@ -122,7 +122,7 @@ def get_command_earthdata(
 
     fname_save = '%s/%s' % (fdir_save, filename)
 
-
+    verbose = True # force verbose for debugging
     if token_mode:
 
         token = get_token_earthdata()
@@ -1304,6 +1304,7 @@ def download_lance_https(
     Output:
         fnames_local: Python list that contains downloaded satellite data file paths
     """
+    verbose = True # set to true for debugging
 
     # VIIRS NRT is labeled differently from the standard product.
     # Therefore, the dataset_tag needs to be updated only for VIIRS NRT products.
@@ -1369,7 +1370,8 @@ def download_lance_https(
             fname_local = fnames_local[i]
 
             if verbose:
-                print('Message [download_laads_https]: Downloading %s ...' % fname_local)
+                print('Message [download_lance_https]: Downloading %s ...' % fname_local)
+            print(primary_commands[i]) # for debugging
             os.system(primary_commands[i])
 
             if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
@@ -1377,7 +1379,7 @@ def download_lance_https(
 
     else:
 
-        print('Message [download_laads_https]: The commands to run are:')
+        print('Message [download_lance_https]: The commands to run are:')
         for command in primary_commands:
             print(command)
     #\----------------------------------------------------------------------------/#
