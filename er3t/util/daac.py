@@ -298,7 +298,7 @@ def get_online_file(
         # as a last resort, attempt with backup tool.
         try:
             # delete local version of the geometa first as this seems to cause issues downstream
-            if geometa or csv:
+            if (geometa is True) or (csv is True): # they can be None so make True explicit
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
@@ -1217,12 +1217,17 @@ def download_laads_https(
     fname_csv = '%s.csv' % fdir_server
     filename_csv = server.replace('https://', '').split('.')[0] + '_'.join(('%s.csv' % fdir_data).split('/'))
 
-    # try to get geometa information from local
-    content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+    # # try to get geometa information from local
+    # content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
 
-    # try to get geometa information online
+    # # try to get geometa information online
+    # if content is None:
+    #     content = get_online_file(fname_csv, geometa=False, csv=None, filename=filename_csv, fdir_save=fdir_save)
+
+    # force online download first since we need to download at a high cadence for ARCSIX
+    content = get_online_file(fname_csv, geometa=False, csv=True, filename=filename_csv, fdir_save=fdir_save)
     if content is None:
-        content = get_online_file(fname_csv, geometa=False, csv=None, filename=filename_csv, fdir_save=fdir_save)
+        content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1334,6 +1339,8 @@ def download_lance_https(
     # # try to get geometa information online
     # if content is None:
     #     content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
+
+    # force online download first since we need to download at a high cadence for ARCSIX
     content = get_online_file(fname_csv, geometa=False, csv=True, filename=filename_csv, fdir_save=fdir_save)
     if content is None:
         content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
