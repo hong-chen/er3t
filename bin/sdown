@@ -839,6 +839,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                                                                   nrt=True)
 
                 product_download_counter += len(filename_tags_03) # update counter
+                print("Message [sdown]: Filename tags:", filename_tags_03)
 
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
