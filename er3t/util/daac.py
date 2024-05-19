@@ -1312,7 +1312,6 @@ def download_lance_https(
     if dataset_tag.split('/')[-1].upper().startswith(('VNP', 'VJ1', 'VJ2')):
         dataset_tag = dataset_tag + '_NRT'
     #\----------------------------------------------------------------------------/#
-    print("dataset tag received ", dataset_tag)
 
     # retrieve the directory where satellite data is stored for picked date
     #/----------------------------------------------------------------------------\#
@@ -1322,37 +1321,29 @@ def download_lance_https(
     else:
         doy_str = get_doy_tag(date, day_interval=day_interval)
 
-    print("doy string is ", doy_str)
     fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
     #\----------------------------------------------------------------------------/#
-    print("fdir_data is: ", fdir_data)
 
     # get csv info
     #/----------------------------------------------------------------------------\#
     fname_csv = '%s/api/v2/content/details/allData/%s/%s/%s?fields=all&formats=csv' % (server, dataset_tag, year_str, doy_str)
-    print("fname csv: ", fname_csv)
     filename_csv = server.replace('https://', '').split('.')[0] + '_'.join(('%s.csv' % fdir_data).split('/'))
-    print("filename csv: ", filename_csv)
     # try to get geometa information from local
     content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
-    print("finished getting content from local file")
     # try to get geometa information online
     if content is None:
-        print("content was none. getting online content")
         content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
-    print("finished getting content from online file")
 
     # get download commands
     #/----------------------------------------------------------------------------\#
     lines    = content.split('\n')
-    print("length of lines is ", len(lines))
     primary_commands = []
     backup_commands  = []
     fnames_local = []
     for line in lines:
         filename = line.strip().split(',')[0]
-        print("inside for loop", filename)
+
         if (filename_tag in filename) and ('.met' not in filename):
             fname_server = '%s/api/v2/content%s/%s' % (server, fdir_data, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
@@ -1362,7 +1353,6 @@ def download_lance_https(
             primary_commands.append(primary_command)
             backup_commands.append(backup_command)
     #\----------------------------------------------------------------------------/#
-    print("fnames_local is", fnames_local)
 
     # run/print command
     #/----------------------------------------------------------------------------\#
