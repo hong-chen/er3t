@@ -273,6 +273,7 @@ def get_local_file(
 def get_online_file(
         fname_file,
         geometa,
+        csv,
         filename=None,
         download=True,
         primary_tool='curl',
@@ -297,7 +298,7 @@ def get_online_file(
         # as a last resort, attempt with backup tool.
         try:
             # delete local version of the geometa first as this seems to cause issues downstream
-            if geometa:
+            if geometa or csv:
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
@@ -1062,7 +1063,7 @@ def get_satfile_tag(
     #         return [] # empty list since that's what sdown is expecting
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+    content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1221,7 +1222,7 @@ def download_laads_https(
 
     # try to get geometa information online
     if content is None:
-        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
+        content = get_online_file(fname_csv, geometa=False, csv=None, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1333,7 +1334,7 @@ def download_lance_https(
     # # try to get geometa information online
     # if content is None:
     #     content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
-    content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
+    content = get_online_file(fname_csv, geometa=False, csv=True, filename=filename_csv, fdir_save=fdir_save)
     if content is None:
         content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
 
