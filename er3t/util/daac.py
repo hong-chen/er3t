@@ -1328,10 +1328,14 @@ def download_lance_https(
     fname_csv = '%s/api/v2/content/details/allData/%s/%s/%s?fields=all&formats=csv' % (server, dataset_tag, year_str, doy_str)
     filename_csv = server.replace('https://', '').split('.')[0] + '_'.join(('%s.csv' % fdir_data).split('/'))
     # try to get geometa information from local
-    content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
-    # try to get geometa information online
+    # content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+    # # try to get geometa information online
+    # if content is None:
+    #     content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
+    content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
     if content is None:
-        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
+        content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
+
     #\----------------------------------------------------------------------------/#
 
     # get download commands
