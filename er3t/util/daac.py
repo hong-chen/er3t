@@ -978,10 +978,11 @@ def get_satfile_tag(
              geometa=False,
              percent0=0.0,
              worldview=False,
+             optical_geo=None,
              start_dt_hhmm=None,
              end_dt_hhmm=None,
              fix_dates=True,
-             buffer=datetime.timedelta(hours=1)
+             buffer=datetime.timedelta(hours=6)
              ):
 
     """
@@ -1106,6 +1107,11 @@ def get_satfile_tag(
         # TODO: Change below lines since they can be overwritten
         f.write('Start_Date: {}\n'.format(start_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
         f.write('End_Date:   {}\n'.format(end_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
+
+    if optical_geo is True:
+        start_dt_hhmm = start_dt_hhmm - datetime.timedelta(hours=2)
+        print("Warning [sdown]: Start datetime was changed but not recorded to catch more data and account for latency")
+
 
     #/----------------------------------------------------------------------------\#
 
