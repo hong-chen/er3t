@@ -827,6 +827,9 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                       ' %s' % link_to_nrt
                 satlogger.warn(msg)
 
+                # intentionally increase the span of cloud products (and geo needed for gridding) due to their high latency
+                if product.upper().endswith(('L2', '03', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
+                    start_dt_hhmm = start_dt_hhmm - datetime.timedelta(hours=2)
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
                                                                   end_dt_hhmm=end_dt_hhmm,
