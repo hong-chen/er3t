@@ -840,7 +840,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                                                                   fdir_out=fdir_out,
                                                                   satellite=product_info['satellite'],
                                                                   instrument=product_info['instrument'],
-                                                                  optical_geo=optical_geo
+                                                                  optical_geo=optical_geo,
                                                                   percent0=iou,
                                                                   nrt=True)
 
