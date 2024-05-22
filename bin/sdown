@@ -819,13 +819,13 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                     continue
                 # sys.exit()
 
-                link_to_nrt = 'https://www.earthdata.nasa.gov/learn/find-data/near-real-time/near-real-time-versus-standard-products'
-                msg = 'Warning [sdown]: Downloading Near Real Time (NRT) products. \n'\
-                      'Please note that the standard product processing rules are relaxed to allow '\
-                      'for faster generation of products and therefore may not be the same quality. '\
-                      'For a complete breakdown of how NASA generates these NRT products, visit:\n'\
-                      ' %s' % link_to_nrt
-                satlogger.warn(msg)
+                # link_to_nrt = 'https://www.earthdata.nasa.gov/learn/find-data/near-real-time/near-real-time-versus-standard-products'
+                # msg = 'Warning [sdown]: Downloading Near Real Time (NRT) products. \n'\
+                #       'Please note that the standard product processing rules are relaxed to allow '\
+                #       'for faster generation of products and therefore may not be the same quality. '\
+                #       'For a complete breakdown of how NASA generates these NRT products, visit:\n'\
+                #       ' %s' % link_to_nrt
+                # satlogger.warn(msg)
 
                 # intentionally increase the span of cloud products (and geo needed for gridding) due to their high latency
                 optical_geo = False
