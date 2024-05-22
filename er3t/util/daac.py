@@ -1355,6 +1355,7 @@ def download_lance_https(
 
     # get download commands
     #/----------------------------------------------------------------------------\#
+    exist_count = 0
     lines    = content.split('\n')
     primary_commands = []
     backup_commands  = []
@@ -1365,11 +1366,18 @@ def download_lance_https(
         if (filename_tag in filename) and ('.met' not in filename):
             fname_server = '%s/api/v2/content%s/%s' % (server, fdir_data, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
-            fnames_local.append(fname_local)
 
-            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
-            primary_commands.append(primary_command)
-            backup_commands.append(backup_command)
+
+            if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                print("Message [download_lance_https]: File {} already exists and looks good. Will now re-download this file.")
+                exist_count += 1
+            else:
+                fnames_local.append(fname_local)
+                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+                primary_commands.append(primary_command)
+                backup_commands.append(backup_command)
+
+    print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #\----------------------------------------------------------------------------/#
 
     # run/print command
