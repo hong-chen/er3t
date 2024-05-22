@@ -1369,7 +1369,7 @@ def download_lance_https(
 
 
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
-                print("Message [download_lance_https]: File {} already exists and looks good. Will now re-download this file.")
+                print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)
