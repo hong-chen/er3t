@@ -1,0 +1,24 @@
+name: er3t-dev
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.12.*
+  - requests=2.32.*
+  - tqdm=4.66.*
+  - gdown=5.2.*
+  - numpy=1.26.*
+  - scipy=1.13.*
+  - scikit-image=0.22.*
+  - matplotlib=3.8.*
+  - pyhdf=0.11.*
+  - h5py=3.11.*
+  - netcdf4=1.6.*
+  - owslib=0.31.*
+  - cartopy=0.22.*
+  - mscorefonts
+  - font-ttf-source-code-pro
+  - vim=8.2.*
+  #- sphinx=4.4.*
+  #- sphinx_rtd_theme=0.4.*
