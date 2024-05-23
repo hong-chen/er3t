@@ -982,7 +982,8 @@ def get_satfile_tag(
              start_dt_hhmm=None,
              end_dt_hhmm=None,
              fix_dates=True,
-             buffer=datetime.timedelta(hours=6)
+             buffer=datetime.timedelta(hours=6),
+             latency=2,
              ):
 
     """
@@ -1103,14 +1104,13 @@ def get_satfile_tag(
         print("Message [get_satfile_tag]: New range of datetimes is {} to {}".format(start_dt_hhmm.strftime('%Y-%m-%d : %H%M'), end_dt_hhmm.strftime('%Y-%m-%d : %H%M')))
 
     # Save metadata
-    with open(os.path.join(fdir_out, "metadata.txt"), "a") as f:
-        # TODO: Change below lines since they can be overwritten
-        f.write('Start_Date: {}\n'.format(start_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
-        f.write('End_Date:   {}\n'.format(end_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
+    # with open(os.path.join(fdir_out, "metadata.txt"), "a") as f:
+    #     f.write('Start_Date: {}\n'.format(start_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
+    #     f.write('End_Date:   {}\n'.format(end_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
 
     if optical_geo is True:
-        start_dt_hhmm = start_dt_hhmm - datetime.timedelta(hours=2)
-        print("Warning [sdown]: Start datetime was changed but not recorded to catch more data and account for latency")
+        start_dt_hhmm = start_dt_hhmm - datetime.timedelta(hours=latency)
+        print("Warning [sdown]: Start datetime was changed to catch more data and account for latency")
 
 
     #/----------------------------------------------------------------------------\#
@@ -1169,7 +1169,11 @@ def get_satfile_tag(
 
     #     filename_tags = [filename_tags[i] for i in indices_sort]
     # # #\----------------------------------------------------------------------------/#
-    return filename_tags
+
+    if optical_geo is True: # add it back to revert to original times
+        start_dt_hhmm = start_dt_hhmm + datetime.timedelta(hours=latency)
+
+    return filename_tags, start_dt_hhmm, end_dt_hhmm
 
 
 

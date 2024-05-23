@@ -732,7 +732,12 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             if not os.path.exists(fdir_out_dt):
                 os.makedirs(fdir_out_dt)
 
-            # Save metadata
+            # Save metadata but if file exists, delete it
+            if os.path.isfile(os.path.join(fdir_out_dt, "metadata.txt")):
+                print("Message [sdown]: metadata.txt file was removed from {}".format(os.path.join(fdir_out_dt, "metadata.txt")))
+                os.remove(os.path.join(fdir_out_dt, "metadata.txt"))
+
+
             with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
                 f.write('Date: {}\n'.format(date_x.strftime('%Y-%m-%d')))
                 f.write('Extent: {}\n'.format([np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)]))
@@ -773,6 +778,8 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
     references = []
     fnames = {}
     download_counter = 0 # overall tracker for all products
+    start_dates = []
+    end_dates   = []
     for product in products:
 
         product_download_counter = 0 # update counter per product
@@ -832,19 +839,21 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                 if product.upper().endswith(('L2', '03', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
                     optical_geo = True
 
-                filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
-                                                                  start_dt_hhmm=start_dt_hhmm,
-                                                                  end_dt_hhmm=end_dt_hhmm,
-                                                                  lon=lon,
-                                                                  lat=lat,
-                                                                  fdir_out=fdir_out,
-                                                                  satellite=product_info['satellite'],
-                                                                  instrument=product_info['instrument'],
-                                                                  optical_geo=optical_geo,
-                                                                  percent0=iou,
-                                                                  nrt=True)
+                filename_tags_03, start_dt, end_dt = er3t.util.daac.get_satfile_tag(date=date,
+                                                                                    start_dt_hhmm=start_dt_hhmm,
+                                                                                    end_dt_hhmm=end_dt_hhmm,
+                                                                                    lon=lon,
+                                                                                    lat=lat,
+                                                                                    fdir_out=fdir_out,
+                                                                                    satellite=product_info['satellite'],
+                                                                                    instrument=product_info['instrument'],
+                                                                                    optical_geo=optical_geo,
+                                                                                    percent0=iou,
+                                                                                    nrt=True)
 
                 product_download_counter += len(filename_tags_03) # update counter
+                start_dates.append(start_dt)
+                end_dates.append(end_dt)
                 print("Message [sdown]: Filename tags:", filename_tags_03)
 
                 if verbose:
@@ -867,7 +876,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                     satlogger.warn(msg)
                     continue
 
-                filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
+                filename_tags_03, start_dt, end_dt = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
                                                                   end_dt_hhmm=end_dt_hhmm,
                                                                   lon=lon,
@@ -879,6 +888,8 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                                                                   nrt=False)
 
                 product_download_counter += len(filename_tags_03) # update counter
+                start_dates.append(start_dt)
+                end_dates.append(end_dt)
 
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
@@ -901,6 +912,14 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
         download_counter += product_download_counter
         if verbose:
             satlogger.info('Message [sdown]: Downloaded {} files for {} ({} onboard {})'.format(product_download_counter, product_info['dataset_tag'], product_info['instrument'], product_info['satellite']))
+
+    oldest_dt = min(start_dates)
+    recent_dt = max(end_dates)
+
+    # Save metadata
+    with open(os.path.join(fdir_out, "metadata.txt"), "a") as f:
+        f.write('Start_Date: {}\n'.format(oldest_dt.strftime('%Y-%m-%d-%H%M')))
+        f.write('End_Date:   {}\n'.format(recent_dt.strftime('%Y-%m-%d-%H%M')))
 
 
     if download_counter > 0:
