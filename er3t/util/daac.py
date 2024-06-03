@@ -130,7 +130,7 @@ def get_command_earthdata(
 
         if verbose:
             options = {
-                    'curl': '--header %s --connect-timeout 120.0 --retry 2 --max-time 60.0 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                    'curl': '--header %s --connect-timeout 60.0 --retry 2 --max-time 60.0 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
                     'wget': '--header=%s --continue --timeout=60 --tries=2 --show-progress --output-document="%s" "%s"' % (header, fname_save, fname_target),
                     }
         else:
