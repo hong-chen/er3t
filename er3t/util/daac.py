@@ -107,8 +107,8 @@ def get_command_earthdata(
         fname_target,
         filename=None,
         token_mode=True,
-        primary_tool='curl',
-        backup_tool='wget',
+        primary_tool='wget',
+        backup_tool='curl',
         fdir_save='%s/satfile' % fdir_data_tmp,
         verbose=False):
 
@@ -276,8 +276,8 @@ def get_online_file(
         csv,
         filename=None,
         download=True,
-        primary_tool='curl',
-        backup_tool='wget',
+        primary_tool='wget',
+        backup_tool='curl',
         fdir_save='%s/satfile' % fdir_data_tmp,
         verbose=False):
 
