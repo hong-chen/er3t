@@ -314,14 +314,14 @@ def get_online_file(
                 print("Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(fname_file))
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
 
-                try:
-                    os.system(backup_command)
-                    content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
-                except Exception as message:
-                    print(message, "\n")
-                    msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(fname_file)
-                    delete_file(fname_file, filename=filename, fdir_save=fdir_save)
-                    raise OSError(msg)
+                # try:
+                #     os.system(backup_command)
+                #     content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
+                # except Exception as message:
+                #     print(message, "\n")
+                #     msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(fname_file)
+                #     delete_file(fname_file, filename=filename, fdir_save=fdir_save)
+                #     raise OSError(msg)
 
     else:
 
