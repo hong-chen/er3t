@@ -12,6 +12,7 @@ __all__ = [
         'format_satname', \
         'get_token_earthdata', \
         'get_fname_geometa', \
+        'delete_file', \
         'get_local_file', \
         'get_online_file', \
         'final_file_check', \
@@ -300,6 +301,9 @@ def get_online_file(
             # delete local version of the geometa first as this seems to cause issues downstream
             if (geometa is True) or (csv is True): # they can be None so make True explicit
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
+            # if primary_tool == 'wget': # force wget to timeout
+            #     primary_command = "timeout 60 " + primary_command
+
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
         except Exception as message:
@@ -314,14 +318,18 @@ def get_online_file(
                 print("Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(fname_file))
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
 
-                # try:
-                #     os.system(backup_command)
-                #     content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
-                # except Exception as message:
-                #     print(message, "\n")
-                #     msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(fname_file)
-                #     delete_file(fname_file, filename=filename, fdir_save=fdir_save)
-                #     raise OSError(msg)
+                try:
+                    # if backup_tool == 'wget':
+                    #     backup_command = "timeout 60 " + backup_command
+                    # print("Executing following operation as a backup...\n{}".format(backup_command))
+
+                    os.system(backup_command)
+                    content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
+                except Exception as message:
+                    print(message, "\n")
+                    msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(fname_file)
+                    delete_file(fname_file, filename=filename, fdir_save=fdir_save)
+                    return None
 
     else:
 
@@ -1377,9 +1385,9 @@ def download_lance_https(
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)
-                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, primary_tool='curl', backup_tool='wget', verbose=verbose)
                 primary_commands.append(primary_command)
-                backup_commands.append(backup_command)
+                backup_commands.append('timeout 60 ' + backup_command)
 
     print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #\----------------------------------------------------------------------------/#
@@ -1393,12 +1401,16 @@ def download_lance_https(
             fname_local = fnames_local[i]
 
             if verbose:
-                print('Message [download_lance_https]: Downloading %s ...' % fname_local)
+                print('Message [download_lance_https]: Downloading to %s ...' % fname_local)
             print(primary_commands[i]) # for debugging
             os.system(primary_commands[i])
 
             if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
                 os.system(backup_commands[i])
+
+                if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                    print("Could not complete the download of or something is wrong with {}...deleting...".format(fname_local))
+                    os.remove(fname_local)
 
     else:
 
