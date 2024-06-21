@@ -272,7 +272,7 @@ def get_local_file(
 
 def get_online_file(
         fname_file,
-        geometa,
+        geometa=False,
         filename=None,
         download=True,
         primary_tool='curl',
