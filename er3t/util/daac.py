@@ -485,9 +485,18 @@ def read_geometa(content):
 
     lines = content.split('\n')
 
+    if len(lines) == 1:
+        msg = 'Error [read_geometa]: Could not download the geoMeta text file. This could be an issue with either the download tool or the Earthdata token'
+        if (lines[0][0] == '{') and (lines[0][-1] == '}'):
+            msg = msg + ' or the date for which you are looking to download does not have data.\n'
+
+        print(msg)
+        return None
+
     if lines[0] == '<!DOCTYPE html>' or lines[1] == '<!DOCTYPE html>':
         msg = 'Error [read_geometa]: Could not download the geoMeta text file. This could be an issue with either the download tool or the Earthdata token.\n'
-        raise OSError(msg)
+        print(msg)
+        return None
 
     index_header = 0
     while (len(lines[index_header]) > 0) and lines[index_header][0] == '#':
@@ -497,7 +506,8 @@ def read_geometa(content):
 
     if index_header == -1:
         msg = 'Error [read_geometa]: Cannot locate header in the provided content.\n'
-        raise OSError(msg)
+        print(msg)
+        return None
 
     header_line = lines[index_header]
     vnames = [word.strip() for word in header_line[1:].split(',')]
@@ -1095,6 +1105,10 @@ def get_satfile_tag(
         end_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 23, 59)
 
     #/----------------------------------------------------------------------------\#
+
+    if data is None:
+        return [], start_dt_hhmm, end_dt_hhmm
+
     # check if the last available overpass is within the range;
     # if not, then change start_dt_hhmm and end_dt_hhmm by offsetting them back in time
     # (but the delta in their time will be preserved)
@@ -1387,7 +1401,7 @@ def download_lance_https(
                 fnames_local.append(fname_local)
                 primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, primary_tool='curl', backup_tool='wget', verbose=verbose)
                 primary_commands.append(primary_command)
-                backup_commands.append('timeout 60 ' + backup_command)
+                backup_commands.append('timeout 60 ' + backup_command) # force timeout for wget
 
     print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #\----------------------------------------------------------------------------/#
