@@ -46,7 +46,7 @@ import sys
 from argparse import ArgumentParser, RawTextHelpFormatter
 import numpy as np
 import datetime
-
+import multiprocessing
 
 import er3t.util.daac
 import er3t.common
@@ -450,6 +450,37 @@ _sat_tags_support_ = {
         }
 #\----------------------------------------------------------------------------/#
 
+def create_args_parallel(date_list,
+                         start_dt_hhmm,
+                         end_dt_hhmm,
+                         extent,
+                         fdir_out,
+                         nrt,
+                         iou,
+                         focus_extent,
+                         products,
+                         verbose):
+
+
+    arg_list = []
+    for i in range(len(date_list)):
+        mini_list = []
+
+        mini_list.append(date_list[i])
+        mini_list.append(start_dt_hhmm)
+        mini_list.append(end_dt_hhmm)
+        mini_list.append(extent)
+        mini_list.append(fdir_out)
+        mini_list.append(nrt)
+        mini_list.append(iou)
+        mini_list.append(focus_extent)
+        mini_list.append(products)
+        mini_list.append(verbose)
+
+        arg_list.append(mini_list)
+
+    return arg_list
+
 
 def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose):
 
@@ -681,17 +712,22 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             if verbose:
                 satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
 
+        # Experimental: delegate dates for parallel computing
+        p_args = create_args_parallel(date_list, start_dt, end_dt, extent, fdir_out_dt, nrt, iou, focus_extent, products, verbose)
 
-            run(date=date_x,
-                start_dt_hhmm=start_dt,
-                end_dt_hhmm=end_dt,
-                extent=extent,
-                fdir_out=fdir_out_dt,
-                nrt=nrt,
-                iou=iou,
-                focus_extent=focus_extent,
-                products=products,
-                verbose=verbose)
+        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+        pool.map(run, p_args)
+        pool.close()
+        # run(date=date_x,
+        #     start_dt_hhmm=start_dt,
+        #     end_dt_hhmm=end_dt,
+        #     extent=extent,
+        #     fdir_out=fdir_out_dt,
+        #     nrt=nrt,
+        #     iou=iou,
+        #     focus_extent=focus_extent,
+        #     products=products,
+        #     verbose=verbose)
 
 
 
