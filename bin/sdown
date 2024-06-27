@@ -460,8 +460,25 @@ def create_args_parallel(date_list,
                          focus_extent,
                          products,
                          verbose):
+    """
+    Create a list of arguments for parallel processing.
 
+    Args:
+        date_list (list): List of dates.
+        start_dt_hhmm (str): Start time in HHMM format.
+        end_dt_hhmm (str): End time in HHMM format.
+        extent (str): Extent of the data.
+        fdir_out (str): Output directory.
+        nrt (bool): Flag indicating if the data is near real-time.
+        iou (float): Intersection over Union threshold.
+        focus_extent (str): Extent to focus on.
+        products (list): List of products.
+        verbose (bool): Flag indicating if verbose output is enabled.
 
+    Returns:
+        list: List of argument lists.
+
+    """
     arg_list = []
     for i in range(len(date_list)):
         mini_list = []
@@ -482,7 +499,7 @@ def create_args_parallel(date_list,
     return arg_list
 
 
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose, parallel):
 
 
     ########################################################################################################
@@ -699,36 +716,58 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             satlogger.info(msg)
 
         date_list = [start_dt + datetime.timedelta(days=x) for x in range((end_dt - start_dt).days + 1)]
-        for date_x in date_list: # download products date by date
-            fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
-            if not os.path.exists(fdir_out_dt):
-                os.makedirs(fdir_out_dt)
+        if parallel:
+            # Experimental: delegate dates for parallel computing
+            msg = 'Warning [sdown]: Parallelization enabled. This is currently in experimental mode, downloads may fail.\n'
+            satlogger.warn(msg)
 
-            # Save metadata
-            with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-                f.write('Date: {}\n'.format(date_x))
-                f.write('Extent: {}\n'.format(extent))
+            # need to create dirs and write metadata before
+            for date_x in date_list: # download products date by date
+                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+                if not os.path.exists(fdir_out_dt):
+                    os.makedirs(fdir_out_dt)
 
+                # Save metadata
+                with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
+                    f.write('Date: {}\n'.format(date_x))
+                    f.write('Extent: {}\n'.format(extent))
+
+                if verbose:
+                    satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
+
+            p_args = create_args_parallel(date_list, start_dt, end_dt, extent, fdir_out_dt, nrt, iou, focus_extent, products, verbose)
             if verbose:
-                satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
+                satlogger.info("Message [sdown]: Found {} CPUs. Downloads will be spread over all available CPUs.".format(multiprocessing.cpu_count()))
+            # start parallelization
+            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+            pool.map(run, p_args)
+            pool.close()
 
-        # Experimental: delegate dates for parallel computing
-        p_args = create_args_parallel(date_list, start_dt, end_dt, extent, fdir_out_dt, nrt, iou, focus_extent, products, verbose)
+        else: # run as usual
+            for date_x in date_list: # download products date by date
+                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+                if not os.path.exists(fdir_out_dt):
+                    os.makedirs(fdir_out_dt)
 
-        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-        pool.map(run, p_args)
-        pool.close()
-        # run(date=date_x,
-        #     start_dt_hhmm=start_dt,
-        #     end_dt_hhmm=end_dt,
-        #     extent=extent,
-        #     fdir_out=fdir_out_dt,
-        #     nrt=nrt,
-        #     iou=iou,
-        #     focus_extent=focus_extent,
-        #     products=products,
-        #     verbose=verbose)
+                # Save metadata
+                with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
+                    f.write('Date: {}\n'.format(date_x))
+                    f.write('Extent: {}\n'.format(extent))
 
+                if verbose:
+                    satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
+
+
+                run(date=date_x,
+                    start_dt_hhmm=start_dt,
+                    end_dt_hhmm=end_dt,
+                    extent=extent,
+                    fdir_out=fdir_out_dt,
+                    nrt=nrt,
+                    iou=iou,
+                    focus_extent=focus_extent,
+                    products=products,
+                    verbose=verbose)
 
 
 
@@ -936,6 +975,8 @@ if __name__ == '__main__':
                         'Example:  --lats 25 30\n \n')
     required.add_argument('-a', '--focus_extent', nargs='+', type=float, metavar='',
                         help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
+    required.add_argument('--parallel', action='store_true',
+                        help='Pass --parallel to enable parallelization of downloads spread over multiple CPUs.\n')
     required.add_argument('-n', '--nrt', action='store_true',
                         help='Pass --nrt if Near Real Time products should be downloaded.\n'\
                              'This is disabled by default to automatically download standard products.\n'\
@@ -962,6 +1003,7 @@ if __name__ == '__main__':
         nrt        = False
         iou        = 0
         focus_extent = None
+        parallel   = False
         verbose    = 1
 
         # initialize logger
@@ -978,6 +1020,7 @@ if __name__ == '__main__':
                                   iou=iou,
                                   focus_extent=focus_extent,
                                   products=products,
+                                  parallel=parallel,
                                   verbose=verbose)
     else:
 
@@ -995,4 +1038,5 @@ if __name__ == '__main__':
                                   iou=args.iou,
                                   focus_extent=args.focus_extent,
                                   products=args.products,
+                                  parallel=args.parallel,
                                   verbose=args.verbose)
