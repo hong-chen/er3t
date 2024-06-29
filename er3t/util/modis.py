@@ -1619,7 +1619,6 @@ class modis_tiff:
         mx  = float(np.max(img))
         img = img/mx
         lon,lat=xx,yy
-        if verb: print(xx.shape,yy.shape,img.shape)
 
         nx,ny,nl = img.shape
         self.img = img
@@ -1965,8 +1964,8 @@ def get_filename_tag(
     try:
         username = os.environ['EARTHDATA_USERNAME']
         password = os.environ['EARTHDATA_PASSWORD']
-    except:
-        exit('Error   [get_filename_tag]: cannot find environment variables \'EARTHDATA_USERNAME\' and \'EARTHDATA_PASSWORD\'.')
+    except Exception as err:
+        exit('Error   [get_filename_tag]: {}\nCannot find environment variables \'EARTHDATA_USERNAME\' and \'EARTHDATA_PASSWORD\'.'.format(err))
 
     try:
         with requests.Session() as session:
@@ -1975,8 +1974,8 @@ def get_filename_tag(
             r      = session.get(r1.url, auth=(username, password))
             if r.ok:
                 content = r.content.decode('utf-8')
-    except:
-        exit('Error   [get_filename_tag]: cannot access \'%s\'.' % fname_server)
+    except Exception as err:
+        exit('Error   [get_filename_tag]: {}\nCannot access {}.'.format(err, fname_server))
 
     dtype = ['|S41','|S16','<i4','<f8','|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
     data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype)
