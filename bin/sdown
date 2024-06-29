@@ -295,7 +295,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         if datetime.timedelta((end_dt - start_dt).days).days < 0:
             msg = 'Warning [sdown]: `end_date` %s UTC and `start_date` %s UTC are both the same' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
-            satlogger.warn(msg)
+            satlogger.warning(msg)
 
 
         if (datetime.timedelta((_today_dt - start_dt).days).days < 0):
@@ -307,7 +307,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         if (datetime.timedelta((_today_dt - end_dt).days).days < 0):
             msg = 'Warning [sdown]: End date is in the future. Data will only be downloaded until today\'s date.' + \
                   '\n\nReceived end date: %s UTC\nToday\'s date is : %s UTC' % (end_dt.strftime("%d %B, %Y: %H%M"), _today_dt.strftime("%d %B, %Y: %H%M"))
-            satlogger.warn(msg)
+            satlogger.warning(msg)
             end_dt = _today_dt
 
         # NRT data is only available for the most recent ~ 7 days or so
@@ -355,7 +355,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         if parallel:
             # Experimental: delegate dates for parallel computing
             msg = 'Warning [sdown]: Parallelization enabled. This is currently in experimental mode, downloads may fail.\n'
-            satlogger.warn(msg)
+            satlogger.warning(msg)
 
             # need to create dirs and write metadata before
             for date_x in date_list: # download products date by date
@@ -462,7 +462,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
             if nrt:
                 if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
                     msg = 'Warning [sdown]: VIIRS cloud products are not available in near real time (NRT)'
-                    satlogger.warn(msg)
+                    satlogger.warning(msg)
                     continue
                 # sys.exit()
 
@@ -472,7 +472,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                       'for faster generation of products and therefore may not be the same quality. '\
                       'For a complete breakdown of how NASA generates these NRT products, visit:\n'\
                       ' %s' % link_to_nrt
-                satlogger.warn(msg)
+                satlogger.warning(msg)
 
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
@@ -503,7 +503,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                 if product.upper().startswith(('VJ2')):
                     msg = 'Warning [sdown]: Standard (non near-real time) products are not available yet for VIIRS onboard NOAA-21\n'\
                           'This is because geoMetaVIIRS data is still unavailable.\n'
-                    satlogger.warn(msg)
+                    satlogger.warning(msg)
                     continue
 
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
