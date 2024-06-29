@@ -49,7 +49,7 @@ import datetime
 import multiprocessing
 
 import er3t.util.daac
-import er3t.util
+import er3t.util.util
 import er3t.common
 from er3t.util.logger import Ear3tLogger
 
@@ -173,13 +173,13 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 sys.exit()
 
         elif geojson_fpath is not None:
-            lons0, lats0 = er3t.util.parse_geojson(geojson_fpath)
+            lons0, lats0 = er3t.util.util.parse_geojson(geojson_fpath)
             if (focus_extent[0] < np.nanmin(lons0)) or (focus_extent[1] > np.nanmax(lons0)) or (focus_extent[2] < np.nanmin(lats0)) or (focus_extent[3] > np.nanmax(lats0)):
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided in the geojson file {}'.format(focus_extent, geojson_fpath))
                 sys.exit()
 
 
-    llons, llats = er3t.util.region_parser(extent, lons, lats, geojson_fpath)
+    llons, llats = er3t.util.util.region_parser(extent, lons, lats, geojson_fpath)
 
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
@@ -187,11 +187,11 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             satlogger.info('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
 
     # error handling for dates
-    if (date is None) and ((start_date is None) or (end_date is None)) and ((nrt) and (latest_nhours is None)):
-        satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date or --latest_nhours')
+    if (date is None) and ((start_date is None) or (end_date is None)) and ((nrt)):
+        satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date ')
         sys.exit()
 
-    elif (date is not None) and ((start_date is None) or (end_date is None)) and (latest_nhours is None):
+    elif (date is not None) and ((start_date is None) or (end_date is None)):
 
         start_dt_hhmm  = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]), 0, 0)
         end_dt_hhmm    = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]), 23, 59)
@@ -265,7 +265,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
 
     else:
-        if (start_date is not None) and (end_date is not None) and (latest_nhours is None):
+        if (start_date is not None) and (end_date is not None):
 
             # start at 0 UTC unless specified by user
             start_hr = 0
@@ -288,10 +288,6 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]), end_hr, end_min)
 
         else:
-            if nrt:
-                end_dt     = _today_dt
-                start_dt   = end_dt - datetime.timedelta(hours=latest_nhours)
-            else:
                 satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date or --latest_nhours. Note that --latest_nhours is only valid for near-real time data')
                 sys.exit()
 
