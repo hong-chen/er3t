@@ -1117,7 +1117,7 @@ def format_time(total_seconds):
     seconds = total_seconds % 60
     milliseconds = (total_seconds - int(total_seconds)) * 1000
 
-    return (int(hours), int(minutes), int(seconds), milliseconds)
+    return (int(hours), int(minutes), int(seconds), int(milliseconds))
 #\---------------------------------------------------------------------------/
 
 if __name__ == '__main__':
