@@ -136,7 +136,7 @@ def create_args_parallel(date_list,
     return arg_list
 
 
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, latest_nhours, iou, focus_extent, geojson_fpath, products, verbose):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, latest_nhours, iou, focus_extent, geojson_fpath, products, verbose, parallel):
 
 
     ########################################################################################################
