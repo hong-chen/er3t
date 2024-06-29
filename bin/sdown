@@ -374,7 +374,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 satlogger.info("Message [sdown]: Found {} CPUs. Downloads will be spread over all available CPUs.".format(multiprocessing.cpu_count()))
             # start parallelization
             pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-            pool.map(run, p_args)
+            pool.starmap(run, p_args)
             pool.close()
 
         else: # run as usual
@@ -571,6 +571,8 @@ def get_sat_info_from_product_tag(tag_):
 
 if __name__ == '__main__':
 
+    exec_start_dt = datetime.datetime.now() # to time sdown
+
     parser = ArgumentParser(prog='sdown', formatter_class=RawTextHelpFormatter,
                             description=_description_)
     parser.add_argument('--fdir', type=str, metavar='', default='sat-data/',
@@ -679,3 +681,8 @@ if __name__ == '__main__':
                                   products=args.products,
                                   parallel=args.parallel,
                                   verbose=args.verbose)
+
+        exec_stop_dt = datetime.datetime.now() # to time sdown
+        exec_total_time = exec_stop_dt - exec_start_dt
+        sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs = er3t.util.util.format_time(exec_total_time.total_seconds())
+        print('\n\nTotal Execution Time: {}:{}:{}.{:0.2f}\n\n'.format(sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs))
