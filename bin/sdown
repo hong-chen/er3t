@@ -49,6 +49,7 @@ import datetime
 import multiprocessing
 
 import er3t.util.daac
+import er3t.util
 import er3t.common
 from er3t.util.logger import Ear3tLogger
 
@@ -135,7 +136,7 @@ def create_args_parallel(date_list,
     return arg_list
 
 
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose, parallel):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, latest_nhours, iou, focus_extent, geojson_fpath, products, verbose):
 
 
     ########################################################################################################
@@ -156,24 +157,6 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         viirs_noaa21 = list(filter(lambda x: x.upper().startswith('VJ2'), products))
 
 
-    if (extent is None) and ((lats is None) or (lons is None)):
-        satlogger.error('Error [sdown]: Must provide either extent or lon/lat coordinates')
-        sys.exit()
-
-    elif (extent is not None) and (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
-        satlogger.error('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
-        sys.exit()
-
-    elif (extent is None) and (lats is not None) and (lons is not None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
-        extent = [lons[0], lons[1], lats[0], lats[1]]
-
-
-    # check to make sure extent is correct
-    if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-        msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
-        satlogger.error(msg)
-        sys.exit()
-
     if focus_extent is not None:
         if len(focus_extent) != 4:
             satlogger.error('Error [sdown]: `focus_extent` must be in [lon1 lon2 lat1 lat2] format')
@@ -184,10 +167,19 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within `extent` coordinates {}'.format(focus_extent, extent))
                 sys.exit()
 
-        if (lats is not None) and (lons is not None):
+        elif (lats is not None) and (lons is not None):
             if (focus_extent[0] < lons[0]) or (focus_extent[1] > lons[1]) or (focus_extent[2] < lats[2]) or (focus_extent[3] > lats[3]):
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided by `lats` {} and `lons` {}'.format(focus_extent, lats, lons))
                 sys.exit()
+
+        elif geojson_fpath is not None:
+            lons0, lats0 = er3t.util.parse_geojson(geojson_fpath)
+            if (focus_extent[0] < np.nanmin(lons0)) or (focus_extent[1] > np.nanmax(lons0)) or (focus_extent[2] < np.nanmin(lats0)) or (focus_extent[3] > np.nanmax(lats0)):
+                satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided in the geojson file {}'.format(focus_extent, geojson_fpath))
+                sys.exit()
+
+
+    llons, llats = er3t.util.region_parser(extent, lons, lats, geojson_fpath)
 
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
@@ -195,17 +187,17 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             satlogger.info('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
 
     # error handling for dates
-    if (date is None) and ((start_date is None) or (end_date is None)):
-        satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date')
+    if (date is None) and ((start_date is None) or (end_date is None)) and ((nrt) and (latest_nhours is None)):
+        satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date or --latest_nhours')
         sys.exit()
 
-    elif (date is not None) and ((start_date is None) or (end_date is None)):
+    elif (date is not None) and ((start_date is None) or (end_date is None)) and (latest_nhours is None):
 
         start_dt_hhmm  = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]), 0, 0)
         end_dt_hhmm    = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]), 23, 59)
         single_dt      = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
 
-        if (datetime.timedelta((_today_dt - single_dt).days).days < 0):
+        if single_dt > end_dt_hhmm:
             msg = 'Error [sdown]: Provided date is in the future. Data will only be downloaded until today\'s date.' + \
                   '\n\nReceived date   : %s\nToday\'s date is : %s UTC' % (single_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.error(msg)
@@ -248,21 +240,22 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = 'Message [sdown]: Data will be downloaded for %s' % single_dt.strftime("%d %B, %Y")
             satlogger.info(msg)
 
-        fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+        fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y-%m-%d')) # save files in dirs with dates specified
         if not os.path.exists(fdir_out_dt):
             os.makedirs(fdir_out_dt)
 
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
             f.write("Date: {}\n".format(single_dt))
-            f.write("Extent: {}\n".format(extent))
+            f.write("Extent: {}\n".format([np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)]))
 
         if verbose:
-            satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(single_dt.strftime("%d %B, %Y"), extent[0], extent[1], extent[2], extent[3]))
+            satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(single_dt.strftime("%d %B, %Y"), np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)))
 
         run(date=single_dt,
             start_dt_hhmm=start_dt_hhmm,
             end_dt_hhmm=end_dt_hhmm,
-            extent=extent,
+            lons=llons,
+            lats=llats,
             fdir_out=fdir_out_dt,
             nrt=nrt,
             iou=iou,
@@ -271,43 +264,53 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             verbose=verbose)
 
 
-    elif (start_date is not None) and (end_date is not None):
+    else:
+        if (start_date is not None) and (end_date is not None) and (latest_nhours is None):
 
-        # start at 0 UTC unless specified by user
-        start_hr = 0
-        start_min = 0
-        if len(start_date) == 12:
-            start_hr, start_min = int(start_date[8:10]), int(start_date[10:12])
+            # start at 0 UTC unless specified by user
+            start_hr = 0
+            start_min = 0
+            if len(start_date) == 12:
+                start_hr, start_min = int(start_date[8:10]), int(start_date[10:12])
 
-        # look for data until the last minute of the day
-        end_hr = 23
-        end_min = 59
-        if (len(end_date) == 12):
-            if (int(end_date[8:10]) < end_hr): # update only if different
-                end_hr = int(end_date[8:10])
+            # look for data until the last minute of the day
+            end_hr = 23
+            end_min = 59
+            if (len(end_date) == 12):
+                if (int(end_date[8:10]) < end_hr): # update only if different
+                    end_hr = int(end_date[8:10])
 
-            if (int(end_date[10:12]) < end_min):
-                end_min = int(end_date[10:12])
+                if (int(end_date[10:12]) < end_min):
+                    end_min = int(end_date[10:12])
 
 
-        start_dt  = datetime.datetime(int(start_date[:4]), int(start_date[4:6]), int(start_date[6:8]), start_hr, start_min)
-        end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]), end_hr, end_min)
+            start_dt  = datetime.datetime(int(start_date[:4]), int(start_date[4:6]), int(start_date[6:8]), start_hr, start_min)
+            end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]), end_hr, end_min)
 
-        if datetime.timedelta((end_dt - start_dt).days).days < 0:
+        else:
+            if nrt:
+                end_dt     = _today_dt
+                start_dt   = end_dt - datetime.timedelta(hours=latest_nhours)
+            else:
+                satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date or --latest_nhours. Note that --latest_nhours is only valid for near-real time data')
+                sys.exit()
+
+
+        if start_dt == end_dt:
             msg = 'Warning [sdown]: `end_date` %s UTC and `start_date` %s UTC are both the same' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
-            satlogger.warning(msg)
+            satlogger.warn(msg)
 
 
-        if (datetime.timedelta((_today_dt - start_dt).days).days < 0):
+        if start_dt > _today_dt:
             msg = 'Error [sdown]: `start_date` cannot be in the future.' + \
                   '\n\nReceived start date: %s UTC \nToday\'s date is    : %s UTC' % (start_dt.strftime("%d %B, %Y: %H%M"), _today_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.error(msg)
             sys.exit()
 
-        if (datetime.timedelta((_today_dt - end_dt).days).days < 0):
+        if end_dt > _today_dt:
             msg = 'Warning [sdown]: End date is in the future. Data will only be downloaded until today\'s date.' + \
                   '\n\nReceived end date: %s UTC\nToday\'s date is : %s UTC' % (end_dt.strftime("%d %B, %Y: %H%M"), _today_dt.strftime("%d %B, %Y: %H%M"))
-            satlogger.warning(msg)
+            satlogger.warn(msg)
             end_dt = _today_dt
 
         # NRT data is only available for the most recent ~ 7 days or so
@@ -351,7 +354,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = 'Message [sdown]: Data will be downloaded for dates beginning %s UTC to %s UTC' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.info(msg)
 
-        date_list = [start_dt + datetime.timedelta(days=x) for x in range((end_dt - start_dt).days + 1)]
+        date_list = [start_dt.date() + datetime.timedelta(days=x) for x in range((end_dt.date() - start_dt.date()).days + 1)]
         if parallel:
             # Experimental: delegate dates for parallel computing
             msg = 'Warning [sdown]: Parallelization enabled. This is currently in experimental mode, downloads may fail.\n'
