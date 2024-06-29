@@ -136,7 +136,7 @@ def create_args_parallel(date_list,
     return arg_list
 
 
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, latest_nhours, iou, focus_extent, geojson_fpath, products, verbose, parallel):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, geojson_fpath, products, verbose, parallel):
 
 
     ########################################################################################################
@@ -611,6 +611,9 @@ if __name__ == '__main__':
     parser.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
                         help='The south-most and north-most latitudes of the region.\nAlternative to providing the last two terms in `extent`.\n'\
                         'Example:  --lats 25 30\n \n')
+    parser.add_argument('--geojson', type=str, metavar='',
+                        help='Path to a geoJSON file containing the extent of interest coordinates\n'\
+                        'Example:  --geojson my/path/to/geofile.json\n \n')
     parser.add_argument('--focus_extent', nargs='+', type=float, metavar='',
                         help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
     parser.add_argument('--parallel', action='store_true',
