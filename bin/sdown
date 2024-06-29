@@ -124,7 +124,7 @@ def create_args_parallel(date_list,
         mini_list.append(start_dt_hhmm)
         mini_list.append(end_dt_hhmm)
         mini_list.append(extent)
-        mini_list.append(fdir_out)
+        mini_list.append(fdir_out[i])
         mini_list.append(nrt)
         mini_list.append(iou)
         mini_list.append(focus_extent)
@@ -357,20 +357,19 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             satlogger.warning(msg)
 
             # need to create dirs and write metadata before
+            fdir_out_dt_list = []
             for date_x in date_list: # download products date by date
                 fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
                 if not os.path.exists(fdir_out_dt):
                     os.makedirs(fdir_out_dt)
 
+                fdir_out_dt_list.append(fdir_out_dt)
                 # Save metadata
                 with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
                     f.write('Date: {}\n'.format(date_x))
                     f.write('Extent: {}\n'.format(extent))
 
-                if verbose:
-                    satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
-
-            p_args = create_args_parallel(date_list, start_dt, end_dt, extent, fdir_out_dt, nrt, iou, focus_extent, products, verbose)
+            p_args = create_args_parallel(date_list, start_dt, end_dt, extent, fdir_out_dt_list, nrt, iou, focus_extent, products, verbose)
             if verbose:
                 satlogger.info("Message [sdown]: Found {} CPUs. Downloads will be spread over all available CPUs.".format(multiprocessing.cpu_count()))
             # start parallelization
