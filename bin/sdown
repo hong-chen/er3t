@@ -643,6 +643,7 @@ if __name__ == '__main__':
         products   = ['MODRGB', 'VNP02IMG']
         nrt        = False
         iou        = 0
+        geojson    = None
         focus_extent = None
         parallel   = False
         verbose    = 1
@@ -659,6 +660,7 @@ if __name__ == '__main__':
                                   fdir_out=fdir,
                                   nrt=nrt,
                                   iou=iou,
+                                  geojson_fpath=geojson,
                                   focus_extent=focus_extent,
                                   products=products,
                                   parallel=parallel,
@@ -677,6 +679,7 @@ if __name__ == '__main__':
                                   fdir_out=args.fdir,
                                   nrt=args.nrt,
                                   iou=args.iou,
+                                  geojson_fpath=args.geojson,
                                   focus_extent=args.focus_extent,
                                   products=args.products,
                                   parallel=args.parallel,
