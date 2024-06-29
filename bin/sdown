@@ -947,41 +947,40 @@ if __name__ == '__main__':
                         'This is disabled by default.\n \n')
     parser.add_argument('--run_demo', action='store_true',
                         help='Pass --run_demo if you would like to view a demonstration of this tool.\n \n')
-    required = parser.add_argument_group('Required Arguments')
-    required.add_argument('-d', '--date', type=str, metavar='', default=None,
+    parser.add_argument('-d', '--date', type=str, metavar='', default=None,
                         help='Date for which you would like to download data. '\
                         'Use yyyymmdd format.\n'\
                         'Example: --date 20210404\n \n')
-    required.add_argument('--start_date', type=str, metavar='', default=None,
+    parser.add_argument('--start_date', type=str, metavar='', default=None,
                         help='The start date of the range of dates for which you would like to download data. '\
                         'Use yyyymmdd or yyyymmddhhmm format.\n'\
                         'Example: --start_date 20210404\n \n')
-    required.add_argument('--end_date', type=str, metavar='', default=None,
+    parser.add_argument('--end_date', type=str, metavar='', default=None,
                         help='The end date of the range of dates for which you would like to download data. '\
                         'Use yyyymmdd or yyyymmddhhmm format.\n'\
                         'Example: --end_date 20210414\n \n')
-    required.add_argument('--iou', type=int, metavar='', default=0,
+    parser.add_argument('--iou', type=int, metavar='', default=0,
                         help='Percentage of points within the region of interest that must overlap with the satellite granule. \n'\
                         'If the overlap < iou, then the granule file will not be downloaded.\n'\
                         'Example:  --iou 60\n \n')
-    required.add_argument('-e', '--extent', nargs='+', type=float, metavar='',
+    parser.add_argument('-e', '--extent', nargs='+', type=float, metavar='',
                         help='Extent of region of interest \nlon1 lon2 lat1 lat2 in West East South North format.\n'\
                         'Example:  --extent -10 -5 25 30\n \n')
-    required.add_argument('-x', '--lons', nargs='+', type=float, metavar='',
+    parser.add_argument('-x', '--lons', nargs='+', type=float, metavar='',
                         help='The west-most and east-most longitudes of the region.\nAlternative to providing the first two terms in `extent`.\n'\
                         'Example:  --lons -10 -5\n \n')
-    required.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
+    parser.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
                         help='The south-most and north-most latitudes of the region.\nAlternative to providing the last two terms in `extent`.\n'\
                         'Example:  --lats 25 30\n \n')
-    required.add_argument('--focus_extent', nargs='+', type=float, metavar='',
+    parser.add_argument('--focus_extent', nargs='+', type=float, metavar='',
                         help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
-    required.add_argument('--parallel', action='store_true',
+    parser.add_argument('--parallel', action='store_true',
                         help='Pass --parallel to enable parallelization of downloads spread over multiple CPUs.\n')
-    required.add_argument('--nrt', action='store_true',
+    parser.add_argument('--nrt', action='store_true',
                         help='Pass --nrt if Near Real Time products should be downloaded.\n'\
                              'This is disabled by default to automatically download standard products.\n'\
                              'Currently, only MODIS and VIIRS NRT products can be downloaded.\n')
-    required.add_argument('--products', type=str, nargs='+', metavar='',
+    parser.add_argument('--products', type=str, nargs='+', metavar='',
                         help='Short prefix (case insensitive) for the product name.\n'\
                         'Example:  --products MOD02QKM\n'
                         '\nTo see a list of supported products, type --help.\n'\
