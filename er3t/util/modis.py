@@ -351,7 +351,7 @@ class modis_l1b:
         rad_sca = hdf_dset_250.attributes()['radiance_scales']     + hdf_dset_500.attributes()['radiance_scales']     + hdf_dset_1km_solar.attributes()['radiance_scales'] + hdf_dset_1km_emissive.attributes()['radiance_scales']
         ref_off = hdf_dset_250.attributes()['reflectance_offsets'] + hdf_dset_500.attributes()['reflectance_offsets'] + hdf_dset_1km_solar.attributes()['reflectance_offsets'] + list(np.full(-99, num_emissive_bands))
         ref_sca = hdf_dset_250.attributes()['reflectance_scales']  + hdf_dset_500.attributes()['reflectance_scales']  + hdf_dset_1km_solar.attributes()['reflectance_scales'] + list(np.ones(num_emissive_bands))
-        cnt_off = hdf_dset_250.attributes()['corrected_counts_offsets'] + hdf_dset_500.attributes()['corrected_counts_offsets'] + hdf_dset_1km_solar.attributes()['corrected_counts_offsets'] + list(np.full(-99, num_emissive_bands))
+        cnt_off = hdf_dset_250.attributes()['corrected_counts_offsets'] + hdf_dset_500.attributes()['corrected_counts_offsets'] + hdf_dset_1km_solar.attributes()['corrected_counts_offsets'] + list(np.full(num_emissive_bands, -99))
         cnt_sca = hdf_dset_250.attributes()['corrected_counts_scales'] + hdf_dset_500.attributes()['corrected_counts_scales'] + hdf_dset_1km_solar.attributes()['corrected_counts_scales'] + list(np.ones(num_emissive_bands))
         return rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca
 
