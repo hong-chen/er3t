@@ -33,9 +33,9 @@ VIIRS_ALL_BANDS = {
                     'M12': 3700,
                     'M13': 4050,
                     'M14': 8550,
-                    'M15': 12013
+                    'M15': 10763,
+                    'M16': 12013
                     }
-
 
 VIIRS_L1B_MOD_BANDS = {
                     'M01': 415,
@@ -46,16 +46,49 @@ VIIRS_L1B_MOD_BANDS = {
                     'M06': 746,
                     'M07': 865,
                     'M08': 1240,
+                    'M09': 1378,
                     'M10': 1610,
-                    'M11': 2250
+                    'M11': 2250,
+                    'M12': 3700,
+                    'M13': 4050,
+                    'M14': 8550,
+                    'M15': 10763,
+                    'M16': 12013
                     }
 
 VIIRS_L1B_IMG_BANDS = {
                     'I01': 640,
                     'I02': 865,
-                    'I03': 1610
+                    'I03': 1610,
+                    'I04': 3740,
+                    'I05': 11450
                     }
 
+
+VIIRS_L1B_MOD_EMISSIVE_BANDS = {'M12': 3700,
+                                'M13': 4050,
+                                'M14': 8550,
+                                'M15': 10763,
+                                'M16': 12013
+                                }
+
+VIIRS_L1B_IMG_EMISSIVE_BANDS = {'I04': 3740,
+                                'I05': 11450
+                                }
+
+VIIRS_L1B_ALL_EMISSIVE_BANDS = {'M12': 3700,
+                                'M13': 4050,
+                                'M14': 8550,
+                                'M15': 10763,
+                                'M16': 12013,
+                                'I04': 3740,
+                                'I05': 11450
+                                }
+
+VIIRS_L1B_MOD_DEFAULT_BANDS = {'M05': 673,
+                               'M04': 555,
+                               'M02':445
+                               }
 
 # reader for VIIRS (Visible Infrared Imaging Radiometer Suite)
 #/---------------------------------------------------------------------------\
@@ -66,10 +99,11 @@ class viirs_03:
     Read VIIRS 03 geolocation data
 
     Input:
-        fnames=   : keyword argument, default=None, Python list of the file path of the original netCDF file
-        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
-        vnames=   : keyword argument, default=[], additional variable names to be read in to self.data
-        verbose=  : keyword argument, default=False, verbose tag
+        fnames=   : list, default=None, Python list of the file path of the original netCDF file
+        extent=   : list, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        vnames=   : list, default=[], additional variable names to be read in to self.data
+        verbose=  : bool, default=False, verbose tag
+        keep_dims=: bool, default=False, set to True to get full granule, False to apply geomask of extent
 
     Output:
         self.data
@@ -85,15 +119,17 @@ class viirs_03:
     ID = 'VIIRS 03 Geolocation Product'
 
 
-    def __init__(self,              \
-                 fnames,            \
+    def __init__(self, \
+                 fnames    = None,  \
                  extent    = None,  \
                  vnames    = [],    \
+                 keep_dims = False, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the raw netCDF files
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
+        self.keep_dims  = keep_dims   # flag; if false -> apply geomask to get 1D; true -> retain 2D granule data
 
         for fname in self.fnames:
 
@@ -118,19 +154,6 @@ class viirs_03:
         self.logic
         """
 
-        # placeholder for xarray
-        #/-----------------------------------------------------------------------------\
-        # if er3t.common.has_xarray:
-        #     import xarray as xr
-        #     with xr.open_dataset(fname, group='geolocation_data') as f:
-        #         lon0 = f.longitude
-        #         lat0 = f.latitude
-        #         sza0 = f.solar_zenith
-        #         saa0 = f.solar_azimuth
-        #         vza0 = f.sensor_zenith
-        #         vaa0 = f.sensor_azimuth
-        #\-----------------------------------------------------------------------------/
-
         if not er3t.common.has_netcdf4:
             msg = 'Error   [viirs_03]: Please install <netCDF4> to proceed.'
             raise OSError(msg)
@@ -150,25 +173,24 @@ class viirs_03:
         # 2. If region (extent=) is not specified, filter invalid data
         #/-----------------------------------------------------------------------------\
         if self.extent is None:
-
             if 'valid_min' in lon0.ncattrs():
                 lon_range = [lon0.getncattr('valid_min'), lon0.getncattr('valid_max')]
-                lat_range = [lat0.getncattr('valid_min'), lat0.getncattr('valid_max')]
+                lat_range = [lon0.getncattr('valid_min'), lon0.getncattr('valid_max')]
             else:
                 lon_range = [-180.0, 180.0]
-                lat_range = [-90.0, 90.0]
+                lat_range = [-90.0 , 90.0]
 
         else:
-
-            lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
-            lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
+            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
+            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
 
         lon = get_data_nc(lon0)
         lat = get_data_nc(lat0)
 
-        logic = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
-        lon   = lon[logic]
-        lat   = lat[logic]
+        logic = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+        if not self.keep_dims:
+            lon   = lon[logic]
+            lat   = lat[logic]
         #\-----------------------------------------------------------------------------/
 
         # solar geometries
@@ -185,15 +207,17 @@ class viirs_03:
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
         #/-----------------------------------------------------------------------------\
-        sza0_data = get_data_nc(sza0)
-        saa0_data = get_data_nc(saa0)
-        vza0_data = get_data_nc(vza0)
-        vaa0_data = get_data_nc(vaa0)
 
-        sza = sza0_data[logic]
-        saa = saa0_data[logic]
-        vza = vza0_data[logic]
-        vaa = vaa0_data[logic]
+        sza = get_data_nc(sza0)
+        saa = get_data_nc(saa0)
+        vza = get_data_nc(vza0)
+        vaa = get_data_nc(vaa0)
+
+        if not self.keep_dims:
+            sza = sza[logic]
+            saa = saa[logic]
+            vza = vza[logic]
+            vaa = vaa[logic]
 
         f.close()
         #\-----------------------------------------------------------------------------/
@@ -258,6 +282,7 @@ class viirs_l1b:
         extent=     : list, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
         bands=      : list, default=None, a Python list of strings of specific band names. By default, all bands are extracted
         verbose=    : bool, default=False, verbosity tag
+        keep_dims=  : bool, default=False, set to True to get full granule, False to apply geomask of extent
 
     Output:
         self.data
@@ -270,16 +295,18 @@ class viirs_l1b:
     ID = 'VIIRS Level 1b Calibrated Radiance'
 
 
-    def __init__(self,               \
-                 fnames,             \
+    def __init__(self, \
+                 fnames     = None,  \
                  f03        = None,  \
                  extent     = None,  \
                  bands      = None,  \
+                 keep_dims  = False, \
                  verbose    = False):
 
         self.fnames     = fnames      # Python list of netCDF filenames
         self.f03        = f03         # geolocation class object created using the `viirs_03` reader
         self.bands      = bands       # Python list of bands to extract information
+        self.keep_dims  = keep_dims   # retain 2D shape; if True -> f03 mask is not applied
 
 
         filename = os.path.basename(fnames[0]).lower()
@@ -298,9 +325,9 @@ class viirs_l1b:
         elif ('02mod' in filename) or ('02dnb' in filename):
             self.resolution = 0.75
             if bands is None:
-                self.bands = list(VIIRS_L1B_MOD_BANDS.keys())
+                self.bands = list(VIIRS_L1B_MOD_DEFAULT_BANDS.keys())
                 if verbose:
-                    msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_MOD_BANDS
+                    msg = 'Message [viirs_l1b]: Data will be extracted for the following bands %s' % VIIRS_L1B_MOD_DEFAULT_BANDS
 
             elif (bands is not None) and not (set(bands).issubset(set(VIIRS_L1B_MOD_BANDS.keys()))):
 
@@ -380,12 +407,7 @@ class viirs_l1b:
         # Calculate 1. radiance, 2. reflectance from the raw data
         #/-----------------------------------------------------------------------------\
 
-        if self.f03 is not None:
-            mask = self.f03.logic[get_fname_pattern(fname)]['mask']
-            rad  = np.zeros((len(self.bands), mask[mask==True].size))
-            ref  = np.zeros((len(self.bands), mask[mask==True].size))
-
-        else:
+        if (self.keep_dims) or (self.f03 is None):
             rad = np.zeros((len(self.bands),
                            f.groups['observation_data'].variables[self.bands[0]].shape[0],
                            f.groups['observation_data'].variables[self.bands[0]].shape[1]))
@@ -393,31 +415,39 @@ class viirs_l1b:
                            f.groups['observation_data'].variables[self.bands[0]].shape[0],
                            f.groups['observation_data'].variables[self.bands[0]].shape[1]))
 
+        else:
+            mask = self.f03.logic[get_fname_pattern(fname)]['mask']
+            rad  = np.zeros((len(self.bands), mask.sum()))
+            ref  = np.zeros((len(self.bands), mask.sum()))
+
+
         wvl = np.zeros(len(self.bands), dtype='uint16')
 
-        # Calculate 1. radiance, 2. reflectance from the raw data
+        ## Calculate 1. radiance, 2. reflectance from the raw data
         #\-----------------------------------------------------------------------------/
         for i in range(len(self.bands)):
 
             nc_dset = f.groups['observation_data'].variables[self.bands[i]]
-            data = self._mask_flags(nc_dset)
-            if self.f03 is not None:
+            data = self._remove_flags(nc_dset)
+            if not self.keep_dims:
                 data = data[mask]
 
             # apply scaling, offset, and unit conversions
-            # add_offset is usually 0. for VIIRS solar bands
-            rad0 = (data - nc_dset.getncattr('radiance_add_offset')) * nc_dset.getncattr('radiance_scale_factor')
+            # add_offset is usually 0 for VIIRS solar bands
+            if hasattr(nc_dset, 'radiance_add_offset'):
+                rad0 = (data - nc_dset.getncattr('radiance_add_offset')) * nc_dset.getncattr('radiance_scale_factor') # radiance
+                ref[i] = (data - nc_dset.getncattr('add_offset')) * nc_dset.getncattr('scale_factor') # reflectance
 
-            # if nc_dset.getncattr('radiance_units').endswith('micrometer'):
+            else: # naming convention changes for emissive bands
+                rad0 = (data - nc_dset.getncattr('add_offset')) * nc_dset.getncattr('scale_factor') # radiance
+                ref[i] = np.full(ref[i].shape, -99, dtype='int8') # make reflectance -99 for emissive bands
+
             rad0 /= 1000. # from <per micron> to <per nm>
             rad[i] = rad0
-
-            ref[i] = (data - nc_dset.getncattr('add_offset')) * nc_dset.getncattr('scale_factor')
             wvl[i] = VIIRS_ALL_BANDS[self.bands[i]]
 
         f.close()
         #\-----------------------------------------------------------------------------/
-
         if hasattr(self, 'data'):
             self.data['wvl'] = dict(name='Wavelengths', data=np.hstack((self.data['wvl']['data'], wvl)), units='nm')
             self.data['rad'] = dict(name='Radiance'   , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
@@ -425,9 +455,9 @@ class viirs_l1b:
 
         else:
             self.data = {}
-            self.data['wvl'] = dict(name='Wavelengths', data=wvl, units='nm')
-            self.data['rad'] = dict(name='Radiance'   , data=rad, units='W/m^2/nm/sr')
-            self.data['ref'] = dict(name='Reflectance', data=ref, units='N/A')
+            self.data['wvl'] = dict(name='Wavelengths', data=wvl       , units='nm')
+            self.data['rad'] = dict(name='Radiance'   , data=rad       , units='W/m^2/nm/sr')
+            self.data['ref'] = dict(name='Reflectance', data=ref       , units='N/A')
 
 
     def save_h5(self, fname):
@@ -436,8 +466,6 @@ class viirs_l1b:
         for key in self.data.keys():
             f[key] = self.data[key]['data']
         f.close()
-
-
 
 
 
