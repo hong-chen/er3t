@@ -532,6 +532,10 @@ def read_geometa(content):
                 data0['Satellite']  = 'NOAA-20'
                 data0['Instrument'] = 'VIIRS'
                 data0['Orbit']      = 'Ascending'
+            elif 'VJ203' in data0_[0].split('.')[0]:
+                data0['Satellite']  = 'NOAA-21'
+                data0['Instrument'] = 'VIIRS'
+                data0['Orbit']      = 'Ascending'
             elif 'VNP03' in data0_[0].split('.')[0]:
                 data0['Satellite']  = 'S-NPP'
                 data0['Instrument'] = 'VIIRS'
