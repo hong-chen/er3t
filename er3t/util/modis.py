@@ -393,6 +393,10 @@ class modis_l1b:
                 lat0  = f.select('Latitude')
                 lon0  = f.select('Longitude')
 
+            # band info
+            band_numbers = list(f.select('Band_250M')[:])
+            band_dict = dict(zip(band_numbers, np.arange(0, len(band_numbers))))
+
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
             raw0      = f.select('EV_250_RefSB')
             uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
@@ -449,8 +453,8 @@ class modis_l1b:
             uct0      = np.vstack([uct0_250, uct0_500])
 
             # band info
-            band_numbers = f.select('Band_250M')[:] + f.select('Band_500M')[:]
-            band_dict = dict(zip(band_numbers, np.arange(0, band_numbers.size)))
+            band_numbers = list(f.select('Band_250M')[:]) + list(f.select('Band_500M')[:])
+            band_dict = dict(zip(band_numbers, np.arange(0, len(band_numbers))))
 
             do_region = True
 
