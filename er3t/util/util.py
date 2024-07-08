@@ -119,8 +119,8 @@ def send_email(
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, [receiver], msg.as_string())
         server.quit()
-    except:
-        raise OSError("Error [send_email]: Failed to send the email.")
+    except Exception as err:
+        raise OSError(err, "Error [send_email]: Failed to send the email.")
 
 
 
@@ -429,11 +429,11 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
     else:
         Nx, Ny = NxNy
@@ -500,11 +500,11 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
 
         lon_1d0 = np.linspace(extent[0], extent[1], Nx+1)
@@ -747,7 +747,7 @@ def downscale(ndarray, new_shape, operation='mean'):
         ndarray: numpy array, downscaled array
     """
     operation = operation.lower()
-    if not operation in ['sum', 'mean', 'max']:
+    if operation not in ['sum', 'mean', 'max']:
         raise ValueError('Error [downscale]: Operation of \'%s\' not supported.' % operation)
     if ndarray.ndim != len(new_shape):
         raise ValueError("Error [downscale]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))

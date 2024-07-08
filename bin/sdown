@@ -395,7 +395,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 run(date=date_x,
                     start_dt_hhmm=start_dt,
                     end_dt_hhmm=end_dt,
-                    extent=extent,
+                    lons=llons,
+                    lats=llats,
                     fdir_out=fdir_out_dt,
                     nrt=nrt,
                     iou=iou,
@@ -405,16 +406,16 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
 
 
-def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_extent, products, verbose):
+def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose):
 
     if focus_extent is not None:
-        lon0 = np.linspace(focus_extent[0], focus_extent[1], 100)
-        lat0 = np.linspace(focus_extent[2], focus_extent[3], 100)
-    else:
-        lon0 = np.linspace(extent[0], extent[1], 100)
-        lat0 = np.linspace(extent[2], extent[3], 100)
+        lons = np.linspace(focus_extent[0], focus_extent[1], 200)
+        lats = np.linspace(focus_extent[2], focus_extent[3], 200)
+    # else: # disabled since we are now pre-calculating lons and lats
+    #     lons = np.linspace(extent[0], extent[1], 100)
+    #     lats = np.linspace(extent[2], extent[3], 100)
 
-    lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
+    lon, lat = np.meshgrid(lons, lats, indexing='ij')
 
     references = []
     fnames = {}
