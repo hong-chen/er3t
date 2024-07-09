@@ -683,7 +683,7 @@ if __name__ == '__main__':
                                   parallel=args.parallel,
                                   verbose=args.verbose)
 
-        exec_stop_dt = datetime.datetime.now() # to time sdown
-        exec_total_time = exec_stop_dt - exec_start_dt
-        sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs = er3t.util.util.format_time(exec_total_time.total_seconds())
-        print('\n\nTotal Execution Time: {}:{}:{}.{}\n\n'.format(sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs))
+    exec_stop_dt = datetime.datetime.now() # to time sdown
+    exec_total_time = exec_stop_dt - exec_start_dt
+    sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs = er3t.util.util.format_time(exec_total_time.total_seconds())
+    print('\n\nTotal Execution Time: {}:{}:{}.{}\n\n'.format(sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs))
