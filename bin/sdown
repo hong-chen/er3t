@@ -359,7 +359,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             # need to create dirs and write metadata before
             fdir_out_dt_list = []
             for date_x in date_list: # download products date by date
-                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y-%m-%d')) # save files in dirs with dates specified
                 if not os.path.exists(fdir_out_dt):
                     os.makedirs(fdir_out_dt)
 
@@ -379,7 +379,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         else: # run as usual
             for date_x in date_list: # download products date by date
-                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y-%m-%d')) # save files in dirs with dates specified
                 if not os.path.exists(fdir_out_dt):
                     os.makedirs(fdir_out_dt)
 
