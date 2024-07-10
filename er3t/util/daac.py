@@ -58,7 +58,7 @@ def get_token_earthdata():
     try:
         token = os.environ['EARTHDATA_TOKEN']
     except KeyError:
-        token = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImhvY2g0MjQwIiwiZXhwIjoxNzE5ODUyMDk1LCJpYXQiOjE3MTQ2NjgwOTUsImlzcyI6IkVhcnRoZGF0YSBMb2dpbiJ9.i6BQ5szhiJeVBF6rmAw0ghAjDXZaZzQqGb_JnCKAkWBOyCfEkMfnOBX99K3WwX8jX0hck_lQNI64-2u3vJH9ZUBZib4gXdAqE-nL19BKFmD9FooHBlfBAlrIbSItRq2yzEV1Tf1OUa6id_ptfNT3zSI4U6CchfSxkbdfz-S5JV3tvLLvF_ubDcHV2-7iTumuSEPDfJNreP234Akl7gOtEDmS2hiVM7DIpWJhI9TcR1SdbhXoxhrgV7_g5j8NWED1Lm2_b5-yHXhhKpc9uQksw9eg5X3MGnwSpY6evkhba5jsBV9XWd6tKmdFxOBpX5OKP41J4lOCvPAHGWnUNec6JQ'
+        token = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImhvY2g0MjQwIiwiZXhwIjoxNzI1NzU3NjU3LCJpYXQiOjE3MjA1NzM2NTcsImlzcyI6IkVhcnRoZGF0YSBMb2dpbiJ9.KVEK8Q9P4CjDROau0FgoXXpDj3Ey9xjPWhOQ3bH9APsjEONWT5mjIfukam_wZbNrN54eMcOn6bxMSnQ26EYZHLP4s6Gn7xmc0jO81OskMDLs6FSbvqXyBLNHDRV1mw4w9enrkUmZMyQohsBmphP57eyGIFiHmPFMgE_F1E2wFM8cGPUz7srCCefLe9wTLQ3ujkJlTKdRZC6UPEEMOheei0cBW7jIJAhcHLAiCsXdH7hjiCJfLBd9Wif2rEWUKcnKnIVyjGKBC7z8zopZ-LcEwyBo9zcZ_ksQpKcA0BOlmmI-vt8WZvmh_7qLdbLIigCECCDUwHngzZ7BfPZk78PNzQ'
 
         msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
         warnings.warn(msg)
