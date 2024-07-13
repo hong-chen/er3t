@@ -17,7 +17,7 @@ __all__ = ['check_equal', 'check_equidistant', 'send_email', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
-           'get_pacq_dts', 'format_time']
+           'get_pacq_dts', 'format_time', 'parse_geojson', 'region_parser']
 
 
 
@@ -1043,6 +1043,63 @@ def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
     lat1 = output[..., 1]
 
     return lon1, lat1
+
+
+def parse_geojson(geojson_fpath):
+
+    import json
+    with open(geojson_fpath, 'r') as f:
+        data = json.load(f)
+        # n_coords = len(data['features'][0]['geometry']['coordinates'][0])
+
+    coords = data['features'][0]['geometry']['coordinates']
+
+    lons = np.array(coords[0])[:, 0]
+    lats = np.array(coords[0])[:, 1]
+    return lons, lats
+
+
+def region_parser(extent, lons, lats, geojson_fpath):
+
+    if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
+        print('Error [sdown]: Must provide either extent or lon/lat coordinates or a geoJSON file')
+        sys.exit()
+
+    if (extent is not None) and ((lats is not None) or (lons is not None)) and (geojson_fpath is not None):
+        print('Warning [sdown]: Received multiple regions of interest. Only `extent` will be used.')
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
+
+
+    if (extent is not None):
+        if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
+            print('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+            sys.exit()
+
+        # check to make sure extent is correct
+        if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
+            msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
+            print(msg)
+            sys.exit()
+
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
+
+    elif (lats is not None) and (lons is not None):
+        if ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
+            llons = np.linspace(lons[0], lons[1], 100)
+            llats = np.linspace(lats[0], lats[1], 100)
+            return llons, llats
+        else:
+            print('Error [sdown]: Must provide two coorect bounds each for `--lons` and `--lats`')
+            sys.exit()
+
+
+    elif (geojson_fpath is not None):
+        llons, llats = parse_geojson(geojson_fpath)
+        return llons, llats
 
 
 def get_pacq_dts(fdir):

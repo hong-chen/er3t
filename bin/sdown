@@ -48,7 +48,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 import numpy as np
 import datetime
 
-
+import er3t.util.util
 import er3t.util.daac
 import er3t.common
 from er3t.util.logger import Ear3tLogger
@@ -85,428 +85,6 @@ _noaa21_viirs_start_date = datetime.datetime(2023, 2, 10)
 # Near Real Time (NRT) is available only for the most recent ~ 7 days
 _nrt_oldest_dt = _today_dt - datetime.timedelta(days=7)
 
-_sat_tags_support_ = {
-
-        'MODRGB': {
-                'dataset_tag': 'MODRGB',
-                   'dict_key': 'mod_rgb',
-                'description': 'Terra MODIS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
-
-        'MYDRGB': {
-                'dataset_tag': 'MYDRGB',
-                   'dict_key': 'myd_rgb',
-                'description': 'Aqua MODIS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
-
-        'MOD03': {
-                'dataset_tag': '61/MOD03',
-                   'dict_key': 'mod_03',
-                'description': 'Terra MODIS Geolocation Fields Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD03.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD03.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MYD03': {
-                'dataset_tag': '61/MYD03',
-                   'dict_key': 'myd_03',
-                'description': 'Aqua MODIS Geolocation Fields Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD03.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD03.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MOD02QKM': {
-                'dataset_tag': '61/MOD02QKM',
-                   'dict_key': 'mod_02',
-                'description': 'Terra MODIS Level 1b (250m) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD02QKM.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02QKM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MYD02QKM': {
-                'dataset_tag': '61/MYD02QKM',
-                   'dict_key': 'myd_02',
-                'description': 'Aqua MODIS Level 1b (250m) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD02QKM.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02QKM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MOD02HKM': {
-                'dataset_tag': '61/MOD02HKM',
-                   'dict_key': 'mod_02',
-                'description': 'Terra MODIS Level 1b (500m) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD02HKM.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02HKM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MYD02HKM': {
-                'dataset_tag': '61/MYD02HKM',
-                   'dict_key': 'myd_02',
-                'description': 'Aqua MODIS Level 1b (250m) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD02HKM.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02HKM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MOD021KM': {
-                'dataset_tag': '61/MOD021KM',
-                   'dict_key': 'mod_02',
-                'description': 'Terra MODIS Level 1b (1km) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD021KM.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD021KM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MYD021KM': {
-                'dataset_tag': '61/MYD021KM',
-                   'dict_key': 'myd_02',
-                'description': 'Aqua MODIS Level 1b (1km) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD021KM.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD021KM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MOD06_L2': {
-                'dataset_tag': '61/MOD06_L2',
-                   'dict_key': 'mod_l2',
-                'description': 'Terra MODIS Atmosphere Level 2 Cloud Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD06_L2.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % _date_today_,
-                },
-
-        'MYD06_L2': {
-                'dataset_tag': '61/MYD06_L2',
-                   'dict_key': 'myd_l2',
-                'description': 'Aqua MODIS Atmosphere Level 2 Cloud Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD06_L2.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % _date_today_,
-                },
-
-        'MOD35_L2': {
-                'dataset_tag': '61/MOD35_L2',
-                   'dict_key': 'mod_l2',
-                'description': 'Terra MODIS Atmosphere Level 2 Cloud Mask',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD35_L2.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'Ackerman, S., P. Menzel, R. Frey, B.Baum, 2017. MODIS Atmosphere L2 Cloud Mask Product. NASA MODIS Adaptive Processing System, Goddard Space Flight Center, [doi:10.5067/MODIS/MOD35_L2.061'
-                },
-
-        'MYD35_L2': {
-                'dataset_tag': '61/MYD35_L2',
-                   'dict_key': 'myd_l2',
-                'description': 'Aqua MODIS Atmosphere Level 2 Cloud Mask',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD35_L2.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'Ackerman, S., P. Menzel, R. Frey, B.Baum, 2017. MODIS Atmosphere L2 Cloud Mask Product. NASA MODIS Adaptive Processing System, Goddard Space Flight Center, [doi:10.5067/MODIS/MYD35_L2.061]'
-                },
-
-        'MCD43A3': {
-                'dataset_tag': '61/MCD43A3',
-                   'dict_key': 'mod_43',
-                'description': 'MODIS BRDF/Albedo Level 3 Surface Product',
-                    'website': 'https://doi.org/10.5067/MODIS/MCD43A3.061',
-                  'satellite': 'Terra & Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: %s), 2021.' % _date_today_,
-                },
-
-        'VNP02IMG': {
-                'dataset_tag': '5200/VNP02IMG',
-                   'dict_key': 'vnp_02',
-                'description': 'Suomi-NPP VIIRS Level 1b (375m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VNP02IMG.002',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2016-09-01. VIIRS/NPP Imagery Resolution 6-Min L1B Swath 375m. Version 1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP02IMG.001',
-                },
-
-        'VJ102IMG': {
-                'dataset_tag': '5201/VJ102IMG',
-                   'dict_key': 'vj1_02',
-                'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (375m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ102IMG.021',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Imagery Resolution 6-Min L1B Swath 375m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102IMG.002',
-                },
-
-         'VJ202IMG': {
-                'dataset_tag': '5200/VJ202IMG',
-                   'dict_key': 'vj2_02',
-                'description': 'JPSS2 (NOAA-21) VIIRS Level 1b (375m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ202IMG.021',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS2 Imagery Resolution 6-Min L1B Swath 375m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ202IMG.002',
-                },
-
-        'VNP02MOD': {
-                'dataset_tag': '5200/VNP02MOD',
-                   'dict_key': 'vnp_02',
-                'description': 'Suomi-NPP VIIRS Level 1b (750m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VNP02MOD.002',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2021-07-12. VIIRS/NPP Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750 m . Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP02MOD.002.',
-                },
-
-        'VJ102MOD': {
-                'dataset_tag': '5201/VJ102MOD',
-                   'dict_key': 'vj1_02',
-                'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (750m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ102MOD.021',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution 6-Min L1B Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102MOD.002',
-                },
-
-        'VJ202MOD': {
-                'dataset_tag': '5200/VJ202MOD',
-                   'dict_key': 'vj2_02',
-                'description': 'JPSS2 (NOAA-21) VIIRS Level 1b (750m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ202MOD.021',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS2 Moderate Resolution 6-Min L1B Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ202MOD.002',
-                },
-
-        'VNP03IMG': {
-                'dataset_tag': '5200/VNP03IMG',
-                   'dict_key': 'vnp_03',
-                'description': 'Suomi-NPP VIIRS (375m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VNP03IMG.002',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. VIIRS/NPP Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP03IMGLL.001',
-                },
-
-        'VJ103IMG': {
-                'dataset_tag': '5201/VJ103IMG',
-                   'dict_key': 'vj1_03',
-                'description': 'JPSS1 (NOAA-20) VIIRS (375m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ103IMG.021',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. VIIRS/JPSS1 Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103IMG.021',
-                },
-
-        'VJ203IMG': {
-                'dataset_tag': '5200/VJ203IMG',
-                   'dict_key': 'vj2_03',
-                'description': 'JPSS2 (NOAA-21) VIIRS (375m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ203IMG.021',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. VIIRS/JPSS2 Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ203IMG.021',
-                },
-
-        'VNP03MOD': {
-                'dataset_tag': '5200/VNP03MOD',
-                   'dict_key': 'vnp_03',
-                'description': 'Suomi-NPP VIIRS (750m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VNP03MOD.002',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2021-07-12. VIIRS/NPP Moderate Resolution Terrain-Corrected Geolocation L1 6-Min Swath 750 m. Version 2. LAADS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP03MOD.002',
-                },
-
-        'VJ103MOD': {
-                'dataset_tag': '5201/VJ103MOD',
-                   'dict_key': 'vj1_03',
-                'description': 'JPSS1 (NOAA-20) VIIRS (750m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ103MOD.021',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103MOD.002',
-                },
-
-         'VJ203MOD': {
-                'dataset_tag': '5200/VJ203MOD',
-                   'dict_key': 'vj2_03',
-                'description': 'JPSS2 (NOAA-21) VIIRS (750m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ203MOD.021',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ203MOD.002',
-                },
-
-        'VNPRGB': {
-                'dataset_tag': '5200/VNPRGB',
-                   'dict_key': 'vnp_rgb',
-                'description': 'Suomi-NPP VIIRS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
-
-        'VJ1RGB': {
-                'dataset_tag': '5201/VJ1RGB',
-                   'dict_key': 'vj1_rgb',
-                'description': 'JPSS1 (NOAA-20) VIIRS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
-
-        'VJ2RGB': {
-                'dataset_tag': '5200/VJ2RGB',
-                   'dict_key': 'vj2_rgb',
-                'description': 'JPSS2 (NOAA-21) VIIRS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
-
-        'VNP_CLDPROP_L2': {
-                'dataset_tag': '5111/CLDPROP_L2_VIIRS_SNPP',
-                   'dict_key': 'vnp_l2',
-                'description': 'Suomi-NPP VIIRS Cloud Properties Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/CLDPROP_L2_VIIRS_SNPP.011',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/SNPP Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
-                },
-
-        'VJ1_CLDPROP_L2': {
-                'dataset_tag': '5111/CLDPROP_L2_VIIRS_NOAA20',
-                   'dict_key': 'vj1_l2',
-                'description': 'JPSS1 (NOAA-20) VIIRS Cloud Properties Product',
-                    'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA20',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/JPSS1 Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
-                },
-
-        ## commenting this out as cloud products for NOAA-21 are not available yet
-        # 'VJ2_CLDPROP_L2': {
-        #         'dataset_tag': '5111/CLDPROP_L2_VIIRS_NOAA21',
-        #            'dict_key': 'vj2_l2',
-        #         'description': 'JPSS2 (NOAA-21) VIIRS Cloud Properties Product',
-        #             'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA21',
-        #           'satellite': 'NOAA21',
-        #          'instrument': 'VIIRS',
-        #           'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/JPSS2 Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
-        #         },
-
-        'oco2_L1bScND': {
-                'dataset_tag': 'oco2_L1bScND',
-                   'dict_key': 'oco_l1b',
-                'description': 'OCO-2 L1B Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/6O3GEUK7U2JG',
-                  'satellite': 'OCO-2',
-                 'instrument': 'OCO-2',
-                  'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 1B calibrated, geolocated science spectra, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6O3GEUK7U2JG (last access: %s), 2019.' % _date_today_,
-                },
-
-        'oco2_L2MetND': {
-                'dataset_tag': 'oco2_L2MetND',
-                   'dict_key': 'oco_met_l2',
-                'description': 'OCO-2 L2 Meteorological Parameters Product',
-                    'website': 'https://doi.org/10.5067/OJZZW0LIGSDH',
-                  'satellite': 'OCO-2',
-                 'instrument': 'OCO-2',
-                  'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 meteorological parameters interpolated from global assimilation model for each sounding, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/OJZZW0LIGSDH (last access: %s), 2019.' % _date_today_,
-                },
-
-        'oco2_L2StdND': {
-                'dataset_tag': 'oco2_L2StdND',
-                   'dict_key': 'oco_ret_l2',
-                'description': 'OCO-2 L2 XCO2 Retrieval Product',
-                    'website': 'https://doi.org/10.5067/6SBROTA57TFH',
-                  'satellite': 'OCO-2',
-                 'instrument': 'OCO-2',
-                  'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 geolocated XCO2 retrievals results, physical model, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6SBROTA57TFH (last access: %s), 2020.' % _date_today_,
-                },
-
-        }
-#\----------------------------------------------------------------------------/#
-
-
-
-def parse_geojson(geojson_fpath):
-    with open(geojson_fpath, 'r') as f:
-        data = json.load(f)
-        # n_coords = len(data['features'][0]['geometry']['coordinates'][0])
-
-    coords = data['features'][0]['geometry']['coordinates']
-
-    lons = np.array(coords[0])[:, 0]
-    lats = np.array(coords[0])[:, 1]
-    return lons, lats
-
-
-def region_parser(extent, lons, lats, geojson_fpath):
-
-    if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
-        satlogger.error('Error [sdown]: Must provide either extent or lon/lat coordinates or a geoJSON file')
-        sys.exit()
-
-    if (extent is not None) and ((lats is not None) or (lons is not None)) and (geojson_fpath is not None):
-        satlogger.warn('Warning [sdown]: Received multiple regions of interest. Only `extent` will be used.')
-        llons = np.linspace(extent[0], extent[1], 100)
-        llats = np.linspace(extent[2], extent[3], 100)
-        return llons, llats
-
-
-    if (extent is not None):
-        if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
-            satlogger.error('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
-            sys.exit()
-
-        # check to make sure extent is correct
-        if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-            msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
-            satlogger.error(msg)
-            sys.exit()
-
-        llons = np.linspace(extent[0], extent[1], 100)
-        llats = np.linspace(extent[2], extent[3], 100)
-        return llons, llats
-
-    elif (lats is not None) and (lons is not None):
-        if ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
-            llons = np.linspace(lons[0], lons[1], 100)
-            llats = np.linspace(lats[0], lats[1], 100)
-            return llons, llats
-        else:
-            satlogger.error('Error [sdown]: Must provide two coorect bounds each for `--lons` and `--lats`')
-            sys.exit()
-
-
-    elif (geojson_fpath is not None):
-        llons, llats = parse_geojson(geojson_fpath)
-        return llons, llats
-
 
 def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, latest_nhours, iou, focus_extent, geojson_fpath, products, verbose):
 
@@ -516,7 +94,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
     ########################################################################################################
 
     if products is None:
-        msg = 'Error [sdown]: Please specify a product to download. \nWe currently support the following:\n{}'.format('\n'.join(_sat_tags_support_.keys()))
+        msg = 'Error [sdown]: Please specify a product to download. \nWe currently support the following:\n{}'.format('\n'.join(er3t.common._sat_tags_support_.keys()))
         satlogger.error(msg)
         sys.exit()
 
@@ -545,13 +123,13 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 sys.exit()
 
         elif geojson_fpath is not None:
-            lons0, lats0 = parse_geojson(geojson_fpath)
+            lons0, lats0 = er3t.util.util.parse_geojson(geojson_fpath)
             if (focus_extent[0] < np.nanmin(lons0)) or (focus_extent[1] > np.nanmax(lons0)) or (focus_extent[2] < np.nanmin(lats0)) or (focus_extent[3] > np.nanmax(lats0)):
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided in the geojson file {}'.format(focus_extent, geojson_fpath))
                 sys.exit()
 
 
-    llons, llats = region_parser(extent, lons, lats, geojson_fpath)
+    llons, llats = er3t.util.util.region_parser(extent, lons, lats, geojson_fpath)
 
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
@@ -901,7 +479,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                     fnames[product_info['dict_key']] += p_fnames
 
         else:
-            msg = 'Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
+            msg = 'Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(er3t.common._sat_tags_support_.keys()))
             satlogger.error(msg)
             raise OSError()
 
@@ -932,8 +510,8 @@ def get_sat_info_from_product_tag(tag_):
     # make all variable names (keys) upper case
     #/----------------------------------------------------------------------------\#
     tags_support = {}
-    for key in _sat_tags_support_.keys():
-        tags_support[key.upper()] = _sat_tags_support_[key]
+    for key in er3t.common._sat_tags_support_.keys():
+        tags_support[key.upper()] = er3t.common._sat_tags_support_[key]
     #\----------------------------------------------------------------------------/#
 
     # return satellite product information
@@ -942,7 +520,7 @@ def get_sat_info_from_product_tag(tag_):
     if (tag in tags_support.keys()):
         return tags_support[tag]
     else:
-        msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (tag_, '\n'.join(_sat_tags_support_.keys()))
+        msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (tag_, '\n'.join(er3t.common._sat_tags_support_.keys()))
         satlogger.error(msg)
         raise OSError()
     #\----------------------------------------------------------------------------/#
