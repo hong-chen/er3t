@@ -497,9 +497,6 @@ class viirs_cldprop_l2:
         self.data
                 ['lon']
                 ['lat']
-                ['ret_std_conf_qa'] => 0: no confidence (do not use), 1: marginal, 2: good, 3: very good
-                ['cld_type_qa']     => 0: no cloud mask, 1: no cloud, 2: water cloud, 3: ice cloud, 4: unknown cloud
-                ['bowtie_qa']       => 0: normal pixel, 1: bowtie pixel
                 ['cloud_mask_flag'] => 0: not determined, 1: determined
                 ['fov_qa_cat']      => 0: cloudy, 1: uncertain, 2: probably clear, 3: confident clear
                 ['day_night_flag']  => 0: night, 1: day
@@ -508,6 +505,12 @@ class viirs_cldprop_l2:
                 ['land_water_cat']  => 0: water, 1: coastal, 2: desert, 3: land
                 ['lon_5km']
                 ['lat_5km']
+        self.qa
+                ['ret_std_conf_qa'] => 0: no confidence (do not use), 1: marginal, 2: good, 3: very good
+                ['cld_type_qa']     => 0: no cloud mask, 1: no cloud, 2: water cloud, 3: ice cloud, 4: unknown cloud
+                ['bowtie_qa']       => 0: normal pixel, 1: bowtie pixel
+                ...
+                more available. refer documentation below.
 
     References: (Product Page) https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA20
                 (User Guide)   https://ladsweb.modaps.eosdis.nasa.gov/api/v2/content/archives/Document%20Archive/Science%20Data%20Product%20Documentation/L2_Cloud_Properties_UG_v1.2_March_2021.pdf
@@ -517,11 +520,19 @@ class viirs_cldprop_l2:
 
     ID = 'VIIRS Level 2 Cloud Properties and Mask'
 
-    def __init__(self, fnames, f03=None, extent=None, maskvars=False):
+    def __init__(self,
+                 fnames,
+                 f03=None,
+                 extent=None,
+                 maskvars=False,
+                 quality_assurance=0,
+                 keep_dims=True):
 
-        self.fnames = fnames
-        self.f03    = f03
-        self.extent = extent
+        self.fnames            = fnames    # Python list of the file path of the original HDF4 files
+        self.f03               = f03       # geolocation class object created using the `viirs_03` reader
+        self.extent            = extent    # specified region [westmost, eastmost, southmost, northmost]
+        self.quality_assurance = quality_assurance # None or 0 = no QA; 1 = some QA; 2 = all QA (lot of data)
+        self.keep_dims         = keep_dims # flag; if false -> convert to 1D; true -> retain 2D granule data
 
         for fname in self.fnames:
             if maskvars:
@@ -545,14 +556,17 @@ class viirs_cldprop_l2:
             snow_ice_flag   = data[:, 2]
             sunglint_flag   = data[:, 3]
             day_night_flag  = data[:, 4]
-            fov_qa_cat      = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3
+            fov_cat      = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3
             cloud_mask_flag = data[:, 7]
-            return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat
+
+            if self.keep_dims:
+                return cloud_mask_flag.reshape(self.data_shape), day_night_flag.reshape(self.data_shape), sunglint_flag.reshape(self.data_shape), snow_ice_flag.reshape(self.data_shape), land_water_cat.reshape(self.data_shape), fov_cat.reshape(self.data_shape)
+            return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_cat
 
 
-    def quality_assurance(self, dbyte, byte=0):
+    def quality_assurance_byte0(self, dbyte):
         """
-        Extract cloud mask QA data to determine quality
+        Extract cloud mask QA data to determine quality. Byte 0 only (spectral retrieval QA)
 
         Reference: VIIRS CLDPROP User Guide, Version 2.1, March 2021
         Filespec:  https://atmosphere-imager.gsfc.nasa.gov/sites/default/files/ModAtmo/dump_CLDPROP_L2_V011.txt
@@ -563,34 +577,48 @@ class viirs_cldprop_l2:
         data = np.unpackbits(dbyte, bitorder='big', axis=1)
 
         # process qa flags
-        if byte == 0: # byte 0 has spectral retrieval QA
+        # 1.6-2.1 retrieval QA
+        ret_1621      = data[:, 0] # 1621 Retrieval Outcome
+        ret_1621_conf = 2 * data[:, 1] + 1 * data[:, 2] # convert to a value between 0 and 3 confidence
+        ret_1621_data = data[:, 3] # 1621 Retrieval Spectral Data Availability QA
 
-            # 1.6-2.1 retrieval QA
-            ret_1621      = data[:, 0]
-            ret_1621_conf = 2 * data[:, 1] + 1 * data[:, 2] # convert to a value between 0 and 3 confidence
-            ret_1621_data = data[:, 3]
+        # VNSWIR-2.1 or Standard (std) Retrieval QA
+        ret_std      = data[:, 4] # Standard Retrieval Outcome
+        ret_std_conf = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3 confidence
+        ret_std_data = data[:, 7] # Standard Retrieval Spectral Data Availability QA
 
-            # VNSWIR-2.1 or Standard (std) retrieval QA
-            ret_std      = data[:, 4]
-            ret_std_conf = 2 * data[:, 5] + 1 * data[:, 6] # convert to a value between 0 and 3 confidence
-            ret_std_data = data[:, 7]
+        if self.keep_dims:
+            return ret_std.reshape(self.data_shape), ret_std_conf.reshape(self.data_shape), ret_std_data.reshape(self.data_shape), ret_1621.reshape(self.data_shape), ret_1621_conf.reshape(self.data_shape), ret_1621_data.reshape(self.data_shape)
+        return ret_std, ret_std_conf, ret_std_data, ret_1621, ret_1621_conf, ret_1621_data
 
-            return ret_std, ret_std_conf, ret_std_data, ret_1621, ret_1621_conf, ret_1621_data
 
-        elif byte == 1: # byte 1 has cloud QA
+    def quality_assurance_byte1(self, dbyte):
+        """
+        Extract cloud mask QA data to determine quality. Byte 1 only (cloud/sfc QA)
 
-            bowtie            = data[:, 0] # bow tie effect
-            cot_oob           = data[:, 1] # cloud optical thickness out of bounds
-            cot_bands         = 2 * data[:, 2] + 1 * data[:, 3] # convert to a value between 0 and 3
-            rayleigh          = data[:, 4] # whether rayleigh correction was applied
-            cld_type_process  = 4 * data[:, 5] + 2 * data[:, 6] + 1 * data[:, 7]
+        Reference: VIIRS CLDPROP User Guide, Version 2.1, March 2021
+        Filespec:  https://atmosphere-imager.gsfc.nasa.gov/sites/default/files/ModAtmo/dump_CLDPROP_L2_V011.txt
+        """
+        if dbyte.dtype != 'uint8':
+            dbyte = dbyte.astype('uint8')
 
-            return cld_type_process, rayleigh, cot_bands, cot_oob, bowtie
+        data = np.unpackbits(dbyte, bitorder='big', axis=1)
+
+        # process qa flags
+        bowtie            = data[:, 0] # bow tie effect
+        cot_oob           = data[:, 1] # cloud optical thickness out of bounds
+        cot_bands         = 2 * data[:, 2] + 1 * data[:, 3] # convert to a value between 0 and 3
+        rayleigh          = data[:, 4] # whether rayleigh correction was applied
+        cld_type_process  = 4 * data[:, 5] + 2 * data[:, 6] + 1 * data[:, 7]
+
+        if self.keep_dims:
+            return cld_type_process.reshape(self.data_shape), rayleigh.reshape(self.data_shape), cot_bands.reshape(self.data_shape), cot_oob.reshape(self.data_shape), bowtie.reshape(self.data_shape)
+        return cld_type_process, rayleigh, cot_bands, cot_oob, bowtie
 
 
     def read_mask(self, fname):
         """
-        Extract cloud mask variables from the file
+        Function to extract cloud mask variables from the file
         """
         try:
             from netCDF4 import Dataset
@@ -602,7 +630,6 @@ class viirs_cldprop_l2:
         f = Dataset(fname, 'r')
 
         cld_msk0       = f.groups['geophysical_data'].variables['Cloud_Mask']
-        qua_assurance0 = f.groups['geophysical_data'].variables['Quality_Assurance']
 
         #/----------------------------------------------------------------------------\#
         if self.extent is None:
@@ -620,8 +647,9 @@ class viirs_cldprop_l2:
             lon           = f.groups['geolocation_data'].variables['longitude'][...]
             logic_extent  = (lon >= lon_range[0]) & (lon <= lon_range[1]) & \
                             (lat >= lat_range[0]) & (lat <= lat_range[1])
-            lon           = lon[logic_extent]
-            lat           = lat[logic_extent]
+            if not self.keep_dims:
+                lon           = lon[logic_extent]
+                lat           = lat[logic_extent]
 
         else:
             lon          = self.f03.data['lon']['data']
@@ -630,25 +658,35 @@ class viirs_cldprop_l2:
 
         # Get cloud mask and flag fields
         #/-----------------------------\#
+
         cm_data = get_data_nc(cld_msk0)
-        qa_data = get_data_nc(qua_assurance0)
         cm = cm_data.copy()
-        qa = qa_data.copy()
-
         cm0 = cm[:, :, 0] # read only the first byte; rest will be supported in the future if needed
-        cm0 = np.array(cm0[logic_extent], dtype='uint8')
+        self.data_shape = cm0.shape # record shape for future
+
+        if not self.keep_dims:
+            cm0 = np.array(cm0[logic_extent], dtype='uint8')
+
         cm0 = cm0.reshape((cm0.size, 1))
-        cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm0)
+        cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_cat = self.extract_data(cm0)
 
-        qa0 = qa[:, :, 0] # read byte 0 for confidence QA (note that indexing is different from MODIS)
-        qa0 = np.array(qa0[logic_extent], dtype='uint8')
-        qa0 = qa0.reshape((qa0.size, 1))
-        _, ret_std_conf_qa, _, _, _, _ = self.quality_assurance(qa0, byte=0) # only get confidence
+        if (self.quality_assurance is not None) and (self.quality_assurance > 0):
+            qua_assurance0 = f.groups['geophysical_data'].variables['Quality_Assurance']
+            qa_data = get_data_nc(qua_assurance0)
+            qa = qa_data.copy()
+            qa0 = qa[:, :, 0] # read byte 0 for confidence QA (note that indexing is different from MODIS)
+            qa1 = qa[:, :, 1] # read byte 1 for confidence QA (note that indexing is different from MODIS)
 
-        qa1 = qa[:, :, 1] # read byte 1 for confidence QA (note that indexing is different from MODIS)
-        qa1 = np.array(qa1[logic_extent], dtype='uint8')
-        qa1 = qa1.reshape((qa1.size, 1))
-        cld_type_qa, _, _, _, bowtie_qa = self.quality_assurance(qa1, byte=1)
+
+            if not self.keep_dims:
+                qa0 = np.array(qa0[logic_extent], dtype='uint8')
+                qa1 = np.array(qa1[logic_extent], dtype='uint8')
+
+            qa0 = qa0.reshape((qa0.size, 1))
+            qa1 = qa1.reshape((qa1.size, 1))
+
+            ret_std_qa, ret_std_conf_qa, ret_std_data_qa, ret_1621_qa, ret_1621_conf_qa, ret_1621_data_qa = self.quality_assurance_byte0(qa0)
+            cld_type_qa, rayleigh_qa, cot_bands_qa, cot_oob_qa, bowtie_qa = self.quality_assurance_byte1(qa1)
 
         f.close()
         # -------------------------------------------------------------------------------------------------
@@ -658,34 +696,72 @@ class viirs_cldprop_l2:
 
             self.logic[fname] = {'0.75km':logic_extent}
 
-            self.data['lon']               = dict(name='Longitude',                        data=np.hstack((self.data['lon']['data'], lon)),                                 units='degrees')
-            self.data['lat']               = dict(name='Latitude',                         data=np.hstack((self.data['lat']['data'], lat)),                                 units='degrees')
-            self.data['ret_std_conf_qa']   = dict(name='QA standard retrieval confidence', data=np.hstack((self.data['ret_std_conf_qa']['data'], ret_std_conf_qa)),         units='N/A')
-            self.data['cld_type_qa']       = dict(name='QA cloud type processing path',    data=np.hstack((self.data['cld_type_qa']['data'], cld_type_qa)),                 units='N/A')
-            self.data['bowtie_qa']         = dict(name='QA bowtie pixel',                  data=np.hstack((self.data['bowtie_qa']['data'], bowtie_qa)),                     units='N/A')
+            self.data['lon']               = dict(name='Longitude',                        data=np.hstack((self.data['lon']['data'], lon)),                               units='degrees')
+            self.data['lat']               = dict(name='Latitude',                         data=np.hstack((self.data['lat']['data'], lat)),                               units='degrees')
             self.data['cloud_mask_flag']   = dict(name='Cloud mask flag',                  data=np.hstack((self.data['cloud_mask_flag']['data'], cloud_mask_flag)),         units='N/A')
-            self.data['fov_qa_cat']        = dict(name='FOV quality cateogry',             data=np.hstack((self.data['fov_qa_cat']['data'], fov_qa_cat)),                   units='N/A')
-            self.data['day_night_flag']    = dict(name='Day/night flag',                   data=np.hstack((self.data['day_night_flag']['data'], day_night_flag)),           units='N/A')
-            self.data['sunglint_flag']     = dict(name='Sunglint flag',                    data=np.hstack((self.data['sunglint_flag']['data'], sunglint_flag)),             units='N/A')
-            self.data['snow_ice_flag']     = dict(name='Snow/ice flag',                    data=np.hstack((self.data['snow_flag']['data'], snow_ice_flag)),                 units='N/A')
-            self.data['land_water_cat']    = dict(name='Land/water flag',                  data=np.hstack((self.data['land_water_cat']['data'], land_water_cat)),           units='N/A')
+            self.data['fov_cat']        = dict(name='FOV quality cateogry',                data=np.hstack((self.data['fov_cat']['data'], fov_cat)),                           units='N/A')
+            self.data['day_night_flag']    = dict(name='Day/night flag',                   data=np.hstack((self.data['day_night_flag']['data'], day_night_flag)),          units='N/A')
+            self.data['sunglint_flag']     = dict(name='Sunglint flag',                    data=np.hstack((self.data['sunglint_flag']['data'], sunglint_flag)),           units='N/A')
+            self.data['snow_ice_flag']     = dict(name='Snow/ice flag',                    data=np.hstack((self.data['snow_flag']['data'], snow_ice_flag)),           units='N/A')
+            self.data['land_water_cat']    = dict(name='Land/water category',              data=np.hstack((self.data['land_water_cat']['data'], land_water_cat)),          units='N/A')
 
         else:
             self.logic = {}
             self.logic[fname] = {'0.75km':logic_extent}
             self.data  = {}
 
-            self.data['lon']             = dict(name='Longitude',                        data=lon,             units='degrees')
-            self.data['lat']             = dict(name='Latitude',                         data=lat,             units='degrees')
-            self.data['ret_std_conf_qa'] = dict(name='QA standard retrieval confidence', data=ret_std_conf_qa, units='N/A')
-            self.data['cld_type_qa']     = dict(name='QA cloud type processing path',    data=cld_type_qa,     units='N/A')
-            self.data['bowtie_qa']       = dict(name='QA bowtie pixel',                  data=bowtie_qa,       units='N/A')
-            self.data['cloud_mask_flag'] = dict(name='Cloud mask flag',                  data=cloud_mask_flag, units='N/A')
-            self.data['fov_qa_cat']      = dict(name='FOV quality category',             data=fov_qa_cat,      units='N/A')
-            self.data['day_night_flag']  = dict(name='Day/night flag',                   data=day_night_flag,  units='N/A')
-            self.data['sunglint_flag']   = dict(name='Sunglint flag',                    data=sunglint_flag,   units='N/A')
-            self.data['snow_ice_flag']   = dict(name='Snow/ice flag',                    data=snow_ice_flag,   units='N/A')
-            self.data['land_water_cat']  = dict(name='Land/water category',              data=land_water_cat,  units='N/A')
+            self.data['lon']              = dict(name='Longitude',                        data=lon,              units='degrees')
+            self.data['lat']              = dict(name='Latitude',                         data=lat,              units='degrees')
+            self.data['cloud_mask_flag']  = dict(name='Cloud mask flag',                  data=cloud_mask_flag,  units='N/A')
+            self.data['fov_cat']          = dict(name='FOV quality category',             data=fov_cat,          units='N/A')
+            self.data['day_night_flag']   = dict(name='Day/night flag',                   data=day_night_flag,   units='N/A')
+            self.data['sunglint_flag']    = dict(name='Sunglint flag',                    data=sunglint_flag,    units='N/A')
+            self.data['snow_ice_flag']    = dict(name='Snow/ice flag',                    data=snow_ice_flag,    units='N/A')
+            self.data['land_water_cat']   = dict(name='Land/water category',              data=land_water_cat,   units='N/A')
+
+
+        # Save QA data if required
+        if (self.quality_assurance is not None) and (self.quality_assurance > 0):
+
+            if hasattr(self, 'qa'):
+                self.qa['ret_std_conf_qa']   = dict(name='QA standard retrieval confidence', data=np.hstack((self.qa['ret_std_conf_qa']['data'], ret_std_conf_qa)),         units='N/A')
+                self.qa['ret_1621_conf_qa']  = dict(name='QA 1.6-2.1 retrieval confidence',  data=np.hstack((self.qa['ret_1621_conf_qa']['data'], ret_1621_conf_qa)),       units='N/A')
+
+                if self.quality_assurance > 1:
+                    self.qa['ret_std_qa']        = dict(name='QA standard retrieval outcome', data=np.hstack((self.qa['ret_std_qa']['data'], ret_std_qa)),         units='N/A')
+                    self.qa['ret_std_qa_data']   = dict(name='QA standard retrieval spectral data availability', data=np.hstack((self.qa['ret_std_data_qa']['data'], ret_std_data_qa)),         units='N/A')
+                    self.qa['ret_1621_qa']        = dict(name='QA 1621 retrieval outcome', data=np.hstack((self.qa['ret_1621_qa']['data'], ret_1621_qa)),         units='N/A')
+                    self.qa['ret_1621_data_qa']   = dict(name='QA 1621 retrieval spectral data availability', data=np.hstack((self.qa['ret_1621_data_qa']['data'], ret_1621_data_qa)),         units='N/A')
+                    self.qa['cld_type_qa']       = dict(name='QA cloud type processing path',    data=np.hstack((self.qa['cld_type_qa']['data'], cld_type_qa)),                 units='N/A')
+
+                    self.qa['bowtie_qa']         = dict(name='QA bowtie pixel',                  data=np.hstack((self.qa['bowtie_qa']['data'], bowtie_qa)),                     units='N/A')
+
+                    self.qa['rayleigh_qa']       = dict(name='QA Rayleigh correction',           data=np.hstack((self.qa['rayleigh_qa']['data'], rayleigh_qa)),                 units='N/A')
+
+                    self.qa['cot_bands_qa']         = dict(name='QA bands used for COT',                  data=np.hstack((self.qa['cot_bands_qa']['data'], cot_bands_qa)),                     units='N/A')
+
+                    self.qa['cot_oob_qa']       = dict(name='QA COT out of bounds',    data=np.hstack((self.qa['cot_oob_qa']['data'], cot_oob_qa)),                 units='N/A')
+
+
+            else:
+
+                self.qa  = {}
+                self.qa['ret_std_conf_qa']  = dict(name='QA standard retrieval confidence', data=ret_std_conf_qa,  units='N/A')
+                self.qa['ret_1621_conf_qa'] = dict(name='QA 1.6-2.1 retrieval confidence',  data=ret_1621_conf_qa, units='N/A')
+                self.qa['ret_std_qa']       = dict(name='QA standard retrieval outcome',    data=ret_std_qa,       units='N/A')
+                self.qa['ret_std_data_qa']  = dict(name='QA standard retrieval spectral data availability',        data=ret_std_data_qa,      units='N/A')
+                self.qa['ret_1621_data_qa'] = dict(name='QA 1621 retrieval spectral data availability',  data=ret_1621_data_qa, units='N/A')
+
+                if self.quality_assurance > 1:
+                    self.qa['cld_type_qa']      = dict(name='QA cloud type processing path',    data=cld_type_qa,      units='N/A')
+                    self.qa['bowtie_qa']        = dict(name='QA bowtie pixel',                  data=bowtie_qa,        units='N/A')
+                    self.qa['rayleigh_qa']      = dict(name='QA Rayleigh correction',           data=rayleigh_qa,      units='N/A')
+                    self.qa['cot_bands_qa']     = dict(name='QA bands used for COT',            data=cot_bands_qa,     units='N/A')
+                    self.qa['cot_oob_qa']       = dict(name='QA COT out of bounds',             data=cot_oob_qa,       units='N/A')
+
+    #########################################################################################################################
+    ############################################### Cloud Optical Properties ################################################
+    #########################################################################################################################
 
 
     def read_cop(self, fname):
