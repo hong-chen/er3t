@@ -951,6 +951,8 @@ def get_sat_info_from_product_tag(tag_):
 
 if __name__ == '__main__':
 
+    exec_start_dt = datetime.datetime.now() # to time sdown
+
     parser = ArgumentParser(prog='sdown', formatter_class=RawTextHelpFormatter,
                             description=_description_)
     parser.add_argument('-f', '--fdir', type=str, metavar='', default='sat-data/',
@@ -1061,3 +1063,8 @@ if __name__ == '__main__':
                                   geojson_fpath=args.geojson,
                                   products=args.products,
                                   verbose=args.verbose)
+
+    exec_stop_dt = datetime.datetime.now() # to time sdown
+    exec_total_time = exec_stop_dt - exec_start_dt
+    sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs = er3t.util.util.format_time(exec_total_time.total_seconds())
+    print('\n\nTotal Execution Time: {}:{}:{}.{}\n\n'.format(sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs))

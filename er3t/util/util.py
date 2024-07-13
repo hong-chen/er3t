@@ -3,7 +3,6 @@ import sys
 import datetime
 import numpy as np
 import warnings
-
 import er3t.common
 
 
@@ -17,7 +16,8 @@ __all__ = ['check_equal', 'check_equidistant', 'send_email', \
            'get_doy_tag', 'add_reference', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat']
+           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
+           'get_pacq_dts', 'format_time']
 
 
 
@@ -1057,6 +1057,24 @@ def get_pacq_dts(fdir):
             pacq_dts.append(split_fparts[0] + '.' + split_fparts[1] + '.' + split_fparts[2])
 
     return pacq_dts
+
+def format_time(total_seconds):
+    """
+    Convert seconds to hours, minutes, seconds, and milliseconds.
+
+    Parameters:
+    - total_seconds: The total number of seconds to convert.
+
+    Returns:
+    - A tuple containing hours, minutes, seconds, and milliseconds.
+    """
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    milliseconds = (total_seconds - int(total_seconds)) * 1000
+
+    return (int(hours), int(minutes), int(seconds), int(milliseconds))
+
 #\---------------------------------------------------------------------------/
 
 if __name__ == '__main__':
