@@ -1044,6 +1044,19 @@ def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
 
     return lon1, lat1
 
+
+def get_pacq_dts(fdir):
+    """
+    Get product acquisition datetimes of files in `fdir`
+    Example: ['VNP02MOD.A2024185.2210', 'MOD03.A2024185.2215']
+    """
+    pacq_dts = []
+    for file in os.listdir(fdir):
+        if file.endswith(('hdf', 'nc')): # support only modis and viirs files
+            split_fparts = os.path.basename(file).split('.')
+            pacq_dts.append(split_fparts[0] + '.' + split_fparts[1] + '.' + split_fparts[2])
+
+    return pacq_dts
 #\---------------------------------------------------------------------------/
 
 if __name__ == '__main__':

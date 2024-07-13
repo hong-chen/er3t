@@ -5,7 +5,7 @@ import datetime
 import numpy as np
 import warnings
 
-from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime
+from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime, get_pacq_dts
 from er3t.common import fdir_data_tmp
 
 __all__ = [
@@ -1033,85 +1033,43 @@ def get_satfile_tag(
     import matplotlib.path as mpl_path
     #\----------------------------------------------------------------------------/#
 
-
     # get formatted satellite tag
-    #/----------------------------------------------------------------------------\#
     satname = format_satname(satellite, instrument)
     satellite, instrument = satname.split('|')
-    #\----------------------------------------------------------------------------/#
-
 
     # get satellite geometa filename on the appropriate DAAC server
-    #/----------------------------------------------------------------------------\#
     if nrt:
         server = 'https://nrt3.modaps.eosdis.nasa.gov'
     else:
         server = 'https://ladsweb.modaps.eosdis.nasa.gov'
 
     fname_geometa = get_fname_geometa(date, satname, server=server)
-    #\----------------------------------------------------------------------------/#
-
 
     # convert longitude in [-180, 180] range
     # since the longitude in GeoMeta dataset is in the range of [-180, 180]
-    #/----------------------------------------------------------------------------\#
     lon[lon>180.0] -= 360.0
     logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
     lon   = lon[logic]
     lat   = lat[logic]
 
-    # # testing new feature: use only corner points and close it like a polygon
-    # lon = np.array([lon[0], lon[0],  lon[-1], lon[-1], lon[0]])
-    # lat = np.array([lat[0], lat[-1], lat[-1], lat[0],  lat[0]])
-    #\----------------------------------------------------------------------------/#
-
-
     # get geometa info
-    #/----------------------------------------------------------------------------\#
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
-
-    # try to get geometa information from local if not download
-    # try:
-    #     content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
-
-    # except Exception as err:
-    #     print(err)
-    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
-
-    # # or try to get geometa information online if content is None
-    # if (content is None) or (isinstance(content, dict)):
-    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
-
-    #     if content is None:
-    #         print("Message [get_satfile_tag]: Could not download the metadata file. Try again at a later time")
-    #         return [] # empty list since that's what sdown is expecting
 
     # for now, always use online file since local seems to cause downstream issues
     content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
-    #\----------------------------------------------------------------------------/#
-
-
     # read in geometa info
-    #/----------------------------------------------------------------------------\#
     data = read_geometa(content)
-    #\----------------------------------------------------------------------------/#
-
+    if data is None:
+        return [], start_dt_hhmm, end_dt_hhmm
 
     # loop through all the satellite "granules" constructed through four corner points
     # and find which granules contain the input data
-    #/----------------------------------------------------------------------------\#
-
     # by default if no start and end times are given, use 0000 and 2359
     if start_dt_hhmm is None:
         start_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 0, 0)
 
     if end_dt_hhmm is None:
         end_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 23, 59)
-
-    #/----------------------------------------------------------------------------\#
-
-    if data is None:
-        return [], start_dt_hhmm, end_dt_hhmm
 
     # check if the last available overpass is within the range;
     # if not, then change start_dt_hhmm and end_dt_hhmm by offsetting them back in time
@@ -1129,15 +1087,10 @@ def get_satfile_tag(
 
         print("Message [get_satfile_tag]: New range of datetimes is {} to {}".format(start_dt_hhmm.strftime('%Y-%m-%d : %H%M'), end_dt_hhmm.strftime('%Y-%m-%d : %H%M')))
 
-    # Save metadata
-    # with open(os.path.join(fdir_out, "metadata.txt"), "a") as f:
-    #     f.write('Start_Date: {}\n'.format(start_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
-    #     f.write('End_Date:   {}\n'.format(end_dt_hhmm.strftime('%Y-%m-%d-%H%M')))
 
     if optical_geo is True:
         start_dt_hhmm = start_dt_hhmm - datetime.timedelta(hours=latency)
         print("Warning [sdown]: Start datetime was changed to catch more data and account for latency")
-
 
     #/----------------------------------------------------------------------------\#
 
@@ -1174,26 +1127,6 @@ def get_satfile_tag(
                 filename = line['GranuleID']
                 filename_tag = '.'.join(filename.split('.')[1:3])
                 filename_tags.append(filename_tag)
-
-            # percent_all = np.append(percent_all, percent_in)
-            # i_all.append(i)
-    #\----------------------------------------------------------------------------/#
-
-    # sort by percentage-in and time if <percent0> is specified or <wordview=True>
-    #/----------------------------------------------------------------------------\#
-    # if (percent0 > 0.0 ) or worldview:
-    #     indices_sort_p = np.argsort(percent_all)
-    #     if satellite != 'Terra':
-    #         indices_sort_i = i_all[::-1]
-    #     else:
-    #         indices_sort_i = i_all
-
-    #     if all(percent_i>97.0 for percent_i in percent_all):
-    #         indices_sort = np.lexsort((indices_sort_p, indices_sort_i))[::-1]
-    #     else:
-    #         indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
-
-    #     filename_tags = [filename_tags[i] for i in indices_sort]
     # # #\----------------------------------------------------------------------------/#
 
     if optical_geo is True: # add it back to revert to original times
@@ -1390,22 +1323,31 @@ def download_lance_https(
     primary_commands = []
     backup_commands  = []
     fnames_local = []
+
+    exist_acq_dts = get_pacq_dts(fdir_out) # existing acq_dts
     for line in lines:
         filename = line.strip().split(',')[0]
 
         if (filename_tag in filename) and ('.met' not in filename):
             fname_server = '%s/api/v2/content%s/%s' % (server, fdir_data, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
-
+            split_fname_local = os.path.basename(fname_local).split('.')
+            acq_dt = split_fname_local[0] + '.' + split_fname_local[1] + '.' + split_fname_local[2]
 
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
                 print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
-            else:
-                fnames_local.append(fname_local)
-                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, primary_tool='curl', backup_tool='wget', verbose=verbose)
-                primary_commands.append(primary_command)
-                backup_commands.append('timeout 60 ' + backup_command) # force timeout for wget
+                continue
+
+            if acq_dt in exist_acq_dts:
+                print("Message [download_lance_https]: File {} already exists based on acq_dt (maybe another source). Will not re-download this file.".format(fname_local))
+                exist_count += 1
+                continue
+
+            fnames_local.append(fname_local)
+            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, primary_tool='curl', backup_tool='wget', verbose=verbose)
+            primary_commands.append(primary_command)
+            backup_commands.append('timeout 60 ' + backup_command) # force timeout for wget
 
     print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #\----------------------------------------------------------------------------/#

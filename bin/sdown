@@ -587,7 +587,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             sys.exit()
 
         if len(viirs_snpp) > 0 and single_dt < _snpp_viirs_start_date:
-            msg = 'Error [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates.' % (single_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
+            msg = 'Error [sdown]: Received %s as date of interest but data for VIIRS onboard S-NPP only exists from %s. Retry with more recent dates.' % (single_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
             satlogger.error(msg)
             sys.exit()
 
@@ -741,9 +741,6 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
                 f.write('Date: {}\n'.format(date_x.strftime('%Y-%m-%d')))
                 f.write('Extent: {}\n'.format([np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)]))
-                # TODO: Change below lines since they can be overwritten
-                # f.write('Start_Date: {}\n'.format(start_dt.strftime('%Y-%m-%d-%H%M')))
-                # f.write('End_Date:   {}\n'.format(end_dt.strftime('%Y-%m-%d-%H%M')))
 
             if verbose:
                 satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y-%m-%d'), np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)))
@@ -821,7 +818,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
         elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
             if nrt:
                 if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
-                    msg = 'Warning [sdown]: VIIRS cloud products are not available in near real time (NRT)'
+                    msg = 'Warning [sdown]: VIIRS cloud products are not available in near real time (NRT) on LANCE DAAC'
                     satlogger.warn(msg)
                     continue
                 # sys.exit()
