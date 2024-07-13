@@ -17,7 +17,8 @@ __all__ = ['check_equal', 'check_equidistant', 'send_email', \
            'get_doy_tag', 'add_reference', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat']
+           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
+           'format_time', 'region_parser', 'parse_geojson']
 
 
 
