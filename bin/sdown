@@ -498,12 +498,6 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                     fnames[product_info['dict_key']] += p_fnames
 
             else:
-                #TODO: Keep track of this to remove this if condition once the product goes online
-                if product.upper().startswith(('VJ2')):
-                    msg = 'Warning [sdown]: Standard (non near-real time) products are not available yet for VIIRS onboard NOAA-21\n'\
-                          'This is because geoMetaVIIRS data is still unavailable.\n'
-                    satlogger.warning(msg)
-                    continue
 
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
