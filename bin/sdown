@@ -90,7 +90,8 @@ _nrt_oldest_dt = _today_dt - datetime.timedelta(days=7)
 def create_args_parallel(date_list,
                          start_dt_hhmm,
                          end_dt_hhmm,
-                         extent,
+                         lons,
+                         lats,
                          fdir_out,
                          nrt,
                          iou,
@@ -104,7 +105,6 @@ def create_args_parallel(date_list,
         date_list (list): List of dates.
         start_dt_hhmm (str): Start time in HHMM format.
         end_dt_hhmm (str): End time in HHMM format.
-        extent (str): Extent of the data.
         fdir_out (str): Output directory.
         nrt (bool): Flag indicating if the data is near real-time.
         iou (float): Intersection over Union threshold.
@@ -123,7 +123,8 @@ def create_args_parallel(date_list,
         mini_list.append(date_list[i])
         mini_list.append(start_dt_hhmm)
         mini_list.append(end_dt_hhmm)
-        mini_list.append(extent)
+        mini_list.append(lons)
+        mini_list.append(lats)
         mini_list.append(fdir_out[i])
         mini_list.append(nrt)
         mini_list.append(iou)
@@ -369,7 +370,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                     f.write('Date: {}\n'.format(date_x))
                     f.write('Extent: {}\n'.format(extent))
 
-            p_args = create_args_parallel(date_list, start_dt, end_dt, extent, fdir_out_dt_list, nrt, iou, focus_extent, products, verbose)
+            p_args = create_args_parallel(date_list, start_dt, end_dt, llons, llats, fdir_out_dt_list, nrt, iou, focus_extent, products, verbose)
             if verbose:
                 satlogger.info("Message [sdown]: Found {} CPUs. Downloads will be spread over all available CPUs.".format(multiprocessing.cpu_count()))
             # start parallelization
