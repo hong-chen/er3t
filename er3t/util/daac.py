@@ -241,14 +241,14 @@ def get_local_file(
 
     # try to get information from local
     # check two locations:
-    #   1) <tmp-data/satfile> directory under er3t main directory
-    #   2) current directory;
+    #   1) current directory;
+    #   2) <tmp-data/satfile> directory under er3t main directory
     #/--------------------------------------------------------------\#
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_save,  filename))
-    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, filename))
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_local, filename))
+    fname_local2 = os.path.abspath('%s/%s' % (fdir_save,  filename))
 
     if os.path.exists(fname_local1):
 
@@ -1041,14 +1041,14 @@ def get_satfile_tag(
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
 
     # try to get geometa information from local
-    # content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
+    content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
 
     # try to get geometa information online
-    # if content is None:
-    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+    if (content is None) or ('<!DOCTYPE html>' in content):
+        content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+    # content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
@@ -1186,7 +1186,7 @@ def download_laads_https(
     content = get_local_file(fname_csv, filename=filename_csv, fdir_save=fdir_save)
 
     # try to get geometa information online
-    if content is None:
+    if (content is None) or ('<!DOCTYPE html>' in content):
         content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
