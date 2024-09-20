@@ -459,7 +459,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                 fnames[product_info['dict_key']] += p_fnames
 
         # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
-        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
+        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '09', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
             if nrt:
                 if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
                     msg = 'Warning [sdown]: VIIRS cloud products are not available in near real time (NRT)'
