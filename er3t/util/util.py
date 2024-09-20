@@ -18,7 +18,7 @@ __all__ = ['check_equal', 'check_equidistant', 'send_email', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
-           'format_time', 'region_parser', 'parse_geojson']
+           'format_time', 'region_parser', 'parse_geojson', 'unpack_uint_to_bits']
 
 
 
@@ -1120,6 +1120,40 @@ def format_time(total_seconds):
 
     return (int(hours), int(minutes), int(seconds), int(milliseconds))
 #\---------------------------------------------------------------------------/
+
+def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
+    """
+    Unpack a uint16 or 32 or 64 array into binary bits.
+    """
+
+    # convert to right dtype
+    uint_array = uint_array.astype('uint{}'.format(num_bits))
+
+    if num_bits == 8: # just use numpy
+        return np.unpackbits(uint_array, bitorder='big', axis=1) # convert to binary
+
+    elif (num_bits == 16) or (num_bits == 32) or (num_bits == 64):
+
+        # Convert uintxx array to uint8 array
+        uint8_array = uint_array.view(np.uint8).reshape(-1, int(num_bits/8))
+
+        # Unpack bits from uint8 array
+        # force little endian since big endian seems to pad an extra 0
+        # and then reverse it if needed
+        bits = np.unpackbits(uint8_array, bitorder='little', axis=1)
+
+        # Reshape to match original uint16 array shape with an additional dimension for bits
+        bits = bits.reshape(uint_array.shape + (num_bits,))
+
+    else:
+        raise ValueError("Only uint8, uint16, uint32, and uint64 dtypes are supported. `num_bits` must be >=8 ")
+
+    if bitorder == 'big': # reverse the order
+        return np.transpose(bits[:, :, ::-1], axes=(2, 0, 1))
+
+    return np.transpose(bits, axes=(2, 0, 1))
+
+
 
 if __name__ == '__main__':
 

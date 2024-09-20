@@ -201,6 +201,26 @@ _sat_tags_support_ = {
                   'reference': 'Ackerman, S., P. Menzel, R. Frey, B.Baum, 2017. MODIS Atmosphere L2 Cloud Mask Product. NASA MODIS Adaptive Processing System, Goddard Space Flight Center, [doi:10.5067/MODIS/MYD35_L2.061]'
                 },
 
+        'MOD09': {
+                'dataset_tag': '61/MOD09',
+                   'dict_key': 'mod_09',
+                'description': 'Terra MODIS Atmosphere Level 2 Atmospherically Corrected Surface Reflectance',
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD09.061',
+                  'satellite': 'Terra',
+                 'instrument': 'MODIS',
+                  'reference': 'Eric Vermote - NASA GSFC and MODAPS SIPS - NASA. (2015). MOD09 MODIS/Terra L2 Surface Reflectance, 5-Min Swath 250m, 500m, and 1km. NASA LP DAAC. http://doi.org/10.5067/MODIS/MOD09.061'
+                },
+
+        'MYD09': {
+                'dataset_tag': '61/MYD09',
+                   'dict_key': 'myd_09',
+                'description': 'Aqua MODIS Atmosphere Level 2 Atmospherically Corrected Surface Reflectance',
+                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD09.061',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'Eric Vermote - NASA GSFC and MODAPS SIPS - NASA. (2015). MYD09 MODIS/Aqua L2 Surface Reflectance, 5-Min Swath 250m, 500m, and 1km. NASA LP DAAC. http://doi.org/10.5067/MODIS/MYD09.061'
+                },
+
         'MCD43A3': {
                 'dataset_tag': '61/MCD43A3',
                    'dict_key': 'mod_43',

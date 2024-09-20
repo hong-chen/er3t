@@ -11,6 +11,7 @@ Now supports:
                 MOD021KM, MYD021KM
                 MOD06_L2, MYD06_L2
                 MOD35_L2, MYD35_L2
+                MOD09,    MYD09
                 MCD43
 
     VIIRS data: VNPRGB,         VJ1RGB,         VJ2RGB,

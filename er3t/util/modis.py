@@ -7,7 +7,7 @@ from scipy import interpolate
 import shutil
 import urllib.request
 import requests
-from er3t.util import check_equal, get_doy_tag, get_data_h4
+from er3t.util import check_equal, get_doy_tag, get_data_h4, unpack_uint_to_bits
 
 
 
@@ -17,6 +17,7 @@ __all__ = [
         'modis_35_l2', \
         'modis_03', \
         'modis_04', \
+        'modis_09', \
         'modis_09a1', \
         'modis_43a1', \
         'modis_43a3', \
@@ -1230,6 +1231,302 @@ class modis_04:
 
         f.end()
 
+
+
+class modis_09:
+    """
+    A class for extracting data from MODIS Atmospherically Corrected Surface Reflectance 5-Min L2 Swath 250m, 500m, 1km files.
+
+    Args:
+        fname (str): The file name of the MOD09 product.
+        resolution (str, optional): The resolution of the data to extract. One of '250m', '500m', or '1km'. Defaults to '1km'.
+        param (str, optional): The parameter to extract. One of 'surface_reflectance' or 'tau'.
+        ancillary_qa(bool, optional): Flag to get ancillary and qa data. Defaults to False i.e., no ancillary or QA data is extracted
+        bands (list, optional): The list of band names. Defaults to extracting bands [1, 4, 3].
+
+    Methods:
+        extract_surface_reflectance(hdf_obj): Extracts surface reflectance data for self.bands at self.resolution.
+        extract_atmospheric_optical_depth(hdf_obj): Extracts atmospheric optical depth (tau) data.
+                                                    Only for 3 "bands" - when using this mode, the data
+                                                    can be interpreted as follows:
+                                                    index 0 (band 1) = atm. model residual values
+                                                    index 1 (band 3) = atm. optical depth
+                                                    index 2 (band 8) = angstrom exponent values
+
+    References: (User Guide) https://ladsweb.modaps.eosdis.nasa.gov/archive/Document%20Archive/Science%20Data%20Product%20Documentation/MOD09_C61_UserGuide_v1.7.pdf
+                (Filespec) https://ladsweb.modaps.eosdis.nasa.gov/filespec/MODIS/61/MOD09
+    """
+    ID = 'MODIS Atmospherically Corrected Surface Reflectance 5-Min L2 Swath 250m, 500m, 1km'
+
+
+    def __init__(self, \
+                 fname,  \
+                 resolution = '1km', \
+                 param = 'surface_reflectance', \
+                 ancillary_qa = False, \
+                 bands = [1, 4, 3]):
+
+
+        self.fname        = fname              # file name
+        self.resolution   = resolution.lower() # resolution
+        self.param        = param.lower()      # parameter to extract
+        self.ancillary_qa = ancillary_qa       # flag to get ancillary and qa data
+        self.bands        = bands              # list of band names
+
+        self.read(fname)
+
+
+    def qa_250m(self, hdf_obj):
+        """
+        Calculates the quality assurance (QA) values for the 250m Reflectance bands.
+
+        Parameters:
+            hdf_obj (object): The HDF object containing the data.
+
+        Returns:
+            tuple: A tuple containing the following QA values:
+                - modland_qa (int): The MODLAND QA value.
+                - all_bands_qa (ndarray): An array containing the QA values for band1 and band2.
+                - atm_correction (int): The atmospheric correction QA value.
+                - adjacent_correction (int): The adjacent correction QA value.
+        """
+        band_qa_byte = hdf_obj.select('250m Reflectance Band Quality')
+        band_qa_byte = band_qa_byte[:]
+
+        band_qa = unpack_uint_to_bits(band_qa_byte, num_bits=16, bitorder='big')
+        adjacent_correction = band_qa[2]
+        atm_correction = band_qa[3]
+        band2_qa = band_qa[4] + band_qa[5] * 2 + band_qa[6] * 4  + band_qa[7] * 8
+        band1_qa = band_qa[8] + band_qa[9] * 2 + band_qa[10] * 4 + band_qa[11] * 8
+        modland_qa = band_qa[14] + band_qa[15] * 2
+
+        all_bands_qa = np.stack([band1_qa, band2_qa], axis=0)
+
+        return modland_qa, all_bands_qa, atm_correction, adjacent_correction
+
+
+    def qa_500m_1km(self, hdf_obj):
+        """
+        Calculates the quality assurance (QA) values for the 500m or 1km Reflectance bands.
+
+        Parameters:
+            hdf_obj (object): The HDF object containing the data.
+
+        Returns:
+            tuple: A tuple containing the following QA values:
+                - modland_qa (int): The MODLAND QA value.
+                - all_bands_qa (ndarray): An array containing the QA values for bands 1 through 7.
+                - atm_correction (int): The atmospheric correction QA value.
+                - adjacent_correction (int): The adjacent correction QA value.
+        """
+        band_qa_byte = hdf_obj.select('{} Reflectance Band Quality'.format(self.resolution))
+        band_qa_byte = band_qa_byte[:]
+
+        band_qa = unpack_uint_to_bits(band_qa_byte, num_bits=32, bitorder='big')
+        adjacent_correction = band_qa[0]
+        atm_correction = band_qa[1]
+        band7_qa = band_qa[2]  + band_qa[3] * 2  + band_qa[4] * 4  + band_qa[5] * 8
+        band6_qa = band_qa[6]  + band_qa[7] * 2  + band_qa[8] * 4  + band_qa[9] * 8
+        band5_qa = band_qa[10] + band_qa[11] * 2 + band_qa[12] * 4 + band_qa[13] * 8
+        band4_qa = band_qa[14] + band_qa[15] * 2 + band_qa[16] * 4 + band_qa[17] * 8
+        band3_qa = band_qa[18] + band_qa[19] * 2 + band_qa[20] * 4 + band_qa[21] * 8
+        band2_qa = band_qa[22] + band_qa[23] * 2 + band_qa[24] * 4 + band_qa[25] * 8
+        band1_qa = band_qa[26] + band_qa[27] * 2 + band_qa[28] * 4 + band_qa[29] * 8
+        modland_qa = band_qa[30] + band_qa[31] * 2
+
+        all_bands_qa = np.stack([band1_qa, band2_qa, band3_qa, band4_qa, band5_qa, band6_qa, band7_qa], axis=0)
+
+        return modland_qa, all_bands_qa, atm_correction, adjacent_correction
+
+
+    def extract_surface_reflectance(self, hdf_obj):
+        """ Extract surface reflectance data """
+        # get lon/lat
+        lon, lat  = hdf_obj.select('Longitude'), hdf_obj.select('Latitude')
+        lon, lat = lon[:], lat[:]
+
+        # check that if bands are provided that they are valid
+        if (self.bands is not None) and (not set(self.bands).issubset(list(MODIS_L1B_HKM_1KM_BANDS.keys()))):
+            raise AttributeError('Error [modis_09]: Your input for `bands`={}\n`bands` must be one of {}\n'.format(self.bands, list(MODIS_L1B_HKM_1KM_BANDS.keys())))
+
+        # resolution and lon/lat interpolation (if needed)
+        if self.resolution == '250m':
+            lon, lat  = upscale_modis_lonlat(lon, lat, scale=4, extra_grid=False)
+            if self.bands is None:
+                self.bands = [1, 2]
+
+        elif self.resolution == '500m':
+            lon, lat  = upscale_modis_lonlat(lon, lat, scale=2, extra_grid=False)
+            if self.bands is None:
+                self.bands = [1, 2, 3, 4, 5, 6, 7]
+
+        elif self.resolution == '1km':
+            self.bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 26]
+
+        else:
+            raise AttributeError('Error [modis_09]: `resolution` must be one of `250m`, `500m`, or `1km`')
+
+        # begin extracting data
+        # search datasets containing the search term derived from param and resolution
+        search_term = self.resolution + ' ' +  ' '.join(self.param.title().split('_'))
+        search_terms_with_bands = [search_term + ' ' + 'Band {}'.format(str(band)) for band in self.bands]
+        params = [i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands] # list of dataset names
+        if len(search_terms_with_bands) != len(params):
+            print('Warning [modis_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
+
+        # use the first param to get shape
+        data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
+        surface_reflectance = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float64)
+        wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
+
+        # loop through bands, scale and offset each param and store in tau
+        for idx, band_num in enumerate(self.bands):
+            surface_reflectance[idx] = get_data_h4(hdf_obj.select(params[idx]))
+            wvl[idx] = MODIS_L1B_HKM_1KM_BANDS[band_num]
+
+        if self.ancillary_qa:
+            if self.resolution == '250m':
+                modland_qa, all_bands_qa, atm_correction, adjacent_correction = self.qa_250m(hdf_obj)
+            else:
+                modland_qa, all_bands_qa, atm_correction, adjacent_correction = self.qa_500m_1km(hdf_obj)
+
+
+        # save the data
+        if hasattr(self, 'data'):
+
+            self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)),     units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)),     units='degrees')
+            self.data['wvl'] = dict(name='Wavelength'          , data=np.hstack((self.data['wvl']['data'], wvl)),     units='nm')
+            self.data['surface_reflectance'] = dict(name='Surface Reflectance', data=np.hstack((self.data['surface_reflectance']['data'], surface_reflectance)),     units='N/A')
+
+            if self.ancillary_qa:
+                self.data['modland_qa'] = dict(name='MODLAND QA'  , data=np.hstack((self.data['modland_qa']['data'], modland_qa)),     units='N/A')
+                self.data['all_bands_qa'] = dict(name='Band QA for all avaialble bands in increasing order (band 1, band 2, etc.)'  , data=np.hstack((self.data['all_bands_qa']['data'], all_bands_qa)),     units='N/A')
+                self.data['atm_correction_qa'] = dict(name='Atmospheric correction QA'  , data=np.hstack((self.data['atm_correction_qa']['data'], atm_correction)),     units='N/A')
+                self.data['adjacent_correction_qa'] = dict(name='Adjacency correction QA'  , data=np.hstack((self.data['adjacent_correction_qa']['data'], adjacent_correction)),     units='N/A')
+
+        else:
+
+            self.data = {}
+            self.data['lon'] = dict(name='Longitude'               , data=lon,     units='degrees')
+            self.data['lat'] = dict(name='Latitude'                , data=lat,     units='degrees')
+            self.data['wvl'] = dict(name='Wavelength'              , data=wvl,     units='nm')
+            self.data['surface_reflectance'] = dict(name='Surface Reflectance', data=surface_reflectance,     units='N/A')
+
+            if self.ancillary_qa:
+                self.data['modland_qa'] = dict(name='MODLAND QA'  , data=modland_qa,     units='N/A')
+                self.data['all_bands_qa'] = dict(name='Band QA for all available bands in increasing order (band 1, band 2, etc.)'  , data=all_bands_qa,     units='N/A')
+                self.data['atm_correction_qa'] = dict(name='Atmospheric correction QA'  , data=atm_correction,     units='N/A')
+                self.data['adjacent_correction_qa'] = dict(name='Adjacency correction QA'  , data=adjacent_correction,     units='N/A')
+
+
+    def extract_atmospheric_optical_depth(self, hdf_obj):
+        """
+        Extract atmospheric optical depth data
+
+        For information on how to interpret the data:
+        https://ladsweb.modaps.eosdis.nasa.gov/archive/Document%20Archive/Science%20Data%20Product%20Documentation/MOD09_C61_UserGuide_v1.7.pdf
+        """
+
+        # get lon/lat
+        lon, lat  = hdf_obj.select('Longitude'), hdf_obj.select('Latitude')
+        lon, lat = lon[:], lat[:]
+
+        # allow others for input but change it internally to use for keyword search
+        if self.param != 'atmospheric_optical_depth':
+            self.param = 'atmospheric_optical_depth'
+
+
+        # for atm tau, only bands 1 (650nm), 3 (470nm), 8 (412nm) are present at 1km in the MOD09 product
+        if (self.bands is not None) or (self.resolution is not None):
+            print('Warning [modis_09]: `bands` and `resolution` are ignored when extracting atmospheric optical depth as only preset bands are available in the MOD09 product, all at 1km\n')
+
+        self.bands = [1, 3, 8]
+        self.resolution = '1km'
+
+        # begin extracting data
+        # search datasets containing the search term derived from param and resolution
+        search_term = self.resolution + ' ' +  ' '.join(self.param.title().split('_'))
+        search_terms_with_bands = [search_term + ' ' + 'Band {}'.format(str(band)) for band in self.bands]
+        params = [i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands] # list of dataset names
+
+        # use the first param to get shape
+        data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
+        tau = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float64) # atm optical depth
+        wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
+
+        # loop through bands, scale and offset each param and store in tau
+        for idx, band_num in enumerate(self.bands):
+            tau[idx] = get_data_h4(hdf_obj.select(params[idx]), init_dtype='int16') # initially signed int
+            wvl[idx] = MODIS_L1B_HKM_1KM_BANDS[band_num]
+
+        if self.ancillary_qa: # get internal cloud mask, qa, and water vapor fields
+            tau_model_hdf  = hdf_obj.select('1km Atmospheric Optical Depth Model')
+            tau_model      = get_data_h4(tau_model_hdf, init_dtype='uint8', replace_fill_value=0).astype('uint8')
+            tau_model_desc = tau_model_hdf.attributes()['long_name'] + '\n' +  tau_model_hdf.attributes()['Model values']
+
+            tau_qa_hdf     = hdf_obj.select('1km Atmospheric Optical Depth Band QA')
+            tau_qa         = get_data_h4(tau_qa_hdf, init_dtype='uint16', replace_fill_value=0).astype('uint16')
+            # convert bits to 16 bit unsigned ints with the 16, 8, 4, 2, 1, 0 order
+            # index 0 = bit 15, index 1 = bit 14, etc.
+            # tau_qa         = unpackbits(tau_qa, 16, endian='big')
+            tau_qa         = unpack_uint_to_bits(tau_qa, num_bits=16, bitorder='big')
+            tau_qa_desc    = tau_qa_hdf.attributes()['long_name'] + '\n' + tau_qa_hdf.attributes()['QA index']
+
+            tau_cloud_mask_hdf = hdf_obj.select('1km Atmospheric Optical Depth Band CM')
+            tau_cloud_mask = get_data_h4(tau_cloud_mask_hdf, init_dtype='uint8', replace_fill_value=0).astype('uint8')
+            tau_cloud_mask_desc = tau_cloud_mask_hdf.attributes()['long_name'] + '\n' + tau_cloud_mask_hdf.attributes()['QA index']
+
+            water_vapor_hdf = hdf_obj.select('1km water_vapor')
+            water_vapor     = get_data_h4(water_vapor_hdf, init_dtype='uint16')
+
+
+        # save the data
+        if hasattr(self, 'data'):
+
+            self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)),     units='degrees')
+            self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)),     units='degrees')
+            self.data['wvl'] = dict(name='Wavelength'          , data=np.hstack((self.data['wvl']['data'], wvl)),     units='nm')
+            self.data['tau'] = dict(name='Atmospheric Optical Depth', data=np.hstack((self.data['tau']['data'], tau)),     units='N/A')
+
+            if self.ancillary_qa:
+                self.data['tau_model'] = dict(name='1km Atmospheric Optical Depth Model',    data=np.hstack((self.data['tau_model']['data'], tau_model)), description=tau_model_desc, units='N/A')
+                self.data['tau_qa']    = dict(name='1km Atmospheric Optical Depth Band QA',  data=np.hstack((self.data['tau_qa']['data'], tau_qa)),       description=tau_qa_desc,    units='N/A')
+                self.data['tau_cloud_mask']    = dict(name='1km Atmospheric Optical Depth Band CM',  data=np.hstack((self.data['tau_cloud_mask']['data'], tau_cloud_mask)),       description=tau_cloud_mask_desc,    units='N/A')
+                self.data['water_vapor']    = dict(name='1km Water Vapor',  data=np.hstack((self.data['water_vapor']['data'], water_vapor)),    units='g/cm^2')
+
+        else:
+
+            self.data = {}
+            self.data['lon'] = dict(name='Longitude'               , data=lon,     units='degrees')
+            self.data['lat'] = dict(name='Latitude'                , data=lat,     units='degrees')
+            self.data['wvl'] = dict(name='Wavelength'              , data=wvl,     units='nm')
+            self.data['tau'] = dict(name='Atmospheric Optical Depth', data=tau,     units='N/A')
+
+            if self.ancillary_qa:
+                self.data['tau_model'] = dict(name='1km Atmospheric Optical Depth Model',    data=tau_model, description=tau_model_desc, units='N/A')
+                self.data['tau_qa']    = dict(name='1km Atmospheric Optical Depth Band QA',  data=tau_qa,    description=tau_qa_desc,    units='N/A')
+                self.data['tau_cloud_mask']  = dict(name='1km Atmospheric Optical Depth Band CM',  data=tau_cloud_mask,       description=tau_cloud_mask_desc,    units='N/A')
+                self.data['water_vapor']    = dict(name='1km Water Vapor',  data=water_vapor,    units='g/cm^2')
+
+
+    def read(self, fname):
+
+        try:
+            from pyhdf.SD import SD, SDC
+        except ImportError:
+            msg = 'Warning [modis_09]: To use \'modis_09\', \'pyhdf\' needs to be installed.'
+            raise ImportError(msg)
+
+        f = SD(fname, SDC.READ)
+        if self.param == 'surface_reflectance':
+            self.extract_surface_reflectance(f)
+
+        elif (self.param == 'atmospheric_optical_depth') or (self.param == 'optical_depth') or (self.param == 'tau'):
+            self.extract_atmospheric_optical_depth(f)
+
+        f.end()
+        #------------------------------------------------------------------------------------------------------------------------------#
 
 
 class modis_09a1:
