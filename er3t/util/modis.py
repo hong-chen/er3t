@@ -1361,7 +1361,8 @@ class modis_09:
                 self.bands = [1, 2, 3, 4, 5, 6, 7]
 
         elif self.resolution == '1km':
-            self.bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 26]
+            if self.bands is None:
+                self.bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 26]
 
         else:
             raise AttributeError('Error [modis_09]: `resolution` must be one of `250m`, `500m`, or `1km`')
