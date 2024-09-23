@@ -1241,7 +1241,7 @@ class modis_09:
         fname (str): The file name of the MOD09 product.
         resolution (str, optional): The resolution of the data to extract. One of '250m', '500m', or '1km'. Defaults to '1km'.
         param (str, optional): The parameter to extract. One of 'surface_reflectance' or 'tau'.
-        ancillary_qa(bool, optional): Flag to get ancillary and qa data. Defaults to False i.e., no ancillary or QA data is extracted
+        ancillary_qa (bool, optional): Flag to get ancillary and qa data. Defaults to False i.e., no ancillary or QA data is extracted
         bands (list, optional): The list of band names. Defaults to extracting bands [1, 4, 3].
 
     Methods:
@@ -1293,13 +1293,12 @@ class modis_09:
         band_qa_byte = hdf_obj.select('250m Reflectance Band Quality')
         band_qa_byte = band_qa_byte[:]
 
-        band_qa = unpack_uint_to_bits(band_qa_byte, num_bits=16, bitorder='big')
-        adjacent_correction = band_qa[2]
-        atm_correction = band_qa[3]
-        band2_qa = band_qa[4] + band_qa[5] * 2 + band_qa[6] * 4  + band_qa[7] * 8
-        band1_qa = band_qa[8] + band_qa[9] * 2 + band_qa[10] * 4 + band_qa[11] * 8
-        modland_qa = band_qa[14] + band_qa[15] * 2
-
+        band_qa = unpack_uint_to_bits(band_qa_byte, num_bits=16, bitorder='little')
+        modland_qa = 2 * band_qa[0] + band_qa[1]
+        band1_qa   = 8 * band_qa[4] + 4 * band_qa[5] + 2 * band_qa[6] + band_qa[7]
+        band2_qa   = 8 * band_qa[8] + 4 * band_qa[9] + 2 * band_qa[10] + band_qa[11]
+        atm_correction = band_qa[12]
+        adjacent_correction = band_qa[13]
         all_bands_qa = np.stack([band1_qa, band2_qa], axis=0)
 
         return modland_qa, all_bands_qa, atm_correction, adjacent_correction
@@ -1322,22 +1321,21 @@ class modis_09:
         band_qa_byte = hdf_obj.select('{} Reflectance Band Quality'.format(self.resolution))
         band_qa_byte = band_qa_byte[:]
 
-        band_qa = unpack_uint_to_bits(band_qa_byte, num_bits=32, bitorder='big')
-        adjacent_correction = band_qa[0]
-        atm_correction = band_qa[1]
-        band7_qa = band_qa[2]  + band_qa[3] * 2  + band_qa[4] * 4  + band_qa[5] * 8
-        band6_qa = band_qa[6]  + band_qa[7] * 2  + band_qa[8] * 4  + band_qa[9] * 8
-        band5_qa = band_qa[10] + band_qa[11] * 2 + band_qa[12] * 4 + band_qa[13] * 8
-        band4_qa = band_qa[14] + band_qa[15] * 2 + band_qa[16] * 4 + band_qa[17] * 8
-        band3_qa = band_qa[18] + band_qa[19] * 2 + band_qa[20] * 4 + band_qa[21] * 8
-        band2_qa = band_qa[22] + band_qa[23] * 2 + band_qa[24] * 4 + band_qa[25] * 8
-        band1_qa = band_qa[26] + band_qa[27] * 2 + band_qa[28] * 4 + band_qa[29] * 8
-        modland_qa = band_qa[30] + band_qa[31] * 2
+        band_qa = unpack_uint_to_bits(band_qa_byte, num_bits=32, bitorder='little')
+        modland_qa = 2 * band_qa[0] + band_qa[1]
+        band1_qa = 8 * band_qa[2] + 4 * band_qa[3] + 2 * band_qa[4] + band_qa[5]
+        band2_qa = 8 * band_qa[6] + 4 * band_qa[7] + 2 * band_qa[8] + band_qa[9]
+        band3_qa = 8 * band_qa[10] + 4 * band_qa[11] + 2 * band_qa[12] + band_qa[13]
+        band4_qa = 8 * band_qa[14] + 4 * band_qa[15] + 2 * band_qa[16] + band_qa[17]
+        band5_qa = 8 * band_qa[18] + 4 * band_qa[19] + 2 * band_qa[20] + band_qa[21]
+        band6_qa = 8 * band_qa[22] + 4 * band_qa[23] + 2 * band_qa[24] + band_qa[25]
+        band7_qa = 8 * band_qa[26] + 4 * band_qa[27] + 2 * band_qa[28] + band_qa[29]
+        atm_correction = band_qa[30]
+        adjacent_correction = band_qa[31]
 
         all_bands_qa = np.stack([band1_qa, band2_qa, band3_qa, band4_qa, band5_qa, band6_qa, band7_qa], axis=0)
 
         return modland_qa, all_bands_qa, atm_correction, adjacent_correction
-
 
     def extract_surface_reflectance(self, hdf_obj):
         """ Extract surface reflectance data """
@@ -1415,10 +1413,11 @@ class modis_09:
             self.data['surface_reflectance'] = dict(name='Surface Reflectance', data=surface_reflectance,     units='N/A')
 
             if self.ancillary_qa:
-                self.data['modland_qa'] = dict(name='MODLAND QA'  , data=modland_qa,     units='N/A')
-                self.data['all_bands_qa'] = dict(name='Band QA for all available bands in increasing order (band 1, band 2, etc.)'  , data=all_bands_qa,     units='N/A')
-                self.data['atm_correction_qa'] = dict(name='Atmospheric correction QA'  , data=atm_correction,     units='N/A')
-                self.data['adjacent_correction_qa'] = dict(name='Adjacency correction QA'  , data=adjacent_correction,     units='N/A')
+                self.qa = {}
+                self.qa['modland_qa'] = dict(name='MODLAND QA'  , data=modland_qa,     units='N/A')
+                self.qa['all_bands_qa'] = dict(name='Band QA for all available bands in increasing order (band 1, band 2, etc.)'  , data=all_bands_qa,     units='N/A')
+                self.qa['atm_correction_qa'] = dict(name='Atmospheric correction QA'  , data=atm_correction,     units='N/A')
+                self.qa['adjacent_correction_qa'] = dict(name='Adjacency correction QA'  , data=adjacent_correction,     units='N/A')
 
 
     def extract_atmospheric_optical_depth(self, hdf_obj):
@@ -1470,7 +1469,6 @@ class modis_09:
             tau_qa         = get_data_h4(tau_qa_hdf, init_dtype='uint16', replace_fill_value=0).astype('uint16')
             # convert bits to 16 bit unsigned ints with the 16, 8, 4, 2, 1, 0 order
             # index 0 = bit 15, index 1 = bit 14, etc.
-            # tau_qa         = unpackbits(tau_qa, 16, endian='big')
             tau_qa         = unpack_uint_to_bits(tau_qa, num_bits=16, bitorder='big')
             tau_qa_desc    = tau_qa_hdf.attributes()['long_name'] + '\n' + tau_qa_hdf.attributes()['QA index']
 
@@ -1483,32 +1481,18 @@ class modis_09:
 
 
         # save the data
-        if hasattr(self, 'data'):
+        self.data = {}
+        self.data['lon'] = dict(name='Longitude'               , data=lon,     units='degrees')
+        self.data['lat'] = dict(name='Latitude'                , data=lat,     units='degrees')
+        self.data['wvl'] = dict(name='Wavelength'              , data=wvl,     units='nm')
+        self.data['tau'] = dict(name='Atmospheric Optical Depth', data=tau,     units='N/A')
 
-            self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)),     units='degrees')
-            self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)),     units='degrees')
-            self.data['wvl'] = dict(name='Wavelength'          , data=np.hstack((self.data['wvl']['data'], wvl)),     units='nm')
-            self.data['tau'] = dict(name='Atmospheric Optical Depth', data=np.hstack((self.data['tau']['data'], tau)),     units='N/A')
-
-            if self.ancillary_qa:
-                self.data['tau_model'] = dict(name='1km Atmospheric Optical Depth Model',    data=np.hstack((self.data['tau_model']['data'], tau_model)), description=tau_model_desc, units='N/A')
-                self.data['tau_qa']    = dict(name='1km Atmospheric Optical Depth Band QA',  data=np.hstack((self.data['tau_qa']['data'], tau_qa)),       description=tau_qa_desc,    units='N/A')
-                self.data['tau_cloud_mask']    = dict(name='1km Atmospheric Optical Depth Band CM',  data=np.hstack((self.data['tau_cloud_mask']['data'], tau_cloud_mask)),       description=tau_cloud_mask_desc,    units='N/A')
-                self.data['water_vapor']    = dict(name='1km Water Vapor',  data=np.hstack((self.data['water_vapor']['data'], water_vapor)),    units='g/cm^2')
-
-        else:
-
-            self.data = {}
-            self.data['lon'] = dict(name='Longitude'               , data=lon,     units='degrees')
-            self.data['lat'] = dict(name='Latitude'                , data=lat,     units='degrees')
-            self.data['wvl'] = dict(name='Wavelength'              , data=wvl,     units='nm')
-            self.data['tau'] = dict(name='Atmospheric Optical Depth', data=tau,     units='N/A')
-
-            if self.ancillary_qa:
-                self.data['tau_model'] = dict(name='1km Atmospheric Optical Depth Model',    data=tau_model, description=tau_model_desc, units='N/A')
-                self.data['tau_qa']    = dict(name='1km Atmospheric Optical Depth Band QA',  data=tau_qa,    description=tau_qa_desc,    units='N/A')
-                self.data['tau_cloud_mask']  = dict(name='1km Atmospheric Optical Depth Band CM',  data=tau_cloud_mask,       description=tau_cloud_mask_desc,    units='N/A')
-                self.data['water_vapor']    = dict(name='1km Water Vapor',  data=water_vapor,    units='g/cm^2')
+        if self.ancillary_qa:
+            self.qa = {}
+            self.qa['tau_model'] = dict(name='1km Atmospheric Optical Depth Model',    data=tau_model, description=tau_model_desc, units='N/A')
+            self.qa['tau_qa']    = dict(name='1km Atmospheric Optical Depth Band QA',  data=tau_qa,    description=tau_qa_desc,    units='N/A')
+            self.qa['tau_cloud_mask']  = dict(name='1km Atmospheric Optical Depth Band CM',  data=tau_cloud_mask,       description=tau_cloud_mask_desc,    units='N/A')
+            self.qa['water_vapor']    = dict(name='1km Water Vapor',  data=water_vapor,    units='g/cm^2')
 
 
     def read(self, fname):
