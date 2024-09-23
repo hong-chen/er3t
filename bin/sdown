@@ -20,6 +20,7 @@ Now supports:
                 VNP03MOD,       VJ103MOD,       VJ203MOD
                 VNP02MOD,       VJ102MOD,       VJ202MOD
                 VNP_CLDPROP_L2, VJ1_CLDPROP_L2
+                VNP09,          VJ109
 
     OCO-2 data: coming soon...
 

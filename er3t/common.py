@@ -412,6 +412,26 @@ _sat_tags_support_ = {
         #           'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/JPSS2 Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
         #         },
 
+        'VNP09': {
+                'dataset_tag': '5200/VNP09',
+                   'dict_key': 'vnp_09',
+                'description': 'VIIRS/NPP Atmospherically Corrected Surface Reflectance 6-Min L2 Swath IP 375m, 750m',
+                    'website': 'n/a',
+                  'satellite': 'SNPP',
+                 'instrument': 'VIIRS',
+                  'reference': 'Roger, J. C., Vermote, E. F., Devadiga, S., & Ray, J. P. (2016). Suomi-NPP VIIRS Surface Reflectance User’s Guide. V1 Re-processing (NASA Land SIPS).'
+                },
+
+        'VJ109': {
+                'dataset_tag': '5200/VJ109',
+                   'dict_key': 'vj1_09',
+                'description': 'VIIRS/JPSS1 Atmospherically Corrected Surface Reflectance 6-Min L2 Swath IP 375m, 750m',
+                    'website': 'n/a',
+                  'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'Roger, J. C., Vermote, E. F., Devadiga, S., & Ray, J. P. (2016). Suomi-NPP VIIRS Surface Reflectance User’s Guide. V1 Re-processing (NASA Land SIPS).'
+                },
+
         'oco2_L1bScND': {
                 'dataset_tag': 'oco2_L1bScND',
                    'dict_key': 'oco_l1b',
