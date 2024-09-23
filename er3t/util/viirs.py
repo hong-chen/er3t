@@ -4,7 +4,7 @@ import h5py
 
 
 import er3t.common
-from er3t.util import get_data_nc
+from er3t.util import get_data_h4, get_data_nc, unpack_uint_to_bits
 from er3t.util.modis import cal_sinusoidal_grid
 
 
@@ -916,6 +916,242 @@ class viirs_cldprop_l2:
             self.data['pcl']      = dict(name='PCL tag (1:PCL)',                     data=pcl,               units='N/A')
 
 
+
+class viirs_09:
+
+    # Note: VIIRS 09 products are only available as HDF files (instead of netCDF like most other VIIRS products)
+    ID = 'VIIRS Atmospherically Corrected Surface Reflectance 6-Min L2 Swath IP 375m, 750m'
+
+
+    def __init__(self, \
+                 fname,  \
+                 resolution = '750m', \
+                 quality_assurance = None, \
+                 bands = ['M05', 'M04', 'M03']):
+
+
+        self.fname             = fname                       # file name
+        self.resolution        = resolution.lower()          # resolution
+        self.quality_assurance = quality_assurance           # string to get qa data
+        self.bands             = list(map(str.upper, bands)) # list of band names; check VIIRS_ALL_BANDS for convention
+
+        self.available_product_bands = ['I01', 'I02', 'I03', 'M01', 'M02', 'M03', 'M04', 'M05', 'M07', 'M08', 'M10', 'M11']
+        self.read(fname)
+
+    ######################### QF1 #########################
+    def qa_qf1_viirs_09(self, hdf_obj):
+        fdata = hdf_obj.select('QF1 Surface Reflectance')[:]
+        bits = unpack_uint_to_bits(fdata, 8, bitorder='little')
+
+        cld_msk_qa = 2 * bits[0] + bits[1]
+        cld_msk_confidence_qa = 2 * bits[2] + bits[3]
+        day_night_qa = bits[4]
+        low_sun_qa   = bits[5]
+        sunglint_qa  = 2 * bits[6] + bits[7]
+        return cld_msk_qa, cld_msk_confidence_qa, day_night_qa, low_sun_qa, sunglint_qa
+
+    ######################### QF2 #########################
+    def qa_qf2_viirs_09(self, hdf_obj):
+        fdata = hdf_obj.select('QF2 Surface Reflectance')[:]
+        bits = unpack_uint_to_bits(fdata, 8, bitorder='little')
+
+        land_water_qa = 4 * bits[0] + 2 * bits[1] + bits[2]
+        cld_shadow_qa = bits[3]
+        heavy_aerosol_qa = bits[4]
+        snow_ice_qa   = bits[5]
+        thin_cirrus_solar_qa  = bits[6]
+        thin_cirrus_thermal_qa = bits[7]
+        return land_water_qa, cld_shadow_qa, heavy_aerosol_qa, snow_ice_qa, thin_cirrus_solar_qa, thin_cirrus_thermal_qa
+
+    ######################### QF3 #########################
+    def qa_qf3_viirs_09(self, hdf_obj):
+        fdata = hdf_obj.select('QF3 Surface Reflectance')[:]
+        bits = unpack_uint_to_bits(fdata, 8, bitorder='little')
+
+        bad_m1_qa = bits[0]
+        bad_m2_qa = bits[1]
+        bad_m3_qa = bits[2]
+        bad_m4_qa = bits[3]
+        bad_m5_qa = bits[4]
+        bad_m7_qa = bits[5]
+        bad_m8_qa = bits[6]
+        bad_m10_qa = bits[7]
+
+        return bad_m1_qa, bad_m2_qa, bad_m3_qa, bad_m4_qa, bad_m5_qa, bad_m7_qa, bad_m8_qa, bad_m10_qa
+
+    ######################### QF4 #########################
+    def qa_qf4_viirs_09(self, hdf_obj):
+        fdata = hdf_obj.select('QF4 Surface Reflectance')[:]
+        bits = unpack_uint_to_bits(fdata, 8, bitorder='little')
+
+        bad_m11_qa = bits[0]
+        bad_i1_qa = bits[1]
+        bad_i2_qa = bits[2]
+        bad_i3_qa = bits[3]
+        aot_qa = bits[4]
+        missing_aot_input_qa = bits[5]
+        invalid_land_qa = bits[6]
+        missing_pw_qa = bits[7]
+        return bad_m11_qa, bad_i1_qa, bad_i2_qa, bad_i3_qa, aot_qa, missing_aot_input_qa, invalid_land_qa, missing_pw_qa
+
+    ######################### QF5 #########################
+    def qa_qf5_viirs_09(self, hdf_obj):
+        fdata = hdf_obj.select('QF5 Surface Reflectance')[:]
+        bits = unpack_uint_to_bits(fdata, 8, bitorder='little')
+
+        missing_ozone_qa = bits[0]
+        missing_sfc_press_qa = bits[1]
+        overall_m1_qa = bits[2]
+        overall_m2_qa = bits[3]
+        overall_m3_qa = bits[4]
+        overall_m4_qa = bits[5]
+        overall_m5_qa = bits[6]
+        overall_m7_qa = bits[7]
+        return missing_ozone_qa, missing_sfc_press_qa, overall_m1_qa, overall_m2_qa, overall_m3_qa, overall_m4_qa, overall_m5_qa, overall_m7_qa
+
+    ######################### QF6 #########################
+    def qa_qf6_viirs_09(self, hdf_obj):
+        fdata = hdf_obj.select('QF6 Surface Reflectance')[:]
+        bits = unpack_uint_to_bits(fdata, 8, bitorder='little')
+
+        overall_m8_qa = bits[0]
+        overall_m10_qa = bits[1]
+        overall_m11_qa = bits[2]
+        overall_i1_qa = bits[3]
+        overall_i2_qa = bits[4]
+        overall_i3_qa = bits[5]
+        return overall_m8_qa, overall_m10_qa, overall_m11_qa, overall_i1_qa, overall_i2_qa, overall_i3_qa
+
+
+    def extract_surface_reflectance(self, hdf_obj):
+        """ Extract surface reflectance data """
+
+        # check that if bands are provided that they are valid
+        if (self.bands is not None) and (not set(self.bands).issubset(self.available_product_bands)):
+            raise AttributeError('Error [viirs_09]: Your input for `bands`={}\n`bands` must be one of {}\n'.format(self.bands, self.available_product_bands))
+
+        # resolution and band settings
+        if self.resolution == '375m':
+            if self.bands is None:
+                self.bands = ['I1', 'I2', 'I3']
+
+            else: # remove leading 0 in string to match product band number convention
+                self.bands = [i[0] + i[1:].lstrip('0') for i in self.bands]
+
+        elif self.resolution == '750m':
+            if self.bands is None:
+                self.bands = ['M1', 'M2', 'M3', 'M4', 'M5', 'M7', 'M8', 'M10', 'M11']
+
+            else: # remove leading 0 in string to match product band number convention
+                self.bands = [i[0] + i[1:].lstrip('0') for i in self.bands]
+
+        else:
+            raise AttributeError('Error [viirs_09]: `resolution` must be one of `375m` or `750m`')
+
+        # begin extracting data
+        # search datasets containing the search term derived from param and resolution
+        search_term = self.resolution + ' ' +  'Surface Reflectance'
+        search_terms_with_bands = [search_term + ' ' + 'Band {}'.format(str(band)) for band in self.bands]
+        params = [i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands] # list of dataset names
+
+        if len(search_terms_with_bands) != len(params):
+            print('Warning [viirs_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
+
+        # use the first param to get shape
+        data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
+        surface_reflectance = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float64)
+        wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
+
+        # loop through bands, scale and offset each param and store in tau
+        for idx, band_num in enumerate(self.bands):
+            if len(band_num) != 3:
+                band_key = band_num[0] + '0{}'.format(band_num[1]) # pad 0 for dictionary indexing
+            else:
+                band_key = band_num
+
+            surface_reflectance[idx] = get_data_h4(hdf_obj.select(params[idx]))
+            wvl[idx] = VIIRS_ALL_BANDS[band_key]
+
+
+        # save the data
+        self.data = {}
+        self.data['wvl'] = dict(name='Wavelength'              , data=wvl,     units='nm')
+        self.data['surface_reflectance'] = dict(name='Surface Reflectance', data=surface_reflectance,     units='N/A')
+
+
+        # save qa data if requested
+        if self.quality_assurance is not None:
+            # save qa in a separate dict
+            self.qa = {}
+
+            if (self.quality_assurance.lower() == 'auto') or (self.quality_assurance.lower() == 'all'):
+                overall_m8_qa, overall_m10_qa, overall_m11_qa, overall_i1_qa, overall_i2_qa, overall_i3_qa = self.qa_qf6_viirs_09(hdf_obj)
+                _, _, overall_m1_qa, overall_m2_qa, overall_m3_qa, overall_m4_qa, overall_m5_qa, overall_m7_qa = self.qa_qf5_viirs_09(hdf_obj)
+
+                overall_ibands_qa = np.stack([overall_i1_qa, overall_i2_qa, overall_i3_qa], axis=0)
+                overall_mbands_qa = np.stack([overall_m1_qa, overall_m2_qa, overall_m3_qa,
+                                              overall_m4_qa, overall_m5_qa, overall_m7_qa,
+                                              overall_m8_qa, overall_m10_qa, overall_m11_qa], axis=0)
+
+                self.qa['overall_ibands_qa']     = dict(name='Overall Quality of Surf. Refl. of Bands: I1, I2, I3', data=overall_ibands_qa, units='N/A')
+                self.qa['overall_mbands_qa']     = dict(name='Overall Quality of Surf. Refl. of Bands: M1, M2, M3, M4, M5, M7, M8, M9, M10, M11', data=overall_mbands_qa, units='N/A')
+
+
+            if (self.quality_assurance.lower() == 'ancillary') or (self.quality_assurance.lower() == 'all'):
+                cld_msk_qa, cld_msk_confidence_qa, day_night_qa, low_sun_qa, sunglint_qa = self.qa_qf1_viirs_09(hdf_obj)
+                land_water_qa, cld_shadow_qa, heavy_aerosol_qa, snow_ice_qa, thin_cirrus_solar_qa, thin_cirrus_thermal_qa = self.qa_qf2_viirs_09(hdf_obj)
+                bad_m1_qa, bad_m2_qa, bad_m3_qa, bad_m4_qa, bad_m5_qa, bad_m7_qa, bad_m8_qa, bad_m10_qa = self.qa_qf3_viirs_09(hdf_obj)
+                bad_m11_qa, bad_i1_qa, bad_i2_qa, bad_i3_qa, aot_qa, missing_aot_input_qa, invalid_land_qa, missing_pw_qa = self.qa_qf4_viirs_09(hdf_obj)
+                missing_ozone_qa, missing_sfc_press_qa, _, _, _, _, _, _ = self.qa_qf5_viirs_09(hdf_obj)
+
+                bad_ibands_qa = np.stack([bad_i1_qa, bad_i2_qa, bad_i3_qa], axis=0)
+                bad_mbands_qa = np.stack([bad_m1_qa, bad_m2_qa, bad_m3_qa,
+                                          bad_m4_qa, bad_m5_qa, bad_m7_qa,
+                                          bad_m8_qa, bad_m10_qa, bad_m11_qa], axis=0)
+
+                missing_data_qa = np.stack([missing_aot_input_qa, invalid_land_qa, missing_pw_qa, missing_ozone_qa, missing_sfc_press_qa])
+                ancillary_data_qa = np.stack([cld_msk_qa, cld_msk_confidence_qa, day_night_qa, low_sun_qa, sunglint_qa,
+                                         land_water_qa, cld_shadow_qa, heavy_aerosol_qa, snow_ice_qa, thin_cirrus_solar_qa,
+                                         thin_cirrus_thermal_qa, aot_qa], axis=0)
+
+                missing_data_desc = 'index 0 = missing AOT input data\n'\
+                                    'index 1 = invalid land AM input over land or ocean\n'\
+                                    'index 2 = missing PW input data\n'\
+                                    'index 3 = missing ozone input data\n'\
+                                    'index 4 = missing surface pressure data\n'
+
+                ancillary_data_desc = 'index 0 = cloud mask (0-3)\n'\
+                                      'index 1 = cloud mask confidence (0-3)\n'\
+                                      'index 2 = day/night flag (0=day)\n'\
+                                      'index 3 = low sun mask (0=high)\n'\
+                                      'index 4 = sunglint flag (0-3; 0=no sunglint)\n'\
+                                      'index 5 = land/water background (0, 1, 2, 3, 5)\n'\
+                                      'index 6 = cloud shadow mask (1=shadow)\n'\
+                                      'index 7 = heavy aerosol mask (1=heavy aerosol)\n'\
+                                      'index 8 = snow/ice present (1=yes)\n'\
+                                      'index 9 = thin cirrus detected by solar/reflective bands (1=yes)\n'\
+                                      'index 10 = thin cirrus detected by thermal/emissive bands (1=yes)\n'\
+                                      'index 11 = overall quality of aerosol optical thickness (0=good)\n'\
+
+
+                self.qa['missing_data_qa']       = dict(name='Missing or Invalid Input Data QA', description=missing_data_desc, data=missing_data_qa, units='N/A')
+                self.qa['ancillary_data_qa']     = dict(name='Ancillary Data QA', description=ancillary_data_desc, data=ancillary_data_qa, units='N/A')
+                self.qa['bad_ibands_qa']         = dict(name='Bad L1b/SDR data of Bands: I1, I2, I3', data=bad_ibands_qa, units='N/A')
+                self.qa['bad_mbands_qa']         = dict(name='Bad L1b/SDR data of Bands: M1, M2, M3, M4, M5, M7, M8, M9, M10, M11', data=bad_mbands_qa, units='N/A')
+
+
+    def read(self, fname):
+
+        try:
+            from pyhdf.SD import SD, SDC
+        except ImportError:
+            msg = 'Warning [viirs_09]: To use \'viirs_09\', \'pyhdf\' needs to be installed.'
+            raise ImportError(msg)
+
+        f = SD(fname, SDC.READ)
+        self.extract_surface_reflectance(f)
+        f.end()
+        #------------------------------------------------------------------------------------------------------------------------------#
 
 
 class viirs_09a1:
