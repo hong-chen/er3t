@@ -1130,7 +1130,11 @@ def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
     uint_array = uint_array.astype('uint{}'.format(num_bits))
 
     if num_bits == 8: # just use numpy
-        return np.unpackbits(uint_array, bitorder='big', axis=1) # convert to binary
+        bits = np.unpackbits(uint_array.flatten(), bitorder=bitorder)
+        # num_bits has to be the last dimensions to get the right array
+        bits = bits.reshape(list(uint_array.shape) + [num_bits])
+        # now we can transpose
+        return np.transpose(bits, axes=(2, 0, 1))
 
     elif (num_bits == 16) or (num_bits == 32) or (num_bits == 64):
 
@@ -1143,7 +1147,8 @@ def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
         bits = np.unpackbits(uint8_array, bitorder='little', axis=1)
 
         # Reshape to match original uint16 array shape with an additional dimension for bits
-        bits = bits.reshape(uint_array.shape + (num_bits,))
+        # note that num_bits must be the last dimension here to get the right reshaped array
+        bits = bits.reshape(list(uint_array.shape) + [num_bits])
 
     else:
         raise ValueError("Only uint8, uint16, uint32, and uint64 dtypes are supported. `num_bits` must be >=8 ")
