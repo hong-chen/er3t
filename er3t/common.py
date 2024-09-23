@@ -415,7 +415,7 @@ _sat_tags_support_ = {
         'VNP09': {
                 'dataset_tag': '5200/VNP09',
                    'dict_key': 'vnp_09',
-                'description': 'VIIRS/NPP Atmospherically Corrected Surface Reflectance 6-Min L2 Swath IP 375m, 750m',
+                'description': 'Suomi-NPP VIIRS Atmospherically Corrected Surface Reflectance Product',
                     'website': 'n/a',
                   'satellite': 'SNPP',
                  'instrument': 'VIIRS',
@@ -425,7 +425,7 @@ _sat_tags_support_ = {
         'VJ109': {
                 'dataset_tag': '5200/VJ109',
                    'dict_key': 'vj1_09',
-                'description': 'VIIRS/JPSS1 Atmospherically Corrected Surface Reflectance 6-Min L2 Swath IP 375m, 750m',
+                'description': 'JPSS1 (NOAA-20) Atmospherically Corrected Surface Reflectance Product',
                     'website': 'n/a',
                   'satellite': 'NOAA20',
                  'instrument': 'VIIRS',
