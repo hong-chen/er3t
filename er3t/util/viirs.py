@@ -918,8 +918,19 @@ class viirs_cldprop_l2:
 
 
 class viirs_09:
+    """
+    A class for extracting data from VIIRS Atmospherically Corrected Surface Reflectance 6-Min L2 Swath IP 375m, 750m files.
+
+    Args:
+        fname (str): The file name of the MOD09 product.
+        resolution (str): The resolution of the product ('375m' or '750m'). Defaults to '750m'.
+        quality_assurance (str): The type of quality assurance data to retrieve ('auto', 'ancillary', 'all', or None). Defaults to None.
+        bands (list, optional): The list of band names. Defaults to ['M05', 'M04', 'M03'].
 
     # Note: VIIRS 09 products are only available as HDF files (instead of netCDF like most other VIIRS products)
+
+    References: (User Guide): https://viirsland.gsfc.nasa.gov/PDF/VIIRS_Surf_Refl_UserGuide_v2.0.pdf
+    """
     ID = 'VIIRS Atmospherically Corrected Surface Reflectance 6-Min L2 Swath IP 375m, 750m'
 
 
@@ -938,6 +949,7 @@ class viirs_09:
         self.available_product_bands = ['I01', 'I02', 'I03', 'M01', 'M02', 'M03', 'M04', 'M05', 'M07', 'M08', 'M10', 'M11']
         self.read(fname)
 
+    # Methods to extract each QQ/QF byte
     ######################### QF1 #########################
     def qa_qf1_viirs_09(self, hdf_obj):
         fdata = hdf_obj.select('QF1 Surface Reflectance')[:]
