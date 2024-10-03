@@ -233,7 +233,7 @@ def delete_file(
 def get_local_file(
         fname_file,
         filename=None,
-        fdir_local='./tmp-data/satfile',
+        fdir_local='./',
         fdir_save='%s/satfile' % fdir_data_tmp,
         ):
 
@@ -253,12 +253,12 @@ def get_local_file(
 
     if os.path.exists(fname_local1):
 
+        os.system('cp %s %s' % (fname_local1, fname_local2))
         with open(fname_local1, 'r') as f_:
             content = f_.read()
 
     elif os.path.exists(fname_local2):
 
-        os.system('cp %s %s' % (fname_local2, fname_local1))
         with open(fname_local2, 'r') as f_:
             content = f_.read()
 
@@ -973,7 +973,7 @@ def get_satfile_tag(
              satellite,
              instrument,
              nrt=False,
-             fdir_local='./tmp-data/satfile',
+             fdir_local='./',
              fdir_save='%s/satfile' % fdir_data_tmp,
              geometa=False,
              percent0=0.0,
