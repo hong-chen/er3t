@@ -233,7 +233,7 @@ def delete_file(
 def get_local_file(
         fname_file,
         filename=None,
-        fdir_local='./',
+        fdir_local='./tmp-data/satfile',
         fdir_save='%s/satfile' % fdir_data_tmp,
         ):
 
@@ -973,7 +973,7 @@ def get_satfile_tag(
              satellite,
              instrument,
              nrt=False,
-             fdir_local='./',
+             fdir_local='./tmp-data/satfile',
              fdir_save='%s/satfile' % fdir_data_tmp,
              geometa=False,
              percent0=0.0,
