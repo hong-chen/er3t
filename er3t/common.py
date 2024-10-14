@@ -201,6 +201,51 @@ _sat_tags_support_ = {
                   'reference': 'Ackerman, S., P. Menzel, R. Frey, B.Baum, 2017. MODIS Atmosphere L2 Cloud Mask Product. NASA MODIS Adaptive Processing System, Goddard Space Flight Center, [doi:10.5067/MODIS/MYD35_L2.061]'
                 },
 
+        # uncomment when product becomes available
+        # 'MOD_CLDMSK_L2': {
+        #         'dataset_tag': '5110/CLDMSK_L2_MODIS_Terra',
+        #            'dict_key': 'mod_cldmsk_l2',
+        #         'description': 'MODIS/Terra Cloud Mask 5-Min Swath 1 km',
+        #                 'doi': '10.5067/MODIS/CLDMSK_L2_MODIS_Terra.001',
+        #             'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_MODIS_Terra',
+        #           'satellite': 'Terra',
+        #          'instrument': 'MODIS',
+        #           'reference': 'Ackerman, S., et al., 2019. MODIS/Terra Cloud Mask and Spectral Test Results 5-Min L2 Swath 1km, Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: https://dx.doi.org/10.5067/VIIRS/ CLDMSK_L2_MODIS_Terra.001',
+        #         },
+
+        # 'TERRA_CLDMSK_L2': {
+        #         'dataset_tag': '5110/CLDMSK_L2_MODIS_Terra',
+        #            'dict_key': 'mod_cldmsk_l2',
+        #         'description': 'MODIS/Terra Cloud Mask 5-Min Swath 1 km',
+        #                 'doi': '10.5067/MODIS/CLDMSK_L2_MODIS_Terra.001',
+        #             'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_MODIS_Terra',
+        #           'satellite': 'Terra',
+        #          'instrument': 'MODIS',
+        #           'reference': 'Ackerman, S., et al., 2019. MODIS/Terra Cloud Mask and Spectral Test Results 5-Min L2 Swath 1km, Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: https://dx.doi.org/10.5067/VIIRS/ CLDMSK_L2_MODIS_Terra.001',
+        #         },
+
+        'MYD_CLDMSK_L2': {
+                'dataset_tag': '5110/CLDMSK_L2_MODIS_Aqua',
+                   'dict_key': 'myd_cldmsk_l2',
+                'description': 'MODIS/Aqua Cloud Mask 5-Min Swath 1 km',
+                        'doi': '10.5067/MODIS/CLDMSK_L2_MODIS_Aqua.001',
+                    'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_MODIS_Aqua',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'Ackerman, S., et al., 2019. MODIS/Aqua Cloud Mask and Spectral Test Results 5-Min L2 Swath 1km, Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: https://dx.doi.org/10.5067/VIIRS/CLDMSK_L2_MODIS_Aqua.001',
+                },
+
+        'AQUA_CLDMSK_L2': {
+                'dataset_tag': '5110/CLDMSK_L2_MODIS_Aqua',
+                   'dict_key': 'myd_cldmsk_l2',
+                'description': 'MODIS/Aqua Cloud Mask 5-Min Swath 1 km',
+                        'doi': '10.5067/MODIS/CLDMSK_L2_MODIS_Aqua.001',
+                    'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_MODIS_Aqua',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'Ackerman, S., et al., 2019. MODIS/Aqua Cloud Mask and Spectral Test Results 5-Min L2 Swath 1km, Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: https://dx.doi.org/10.5067/VIIRS/CLDMSK_L2_MODIS_Aqua.001',
+                },
+
         'MOD09': {
                 'dataset_tag': '61/MOD09',
                    'dict_key': 'mod_09',
@@ -411,6 +456,39 @@ _sat_tags_support_ = {
         #          'instrument': 'VIIRS',
         #           'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/JPSS2 Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
         #         },
+
+        'VNP_CLDMSK_L2': {
+                'dataset_tag': '5110/CLDMSK_L2_VIIRS_SNPP',
+                   'dict_key': 'vnp_cldmsk_l2',
+                'description': 'VIIRS/SNPP Cloud Mask 6-Min Swath 750 m',
+                        'doi': '10.5067/VIIRS/CLDMSK_L2_VIIRS_SNPP.001',
+                    'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_VIIRS_SNPP',
+                  'satellite': 'SNPP',
+                 'instrument': 'VIIRS',
+                  'reference': 'Ackerman, S., et al., 2019. VIIRS/SNPP Cloud Mask and Spectral Test Results 6-Min L2 Swath 750m, Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: https://dx.doi.org/10.5067/VIIRS/CLDMSK_L2_VIIRS_SNPP.001',
+                },
+
+         'VJ1_CLDMSK_L2': {
+                'dataset_tag': '5110/CLDMSK_L2_VIIRS_NOAA20',
+                   'dict_key': 'vj1_cldmsk_l2',
+                'description': 'VIIRS/NOAA20 (JPSS1) Cloud Mask 6-Min Swath 750 m',
+                        'doi': '10.5067/VIIRS/CLDMSK_L2_VIIRS_NOAA20.001',
+                    'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_VIIRS_NOAA20',
+                  'satellite': 'NOAA20',
+                 'instrument': 'VIIRS',
+                  'reference': 'Ackerman, S., et al., 2019. VIIRS/NOAA20 Cloud Mask and Spectral Test Results 6-Min L2 Swath 750m, Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: https://dx.doi.org/10.5067/VIIRS/CLDMSK_L2_VIIRS_NOAA20.001',
+                },
+
+          'VJ2_CLDMSK_L2': {
+                'dataset_tag': '5110/CLDMSK_L2_VIIRS_NOAA21',
+                   'dict_key': 'vj2_cldmsk_l2',
+                'description': 'VIIRS/NOAA21 (JPSS2) Cloud Mask 6-Min Swath 750 m',
+                        'doi': '10.5067/VIIRS/CLDMSK_L2_VIIRS_NOAA21.001',
+                    'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_VIIRS_NOAA21',
+                  'satellite': 'NOAA21',
+                 'instrument': 'VIIRS',
+                  'reference': 'Ackerman, S., et al., 2019. VIIRS/NOAA21 Cloud Mask and Spectral Test Results 6-Min L2 Swath 750m, Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: https://dx.doi.org/10.5067/VIIRS/CLDMSK_L2_VIIRS_NOAA21.001',
+                },
 
         'VNP09': {
                 'dataset_tag': '5200/VNP09',
