@@ -1,5 +1,6 @@
 import os
 import sys
+import fnmatch
 import datetime
 import numpy as np
 import warnings
@@ -9,7 +10,8 @@ import er3t.common
 
 EARTH_RADIUS = er3t.common.params['earth_radius']
 
-__all__ = ['check_equal', 'check_equidistant', 'send_email', \
+__all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
+           'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'find_nearest', 'move_correlate', \
@@ -19,6 +21,66 @@ __all__ = ['check_equal', 'check_equidistant', 'send_email', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
            'format_time', 'region_parser', 'parse_geojson', 'unpack_uint_to_bits']
+
+
+def get_all_files(fdir, pattern='*'):
+
+    fnames = []
+    for fdir_root, fdir_sub, fnames_tmp in os.walk(fdir):
+        for fname_tmp in fnames_tmp:
+            if fnmatch.fnmatch(fname_tmp, pattern):
+                fnames.append(os.path.join(fdir_root, fname_tmp))
+    return sorted(fnames)
+
+
+
+def get_all_folders(fdir, pattern='*'):
+
+    fnames = get_all_files(fdir)
+
+    folders = []
+    for fname in fnames:
+        folder_tmp = os.path.abspath(os.path.dirname(os.path.relpath(fname)))
+        if (folder_tmp not in folders) and fnmatch.fnmatch(folder_tmp, pattern):
+                folders.append(folder_tmp)
+
+    return folders
+
+
+
+def load_h5(fname):
+
+    import h5py
+
+    def get_variable_names(obj, prefix=''):
+
+        """
+        Purpose: Walk through the file and extract information of data groups and data variables
+
+        Input: h5py file object <f>, e.g., f = h5py.File('file.h5', 'r')
+
+        Outputs:
+            data variable path in the format of <['group1/variable1']> to
+            mimic the style of accessing HDF5 data variables using h5py, e.g.,
+            <f['group1/variable1']>
+        """
+
+        for key in obj.keys():
+
+            item = obj[key]
+            path = '{prefix}/{key}'.format(prefix=prefix, key=key)
+            if isinstance(item, h5py.Dataset):
+                yield path
+            elif isinstance(item, h5py.Group):
+                yield from get_variable_names(item, prefix=path)
+
+    data = {}
+    f = h5py.File(fname, 'r')
+    keys = get_variable_names(f)
+    for key in keys:
+        data[key[1:]] = f[key[1:]][...]
+    f.close()
+    return data
 
 
 
@@ -220,12 +282,13 @@ def get_data_h4(hdf_dset, replace_fill_value=np.nan):
     attrs = hdf_dset.attributes()
     data  = hdf_dset[:]
 
-    # data = (integer_value - attrs['add_offset']) * attrs['scale_factor']
     if 'add_offset' in attrs:
         data = data - attrs['add_offset']
 
     if 'scale_factor' in attrs:
         data = data * attrs['scale_factor']
+    else:
+        data = data * 1.0
 
     if '_FillValue' in attrs and replace_fill_value is not None:
         _FillValue = np.float64(attrs['_FillValue'])
@@ -560,7 +623,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     #/----------------------------------------------------------------------------\#
     lon = np.array(lon).ravel()
     lat = np.array(lat).ravel()
-    data = np.array(data).ravel()
+    data = np.array(data).ravel()*1.0
     #\----------------------------------------------------------------------------/#
 
 

@@ -58,7 +58,8 @@ def get_token_earthdata():
     try:
         token = os.environ['EARTHDATA_TOKEN']
     except KeyError:
-        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
+        token = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImhvY2g0MjQwIiwiZXhwIjoxNzMyOTA5MjczLCJpYXQiOjE3Mjc3MjUyNzMsImlzcyI6Imh0dHBzOi8vdXJzLmVhcnRoZGF0YS5uYXNhLmdvdiJ9.HT6ZMvq-JQuoeZZmkQJBcyCVLtzoomJpPwo9IyNLAGYbViqVFyPxaj0-vlwy70Dv8Y4BWl5DHXKA5P4QSKttYhNFsXB86WLw6vzPO6RHRLwBh6j055TMo_JcSO2Pfvu2nguo2O_hXUL_P0Xpwdi0R6x4HTmN5Qk1S_nh1hondH_Oj2TnCukuV773FXGtkYGpKml-8uH2YA1J971tgTBUWoI1fu1sh9QbW-qZfTdK41F0NI-3PKVyPbALH8dzd5LbErA7nL1kfm-J0-Erwvp41EiKP-2CDTw1ZY07LSLcVwvQh3miFWa4rOJW_d2VnaQMc7yZBgVy4zhNG4wpNfZhDw'
+
 
         msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
         warnings.warn(msg)
@@ -240,23 +241,23 @@ def get_local_file(
 
     # try to get information from local
     # check two locations:
-    #   1) <tmp-data/satfile> directory under er3t main directory
-    #   2) current directory;
+    #   1) current directory;
+    #   2) <tmp-data/satfile> directory under er3t main directory
     #/--------------------------------------------------------------\#
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_save,  filename))
-    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, filename))
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_local, filename))
+    fname_local2 = os.path.abspath('%s/%s' % (fdir_save,  filename))
 
     if os.path.exists(fname_local1):
 
+        os.system('cp %s %s' % (fname_local1, fname_local2))
         with open(fname_local1, 'r') as f_:
             content = f_.read()
 
     elif os.path.exists(fname_local2):
 
-        os.system('cp %s %s' % (fname_local2, fname_local1))
         with open(fname_local2, 'r') as f_:
             content = f_.read()
 
@@ -1062,11 +1063,11 @@ def get_satfile_tag(
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
 
     # try to get geometa information from local
-    # content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
+    content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
 
     # try to get geometa information online
-    # if content is None:
-    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+    if (content is None) or ('<!DOCTYPE html>' in content):
+        content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
     content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
@@ -1126,9 +1127,11 @@ def get_satfile_tag(
                     filename = line['GranuleID']
                     filename_tag = '.'.join(filename.split('.')[1:3])
                     filename_tags.append(filename_tag)
-                    percent_all = np.append(percent_all, percent_in)
-                    i_all.append(i)
+
+            percent_all = np.append(percent_all, percent_in)
+            i_all.append(i)
     #\----------------------------------------------------------------------------/#
+
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
@@ -1146,6 +1149,7 @@ def get_satfile_tag(
 
         filename_tags = [filename_tags[i] for i in indices_sort]
     # #\----------------------------------------------------------------------------/#
+
     return filename_tags
 
 
@@ -1586,6 +1590,11 @@ def download_worldview_image(
         try:
             lon__ = np.arange(extent[0], extent[1], 500.0/111000.0)
             lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
+
+            if (lon__.size>800) or (lat__.size>800):
+                lon__ = np.linspace(extent[0], extent[1], 800)
+                lat__ = np.linspace(extent[2], extent[3], 800)
+
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
             line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, nrt=False, geometa=True, percent0=25.0, worldview=True)[0]

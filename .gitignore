@@ -16,6 +16,7 @@ build
 *.mp4
 
 # data files
+*log*
 *model*
 *data*
 *.hdf

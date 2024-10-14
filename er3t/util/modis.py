@@ -618,7 +618,7 @@ class modis_l2:
             self.read(fname, cop_flag=cop_flag)
 
             if len(vnames) > 0:
-                self.read_vars(fname, vnames=vnames, cop_flag=cop_flag)
+                self.read_vars(fname, vnames=vnames)
 
 
     def read(self, fname, cop_flag):
@@ -777,7 +777,7 @@ class modis_l2:
         f.end()
         # -------------------------------------------------------------------------------------------------
 
-        pcl = pcl[logic_1km]
+        # pcl = pcl[logic_1km]
 
         if hasattr(self, 'data'):
 
@@ -2251,7 +2251,6 @@ def upscale_modis_lonlat(lon_in, lat_in, scale=5, extra_grid=True):
     offsets = offsets_dict[scale]
 
     lon_in[lon_in>180.0] -= 360.0
-
     # +
     # find center lon, lat
     proj_lonlat = ccrs.PlateCarree()
@@ -2292,10 +2291,18 @@ def upscale_modis_lonlat(lon_in, lat_in, scale=5, extra_grid=True):
 
     YY = np.arange(y)
 
-    f_x = interpolate.interp2d(XX_in, YY_in, xy_in[:, :, 0], kind='linear', fill_value=None)
-    f_y = interpolate.interp2d(XX_in, YY_in, xy_in[:, :, 1], kind='linear', fill_value=None)
+    # Deprecated since Scipy v1.12
+    # f_x = interpolate.interp2d(XX_in, YY_in, xy_in[:, :, 0], kind='linear', fill_value=None)
+    # f_y = interpolate.interp2d(XX_in, YY_in, xy_in[:, :, 1], kind='linear', fill_value=None)
 
-    lonlat = proj_lonlat.transform_points(proj_xy, f_x(XX, YY), f_y(XX, YY))[:, :, [0, 1]]
+    XX_grid, YY_grid = np.meshgrid(XX, YY, indexing='ij')
+
+    # note that RegularGridInterpolator requires transposed data
+    f_x = interpolate.RegularGridInterpolator((XX_in, YY_in), xy_in[:, :, 0].T, method='linear', fill_value=None, bounds_error=False)
+    f_y = interpolate.RegularGridInterpolator((XX_in, YY_in), xy_in[:, :, 1].T, method='linear', fill_value=None, bounds_error=False)
+
+    # reverse the transpose to get back original form
+    lonlat = proj_lonlat.transform_points(proj_xy, f_x((XX_grid, YY_grid)).T, f_y((XX_grid, YY_grid)).T)[:, :, [0, 1]]
 
     return lonlat[:, :, 0], lonlat[:, :, 1]
 
