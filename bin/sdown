@@ -11,6 +11,7 @@ Now supports:
                 MOD021KM, MYD021KM
                 MOD06_L2, MYD06_L2
                 MOD35_L2, MYD35_L2
+                          MYD_CLDMSK_L2 (or Aqua_CLDMSK_L2)
                 MOD09,    MYD09
                 MCD43
 
@@ -20,6 +21,7 @@ Now supports:
                 VNP03MOD,       VJ103MOD,       VJ203MOD
                 VNP02MOD,       VJ102MOD,       VJ202MOD
                 VNP_CLDPROP_L2, VJ1_CLDPROP_L2
+                VNP_CLDMSK_L2,  VJ1_CLDMSK_L2,  VJ2_CLDMSK_L2
                 VNP09,          VJ109
 
     OCO-2 data: coming soon...
@@ -635,7 +637,7 @@ if __name__ == '__main__':
         lons       = None
         lats       = None
         fdir       = 'sat-data/'
-        products   = ['MODRGB', 'VNP02IMG']
+        products   = ['MOD06_L2', 'VNP02IMG']
         nrt        = False
         iou        = 0
         geojson    = None
