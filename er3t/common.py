@@ -227,7 +227,7 @@ _sat_tags_support_ = {
         'MYD_CLDMSK_L2': {
                 'dataset_tag': '5110/CLDMSK_L2_MODIS_Aqua',
                    'dict_key': 'myd_cldmsk_l2',
-                'description': 'MODIS/Aqua Cloud Mask 5-Min Swath 1 km',
+                'description': 'Aqua MODIS Continuity Cloud Mask (MVCM) 5-Min Swath 1 km',
                         'doi': '10.5067/MODIS/CLDMSK_L2_MODIS_Aqua.001',
                     'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_MODIS_Aqua',
                   'satellite': 'Aqua',
@@ -238,7 +238,7 @@ _sat_tags_support_ = {
         'AQUA_CLDMSK_L2': {
                 'dataset_tag': '5110/CLDMSK_L2_MODIS_Aqua',
                    'dict_key': 'myd_cldmsk_l2',
-                'description': 'MODIS/Aqua Cloud Mask 5-Min Swath 1 km',
+                'description': 'Aqua MODIS Continuity Cloud Mask (MVCM) 5-Min Swath 1 km',
                         'doi': '10.5067/MODIS/CLDMSK_L2_MODIS_Aqua.001',
                     'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_MODIS_Aqua',
                   'satellite': 'Aqua',
@@ -460,7 +460,7 @@ _sat_tags_support_ = {
         'VNP_CLDMSK_L2': {
                 'dataset_tag': '5110/CLDMSK_L2_VIIRS_SNPP',
                    'dict_key': 'vnp_cldmsk_l2',
-                'description': 'VIIRS/SNPP Cloud Mask 6-Min Swath 750 m',
+                'description': 'SNPP VIIRS Continuity Cloud Mask (MVCM) 6-Min Swath 750 m',
                         'doi': '10.5067/VIIRS/CLDMSK_L2_VIIRS_SNPP.001',
                     'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_VIIRS_SNPP',
                   'satellite': 'SNPP',
@@ -471,7 +471,7 @@ _sat_tags_support_ = {
          'VJ1_CLDMSK_L2': {
                 'dataset_tag': '5110/CLDMSK_L2_VIIRS_NOAA20',
                    'dict_key': 'vj1_cldmsk_l2',
-                'description': 'VIIRS/NOAA20 (JPSS1) Cloud Mask 6-Min Swath 750 m',
+                'description': 'NOAA20 (JPSS1) VIIRS Continuity Cloud Mask (MVCM) 6-Min Swath 750 m',
                         'doi': '10.5067/VIIRS/CLDMSK_L2_VIIRS_NOAA20.001',
                     'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_VIIRS_NOAA20',
                   'satellite': 'NOAA20',
@@ -482,7 +482,7 @@ _sat_tags_support_ = {
           'VJ2_CLDMSK_L2': {
                 'dataset_tag': '5110/CLDMSK_L2_VIIRS_NOAA21',
                    'dict_key': 'vj2_cldmsk_l2',
-                'description': 'VIIRS/NOAA21 (JPSS2) Cloud Mask 6-Min Swath 750 m',
+                'description': 'NOAA21 (JPSS2) VIIRS Continuity Cloud Mask (MVCM) 6-Min Swath 750 m',
                         'doi': '10.5067/VIIRS/CLDMSK_L2_VIIRS_NOAA21.001',
                     'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDMSK_L2_VIIRS_NOAA21',
                   'satellite': 'NOAA21',
