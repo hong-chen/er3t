@@ -19,7 +19,8 @@ __all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
            'get_doy_tag', 'add_reference', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat']
+           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
+           'format_time', 'region_parser', 'parse_geojson', 'unpack_uint_to_bits']
 
 
 def get_all_files(fdir, pattern='*'):
@@ -181,8 +182,8 @@ def send_email(
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, [receiver], msg.as_string())
         server.quit()
-    except:
-        raise OSError("Error [send_email]: Failed to send the email.")
+    except Exception as err:
+        raise OSError(err, "Error [send_email]: Failed to send the email.")
 
 
 
@@ -492,11 +493,11 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
     else:
         Nx, Ny = NxNy
@@ -563,11 +564,11 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
 
         lon_1d0 = np.linspace(extent[0], extent[1], Nx+1)
@@ -810,7 +811,7 @@ def downscale(ndarray, new_shape, operation='mean'):
         ndarray: numpy array, downscaled array
     """
     operation = operation.lower()
-    if not operation in ['sum', 'mean', 'max']:
+    if operation not in ['sum', 'mean', 'max']:
         raise ValueError('Error [downscale]: Operation of \'%s\' not supported.' % operation)
     if ndarray.ndim != len(new_shape):
         raise ValueError("Error [downscale]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
@@ -1107,7 +1108,120 @@ def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
 
     return lon1, lat1
 
+
+def parse_geojson(geojson_fpath):
+
+    import json
+    with open(geojson_fpath, 'r') as f:
+        data = json.load(f)
+        # n_coords = len(data['features'][0]['geometry']['coordinates'][0])
+
+    coords = data['features'][0]['geometry']['coordinates']
+
+    lons = np.array(coords[0])[:, 0]
+    lats = np.array(coords[0])[:, 1]
+    return lons, lats
+
+
+def region_parser(extent, lons, lats, geojson_fpath):
+
+    if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
+        print('Error [sdown]: Must provide either extent or lon/lat coordinates or a geoJSON file')
+        sys.exit()
+
+    if (extent is not None) and ((lats is not None) or (lons is not None)) and (geojson_fpath is not None):
+        print('Warning [sdown]: Received multiple regions of interest. Only `extent` will be used.')
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
+
+
+    if (extent is not None):
+        if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
+            print('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+            sys.exit()
+
+        # check to make sure extent is correct
+        if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
+            msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
+            print(msg)
+            sys.exit()
+
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
+
+    elif (lats is not None) and (lons is not None):
+        if ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
+            llons = np.linspace(lons[0], lons[1], 100)
+            llats = np.linspace(lats[0], lats[1], 100)
+            return llons, llats
+        else:
+            print('Error [sdown]: Must provide two coorect bounds each for `--lons` and `--lats`')
+            sys.exit()
+
+
+    elif (geojson_fpath is not None):
+        llons, llats = parse_geojson(geojson_fpath)
+        return llons, llats
+
+
+def format_time(total_seconds):
+    """
+    Convert seconds to hours, minutes, seconds, and milliseconds.
+
+    Parameters:
+    - total_seconds: The total number of seconds to convert.
+
+    Returns:
+    - A tuple containing hours, minutes, seconds, and milliseconds.
+    """
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    milliseconds = (total_seconds - int(total_seconds)) * 1000
+
+    return (int(hours), int(minutes), int(seconds), int(milliseconds))
 #\---------------------------------------------------------------------------/
+
+def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
+    """
+    Unpack a uint16 or 32 or 64 array into binary bits.
+    """
+
+    # convert to right dtype
+    uint_array = uint_array.astype('uint{}'.format(num_bits))
+
+    if num_bits == 8: # just use numpy
+        bits = np.unpackbits(uint_array.flatten(), bitorder=bitorder)
+        # num_bits has to be the last dimensions to get the right array
+        bits = bits.reshape(list(uint_array.shape) + [num_bits])
+        # now we can transpose
+        return np.transpose(bits, axes=(2, 0, 1))
+
+    elif (num_bits == 16) or (num_bits == 32) or (num_bits == 64):
+
+        # Convert uintxx array to uint8 array
+        uint8_array = uint_array.view(np.uint8).reshape(-1, int(num_bits/8))
+
+        # Unpack bits from uint8 array
+        # force little endian since big endian seems to pad an extra 0
+        # and then reverse it if needed
+        bits = np.unpackbits(uint8_array, bitorder='little', axis=1)
+
+        # Reshape to match original uint16 array shape with an additional dimension for bits
+        # note that num_bits must be the last dimension here to get the right reshaped array
+        bits = bits.reshape(list(uint_array.shape) + [num_bits])
+
+    else:
+        raise ValueError("Only uint8, uint16, uint32, and uint64 dtypes are supported. `num_bits` must be >=8 ")
+
+    if bitorder == 'big': # reverse the order
+        return np.transpose(bits[:, :, ::-1], axes=(2, 0, 1))
+
+    return np.transpose(bits, axes=(2, 0, 1))
+
+
 
 if __name__ == '__main__':
 
