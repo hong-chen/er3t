@@ -1073,7 +1073,7 @@ class modis_35_l2:
 
 class modis_mvcm_cldmsk_l2:
     """
-    A class for extracting data from MODIS/Aqua and MODIS/Terra Cloud Mask 5-Min Swath 1 km files (CLDMSK_L2).
+    A class for extracting data from MODIS/Aqua Cloud Mask 5-Min Swath 1 km files (CLDMSK_L2).
     This is the Continuity MODIS-VIIRS Cloud Mask (MVCM) and is produced slightly differently from the MxD35_L2 cloud mask product.
     Consult the references below for appropriate usage.
 
@@ -1086,6 +1086,8 @@ class modis_mvcm_cldmsk_l2:
                 (ATBD) https://modis-atmosphere.gsfc.nasa.gov/sites/default/files/ModAtmo/MOD35_ATBD_Collection6_0.pdf
                 (Filespec) https://ladsweb.modaps.eosdis.nasa.gov/filespec/VIIRS/1/CLDMSK_L2_MODIS_Aqua
                 (Paper) Frey et al. (2020), https://doi.org/10.3390/rs12203334
+
+    Note: MODIS/Terra is not yet supported by MVCM
     """
     ID = 'MODIS MVCM Continuity Cloud Mask 5-Min Swath 1 km'
 
