@@ -513,21 +513,21 @@ class modis_l1b:
 
         if self.keep_dims: # don't apply the logic geomask
             raw = raw0[:]
-            rad = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float64)
-            ref = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float64)
-            cnt = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float64)
+            rad = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float32)
+            ref = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float32)
+            cnt = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float32)
             # Calculate uncertainty
             uct     = uct0[:]
-            uct_pct = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float64)
+            uct_pct = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float32)
 
         else:
             raw = raw0[:][:, logic]
-            rad = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
-            ref = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
-            cnt = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+            rad = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float32)
+            ref = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float32)
+            cnt = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float32)
             # Calculate uncertainty
             uct     = uct0[:][:, logic]
-            uct_pct = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+            uct_pct = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float32)
 
         # apply offsets and scales
         for band_counter, i in enumerate(self.bands):
@@ -1598,7 +1598,7 @@ class modis_09:
 
         # use the first param to get shape
         data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
-        surface_reflectance = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float64)
+        surface_reflectance = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float32)
         wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
 
         # loop through bands, scale and offset each param and store in tau
@@ -1675,7 +1675,7 @@ class modis_09:
 
         # use the first param to get shape
         data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
-        tau = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float64) # atm optical depth
+        tau = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float32) # atm optical depth
         wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
 
         # loop through bands, scale and offset each param and store in tau
@@ -1837,7 +1837,7 @@ class modis_09a1:
         f     = SD(fname, SDC.READ)
 
         Nchan = 7 # wavelengths are 0:620-670nm, 1:841-876nm, 2:459-479nm, 3:545-565nm, 4:1230-1250nm, 5:1628-1652nm, 6:2105-2155nm
-        ref = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        ref = np.zeros((Nchan, logic.sum()), dtype=np.float32)
         for ichan in range(Nchan):
             data0 = f.select('sur_refl_b%2.2d' % (ichan+1))
             data  = get_data_h4(data0)[logic]
@@ -1957,9 +1957,9 @@ class modis_43a1:
         f     = SD(fname, SDC.READ)
 
         Nchan = 7 # wavelengths are 0:620-670nm, 1:841-876nm, 2:459-479nm, 3:545-565nm, 4:1230-1250nm, 5:1628-1652nm, 6:2105-2155nm
-        f_iso = np.zeros((Nchan, logic.sum()), dtype=np.float64)
-        f_vol = np.zeros((Nchan, logic.sum()), dtype=np.float64)
-        f_geo = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        f_iso = np.zeros((Nchan, logic.sum()), dtype=np.float32)
+        f_vol = np.zeros((Nchan, logic.sum()), dtype=np.float32)
+        f_geo = np.zeros((Nchan, logic.sum()), dtype=np.float32)
 
         for ichan in range(Nchan):
             data0 = f.select('BRDF_Albedo_Parameters_Band%d' % (ichan+1))
@@ -2091,8 +2091,8 @@ class modis_43a3:
         f     = SD(fname, SDC.READ)
 
         Nchan = 7 # wavelengths are 0:620-670nm, 1:841-876nm, 2:459-479nm, 3:545-565nm, 4:1230-1250nm, 5:1628-1652nm, 6:2105-2155nm
-        bsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float64)
-        wsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        bsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float32)
+        wsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float32)
 
         for ichan in range(Nchan):
             data0 = f.select('Albedo_BSA_Band%d' % (ichan+1))

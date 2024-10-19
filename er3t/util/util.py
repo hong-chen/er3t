@@ -291,7 +291,7 @@ def get_data_h4(hdf_dset, replace_fill_value=np.nan):
         data = data * 1.0
 
     if '_FillValue' in attrs and replace_fill_value is not None:
-        _FillValue = np.float64(attrs['_FillValue'])
+        _FillValue = np.float32(attrs['_FillValue'])
         data[data == _FillValue] = replace_fill_value
 
     return data
@@ -303,7 +303,7 @@ def get_data_nc(nc_dset, replace_fill_value=np.nan):
     data  = nc_dset[:]
 
     if replace_fill_value is not None:
-        data = data.astype('float64')
+        data = data.astype('float32')
         data.filled(fill_value=replace_fill_value)
 
     return data
@@ -326,7 +326,7 @@ def move_correlate(data0, data, Ndx=5, Ndy=5):
     yy0 = yy.copy()
     valid = np.ones((Nx, Ny), dtype=np.int32)
 
-    corr_coef = np.zeros((2*Ndx+1, 2*Ndy+1), dtype=np.float64)
+    corr_coef = np.zeros((2*Ndx+1, 2*Ndy+1), dtype=np.float32)
     dxx = np.arange(-Ndx, Ndx+1)
     dyy = np.arange(-Ndy, Ndy+1)
 
@@ -430,8 +430,8 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
 
     else:
 
-        dx = np.zeros_like(x_out, dtype=np.float64)
-        dy = np.zeros_like(y_out, dtype=np.float64)
+        dx = np.zeros_like(x_out, dtype=np.float32)
+        dy = np.zeros_like(y_out, dtype=np.float32)
 
         dx[1:, ...] = x_out[1:, ...] - x_out[:-1, ...]
         dx[0, ...]  = dx[1, ...]
@@ -687,8 +687,8 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
 
     # get lon_2d/lat_2d
     #/----------------------------------------------------------------------------\#
-    lon_2d = np.zeros((Nx, Ny), dtype=np.float64)
-    lat_2d = np.zeros((Nx, Ny), dtype=np.float64)
+    lon_2d = np.zeros((Nx, Ny), dtype=np.float32)
+    lat_2d = np.zeros((Nx, Ny), dtype=np.float32)
     lon_2d[0, :] = lon_1d
     lat_2d[0, :] = lat_1d
     for i in range(1, Nx):

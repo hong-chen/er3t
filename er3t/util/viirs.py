@@ -1300,7 +1300,7 @@ class viirs_09:
 
         # use the first param to get shape
         data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
-        surface_reflectance = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float64)
+        surface_reflectance = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float32)
         wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
 
         # loop through bands, scale and offset each param and store in tau
@@ -1621,8 +1621,8 @@ class viirs_43ma3:
         f     = Dataset(fname, 'r')
 
         Nchan = len(channels)
-        bsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float64)
-        wsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        bsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float32)
+        wsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float32)
 
         for ichan in range(Nchan):
             data0 = f.groups['HDFEOS'].groups['GRIDS'].groups['VIIRS_Grid_BRDF'].groups['Data Fields'].variables['Albedo_BSA_%s' % channels[ichan]]
@@ -1762,7 +1762,7 @@ class viirs_43ma4:
         f     = Dataset(fname, 'r')
 
         Nchan = len(channels)
-        sfc_ref = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        sfc_ref = np.zeros((Nchan, logic.sum()), dtype=np.float32)
 
         for ichan in range(Nchan):
             data0 = f.groups['HDFEOS'].groups['GRIDS'].groups['VIIRS_Grid_BRDF'].groups['Data Fields'].variables['Nadir_Reflectance_%s' % channels[ichan]]

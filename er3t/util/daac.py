@@ -713,8 +713,8 @@ def cal_lon_lat_utc_geometa(
     N_a = N_along
     N_c = N_cross
 
-    i_a = np.arange(N_a, dtype=np.float64)
-    i_c = np.arange(N_c, dtype=np.float64)
+    i_a = np.arange(N_a, dtype=np.float32)
+    i_c = np.arange(N_c, dtype=np.float32)
     ii_a, ii_c = np.meshgrid(i_a, i_c, indexing='ij')
 
     res_a = dist_a/N_a
@@ -758,7 +758,7 @@ def cal_lon_lat_utc_geometa(
     dtime0 = datetime.datetime.strptime(dtime0_s, 'A%Y%j.%H%M')
     jday0 = dtime_to_jday(dtime0)
 
-    jday_out = np.zeros(lon_out.shape, dtype=np.float64)
+    jday_out = np.zeros(lon_out.shape, dtype=np.float32)
     delta_t0 = delta_t / N_scan
 
     delta_t0_c = delta_t0/3.0/N_c*i_c  # 120 degree coverage thus </3.0>
@@ -1070,7 +1070,7 @@ def get_satfile_tag(
         content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
+    # content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
 
     # read in geometa info
     data = read_geometa(content)
@@ -1096,7 +1096,7 @@ def get_satfile_tag(
     Ndata = len(data)
     filename_tags = []
 
-    percent_all   = np.array([], dtype=np.float64)
+    percent_all   = np.array([], dtype=np.float32)
     i_all         = []
     for i in range(Ndata):
 

@@ -80,9 +80,9 @@ class oco2_rad_nadir:
 
         Nspec, Nfoot, Ncoef = wvl_coef.shape
 
-        wvl_o2_a       = np.zeros((Nfoot, Nchan), dtype=np.float64)
-        wvl_co2_weak   = np.zeros((Nfoot, Nchan), dtype=np.float64)
-        wvl_co2_strong = np.zeros((Nfoot, Nchan), dtype=np.float64)
+        wvl_o2_a       = np.zeros((Nfoot, Nchan), dtype=np.float32)
+        wvl_co2_weak   = np.zeros((Nfoot, Nchan), dtype=np.float32)
+        wvl_co2_strong = np.zeros((Nfoot, Nchan), dtype=np.float32)
 
         chan = np.arange(1, Nchan+1)
         for i in range(Nfoot):
