@@ -25,10 +25,6 @@ class mca_atm_1d:
     Output:
         self.nml: Python dictionary, ig range from 0 to 15 (0, 1, ..., 15)
             [ig]['Atm_zgrd0']
-            [ig]['Atm_wkd0']
-            [ig]['Atm_mtprof']
-            [ig]['Atm_tmp1d']
-            [ig]['Atm_nkd']
             [ig]['Atm_nz']
             [ig]['Atm_ext1d']
             [ig]['Atm_omg1d']
@@ -72,10 +68,6 @@ class mca_atm_1d:
         for ig in range(self.Ng):
 
             self.nml[ig]['Atm_zgrd0'] = {'data':self.atm.lev['altitude']['data']*1000.0, 'units':'m'  , 'name':'Layer boundaries'}
-            self.nml[ig]['Atm_wkd0']  = {'data':1.0                                    , 'units':'N/A', 'name':'Weight coefficients'}
-            self.nml[ig]['Atm_mtprof']= {'data':0                                      , 'units':'N/A', 'name':'Temperature profile flag'}
-            self.nml[ig]['Atm_tmp1d'] = {'data':self.atm.lay['temperature']['data']    , 'units':'K'  , 'name':'Temperature profile'}
-            self.nml[ig]['Atm_nkd']   = {'data':1                                      , 'units':'N/A', 'name':'Number of K-distribution'}
             self.nml[ig]['Atm_np1d']  = {'data':1                                      , 'units':'N/A', 'name':'Number of 1D atmospheric constituents'}
 
             nz = self.atm.lay['altitude']['data'].size

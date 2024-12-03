@@ -55,7 +55,7 @@ class mca_run:
 
         if executable is None:
             if er3t.common.has_mcarats:
-                executable = os.environ['MCARATS_V010_EXE']
+                executable = os.environ['MCARATS_V011_EXE']
             else:
                 msg = '\nError [mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>.'
                 raise OSError(msg)
@@ -102,15 +102,19 @@ class mca_run:
 
             input_file  = os.path.abspath(fnames_inp[i])
             output_file = os.path.abspath(fnames_out[i])
+            dat_path    = '.'    # location where the scattering/Atm3d/surface property files exist  # mca V11
+            uncgoal     = 10000  # very large uncertainty (%) # mca V11
 
             fdir_out    = os.path.dirname(output_file)
             if not os.path.exists(fdir_out):
                 os.system('mkdir -p %s' % fdir_out)
 
             if (Ncpu > 1) and has_mpi:
-                command = 'mpirun -n %d %s %d %d %s %s' % (Ncpu, executable, photons_dist[i], solver, input_file, output_file)
+                # command = 'mpirun -n %d %s %d %d %s %s' % (Ncpu, executable, photons_dist[i], solver, input_file, output_file)
+                command = 'mpirun -n %d %s %d %f %d %s %s %s' % (Ncpu, executable, photons_dist[i], uncgoal, solver, dat_path, input_file, output_file) # mca V11
             else:
-                command = '%s %d %d %s %s' % (executable, photons_dist[i], solver, input_file, output_file)
+                # command = '%s %d %d %s %s' % (executable, photons_dist[i], solver, input_file, output_file)
+                command = '%s %d %f %d %s %s %s' % (executable, photons_dist[i], uncgoal, solver, dat_path, input_file, output_file) # mca V11
 
             self.commands.append(command)
 

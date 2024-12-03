@@ -32,14 +32,16 @@ def load_mca_inp_nml():
                    =  2 : standard optimizations (recommended)
                    =  3 : quick-and-dirty optimizations (for speed when small biases are acceptable)
     Wld_njob=1   : # of jobs in a single experiment
+    Wld_nwl=1    : # of wavelengths or CKD terms in a single experiment
     """
-    mcarWld_nml_init = OrderedDict([
+    mcarats_env = OrderedDict([
                          ('Wld_mverb'  , None),
                          ('Wld_jseed'  , None),
                          ('Wld_mbswap' , None),
                          ('Wld_mtarget', None),
                          ('Wld_moptim' , None),
-                         ('Wld_njob'   , None)])
+                         ('Wld_njob'   , None),
+                         ('Wld_nwl'    , None)])
 
     """
     KNDFL=100
@@ -48,25 +50,13 @@ def load_mca_inp_nml():
     Sca_nanci(KNDFL)=0    : # of ancillary file
     Sca_nangi(KNDFL)=100  : # of angles in each file
     Sca_nskip(KNDFL)=0    : # of data record lines to be skipped
-    Sca_ndfl=0            : # of scattering phase function data files
+    Sca_npfd=0            : # of scattering phase function data files
     Sca_nchi=4            : # of orders for truncation approximation (>= 2)
     Sca_ntg=20000         : # of table grids for angles & probabilities
     Sca_qtfmax=20.0       : geometrical truncation angle (deg.)
-    """
-    mcarSca_nml_init = OrderedDict([
-                       ('Sca_inpfile', None),
-                       ('Sca_npf'    , None),
-                       ('Sca_nanci'  , None),
-                       ('Sca_nangi'  , None),
-                       ('Sca_nskip'  , None),
-                       ('Sca_ndfl'   , None),
-                       ('Sca_nchi'   , None),
-                       ('Sca_ntg'    , None),
-                       ('Sca_qtfmax' , None)])
 
-    """
     KNP1D=KNP3D=100
-    Atm_inpfile=' '     : file name for input of 3D otpical properties
+    Atm_atm3dfile=' '     : file name for input of 3D otpical properties
     Atm_np1d=1          : # of scattering components in 1D medium
     Atm_np3d=1          : # of scattering components in 3D medium
     Atm_nx=1            : # of X grid points
@@ -74,52 +64,20 @@ def load_mca_inp_nml():
     Atm_nz=1            : # of Z grid points
     Atm_iz3l=1          : layer index for the lowest 3-D layer
     Atm_nz3=0           : # of 3-D inhomogeneous layers
-    Atm_nkd=1           : # of terms for the k-distribution
-    Atm_mtprof=0        : Flag for temperature profile input.
     Atm_nwl=1           : # of wavelengths
     Atm_nqlay=10        : # of Gaussian quadrature points per layer
     Atm_iipfd1d(KNP1D)=1: indices for phase function data files for 1D medium
     Atm_iipfd3d(KNP3D)=1: indices for phase function data files for 3D medium
-    """
-    mcarAtm_nml_init = OrderedDict([
-                       ('Atm_inpfile', None),
-                       ('Atm_np1d'   , None),
-                       ('Atm_np3d'   , None),
-                       ('Atm_nx'     , None),
-                       ('Atm_ny'     , None),
-                       ('Atm_nz'     , None),
-                       ('Atm_iz3l'   , None),
-                       ('Atm_nz3'    , None),
-                       ('Atm_nkd'    , None),
-                       ('Atm_mtprof' , None),
-                       ('Atm_nwl'    , None),
-                       ('Atm_nqlay'  , None),
-                       ('Atm_iipfd1d', None),
-                       ('Atm_iipfd3d', None)])
 
-    """
     Sfc_inpfile=' '          : file name for input of surface properties
     Sfc_mbrdf(4)=(1, 1, 1, 1): flags of on/off status for BRDF models
     Sfc_nxb=1                : # of X grid points
     Sfc_nyb=1                : # of Y grid points
     Sfc_nsco=60              : # of uz0 for coefficient table
     Sfc_nsuz=200             : # of uz0 grids for albedo LUTs
-    """
-    mcarSfc_nml_init = OrderedDict([
-                       ('Sfc_inpfile', None),
-                       ('Sfc_mbrdf'  , None),
-                       ('Sfc_nxb'    , None),
-                       ('Sfc_nyb'    , None),
-                       ('Sfc_nsco'   , None),
-                       ('Sfc_nsuz'   , None)])
 
-    """
     Src_nsrc=1: # of sources
-    """
-    mcarSrc_nml_init = OrderedDict([
-                       ('Src_nsrc', None)])
 
-    """
     Flx_mflx=1      : flag for flux density calculations (0=off, 1=on)
     Flx_mhrt=1      : flag for heating rate calculations (0=off, 1=on)
     Flx_nxf=1       : # of cells along X
@@ -127,17 +85,7 @@ def load_mca_inp_nml():
     Flx_diff0=1.0   : numerical diffusion parameter
     Flx_diff1=0.01  : numerical diffusion parameter
     Flx_cf_dtau=0.2 : Delta_tau, layer optical thickness for collision forcing
-    """
-    mcarFlx_nml_init = OrderedDict([
-                       ('Flx_mflx'   , None),
-                       ('Flx_mhrt'   , None),
-                       ('Flx_nxf'    , None),
-                       ('Flx_nyf'    , None),
-                       ('Flx_diff0'  , None),
-                       ('Flx_diff1'  , None),
-                       ('Flx_cf_dtau', None)])
 
-    """
     Rad_mrkind=2   : a kind of radiance
                    = 0 : no radiance calculation
                    = 1 : 1st kind, local radiance averaged over solid angle
@@ -157,20 +105,7 @@ def load_mca_inp_nml():
     Rad_ntp=100    : # of total pathlength bins
     Rad_tpmin=0.0  : min of total pathlength
     Rad_tpmax=1.0e5: max of total pathlength
-    """
-    mcarRad_nml_init = OrderedDict([
-                       ('Rad_mrkind', None),
-                       ('Rad_mpmap' , None),
-                       ('Rad_mplen' , None),
-                       ('Rad_nrad'  , None),
-                       ('Rad_nxr'   , None),
-                       ('Rad_nyr'   , None),
-                       ('Rad_nwf'   , None),
-                       ('Rad_ntp'   , None),
-                       ('Rad_tpmin' , None),
-                       ('Rad_tpmax' , None)])
 
-    """
     Vis_mrend=2      : method for rendering (0/1/2/3/4)
                      = 0 : integration of density along the ray (e.g. for calculating optical thickness)
                      = 1 : as 1, but with attenuation (assuming that the source function is uniformly 1)
@@ -181,15 +116,7 @@ def load_mca_inp_nml():
     Vis_fpsmth=0.5   : phase function smoothing fraction for relaxed TMS correction
     Vis_fatten=1.0   : attenuation factor (1 for physics-based rendering)
     Vis_nqhem=1      : # of Gaussian quadrature points in a hemisphere
-    """
-    mcarVis_nml_init = OrderedDict([
-                       ('Vis_mrend'  , None),
-                       ('Vis_epserr' , None),
-                       ('Vis_fpsmth' , None),
-                       ('Vis_fatten' , None),
-                       ('Vis_nqhem'  , None)])
 
-    """
     Pho_iso_SS=1       : scattering order at which 1-D transfer begins
     Pho_iso_tru=0      : truncation approximations are used after this scattering order
     Pho_iso_max=1000000: max scattering order for which radiation is sampled
@@ -198,7 +125,64 @@ def load_mca_inp_nml():
     Pho_wfac=1.0       : factor for ideal photon weight
     Pho_pfpeak=30.0    : phase function peak threshold
     """
-    mcarPho_nml_init = OrderedDict([
+    mcarats_init = OrderedDict([
+                       ('Sca_inpfile', None),
+                       ('Sca_npf'    , None),
+                       ('Sca_nanci'  , None),
+                       ('Sca_nangi'  , None),
+                       ('Sca_nskip'  , None),
+                       ('Sca_npfd'   , None),
+                       ('Sca_nchi'   , None),
+                       ('Sca_ntg'    , None),
+                       ('Sca_qtfmax' , None),
+
+                       ('Atm_atm3dfile', None),
+                       ('Atm_np1d'   , None),
+                       ('Atm_np3d'   , None),
+                       ('Atm_nx'     , None),
+                       ('Atm_ny'     , None),
+                       ('Atm_nz'     , None),
+                       ('Atm_iz3l'   , None),
+                       ('Atm_nz3'    , None),
+                       ('Atm_nwl'    , None),
+                       ('Atm_nqlay'  , None),
+                       ('Atm_iipfd1d', None),
+                       ('Atm_iipfd3d', None),
+
+                       ('Sfc_inpfile', None),
+                       ('Sfc_mbrdf'  , None),
+                       ('Sfc_nxb'    , None),
+                       ('Sfc_nyb'    , None),
+                       ('Sfc_nsco'   , None),
+                       ('Sfc_nsuz'   , None),
+
+                       ('Src_nsrc', None),
+
+                       ('Flx_mflx'   , None),
+                       ('Flx_mhrt'   , None),
+                       ('Flx_nxf'    , None),
+                       ('Flx_nyf'    , None),
+                       ('Flx_diff0'  , None),
+                       ('Flx_diff1'  , None),
+                       ('Flx_cf_dtau', None),
+
+                       ('Rad_mrkind', None),
+                       ('Rad_mpmap' , None),
+                       ('Rad_mplen' , None),
+                       ('Rad_nrad'  , None),
+                       ('Rad_nxr'   , None),
+                       ('Rad_nyr'   , None),
+                       ('Rad_nwf'   , None),
+                       ('Rad_ntp'   , None),
+                       ('Rad_tpmin' , None),
+                       ('Rad_tpmax' , None),
+
+                       ('Vis_mrend'  , None),
+                       ('Vis_epserr' , None),
+                       ('Vis_fpsmth' , None),
+                       ('Vis_fatten' , None),
+                       ('Vis_nqhem'  , None),
+
                        ('Pho_iso_SS' , None),
                        ('Pho_iso_tru', None),
                        ('Pho_iso_max', None),
@@ -212,19 +196,13 @@ def load_mca_inp_nml():
     # MCARaTS job
     """
     Wld_nplcf=0  : dummy variable (will be removed in the future)
-    """
-    mcarWld_nml_job  = OrderedDict([
-                       ('Wld_nplcf', None)])
 
-    """
     KNP1D=KNP3D=100
     KNWL=KNZ=3000
     Atm_idread=1           : location of data to be read
-    Atm_wkd0=1             : weight coefficients of the correlated-k distribution
     Atm_dx=1.0e4           : X size of cell
     Atm_dy=1.0e4           : Y size of cell
     Atm_zgrd0(KNZ+1)=10.0  : Z (height) at layer interfaces
-    Atm_tmp1d(KNZ+1)=300.0 : Z (height) at layer interfaces
     Atm_ext1d(KNZ,KNP1D)   : extinction coefficients
     Atm_omg1d(KNZ,KNP1D) : single scattering albedos
     Atm_apf1d(KNZ,KNP1D) : phase function specification parameters
@@ -237,28 +215,7 @@ def load_mca_inp_nml():
     Atm_mcs_frc=0.8      : threshold for fraction of super-voxels good for MCS
     Atm_mcs_dtauz=2.0    : Delta_tau_z,  threshold for super-voxel optical thickness
     Atm_mcs_dtauxy=4.0   : Delta_tau_xy, threshold for super-voxel optical thickness
-    """
-    mcarAtm_nml_job  = OrderedDict([
-                       ('Atm_idread'    , None),
-                       ('Atm_wkd0'      , None),
-                       ('Atm_dx'        , None),
-                       ('Atm_dy'        , None),
-                       ('Atm_zgrd0'     , None),
-                       ('Atm_tmp1d'     , None),
-                       ('Atm_ext1d'     , None),
-                       ('Atm_omg1d'     , None),
-                       ('Atm_apf1d'     , None),
-                       ('Atm_abs1d'     , None),
-                       ('Atm_fext1d'    , None),
-                       ('Atm_fext3d'    , None),
-                       ('Atm_fabs1d'    , None),
-                       ('Atm_fabs3d'    , None),
-                       ('Atm_mcs_rat'   , None),
-                       ('Atm_mcs_frc'   , None),
-                       ('Atm_mcs_dtauz' , None),
-                       ('Atm_mcs_dtauxy', None)])
 
-    """
     Sfc_NPAR=5
     Sfc_idread=1       : index of data to be read
     Sfc_mtype=1        : surface BRDF type
@@ -270,38 +227,14 @@ def load_mca_inp_nml():
     Sfc_nqpot=24       : # of quadrature points for preprocess
     Sfc_rrmax=5.0      : max factor for relative BRDF used for random directions
     Sfc_rrexp=0.5      : scaling exponent for relative BRDF used for random directions
-    """
-    mcarSfc_nml_job  = OrderedDict([
-                       ('Sfc_idread', None),
-                       ('Sfc_mtype' , None),
-                       ('Sfc_param' , None),
-                       ('Sfc_nudsm' , None),
-                       ('Sfc_nurpv' , None),
-                       ('Sfc_nulsrt', None),
-                       ('Sfc_nqpot' , None),
-                       ('Sfc_rrmax' , None),
-                       ('Sfc_rrexp' , None)])
 
-    """
     KNSRC=3000
-    Src_mtype(KNSRC)=1  : flag for source type, 0:local 1:solar 2:solar+thermal 3: thermal
-    Src_dwlen(KNSRC)=0.1: wavelength band width
     Src_mphi(KNSRC)=0   : flag for random azimuth
     Src_flx(KNSRC)=1.0  : source flux density
     Src_qmax(KNSRC)=0.0 : full cone angle
     Src_the(KNSRC)=120.0: zenith angle
     Src_phi(KNSRC)=0.0  : azimuth angle
-    """
-    mcarSrc_nml_job  = OrderedDict([
-                       ('Src_mtype', None),
-                       ('Src_dwlen', None),
-                       ('Src_mphi' , None),
-                       ('Src_flx'  , None),
-                       ('Src_qmax' , None),
-                       ('Src_the'  , None),
-                       ('Src_phi'  , None)])
-
-    """
+    
     KNZ=KNRAD=3000; KNWF=30
     Rad_mrproj=0           : flag for angular weighting (for mrkind = 1 or 3)
                            = 0 : w = 1, results are radiances simply averaged over solid angle
@@ -338,7 +271,42 @@ def load_mca_inp_nml():
     Rad_apsize(KNRAD)=0.0   : aperture size
     Rad_zref(KNRAD)=0.0     : Z location of the reference level height
     """
-    mcarRad_nml_job  = OrderedDict([
+    mcarats_job  = OrderedDict([
+                       ('Wld_nplcf', None),
+
+                       ('Atm_idread'    , None),
+                       ('Atm_dx'        , None),
+                       ('Atm_dy'        , None),
+                       ('Atm_zgrd0'     , None),
+                       ('Atm_ext1d'     , None),
+                       ('Atm_omg1d'     , None),
+                       ('Atm_apf1d'     , None),
+                       ('Atm_abs1d'     , None),
+                       ('Atm_fext1d'    , None),
+                       ('Atm_fext3d'    , None),
+                       ('Atm_fabs1d'    , None),
+                       ('Atm_fabs3d'    , None),
+                       ('Atm_mcs_rat'   , None),
+                       ('Atm_mcs_frc'   , None),
+                       ('Atm_mcs_dtauz' , None),
+                       ('Atm_mcs_dtauxy', None),
+
+                       ('Sfc_idread', None),
+                       ('Sfc_mtype' , None),
+                       ('Sfc_param' , None),
+                       ('Sfc_nudsm' , None),
+                       ('Sfc_nurpv' , None),
+                       ('Sfc_nulsrt', None),
+                       ('Sfc_nqpot' , None),
+                       ('Sfc_rrmax' , None),
+                       ('Sfc_rrexp' , None),
+
+                       ('Src_mphi' , None),
+                       ('Src_flx'  , None),
+                       ('Src_qmax' , None),
+                       ('Src_the'  , None),
+                       ('Src_phi'  , None),
+
                        ('Rad_mrproj' , None),
                        ('Rad_difr0'  , None),
                        ('Rad_difr1'  , None),
@@ -366,20 +334,9 @@ def load_mca_inp_nml():
     # -
 
     mcarats_nml_all = OrderedDict([
-                   ('mcarWld_nml_init', mcarWld_nml_init),
-                   ('mcarSca_nml_init', mcarSca_nml_init),
-                   ('mcarAtm_nml_init', mcarAtm_nml_init),
-                   ('mcarSfc_nml_init', mcarSfc_nml_init),
-                   ('mcarSrc_nml_init', mcarSrc_nml_init),
-                   ('mcarFlx_nml_init', mcarFlx_nml_init),
-                   ('mcarRad_nml_init', mcarRad_nml_init),
-                   ('mcarVis_nml_init', mcarVis_nml_init),
-                   ('mcarPho_nml_init', mcarPho_nml_init),
-                   ('mcarWld_nml_job' , mcarWld_nml_job) ,
-                   ('mcarAtm_nml_job' , mcarAtm_nml_job) ,
-                   ('mcarSfc_nml_job' , mcarSfc_nml_job) ,
-                   ('mcarSrc_nml_job' , mcarSrc_nml_job) ,
-                   ('mcarRad_nml_job' , mcarRad_nml_job)])
+                   ('mcarats_env', mcarats_env),
+                   ('mcarats_init', mcarats_init),
+                   ('mcarats_job', mcarats_job)])
 
     return mcarats_nml_all
 
@@ -413,17 +370,18 @@ def load_mca_inp_nml_info():
       =  2 : standard optimizations (recommended)\n\
       =  3 : quick-and-dirty optimizations (for speed when small biases are acceptable)'),
     ('Wld_njob'   , 'default=1 : # of jobs in a single experiment'),
+    ('Wld_nwl'    , 'default=1 : # of wavelengths or CKD terms in a single experiment'),
 
     ('Sca_inpfile' , 'default(KNDFL)=\' \' : file names for scattering phase functions'),
     ('Sca_npf'     , 'default(KNDFL)=0 : # of tabulated phase functions in each file'),
     ('Sca_nangi'   , 'default(KNDFL)=100 : # of angles in each file'),
     ('Sca_nskip'   , 'default(KNDFL)=0 : # of data record lines to be skipped'),
-    ('Sca_ndfl'    , 'default=0 : # of scattering phase function data files'),
+    ('Sca_npfd'    , 'default=0 : # of scattering phase function data files'),
     ('Sca_nchi'    , 'default=4 : # of orders for truncation approximation (>= 2)'),
     ('Sca_ntg'     , 'default=20000 : # of table grids for angles & probabilities'),
     ('Sca_qtfmax'  , 'default=20.0  : geometrical truncation angle (deg.)'),
 
-    ('Atm_inpfile' , 'default=\' \' : file name for input of 3D otpical properties'),
+    ('Atm_atm3dfile' , 'default=\' \' : file name for input of 3D otpical properties'),
     ('Atm_np1d'    , 'default=1 : # of scattering components in 1D medium'),
     ('Atm_np3d'    , 'default=1 : # of scattering components in 3D medium'),
     ('Atm_nx'      , 'default=1 : # of X grid points'),
@@ -432,8 +390,6 @@ def load_mca_inp_nml_info():
     ('Atm_iz3l'    , 'default=1 : layer index for the lowest 3-D layer'),
     ('Atm_nz3'     , 'default=0 : # of 3-D inhomogeneous layers'),
     ('Atm_nwl'     , 'default=1 : # of wavelengths'),
-    ('Atm_nkd'     , 'default=1 : # of K-distribution terms'),
-    ('Atm_mtprof'  , 'default=0 : Flag for temperature profile input, 0:layer, 1:level'),
     ('Atm_nqlay'   , 'default=10 : # of Gaussian quadrature points per layer'),
     ('Atm_iipfd1d' , 'default(KNP1D)=1 : indices for phase function data files for 1D medium'),
     ('Atm_iipfd3d' , 'default(KNP3D)=1 : indices for phase function data files for 3D medium'),
@@ -496,11 +452,9 @@ def load_mca_inp_nml_info():
     ('Wld_nplcf'   , 'default=0 : dummy variable (will be removed in the future)'),
 
     ('Atm_idread'    , 'default=1 : location of data to be read'),
-    ('Atm_wkd0'      , 'default=1 : weight coefficients of the correlated-k distribution'),
     ('Atm_dx'        , 'default=1.0e4 : X size of cell'),
     ('Atm_dy'        , 'default=1.0e4 : Y size of cell'),
     ('Atm_zgrd0'     , 'default(KNZ+1)=10.0 : Z (height) at layer interfaces'),
-    ('Atm_tmp1d'     , 'default(KNZ+1)=300.0 : Z (height) at layer interfaces'),
     ('Atm_ext1d'     , 'default(KNZ,KNP1D) : extinction coefficients'),
     ('Atm_omg1d'     , 'default(KNZ,KNP1D) : single scattering albedos'),
     ('Atm_apf1d'     , 'default(KNZ,KNP1D) : phase function specification parameters'),
@@ -526,8 +480,6 @@ def load_mca_inp_nml_info():
     ('Sfc_rrmax' , 'default=5.0 : max factor for relative BRDF used for random directions'),
     ('Sfc_rrexp' , 'default=0.5 : scaling exponent for relative BRDF used for random directions'),
 
-    ('Src_mtype' , 'default(KNSRC)=1: 0:local 1:solar 2:solar+thermal 3:thermal'),
-    ('Src_dwlen' , 'default(KNSRC)=0.1 : wavelength band width (micrometer)'),
     ('Src_mphi'  , 'default(KNSRC)=0 : flag for random azimuth'),
     ('Src_flx'   , 'default(KNSRC)=1.0 : source flux density'),
     ('Src_qmax'  , 'default(KNSRC)=0.0 : full cone angle'),

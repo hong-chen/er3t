@@ -22,7 +22,7 @@ class mca_sca:
 
     Output:
         self.nml: Python dictionary
-                ['Sca_npf']
+                ['Sca_npfd']
                 ['Sca_nskip']
                 ['Sca_nanci']
                 ['Sca_nangi']
@@ -73,7 +73,7 @@ class mca_sca:
 
         self.nml= {}
 
-        self.nml['Sca_npf']   = dict(data=self.pha.data['pha']['data'].shape[1], name='Number of tabulated phase functions', units='N/A')
+        self.nml['Sca_npfd']   = dict(data=self.pha.data['pha']['data'].shape[1], name='Number of tabulated phase functions', units='N/A')
         self.nml['Sca_nskip'] = dict(data=nskip, name='Number of phase functions to be skipped', units='N/A')
         self.nml['Sca_nanci'] = dict(data=nanci, name='Number of ancillary data', units='N/A')
         self.nml['Sca_nangi'] = dict(data=self.pha.data['ang']['data'].size, name='Number of angles', units='N/A')
@@ -87,7 +87,7 @@ class mca_sca:
 
         f = open(fname, 'wb')
         f.write(struct.pack('<%df' % self.pha.data['ang']['data'].size, *self.pha.data['ang']['data'].flatten(order='F')))
-        for i in range(self.nml['Sca_npf']['data']):
+        for i in range(self.nml['Sca_npfd']['data']):
             f.write(struct.pack('<%df' % self.pha.data['pha']['data'][:, i].size, *self.pha.data['pha']['data'][:, i].flatten(order='F')))
         f.close()
 

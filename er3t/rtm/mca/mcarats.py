@@ -262,6 +262,7 @@ class mcarats_ng:
 
             self.nml[ig]['Wld_mbswap'] = 0
             self.nml[ig]['Wld_njob']   = 1
+            self.nml[ig]['Wld_nwl']   = 1
 
 
             if self.target == 'flux' :
@@ -316,7 +317,7 @@ class mcarats_ng:
         for ig in range(self.Ng):
             # this parameter is important, otherwise random memory segmentation error will occur
             if sca is None:
-                self.nml[ig]['Sca_npf'] = 0
+                self.nml[ig]['Sca_npfd'] = 0
             else:
                 for key in sca.nml.keys():
                     if os.path.exists(sca.nml['Sca_inpfile']['data']):
@@ -376,8 +377,6 @@ class mcarats_ng:
         for ig in range(self.Ng):
             self.nml[ig]['Src_flx']   = 1.0
             self.nml[ig]['Src_qmax']  = 0.533133
-            self.nml[ig]['Src_dwlen'] = 0.0
-            self.nml[ig]['Src_mtype'] = 1
             self.nml[ig]['Src_mphi']  = 0
             self.nml[ig]['Src_the']   = 180.0 - solar_zenith_angle
             self.nml[ig]['Src_phi']   = cal_mca_azimuth(solar_azimuth_angle)
