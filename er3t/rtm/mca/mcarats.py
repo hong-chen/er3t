@@ -270,18 +270,24 @@ class mcarats_ng:
                 self.nml[ig]['Wld_mtarget'] = 1
                 self.nml[ig]['Flx_mflx']    = 3
                 self.nml[ig]['Flx_mhrt']    = 0
+                self.nml[ig]['Flx_nxf']     = self.Nx
+                self.nml[ig]['Flx_nyf']     = self.Ny
 
             elif self.target == 'flux0' :
 
                 self.nml[ig]['Wld_mtarget'] = 1
                 self.nml[ig]['Flx_mflx']    = 1
                 self.nml[ig]['Flx_mhrt']    = 0
+                self.nml[ig]['Flx_nxf']     = self.Nx
+                self.nml[ig]['Flx_nyf']     = self.Ny
 
             elif self.target == 'heating rate':
 
                 self.nml[ig]['Wld_mtarget'] = 1
                 self.nml[ig]['Flx_mflx']    = 3
                 self.nml[ig]['Flx_mhrt']    = 1
+                self.nml[ig]['Flx_nxf']     = self.Nx
+                self.nml[ig]['Flx_nyf']     = self.Ny
 
             elif self.target == 'radiance':
 
@@ -321,7 +327,9 @@ class mcarats_ng:
             else:
                 for key in sca.nml.keys():
                     if os.path.exists(sca.nml['Sca_inpfile']['data']):
-                        sca.nml['Sca_inpfile']['data'] = os.path.relpath(sca.nml['Sca_inpfile']['data'], start=self.fdir)
+                        self.dirname_data = os.path.dirname(os.path.abspath(sca.nml['Sca_inpfile']['data']))
+                        sca.nml['Sca_inpfile']['data'] = os.path.basename(sca.nml['Sca_inpfile']['data'])
+                        # sca.nml['Sca_inpfile']['data'] = os.path.relpath(sca.nml['Sca_inpfile']['data'], start=self.fdir)
                     self.nml[ig][key] = sca.nml[key]['data']
 
 
@@ -349,8 +357,10 @@ class mcarats_ng:
                     for key in atm_3d.nml.keys():
 
                         if key not in ['Atm_tmpa3d', 'Atm_abst3d', 'Atm_extp3d', 'Atm_omgp3d', 'Atm_apfp3d']:
-                            if os.path.exists(atm_3d.nml['Atm_inpfile']['data']):
-                                atm_3d.nml['Atm_inpfile']['data'] = os.path.relpath(atm_3d.nml['Atm_inpfile']['data'], start=self.fdir)
+                            if os.path.exists(atm_3d.nml['Atm_atm3dfile']['data']):
+                                self.dirname_data = os.path.dirname(os.path.abspath(atm_3d.nml['Atm_atm3dfile']['data']))
+                                atm_3d.nml['Atm_atm3dfile']['data'] = os.path.basename(atm_3d.nml['Atm_atm3dfile']['data'])
+                                # atm_3d.nml['Atm_atm3dfile']['data'] = os.path.relpath(atm_3d.nml['Atm_atm3dfile']['data'], start=self.fdir)
                             self.nml[ig][key] = atm_3d.nml[key]['data']
 
                 self.Nx = atm_3d.nml['Atm_nx']['data']
@@ -402,7 +412,9 @@ class mcarats_ng:
                 for key in surface_albedo.nml.keys():
                     if '2d' not in key:
                         if os.path.exists(surface_albedo.nml['Sfc_inpfile']['data']):
-                            surface_albedo.nml['Sfc_inpfile']['data'] = os.path.relpath(surface_albedo.nml['Sfc_inpfile']['data'], start=self.fdir)
+                            self.dirname_data = os.path.dirname(os.path.abspath(surface_albedo.nml['Sfc_inpfile']['data']))
+                            surface_albedo.nml['Sfc_inpfile']['data'] = os.path.basename(surface_albedo.nml['Sfc_inpfile']['data'])
+                            # surface_albedo.nml['Sfc_inpfile']['data'] = os.path.relpath(surface_albedo.nml['Sfc_inpfile']['data'], start=self.fdir)
                         self.nml[ig][key] = surface_albedo.nml[key]['data']
 
                 self.sfc_2d = True
@@ -464,7 +476,7 @@ class mcarats_ng:
         if not self.quiet:
             self.print_info()
 
-        run0 = mca_run(fnames_inp, fnames_out, photons=self.photons, solver=solvers[self.solver], Ncpu=self.Ncpu, verbose=self.verbose, quiet=self.quiet, mp_mode=self.mp_mode)
+        run0 = mca_run(fnames_inp, fnames_out, self.dirname_data, photons=self.photons, solver=solvers[self.solver], Ncpu=self.Ncpu, verbose=self.verbose, quiet=self.quiet, mp_mode=self.mp_mode)
 
 
     def run_check(self):

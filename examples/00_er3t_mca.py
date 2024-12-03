@@ -1326,8 +1326,8 @@ if __name__ == '__main__':
 
     # irradiance simulation
     #/-----------------------------------------------------------------------------\
-    example_01_flux_clear_sky()
-    #example_02_flux_les_cloud_3d()
+    #example_01_flux_clear_sky()
+    example_02_flux_les_cloud_3d()
     #example_03_flux_les_cloud_3d_aerosol_1d()
     #example_04_flux_les_cloud_3d_aerosol_3d()
     #\-----------------------------------------------------------------------------/

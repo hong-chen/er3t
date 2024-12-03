@@ -41,6 +41,7 @@ class mca_run:
     def __init__(self,
                  fnames_inp, \
                  fnames_out, \
+                 dirname_dat, \
                  executable = None, \
                  photons    = 1.0e6,  \
                  solver     = 0,      \
@@ -102,7 +103,7 @@ class mca_run:
 
             input_file  = os.path.abspath(fnames_inp[i])
             output_file = os.path.abspath(fnames_out[i])
-            dat_path    = '.'    # location where the scattering/Atm3d/surface property files exist  # mca V11
+            dat_path    = dirname_dat # location where the scattering/Atm3d/surface property files exist  # mca V11
             uncgoal     = 10000  # very large uncertainty (%) # mca V11
 
             fdir_out    = os.path.dirname(output_file)

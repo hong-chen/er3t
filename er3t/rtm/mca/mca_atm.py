@@ -215,7 +215,7 @@ class mca_atm_3d:
         if not self.overwrite:
             if (not os.path.exists(fname)) and (not force):
                 self.gen_mca_3d_atm_file(fname)
-            self.nml['Atm_inpfile'] = {'data':fname}
+            self.nml['Atm_atm3dfile'] = {'data':fname}
         else:
             self.gen_mca_3d_atm_file(fname)
 
@@ -359,15 +359,15 @@ class mca_atm_3d:
 
         fname = os.path.abspath(fname)
 
-        self.nml['Atm_inpfile'] = {'data':fname}
+        self.nml['Atm_atm3dfile'] = {'data':fname}
 
         f = open(fname, 'wb')
-        f.write(struct.pack('<%df' % self.nml['Atm_tmpa3d']['data'].size, *self.nml['Atm_tmpa3d']['data'].flatten(order='F')))
-        f.write(struct.pack('<%df' % self.nml['Atm_abst3d']['data'].size, *self.nml['Atm_abst3d']['data'].flatten(order='F')))
+        # f.write(struct.pack('<%df' % self.nml['Atm_tmpa3d']['data'].size, *self.nml['Atm_tmpa3d']['data'].flatten(order='F')))
         for i in range(self.nml['Atm_np3d']['data']):
             f.write(struct.pack('<%df' % self.nml['Atm_extp3d']['data'][..., i].size, *self.nml['Atm_extp3d']['data'][..., i][..., np.newaxis].flatten(order='F')))
             f.write(struct.pack('<%df' % self.nml['Atm_omgp3d']['data'][..., i].size, *self.nml['Atm_omgp3d']['data'][..., i][..., np.newaxis].flatten(order='F')))
             f.write(struct.pack('<%df' % self.nml['Atm_apfp3d']['data'][..., i].size, *self.nml['Atm_apfp3d']['data'][..., i][..., np.newaxis].flatten(order='F')))
+            f.write(struct.pack('<%df' % self.nml['Atm_abst3d']['data'].size, *self.nml['Atm_abst3d']['data'].flatten(order='F')))
         f.close()
 
         if not self.quiet:
@@ -378,7 +378,7 @@ class mca_atm_3d:
 
         fname = os.path.abspath(fname)
 
-        self.nml['Atm_inpfile'] = {'data':fname}
+        self.nml['Atm_atm3dfile'] = {'data':fname}
 
         f = h5py.File(fname, 'w')
         for key in self.nml.keys():
