@@ -1671,9 +1671,9 @@ def download_worldview_image(
 
         except Exception as error:
 
-            print(error)
             msg = '\nError [download_wordview_image]: Unable to download imagery for <%s> onboard <%s> at <%s>.' % (instrument, satellite, date_s)
             warnings.warn(msg)
+            print('!!!\n%s\n!!!\n' % error)
 
         if fmt == 'h5':
 
