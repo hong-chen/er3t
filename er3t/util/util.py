@@ -11,7 +11,7 @@ import er3t.common
 EARTH_RADIUS = er3t.common.params['earth_radius']
 
 __all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
-           'check_equal', 'check_equidistant', 'send_email', \
+           'check_equal', 'check_equidistant', 'send_email', 'print_ref', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'find_nearest', 'move_correlate', \
@@ -187,6 +187,27 @@ def send_email(
 
 
 
+def add_reference(reference, reference_list=er3t.common.references):
+
+    if reference not in reference_list:
+
+        reference_list.append(reference)
+
+
+
+def print_reference():
+
+    print('\nReferences:')
+    print('╭────────────────────────────────────────────────────────────────────────────╮')
+    for reference in er3t.common.references:
+        print(reference)
+    print('╰────────────────────────────────────────────────────────────────────────────╯')
+    print()
+
+    return
+
+
+
 def nice_array_str(array1d, numPerLine=6):
 
     """
@@ -277,6 +298,7 @@ def jday_to_dtime(jday):
     return dtime
 
 
+
 def get_data_h4(hdf_dset, replace_fill_value=np.nan):
 
     attrs = hdf_dset.attributes()
@@ -297,6 +319,7 @@ def get_data_h4(hdf_dset, replace_fill_value=np.nan):
     return data
 
 
+
 def get_data_nc(nc_dset, replace_fill_value=np.nan):
 
     nc_dset.set_auto_maskandscale(True)
@@ -307,6 +330,7 @@ def get_data_nc(nc_dset, replace_fill_value=np.nan):
         data.filled(fill_value=replace_fill_value)
 
     return data
+
 
 
 def move_correlate(data0, data, Ndx=5, Ndy=5):
@@ -383,15 +407,15 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
         raise ImportError(msg)
 
     # only support output at maximum dimension of 2
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if x_out.ndim > 2:
         msg = '\nError [find_nearest]: Only supports <x_out.ndim<=2> and <y_out.ndim<=2>.'
         raise ValueError(msg)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # preprocess raw data
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     x = np.array(x_raw).ravel()
     y = np.array(y_raw).ravel()
     data = np.array(data_raw).ravel()
@@ -400,30 +424,30 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
     x = x[logic_valid]
     y = y[logic_valid]
     data = data[logic_valid]
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # create KDTree
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     points = np.transpose(np.vstack((x, y)))
     tree_xy = KDTree(points)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # search KDTree for the nearest neighbor
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     points_query = np.transpose(np.vstack((x_out.ravel(), y_out.ravel())))
     dist_xy, indices_xy = tree_xy.query(points_query, workers=-1)
     indices_xy[indices_xy>=data.size] = -1
 
     dist_out = dist_xy.reshape(x_out.shape)
     data_out = data[indices_xy].reshape(x_out.shape)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # use fill value to fill in grids that are "two far"* away from raw data
     #   * by default 1 grid away is defined as "too far"
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if Ngrid_limit is None:
 
         logic_out = np.repeat(False, data_out.size).reshape(x_out.shape)
@@ -444,7 +468,7 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
 
     logic_out = logic_out | (indices_xy.reshape(data_out.shape)==indices_xy.size) | (indices_xy.reshape(data_out.shape)==-1)
     data_out[logic_out] = fill_value
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return data_out
 
@@ -477,11 +501,11 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
         raise ImportError(msg)
 
     # flatten lon/lat/data
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon = np.array(lon).ravel()
     lat = np.array(lat).ravel()
     data = np.array(data).ravel()
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     if extent is None:
         extent = [lon.min(), lon.max(), lat.min(), lat.max()]
@@ -550,11 +574,11 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         raise ImportError(msg)
 
     # flatten lon/lat/data
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon = np.array(lon).ravel()
     lat = np.array(lat).ravel()
     data = np.array(data).ravel()
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     if lon_1d is None or lat_1d is None:
 
@@ -620,24 +644,24 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
         raise ImportError(msg)
 
     # flatten lon/lat/data
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon = np.array(lon).ravel()
     lat = np.array(lat).ravel()
     data = np.array(data).ravel()*1.0
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get extent
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if extent is None:
         extent = [np.nanmin(lon), np.nanmax(lon), np.nanmin(lat), np.nanmax(lat)]
     else:
         extent = np.float_(np.array(extent))
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # dist_x and dist_y
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if mode == 'min':
         dist_x = np.abs(extent[1]-extent[0])/180.0*np.pi*R_earth*np.cos(np.deg2rad(np.abs(extent[2:]).max()))*1000.0
     elif mode == 'max':
@@ -648,56 +672,56 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     lon1 = [extent[0], extent[1]]
     lat1 = [extent[3], extent[3]]
     dist_y = cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get Nx/Ny and dx/dy
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if dx is None or dy is None:
 
         # Nx and Ny
-        #/----------------------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         xy = (extent[1]-extent[0])*(extent[3]-extent[2])
         N0 = np.sqrt(lon.size/xy)
         Nx = int(N0*(extent[1]-extent[0]))
         Ny = int(N0*(extent[3]-extent[2]))
-        #\----------------------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # dx and dy
-        #/----------------------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         dx = dist_x / Nx
         dy = dist_y / Ny
-        #\----------------------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
     else:
 
         Nx = int(dist_x // dx)
         Ny = int(dist_y // dy)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get west-most lon_1d/lat_1d
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon_1d = np.repeat(extent[0], Ny)
     lat_1d = np.repeat(extent[2], Ny)
     for i in range(1, Ny):
         lon_1d[i], lat_1d[i] = cal_geodesic_lonlat(lon_1d[i-1], lat_1d[i-1], dy, 0.0)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get lon_2d/lat_2d
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon_2d = np.zeros((Nx, Ny), dtype=np.float32)
     lat_2d = np.zeros((Nx, Ny), dtype=np.float32)
     lon_2d[0, :] = lon_1d
     lat_2d[0, :] = lat_1d
     for i in range(1, Nx):
         lon_2d[i, :], lat_2d[i, :] = cal_geodesic_lonlat(lon_2d[i-1, :], lat_2d[i-1, :], dx, 90.0)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # gridding
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     points   = np.transpose(np.vstack((lon, lat)))
 
     if method == 'nearest':
@@ -709,7 +733,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     data_2d[logic] = fill_value
 
     return lon_2d, lat_2d, data_2d
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -734,18 +758,6 @@ def get_doy_tag(date, day_interval=8):
     return doy_tag
 
 
-
-def add_reference(reference, reference_list=er3t.common.references):
-
-    if reference not in reference_list:
-
-        reference_list.append(reference)
-
-#\---------------------------------------------------------------------------/
-
-
-# physics
-#/---------------------------------------------------------------------------\
 
 def combine_alt(atm_z, cld_z):
 
@@ -1109,6 +1121,7 @@ def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
     return lon1, lat1
 
 
+
 def parse_geojson(geojson_fpath):
 
     import json
@@ -1121,6 +1134,7 @@ def parse_geojson(geojson_fpath):
     lons = np.array(coords[0])[:, 0]
     lats = np.array(coords[0])[:, 1]
     return lons, lats
+
 
 
 def region_parser(extent, lons, lats, geojson_fpath):
@@ -1166,6 +1180,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
         return llons, llats
 
 
+
 def format_time(total_seconds):
     """
     Convert seconds to hours, minutes, seconds, and milliseconds.
@@ -1182,7 +1197,8 @@ def format_time(total_seconds):
     milliseconds = (total_seconds - int(total_seconds)) * 1000
 
     return (int(hours), int(minutes), int(seconds), int(milliseconds))
-#\---------------------------------------------------------------------------/
+
+
 
 def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
     """

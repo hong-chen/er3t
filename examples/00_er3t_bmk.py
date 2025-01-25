@@ -11,7 +11,7 @@ from matplotlib.ticker import FixedLocator
 from matplotlib import rcParams
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
-mpl.use('Agg')
+# mpl.use('Agg')
 
 
 import er3t
@@ -46,9 +46,9 @@ def lrt_flux_one_clear(params):
 
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
-    lrt_cfg['mol_abs_param'] = 'lowtran'
+    # lrt_cfg['mol_abs_param'] = 'lowtran'
     # lrt_cfg['mol_abs_param'] = 'reptran coarse'
-    lrt_cfg['solar_file']    = '%s/solar/solar_16g.dat' % (er3t.common.fdir_data)
+    # lrt_cfg['solar_file']    = '%s/solar/solar_16g.dat' % (er3t.common.fdir_data)
     # lrt_cfg['mol_abs_param'] = 'reptran_channel modis_aqua_b01'
     # lrt_cfg['output_process'] = 'per_band'
 
@@ -67,7 +67,7 @@ def lrt_flux_one_clear(params):
                 # },
             # mute_list = ['slit_function_file', 'spline', 'wavelength'],
             # mute_list = ['slit_function_file', 'spline', 'source solar'],
-            mute_list = ['slit_function_file', 'spline'],
+            # mute_list = ['slit_function_file', 'spline'],
             )
     er3t.rtm.lrt.lrt_run(init)
 
@@ -158,19 +158,19 @@ def test_01_flux_one_clear(wavelengh, plot=True):
     error = np.abs(data_mca['f_down']-data_lrt['f_down'])/data_lrt['f_down']*100.0
 
     # figure
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
         plt.close('all')
         fig = plt.figure(figsize=(8, 6))
         fig.suptitle('Wavelength %.1f nm [Error %.1f%%]' % (params['wavelength'], error.mean()))
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(121)
         ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=3.0, alpha=0.6, ls='--')
         ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='magenta', lw=3.0, alpha=0.6, ls='--')
         ax1.errorbar(data_mca['f_up']          , params['output_altitude'], xerr=data_mca['f_up_std']          , color='red'     , lw=1.0, alpha=1.0)
         ax1.errorbar(data_mca['f_down_diffuse'], params['output_altitude'], xerr=data_mca['f_down_diffuse_std'],  color='magenta', lw=1.0, alpha=1.0)
         ax1.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
-        ax1.set_xlabel('Flux Density [$\mathrm{W m^{-2} nm^{-1}}$]')
+        ax1.set_xlabel('Flux Density [$\\mathrm{W m^{-2} nm^{-1}}$]')
         ax1.set_ylabel('Altitude [km]')
         ax1.set_xlim(0.0, 0.5)
 
@@ -180,28 +180,66 @@ def test_01_flux_one_clear(wavelengh, plot=True):
         ax2.errorbar(data_mca['f_down']       , params['output_altitude'], xerr=data_mca['f_down_std']       , color='blue', lw=1.0, alpha=1.0)
         ax2.errorbar(data_mca['f_down_direct'], params['output_altitude'], xerr=data_mca['f_down_direct_std'], color='cyan', lw=1.0, alpha=1.0)
         ax2.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
-        ax2.set_xlabel('Flux Density [$\mathrm{W m^{-2} nm^{-1}}$]')
+        ax2.set_xlabel('Flux Density [$\\mathrm{W m^{-2} nm^{-1}}$]')
         ax2.set_xlim(0.0, 2.0)
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
         # save figure
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         fig.savefig('%s_%06.1fnm.png' % (_metadata['Function'], params['wavelength']), bbox_inches='tight', metadata=_metadata)
-        #\--------------------------------------------------------------/#
         # plt.show()
-    #\----------------------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # References
-    #/-----------------------------------------------------------------------------\
-    print('\nReferences:')
-    print('-'*80)
-    for reference in er3t.common.references:
-        print(reference)
-    print('-'*80)
-    print()
-    #\-----------------------------------------------------------------------------/
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    er3t.util.print_ref()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
+
+def check_solar():
+
+    data_kurudz = np.loadtxt('%s/solar/kurudz_1.0nm.dat' % er3t.common.fdir_data)
+    data_abs16g = np.loadtxt('%s/solar/solar_16g.dat' % er3t.common.fdir_data)
+
+    # figure
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    if True:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #╭──────────────────────────────────────────────────────────────╮#
+        ax1 = fig.add_subplot(111)
+        ax1.scatter(data_abs16g[:, 0], data_abs16g[:, 1]/1000.0, s=10, c='r', lw=0.0)
+        ax1.scatter(data_kurudz[:, 0], data_kurudz[:, 1]/1000.0, s=4, c='k', lw=0.0)
+        ax1.set_xlim((200, 2400))
+        ax1.set_ylim((0, 2.4))
+        ax1.set_xlabel('Wavelength [nm]')
+        ax1.set_ylabel('Irradiance [$\\mathrm{W m^{-2} nm^{-1}}$]')
+
+        patches_legend = [
+                          mpatches.Patch(color='black' , label='Kurudz 1nm'), \
+                          mpatches.Patch(color='red'   , label='ABS_16G'), \
+                         ]
+        ax1.legend(handles=patches_legend, loc='upper right', fontsize=16)
+        #╰──────────────────────────────────────────────────────────────╯#
+        # save figure
+        #╭──────────────────────────────────────────────────────────────╮#
+        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # plt.savefig('%s.png' % _metadata_['Function'], bbox_inches='tight', metadata=_metadata_)
+        #╰──────────────────────────────────────────────────────────────╯#
+        plt.show()
+        sys.exit()
+        plt.close(fig)
+        plt.clf()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+    print(data_kurudz)
+    print(data_abs16g)
+
+    sys.exit()
 
 
 
@@ -213,9 +251,10 @@ if __name__ == '__main__':
 
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
+        # check_solar()
         # for wavelength in [470.0, 555.0, 659.0, 772.0, 1621.0, 2079.0]:
-        for wavelength in [772.0, 1621.0, 2079.0]:
-        # for wavelength in [650.0]:
+        # for wavelength in [772.0, 1621.0, 2079.0]:
+        for wavelength in [650.0]:
             test_01_flux_one_clear(wavelength)
 
     else:

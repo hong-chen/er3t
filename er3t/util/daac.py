@@ -32,7 +32,7 @@ def format_satname(satellite, instrument):
     """ Format satellite and instrument name """
 
     # check satellite and instrument
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
         instrument = instrument.upper()
         satellite  = satellite.lower().title()
@@ -45,7 +45,7 @@ def format_satname(satellite, instrument):
     else:
         msg = '\nError [format_satname]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
         raise NameError(msg)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     satname = '%s|%s' % (satellite, instrument)
 
@@ -175,7 +175,7 @@ def get_fname_geometa(
     date_s = date.strftime('%Y-%m-%d')
 
     # generate satellite filename on LAADS DAAC server
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if server == 'https://ladsweb.modaps.eosdis.nasa.gov':
         fnames_geometa = {
                'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'                % (server, date.year, date_s),
@@ -184,9 +184,10 @@ def get_fname_geometa(
                'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
                'NOAA21|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-21/%4.4d/VJ203MOD_%s.txt' % (server, date.year, date_s),
             }
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # generate satellite filename on LANCE DAAC server (near real time)
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     elif server == 'https://nrt3.modaps.eosdis.nasa.gov':
         fnames_geometa = {
                'Aqua|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt'               % (server, date.year, date_s),
@@ -200,7 +201,7 @@ def get_fname_geometa(
         raise OSError(msg)
 
     fname_geometa = fnames_geometa[satname]
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return fname_geometa
 
@@ -243,7 +244,7 @@ def get_local_file(
     # check two locations:
     #   1) current directory;
     #   2) <tmp-data/satfile> directory under er3t main directory
-    #/--------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
@@ -264,7 +265,7 @@ def get_local_file(
     else:
 
         content = None
-    #\--------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return content
 
@@ -333,7 +334,7 @@ def get_online_file(
     else:
 
         # this can be revisited, disabling it for now
-        #/--------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         # try:
         #     with requests.Session() as session:
         #         session.auth = (username, password)
@@ -348,11 +349,11 @@ def get_online_file(
         # else:
         #     msg = '\nError [get_online_file]: failed to retrieve information from <%s>.' % fname_server
         #     warnings.warn(msg)
-        #\--------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # this can be revisited, disabling it for now
         # Use error handling to overcome occasional issues with LAADS DAAC servers
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         # try:
         #     webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
         # except urllib.error.HTTPError:
@@ -365,7 +366,7 @@ def get_online_file(
         #         msg = '\nError [get_online_file]: cannot access <%s>.' % fdir_server
         #         raise OSError(msg)
         # content  = webpage.read().decode('utf-8')
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         content = None
 
@@ -569,7 +570,7 @@ def cal_proj_xy_geometa(line_data, closed=True):
     import cartopy.crs as ccrs
 
     # get corner points
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon_  = np.array([
         float(line_data['GRingLongitude1']),
         float(line_data['GRingLongitude2']),
@@ -591,20 +592,20 @@ def cal_proj_xy_geometa(line_data, closed=True):
        (abs(lon_[1]-lon_[3])>180.0) | (abs(lon_[2]-lon_[3])>180.0):
 
         lon_[lon_<0.0] += 360.0
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # roughly determine the center of granule
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon = lon_[:-1]
     lat = lat_[:-1]
     center_lon_ = lon.mean()
     center_lat_ = lat.mean()
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # find the true center
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     proj_lonlat = ccrs.PlateCarree()
 
     proj_xy_ = ccrs.Orthographic(central_longitude=center_lon_, central_latitude=center_lat_)
@@ -613,14 +614,14 @@ def cal_proj_xy_geometa(line_data, closed=True):
     center_x  = xy_[:, 0].mean()
     center_y  = xy_[:, 1].mean()
     center_lon, center_lat = proj_lonlat.transform_point(center_x, center_y, proj_xy_)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # convert lon/lat corner points into xy
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     proj_xy = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
     xy_  = proj_xy.transform_points(proj_lonlat, lon_, lat_)[:, [0, 1]]
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     if closed:
@@ -669,29 +670,29 @@ def cal_lon_lat_utc_geometa(
 
 
     # check if delta_t is correct
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if line_data['Instrument'].lower() == 'modis' and delta_t != 300.0:
         msg = '\nWarning [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t=%.1f>, please double-check.' % delta_t
         warnings.warn(msg)
     elif line_data['Instrument'].lower() == 'viirs' and delta_t != 360.0:
         msg = '\nWarning [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t=%.1f>, please double-check.' % delta_t
         warnings.warn(msg)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get lon/lat corner points into xy
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     proj_xy, xy_ = cal_proj_xy_geometa(line_data, closed=True)
     xy  = xy_[:-1, :]
     x = xy[:, 0]
     y = xy[:, 1]
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # reconstruct x y grids
     # c: cross track
     # a: along track
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     x_01_c = (x[0]+x[1])/2.0
     y_01_c = (y[0]+y[1])/2.0
 
@@ -724,7 +725,7 @@ def cal_lon_lat_utc_geometa(
     ang_c = np.arctan(slope_c)
 
     # TODO: this is experimental, might cause some problem in the future
-    #/--------------------------------------------------------------\#
+    #╭──────────────────────────────────────────────────────────────╮#
     if ((x[0]>x[1]) or (x[3]>x[2])) or ((y[2]>y[1]) or (y[3]>y[0])):
         if ((x[0]>x[3]) or (x[1]>x[2])):
             index0 = 0
@@ -735,24 +736,24 @@ def cal_lon_lat_utc_geometa(
             index0 = 1
         else:
             index0 = 2
-    #\--------------------------------------------------------------/#
+    #╰──────────────────────────────────────────────────────────────╯#
 
     xx = x[index0]-res_c*ii_c*np.cos(ang_c)-res_a*ii_a*np.cos(ang_a)
     yy = y[index0]-res_c*ii_c*np.sin(ang_c)-res_a*ii_a*np.sin(ang_a)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # calculate lon lat
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     proj_lonlat = ccrs.PlateCarree()
     lonlat_out = proj_lonlat.transform_points(proj_xy, xx, yy)[..., [0, 1]]
     lon_out = lonlat_out[..., 0]
     lat_out = lonlat_out[..., 1]
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # calculate utc (jday)
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     filename = line_data['GranuleID']
     dtime0_s = '.'.join(filename.split('.')[1:3])
     dtime0 = datetime.datetime.strptime(dtime0_s, 'A%Y%j.%H%M')
@@ -766,12 +767,12 @@ def cal_lon_lat_utc_geometa(
         delta_t0_c = delta_t0_c[::-1]
 
     # TODO: this is experimental, might cause some problem in the future
-    #/--------------------------------------------------------------\#
+    #╭──────────────────────────────────────────────────────────────╮#
     if index0 in [1, 3]:
         lon_out = lon_out[:, ::-1]
         lat_out = lat_out[:, ::-1]
         delta_t0_c = delta_t0_c[::-1]
-    #\--------------------------------------------------------------/#
+    #╰──────────────────────────────────────────────────────────────╯#
 
     N_a0 = int(N_a//N_scan)
 
@@ -786,11 +787,11 @@ def cal_lon_lat_utc_geometa(
 
         jday_out0 = np.tile(jday_out0_, N_a0).reshape((N_a0, N_c))
         jday_out[index_s:index_e, :] = jday_out0
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # figure
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if testing:
         import matplotlib as mpl
         mpl.use('Agg')
@@ -804,7 +805,7 @@ def cal_lon_lat_utc_geometa(
         plt.close('all')
         fig = plt.figure(figsize=(8, 6))
         # plot
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(111, projection=proj_xy)
         cs = ax1.scatter(lon_out[::5, ::5], lat_out[::5, ::5], c=utc_sec_out[::5, ::5], transform=ccrs.PlateCarree(), vmin=0.0, vmax=delta_t, cmap='jet', s=1, lw=0.0)
         ax1.text(x[0], y[0], '0-LR', color='black')
@@ -830,16 +831,16 @@ def cal_lon_lat_utc_geometa(
         g3 = ax1.gridlines()
         g3.xlocator = FixedLocator(np.arange(-180, 181, 60))
         g3.ylocator = FixedLocator(np.arange(-80, 81, 20))
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
         # save figure
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         fname_png = filename.replace('.hdf', '.png').replace('.nc', '.png')
         fig.savefig('globe-view_%s' % fname_png, bbox_inches='tight', metadata=_metadata)
         print("\nMessage [cal_lon_lat_utc_geometa]: Figure saved as 'globe-view_%s'" % fname_png)
-        #\--------------------------------------------------------------/#
-    #\----------------------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return lon_out, lat_out, jday_out
 
@@ -918,13 +919,13 @@ def cal_sec_offset_abi(extent, satname='GOES-East|ABI', sec_per_scan=30.0):
 
 
     # define projections
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     proj_lonlat = ccrs.PlateCarree()
     proj_xy = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # get scan stripe edges in y
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     Nscan = len(full_disk_time_span.keys())
 
     lat_scan_edges = np.linspace(90.0, -90.0, Nscan+1)
@@ -932,11 +933,11 @@ def cal_sec_offset_abi(extent, satname='GOES-East|ABI', sec_per_scan=30.0):
     xy = proj_xy.transform_points(proj_lonlat, lon_scan_edges, lat_scan_edges)[:, [0, 1]]
 
     y_scan_edges = xy[:, 1]
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # calculate corner points from <extent>
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon_in_ = np.arange(extent[0], extent[1], 0.001)
     lat_in_ = np.arange(extent[2], extent[3], 0.001)
     lon_in, lat_in = np.meshgrid(lon_in_, lat_in_, indexing='ij')
@@ -947,7 +948,7 @@ def cal_sec_offset_abi(extent, satname='GOES-East|ABI', sec_per_scan=30.0):
 
     y_min = np.nanmin(y_in)
     y_max = np.nanmax(y_in)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     Ns = max(np.argmin(np.abs(y_scan_edges-y_max))-1, 0)
     Ne = min(np.argmin(np.abs(y_scan_edges-y_min))+1, Nscan)
@@ -968,7 +969,7 @@ def cal_sec_offset_abi(extent, satname='GOES-East|ABI', sec_per_scan=30.0):
             if logic_in.sum() > 0:
 
                 # calculate time offset
-                #/----------------------------------------------------------------------------\#
+                #╭────────────────────────────────────────────────────────────────────────────╮#
                 R_earth = np.nanmax(y_scan_edges)
                 delta_scan_x_half = R_earth * np.sin(np.arccos(((y_edge_min+y_edge_max)/2.0)/R_earth))
                 delta_x = delta_scan_x_half*2.0
@@ -981,7 +982,7 @@ def cal_sec_offset_abi(extent, satname='GOES-East|ABI', sec_per_scan=30.0):
 
                 time0 = time_s + ((x_min-x_s)/delta_x)*delta_t
                 sec_offset[logic_in] = time0 + slope*(x_in[logic_in]-x_min)
-                #\----------------------------------------------------------------------------/#
+                #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     return sec_offset
@@ -1024,39 +1025,39 @@ def get_satfile_tag(
     """
 
     # check cartopy and matplotlib
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     import cartopy.crs as ccrs
     import matplotlib.path as mpl_path
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get formatted satellite tag
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     satname = format_satname(satellite, instrument)
     satellite, instrument = satname.split('|')
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get satellite geometa filename on the appropriate DAAC server
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if nrt:
         server = 'https://nrt3.modaps.eosdis.nasa.gov'
     else:
         server = 'https://ladsweb.modaps.eosdis.nasa.gov'
 
     fname_geometa = get_fname_geometa(date, satname, server=server)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # convert longitude in [-180, 180] range
     # since the longitude in GeoMeta dataset is in the range of [-180, 180]
     # or check overlap within region of interest
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon[lon>180.0] -= 360.0
     logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
     lon   = lon[logic]
     lat   = lat[logic]
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get geometa info
@@ -1082,7 +1083,7 @@ def get_satfile_tag(
 
     # loop through all the satellite "granules" constructed through four corner points
     # and find which granules contain the input data
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
 
     # by default if no start and end times are given, use 0000 and 2359
     if start_dt_hhmm is None:
@@ -1130,11 +1131,11 @@ def get_satfile_tag(
 
             percent_all = np.append(percent_all, percent_in)
             i_all.append(i)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if (percent0 > 0.0 ) or worldview:
         indices_sort_p = np.argsort(percent_all)
         if satellite != 'Terra':
@@ -1148,7 +1149,7 @@ def get_satfile_tag(
             indices_sort = np.lexsort((indices_sort_i, indices_sort_p))[::-1]
 
         filename_tags = [filename_tags[i] for i in indices_sort]
-    # #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return filename_tags
 
@@ -1187,7 +1188,7 @@ def download_laads_https(
     """
 
     # retrieve the directory where satellite data is stored for picked date
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     year_str = str(date.timetuple().tm_year).zfill(4)
     if day_interval == 1:
         doy_str  = str(date.timetuple().tm_yday).zfill(3)
@@ -1196,11 +1197,11 @@ def download_laads_https(
 
     fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
     fdir_server = server + fdir_data
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get csv info
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     fname_csv = '%s.csv' % fdir_server
     filename_csv = server.replace('https://', '').split('.')[0] + '_'.join(('%s.csv' % fdir_data).split('/'))
 
@@ -1210,11 +1211,11 @@ def download_laads_https(
     # try to get geometa information online
     if content is None:
         content = get_online_file(fname_csv, geometa=False, csv=True, filename=filename_csv, fdir_save=fdir_save)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get download commands
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     exist_count = 0 # to prevent re-downloading. TODO: Add `overwrite` option instead for user
     lines = content.split('\n')
     primary_commands = []
@@ -1236,11 +1237,11 @@ def download_laads_https(
                 backup_commands.append(backup_command)
 
     print("Message [download_laads_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # run/print command
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if run:
 
         for i in range(len(primary_commands)):
@@ -1265,7 +1266,7 @@ def download_laads_https(
         print('Message [download_laads_https]: The commands to run are:')
         for command in primary_commands:
             print(command)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     return fnames_local
@@ -1306,14 +1307,14 @@ def download_lance_https(
 
     # VIIRS NRT is labeled differently from the standard product.
     # Therefore, the dataset_tag needs to be updated only for VIIRS NRT products.
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if dataset_tag.split('/')[-1].upper().startswith(('VNP', 'VJ1', 'VJ2')):
         dataset_tag = dataset_tag + '_NRT'
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # retrieve the directory where satellite data is stored for picked date
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     year_str = str(date.timetuple().tm_year).zfill(4)
     if day_interval == 1:
         doy_str  = str(date.timetuple().tm_yday).zfill(3)
@@ -1321,11 +1322,11 @@ def download_lance_https(
         doy_str = get_doy_tag(date, day_interval=day_interval)
 
     fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get csv info
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     fname_csv = '%s/api/v2/content/details/allData/%s/%s/%s?fields=all&formats=csv' % (server, dataset_tag, year_str, doy_str)
     filename_csv = server.replace('https://', '').split('.')[0] + '_'.join(('%s.csv' % fdir_data).split('/'))
 
@@ -1335,11 +1336,11 @@ def download_lance_https(
     # try to get geometa information online
     if content is None:
         content = get_online_file(fname_csv, geometa=False, csv=True, filename=filename_csv, fdir_save=fdir_save)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get download commands
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     exist_count = 0
     lines = content.split('\n')
     primary_commands = []
@@ -1363,12 +1364,12 @@ def download_lance_https(
                 backup_commands.append('timeout 60 ' + backup_command) # force timeout for wget
 
     print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
     # run/print command
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if run:
 
         for i in range(len(primary_commands)):
@@ -1393,7 +1394,7 @@ def download_lance_https(
         print('Message [download_lance_https]: The commands to run are:')
         for command in primary_commands:
             print(command)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return fnames_local
 
@@ -1565,26 +1566,26 @@ def download_worldview_image(
     """
 
     # get formatted satellite and instrument name
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     satname = format_satname(satellite, instrument)
     satellite, instrument = satname.split('|')
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # time stamping the satellite imagery (contained in file name)
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if satellite in ['Aqua', 'Terra', 'NOAA20', 'SNPP', 'NOAA21']:
 
         # pick layer
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         if layer_name0 is None:
             layer_name0='CorrectedReflectance_TrueColor'
         layer_name = '%s_%s_%s' % (instrument, satellite, layer_name0)
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # calculate time based on the relative location of
         # selected region to satellite granule
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         date_s = date.strftime('%Y-%m-%d')
 
         try:
@@ -1614,19 +1615,19 @@ def download_worldview_image(
         except Exception as error:
             print(error)
             fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
     elif satellite in ['GOES-West', 'GOES-East']:
 
         # pick layer
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         if layer_name0 is None:
             layer_name0='GeoColor'
         layer_name = '%s_%s_%s' % (satellite, instrument, layer_name0)
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # every 10 minutes, e.g., 10:10, 10:20, 10:30 ...
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         delta = datetime.timedelta(minutes=10)
         date = datetime.datetime.min + round((date-datetime.datetime.min)/delta) * delta
         date_s = date.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -1636,10 +1637,10 @@ def download_worldview_image(
         date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
 
         fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
     fname  = os.path.abspath(fname)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     if run:
 

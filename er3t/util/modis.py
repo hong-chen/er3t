@@ -81,7 +81,7 @@ MODIS_L1B_HKM_1KM_BANDS_DEFAULT = {1: 650,
                                     }
 
 # reader for MODIS (Moderate Resolution Imaging Spectroradiometer)
-#/-----------------------------------------------------------------------------\
+#╭────────────────────────────────────────────────────────────────────────────╮#
 
 class modis_03:
 
@@ -166,7 +166,7 @@ class modis_03:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         lon = lon0[:]
         lat = lat0[:]
 
@@ -181,12 +181,11 @@ class modis_03:
         if not self.keep_dims:
             lon       = lon[logic]
             lat       = lat[logic]
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         sza = get_data_h4(sza0)
         saa = get_data_h4(saa0)
         vza = get_data_h4(vza0)
@@ -199,7 +198,7 @@ class modis_03:
             vaa = vaa[logic]
 
         f.end()
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         if hasattr(self, 'data'):
 
@@ -508,7 +507,7 @@ class modis_l1b:
 
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         wvl = np.zeros(len(self.bands), dtype='uint16')
 
         if self.keep_dims: # don't apply the logic geomask
@@ -540,7 +539,7 @@ class modis_l1b:
             wvl[band_counter]       = MODIS_L1B_HKM_1KM_BANDS[i]
 
         f.end()
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -684,8 +683,7 @@ class modis_l2:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # ----------------------------------------------------------------------------
-
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if self.extent is None:
 
             if 'actual_range' in lon0.attributes().keys():
@@ -719,10 +717,10 @@ class modis_l2:
         logic_5km = (lon_5km >= lon_range[0]) & (lon_5km <= lon_range[1]) & (lat_5km >= lat_range[0]) & (lat_5km <= lat_range[1])
         lon_5km   = lon_5km[logic_5km]
         lat_5km   = lat_5km[logic_5km]
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Calculate 1. cot, 2. cer, 3. ctp
-        #/--------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         ctp           = get_data_h4(ctp)[logic_1km]
 
         cot0_data     = get_data_h4(cot0)[logic_1km]
@@ -775,7 +773,7 @@ class modis_l2:
         cwp[logic_pcl] = cwp1_data[logic_pcl]
 
         f.end()
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # pcl = pcl[logic_1km]
 
@@ -974,8 +972,7 @@ class modis_35_l2:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if self.extent is None:
 
             if 'actual_range' in lon0.attributes().keys():
@@ -992,9 +989,10 @@ class modis_35_l2:
 
             lon_range = [self.extent[0] - 0.01, self.extent[1] + 0.01]
             lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Attempt to get lat/lon from geolocation file
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if self.f03 is None:
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=True)
             logic_1km = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
@@ -1004,7 +1002,7 @@ class modis_35_l2:
             lon       = self.f03.data['lon']['data']
             lat       = self.f03.data['lat']['data']
             logic_1km = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
-        #/----------------------------------------------------------------------------\#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         lon_5km   = lon0[:]
         lat_5km   = lat0[:]
@@ -1012,10 +1010,8 @@ class modis_35_l2:
         lon_5km   = lon_5km[logic_5km]
         lat_5km   = lat_5km[logic_5km]
 
-        # -------------------------------------------------------------------------------------------------
-
         # Get cloud mask and flag fields
-        #/-----------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         cm0_data = get_data_h4(cld_msk0)
         qa0_data = get_data_h4(qa0)
         cm = cm0_data.copy()
@@ -1033,7 +1029,7 @@ class modis_35_l2:
         use_qa, confidence_qa = self.quality_assurance(qa, byte=0)
 
         f.end()
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         if hasattr(self, 'data'):
 
@@ -1367,7 +1363,7 @@ class modis_04:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         lon = lon0[:]
         lat = lat0[:]
 
@@ -1391,11 +1387,11 @@ class modis_04:
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]
         lat       = lat[logic]
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         #
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         Deep_Blue_AOD_550_land              = get_data_h4(Deep_Blue_AOD_550_land_0)[logic]
         Deep_Blue_Angstrom_Exponent_land    = get_data_h4(Deep_Blue_Angstrom_Exponent_land_0)[logic]
         Deep_Blue_Aerosol_type_land         = get_data_h4(Deep_Blue_Aerosol_type_land_0)[logic]
@@ -1403,7 +1399,7 @@ class modis_04:
         Deep_Blue_SSA_land                  = get_data_h4(Deep_Blue_SSA_land_0)[logic]
 
         f.end()
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         if hasattr(self, 'data'):
             self.logic = {}
@@ -1734,7 +1730,6 @@ class modis_09:
             self.extract_atmospheric_optical_depth(f)
 
         f.end()
-        #------------------------------------------------------------------------------------------------------------------------------#
 
 
 class modis_09a1:
@@ -2205,14 +2200,14 @@ class modis_tiff:
         self.lonm   = 0.5*(self.long[1:]+self.long[:-1])
         self.latm   = 0.5*(self.latg[1:]+self.latg[:-1])
 
-#\-----------------------------------------------------------------------------/
+#╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
 
 
 # Useful functions
-#/-----------------------------------------------------------------------------\
+#╭────────────────────────────────────────────────────────────────────────────╮#
 
 def upscale_modis_lonlat(lon_in, lat_in, scale=5, extra_grid=True):
 
@@ -2574,7 +2569,7 @@ def get_filename_tag(
 
     # loop through all the "MODIS granules" constructed through four corner points
     # and find which granules contain the input data
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     proj_ori = ccrs.PlateCarree()
     for i in range(Ndata):
 
@@ -2589,20 +2584,20 @@ def get_filename_tag(
             xx0[xx0<0.0] += 360.0
 
         # roughly determine the center of granule
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #╭──────────────────────────────────────────────────────────────╮#
         xx = xx0[:-1]
         yy = yy0[:-1]
         center_lon = xx.mean()
         center_lat = yy.mean()
-        # ---------------------------------------------------------------------
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # find the precise center point of MODIS granule
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #╭──────────────────────────────────────────────────────────────╮#
         proj_tmp   = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
         LonLat_tmp = proj_tmp.transform_points(proj_ori, xx, yy)[:, [0, 1]]
         center_xx  = LonLat_tmp[:, 0].mean(); center_yy = LonLat_tmp[:, 1].mean()
         center_lon, center_lat = proj_ori.transform_point(center_xx, center_yy, proj_tmp)
-        # ---------------------------------------------------------------------
+        #╰──────────────────────────────────────────────────────────────╯#
 
         proj_new = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
         LonLat_in = proj_new.transform_points(proj_ori, lon, lat)[:, [0, 1]]
@@ -2615,7 +2610,7 @@ def get_filename_tag(
             filename = data[i]['GranuleID'].decode('UTF-8')
             filename_tag = '.'.join(filename.split('.')[1:3])
             filename_tags.append(filename_tag)
-    # ---------------------------------------------------------------------
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return filename_tags
 
@@ -2712,7 +2707,7 @@ def find_fname_match(fname0, fnames, index_s=1, index_e=3):
 
     return fname_match
 
-#\-----------------------------------------------------------------------------/
+#╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 if __name__=='__main__':

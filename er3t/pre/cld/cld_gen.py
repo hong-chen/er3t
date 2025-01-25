@@ -537,33 +537,33 @@ class cld_gen_hom:
         self.verbose = verbose     # verbose tag
 
         # check for pickle file
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
 
         # if pickle file exists - load the data directly from pickle file
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         if ((self.fname is not None) and (os.path.exists(self.fname)) and (not overwrite)):
 
             self.load(self.fname)
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # if pickle file does not exist or overwrite is specified - run the program and save
         # data into pickle file
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         elif ((self.fname is not None) and (os.path.exists(self.fname)) and (overwrite)) or \
              ((self.fname is not None) and (not os.path.exists(self.fname))):
 
             self.run(cot0, cer0, atm_obj=atm_obj)
             self.dump(self.fname)
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # if pickle file doesn't get specified
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         else:
 
             self.run(cot0, cer0, atm_obj=atm_obj)
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
     def load(self, fname):
 
@@ -632,13 +632,13 @@ class cld_gen_hom:
         self.lay['thickness'] = {'data':thickness, 'name':'Layer thickness', 'units':'km'}
 
         # get temperature profile
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if atm_obj is None:
             atm_obj = atm_atmmod(levels=alt_lev)
             t_1d = atm_obj.lay['temperature']['data']
         else:
             t_1d = np.interp(self.lay['altitude']['data'], atm_obj.lay['altitude']['data'], atm_obj.lay['temperature']['data'])
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         t_3d = np.empty((self.Nx, self.Ny, self.Nz), dtype=t_1d.dtype)
         t_3d[...] = t_1d[None, None, :]
@@ -667,32 +667,32 @@ class cld_gen_hom:
         data0 = np.zeros((self.Nx, self.Ny, self.Nz), dtype=np.float64)
 
         # cloud effective radius (3D)
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         data = data0.copy()
         data[...] = cer0
         self.lay['cer'] = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # extinction coefficients (3D)
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         cot0_ = cot0*cot_scale/self.Nz
         ext0 = cot0_/self.dz/1000.0
         data = data0.copy()
         data[...] = ext0
         self.lay['extinction'] = {'data':data, 'name':'Extinction coefficients', 'units':'m^-1'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # cloud optical thickness (3D)
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         data = data0.copy()
         data[...] = cot0_
         self.lay['cot'] = {'data':data, 'name':'Cloud optical thickness', 'units':'N/A'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # column integrated cloud optical thickness
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         self.lev['cot_2d'] = {'data':np.sum(data, axis=-1), 'name':'Cloud optical thickness', 'units':'N/A'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -901,18 +901,18 @@ class cld_gen_cop:
         self.lev['altitude'] = copy.deepcopy(self.atm.lev['altitude'])
 
         # temperature 3d
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         t_1d = self.atm.lay['temperature']['data']
         Nz   = t_1d.size
         t_3d      = np.empty((Nx, Ny, Nz), dtype=t_1d.dtype)
         t_3d[...] = t_1d[None, None, :]
 
         self.lay['temperature'] = {'data':t_3d, 'name':'Temperature', 'units':'K'}
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
 
         # extinction 3d
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         ext_3d      = np.zeros((Nx, Ny, Nz), dtype=np.float64)
 
         alt = self.atm.lay['altitude']['data']
@@ -932,16 +932,16 @@ class cld_gen_cop:
 
         ext_3d[np.isnan(ext_3d)] = 0.0
         self.lay['extinction']   = {'data':ext_3d, 'name':'Extinction coefficients', 'units':'m^-1'}
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # cer 3d
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         cer_3d = np.empty((Nx, Ny, Nz), dtype=cloud_effective_radius.dtype)
         cer_3d[...] = cloud_effective_radius[:, :, None]
 
         cer_3d[ext_3d<=0.0] = 0.0
         self.lay['cer'] = {'data':cer_3d, 'name':'Cloud Effective radius', 'units':'micron'}
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
 
     def get_extra_cloud_property(self, cer_mode='top', fill_clear=0.0, overwrite=False):
@@ -952,7 +952,7 @@ class cld_gen_cop:
         """
 
         # cloud mask based on cer
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         cer_3d = self.lay['cer']['data'].copy()
         if ('cld_msk' not in self.lay.keys()) or ('cld_msk_2d' not in self.lev.keys()) or (overwrite):
             cld_msk_3d = np.zeros(cer_3d.shape, dtype=np.int32)
@@ -963,20 +963,20 @@ class cld_gen_cop:
 
             self.lay['cld_msk'] = {'data':cld_msk_3d, 'name':'Cloud Mask (1: Cloud)', 'units':'N/A'}
             self.lev['cld_msk_2d'] = {'data': cld_msk_2d, 'name': 'Cloud Mask (1: Cloud)', 'units':'N/A'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # cloud optical thickness
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if ('cot_2d' not in self.lev.keys()) or (overwrite):
             cot_2d = np.nansum(self.lay['extinction']['data']*self.lay['thickness']['data'][0]*1000.0, axis=-1)
             cot_2d[cld_msk_2d==0] = fill_clear
             self.lev['cot_2d'] = {'data': cot_2d, 'name': 'Cloud Optical Thickness', 'units': 'N/A'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # cloud effective radius <cer_2d>
         # cloud top height <cth_2d>
         # cloud base height <cbh_2d>
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if ('cer_2d' not in self.lev.keys()) or ('cth_2d' not in self.lev.keys()) or ('cbh_2d' not in self.lev.keys()) or (overwrite):
             cer_3d[cld_msk_3d==0] = np.nan
 
@@ -1007,7 +1007,7 @@ class cld_gen_cop:
             self.lev['cer_2d'] = {'data': cer_2d, 'name': 'Cloud Effective Radius', 'units': 'micron'}
             self.lev['cth_2d'] = {'data': cth_2d, 'name': 'Cloud Top Height'      , 'units': 'km'}
             self.lev['cbh_2d'] = {'data': cbh_2d, 'name': 'Cloud Base Height'     , 'units': 'km'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 

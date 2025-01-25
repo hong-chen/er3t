@@ -147,17 +147,17 @@ class mcarats_ng:
         self.target  = target
 
         # Nx, Ny
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if len(atm_3ds) > 0:
             self.Nx = atm_3ds[0].nml['Atm_nx']['data']
             self.Ny = atm_3ds[0].nml['Atm_ny']['data']
         else:
             self.Nx = 1
             self.Ny = 1
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # photon distribution over gs of correlated-k
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if weights is None:
             self.np_mode = 'evenly'
             weights = np.repeat(1.0/self.Ng, Ng)
@@ -168,10 +168,10 @@ class mcarats_ng:
 
         self.photons = np.tile(photons_dist, Nrun)
         self.photons_per_set = photons_dist.sum()
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Determine how many CPUs to utilize
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         Ncpu_total = mp.cpu_count()
         self.Ncpu_total = Ncpu_total
         if Ncpu == 'auto':
@@ -184,7 +184,7 @@ class mcarats_ng:
         else:
             msg = 'Error [mcarats_ng]: Cannot understand <Ncpu=%s>.' % Ncpu
             raise OSError(msg)
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # in file names, 'r' indicates #run, 'g' indicates #g, index of 'r' and 'g' both start from 0
         # self.fnames_inp/self.fnames_out is a list embeded with lists
@@ -485,7 +485,7 @@ class mcarats_ng:
 
     def print_info(self):
 
-        print('----------------------------------------------------------')
+        print('╭────────────────────────────────────────────────────────╮')
         print('                 General Information                      ')
         print('               Simulation : %s %s' % (self.solver, self.target.title()))
         print('               Wavelength : %s' % (self.wvl_info))
@@ -520,7 +520,7 @@ class mcarats_ng:
         print('  Number of Photons / Set : %.1e (%s over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
         print('           Number of Runs : %s (g) * %d (set)' % (self.Ng, self.Nrun))
         print('           Number of CPUs : %d (used) of %d (total)' % (self.Ncpu, self.Ncpu_total))
-        print('----------------------------------------------------------')
+        print('╰────────────────────────────────────────────────────────╯')
 
 
 

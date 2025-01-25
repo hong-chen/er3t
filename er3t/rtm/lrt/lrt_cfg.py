@@ -19,10 +19,10 @@ def get_lrt_cfg(
         ):
 
     # add reference
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     reference = '\nlibRadtran (Mayer et al., 2005; Emde et al., 2016):\n- Mayer, B. and Kylling, A.: Technical note: The libRadtran software package for radiative transfer calculations - description and examples of use, Atmos. Chem. Phys., 5, 1855–1877, https://doi.org/10.5194/acp-5-1855-2005, 2005.\n- Emde, C., Buras-Schnell, R., Kylling, A., Mayer, B., Gasteiger, J., Hamann, U., Kylling, J., Richter, B., Pause, C., Dowling, T., and Bugliaro, L.: The libRadtran software package for radiative transfer calculations (version 2.0.1), Geosci. Model Dev., 9, 1647–1672, https://doi.org/10.5194/gmd-9-1647-2016, 2016.'
     er3t.util.add_reference(reference)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     if lrt_fdir is None:
         if er3t.common.has_libradtran:
