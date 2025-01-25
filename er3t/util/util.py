@@ -11,12 +11,12 @@ import er3t.common
 EARTH_RADIUS = er3t.common.params['earth_radius']
 
 __all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
-           'check_equal', 'check_equidistant', 'send_email', 'print_ref', \
+           'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'find_nearest', 'move_correlate', \
            'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
-           'get_doy_tag', 'add_reference', \
+           'get_doy_tag', 'add_reference', 'print_reference', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
@@ -185,26 +185,6 @@ def send_email(
     except Exception as err:
         raise OSError(err, "Error [send_email]: Failed to send the email.")
 
-
-
-def add_reference(reference, reference_list=er3t.common.references):
-
-    if reference not in reference_list:
-
-        reference_list.append(reference)
-
-
-
-def print_reference():
-
-    print('\nReferences:')
-    print('╭────────────────────────────────────────────────────────────────────────────╮')
-    for reference in er3t.common.references:
-        print(reference)
-    print('╰────────────────────────────────────────────────────────────────────────────╯')
-    print()
-
-    return
 
 
 
@@ -756,6 +736,27 @@ def get_doy_tag(date, day_interval=8):
     doy_tag = '%3.3d' % doys[np.argmin(np.abs(doys-doy))]
 
     return doy_tag
+
+
+
+def add_reference(reference, reference_list=er3t.common.references):
+
+    if reference not in reference_list:
+
+        reference_list.append(reference)
+
+
+
+def print_reference():
+
+    print('\nReferences:')
+    print('╭────────────────────────────────────────────────────────────────────────────╮')
+    for reference in er3t.common.references:
+        print(reference)
+    print('╰────────────────────────────────────────────────────────────────────────────╯')
+    print()
+
+    return
 
 
 
