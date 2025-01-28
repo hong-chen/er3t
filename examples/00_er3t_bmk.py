@@ -245,6 +245,85 @@ def check_solar():
 
 
 
+def lrt_rad_one_clear(params):
+
+    """
+    libRadtran radiance calculation
+    """
+
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = '%s/tmp-data/%s/%s' % (er3t.common.fdir_examples, name_tag, _metadata['Function'])
+    if not os.path.exists(fdir_tmp):
+        os.makedirs(fdir_tmp)
+
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
+    lrt_cfg['atmosphere_file'] = params['atmosphere_file']
+    # lrt_cfg['mol_abs_param'] = 'lowtran'
+    # lrt_cfg['mol_abs_param'] = 'reptran coarse'
+    # lrt_cfg['solar_file']    = '%s/solar/solar_16g.dat' % (er3t.common.fdir_data)
+    # lrt_cfg['mol_abs_param'] = 'reptran_channel modis_aqua_b01'
+    # lrt_cfg['output_process'] = 'per_band'
+
+    init = er3t.rtm.lrt.lrt_init_mono_rad(
+            input_file  = '%s/input.txt' % fdir_tmp,
+            output_file = '%s/output.txt' % fdir_tmp,
+            date        = params['date'],
+            surface_albedo     = params['surface_albedo'],
+            solar_zenith_angle = params['solar_zenith_angle'],
+            solar_azimuth_angle = params['solar_azimuth_angle'],
+            sensor_zenith_angle = params['sensor_zenith_angle'],
+            sensor_azimuth_angle = params['sensor_azimuth_angle'],
+            wavelength         = params['wavelength'],
+            output_altitude    = params['output_altitude'],
+            lrt_cfg            = lrt_cfg,
+            # input_dict_extra   = {
+                # 'output_process': 'integrate',
+                # 'output_process': 'sum',
+                # },
+            # mute_list = ['slit_function_file', 'spline', 'wavelength'],
+            # mute_list = ['slit_function_file', 'spline', 'source solar'],
+            # mute_list = ['slit_function_file', 'spline'],
+            )
+    er3t.rtm.lrt.lrt_run(init)
+
+    data0 = er3t.rtm.lrt.lrt_read_uvspec_rad([init])
+
+    data = {
+                'rad': np.squeeze(data0.rad),
+            }
+
+    return data
+
+def test_01_rad_one_clear(wavelength, plot=True):
+
+    params = {
+                    'date': datetime.datetime(2019, 8, 15),
+         'atmosphere_file': '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
+          'surface_albedo': 0.1,
+      'solar_zenith_angle': 18.7,
+     'solar_azimuth_angle': -53.6,
+     'sensor_zenith_angle': 51.5,
+    'sensor_azimuth_angle': 81.3,
+              'wavelength': wavelength,
+         'output_altitude': 'toa',
+         }
+
+    data_lrt = lrt_rad_one_clear(params)
+    print('Wavelength: %d nm' % wavelength)
+    print('libRadtran: %.8f' % data_lrt['rad'])
+
+    # data_mca = mca_rad_one_clear(params)
+
+    # References
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # er3t.util.print_reference()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+
+
+
+
 if __name__ == '__main__':
 
     warnings.warn('Under active development ...')
@@ -253,9 +332,10 @@ if __name__ == '__main__':
 
         # check_solar()
         # for wavelength in [470.0, 555.0, 659.0, 772.0, 1621.0, 2079.0]:
-        # for wavelength in [772.0, 1621.0, 2079.0]:
-        for wavelength in [650.0]:
-            test_01_flux_one_clear(wavelength)
+        for wavelength in [772.0, 1621.0, 2079.0]:
+            test_01_rad_one_clear(wavelength, plot=True)
+        # for wavelength in [650.0]:
+        #     test_01_flux_one_clear(wavelength)
 
     else:
 
