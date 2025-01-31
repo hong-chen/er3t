@@ -17,6 +17,7 @@ __all__ = [
         'modis_35_l2', \
         'modis_03', \
         'modis_04', \
+        'modis_07', \
         'modis_09', \
         'modis_09a1', \
         'modis_43a1', \
