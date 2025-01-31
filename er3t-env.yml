@@ -10,6 +10,7 @@ dependencies:
   - gdown=4.5.*
   - numpy=1.21.*
   - scipy=1.7.*
+  - scikit-image=0.18.*
   - matplotlib=3.5.*
   - pyhdf=0.10.*
   - h5py=3.6.*
@@ -19,6 +20,5 @@ dependencies:
   - sphinx=4.4.*
   - sphinx_rtd_theme=0.4.*
   - vim=8.2.*
-  - powerline-status=2.7.*
   - mscorefonts
   - font-ttf-source-code-pro

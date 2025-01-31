@@ -82,14 +82,15 @@ class mca_atm_1d:
 
             self.nml[ig]['Atm_nz']    = {'data':nz                                     , 'units':'N/A', 'name':'Number of z grid points'}
 
+            # Use Bodhaine formula to calculate Rayleigh Optical Depth
+            atm_sca = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:]) \
+                     / (self.atm.lay['thickness']['data']*1000.0)
+
             # Absorption coefficient
             atm_abs = self.abs.coef['abso_coef']['data'][:, ig] / (self.atm.lay['thickness']['data']*1000.0)
             self.nml[ig]['Atm_abs1d(1:, 1)'] = {'data':atm_abs, 'units':'/m' , 'name':'Absorption coefficients'}
 
-            # Extinction coefficient
-            # Use Bodhaine formula to calculate Rayleigh Optical Deption
-            atm_ext = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:]) \
-                     / (self.atm.lay['thickness']['data']*1000.0)
+            atm_ext = atm_sca
             self.nml[ig]['Atm_ext1d(1:, 1)'] = {'data':atm_ext, 'units':'/m' , 'name':'Extinction coefficients'}
 
             # Single Scattering Albedo
@@ -291,28 +292,28 @@ class mca_atm_3d:
                 atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
 
                 # set left-outbound to left-most value
-                #/--------------------------------------------------------------\#
+                #╭────────────────────────────────────────────────────────────────────────────╮#
                 logic0 = (atm_apf>0.0) & (atm_apf<ind[0])
                 atm_omg[logic0] = ssa[0]
                 atm_apf[logic0] = ind[0]
-                #\--------------------------------------------------------------/#
+                #╰────────────────────────────────────────────────────────────────────────────╯#
 
                 # set right-outbound to right-most value
-                #/--------------------------------------------------------------\#
+                #╭────────────────────────────────────────────────────────────────────────────╮#
                 logic1 = (atm_apf>ind[-1])
                 atm_omg[logic1] = ssa[-1]
                 atm_apf[logic1] = ind[-1]
-                #\--------------------------------------------------------------/#
+                #╰────────────────────────────────────────────────────────────────────────────╯#
 
         self.nml['Atm_nx']     = copy.deepcopy(self.cld.lay['nx'])
         self.nml['Atm_ny']     = copy.deepcopy(self.cld.lay['ny'])
 
         self.nml['Atm_dx']     = copy.deepcopy(self.cld.lay['dx'])
-        #self.nml['Atm_dx']['data']  *= 1000.0
+        self.nml['Atm_dx']['data']  *= 1000.0
         self.nml['Atm_dx']['units']  = 'm'
 
         self.nml['Atm_dy']     = copy.deepcopy(self.cld.lay['dy'])
-        #self.nml['Atm_dy']['data']  *= 1000.0
+        self.nml['Atm_dy']['data']  *= 1000.0
         self.nml['Atm_dy']['units']  = 'm'
 
         self.nml['Atm_nz3']    = {'data':nz3   , 'unit':'N/A', 'name':'number of 3D layer'}

@@ -214,7 +214,7 @@ def example_01_flux_clear_sky(
     print('-'*80)
     for reference in er3t.common.references:
         print(reference)
-        print('-'*80)
+    print('-'*80)
     print()
     #\-----------------------------------------------------------------------------/
 
@@ -432,7 +432,7 @@ def example_02_flux_les_cloud_3d(
     print('-'*80)
     for reference in er3t.common.references:
         print(reference)
-        print('-'*80)
+    print('-'*80)
     print()
     #\-----------------------------------------------------------------------------/
 
@@ -659,7 +659,7 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
     print('-'*80)
     for reference in er3t.common.references:
         print(reference)
-        print('-'*80)
+    print('-'*80)
     print()
     #\-----------------------------------------------------------------------------/
 
@@ -902,7 +902,7 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     print('-'*80)
     for reference in er3t.common.references:
         print(reference)
-        print('-'*80)
+    print('-'*80)
     print()
     #\-----------------------------------------------------------------------------/
 
@@ -1124,7 +1124,7 @@ def example_05_rad_les_cloud_3d(
     print('-'*80)
     for reference in er3t.common.references:
         print(reference)
-        print('-'*80)
+    print('-'*80)
     print()
     #\-----------------------------------------------------------------------------/
 
@@ -1316,7 +1316,7 @@ def example_06_rad_cld_gen_hem(
     print('-'*80)
     for reference in er3t.common.references:
         print(reference)
-        print('-'*80)
+    print('-'*80)
     print()
     #\-----------------------------------------------------------------------------/
 

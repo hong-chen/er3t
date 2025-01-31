@@ -224,11 +224,11 @@ def cal_lon_lat_utc_geometa(
     # check if delta_t is correct
     #/----------------------------------------------------------------------------\#
     if line_data['Instrument'].lower() == 'modis' and delta_t != 300.0:
-        msg = '\nWarning [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t=%.1f>, please double-check.' % delta_t
-        warning.warn(msg)
+        msg = '\nwarnings [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t=%.1f>, please double-check.' % delta_t
+        warnings.warn(msg)
     elif line_data['Instrument'].lower() == 'viirs' and delta_t != 360.0:
-        msg = '\nWarning [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t=%.1f>, please double-check.' % delta_t
-        warning.warn(msg)
+        msg = '\nwarnings [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t=%.1f>, please double-check.' % delta_t
+        warnings.warn(msg)
     #\----------------------------------------------------------------------------/#
 
 
@@ -684,27 +684,90 @@ def test_noaa20_viirs_extra():
             print()
 
 
-if __name__ == '__main__':
+def segment_label(data_in):
+
+    import skimage
+    import skimage.filters
+    import skimage.segmentation
+    import skimage.measure
+
+
+    edges = skimage.filters.sobel(data_in)
+
+    markers = np.zeros_like(data_in)
+    foreground, background = 1, 2
+    markers[data_in == 0] = background
+    markers[data_in >  0] = foreground
+
+    ws = skimage.segmentation.watershed(edges, markers=markers)
+    seg = skimage.measure.label(ws==foreground)
+
+
+    obj_labels = np.unique(seg)
+    print(obj_labels)
+    print(obj_labels.size)
 
     import matplotlib as mpl
-    import matplotlib.path as mpl_path
     import matplotlib.pyplot as plt
+    import matplotlib.path as mpl_path
     import matplotlib.image as mpl_img
     import matplotlib.patches as mpatches
     import matplotlib.gridspec as gridspec
     from matplotlib import rcParams, ticker
     from matplotlib.ticker import FixedLocator
     from mpl_toolkits.axes_grid1 import make_axes_locatable
-    import cartopy.crs as ccrs
-    import cartopy
+    # import cartopy.crs as ccrs
     # mpl.use('Agg')
 
-    # test_aqua_modis()
-    # test_terra_modis()
-    # test_snpp_viirs()
-    # test_noaa20_viirs_extra()
-    # extent = [-60.0, -59.0, 12.5, 13.5]
-    # extent = [-110.0, -109.0, 31.0, 32.0]
-    # extent = [-60.0, -59.0, -53.5, -52.5]
-    sec_offset = cal_sec_offset_abi(extent, satname='GEOS-East|ABI')
+    # figure
+    #/----------------------------------------------------------------------------\#
+    if True:
+        plt.close('all')
+        fig = plt.figure(figsize=(18, 8))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(121)
+        cs = ax1.imshow(data_in.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+
+        ax2 = fig.add_subplot(122)
+        cs = ax2.imshow(seg.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        # ax1.scatter(x, y, s=6, c='k', lw=0.0)
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.plot([0, 1], [0, 1], color='k', ls='--')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
+    #\----------------------------------------------------------------------------/#
+
+
+
+    pass
+
+
+if __name__ == '__main__':
+
+    import h5py
+
+    fname = '/data/hong/mygit/les/02_retr-algm/01_cld-det/01_mul-ang/aux/cld-msk_gtruth.h5'
+    f = h5py.File(fname, 'r')
+    cld_2d = f['cloud_mask'][...]
+    f.close()
+
+    segment_label(cld_2d)
+
+
     pass
