@@ -79,7 +79,7 @@ class cld_les:
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
             try:
-                file_correct = (obj.ID == 'LES Cloud 3D')
+                file_correct = (('3d' in obj.ID.lower()) and 'cloud' in obj.ID.lower())
             except:
                 file_correct = False
 
@@ -124,7 +124,7 @@ class cld_les:
             raise ImportError(msg)
 
         # read data
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         f = Dataset(fname_nc, 'r')
 
         x      = f.variables['x'][:]/1000.0        # x direction (in km)
@@ -134,7 +134,7 @@ class cld_les:
 
         # in vertical dimension, only select data where clouds exist to shrink data size
         # and accelerate calculation
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         Nz0 = z0.size
 
         qc_z = np.sum(qc_3d, axis=(1, 2))
@@ -154,13 +154,13 @@ class cld_les:
         cer_3d = f.variables['REL'][index_t, :index_e, :, :]  # cloud effective radius
         Nc_3d  = f.variables['NC'][index_t, :index_e, :, :]   # cloud droplet number concentration
         t_3d   = f.variables['TABS'][index_t, :index_e, :, :] # absolute temperature
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         f.close()
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # check whether the data is equidistant or non-equidistant
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         dz  = z[1:]-z[:-1]
         diff = np.abs(dz-dz[0])
         if any([i>1e-3 for i in diff]):
@@ -169,18 +169,18 @@ class cld_les:
             self.logic_equidist = False
         else:
             self.logic_equidist = True
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         Nz, Ny, Nx = qc_3d.shape
 
         # 3d pressure field
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         p_3d      = np.empty((Nz, Ny, Nx), dtype=p.dtype)
         p_3d[...] = p[:, None, None]
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # calculate cloud extinction
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         # water vapor volume mixing ratio (from mass mixing ratio, kg/kg)
         vmr_3d = mmr2vmr(qv_3d * 0.001)
 
@@ -199,14 +199,14 @@ class cld_les:
         ext_3d        = np.zeros_like(t_3d)
         ext_3d[logic] = const0 / cer_3d[logic] * lwc_3d[logic]
         cer_3d[np.logical_not(logic)] = 0.0
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         self.Nx = Nx
         self.Ny = Ny
         self.Nz = Nz
 
         # layer property
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         self.lay = {}
 
         self.lay['x']           = {'data':x             , 'name':'X' , 'units':'km'}
@@ -225,11 +225,12 @@ class cld_les:
         self.lay['temperature'] = {'data':t_3d  , 'name':'Temperature (3D)'            , 'units':'K'}
         self.lay['extinction']  = {'data':ext_3d, 'name':'Extinction coefficients (3D)', 'units':'m^-1'}
         self.lay['cer']         = {'data':cer_3d, 'name':'Cloud effective radius (3D)' , 'units':'mm'}
-        #\--------------------------------------------------------------/#
+        self.lay['lwc']         = {'data':lwc_3d, 'name':'Liquid water content (3D)'   , 'units':'kg m^-3'}
+        #╰──────────────────────────────────────────────────────────────╯#
 
 
         # level property
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         self.lev = {}
 
         # in km
@@ -242,7 +243,7 @@ class cld_les:
         dz_ = np.append(dz_, dz_[-1])
         self.lev['altitude']  = {'data':z_ , 'name':'Altitude'       , 'units':'km'}
         self.lev['thickness'] = {'data':dz_, 'name':'Layer thickness', 'units':'km'}
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
 
     def post_les(self, altitude):
@@ -252,21 +253,21 @@ class cld_les:
         """
 
         # transpose netCDF data from (Nz, Ny, Nx) to (Nx, Ny, Nz)
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         for key in self.lay.keys():
             if isinstance(self.lay[key]['data'], np.ndarray):
                 if self.lay[key]['data'].ndim == 3:
                     self.lay[key]['data'] = np.transpose(self.lay[key]['data'])
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # downscale (usually in vertical z dimension)
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if any([i!=1 for i in self.coarsen]):
             self.downscale(self.coarsen)
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # cloud optical thickness
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         cot_3d = np.zeros_like(self.lay['extinction']['data'])
         dz_    = self.lay['thickness']['data']
         for i, dz0 in enumerate(dz_):
@@ -274,17 +275,17 @@ class cld_les:
         self.lay['cot'] = {'data':cot_3d, 'name':'Cloud optical thickness (3D)'}
 
         self.lev['cot_2d'] = {'data': np.sum(cot_3d, axis=-1), 'name': 'Cloud optical thickness (2D)'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # placeholder for <altitude> implementation
-        #/----------------------------------------------------------------------------\#
-        #\----------------------------------------------------------------------------/#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     def downscale(self, coarsen):
 
         # extract downscaling factors of dnx, dny, dnz from <coarsen>
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if len(coarsen) == 3:
             dnx, dny, dnz = coarsen
         elif len(coarsen) == 4:
@@ -294,10 +295,10 @@ class cld_les:
         else:
             msg = '\nError [cld_les]: Cannot interpret <coarsen> factors.'
             raise OSError(msg)
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # downscale in process
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or (self.Nz%dnz != 0):
             msg = '\nError [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['temperature']['data'].shape), str(coarsen))
             raise ValueError(msg)
@@ -326,7 +327,7 @@ class cld_les:
 
             self.Nx = self.lay['nx']['data']
             self.Ny = self.lay['ny']['data']
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     def get_extra_cloud_property(self, cer_mode='top', fill_clear=0.0, overwrite=False):
@@ -337,7 +338,7 @@ class cld_les:
         """
 
         # cloud mask based on cer
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if ('cld_msk' not in self.lay.keys()) or ('cld_msk_2d' not in self.lev.keys()) or (overwrite):
             cld_msk_3d = np.zeros(self.lay['cer']['data'].shape, dtype=np.int32)
             cld_msk_3d[self.lay['cer']['data']>0] = 1
@@ -347,20 +348,20 @@ class cld_les:
 
             self.lay['cld_msk'] = {'data':cld_msk_3d, 'name':'Cloud Mask (1: Cloud)', 'units':'N/A'}
             self.lev['cld_msk_2d'] = {'data': cld_msk_2d, 'name': 'Cloud Mask (1: Cloud)', 'units':'N/A'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # cloud optical thickness
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if ('cot_2d' not in self.lev.keys()) or (overwrite):
             cot_2d = np.nansum(self.lay['extinction']['data']*self.lay['thickness']['data'][0]*1000.0, axis=-1)
             cot_2d[cld_msk_2d==0] = fill_clear
             self.lev['cot_2d'] = {'data': cot_2d, 'name': 'Cloud Optical Thickness', 'units': 'N/A'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # cloud effective radius <cer_2d>
         # cloud top height <cth_2d>
         # cloud base height <cbh_2d>
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if ('cer_2d' not in self.lev.keys()) or ('cth_2d' not in self.lev.keys()) or ('cbh_2d' not in self.lev.keys()) or (overwrite):
             cer_3d = self.lay['cer']['data'].copy()
             cer_3d[cld_msk_3d==0] = np.nan
@@ -392,7 +393,7 @@ class cld_les:
             self.lev['cer_2d'] = {'data': cer_2d, 'name': 'Cloud Effective Radius', 'units': 'micron'}
             self.lev['cth_2d'] = {'data': cth_2d, 'name': 'Cloud Top Height'      , 'units': 'km'}
             self.lev['cbh_2d'] = {'data': cbh_2d, 'name': 'Cloud Base Height'     , 'units': 'km'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 

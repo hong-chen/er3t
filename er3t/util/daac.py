@@ -7,6 +7,7 @@ import warnings
 from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime
 from er3t.common import fdir_data_tmp
 
+
 __all__ = [
         'format_satname', \
         'get_token_earthdata', \
@@ -24,7 +25,6 @@ __all__ = [
         'download_oco2_https', \
         'download_worldview_image', \
         ]
-
 
 
 def format_satname(satellite, instrument):
@@ -226,8 +226,6 @@ def delete_file(
 
     if os.path.exists(fname_local2):
         os.remove(fname_local2)
-
-
 
 def get_local_file(
         fname_file,
@@ -627,7 +625,6 @@ def cal_proj_xy_geometa(line_data, closed=True):
         return proj_xy, xy_
     else:
         return proj_xy, xy_[:-1, :]
-
 
 
 def cal_lon_lat_utc_geometa(
