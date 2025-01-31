@@ -390,7 +390,7 @@ class mcarats_ng:
             if self.verbose:
                 print('Message [mcarats_ng]: Assume Lambertian surface ...')
 
-            if isinstance(surface_albedo, float):
+            if isinstance(surface_albedo, float) or isinstance(surface_albedo, np.float32) or isinstance(surface_albedo, np.float64):
 
                 self.nml[ig]['Sfc_mbrdf'] = np.array([1, 0, 0, 0])
                 self.nml[ig]['Sfc_mtype'] = 1

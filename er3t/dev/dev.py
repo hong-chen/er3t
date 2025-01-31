@@ -224,11 +224,11 @@ def cal_lon_lat_utc_geometa(
     # check if delta_t is correct
     #/----------------------------------------------------------------------------\#
     if line_data['Instrument'].lower() == 'modis' and delta_t != 300.0:
-        msg = '\nWarning [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t=%.1f>, please double-check.' % delta_t
-        warning.warn(msg)
+        msg = '\nwarnings [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t=%.1f>, please double-check.' % delta_t
+        warnings.warn(msg)
     elif line_data['Instrument'].lower() == 'viirs' and delta_t != 360.0:
-        msg = '\nWarning [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t=%.1f>, please double-check.' % delta_t
-        warning.warn(msg)
+        msg = '\nwarnings [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t=%.1f>, please double-check.' % delta_t
+        warnings.warn(msg)
     #\----------------------------------------------------------------------------/#
 
 

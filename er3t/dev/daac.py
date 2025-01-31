@@ -137,7 +137,6 @@ def get_command_earthdata(
                     'wget': '--header=%s --continue --timeout=120 --tries=3  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
                     }
 
-
     else:
 
         secret = gen_file_earthdata()

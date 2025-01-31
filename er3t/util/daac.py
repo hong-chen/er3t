@@ -1,12 +1,12 @@
 import os
 import sys
 import datetime
-
 import numpy as np
 import warnings
 
 from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime
 from er3t.common import fdir_data_tmp
+
 
 __all__ = [
         'format_satname', \
@@ -25,7 +25,6 @@ __all__ = [
         'download_oco2_https', \
         'download_worldview_image', \
         ]
-
 
 
 def format_satname(satellite, instrument):
@@ -227,8 +226,6 @@ def delete_file(
 
     if os.path.exists(fname_local2):
         os.remove(fname_local2)
-
-
 
 def get_local_file(
         fname_file,
@@ -628,7 +625,6 @@ def cal_proj_xy_geometa(line_data, closed=True):
         return proj_xy, xy_
     else:
         return proj_xy, xy_[:-1, :]
-
 
 
 def cal_lon_lat_utc_geometa(
@@ -1228,6 +1224,7 @@ def download_laads_https(
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                fnames_local.append(fname_local)
                 print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
@@ -1434,18 +1431,25 @@ def download_oco2_https(
     if dataset_tag in [
             'OCO2_L2_Met.10',
             'OCO2_L2_Met.10r',
+            'OCO2_L2_Met.11r',
             'OCO2_L2_Standard.10',
             'OCO2_L2_Standard.10r',
+            'OCO2_L2_Standard.11r',
             'OCO2_L1B_Science.10',
             'OCO2_L1B_Science.10r',
+            'OCO2_L1B_Science.11r',
             'OCO2_L1B_Calibration.10',
             'OCO2_L1B_Calibration.10r',
-            'OCO2_L2_CO2Prior.10r',
+            'OCO2_L1B_Calibration.11r',
             'OCO2_L2_CO2Prior.10',
-            'OCO2_L2_IMAPDOAS.10r',
+            'OCO2_L2_CO2Prior.10r',
+            'OCO2_L2_CO2Prior.11r',
             'OCO2_L2_IMAPDOAS.10',
+            'OCO2_L2_IMAPDOAS.10r',
+            'OCO2_L2_IMAPDOAS.11r',
+            'OCO2_L2_Diagnostic.10',
             'OCO2_L2_Diagnostic.10r',
-            'OCO2_L2_Diagnostic.10'
+            'OCO2_L2_Diagnostic.11r'
             ]:
 
         fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
@@ -1453,6 +1457,7 @@ def download_oco2_https(
     elif dataset_tag in [
             'OCO2_L2_Lite_FP.9r',
             'OCO2_L2_Lite_FP.10r',
+            'OCO2_L2_Lite_FP.11.1r',
             'OCO2_L2_Lite_SIF.10r'
             ]:
 
