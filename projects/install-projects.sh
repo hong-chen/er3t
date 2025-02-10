@@ -10,7 +10,7 @@ then
 fi
 
 er3t_data_google_id="1Oov75VffmuQSljxjoOS6q6egmfT6CmkI"
-er3t_data_local_filename="er3t-data-examples.tar.gz"
+er3t_data_local_filename="er3t-data-projects.tar.gz"
 
 echo "1. Install Data ########################################"
 echo
