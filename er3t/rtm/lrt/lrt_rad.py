@@ -556,7 +556,7 @@ class lrt_read_uvspec_rad:
         Nvar = inits[0].Nvar
 
         self.dims  = {'X':'Wavelength', 'Y':'Altitude', 'Z':'Files'}
-        rad  = np.zeros((Nx, Ny, Nz, Nvar-1), dtype=np.float64)
+        rad  = np.zeros((Nx, Ny, Nz, Nvar-1), dtype=np.float32)
 
         for i, init in enumerate(inits):
 
