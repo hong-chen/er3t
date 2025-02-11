@@ -33,6 +33,7 @@ import er3t
 #╭────────────────────────────────────────────────────────────────────────────╮#
 name_tag = '00_er3t_lrt'
 fdir0    = er3t.common.fdir_examples
+rcParams['font.size'] = 14
 #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -550,7 +551,7 @@ def example_rad_01_sun_glint(
         #╭────────────────────────────────────────────────────────────────────────────╮#
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111, projection='polar')
-        ax1.plot(np.deg2rad(vaa), rad, color='red', lw=6.0, zorder=1)
+        ax1.plot(np.deg2rad(vaa), rad, color='red', lw=1.0, zorder=1)
 
         ax1.scatter(np.deg2rad(saa0), rad.max()*1.1, s=400, c='orange', lw=0.0, alpha=0.8)
 
@@ -730,13 +731,13 @@ def example_rad_02_libera_adm(
 
         # 555 nm
         #╭──────────────────────────────────────────────────────────────╮#
-        ax1.plot(np.deg2rad(vaa), ref_555, color='darkblue', lw=12.0, alpha=1.0, zorder=0)
+        ax1.plot(np.deg2rad(vaa), ref_555, color='darkblue', lw=3.0, alpha=1.0, zorder=0)
         #╰──────────────────────────────────────────────────────────────╯#
 
         # vis band
         #╭──────────────────────────────────────────────────────────────╮#
         scale_factor = ref_555[0]/ref_vis[0]
-        ax1.plot(np.deg2rad(vaa), ref_vis*scale_factor, color='orange', ls='--', lw=6.0, zorder=1)
+        ax1.plot(np.deg2rad(vaa), ref_vis*scale_factor, color='orange', ls='--', lw=1.0, zorder=1)
         #╰──────────────────────────────────────────────────────────────╯#
 
         ax1.set_theta_zero_location('N')
