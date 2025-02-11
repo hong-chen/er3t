@@ -1129,7 +1129,7 @@ def example_06_rad_cld_gen_hem(
 
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    levels    = np.linspace(0.0, 20.0, 201)
+    levels    = np.linspace(0.0, 20.0, 101)
     fname_atm = '%s/atm.pk' % fdir
     atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -1156,12 +1156,16 @@ def example_06_rad_cld_gen_hem(
     fname_cld = '%s/cld.pk' % fdir
     cld0 = er3t.pre.cld.cld_gen_hem(
             fname=fname_cld,
+            Nx=200,
+            Ny=200,
+            dx=0.2,
+            dy=0.2,
             radii=[1.0, 2.0, 4.0],
             weights=[0.6, 0.3, 0.1],
-            altitude=np.arange(2.0, 5.01, 0.1),
+            altitude=np.arange(2.0, 5.01, 0.2),
             cloud_frac_tgt=0.2,
             w2h_ratio=2.0,
-            min_dist=1.5,
+            min_dist=0.2,
             overlap=False,
             overwrite=overwrite
             )
@@ -1298,16 +1302,16 @@ if __name__ == '__main__':
 
     # irradiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # example_01_flux_clear_sky()
+    example_01_flux_clear_sky()
     example_02_flux_les_cloud_3d()
-    # example_03_flux_les_cloud_3d_aerosol_1d()
-    # example_04_flux_les_cloud_3d_aerosol_3d()
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+    example_03_flux_les_cloud_3d_aerosol_1d()
+    example_04_flux_les_cloud_3d_aerosol_3d()
+    ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # example_05_rad_les_cloud_3d()
-    # example_06_rad_cld_gen_hem()
+    example_05_rad_les_cloud_3d()
+    example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass
