@@ -4,6 +4,7 @@ import pickle
 import warnings
 import numpy as np
 
+import er3t.common
 from er3t.util import mmr2vmr, cal_rho_air, downscale
 
 
@@ -372,10 +373,10 @@ class cld_les:
             dz = self.lay['thickness']['data'][0]
             z_indice = np.arange(Nz)
 
-            cer_2d = np.zeros((Nx, Ny), dtype=np.float64); cer_2d[...] = fill_clear
+            cer_2d = np.zeros((Nx, Ny), dtype=er3t.common.f_dtype); cer_2d[...] = fill_clear
 
-            cth_2d = np.zeros((Nx, Ny), dtype=np.float64); cth_2d[...] = fill_clear
-            cbh_2d = np.zeros((Nx, Ny), dtype=np.float64); cbh_2d[...] = fill_clear
+            cth_2d = np.zeros((Nx, Ny), dtype=er3t.common.f_dtype); cth_2d[...] = fill_clear
+            cbh_2d = np.zeros((Nx, Ny), dtype=er3t.common.f_dtype); cbh_2d[...] = fill_clear
 
             for i in range(Nx):
                 for j in range(Ny):

@@ -236,7 +236,7 @@ def rearrange_jobs(Ncpu, weights_in):
     # assign jobs to workers in a way that the difference between the work load of
     # workers is minimized
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    loads_now = np.zeros(Ncpu, dtype=np.float64)
+    loads_now = np.zeros(Ncpu, dtype=er3t.common.f_dtype)
     while Njob > 0:
 
         job0 = jobs[0]
@@ -280,7 +280,7 @@ def rearrange_jobs(Ncpu, weights_in):
 
     while Nround > 0:
 
-        weight0_round = np.array([], dtype=np.float64)
+        weight0_round = np.array([], dtype=er3t.common.f_dtype)
         index0_round = np.array([], dtype=np.int32)
 
         for i in i_next_round:

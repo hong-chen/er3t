@@ -104,7 +104,7 @@ class sfc_2d_gen:
         if isinstance(self.sfc, np.ndarray):
 
             Nx, Ny = self.sfc.shape
-            sfc = np.zeros((Nx, Ny, 1), dtype=np.float64)
+            sfc = np.zeros((Nx, Ny, 1), dtype=er3t.common.f_dtype)
             sfc[:, :, 0] = self.sfc[:, :]
 
             self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
@@ -119,7 +119,7 @@ class sfc_2d_gen:
             if ('fiso' in keys_check) and ('fvol' in keys_check) and ('fgeo' in keys_check):
 
                 Nx, Ny = self.sfc[keys['fiso']].shape
-                sfc = np.zeros((Nx, Ny, 3), dtype=np.float64)
+                sfc = np.zeros((Nx, Ny, 3), dtype=er3t.common.f_dtype)
                 sfc[:, :, 0] = self.sfc[keys['fiso']][:, :]
                 sfc[:, :, 1] = self.sfc[keys['fgeo']][:, :]
                 sfc[:, :, 2] = self.sfc[keys['fvol']][:, :]
@@ -133,7 +133,7 @@ class sfc_2d_gen:
                ('slope'      in keys_check):
 
                 Nx, Ny = self.sfc[keys['slope']].shape
-                sfc = np.zeros((Nx, Ny, 5), dtype=np.float64)
+                sfc = np.zeros((Nx, Ny, 5), dtype=er3t.common.f_dtype)
                 sfc[:, :, 0] = self.sfc[keys['diffusealb']][:, :]
                 sfc[:, :, 1] = self.sfc[keys['diffusefrac']][:, :]
                 sfc[:, :, 2] = self.sfc[keys['refracr']][:, :]

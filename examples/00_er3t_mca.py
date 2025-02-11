@@ -1298,16 +1298,16 @@ if __name__ == '__main__':
 
     # irradiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_01_flux_clear_sky()
+    # example_01_flux_clear_sky()
     example_02_flux_les_cloud_3d()
-    example_03_flux_les_cloud_3d_aerosol_1d()
-    example_04_flux_les_cloud_3d_aerosol_3d()
+    # example_03_flux_les_cloud_3d_aerosol_1d()
+    # example_04_flux_les_cloud_3d_aerosol_3d()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_05_rad_les_cloud_3d()
-    example_06_rad_cld_gen_hem()
+    # example_05_rad_les_cloud_3d()
+    # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass
