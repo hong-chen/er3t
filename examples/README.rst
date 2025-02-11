@@ -1,4 +1,4 @@
-Examples (`code status <https://discord.com/channels/681619528945500252/1004090233412923544/1017575066139103293>`_)
+Examples
 ~~~~~~~~
 
 **The code in this directory is under active development. Please check for the latest code status before use.**
@@ -26,31 +26,6 @@ Codes ``00`` can be used for quickly adapting the usage of ``er3t.rtm.mca`` (MCA
 The figure results for each example are provided in ``check`` directory (available after installing auxiliary data)
 for validation.
 
-
-|
-|
-
-============================
-Get Access to NASA EARTHDATA
-============================
-
-Code ``01`` and ``02`` contain some programs that can automatically download satellite data from NASA EARTHDATA.
-To get the data access, you will need to register an account with NASA EARTHDATA.
-
-#. Register an account at `NASA EARTHDATA <https://urs.earthdata.nasa.gov>`_ ;
-
-#. Create a ``.netrc`` file under your home directory, e.g., type in ``touch ~/.netrc``;
-
-#. Assume you registered with an username ``abc`` and a password ``123``, in the ``~/.netrc`` file, put in
-
-   ::
-
-     machine urs.earthdata.nasa.gov
-     login abc
-     password 123
-
-#. Request a token (instructions `here <https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens/>`_)
-   for your EARTHDATA account and store the token under environment variable ``EARTHDATA_TOKEN``, e.g., ``export EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"``.
 
 |
 |
