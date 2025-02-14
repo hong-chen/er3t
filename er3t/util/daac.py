@@ -548,7 +548,6 @@ def read_geometa(content):
 
 
 
-
 def cal_proj_xy_geometa(line_data, closed=True):
 
     """
@@ -625,6 +624,7 @@ def cal_proj_xy_geometa(line_data, closed=True):
         return proj_xy, xy_
     else:
         return proj_xy, xy_[:-1, :]
+
 
 
 def cal_lon_lat_utc_geometa(
@@ -710,8 +710,8 @@ def cal_lon_lat_utc_geometa(
     N_a = N_along
     N_c = N_cross
 
-    i_a = np.arange(N_a, dtype=np.float32)
-    i_c = np.arange(N_c, dtype=np.float32)
+    i_a = np.arange(N_a, dtype=np.float64)
+    i_c = np.arange(N_c, dtype=np.float64)
     ii_a, ii_c = np.meshgrid(i_a, i_c, indexing='ij')
 
     res_a = dist_a/N_a
@@ -755,7 +755,7 @@ def cal_lon_lat_utc_geometa(
     dtime0 = datetime.datetime.strptime(dtime0_s, 'A%Y%j.%H%M')
     jday0 = dtime_to_jday(dtime0)
 
-    jday_out = np.zeros(lon_out.shape, dtype=np.float32)
+    jday_out = np.zeros(lon_out.shape, dtype=np.float64)
     delta_t0 = delta_t / N_scan
 
     delta_t0_c = delta_t0/3.0/N_c*i_c  # 120 degree coverage thus </3.0>
@@ -1615,11 +1615,11 @@ def download_worldview_image(
             date0 = jday_to_dtime(jday0)
             date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.4f' % extent0 for extent0 in extent]))
 
         except Exception as error:
             print(error)
-            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.4f' % extent0 for extent0 in extent]))
         #╰──────────────────────────────────────────────────────────────╯#
 
     elif satellite in ['GOES-West', 'GOES-East']:
@@ -1641,7 +1641,7 @@ def download_worldview_image(
         date0 = date + datetime.timedelta(seconds=sec_offset)
         date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.4f' % extent0 for extent0 in extent]))
         #╰──────────────────────────────────────────────────────────────╯#
 
     fname  = os.path.abspath(fname)
