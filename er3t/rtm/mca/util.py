@@ -119,7 +119,7 @@ class func_ref_vs_cot:
         if atm0 is None:
             levels = np.arange(0.0, 20.1, 0.1)
             fname_atm = '%s/atm_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
-            atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=self.fname_atm, overwrite=False)        
+            atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=self.fname_atm, overwrite=False)
         else:
             atm0 = atm0
         #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -127,7 +127,8 @@ class func_ref_vs_cot:
         # abs object
         #╭────────────────────────────────────────────────────────────────────────────╮#
         fname_abs = '%s/abs_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
-        abs0      = er3t.pre.abs.abs_16g(wavelength=self.wvl0, fname=fname_abs, atm_obj=atm0, overwrite=False)
+        # abs0      = er3t.pre.abs.abs_16g(wavelength=self.wvl0, fname=fname_abs, atm_obj=atm0, overwrite=False)
+        abs0      = er3t.pre.abs.abs_rep(wavelength=self.wvl0, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=False)
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # phase function
