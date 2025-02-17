@@ -80,7 +80,7 @@ class abs_rep:
 
         elif ((wavelength is not None) and (fname is None)):
 
-            self.run(atm_obj)
+            self.run(wavelength)
 
         else:
 
