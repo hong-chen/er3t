@@ -146,6 +146,12 @@ def get_data_info_nc(fname, dataType='netCDF4'):
         objs.append(obj)
 
     data_info = OrderedDict()
+
+    data_info['<file>'] = '(1,)'
+    for attr in f.ncattrs():
+        attr0 = f.getncattr(attr)
+        data_info['<file>|%s' % (attr)] = attr0
+
     for i, vname in enumerate(vnames):
         data_info[vname] = str(objs[i].shape)
         for attr in objs[i].ncattrs():
@@ -203,6 +209,12 @@ def get_data_info_h5(fname, dataType='HDF5'):
         vnames.append(vname[1:])
 
     data_info = OrderedDict()
+
+    data_info['<file>'] = '(1,)'
+    for attr in f.attrs.keys():
+        attr0 = f.attrs[attr]
+        data_info['<file>|%s' % (attr)] = attr0
+
     for vname in vnames:
         obj = f[vname]
         data_info[vname] = str(obj.shape)
