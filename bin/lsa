@@ -219,14 +219,15 @@ def get_data_info_h5(fname, dataType='HDF5'):
         obj = f[vname]
         data_info[vname] = str(obj.shape)
         for attr in obj.attrs.keys():
-            if '_LIST' in attr:
-                return get_data_info_nc(fname)
             attr0 = obj.attrs[attr]
-            if isinstance(attr0, (bytes, bytearray)):
-                attr0 = str(attr0, encoding='utf-8')
+            if '_LIST' in attr:
+                data_info['%s|%s' % (vname, attr)] = attr0.shape
             else:
-                attr0 = str(attr0)
-            data_info['%s|%s' % (vname, attr)] = attr0
+                if isinstance(attr0, (bytes, bytearray)):
+                    attr0 = str(attr0, encoding='utf-8')
+                else:
+                    attr0 = str(attr0)
+                data_info['%s|%s' % (vname, attr)] = attr0
 
     f.close()
 
@@ -366,7 +367,7 @@ def generate_message(data_info, dataType, dash_extra=2):
 
     body = ''
     for i, vname in enumerate(vnames):
-        dashed_line = '-'*(Nmax-len(vname))
+        dashed_line = '─'*(Nmax-len(vname))
         info = data_info[vname]
         line = '{vname} {dashed_line} : {info}\n'.format(vname=vname, dashed_line=dashed_line, info=info)
         body += line
