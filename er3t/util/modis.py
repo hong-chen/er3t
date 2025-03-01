@@ -1459,6 +1459,7 @@ class modis_04:
 class modis_09:
     """
     A class for extracting data from MODIS Atmospherically Corrected Surface Reflectance 5-Min L2 Swath 250m, 500m, 1km files.
+    Note: Although this product is referred to as surface reflectance, it is in fact producing the Bidirectional Reflectance Factor (BRF) and therefore the values may be > 1 over bright surfaces.
 
     Args:
         fname (str): The file name of the MOD09 product.
