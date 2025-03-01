@@ -1004,6 +1004,10 @@ class func_ref_vs_cot:
                 solar_zenith_angle=self.sza0,
                 spectral_resolution=1.0,
                 lrt_cfg=lrt_cfg,
+                mute_list = ['slit_function_file', 'wavelength', 'source solar'],
+                input_dict_extra={
+                    'wavelength': '%.1f %.1f' % (self.wvl0, self.wvl0),
+                    },
                 )
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -1037,6 +1041,10 @@ class func_ref_vs_cot:
                     cld_cfg=cld_cfg,
                     aer_cfg=aer_cfg,
                     output_altitude='toa',
+                    mute_list = ['slit_function_file', 'wavelength', 'source solar'],
+                    input_dict_extra={
+                        'wavelength': '%.1f %.1f' % (self.wvl0, self.wvl0),
+                        },
                     )
 
             inits_rad.append(init_rad)

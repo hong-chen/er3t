@@ -38,7 +38,7 @@ def get_lrt_cfg(
             'data_files_path'    : '%s/data' % lrt_fdir,
             'rte_solver'         : 'disort',
             'number_of_streams'  : 8,
-            'mol_abs_param'      : 'reptran fine', # use 'reptran fine' for higher resolution
+            'mol_abs_param'      : 'reptran coarse', # use 'reptran fine' for higher resolution
             'slit_function_file_vis' : '%s/vis_%.1fnm_s.dat' % (ssfr_fdir, spectral_resolution),
             'slit_function_file_nir' : '%s/nir_%.1fnm_s.dat' % (ssfr_fdir, spectral_resolution),
             }

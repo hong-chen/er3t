@@ -129,6 +129,9 @@ class func_ref_vs_cot:
         fname_abs = '%s/abs_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
         # abs0      = er3t.pre.abs.abs_16g(wavelength=self.wvl0, fname=fname_abs, atm_obj=atm0, overwrite=False)
         abs0      = er3t.pre.abs.abs_rep(wavelength=self.wvl0, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=False)
+        # sol0 = np.sum(abs0.coef['solar']['data'] * abs0.coef['weight']['data']) * 1000.0
+        # print(sol0)
+        # sys.exit()
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # phase function
