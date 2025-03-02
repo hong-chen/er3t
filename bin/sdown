@@ -566,7 +566,7 @@ def get_sat_info_from_product_tag(tag_, nrt=False):
     # return satellite product information
     #/----------------------------------------------------------------------------\#
     tag = tag_.upper()
-    if tag.endwith('29') and nrt: # the MODIS 29 standard product is on the NSIDC server, NRT product is on NASA LANCE DAAC
+    if tag.endswith('29') and nrt: # the MODIS 29 standard product is on the NSIDC server, NRT product is on NASA LANCE DAAC
         tag = tag + '_NRT'
 
     if (tag in tags_support.keys()):
