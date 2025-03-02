@@ -1124,13 +1124,33 @@ def parse_geojson(geojson_fpath):
 
 
 def region_parser(extent, lons, lats, geojson_fpath):
+    """
+    Parse region specifications and return longitude and latitude arrays.
+    This function processes different forms of region specifications: extent, lon/lat coordinates, or a geoJSON file.
+    It validates inputs and returns arrays of longitudes and latitudes that define the region.
+    Args:
+    ----
+        extent (list or None): Region extent as [lon_min, lon_max, lat_min, lat_max]
+            (i.e., West, East, South, North).
+        lons (list or None): Longitude bounds as [lon_min, lon_max].
+        lats (list or None): Latitude bounds as [lat_min, lat_max].
+        geojson_fpath (str or None): File path to a geoJSON file containing region information.
+
+    Returns:
+    -------
+        tuple: A tuple containing:
+            - llons (numpy.ndarray): Array of longitudes linearly spaced across the region.
+            - llats (numpy.ndarray): Array of latitudes linearly spaced across the region.
+    Raises:
+        SystemExit: If inputs are invalid or insufficient to define a region.
+    """
 
     if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
-        print('Error [sdown]: Must provide either extent or lon/lat coordinates or a geoJSON file')
+        print('Error [region_parser]: Must provide either extent or lon/lat coordinates or a geoJSON file')
         sys.exit()
 
     if (extent is not None) and ((lats is not None) or (lons is not None)) and (geojson_fpath is not None):
-        print('Warning [sdown]: Received multiple regions of interest. Only `extent` will be used.')
+        print('Warning [region_parser]: Received multiple regions of interest. Only `extent` will be used.')
         llons = np.linspace(extent[0], extent[1], 100)
         llats = np.linspace(extent[2], extent[3], 100)
         return llons, llats
@@ -1138,12 +1158,12 @@ def region_parser(extent, lons, lats, geojson_fpath):
 
     if (extent is not None):
         if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
-            print('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+            print('Error [region_parser]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
             sys.exit()
 
         # check to make sure extent is correct
         if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-            msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
+            msg = 'Error [region_parser]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
             print(msg)
             sys.exit()
 
@@ -1157,7 +1177,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
             llats = np.linspace(lats[0], lats[1], 100)
             return llons, llats
         else:
-            print('Error [sdown]: Must provide two coorect bounds each for `--lons` and `--lats`')
+            print('Error [region_parser]: Must provide two coorect bounds each for `--lons` and `--lats`')
             sys.exit()
 
 
