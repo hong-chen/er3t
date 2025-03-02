@@ -448,12 +448,14 @@ def get_nsidc_file_list(
 
     # now that we have found and verified that the collection and product exists, we need to query granules.
     # granules are indexed by page numbers and page size (defaults to 10) so we need to go through each page.
-    # example url: # https://cmr.earthdata.nasa.gov/search/granules.csv?collection_concept_id=C1646610390-NSIDC_ECS&downloadable=true&instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85
-    # note that we use the shortened base url and send other parameters through function call `params=`.
-    cmr_granules_url = 'https://cmr.earthdata.nasa.gov/search/granules.json?has_granules=true'
+    # example url: # https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=true&instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85
+
+    cmr_granules_url = 'https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=True'
     # update search params with page info
     search_params['page_num'] = 1
     search_params['page_size'] = 100 # do not make this too big as query will take too long
+    search_params_string = '&'.join('{}={}'.format(k, v) for (k, v) in search_params.items())
+    cmr_granules_url = f'{cmr_granules_url}&{search_params_string}'
 
     # create list for links
     nsidc_download_links = []
