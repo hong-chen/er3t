@@ -428,7 +428,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
     for product in products:
 
         product_download_counter = 0 # update counter per product
-        product_info = get_sat_info_from_product_tag(product)
+        product_info = get_sat_info_from_product_tag(product, nrt)
         fnames[product_info['dict_key']] = []
 
         if verbose:
@@ -446,7 +446,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
             fnames[product_info['dict_key']] += p_fnames
             product_download_counter += 1 # update counter only by 1 since it is always a single RGB image per satellite per date
 
-        # MODIS surface product
+        # MODIS BRDF product
         elif '43' in product.upper():
             from er3t.util.modis import get_sinusoidal_grid_tag
             filename_tags_43 = get_sinusoidal_grid_tag(lon, lat)
@@ -461,8 +461,8 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                                                                verbose=verbose)
                 fnames[product_info['dict_key']] += p_fnames
 
-        # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
-        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '09', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
+        # MODIS Level-1b radiances, Level-2 cloud products, surface reflectance products, and solar/viewing geoemetries
+        elif product.upper().endswith(('29', 'QKM', 'HKM', '1KM', 'L2', '03', '09', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
             if nrt:
                 if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
                     msg = 'Warning [sdown]: VIIRS cloud products are not available in near real time (NRT)'
@@ -495,11 +495,11 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
 
                 for filename_tag in filename_tags_03:
                     p_fnames = er3t.util.daac.download_lance_https(date=date,
-                                                                   dataset_tag=product_info['dataset_tag'],
-                                                                   filename_tag=filename_tag,
-                                                                   day_interval=1,
-                                                                   fdir_out=fdir_out,
-                                                                   verbose=verbose)
+                                                                dataset_tag=product_info['dataset_tag'],
+                                                                filename_tag=filename_tag,
+                                                                day_interval=1,
+                                                                fdir_out=fdir_out,
+                                                                verbose=verbose)
                     fnames[product_info['dict_key']] += p_fnames
 
             else:
@@ -520,12 +520,19 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
                 for filename_tag in filename_tags_03:
-                    p_fnames = er3t.util.daac.download_laads_https(date=date,
-                                                                   dataset_tag=product_info['dataset_tag'],
-                                                                   filename_tag=filename_tag,
-                                                                   day_interval=1,
-                                                                   fdir_out=fdir_out,
-                                                                   verbose=verbose)
+                    if product.upper().endswith('29'): # NRT product lives on LANCE server, standard product on NSIDC servver
+                        p_fnames = er3t.util.daac.download_nsidc_https(date=date,
+                                                                       dataset_tag=product_info['dataset_tag'],
+                                                                       filename_tag=filename_tag,
+                                                                       fdir_out=fdir_out,
+                                                                       verbose=verbose)
+                    else:
+                        p_fnames = er3t.util.daac.download_laads_https(date=date,
+                                                                    dataset_tag=product_info['dataset_tag'],
+                                                                    filename_tag=filename_tag,
+                                                                    day_interval=1,
+                                                                    fdir_out=fdir_out,
+                                                                    verbose=verbose)
                     fnames[product_info['dict_key']] += p_fnames
 
         else:
@@ -547,7 +554,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
         satlogger.info('Message [sdown]: No satellite files were found for the given parameters')
 
 
-def get_sat_info_from_product_tag(tag_):
+def get_sat_info_from_product_tag(tag_, nrt=False):
 
     # make all variable names (keys) upper case
     #/----------------------------------------------------------------------------\#
@@ -559,6 +566,9 @@ def get_sat_info_from_product_tag(tag_):
     # return satellite product information
     #/----------------------------------------------------------------------------\#
     tag = tag_.upper()
+    if tag.endwith('29') and nrt: # the MODIS 29 standard product is on the NSIDC server, NRT product is on NASA LANCE DAAC
+        tag = tag + '_NRT'
+
     if (tag in tags_support.keys()):
         return tags_support[tag]
     else:

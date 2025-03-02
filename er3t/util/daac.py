@@ -372,6 +372,69 @@ def get_online_file(
     return content
 
 
+def get_nsidc_file_list(
+        url,
+        fdir_save='%s/satfile' % fdir_data_tmp,
+        verbose=True):
+    """
+    Get a list of files available from an NSIDC URL directory.
+
+    Args:
+    ----
+        url : str
+            The URL of the NSIDC directory to list files from.
+        fdir_save : str, optional
+            Directory to save temporary files.
+        verbose : bool, optional
+            Whether to print verbose messages.
+
+    Returns:
+    --------
+        list
+            A list of filenames available in the directory.
+    """
+    import requests
+    from bs4 import BeautifulSoup
+    import os
+
+    if not os.path.exists(fdir_save):
+        os.makedirs(fdir_save)
+
+    try:
+        # Get authentication ready by using the token approach
+        token = get_token_earthdata()
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Fetch the directory listing
+        if verbose:
+            print(f"Message [get_nsidc_file_list]: Requesting file list from {url}")
+
+        response = requests.get(url, headers=headers)
+
+        if response.status_code != 200:
+            print(f"Error [get_nsidc_file_list]: Failed to access URL {url}. Status code: {response.status_code}")
+            return []
+
+        # Parse HTML to extract file links
+        soup = BeautifulSoup(response.text, 'html.parser')
+        file_list = []
+
+        # NSIDC typically uses table format for directory listings
+        for link in soup.find_all('a'):
+            href = link.get('href')
+            if href and (not href.startswith('?')) and (not href == '../'):
+                file_list.append(href)
+
+        if verbose:
+            print(f"Message [get_nsidc_file_list]: Found {len(file_list)} files")
+
+        return file_list
+
+    except Exception as error:
+        print(f"Error [get_nsidc_file_list]: {error}")
+        return []
+
+
 def final_file_check(fname_local, data_format, verbose):
     """
     Check if the file has been successfully downloaded.
@@ -1227,7 +1290,7 @@ def download_laads_https(
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
-                print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
+                print("Message [download_laads_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)
@@ -1269,7 +1332,6 @@ def download_laads_https(
 
 
     return fnames_local
-
 
 
 def download_lance_https(
@@ -1365,8 +1427,6 @@ def download_lance_https(
     print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #\----------------------------------------------------------------------------/#
 
-
-
     # run/print command
     #/----------------------------------------------------------------------------\#
     if run:
@@ -1397,6 +1457,108 @@ def download_lance_https(
 
     return fnames_local
 
+
+def download_nsidc_https(
+             date,
+             dataset_tag,
+             filename_tag,
+             server='https://n5eil01u.ecs.nsidc.org',
+             fdir_prefix=None,
+             fdir_out='tmp-data',
+             fdir_save='%s/satfile' % fdir_data_tmp,
+             data_format=None,
+             run=True,
+             verbose=True):
+
+    """
+    Downloads products from the NSIDC Data Archive.
+
+    Args:
+    ----
+        date: Python datetime object
+        dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
+        filename_tag: string, string pattern in the filename, e.g. '.2035.'
+        server=: string, data server
+        fdir_prefix=: string, not used and only listed here for continuity. refers to data directory on the server
+        day_interval=: integer, for 8 day data, day_interval=8
+        fdir_out=: string, output data directory
+        data_format=None: e.g., 'hdf'
+        run=: boolean type, if False, the command will only be displayed but not run
+        verbose=: boolean type, verbose tag
+
+    Returns:
+    -------
+        fnames_local: Python list that contains downloaded satellite data file paths
+    """
+
+    # retrieve the directory where satellite data is stored for date
+    #/----------------------------------------------------------------------------\#
+    doy_str = date.strftime('%Y.%m.%d')
+    fdir_data = '%s/%s/' % (dataset_tag, doy_str)
+    fdir_server = server + fdir_data
+    #\----------------------------------------------------------------------------/#
+
+    # obtain the list of files available at that data directory on the server
+    files = get_nsidc_file_list(url=fdir_server, fdir_save=fdir_save)
+    if len(files) == 0:
+        return []
+
+    # get download commands
+    #/----------------------------------------------------------------------------\#
+    exist_count = 0 # to prevent re-downloading. TODO: Add `overwrite` option instead for user
+
+    primary_commands = []
+    backup_commands  = []
+    fnames_local = []
+    for filename in files:
+        if data_format is not None:
+            if not filename.endswith(data_format): # then skip
+                continue
+
+        if filename_tag in filename:
+
+            fname_server = '%s/%s' % (fdir_server, filename)
+            fname_local  = '%s/%s' % (fdir_out, filename)
+            if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                print("Message [download_nsidc_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
+                exist_count += 1
+            else:
+                fnames_local.append(fname_local)
+                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+                primary_commands.append(primary_command)
+                backup_commands.append(backup_command)
+
+    print("Message [download_nsidc_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
+    #\----------------------------------------------------------------------------/#
+
+    # run/print command
+    #/----------------------------------------------------------------------------\#
+    if run:
+        for i in range(len(primary_commands)):
+
+            fname_local = fnames_local[i]
+
+            if verbose:
+                print('Message [download_nsidc_https]: Downloading %s ...' % fname_local)
+            os.system(primary_commands[i])
+
+            # if primary command fails, execute backup command.
+            # if that fails again, then delete the file and remove from list
+            if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                os.system(backup_commands[i])
+
+                if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                    print("Message [download_nsidc_https]: Could not complete the download of or something is wrong with {}...deleting...".format(fname_local))
+                    os.remove(fname_local)
+                    fnames_local.remove(fname_local) #remove from list
+    else:
+
+        print('Message [download_nsidc_https]: The commands to run are:')
+        for command in primary_commands:
+            print(command)
+    #\----------------------------------------------------------------------------/#
+
+    return fnames_local
 
 
 def download_oco2_https(
