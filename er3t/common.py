@@ -521,7 +521,7 @@ _sat_tags_support_ = {
                 },
 
         'MYD29': {
-                  'dataset_tag': 'MOST/MYD29.061',
+                  'dataset_tag': 'MOSA/MYD29.061',
                    'dict_key': 'myd_29',
                 'description': 'MODIS/Aqua Sea Ice Extent 5-Min L2 Swath 1km',
                     'website': 'https://nsidc.org/data/myd29/versions/61',
