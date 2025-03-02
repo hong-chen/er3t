@@ -99,7 +99,7 @@ def create_args_parallel(date_list,
                          fdir_out,
                          nrt,
                          iou,
-                         focus_extent,
+                         extent,
                          products,
                          verbose):
     """
@@ -112,7 +112,7 @@ def create_args_parallel(date_list,
         fdir_out (str): Output directory.
         nrt (bool): Flag indicating if the data is near real-time.
         iou (float): Intersection over Union threshold.
-        focus_extent (str): Extent to focus on.
+        extent (str): Extent to focus on.
         products (list): List of products.
         verbose (bool): Flag indicating if verbose output is enabled.
 
@@ -132,7 +132,7 @@ def create_args_parallel(date_list,
         mini_list.append(fdir_out[i])
         mini_list.append(nrt)
         mini_list.append(iou)
-        mini_list.append(focus_extent)
+        mini_list.append(extent)
         mini_list.append(products)
         mini_list.append(verbose)
 
@@ -141,7 +141,7 @@ def create_args_parallel(date_list,
     return arg_list
 
 
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, geojson_fpath, products, verbose, parallel):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, geojson_fpath, products, verbose, parallel):
 
 
     ########################################################################################################
@@ -161,30 +161,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         viirs_noaa20 = list(filter(lambda x: x.upper().startswith('VJ1'), products))
         viirs_noaa21 = list(filter(lambda x: x.upper().startswith('VJ2'), products))
 
-
-    if focus_extent is not None:
-        if len(focus_extent) != 4:
-            satlogger.error('Error [sdown]: `focus_extent` must be in [lon1 lon2 lat1 lat2] format')
-            sys.exit()
-
-        if extent is not None:
-            if (focus_extent[0] < extent[0]) or (focus_extent[1] > extent[1]) or (focus_extent[2] < extent[2]) or (focus_extent[3] > extent[3]):
-                satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within `extent` coordinates {}'.format(focus_extent, extent))
-                sys.exit()
-
-        elif (lats is not None) and (lons is not None):
-            if (focus_extent[0] < lons[0]) or (focus_extent[1] > lons[1]) or (focus_extent[2] < lats[2]) or (focus_extent[3] > lats[3]):
-                satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided by `lats` {} and `lons` {}'.format(focus_extent, lats, lons))
-                sys.exit()
-
-        elif geojson_fpath is not None:
-            lons0, lats0 = er3t.util.util.parse_geojson(geojson_fpath)
-            if (focus_extent[0] < np.nanmin(lons0)) or (focus_extent[1] > np.nanmax(lons0)) or (focus_extent[2] < np.nanmin(lats0)) or (focus_extent[3] > np.nanmax(lats0)):
-                satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided in the geojson file {}'.format(focus_extent, geojson_fpath))
-                sys.exit()
-
-
     llons, llats = er3t.util.util.region_parser(extent, lons, lats, geojson_fpath)
+    extent = [llons.min(), llons.max(), llats.min(), llats.max()] # override extent
 
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
@@ -264,7 +242,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             fdir_out=fdir_out_dt,
             nrt=nrt,
             iou=iou,
-            focus_extent=focus_extent,
+            extent=extent,
             products=products,
             verbose=verbose)
 
@@ -299,7 +277,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
 
         if start_dt == end_dt:
             msg = 'Warning [sdown]: `end_date` %s UTC and `start_date` %s UTC are both the same' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
-            satlogger.warn(msg)
+            satlogger.warning(msg)
 
 
         if start_dt > _today_dt:
@@ -374,7 +352,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                     f.write('Date: {}\n'.format(date_x))
                     f.write('Extent: {}\n'.format(extent))
 
-            p_args = create_args_parallel(date_list, start_dt, end_dt, llons, llats, fdir_out_dt_list, nrt, iou, focus_extent, products, verbose)
+            p_args = create_args_parallel(date_list, start_dt, end_dt, llons, llats, fdir_out_dt_list, nrt, iou, extent, products, verbose)
             if verbose:
                 satlogger.info("Message [sdown]: Found {} CPUs. Downloads will be spread over all available CPUs.".format(multiprocessing.cpu_count()))
             # start parallelization
@@ -405,22 +383,23 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                     fdir_out=fdir_out_dt,
                     nrt=nrt,
                     iou=iou,
-                    focus_extent=focus_extent,
+                    extent=extent,
                     products=products,
                     verbose=verbose)
 
 
 
-def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose):
+def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, extent, products, verbose):
 
-    if focus_extent is not None:
-        lons = np.linspace(focus_extent[0], focus_extent[1], 200)
-        lats = np.linspace(focus_extent[2], focus_extent[3], 200)
+    # if extent is not None:
+    #     lons = np.linspace(extent[0], extent[1], 200)
+    #     lats = np.linspace(extent[2], extent[3], 200)
     # else: # disabled since we are now pre-calculating lons and lats
     #     lons = np.linspace(extent[0], extent[1], 100)
     #     lats = np.linspace(extent[2], extent[3], 100)
 
-    lon, lat = np.meshgrid(lons, lats, indexing='ij')
+    # pre-calculate lons and lats
+    lon_2d, lat_2d = np.meshgrid(lons, lats, indexing='ij')
 
     references = []
     fnames = {}
@@ -449,7 +428,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
         # MODIS BRDF product
         elif '43' in product.upper():
             from er3t.util.modis import get_sinusoidal_grid_tag
-            filename_tags_43 = get_sinusoidal_grid_tag(lon, lat)
+            filename_tags_43 = get_sinusoidal_grid_tag(lon_2d, lat_2d)
             product_download_counter += len(filename_tags_43) # update counter
 
             for filename_tag in filename_tags_43:
@@ -481,8 +460,8 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
                                                                   end_dt_hhmm=end_dt_hhmm,
-                                                                  lon=lon,
-                                                                  lat=lat,
+                                                                  lon=lon_2d,
+                                                                  lat=lat_2d,
                                                                   satellite=product_info['satellite'],
                                                                   instrument=product_info['instrument'],
                                                                   percent0=iou,
@@ -507,8 +486,8 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
                                                                   end_dt_hhmm=end_dt_hhmm,
-                                                                  lon=lon,
-                                                                  lat=lat,
+                                                                  lon=lon_2d,
+                                                                  lat=lat_2d,
                                                                   satellite=product_info['satellite'],
                                                                   instrument=product_info['instrument'],
                                                                   percent0=iou,
@@ -522,10 +501,14 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_
                 for filename_tag in filename_tags_03:
                     if product.upper().endswith('29'): # NRT product lives on LANCE server, standard product on NSIDC servver
                         p_fnames = er3t.util.daac.download_nsidc_https(date=date,
-                                                                       dataset_tag=product_info['dataset_tag'],
+                                                                       extent=extent,
+                                                                       product_dict=product_info,
                                                                        filename_tag=filename_tag,
                                                                        fdir_out=fdir_out,
-                                                                       verbose=verbose)
+                                                                       run=True,
+                                                                       start_dt_hhmm=start_dt_hhmm,
+                                                                       end_dt_hhmm=end_dt_hhmm,
+                                                                       verbose=True)
                     else:
                         p_fnames = er3t.util.daac.download_laads_https(date=date,
                                                                     dataset_tag=product_info['dataset_tag'],
@@ -621,8 +604,6 @@ if __name__ == '__main__':
     parser.add_argument('--geojson', type=str, metavar='',
                         help='Path to a geoJSON file containing the extent of interest coordinates\n'\
                         'Example:  --geojson my/path/to/geofile.json\n \n')
-    parser.add_argument('--focus_extent', nargs='+', type=float, metavar='',
-                        help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
     parser.add_argument('--parallel', action='store_true',
                         help='Pass --parallel to enable parallelization of downloads spread over multiple CPUs.\n')
     parser.add_argument('--nrt', action='store_true',
@@ -651,7 +632,6 @@ if __name__ == '__main__':
         nrt        = False
         iou        = 0
         geojson    = None
-        focus_extent = None
         parallel   = False
         verbose    = 1
 
@@ -668,7 +648,6 @@ if __name__ == '__main__':
                                   nrt=nrt,
                                   iou=iou,
                                   geojson_fpath=geojson,
-                                  focus_extent=focus_extent,
                                   products=products,
                                   parallel=parallel,
                                   verbose=verbose)
@@ -687,7 +666,6 @@ if __name__ == '__main__':
                                   nrt=args.nrt,
                                   iou=args.iou,
                                   geojson_fpath=args.geojson,
-                                  focus_extent=args.focus_extent,
                                   products=args.products,
                                   parallel=args.parallel,
                                   verbose=args.verbose)
