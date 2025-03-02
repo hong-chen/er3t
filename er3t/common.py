@@ -530,6 +530,26 @@ _sat_tags_support_ = {
                   'reference': 'Hall, D. K. & Riggs, G. A. (2021). MODIS/Aqua Sea Ice Extent 5-Min L2 Swath 1km. (MYD29, Version 61). [Data Set]. Boulder, Colorado USA. NASA National Snow and Ice Data Center Distributed Active Archive Center. https://doi.org/10.5067/MODIS/MYD29.061. [describe subset used if applicable]. Date Accessed 03-01-2025.'
                 },
 
+        'MOD29_NRT': {
+                  'dataset_tag': '61/MOD29',
+                   'dict_key': 'mod_29',
+                'description': 'MODIS/Terra Sea Ice Extent 5-Min L2 Swath 1km',
+                    'website': 'https://nsidc.org/data/mod29/versions/61',
+                  'satellite': 'Terra',
+                 'instrument': 'MODIS',
+                  'reference': 'Hall, D. K. & Riggs, G. (2021). MODIS/Terra Sea Ice Extent 5-Min L2 Swath 1km. (MOD29, Version 61). [Data Set]. Boulder, Colorado USA. NASA National Snow and Ice Data Center Distributed Active Archive Center. https://doi.org/10.5067/MODIS/MOD29.061. [describe subset used if applicable]. Date Accessed 03-01-2025.'
+                },
+
+        'MYD29_NRT': {
+                  'dataset_tag': '61/MYD29',
+                   'dict_key': 'myd_29',
+                'description': 'MODIS/Aqua Sea Ice Extent 5-Min L2 Swath 1km',
+                    'website': 'https://nsidc.org/data/myd29/versions/61',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'Hall, D. K. & Riggs, G. A. (2021). MODIS/Aqua Sea Ice Extent 5-Min L2 Swath 1km. (MYD29, Version 61). [Data Set]. Boulder, Colorado USA. NASA National Snow and Ice Data Center Distributed Active Archive Center. https://doi.org/10.5067/MODIS/MYD29.061. [describe subset used if applicable]. Date Accessed 03-01-2025.'
+                },
+
         'oco2_L1bScND': {
                 'dataset_tag': 'oco2_L1bScND',
                    'dict_key': 'oco_l1b',
