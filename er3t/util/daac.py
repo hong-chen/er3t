@@ -1134,10 +1134,10 @@ def get_satfile_tag(
 
     # try to get geometa information online
     if (content is None) or ('<!DOCTYPE html>' in content):
-        content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+        content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
+    # content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
 
     # read in geometa info
     data = read_geometa(content)
