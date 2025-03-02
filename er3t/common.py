@@ -512,7 +512,9 @@ _sat_tags_support_ = {
 
         'MOD29': {
                   'dataset_tag': 'MOST/MOD29.061',
+                  'short_name': 'MOD29',
                    'dict_key': 'mod_29',
+                   'version' : '61',
                 'description': 'MODIS/Terra Sea Ice Extent 5-Min L2 Swath 1km',
                     'website': 'https://nsidc.org/data/mod29/versions/61',
                   'satellite': 'Terra',
@@ -522,7 +524,9 @@ _sat_tags_support_ = {
 
         'MYD29': {
                   'dataset_tag': 'MOSA/MYD29.061',
+                  'short_name': 'MYD29',
                    'dict_key': 'myd_29',
+                   'version' : '61',
                 'description': 'MODIS/Aqua Sea Ice Extent 5-Min L2 Swath 1km',
                     'website': 'https://nsidc.org/data/myd29/versions/61',
                   'satellite': 'Aqua',
