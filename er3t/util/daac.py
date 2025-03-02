@@ -1,5 +1,6 @@
 import os
 import sys
+import requests
 import datetime
 
 import numpy as np
@@ -377,11 +378,17 @@ def get_online_file(
 
 
 def get_nsidc_file_list(
-        url,
-        fdir_save='%s/satfile' % fdir_data_tmp,
-        verbose=True):
+        product_id,
+        version,
+        instrument,
+        extent,
+        start_dt_hhmm,
+        end_dt_hhmm,
+        ):
     """
     Get a list of files available from an NSIDC URL directory.
+    Modeled after Jupyter Notebook from the official NSIDC Github repo:
+    https://github.com/nsidc/NSIDC-Data-Access-Notebook/blob/master/notebooks/Customize%20and%20Access%20NSIDC%20Data.ipynb
 
     Args:
     ----
@@ -397,46 +404,91 @@ def get_nsidc_file_list(
         list
             A list of filenames available in the directory.
     """
-    import requests
-    from bs4 import BeautifulSoup
-    import os
 
-    if not os.path.exists(fdir_save):
-        os.makedirs(fdir_save)
+    #\----------------------------------------------------------------------------------------------------------------------/#
+    # first we need to check that collections for this product exist given the time and region. An example URL:
+    # https://cmr.earthdata.nasa.gov/search/collections.json?instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85&has_granules=true
 
-    try:
-        # Get authentication ready by using the token approach
-        token = get_token_earthdata()
-        headers = {"Authorization": f"Bearer {token}"}
+    # build search params
+    temporal = start_dt_hhmm.strftime('%Y-%m-%dT%H:%M%SZ') + ',' + end_dt_hhmm.strftime('%Y-%m-%dT%H:%M%SZ')
+    bbox     = f'{extent[0]},{extent[2]},{extent[1]},{extent[3]}' # bottom lonlat, top lonlat
+    search_params = dict(instrument=instrument,
+                         short_name=product_id,
+                         version=version, # collection version like "61" for MODIS collection 6.1
+                         temporal=temporal,
+                         bounding_box=bbox)
 
-        # Fetch the directory listing
-        if verbose:
-            print(f"Message [get_nsidc_file_list]: Requesting file list from {url}")
+    cmr_collections_url = 'https://cmr.earthdata.nasa.gov/search/collections.json?has_granules=true'
+    search_params_string = '&'.join("{!s}={!r}".format(k,v) for (k,v) in search_params.items())
+    cmr_collections_url = f'{cmr_collections_url}?{search_params_string}'
+    session = requests.session()
+    response = session.get(cmr_collections_url, timeout=10)
+    if response.status_code != 200:
+        print(f'Message [get_nsidc_file_list]: Could not submit query to {cmr_collections_url} as it resulted in a status code {response.status_code}')
+        return []
 
-        response = requests.get(url, headers=headers)
+    json_results = response.json()
+    results = json_results['feed']['entry']
+    if len(results) == 0:
+        print(f'Message [get_nsidc_file_list]: Could not find any results on {cmr_collections_url}')
+        return []
+    # print('Message [get_nsidc_file_list]: Found dataset {}'.format(results[0]['dataset_id'])) # debug statement
 
+    # loop through results just to make sure data is on the NSIDC servers
+    nsidc_counts = 0
+    for result in results:
+        if 'NSIDC' in result['archive_center'].upper():
+            nsidc_counts += 1
+
+    if nsidc_counts == 0:
+        print('Message [get_nsidc_file_list]: Could not find any data on NSIDC data centers')
+        return []
+
+    #\----------------------------------------------------------------------------------------------------------------------/#
+
+    # now that we have found and verified that the collection and product exists, we need to query granules.
+    # granules are indexed by page numbers and page size (defaults to 10) so we need to go through each page.
+    # example url: # https://cmr.earthdata.nasa.gov/search/granules.csv?collection_concept_id=C1646610390-NSIDC_ECS&downloadable=true&instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85
+    # note that we use the shortened base url and send other parameters through function call `params=`.
+    cmr_granules_url = 'https://cmr.earthdata.nasa.gov/search/granules.json?has_granules=true'
+    # update search params with page info
+    search_params['page_num'] = 1
+    search_params['page_size'] = 100 # do not make this too big as query will take too long
+
+    # create list for links
+    nsidc_download_links = []
+
+    # set up input parameters
+    headers = {'Accept': 'application/json'}
+    application_formats = ('application/x-hdfeos', 'application/x-netcdf')
+    data_formats        = ('hdf', 'nc', 'hdf5', 'hdf4')
+
+    # send queries until we run out of pages
+    while True:
+        response = requests.get(cmr_granules_url, params=search_params, headers=headers, timeout=30)
         if response.status_code != 200:
-            print(f"Error [get_nsidc_file_list]: Failed to access URL {url}. Status code: {response.status_code}")
+            print(f'Message [get_nsidc_file_list]: Could not submit query to {cmr_granules_url} as it resulted in a status code {response.status_code}')
             return []
 
-        # Parse HTML to extract file links
-        soup = BeautifulSoup(response.text, 'html.parser')
-        file_list = []
+        json_results = response.json()
+        results = json_results['feed']['entry']
+        if len(results) == 0: # out of results, so break out of loop
+            break
 
-        # NSIDC typically uses table format for directory listings
-        for link in soup.find_all('a'):
-            href = link.get('href')
-            if href and (not href.startswith('?')) and (not href == '../'):
-                file_list.append(href)
+        # loop through to get downloadable links
+        for granule in results:
+            links = granule['links']
+            for link in links:
+                if link['type'].lower().endswith(application_formats) or link['href'].lower().endswith(data_formats):
+                    nsidc_download_links.append(link['href']) # add link to list
 
-        if verbose:
-            print(f"Message [get_nsidc_file_list]: Found {len(file_list)} files")
+        # update page number for next request query
+        search_params['page_num'] += 1
+    #\----------------------------------------------------------------------------------------------------------------------/#
 
-        return file_list
+    print(f'Message [get_nsidc_file_list]: Found {len(nsidc_download_links)} granules')
+    return nsidc_download_links
 
-    except Exception as error:
-        print(f"Error [get_nsidc_file_list]: {error}")
-        return []
 
 
 def final_file_check(fname_local, data_format, verbose):
@@ -1096,13 +1148,11 @@ def get_satfile_tag(
     import matplotlib.path as mpl_path
     #\----------------------------------------------------------------------------/#
 
-
     # get formatted satellite tag
     #/----------------------------------------------------------------------------\#
     satname = format_satname(satellite, instrument)
     satellite, instrument = satname.split('|')
     #\----------------------------------------------------------------------------/#
-
 
     # get satellite geometa filename on the appropriate DAAC server
     #/----------------------------------------------------------------------------\#
@@ -1114,7 +1164,6 @@ def get_satfile_tag(
     fname_geometa = get_fname_geometa(date, satname, server=server)
     #\----------------------------------------------------------------------------/#
 
-
     # convert longitude in [-180, 180] range
     # since the longitude in GeoMeta dataset is in the range of [-180, 180]
     # or check overlap within region of interest
@@ -1124,7 +1173,6 @@ def get_satfile_tag(
     lon   = lon[logic]
     lat   = lat[logic]
     #\----------------------------------------------------------------------------/#
-
 
     # get geometa info
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
@@ -1144,8 +1192,6 @@ def get_satfile_tag(
 
     if data is None:
         return []
-
-
 
     # loop through all the satellite "granules" constructed through four corner points
     # and find which granules contain the input data
@@ -1199,7 +1245,6 @@ def get_satfile_tag(
             i_all.append(i)
     #\----------------------------------------------------------------------------/#
 
-
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
     if (percent0 > 0.0 ) or worldview:
@@ -1218,7 +1263,6 @@ def get_satfile_tag(
     # #\----------------------------------------------------------------------------/#
 
     return filename_tags
-
 
 
 def download_laads_https(
@@ -1463,16 +1507,16 @@ def download_lance_https(
 
 
 def download_nsidc_https(
-             date,
-             dataset_tag,
-             filename_tag,
-             server='https://n5eil01u.ecs.nsidc.org',
-             fdir_prefix=None,
-             fdir_out='tmp-data',
-             fdir_save='%s/satfile' % fdir_data_tmp,
-             data_format=None,
-             run=True,
-             verbose=True):
+                        date,
+                        extent,
+                        product_dict,
+                        filename_tag,
+                        fdir_out='tmp-data',
+                        data_format=None,
+                        run=True,
+                        start_dt_hhmm=None,
+                        end_dt_hhmm=None,
+                        verbose=True):
 
     """
     Downloads products from the NSIDC Data Archive.
@@ -1480,10 +1524,7 @@ def download_nsidc_https(
     Args:
     ----
         date: Python datetime object
-        dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
         filename_tag: string, string pattern in the filename, e.g. '.2035.'
-        server=: string, data server
-        fdir_prefix=: string, not used and only listed here for continuity. refers to data directory on the server
         day_interval=: integer, for 8 day data, day_interval=8
         fdir_out=: string, output data directory
         data_format=None: e.g., 'hdf'
@@ -1494,16 +1535,21 @@ def download_nsidc_https(
     -------
         fnames_local: Python list that contains downloaded satellite data file paths
     """
+    # by default if no start and end times are given, use 0000 and 2359
+    if start_dt_hhmm is None:
+        start_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 0, 0)
 
-    # retrieve the directory where satellite data is stored for date
-    #/----------------------------------------------------------------------------\#
-    doy_str = date.strftime('%Y.%m.%d')
-    fdir_data = '/%s/%s/' % (dataset_tag, doy_str)
-    fdir_server = server + fdir_data
-    #\----------------------------------------------------------------------------/#
+    if end_dt_hhmm is None:
+        end_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 23, 59)
 
     # obtain the list of files available at that data directory on the server
-    files = get_nsidc_file_list(url=fdir_server, fdir_save=fdir_save)
+    files = get_nsidc_file_list(product_id=product_dict['short_name'],
+                                version=product_dict['short_name'],
+                                instrument=product_dict['instrument'],
+                                extent=extent,
+                                start_dt_hhmm=start_dt_hhmm,
+                                end_dt_hhmm=end_dt_hhmm)
+
     if len(files) == 0:
         return []
 
@@ -1514,14 +1560,14 @@ def download_nsidc_https(
     primary_commands = []
     backup_commands  = []
     fnames_local = []
-    for filename in files:
+    for fname_server in files:
+        filename = os.path.basename(fname_server)
         if data_format is not None:
             if not filename.endswith(data_format): # then skip
                 continue
 
         if filename_tag in filename:
 
-            fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
                 print("Message [download_nsidc_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
