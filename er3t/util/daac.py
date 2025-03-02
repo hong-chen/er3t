@@ -450,12 +450,10 @@ def get_nsidc_file_list(
     # granules are indexed by page numbers and page size (defaults to 10) so we need to go through each page.
     # example url: # https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=true&instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85
 
-    cmr_granules_url = 'https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=True'
+    cmr_granules_base_url = 'https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=True'
     # update search params with page info
     search_params['page_num'] = 1
     search_params['page_size'] = 100 # do not make this too big as query will take too long
-    search_params_string = '&'.join('{}={}'.format(k, v) for (k, v) in search_params.items())
-    cmr_granules_url = f'{cmr_granules_url}&{search_params_string}'
 
     # create list for links
     nsidc_download_links = []
@@ -467,6 +465,10 @@ def get_nsidc_file_list(
 
     # send queries until we run out of pages
     while True:
+        # update search params and url
+        search_params_string = '&'.join('{}={}'.format(k, v) for (k, v) in search_params.items())
+        cmr_granules_url = f'{cmr_granules_base_url}&{search_params_string}'
+
         response = requests.get(cmr_granules_url, params=search_params, headers=headers, timeout=30)
         if response.status_code != 200:
             print(f'Message [get_nsidc_file_list]: Could not submit query to {cmr_granules_url} as it resulted in a status code {response.status_code}')
