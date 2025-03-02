@@ -1498,7 +1498,7 @@ def download_nsidc_https(
     # retrieve the directory where satellite data is stored for date
     #/----------------------------------------------------------------------------\#
     doy_str = date.strftime('%Y.%m.%d')
-    fdir_data = '%s/%s/' % (dataset_tag, doy_str)
+    fdir_data = '/%s/%s/' % (dataset_tag, doy_str)
     fdir_server = server + fdir_data
     #\----------------------------------------------------------------------------/#
 
