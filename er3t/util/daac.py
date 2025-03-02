@@ -9,23 +9,27 @@ from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime
 from er3t.common import fdir_data_tmp
 
 __all__ = [
-        'format_satname', \
-        'get_token_earthdata', \
-        'get_fname_geometa', \
-        'get_local_file', \
-        'get_online_file', \
-        'final_file_check', \
-        'read_geometa', \
-        'cal_proj_xy_geometa', \
-        'cal_lon_lat_utc_geometa', \
-        'cal_sec_offset_abi', \
-        'get_satfile_tag', \
-        'download_laads_https', \
-        'download_lance_https',\
-        'download_oco2_https', \
-        'download_worldview_image', \
-        ]
-
+    'format_satname', \
+    'get_token_earthdata', \
+    'gen_file_earthdata', \
+    'get_command_earthdata', \
+    'get_fname_geometa', \
+    'delete_file', \
+    'get_local_file', \
+    'get_online_file', \
+    'get_nsidc_file_list', \
+    'final_file_check', \
+    'read_geometa', \
+    'cal_proj_xy_geometa', \
+    'cal_lon_lat_utc_geometa', \
+    'cal_sec_offset_abi', \
+    'get_satfile_tag', \
+    'download_laads_https', \
+    'download_lance_https', \
+    'download_nsidc_https', \
+    'download_oco2_https', \
+    'download_worldview_image', \
+    ]
 
 
 def format_satname(satellite, instrument):
