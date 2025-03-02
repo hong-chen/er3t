@@ -410,7 +410,7 @@ def get_nsidc_file_list(
     # https://cmr.earthdata.nasa.gov/search/collections.json?instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85&has_granules=true
 
     # build search params
-    temporal = start_dt_hhmm.strftime('%Y-%m-%dT%H:%M%SZ') + ',' + end_dt_hhmm.strftime('%Y-%m-%dT%H:%M%SZ')
+    temporal = start_dt_hhmm.strftime('%Y-%m-%dT%H:%M:%SZ') + ',' + end_dt_hhmm.strftime('%Y-%m-%dT%H:%M:%SZ')
     bbox     = f'{extent[0]},{extent[2]},{extent[1]},{extent[3]}' # bottom lonlat, top lonlat
     search_params = dict(instrument=instrument,
                          short_name=product_id,
@@ -418,9 +418,9 @@ def get_nsidc_file_list(
                          temporal=temporal,
                          bounding_box=bbox)
 
-    cmr_collections_url = 'https://cmr.earthdata.nasa.gov/search/collections.json?has_granules=true'
-    search_params_string = '&'.join("{!s}={!r}".format(k,v) for (k,v) in search_params.items())
-    cmr_collections_url = f'{cmr_collections_url}?{search_params_string}'
+    cmr_collections_url = 'https://cmr.earthdata.nasa.gov/search/collections.json?has_granules=True'
+    search_params_string = '&'.join('{}={}'.format(k, v) for (k, v) in search_params.items())
+    cmr_collections_url = f'{cmr_collections_url}&{search_params_string}'
     session = requests.session()
     response = session.get(cmr_collections_url, timeout=10)
     if response.status_code != 200:
@@ -1544,7 +1544,7 @@ def download_nsidc_https(
 
     # obtain the list of files available at that data directory on the server
     files = get_nsidc_file_list(product_id=product_dict['short_name'],
-                                version=product_dict['short_name'],
+                                version=product_dict['version'],
                                 instrument=product_dict['instrument'],
                                 extent=extent,
                                 start_dt_hhmm=start_dt_hhmm,
