@@ -1868,8 +1868,9 @@ class modis_29:
     """
     A class for extracting data from MODIS Sea Ice Extent 5-Min L2 Swath 1km files.
 
-    This class provides functionality to read and extract data from MODIS MOD29 HDF files,
-    which contain sea ice extent and ice surface temperature information.
+    This class provides functionality to read and extract data from MODIS MOD29/MYD29 HDF files,
+    which ice surface temperature and optionally, sea ice extent information.
+
     Args:
     ----
         fname (str): Path to the MOD29 file
