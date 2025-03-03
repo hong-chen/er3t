@@ -6,7 +6,7 @@ import datetime
 import numpy as np
 import warnings
 
-from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime
+from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime, has_common_substring
 from er3t.common import fdir_data_tmp
 
 __all__ = [
@@ -1514,7 +1514,7 @@ def download_nsidc_https(
                         date,
                         extent,
                         product_dict,
-                        filename_tag,
+                        filename_tags,
                         fdir_out='tmp-data',
                         data_format=None,
                         run=True,
@@ -1528,7 +1528,6 @@ def download_nsidc_https(
     Args:
     ----
         date: Python datetime object
-        filename_tag: string, string pattern in the filename, e.g. '.2035.'
         day_interval=: integer, for 8 day data, day_interval=8
         fdir_out=: string, output data directory
         data_format=None: e.g., 'hdf'
@@ -1570,7 +1569,7 @@ def download_nsidc_https(
             if not filename.endswith(data_format): # then skip
                 continue
 
-        if filename_tag in filename:
+        if has_common_substring(filename, filename_tags): # if filename contains any match to the tags, proceed with downloading
 
             fname_local  = '%s/%s' % (fdir_out, filename)
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):

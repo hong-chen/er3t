@@ -1242,7 +1242,17 @@ def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
     return np.transpose(bits, axes=(2, 0, 1))
 
 
+def has_common_substring(input_str, substring_list):
+    """
+    Check if the input string contains any of the substrings from the list without using for loops.
 
-if __name__ == '__main__':
+    Args:
+    ----
+        input_str (str): The string to check against.
+        substring_list (list): List of substrings to look for in the input string.
 
-    pass
+    Returns:
+    -------
+        bool: True if input_str contains any substring from substring_list, False otherwise.
+    """
+    return any(substring in input_str for substring in substring_list)
