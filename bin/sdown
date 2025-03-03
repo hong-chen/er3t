@@ -13,6 +13,7 @@ Now supports:
                 MOD35_L2, MYD35_L2
                           MYD_CLDMSK_L2 (or Aqua_CLDMSK_L2)
                 MOD09,    MYD09
+                MOD29,    MYD29
                 MCD43
 
     VIIRS data: VNPRGB,         VJ1RGB,         VJ2RGB,
