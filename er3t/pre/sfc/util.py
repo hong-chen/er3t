@@ -29,7 +29,7 @@ def cal_ocean_brdf(
     """
 
     # check data dimension
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     try:
         Nx, Ny = u10.shape
         u10 = np.float_(u10)
@@ -47,11 +47,11 @@ def cal_ocean_brdf(
         sal_ = np.zeros_like(u10)
         sal_[...] = sal
         sal = sal_
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # refractive index of water as a function of wavelength and salinity
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     reference = '\nRefractive Index of Water (Hale and Querry, 1973):\n- Hale, G. M., and Querry, M. R.: Optical Constants of Water in the 200-nm to 200-μm Wavelength Region, Appl. Opt. 12, 555-563, https://doi.org/10.1364/AO.12.000555, 1973.'
     er3t.util.add_reference(reference)
 
@@ -94,27 +94,27 @@ def cal_ocean_brdf(
     refrac_i = np.interp(wvl, refractive_index_water['wvl'], refractive_index_water['imaginary'])
 
     # salinity corrections
-    #/--------------------------------------------------------------\#
+    #╭──────────────────────────────────────────────────────────────╮#
     reference = '\nSalinity Correction (Friedman, 1969):\n- Friedman, D.: Infrared Characteristics of Ocean Water (1.5 –15 μ), Appl. Opt. 8, 2073-2078, https://doi.org/10.1364/AO.8.002073, 1969.'
     er3t.util.add_reference(reference)
 
     refrac_r += 0.006*(sal/34.3)
     # refrac_i += 0.000*(sal/34.3)
-    #\--------------------------------------------------------------/#
-    #\----------------------------------------------------------------------------/#
+    #╰──────────────────────────────────────────────────────────────╯#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # variance of micro-scopic surface slope
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     reference = '\nCox-Munk Parameterization (Cox and Munk, 1954):\n- Cox, C., and Munk, W.: Measurement of the Roughness of the Sea Surface from Photographs of the Sun’s Glitter, J. Opt. Soc. Am. 44, 838-850, https://doi.org/10.1364/JOSA.44.000838, 1954.'
     er3t.util.add_reference(reference)
 
     slope = 0.00512*u10 + 0.003
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # whitecaps treatment
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if whitecaps:
 
         reference = '\nWhitecaps (Koepke, 1984):\n- Koepke, P.: Effective reflectance of oceanic whitecaps, Appl. Opt. 23, 1816-1824, https://doi.org/10.1364/AO.23.001816, 1984.'
@@ -137,7 +137,7 @@ def cal_ocean_brdf(
 
         diffuse_frac = 0.0*u10
         diffuse_alb  = 0.0*u10
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     params = {
           'diffuse_alb': diffuse_alb,

@@ -73,65 +73,65 @@ class lrt_init_mono_rad:
 
 
         # input file
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if input_file is None:
             dtime_tmp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             input_file = 'lrt_input_%s.txt' % dtime_tmp
             if verbose:
                 print('Message [lrt_init_mono]: <input_file> is missing, assigning input_file = %s.' % input_file)
         self.input_file = input_file
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # output file
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if output_file is None:
             output_file = 'lrt_output_%s.txt' % dtime_tmp
             if verbose:
                 print('Message [lrt_init_mono]: <output_file> is missing, assigning output_file = %s.' % output_file)
         self.output_file = output_file
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # date
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if date is None:
             date = datetime.date.today()
             if verbose:
                 print('Message [lrt_init_mono]: <date> is missing, assigning date = datetime.date.today().')
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # surface albedo
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if surface_albedo is None:
             surface_albedo = 0.03
             if verbose:
                 print('Message [lrt_init_mono]: <surface_albedo> is missing, assigning surface_albedo = 0.03.')
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # solar zenith angle
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if solar_zenith_angle is None:
             solar_zenith_angle = 0.0
             if verbose:
                 print('Message [lrt_init_mono]: <solar_zenith_angle> is missing, assigning solar_zenith_angle = 0.0.')
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # solar azimuth angle
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if solar_azimuth_angle is None:
             solar_azimuth_angle = 0.0
             if verbose:
                 print('Message [lrt_init_mono]: <solar_azimuth_angle> is missing, assigning solar_azimuth_angle = 0.0.')
         solar_azimuth_angle = convert_azimuth_angle(solar_azimuth_angle)
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # sensor zenith angle
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if sensor_zenith_angle is None:
             sensor_zenith_angle = 0.0
             if verbose:
@@ -146,11 +146,11 @@ class lrt_init_mono_rad:
                 self.Nvar = 2
         else:
             self.Nvar = 2
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # sensor azimuth angle
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if sensor_azimuth_angle is None:
             sensor_azimuth_angle = 0.0
             if verbose:
@@ -166,17 +166,17 @@ class lrt_init_mono_rad:
                 self.Nvar = 1 + (self.Nvar-1)
         else:
             self.Nvar = 1 + (self.Nvar-1)
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # wavelength
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if wavelength is None:
             wavelength = 500.0
             if verbose:
                 print('Message [lrt_init_mono]: <wavelength> is missing, assigning wavelength = 500.0.')
         self.Nx = 1
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # slit function
         if wavelength < 950.0:
@@ -556,7 +556,7 @@ class lrt_read_uvspec_rad:
         Nvar = inits[0].Nvar
 
         self.dims  = {'X':'Wavelength', 'Y':'Altitude', 'Z':'Files'}
-        rad  = np.zeros((Nx, Ny, Nz, Nvar-1), dtype=np.float64)
+        rad  = np.zeros((Nx, Ny, Nz, Nvar-1), dtype=np.float32)
 
         for i, init in enumerate(inits):
 

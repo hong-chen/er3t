@@ -91,7 +91,7 @@ VIIRS_L1B_MOD_DEFAULT_BANDS = {'M05': 673,
                                }
 
 # reader for VIIRS (Visible Infrared Imaging Radiometer Suite)
-#/---------------------------------------------------------------------------\
+#╭────────────────────────────────────────────────────────────────────────────╮#
 
 class viirs_03:
 
@@ -163,15 +163,15 @@ class viirs_03:
         f     = Dataset(fname, 'r')
 
         # geolocation
-        #/-----------------------------------------------------------------------------\
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         lat0 = f.groups['geolocation_data'].variables['latitude']
         lon0 = f.groups['geolocation_data'].variables['longitude']
-        #\-----------------------------------------------------------------------------/
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # only crop necessary data
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        #/-----------------------------------------------------------------------------\
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if self.extent is None:
             if 'valid_min' in lon0.ncattrs():
                 lon_range = [lon0.getncattr('valid_min'), lon0.getncattr('valid_max')]
@@ -191,23 +191,22 @@ class viirs_03:
         if not self.keep_dims:
             lon   = lon[logic]
             lat   = lat[logic]
-        #\-----------------------------------------------------------------------------/
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # solar geometries
-        #/-----------------------------------------------------------------------------\
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         sza0 = f.groups['geolocation_data'].variables['solar_zenith']
         saa0 = f.groups['geolocation_data'].variables['solar_azimuth']
-        #\-----------------------------------------------------------------------------/
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # sensor geometries
-        #/-----------------------------------------------------------------------------\
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         vza0 = f.groups['geolocation_data'].variables['sensor_zenith']
         vaa0 = f.groups['geolocation_data'].variables['sensor_azimuth']
-        #\-----------------------------------------------------------------------------/
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
-        #/-----------------------------------------------------------------------------\
-
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         sza = get_data_nc(sza0)
         saa = get_data_nc(saa0)
         vza = get_data_nc(vza0)
@@ -220,7 +219,7 @@ class viirs_03:
             vaa = vaa[logic]
 
         f.close()
-        #\-----------------------------------------------------------------------------/
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         if hasattr(self, 'data'):
 
@@ -406,7 +405,7 @@ class viirs_l1b:
         f   = Dataset(fname, 'r')
 
         # Calculate 1. radiance, 2. reflectance from the raw data
-        #/-----------------------------------------------------------------------------\
+        #╭────────────────────────────────────────────────────────────────────────────╮#
 
         if (self.keep_dims) or (self.f03 is None):
             rad = np.zeros((len(self.bands),
@@ -424,8 +423,7 @@ class viirs_l1b:
 
         wvl = np.zeros(len(self.bands), dtype='uint16')
 
-        ## Calculate 1. radiance, 2. reflectance from the raw data
-        #\-----------------------------------------------------------------------------/
+        # Calculate 1. radiance, 2. reflectance from the raw data
         for i in range(len(self.bands)):
 
             nc_dset = f.groups['observation_data'].variables[self.bands[i]]
@@ -452,7 +450,8 @@ class viirs_l1b:
             wvl[i] = VIIRS_ALL_BANDS[self.bands[i]]
 
         f.close()
-        #\-----------------------------------------------------------------------------/
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
         if hasattr(self, 'data'):
             self.data['wvl'] = dict(name='Wavelengths', data=np.hstack((self.data['wvl']['data'], wvl)), units='nm')
             self.data['rad'] = dict(name='Radiance'   , data=np.hstack((self.data['rad']['data'], rad)), units='W/m^2/nm/sr')
@@ -631,12 +630,11 @@ class viirs_cldprop_l2:
             msg = 'Error [viirs_cldprop_l2]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
-        # ------------------------------------------------------------------------------------ #
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         f = Dataset(fname, 'r')
 
         cld_msk0       = f.groups['geophysical_data'].variables['Cloud_Mask']
 
-        #/----------------------------------------------------------------------------\#
         if self.extent is None:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
@@ -662,8 +660,6 @@ class viirs_cldprop_l2:
             logic_extent = self.f03.logic[get_fname_pattern(fname)]['mask']
 
         # Get cloud mask and flag fields
-        #/-----------------------------\#
-
         cm_data = get_data_nc(cld_msk0)
         cm = cm_data.copy()
         cm0 = cm[:, :, 0] # read only the first byte; rest will be supported in the future if needed
@@ -694,7 +690,7 @@ class viirs_cldprop_l2:
             cld_type_qa, rayleigh_qa, cot_bands_qa, cot_oob_qa, bowtie_qa = self.quality_assurance_byte1(qa1)
 
         f.close()
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # save the data
         if hasattr(self, 'data'):
@@ -782,7 +778,7 @@ class viirs_cldprop_l2:
             msg = 'Error [viirs_cldprop_l2]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
-        # ------------------------------------------------------------------------------------ #
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         f = Dataset(fname, 'r')
 
         #------------------------------------Cloud variables------------------------------------#
@@ -882,7 +878,7 @@ class viirs_cldprop_l2:
         cwp[logic_pcl] = cwp1_data[logic_pcl]
 
         f.close()
-        # ------------------------------------------------------------------------------------ #
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         pcl = pcl[logic_extent]
 
@@ -1300,7 +1296,7 @@ class viirs_09:
 
         # use the first param to get shape
         data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
-        surface_reflectance = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float64)
+        surface_reflectance = np.zeros((len(params), data_shape[0], data_shape[1]), dtype=np.float32)
         wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
 
         # loop through bands, scale and offset each param and store in tau
@@ -1392,7 +1388,6 @@ class viirs_09:
         f = SD(fname, SDC.READ)
         self.extract_surface_reflectance(f)
         f.end()
-        #------------------------------------------------------------------------------------------------------------------------------#
 
 
 class viirs_09a1:
@@ -1499,7 +1494,6 @@ class viirs_09a1:
         dset.set_auto_maskandscale(True)
         ref = np.ma.getdata(dset[:])[logic]
         f.close()
-        #\-----------------------------------------------------------------------------/
 
         if hasattr(self, 'data'):
             self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)), units='degrees')
@@ -1621,8 +1615,8 @@ class viirs_43ma3:
         f     = Dataset(fname, 'r')
 
         Nchan = len(channels)
-        bsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float64)
-        wsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        bsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float32)
+        wsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float32)
 
         for ichan in range(Nchan):
             data0 = f.groups['HDFEOS'].groups['GRIDS'].groups['VIIRS_Grid_BRDF'].groups['Data Fields'].variables['Albedo_BSA_%s' % channels[ichan]]
@@ -1762,7 +1756,7 @@ class viirs_43ma4:
         f     = Dataset(fname, 'r')
 
         Nchan = len(channels)
-        sfc_ref = np.zeros((Nchan, logic.sum()), dtype=np.float64)
+        sfc_ref = np.zeros((Nchan, logic.sum()), dtype=np.float32)
 
         for ichan in range(Nchan):
             data0 = f.groups['HDFEOS'].groups['GRIDS'].groups['VIIRS_Grid_BRDF'].groups['Data Fields'].variables['Nadir_Reflectance_%s' % channels[ichan]]
@@ -1788,11 +1782,11 @@ class viirs_43ma4:
             self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
             self.data['ref'] = dict(name='Surface reflectance at nadir', data=sfc_ref, units='N/A')
 
-#\---------------------------------------------------------------------------/
+#╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 # VIIRS tools
-#/---------------------------------------------------------------------------\
+#╭────────────────────────────────────────────────────────────────────────────╮#
 
 def get_fname_pattern(fname, index_s=1, index_e=2):
 
@@ -1801,7 +1795,7 @@ def get_fname_pattern(fname, index_s=1, index_e=2):
 
     return pattern
 
-#\---------------------------------------------------------------------------/
+#╰────────────────────────────────────────────────────────────────────────────╯#
 
 if __name__=='__main__':
 

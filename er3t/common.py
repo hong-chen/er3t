@@ -2,6 +2,10 @@ import os
 import sys
 import datetime
 import importlib.util
+import numpy as np
+
+f_dtype = np.float32
+i_dtype = np.int16
 
 has_mcarats     = ('MCARATS_V010_EXE' in dict(os.environ))
 has_libradtran  = ('LIBRADTRAN_V2_DIR' in dict(os.environ))

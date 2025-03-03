@@ -19,10 +19,10 @@ def get_lrt_cfg(
         ):
 
     # add reference
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     reference = '\nlibRadtran (Mayer et al., 2005; Emde et al., 2016):\n- Mayer, B. and Kylling, A.: Technical note: The libRadtran software package for radiative transfer calculations - description and examples of use, Atmos. Chem. Phys., 5, 1855–1877, https://doi.org/10.5194/acp-5-1855-2005, 2005.\n- Emde, C., Buras-Schnell, R., Kylling, A., Mayer, B., Gasteiger, J., Hamann, U., Kylling, J., Richter, B., Pause, C., Dowling, T., and Bugliaro, L.: The libRadtran software package for radiative transfer calculations (version 2.0.1), Geosci. Model Dev., 9, 1647–1672, https://doi.org/10.5194/gmd-9-1647-2016, 2016.'
     er3t.util.add_reference(reference)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     if lrt_fdir is None:
         if er3t.common.has_libradtran:
@@ -37,8 +37,8 @@ def get_lrt_cfg(
             'solar_file'         : '%s/data/solar_flux/kurudz_%.1fnm.dat' % (lrt_fdir, spectral_resolution),
             'data_files_path'    : '%s/data' % lrt_fdir,
             'rte_solver'         : 'disort',
-            'number_of_streams'  : 32,
-            'mol_abs_param'      : 'reptran fine', # use 'reptran fine' for higher resolution
+            'number_of_streams'  : 8,
+            'mol_abs_param'      : 'reptran coarse', # use 'reptran fine' for higher resolution
             'slit_function_file_vis' : '%s/vis_%.1fnm_s.dat' % (ssfr_fdir, spectral_resolution),
             'slit_function_file_nir' : '%s/nir_%.1fnm_s.dat' % (ssfr_fdir, spectral_resolution),
             }

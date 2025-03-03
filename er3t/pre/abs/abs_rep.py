@@ -80,7 +80,7 @@ class abs_rep:
 
         elif ((wavelength is not None) and (fname is None)):
 
-            self.run(atm_obj)
+            self.run(wavelength)
 
         else:
 
@@ -132,17 +132,17 @@ class abs_rep:
         f0 = Dataset('%s/reptran_%s_%s.cdf' % (self.fdir_data, self.source, self.target), 'r')
 
         # read out band names
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         band_bytes = f0.variables['band_name'][:]
         Nband, Nchar = band_bytes.shape
         bands = [band.decode('utf-8').replace(' ', '') for band in band_bytes.view('S%d' % Nchar).ravel()]
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # select band
         # if <band_name=> is specified, use <band_name=>
         # if <band_name=> is not specified, fall back to <wavelength=>
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         wvl_min = f0.variables['wvlmin'][:]
         wvl_max = f0.variables['wvlmax'][:]
 
@@ -172,27 +172,27 @@ class abs_rep:
                 index_band = indices[0]
                 self.band_name  = bands[index_band]
                 self.run_reptran = True
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # read out gases
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         gas_bytes = f0.variables['species_name'][:]
         Ngas, Nchar = gas_bytes.shape
         gases = [gas.decode('utf-8').replace(' ', '') for gas in gas_bytes.view('S%d' % Nchar).ravel()]
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
         # get band information
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         wvl_min0 = f0.variables['wvlmin'][:][index_band]
         wvl_max0 = f0.variables['wvlmax'][:][index_band]
         wvl_int0 = f0.variables['wvl_integral'][:][index_band]
         avg_err0 = f0.variables['avg_error'][:][index_band]
         nwvl0    = f0.variables['nwvl_in_band'][:][index_band]
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # get representative wavelength information
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         wvl_indices0 = f0.variables['iwvl'][:][:, index_band]
         wvl_indices = wvl_indices0[wvl_indices0>0] - 1
         wvl_weights0 = f0.variables['iwvl_weight'][:][:, index_band]
@@ -211,7 +211,7 @@ class abs_rep:
         self.sol   = sol
         self.wgt   = wvl_weights
         self.gases = [gases[index] for index in gas_indices]
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         f0.close()
 
@@ -247,10 +247,26 @@ class abs_rep:
                 'data': self.sol.data
                 }
 
-        if (self.source == 'solar') and (self.target in ['fine', 'medium', 'coarse']):
-            self.coef['solar']['data'][...] = cal_solar_kurudz(self.wvl, slit_func=self.slit_func)
+        # sol0 = self.sol.data.copy()
+        # print('+'*20)
+        # print(self.wvl)
+        # print(sol0)
+        # if (self.source == 'solar') and (self.target in ['fine', 'medium', 'coarse']):
+        #     self.coef['solar']['data'][...] = cal_solar_kurudz(self.wvl, slit_func=self.slit_func)
         # else:
         #     self.coef['solar']['data'][...] = np.sum(self.sol.data*self.wgt.data)
+        # sol1 = self.coef['solar']['data']
+        # print(sol1)
+        # print()
+        # print(self.wgt.data)
+        # sol0_ = np.sum(sol0*self.wgt.data)
+        # sol1_ = np.sum(sol1*self.wgt.data)
+        # print(sol0_)
+        # print(sol1_)
+        # print((sol1_-sol0_)/sol0_ * 100.0)
+        # print()
+        # print('-'*20)
+        # print()
 
         self.coef['slit_func'] = {
                 'name': 'Slit Function (Nz, Ng)',
@@ -314,7 +330,7 @@ class abs_rep:
                         iwvl = np.argmin(np.abs(wvl_ref-wvl0))
 
                         # for water vapor (H2O)
-                        #/--------------------------------------------------------------\#
+                        #╭──────────────────────────────────────────────────────────────╮#
                         if xsec.ndim == 4:
                             points = (dt_ref, vmr_ref, p_ref[i_sort_p])
                             f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_p])
@@ -322,16 +338,16 @@ class abs_rep:
                             # vmr_ = np.log(self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data'])
                             vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
                             f_points = np.transpose(np.vstack((dt_, vmr_, p_)))
-                        #\--------------------------------------------------------------/#
+                        #╰──────────────────────────────────────────────────────────────╯#
 
                         # for other gases (CH4, CO2, CO, N2, N2O, O2, O3)
-                        #/--------------------------------------------------------------\#
+                        #╭──────────────────────────────────────────────────────────────╮#
                         else:
                             points = (dt_ref, p_ref[i_sort_p])
                             f_interp = interpolate.RegularGridInterpolator(points, xsec[:, iwvl, i_sort_p])
 
                             f_points = np.transpose(np.vstack((dt_, p_)))
-                        #\--------------------------------------------------------------/#
+                        #╰──────────────────────────────────────────────────────────────╯#
 
                         # from <libRadtran>/src/molecular.c: <The lookup table file contains the cross sections in units of 10^(-20)m^2; here we need cm^2, thus we multiply with 10^(-16)>
                         # first factor: 10^(-16) for converting units from m^-2 to cm^-2
