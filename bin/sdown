@@ -498,18 +498,22 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, extent
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
-                for filename_tag in filename_tags_03:
-                    if product.upper().endswith('29'): # NRT product lives on LANCE server, standard product on NSIDC servver
-                        p_fnames = er3t.util.daac.download_nsidc_https(date=date,
-                                                                       extent=extent,
-                                                                       product_dict=product_info,
-                                                                       filename_tag=filename_tag,
-                                                                       fdir_out=fdir_out,
-                                                                       run=True,
-                                                                       start_dt_hhmm=start_dt_hhmm,
-                                                                       end_dt_hhmm=end_dt_hhmm,
-                                                                       verbose=True)
-                    else:
+
+                # the 29 product is hosted on NSIDC and the backend is served differently
+                # and does not need a loop of the satfile tags
+                if product.upper().endswith('29'): # NRT product lives on LANCE server, standard product on NSIDC servver
+                    p_fnames = er3t.util.daac.download_nsidc_https(date=date,
+                                                                    extent=extent,
+                                                                    product_dict=product_info,
+                                                                    filename_tags=filename_tags_03,
+                                                                    fdir_out=fdir_out,
+                                                                    run=True,
+                                                                    start_dt_hhmm=start_dt_hhmm,
+                                                                    end_dt_hhmm=end_dt_hhmm,
+                                                                    verbose=True)
+
+                else:
+                    for filename_tag in filename_tags_03:
                         p_fnames = er3t.util.daac.download_laads_https(date=date,
                                                                     dataset_tag=product_info['dataset_tag'],
                                                                     filename_tag=filename_tag,
