@@ -1523,21 +1523,32 @@ def download_nsidc_https(
                         verbose=True):
 
     """
-    Downloads products from the NSIDC Data Archive.
+    Download files from NSIDC (National Snow and Ice Data Center) using HTTPS protocol.
+
+    This function retrieves files from the NSIDC data archive centers that match specified date, spatial extent, and filename criteria (specified by filename_tags).
+    Pre-existing files are skipped if they pass validity checks.
 
     Args:
     ----
-        date: Python datetime object
-        day_interval=: integer, for 8 day data, day_interval=8
-        fdir_out=: string, output data directory
-        data_format=None: e.g., 'hdf'
-        run=: boolean type, if False, the command will only be displayed but not run
-        verbose=: boolean type, verbose tag
+        date (datetime.date): Date for which to download data.
+        extent (list or tuple): Geographic extent [min_lon, min_lat, max_lon, max_lat].
+        product_dict (dict): Dictionary containing product information with keys:
+            'short_name': Product short name.
+            'version': Product version.
+            'instrument': Instrument name.
+        filename_tags (list or str): String or list of strings to match in filenames.
+        fdir_out (str, optional): Directory where files will be saved. Defaults to 'tmp-data'.
+        data_format (str, optional): File format to filter by (e.g., '.h5', '.nc'). Defaults to None.
+        run (bool, optional): If True, execute download commands; if False, just print them. Defaults to True.
+        start_dt_hhmm (datetime.datetime, optional): Start time for data selection. Defaults to 00:00 of given date.
+        end_dt_hhmm (datetime.datetime, optional): End time for data selection. Defaults to 23:59 of given date.
+        verbose (bool, optional): If True, print detailed information. Defaults to True.
 
     Returns:
     -------
-        fnames_local: Python list that contains downloaded satellite data file paths
+        list: Paths to successfully downloaded local files. Empty list if no files were downloaded.
     """
+
     # by default if no start and end times are given, use 0000 and 2359
     if start_dt_hhmm is None:
         start_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 0, 0)
