@@ -453,7 +453,7 @@ def get_nsidc_file_list(
     cmr_granules_base_url = 'https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=True'
     # update search params with page info
     search_params['page_num'] = 1
-    search_params['page_size'] = 100 # do not make this too big as query will take too long
+    search_params['page_size'] = 10 # do not make this too big as query will take too long
 
     # create list for links
     nsidc_download_links = []
@@ -469,7 +469,7 @@ def get_nsidc_file_list(
         search_params_string = '&'.join('{}={}'.format(k, v) for (k, v) in search_params.items())
         cmr_granules_url = f'{cmr_granules_base_url}&{search_params_string}'
 
-        response = requests.get(cmr_granules_url, params=search_params, headers=headers, timeout=30)
+        response = requests.get(cmr_granules_url, headers=headers, timeout=30)
         if response.status_code != 200:
             print(f'Message [get_nsidc_file_list]: Could not submit query to {cmr_granules_url} as it resulted in a status code {response.status_code}')
             return []
@@ -483,7 +483,7 @@ def get_nsidc_file_list(
         for granule in results:
             links = granule['links']
             for link in links:
-                if link['type'].lower().endswith(application_formats) or link['href'].lower().endswith(data_formats):
+                if link['href'].lower().endswith(data_formats):
                     nsidc_download_links.append(link['href']) # add link to list
 
         # update page number for next request query
