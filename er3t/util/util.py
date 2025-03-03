@@ -277,23 +277,47 @@ def jday_to_dtime(jday):
     return dtime
 
 
-def get_data_h4(hdf_dset, replace_fill_value=np.nan):
+def get_data_h4(hdf_dset, init_dtype=None, replace_fill_value=np.nan):
+    """
+    Retrieves data from an HDF dataset and performs optional data type conversion and fill value replacement.
+
+    Args:
+    ----
+        hdf_dset (h5py.Dataset): The HDF dataset to retrieve data from.
+        init_dtype (dtype, optional): The desired data type for the retrieved data. Defaults to None.
+        replace_fill_value (float or int, optional): The value to replace the fill value with. Defaults to np.nan.
+
+    Returns:
+        numpy.ndarray: The retrieved data with optional data type conversion and fill value replacement.
+    """
 
     attrs = hdf_dset.attributes()
     data  = hdf_dset[:]
+    if init_dtype is not None:
+        data = np.array(data, dtype=init_dtype)
 
+    # Check if the dataset has a fill value attribute and if fill value replacement is requested
+    if '_FillValue' in attrs and replace_fill_value is not None:
+        # If the replacement fill value is NaN, convert the fill value attribute to float64
+        if np.isnan(replace_fill_value):
+            _FillValue = np.array(attrs['_FillValue'], dtype='float64')
+            data = data.astype('float64')
+
+        else: # otherwise let the fill value be the same data type as the dataset
+            _FillValue = np.array(attrs['_FillValue'], dtype=data.dtype)
+
+        # Replace the fill values in the dataset with the replacement fill value
+        data[data == _FillValue] = replace_fill_value
+
+    # If the dataset has an add_offset attribute, subtract it from the data
     if 'add_offset' in attrs:
         data = data - attrs['add_offset']
 
+    # If the dataset has a scale_factor attribute, multiply it with the data
     if 'scale_factor' in attrs:
         data = data * attrs['scale_factor']
-    else:
-        data = data * 1.0
 
-    if '_FillValue' in attrs and replace_fill_value is not None:
-        _FillValue = np.float64(attrs['_FillValue'])
-        data[data == _FillValue] = replace_fill_value
-
+    # Return the processed data
     return data
 
 
