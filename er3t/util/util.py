@@ -278,24 +278,47 @@ def jday_to_dtime(jday):
     return dtime
 
 
+def get_data_h4(hdf_dset, init_dtype=None, replace_fill_value=np.nan):
+    """
+    Retrieves data from an HDF dataset and performs optional data type conversion and fill value replacement.
 
-def get_data_h4(hdf_dset, replace_fill_value=np.nan):
+    Args:
+    ----
+        hdf_dset (h5py.Dataset): The HDF dataset to retrieve data from.
+        init_dtype (dtype, optional): The desired data type for the retrieved data. Defaults to None.
+        replace_fill_value (float or int, optional): The value to replace the fill value with. Defaults to np.nan.
+
+    Returns:
+        numpy.ndarray: The retrieved data with optional data type conversion and fill value replacement.
+    """
 
     attrs = hdf_dset.attributes()
     data  = hdf_dset[:]
+    if init_dtype is not None:
+        data = np.array(data, dtype=init_dtype)
 
+    # Check if the dataset has a fill value attribute and if fill value replacement is requested
+    if '_FillValue' in attrs and replace_fill_value is not None:
+        # If the replacement fill value is NaN, convert the fill value attribute to float64
+        if np.isnan(replace_fill_value):
+            _FillValue = np.array(attrs['_FillValue'], dtype='float64')
+            data = data.astype('float64')
+
+        else: # otherwise let the fill value be the same data type as the dataset
+            _FillValue = np.array(attrs['_FillValue'], dtype=data.dtype)
+
+        # Replace the fill values in the dataset with the replacement fill value
+        data[data == _FillValue] = replace_fill_value
+
+    # If the dataset has an add_offset attribute, subtract it from the data
     if 'add_offset' in attrs:
         data = data - attrs['add_offset']
 
+    # If the dataset has a scale_factor attribute, multiply it with the data
     if 'scale_factor' in attrs:
         data = data * attrs['scale_factor']
-    else:
-        data = data * 1.0
 
-    if '_FillValue' in attrs and replace_fill_value is not None:
-        _FillValue = np.float32(attrs['_FillValue'])
-        data[data == _FillValue] = replace_fill_value
-
+    # Return the processed data
     return data
 
 
@@ -1217,13 +1240,33 @@ def parse_geojson(geojson_fpath):
 
 
 def region_parser(extent, lons, lats, geojson_fpath):
+    """
+    Parse region specifications and return longitude and latitude arrays.
+    This function processes different forms of region specifications: extent, lon/lat coordinates, or a geoJSON file.
+    It validates inputs and returns arrays of longitudes and latitudes that define the region.
+    Args:
+    ----
+        extent (list or None): Region extent as [lon_min, lon_max, lat_min, lat_max]
+            (i.e., West, East, South, North).
+        lons (list or None): Longitude bounds as [lon_min, lon_max].
+        lats (list or None): Latitude bounds as [lat_min, lat_max].
+        geojson_fpath (str or None): File path to a geoJSON file containing region information.
+
+    Returns:
+    -------
+        tuple: A tuple containing:
+            - llons (numpy.ndarray): Array of longitudes linearly spaced across the region.
+            - llats (numpy.ndarray): Array of latitudes linearly spaced across the region.
+    Raises:
+        SystemExit: If inputs are invalid or insufficient to define a region.
+    """
 
     if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
-        print('Error [sdown]: Must provide either extent or lon/lat coordinates or a geoJSON file')
+        print('Error [region_parser]: Must provide either extent or lon/lat coordinates or a geoJSON file')
         sys.exit()
 
     if (extent is not None) and ((lats is not None) or (lons is not None)) and (geojson_fpath is not None):
-        print('Warning [sdown]: Received multiple regions of interest. Only `extent` will be used.')
+        print('Warning [region_parser]: Received multiple regions of interest. Only `extent` will be used.')
         llons = np.linspace(extent[0], extent[1], 100)
         llats = np.linspace(extent[2], extent[3], 100)
         return llons, llats
@@ -1231,12 +1274,12 @@ def region_parser(extent, lons, lats, geojson_fpath):
 
     if (extent is not None):
         if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
-            print('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+            print('Error [region_parser]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
             sys.exit()
 
         # check to make sure extent is correct
         if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-            msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
+            msg = 'Error [region_parser]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
             print(msg)
             sys.exit()
 
@@ -1250,7 +1293,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
             llats = np.linspace(lats[0], lats[1], 100)
             return llons, llats
         else:
-            print('Error [sdown]: Must provide two coorect bounds each for `--lons` and `--lats`')
+            print('Error [region_parser]: Must provide two coorect bounds each for `--lons` and `--lats`')
             sys.exit()
 
 
@@ -1317,7 +1360,17 @@ def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
     return np.transpose(bits, axes=(2, 0, 1))
 
 
+def has_common_substring(input_str, substring_list):
+    """
+    Check if the input string contains any of the substrings from the list without using for loops.
 
-if __name__ == '__main__':
+    Args:
+    ----
+        input_str (str): The string to check against.
+        substring_list (list): List of substrings to look for in the input string.
 
-    pass
+    Returns:
+    -------
+        bool: True if input_str contains any substring from substring_list, False otherwise.
+    """
+    return any(substring in input_str for substring in substring_list)

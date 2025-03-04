@@ -1,32 +1,38 @@
 import os
 import sys
+import requests
 import datetime
 import numpy as np
 import warnings
 
-from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime
+
+from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime, has_common_substring
 import er3t.common
 from er3t.common import fdir_data_tmp
 
 
 __all__ = [
-        'format_satname', \
-        'get_token_earthdata', \
-        'get_fname_geometa', \
-        'get_local_file', \
-        'get_online_file', \
-        'final_file_check', \
-        'read_geometa', \
-        'cal_proj_xy_geometa', \
-        'cal_lon_lat_utc_geometa', \
-        'cal_sec_offset_abi', \
-        'get_satfile_tag', \
-        'download_laads_https', \
-        'download_lance_https',\
-        'download_oco2_https', \
-        'download_worldview_image', \
-        ]
-
+    'format_satname', \
+    'get_token_earthdata', \
+    'gen_file_earthdata', \
+    'get_command_earthdata', \
+    'get_fname_geometa', \
+    'delete_file', \
+    'get_local_file', \
+    'get_online_file', \
+    'get_nsidc_file_list', \
+    'final_file_check', \
+    'read_geometa', \
+    'cal_proj_xy_geometa', \
+    'cal_lon_lat_utc_geometa', \
+    'cal_sec_offset_abi', \
+    'get_satfile_tag', \
+    'download_laads_https', \
+    'download_lance_https', \
+    'download_nsidc_https', \
+    'download_oco2_https', \
+    'download_worldview_image', \
+    ]
 
 def format_satname(satellite, instrument):
     """ Format satellite and instrument name """
@@ -369,6 +375,124 @@ def get_online_file(
         content = None
 
     return content
+
+
+def get_nsidc_file_list(
+        product_id,
+        version,
+        instrument,
+        extent,
+        start_dt_hhmm,
+        end_dt_hhmm,
+        ):
+    """
+    Get a list of files available from an NSIDC URL directory.
+    Modeled after Jupyter Notebook from the official NSIDC Github repo:
+    https://github.com/nsidc/NSIDC-Data-Access-Notebook/blob/master/notebooks/Customize%20and%20Access%20NSIDC%20Data.ipynb
+
+    Args:
+    ----
+        url : str
+            The URL of the NSIDC directory to list files from.
+        fdir_save : str, optional
+            Directory to save temporary files.
+        verbose : bool, optional
+            Whether to print verbose messages.
+
+    Returns:
+    --------
+        list
+            A list of filenames available in the directory.
+    """
+
+    #\----------------------------------------------------------------------------------------------------------------------/#
+    # first we need to check that collections for this product exist given the time and region. An example URL:
+    # https://cmr.earthdata.nasa.gov/search/collections.json?instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85&has_granules=true
+
+    # build search params
+    temporal = start_dt_hhmm.strftime('%Y-%m-%dT%H:%M:%SZ') + ',' + end_dt_hhmm.strftime('%Y-%m-%dT%H:%M:%SZ')
+    bbox     = f'{extent[0]},{extent[2]},{extent[1]},{extent[3]}' # bottom lonlat, top lonlat
+    search_params = dict(instrument=instrument,
+                         short_name=product_id,
+                         version=version, # collection version like "61" for MODIS collection 6.1
+                         temporal=temporal,
+                         bounding_box=bbox)
+
+    cmr_collections_url = 'https://cmr.earthdata.nasa.gov/search/collections.json?has_granules=True'
+    search_params_string = '&'.join('{}={}'.format(k, v) for (k, v) in search_params.items())
+    cmr_collections_url = f'{cmr_collections_url}&{search_params_string}'
+    session = requests.session()
+    response = session.get(cmr_collections_url, timeout=10)
+    if response.status_code != 200:
+        print(f'Message [get_nsidc_file_list]: Could not submit query to {cmr_collections_url} as it resulted in a status code {response.status_code}')
+        return []
+
+    json_results = response.json()
+    results = json_results['feed']['entry']
+    if len(results) == 0:
+        print(f'Message [get_nsidc_file_list]: Could not find any results on {cmr_collections_url}')
+        return []
+    # print('Message [get_nsidc_file_list]: Found dataset {}'.format(results[0]['dataset_id'])) # debug statement
+
+    # loop through results just to make sure data is on the NSIDC servers
+    nsidc_counts = 0
+    for result in results:
+        if 'NSIDC' in result['archive_center'].upper():
+            nsidc_counts += 1
+
+    if nsidc_counts == 0:
+        print('Message [get_nsidc_file_list]: Could not find any data on NSIDC data centers')
+        return []
+
+    #\----------------------------------------------------------------------------------------------------------------------/#
+
+    # now that we have found and verified that the collection and product exists, we need to query granules.
+    # granules are indexed by page numbers and page size (defaults to 10) so we need to go through each page.
+    # example url: # https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=true&instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85
+
+    cmr_granules_base_url = 'https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=True'
+    # update search params with page info
+    search_params['page_num'] = 1
+    search_params['page_size'] = 10 # do not make this too big as query will take too long
+
+    # create list for links
+    nsidc_download_links = []
+
+    # set up input parameters
+    headers = {'Accept': 'application/json'}
+    application_formats = ('application/x-hdfeos', 'application/x-netcdf')
+    data_formats        = ('hdf', 'nc', 'hdf5', 'hdf4')
+
+    # send queries until we run out of pages
+    while True:
+        # update search params and url
+        search_params_string = '&'.join('{}={}'.format(k, v) for (k, v) in search_params.items())
+        cmr_granules_url = f'{cmr_granules_base_url}&{search_params_string}'
+
+        response = requests.get(cmr_granules_url, headers=headers, timeout=30)
+        if response.status_code != 200:
+            print(f'Message [get_nsidc_file_list]: Could not submit query to {cmr_granules_url} as it resulted in a status code {response.status_code}')
+            return []
+
+        json_results = response.json()
+        results = json_results['feed']['entry']
+        if len(results) == 0: # out of results, so break out of loop
+            break
+
+        # loop through to get downloadable links
+        for granule in results:
+            links = granule['links']
+            for link in links:
+                if link['href'].lower().endswith(data_formats):
+                    nsidc_download_links.append(link['href']) # add link to list
+
+        # update page number for next request query
+        search_params['page_num'] += 1
+    #\----------------------------------------------------------------------------------------------------------------------/#
+
+    print(f'Message [get_nsidc_file_list]: Found {len(nsidc_download_links)} granules')
+    return nsidc_download_links
+
 
 
 def final_file_check(fname_local, data_format, verbose):
@@ -1029,13 +1153,11 @@ def get_satfile_tag(
     import matplotlib.path as mpl_path
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # get formatted satellite tag
     #╭────────────────────────────────────────────────────────────────────────────╮#
     satname = format_satname(satellite, instrument)
     satellite, instrument = satname.split('|')
     #╰────────────────────────────────────────────────────────────────────────────╯#
-
 
     # get satellite geometa filename on the appropriate DAAC server
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1047,7 +1169,6 @@ def get_satfile_tag(
     fname_geometa = get_fname_geometa(date, satname, server=server)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # convert longitude in [-180, 180] range
     # since the longitude in GeoMeta dataset is in the range of [-180, 180]
     # or check overlap within region of interest
@@ -1058,7 +1179,6 @@ def get_satfile_tag(
     lat   = lat[logic]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # get geometa info
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
 
@@ -1067,7 +1187,7 @@ def get_satfile_tag(
 
     # try to get geometa information online
     if (content is None) or ('<!DOCTYPE html>' in content):
-        content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+        content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
     # content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
@@ -1077,8 +1197,6 @@ def get_satfile_tag(
 
     if data is None:
         return []
-
-
 
     # loop through all the satellite "granules" constructed through four corner points
     # and find which granules contain the input data
@@ -1132,7 +1250,6 @@ def get_satfile_tag(
             i_all.append(i)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #╭────────────────────────────────────────────────────────────────────────────╮#
     if (percent0 > 0.0 ) or worldview:
@@ -1151,7 +1268,6 @@ def get_satfile_tag(
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return filename_tags
-
 
 
 def download_laads_https(
@@ -1227,8 +1343,7 @@ def download_laads_https(
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
-                fnames_local.append(fname_local)
-                print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
+                print("Message [download_laads_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)
@@ -1270,7 +1385,6 @@ def download_laads_https(
 
 
     return fnames_local
-
 
 
 def download_lance_https(
@@ -1366,8 +1480,6 @@ def download_lance_https(
     print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
-
     # run/print command
     #╭────────────────────────────────────────────────────────────────────────────╮#
     if run:
@@ -1398,6 +1510,120 @@ def download_lance_https(
 
     return fnames_local
 
+
+def download_nsidc_https(
+                        date,
+                        extent,
+                        product_dict,
+                        filename_tags,
+                        fdir_out='tmp-data',
+                        data_format=None,
+                        run=True,
+                        start_dt_hhmm=None,
+                        end_dt_hhmm=None,
+                        verbose=True):
+
+    """
+    Download files from NSIDC (National Snow and Ice Data Center) using HTTPS protocol.
+
+    This function retrieves files from the NSIDC data archive centers that match specified date, spatial extent, and filename criteria (specified by filename_tags).
+    Pre-existing files are skipped if they pass validity checks.
+
+    Args:
+    ----
+        date (datetime.date): Date for which to download data.
+        extent (list or tuple): Geographic extent [min_lon, min_lat, max_lon, max_lat].
+        product_dict (dict): Dictionary containing product information with keys:
+            'short_name': Product short name.
+            'version': Product version.
+            'instrument': Instrument name.
+        filename_tags (list or str): String or list of strings to match in filenames.
+        fdir_out (str, optional): Directory where files will be saved. Defaults to 'tmp-data'.
+        data_format (str, optional): File format to filter by (e.g., '.h5', '.nc'). Defaults to None.
+        run (bool, optional): If True, execute download commands; if False, just print them. Defaults to True.
+        start_dt_hhmm (datetime.datetime, optional): Start time for data selection. Defaults to 00:00 of given date.
+        end_dt_hhmm (datetime.datetime, optional): End time for data selection. Defaults to 23:59 of given date.
+        verbose (bool, optional): If True, print detailed information. Defaults to True.
+
+    Returns:
+    -------
+        list: Paths to successfully downloaded local files. Empty list if no files were downloaded.
+    """
+
+    # by default if no start and end times are given, use 0000 and 2359
+    if start_dt_hhmm is None:
+        start_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 0, 0)
+
+    if end_dt_hhmm is None:
+        end_dt_hhmm = datetime.datetime(date.year, date.month, date.day, 23, 59)
+
+    # obtain the list of files available at that data directory on the server
+    files = get_nsidc_file_list(product_id=product_dict['short_name'],
+                                version=product_dict['version'],
+                                instrument=product_dict['instrument'],
+                                extent=extent,
+                                start_dt_hhmm=start_dt_hhmm,
+                                end_dt_hhmm=end_dt_hhmm)
+
+    if len(files) == 0:
+        return []
+
+    # get download commands
+    #/----------------------------------------------------------------------------\#
+    exist_count = 0 # to prevent re-downloading. TODO: Add `overwrite` option instead for user
+
+    primary_commands = []
+    backup_commands  = []
+    fnames_local = []
+    for fname_server in files:
+        filename = os.path.basename(fname_server)
+        if data_format is not None:
+            if not filename.endswith(data_format): # then skip
+                continue
+
+        if has_common_substring(filename, filename_tags): # if filename contains any match to the tags, proceed with downloading
+
+            fname_local  = '%s/%s' % (fdir_out, filename)
+            if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                print("Message [download_nsidc_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
+                exist_count += 1
+            else:
+                fnames_local.append(fname_local)
+                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+                primary_commands.append(primary_command)
+                backup_commands.append(backup_command)
+
+    print("Message [download_nsidc_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
+    #\----------------------------------------------------------------------------/#
+
+    # run/print command
+    #/----------------------------------------------------------------------------\#
+    if run:
+        for i in range(len(primary_commands)):
+
+            fname_local = fnames_local[i]
+
+            if verbose:
+                print('Message [download_nsidc_https]: Downloading %s ...' % fname_local)
+            os.system(primary_commands[i])
+
+            # if primary command fails, execute backup command.
+            # if that fails again, then delete the file and remove from list
+            if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                os.system(backup_commands[i])
+
+                if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                    print("Message [download_nsidc_https]: Could not complete the download of or something is wrong with {}...deleting...".format(fname_local))
+                    os.remove(fname_local)
+                    fnames_local.remove(fname_local) #remove from list
+    else:
+
+        print('Message [download_nsidc_https]: The commands to run are:')
+        for command in primary_commands:
+            print(command)
+    #\----------------------------------------------------------------------------/#
+
+    return fnames_local
 
 
 def download_oco2_https(

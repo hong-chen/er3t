@@ -1475,6 +1475,7 @@ class modis_04:
 class modis_09:
     """
     A class for extracting data from MODIS Atmospherically Corrected Surface Reflectance 5-Min L2 Swath 250m, 500m, 1km files.
+    Note: Although this product is referred to as surface reflectance, it is in fact producing the Bidirectional Reflectance Factor (BRF) and therefore the values may be > 1 over bright surfaces.
 
     Args:
         fname (str): The file name of the MOD09 product.
@@ -1812,7 +1813,7 @@ class modis_07:
             cloud_mask_flag = data[:, 7]
             return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat
 
-        
+
     def quality_assurance(self, dbyte, byte=0):
         """
         Extract cloud mask QA data to determine confidence
@@ -1839,16 +1840,16 @@ class modis_07:
         except ImportError:
             msg = 'Warning [modis_07]: To use \'modis_07\', \'pyhdf\' needs to be installed.'
             raise ImportError(msg)
-        
+
         f     = SD(fname, SDC.READ)
-        
+
         lon0       = f.select('Longitude')
         lat0       = f.select('Latitude')
         cld_msk0   = f.select('Cloud_Mask')
         qa0        = f.select('Quality_Assurance')
         lon = lon0[:]
         lat = lat0[:]
-        
+
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
         #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1873,21 +1874,21 @@ class modis_07:
         lon       = lon[logic]
         lat       = lat[logic]
         #╰────────────────────────────────────────────────────────────────────────────╯#
- 
+
         p_level = np.array([5, 10, 20, 30, 50, 70, 100, 150, 200, 250, 300, 400, 500, 620, 700, 780, 850, 920, 950, 1000])
-        
+
         # Get cloud mask and flag fields
         #╭──────────────────────────────────────────────────────────────╮#
         cm0_data = get_data_h4(cld_msk0, replace_fill_value=None)
         qa0_data = get_data_h4(qa0, replace_fill_value=None)
         cm = cm0_data.copy()
         qa = qa0_data.copy()
-        
+
         cm = cm[:, :] # read only the first of 6 bytes; rest will be supported in the future if needed
         cm = np.array(cm[logic], dtype='uint8')
         cm = cm.reshape((cm.size, 1))
         cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
-        
+
         ### fov_qa_cat: 0=cloudy, 1=uncertain, 2=probably clear, 3=confident clear
 
         qa = qa[:, :,] # read only the first byte for confidence (indexed differently from cloud mask SDS)
@@ -1895,18 +1896,19 @@ class modis_07:
         qa = qa.reshape((qa.size, 1))
         use_qa, confidence_qa = self.quality_assurance(qa, byte=0)
         #╰──────────────────────────────────────────────────────────────╯#
-        
+
         T_level_retrieved = np.array(get_data_h4(f.select('Retrieved_Temperature_Profile'))[:, logic])
         h_level_retrieved = np.array(get_data_h4(f.select('Retrieved_Height_Profile'))[:, logic])
         dewT_level_retrieved = np.array(get_data_h4(f.select('Retrieved_Moisture_Profile'))[:, logic])
         wvmx_level_retrieved = np.array(get_data_h4(f.select('Retrieved_WV_Mixing_Ratio_Profile'))[:, logic])
         h_sfc = np.array(get_data_h4(f.select('Surface_Elevation'))[logic])
         p_sfc = np.array(get_data_h4(f.select('Surface_Pressure'))[logic])
+
         t_skin = np.array(get_data_h4(f.select('Skin_Temperature'))[logic])
         
         for data in [T_level_retrieved, h_level_retrieved, dewT_level_retrieved, wvmx_level_retrieved, h_sfc, p_sfc]:
             data[data < 0] = np.nan
-        
+
         sza = np.array(get_data_h4(f.select('Solar_Zenith'))[logic])
         saa = np.array(get_data_h4(f.select('Solar_Azimuth'))[logic])
         vza = np.array(get_data_h4(f.select('Sensor_Zenith'))[logic])
@@ -2074,6 +2076,134 @@ class modis_09a1:
             self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
             self.data['ref'] = dict(name='Surface reflectance' , data=ref, units='N/A')
 
+
+class modis_29:
+    """
+    A class for extracting data from MODIS Sea Ice Extent 5-Min L2 Swath 1km files.
+
+    This class provides functionality to read and extract data from MODIS MOD29/MYD29 HDF files,
+    which ice surface temperature and optionally, sea ice extent information.
+
+    Args:
+    ----
+        fname (str): Path to the MOD29 file
+        f03 (object, optional): A modis_03 geolocation class object
+
+    Returns:
+    -------
+        data (dict): Contains the extracted data arrays with metadata
+        qa (dict): Contains the quality assessment arrays with metadata
+
+
+    References: (User Guide) https://nsidc.org/sites/default/files/myd29-v061-userguide_1.pdf
+    """
+
+    ID = 'MODIS Sea Ice Extent 5-Min L2 Swath 1km'
+
+    def __init__(self,
+                 fname, \
+                 f03=None, \
+                ):
+
+        self.fname = fname # file name
+        self.f03   = f03 # geolocation class object created using the `modis_03` reader
+        self.read(fname)
+
+
+    def extract_ice_surface_temperature(self, hdf_obj):
+        """ extract ice surface temperature """
+        # The valid range for ISTs is 210K to 313.20K.
+        ist = hdf_obj.select('Ice_Surface_Temperature')
+        ist = get_data_h4(ist)
+        ist_desc =  '0.0: missing\n'\
+                    '1.0: no decision\n'\
+                    '11.0: night\n'\
+                    '25.0: land\n'\
+                    '37.0: inland water\n'\
+                    '39.0: open ocean\n'\
+                    '50.0: cloud\n'\
+                    '243-273: expected range of IST calibrated data values\n'\
+                    '655.35: fill\n'
+
+        ist_qa = hdf_obj.select('Ice_Surface_Temperature_Pixel_QA')
+        ist_qa = get_data_h4(ist_qa, init_dtype='uint8')
+        ist_qa_desc =   '0: good quality\n'\
+                        '1: other quality\n'\
+                        '252: Antarctica mask\n'\
+                        '253: land mask\n'\
+                        '254: ocean mask\n'\
+                        '255: fill\n'
+
+        return ist, ist_desc, ist_qa, ist_qa_desc
+
+
+    def extract_sea_ice_extent(self, hdf_obj):
+        """ extract sea ice extent by reflectance methods """
+        sit = hdf_obj.select('Sea_Ice_by_Reflectance')
+        sit = get_data_h4(sit)
+        sit_desc =  '0: missing\n'\
+                    '1: no decision\n'\
+                    '11: night\n'\
+                    '25: land\n'\
+                    '37: inland water\n'\
+                    '39: ocean\n'\
+                    '50: cloud\n'\
+                    '100: lake ice\n'\
+                    '200: sea ice\n'\
+                    '254: detector saturated\n'\
+                    '255: fill\n'
+
+        sit_qa = hdf_obj.select('Sea_Ice_by_Reflectance_Pixel_QA')
+        sit_qa = get_data_h4(sit_qa, init_dtype='uint8')
+        sit_qa_desc =   '0: good quality\n'\
+                        '1: other quality\n'\
+                        '252: Antarctica mask\n'\
+                        '253: land mask\n'\
+                        '254: ocean mask\n'\
+                        '255: fill\n'
+
+        return sit, sit_desc, sit_qa, sit_qa_desc
+
+
+    def read(self, fname):
+
+        try:
+            from pyhdf.SD import SD, SDC
+        except ImportError:
+            msg = 'Warning [modis_29]: To use \'modis_29\', \'pyhdf\' needs to be installed.'
+            raise ImportError(msg)
+
+        f = SD(fname, SDC.READ)
+
+        # get lon/lat at native 5km resolution
+        lon_5km, lat_5km  = f.select('Longitude'), f.select('Latitude')
+        lon_5km, lat_5km = lon_5km[:], lat_5km[:]
+
+        ist, ist_desc, ist_qa, ist_qa_desc = self.extract_ice_surface_temperature(f)
+
+        # some files will not have sea ice data so we need to check
+        if 'Sea_Ice_by_Reflectance' in f.datasets():
+            sit, sit_desc, sit_qa, sit_qa_desc = self.extract_sea_ice_extent(f)
+
+        # save the data
+        self.data = {}
+        self.qa   = {}
+
+        if self.f03 is not None:
+            lon = self.f03.data['lon']['data']
+            lat = self.f03.data['lat']['data']
+            self.data['lon'] = dict(name='Longitude', data=lon, units='degrees')
+            self.data['lat'] = dict(name='Latitude', data=lat,  units='degrees')
+
+        self.data['ice_surface_temperature']  = dict(name='Ice Surface Temperature', data=ist, units='degrees_Kelvin', description=ist_desc)
+        self.qa['ice_surface_temperature_qa'] = dict(name='Ice Surface Temperature QA', data=ist_qa, units='n/a', description=ist_qa_desc)
+
+        if 'Sea_Ice_by_Reflectance' in f.datasets():
+            self.data['sea_ice_extent']  = dict(name='Sea ice by reflective characteristics', data=sit, units='n/a', description=sit_desc)
+            self.qa['sea_ice_extent_qa'] = dict(name='Sea ice by reflective characteristics QA', data=sit_qa, units='n/a', description=sit_qa_desc)
+
+        f.end()
+        #------------------------------------------------------------------------------------------------------------------------------#
 
 
 class modis_43a1:
@@ -2418,9 +2548,6 @@ class modis_tiff:
         self.latm   = 0.5*(self.latg[1:]+self.latg[:-1])
 
 #╰────────────────────────────────────────────────────────────────────────────╯#
-
-
-
 
 
 # Useful functions
