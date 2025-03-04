@@ -3,6 +3,7 @@ import sys
 import glob
 import datetime
 import warnings
+import tqdm
 import h5py
 import numpy as np
 import matplotlib as mpl
@@ -19,6 +20,31 @@ import er3t
 
 name_tag = '00_er3t_bmk'
 
+params = {
+                         'date': datetime.datetime(2014, 9, 11),
+                  'wavelength' : 650.0,
+               'surface_albedo': 0.03,
+          'atmospheric_profile': '%s/afglt.dat' % er3t.common.fdir_data_atmmod,
+          'solar_zenith_angle' : 28.2797,
+         'solar_azimuth_angle' : 238.9053,
+         'sensor_zenith_angle' : 0.0,
+         # 'sensor_zenith_angle' : 6.2445,
+        'sensor_azimuth_angle' : 261.9049,
+             'sensor_altitude' : 705000.0,
+            'cloud_top_height' : 2.0,
+ 'cloud_geometrical_thickness' : 1.0,
+                      'Nphoton': 5e6,
+                         'Ncpu': 'auto',
+                         'cer0': 10.0,
+                         'cot' : np.concatenate((              \
+                                 np.arange(0.0, 2.0, 0.5),     \
+                                 np.arange(2.0, 30.0, 2.0),    \
+                                 np.arange(30.0, 60.0, 5.0),   \
+                                 np.arange(60.0, 100.0, 10.0), \
+                                 np.arange(100.0, 401.0, 50.0) \
+                                )),
+                }
+#
 
 
 def test_00_util():
@@ -245,6 +271,8 @@ def check_solar():
 
 
 
+
+
 def lrt_rad_one_clear(params):
 
     """
@@ -294,6 +322,126 @@ def lrt_rad_one_clear(params):
 
     return data
 
+
+def test_00_solar_old():
+
+    wvl = np.arange(300.0, 2500.1, 1.0)
+
+    # get solar
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    solar_crk_16g = np.zeros_like(wvl)
+    solar_rep_f = np.zeros_like(wvl)
+    solar_rep_m = np.zeros_like(wvl)
+    solar_rep_c = np.zeros_like(wvl)
+    solar_kurudz_1nm = np.zeros_like(wvl)
+
+    levels = np.linspace(0.0, 20.0, 41)
+    atm0 = er3t.pre.atm.atm_atmmod(levels=levels)
+
+    for i, wvl0 in enumerate(tqdm.tqdm(wvl)):
+        # abs_crk0 = er3t.pre.abs.abs_16g(wavelength=wvl0, atm_obj=atm0)
+        abs_rep_f0 = er3t.pre.abs.abs_rep(wavelength=wvl0, target='fine', atm_obj=atm0)
+        # abs_rep_m0 = er3t.pre.abs.abs_rep(wavelength=wvl0, target='medium', atm_obj=atm0)
+        # abs_rep_c0 = er3t.pre.abs.abs_rep(wavelength=wvl0, target='coarse', atm_obj=atm0)
+
+        # solar_crk_16g[i] = np.sum(abs_crk0.coef['solar']['data'] * abs_crk0.coef['weight']['data']) * 1000.0
+        solar_rep_f[i] = np.sum(abs_rep_f0.coef['solar']['data'] * abs_rep_f0.coef['weight']['data']) * 1000.0
+        # solar_rep_m[i] = np.sum(abs_rep_m0.coef['solar']['data'] * abs_rep_m0.coef['weight']['data']) * 1000.0
+        # solar_rep_c[i] = np.sum(abs_rep_c0.coef['solar']['data'] * abs_rep_c0.coef['weight']['data']) * 1000.0
+        print('%5d %.6e' % (wvl0, solar_rep_f[i]))
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+    sys.exit()
+
+    # figure
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    plot = True
+    if plot:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot1
+        #╭──────────────────────────────────────────────────────────────╮#
+        ax1 = fig.add_subplot(111)
+        # ax1.plot(wvl, solar_crk_16g, lw=2, c='k')
+        ax1.plot(wvl, solar_rep_f, lw=2, c='k')
+        # ax1.plot(wvl, (solar_rep_f-solar_crk_16g)/solar_crk_16g*100.0, lw=2, c='r')
+        # ax1.plot(wvl, (solar_rep_m-solar_crk_16g)/solar_crk_16g*100.0, lw=2, c='g')
+        # ax1.plot(wvl, (solar_rep_c-solar_crk_16g)/solar_crk_16g*100.0, lw=2, c='b')
+        ax1.axhline(0.0, color='gray', ls=':')
+        # ax1.set_xlim((0, 1))
+        # ax1.set_ylim((0, 1))
+        # ax1.set_xlabel('X')
+        # ax1.set_ylabel('Y')
+        # ax1.set_title('Plot1')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #╰──────────────────────────────────────────────────────────────╯#
+        # save figure
+        #╭──────────────────────────────────────────────────────────────╮#
+        fig.subplots_adjust(hspace=0.35, wspace=0.35)
+        _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+        fname_fig = '%s_%s.png' % (_metadata_['Date'], _metadata_['Function'],)
+        plt.savefig(fname_fig, bbox_inches='tight', metadata=_metadata_, transparent=False)
+        #╰──────────────────────────────────────────────────────────────╯#
+        plt.show()
+        sys.exit()
+        plt.close(fig)
+        plt.clf()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+def test_00_solar():
+
+    wvl = np.arange(300.0, 1200.1, 1.0)
+
+    data_sol_krz = np.loadtxt('%s/kurudz_1.0nm.dat' % er3t.common.fdir_data_solar)
+    data_sol_16g = np.loadtxt('%s/solar_16g_1.0nm.dat' % er3t.common.fdir_data_solar)
+    # data_sol_16g = np.loadtxt('%s/solar_16g_1.0nm.dat' % er3t.common.fdir_data_solar)
+    data_sol_rep = np.loadtxt('%s/solar_rep_f.dat' % er3t.common.fdir_data_solar)
+
+    sol_krz = np.interp(wvl, data_sol_krz[:, 0], data_sol_krz[:, 1])
+    sol_16g = np.interp(wvl, data_sol_16g[:, 0], data_sol_16g[:, 1])
+    sol_rep = np.interp(wvl, data_sol_rep[:, 0], data_sol_rep[:, 1])
+
+
+    # figure
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    plot = True
+    if plot:
+        plt.close('all')
+        fig = plt.figure(figsize=(18, 4))
+        # fig.suptitle('Figure')
+        # plot1
+        #╭──────────────────────────────────────────────────────────────╮#
+        ax1 = fig.add_subplot(111)
+        ax1.plot(wvl, sol_krz/sol_16g, lw=2, c='k')
+        ax1.plot(wvl, sol_rep/sol_16g, lw=2, c='r')
+        # ax1.plot(wvl, sol_16g, lw=2, c='r')
+        # ax1.plot(wvl, (solar_rep_f-solar_crk_16g)/solar_crk_16g*100.0, lw=2, c='r')
+        # ax1.plot(wvl, (solar_rep_m-solar_crk_16g)/solar_crk_16g*100.0, lw=2, c='g')
+        # ax1.plot(wvl, (solar_rep_c-solar_crk_16g)/solar_crk_16g*100.0, lw=2, c='b')
+        ax1.axhline(1.0, color='gray', ls=':')
+        # ax1.set_xlim((0, 1))
+        # ax1.set_ylim((0, 1))
+        # ax1.set_xlabel('X')
+        # ax1.set_ylabel('Y')
+        # ax1.set_title('Plot1')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #╰──────────────────────────────────────────────────────────────╯#
+        # save figure
+        #╭──────────────────────────────────────────────────────────────╮#
+        fig.subplots_adjust(hspace=0.35, wspace=0.35)
+        _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+        fname_fig = '%s_%s.png' % (_metadata_['Date'], _metadata_['Function'],)
+        plt.savefig(fname_fig, bbox_inches='tight', metadata=_metadata_, transparent=False)
+        #╰──────────────────────────────────────────────────────────────╯#
+        plt.show()
+        sys.exit()
+        plt.close(fig)
+        plt.clf()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
 def test_01_rad_one_clear(wavelength, plot=True):
 
     params = {
@@ -319,7 +467,116 @@ def test_01_rad_one_clear(wavelength, plot=True):
     # er3t.util.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
+def test_02_rad_cloud(params, overwrite=False):
 
+    # run mcarats
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    fdir = '%s/mca_ipa_%07.2fnm_%04.2f_%07.2f_%07.2f_%07.2f_%07.2f_cbh-%05.2fkm_cth-%05.2fkm' % ( \
+             'tmp-data',
+             params['wavelength'], params['surface_albedo'], \
+             params['solar_zenith_angle'], params['solar_azimuth_angle'], \
+             params['sensor_zenith_angle'], params['sensor_azimuth_angle'], \
+             params['cloud_top_height']-params['cloud_geometrical_thickness'], params['cloud_top_height'], \
+             )
+
+    f_mca = er3t.rtm.mca.func_ref_vs_cot(
+            params['cot'],
+            cer0=params['cer0'],
+            fdir=fdir,
+            date=params['date'],
+            wavelength=params['wavelength'],
+            surface_albedo=params['surface_albedo'],
+            solar_zenith_angle=params['solar_zenith_angle'],
+            solar_azimuth_angle=params['solar_azimuth_angle'],
+            sensor_zenith_angle=params['sensor_zenith_angle'],
+            sensor_azimuth_angle=params['sensor_azimuth_angle'],
+            sensor_altitude=params['sensor_altitude'],
+            cloud_top_height=params['cloud_top_height'],
+            cloud_geometrical_thickness=params['cloud_geometrical_thickness'],
+            atmospheric_profile=params['atmospheric_profile'],
+            Nphoton=params['Nphoton'],
+            Ncpu=params['Ncpu'],
+            overwrite=overwrite,
+            )
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    # run libRadtran
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    fdir = '%s/lrt_ipa_%07.2fnm_%04.2f_%07.2f_%07.2f_%07.2f_%07.2f_cbh-%05.2fkm_cth-%05.2fkm' % ( \
+             'tmp-data',
+             params['wavelength'], params['surface_albedo'], \
+             params['solar_zenith_angle'], params['solar_azimuth_angle'], \
+             params['sensor_zenith_angle'], params['sensor_azimuth_angle'], \
+             params['cloud_top_height']-params['cloud_geometrical_thickness'], params['cloud_top_height'], \
+             )
+
+    f_lrt = er3t.rtm.lrt.func_ref_vs_cot(
+            params['cot'],
+            cer0=params['cer0'],
+            fdir=fdir,
+            date=params['date'],
+            wavelength=params['wavelength'],
+            surface_albedo=params['surface_albedo'],
+            solar_zenith_angle=params['solar_zenith_angle'],
+            solar_azimuth_angle=params['solar_azimuth_angle'],
+            sensor_zenith_angle=params['sensor_zenith_angle'],
+            sensor_azimuth_angle=params['sensor_azimuth_angle'],
+            sensor_altitude=params['sensor_altitude'],
+            cloud_top_height=params['cloud_top_height'],
+            cloud_geometrical_thickness=params['cloud_geometrical_thickness'],
+            atmospheric_profile=params['atmospheric_profile'],
+            Ncpu=params['Ncpu'],
+            overwrite=True,
+            )
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    # figure
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    plot = True
+    if plot:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot1
+        #╭──────────────────────────────────────────────────────────────╮#
+        ax1 = fig.add_subplot(111)
+        # ax1.scatter(f_mca.cot, f_mca.ref, s=2, c='k', lw=0.0)
+
+        ax1.fill_between(f_mca.cot, f_mca.ref-f_mca.ref_std, f_mca.ref+f_mca.ref_std, lw=0, color='b')
+        ax1.plot(f_lrt.cot, f_lrt.ref, lw=2, color='r')
+        ax1.axhline(1.0, color='gray', ls=':')
+        ax1.set_xlabel('COT')
+        ax1.set_ylabel('Reflectance')
+        patches_legend = [
+                         mpatches.Patch(color='red'   , label='libRadtran'), \
+                         mpatches.Patch(color='blue'  , label='MCARaTS'), \
+                         ]
+        ax1.legend(handles=patches_legend, loc='lower right', fontsize=16)
+
+        # ax1.plot(f_lrt.cot, (f_lrt.ref-f_mca.ref)/f_mca.ref*100.0, lw=2, color='r')
+        # ax1.axhline(0.0, color='gray', ls=':')
+        # ax1.set_ylim((-50, 50))
+        # ax1.set_xlabel('COT')
+        # ax1.set_ylabel('Bias [%]')
+
+        # ax1.set_title('Plot1')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #╰──────────────────────────────────────────────────────────────╯#
+        # save figure
+        #╭──────────────────────────────────────────────────────────────╮#
+        fig.subplots_adjust(hspace=0.35, wspace=0.35)
+        _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+        fname_fig = 'test.png'
+        plt.savefig(fname_fig, bbox_inches='tight', metadata=_metadata_, transparent=False)
+        #╰──────────────────────────────────────────────────────────────╯#
+        plt.show()
+        sys.exit()
+        plt.close(fig)
+        plt.clf()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    return
 
 
 
@@ -330,12 +587,15 @@ if __name__ == '__main__':
 
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
-        # check_solar()
+        # test_00_solar_old()
+        # test_00_solar()
         # for wavelength in [470.0, 555.0, 659.0, 772.0, 1621.0, 2079.0]:
-        for wavelength in [772.0, 1621.0, 2079.0]:
-            test_01_rad_one_clear(wavelength, plot=True)
+        # for wavelength in [772.0, 1621.0, 2079.0]:
+        #     test_01_rad_one_clear(wavelength, plot=True)
         # for wavelength in [650.0]:
         #     test_01_flux_one_clear(wavelength)
+
+        test_02_rad_cloud(params, overwrite=False)
 
     else:
 
