@@ -791,8 +791,10 @@ class modis_l2:
             self.data['ctp']       = dict(name='Cloud thermodynamic phase',           data=np.hstack((self.data['ctp']['data'], ctp)),                   units='N/A')
             self.data['cot']       = dict(name='Cloud optical thickness',             data=np.hstack((self.data['cot']['data'], cot)),                   units='N/A')
             self.data['cer']       = dict(name='Cloud effective radius',              data=np.hstack((self.data['cer']['data'], cer)),                   units='micron')
+            self.data['cwp']       = dict(name='Cloud water path',                    data=np.hstack((self.data['cwp']['data'], cwp)),                   units='g/m^2')
             self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_err']['data'], cot*cot_err/100.0)), units='N/A')
             self.data['cer_err']   = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_err']['data'], cer*cer_err/100.0)), units='micron')
+            self.data['cwp_err']   = dict(name='Cloud water path uncertainty',       data=np.hstack((self.data['cwp_err']['data'], cwp*cwp_err/100.0)), units='g/m^2')
             self.data['pcl']       = dict(name='PCL tag (1:PCL)',                     data=np.hstack((self.data['pcl']['data'], pcl)),                   units='N/A')
             self.data['lon_5km']   = dict(name='Longitude at 5km',                    data=np.hstack((self.data['lon_5km']['data'], lon_5km)),           units='degrees')
             self.data['lat_5km']   = dict(name='Latitude at 5km',                     data=np.hstack((self.data['lat_5km']['data'], lat_5km)),           units='degrees')
@@ -807,8 +809,10 @@ class modis_l2:
             self.data['ctp']       = dict(name='Cloud thermodynamic phase',           data=ctp,               units='N/A')
             self.data['cot']       = dict(name='Cloud optical thickness',             data=cot,               units='N/A')
             self.data['cer']       = dict(name='Cloud effective radius',              data=cer,               units='micron')
+            self.data['cwp']       = dict(name='Cloud water path',                    data=cwp,               units='g/m^2')
             self.data['cot_err']   = dict(name='Cloud optical thickness uncertainty', data=cot*cot_err/100.0, units='N/A')
             self.data['cer_err']   = dict(name='Cloud effective radius uncertainty',  data=cer*cer_err/100.0, units='micron')
+            self.data['cwp_err']   = dict(name='Cloud water path uncertainty',       data=cwp*cwp_err/100.0, units='g/m^2')
             self.data['pcl']       = dict(name='PCL tag (1:PCL)',                     data=pcl,               units='N/A')
             self.data['lon_5km']   = dict(name='Longitude at 5km',                    data=lon_5km,           units='degrees')
             self.data['lat_5km']   = dict(name='Latitude at 5km',                     data=lat_5km,           units='degrees')
@@ -1363,6 +1367,8 @@ class modis_04:
         Deep_Blue_Aerosol_type_land_0       = f.select('Aerosol_Type_Land')
         Deep_Blue_Aerosol_cloud_frac_land_0 = f.select('Aerosol_Cloud_Fraction_Land')
         Deep_Blue_SSA_land_0                = f.select('Deep_Blue_Spectral_Single_Scattering_Albedo_Land')
+        Asymmetry_Factor_Best_Ocean_0       = f.select('Asymmetry_Factor_Best_Ocean') # 7 bands
+        Effective_Optical_Depth_Best_Ocean_0 = f.select('Effective_Optical_Depth_Best_Ocean') # 7 bands
 
 
         # 1. If region (extent=) is specified, filter data within the specified region
@@ -1403,6 +1409,8 @@ class modis_04:
         Deep_Blue_SSA_land_412               = get_data_h4(Deep_Blue_SSA_land_0)[0, logic] #0.412 micron
         Deep_Blue_SSA_land_470               = get_data_h4(Deep_Blue_SSA_land_0)[1, logic] #0.47  micron
         Deep_Blue_SSA_land_660               = get_data_h4(Deep_Blue_SSA_land_0)[2, logic] #0.66  micron
+        Asymmetry_Factor_Best_Ocean_all     = get_data_h4(Asymmetry_Factor_Best_Ocean_0)[:, logic]
+        Effective_Optical_Depth_Best_Ocean_all = get_data_h4(Effective_Optical_Depth_Best_Ocean_0)[:, logic]
 
         f.end()
         #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -1420,6 +1428,8 @@ class modis_04:
             self.data['SSA_land_412'] = dict(name='Single Scattering Albedo 412 nm (Land)'  , data=np.hstack((self.data['SSA_land']['data'], Deep_Blue_SSA_land_412)), units='None')
             self.data['SSA_land_470'] = dict(name='Single Scattering Albedo 470 nm (Land)'  , data=np.hstack((self.data['SSA_land']['data'], Deep_Blue_SSA_land_470)), units='None')
             self.data['SSA_land_660'] = dict(name='Single Scattering Albedo 660 nm (Land)'  , data=np.hstack((self.data['SSA_land']['data'], Deep_Blue_SSA_land_660)), units='None')
+            self.data['Asymmetry_Factor_Best_Ocean'] = dict(name='Asymmetry Factor Best Ocean', data=np.hstack((self.data['Asymmetry_Factor_Best_Ocean']['data'], Asymmetry_Factor_Best_Ocean_all)), units='None')
+            self.data['Effective_Optical_Depth_Best_Ocean'] = dict(name='Effective Optical Depth Best Ocean', data=np.hstack((self.data['Effective_Optical_Depth_Best_Ocean']['data'], Effective_Optical_Depth_Best_Ocean_all)), units='None')
         else:
             self.logic = {}
             self.logic[fname] = {'1km':logic}
@@ -1433,6 +1443,8 @@ class modis_04:
             self.data['SSA_land_412'] = dict(name='Single Scattering Albedo 412 nm (Land)'  , data=Deep_Blue_SSA_land_412           , units='None')
             self.data['SSA_land_470'] = dict(name='Single Scattering Albedo 470 nm (Land)'  , data=Deep_Blue_SSA_land_470           , units='None')
             self.data['SSA_land_660'] = dict(name='Single Scattering Albedo 660 nm (Land)'  , data=Deep_Blue_SSA_land_660           , units='None')
+            self.data['Asymmetry_Factor_Best_Ocean'] = dict(name='Asymmetry Factor Best Ocean', data=Asymmetry_Factor_Best_Ocean_all, units='None')
+            self.data['Effective_Optical_Depth_Best_Ocean'] = dict(name='Effective Optical Depth Best Ocean', data=Effective_Optical_Depth_Best_Ocean_all, units='None')
 
 
     def read_vars(self, fname, vnames=[]):
@@ -1892,6 +1904,8 @@ class modis_07:
         h_sfc = np.array(get_data_h4(f.select('Surface_Elevation'))[logic])
         p_sfc = np.array(get_data_h4(f.select('Surface_Pressure'))[logic])
 
+        t_skin = np.array(get_data_h4(f.select('Skin_Temperature'))[logic])
+        
         for data in [T_level_retrieved, h_level_retrieved, dewT_level_retrieved, wvmx_level_retrieved, h_sfc, p_sfc]:
             data[data < 0] = np.nan
 
@@ -1913,6 +1927,7 @@ class modis_07:
             self.data['wvmx_level_retrieved'] = dict(name='Retrieved WV Mixing Ratio Profile', data=np.hstack((self.data['wvmx_level_retrieved']['data'], wvmx_level_retrieved)), units='g/kg')
             self.data['h_sfc'] = dict(name='Surface Elevation' , data=np.hstack((self.data['h_surf']['data'], h_sfc)), units='m')
             self.data['p_sfc'] = dict(name='Surface Pressure'  , data=np.hstack((self.data['p_surf']['data'], p_sfc)), units='hPa')
+            self.data['t_skin'] = dict(name='Skin Temperature'  , data=np.hstack((self.data['t_skin']['data'], t_skin)), units='K')
             self.data['sza'] = dict(name='Solar Zenith Angle'  , data=np.hstack((self.data['sza']['data'], sza)), units='degrees')
             self.data['saa'] = dict(name='Solar Azimuth Angle' , data=np.hstack((self.data['saa']['data'], saa)), units='degrees')
             self.data['vza'] = dict(name='Sensor Zenith Angle' , data=np.hstack((self.data['vza']['data'], vza)), units='degrees')
@@ -1929,6 +1944,7 @@ class modis_07:
             self.data['wvmx_level_retrieved'] = dict(name='Retrieved WV Mixing Ratio Profile', data=wvmx_level_retrieved, units='g/kg')
             self.data['h_sfc'] = dict(name='Surface Elevation' , data=h_sfc, units='m')
             self.data['p_sfc'] = dict(name='Surface Pressure'  , data=p_sfc, units='hPa')
+            self.data['t_skin'] = dict(name='Skin Temperature'  , data=t_skin, units='K')
             self.data['sza'] = dict(name='Solar Zenith Angle'  , data=sza, units='degrees')
             self.data['saa'] = dict(name='Solar Azimuth Angle' , data=saa, units='degrees')
             self.data['vza'] = dict(name='Sensor Zenith Angle' , data=vza, units='degrees')

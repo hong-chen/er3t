@@ -1,5 +1,7 @@
 import numpy as np
 from scipy import interpolate
+import h5py
+import os
 
 
 import er3t.common

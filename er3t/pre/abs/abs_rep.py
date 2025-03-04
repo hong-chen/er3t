@@ -337,6 +337,10 @@ class abs_rep:
 
                             # vmr_ = np.log(self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data'])
                             vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
+                            
+                            if vmr_.max() > vmr_ref.max():
+                                vmr_[vmr_>vmr_ref.max()] = vmr_ref.max()
+                            
                             f_points = np.transpose(np.vstack((dt_, vmr_, p_)))
                         #╰──────────────────────────────────────────────────────────────╯#
 

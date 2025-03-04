@@ -136,6 +136,7 @@ class lrt_init_mono_flx:
                             ('wavelength'        , '%.1f %.1f' % (wavelength_s, wavelength_e)),
                             ('spline'            , '%.3f %.3f %.3f' % (wavelength, wavelength, spectral_resolution)),
                             ('slit_function_file', slit_function_file),
+                            ('data_files_path'   , lrt_cfg['data_files_path']),
                             ('mol_abs_param'     , lrt_cfg['mol_abs_param']),
                             ('zout'              , output_altitude)
                             ])
