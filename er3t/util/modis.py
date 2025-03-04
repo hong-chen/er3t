@@ -1016,15 +1016,33 @@ class modis_35_l2:
 
         # Get cloud mask and flag fields
         #/-----------------------------\#
+
+        if '_FillValue' in cld_msk0.attributes().keys():
+            cld_msk_fill_value = cld_msk0.attributes()['_FillValue']
+        else:
+            cld_msk_fill_value = 0
+
+        if '_FillValue' in qa0.attributes().keys():
+            qa_fill_value = qa0.attributes()['_FillValue']
+        else:
+            qa_fill_value = 0
+
         cm0_data = get_data_h4(cld_msk0)
         qa0_data = get_data_h4(qa0)
         cm = cm0_data.copy()
         qa = qa0_data.copy()
 
+        # negative integers need to be reampped according to ATBD
+        cm[cm < 0] = cm[cm < 0] + 256
+        qa[qa < 0] = qa[qa < 0] + 256
+
+        # turn nans into fill values
+        cm = np.nan_to_num(cm, cld_msk_fill_value)
+        qa = np.nan_to_num(qa, qa_fill_value)
+
         cm = cm[0, :, :] # read only the first of 6 bytes; rest will be supported in the future if needed
         cm = np.array(cm[logic_1km], dtype='uint8')
         cm = cm.reshape((cm.size, 1))
-        cm[cm < 0] = cm[cm < 0] + 256 # negative integers need to be reampped according to ATBD
         cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
 
 
