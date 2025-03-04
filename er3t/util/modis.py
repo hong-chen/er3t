@@ -1024,12 +1024,14 @@ class modis_35_l2:
         cm = cm[0, :, :] # read only the first of 6 bytes; rest will be supported in the future if needed
         cm = np.array(cm[logic_1km], dtype='uint8')
         cm = cm.reshape((cm.size, 1))
+        cm[cm < 0] = cm[cm < 0] + 256 # negative integers need to be reampped according to ATBD
         cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
 
 
         qa = qa[:, :, 0] # read only the first byte for confidence (indexed differently from cloud mask SDS)
         qa = np.array(qa[logic_1km], dtype='uint8')
         qa = qa.reshape((qa.size, 1))
+        qa[qa < 0] = qa[qa < 0] + 256 # negative integers need to be reampped according to ATBD
         use_qa, confidence_qa = self.quality_assurance(qa, byte=0)
 
         f.end()
