@@ -28,8 +28,13 @@ def gen_cloud_1d(cld_cfg):
     lwc = np.zeros_like(alt)
     cer = np.zeros_like(alt)
 
-    lwc[1:] = cld_cfg['liquid_water_content']
-    cer[1:] = cld_cfg['cloud_effective_radius']
+    if type(cld_cfg['liquid_water_content']) is not np.ndarray:
+        lwc[1:] = cld_cfg['liquid_water_content']
+        cer[1:] = cld_cfg['cloud_effective_radius']
+
+    else:
+        lwc[1:] = cld_cfg['liquid_water_content'][::-1]
+        cer[1:] = cld_cfg['cloud_effective_radius'][::-1]
 
     with open(cld_cfg['cloud_file'], 'w') as f:
         f.write('# Altitude[km]    Liquid Water Content [g/m3]    Cloud Effective Radius [um]\n')

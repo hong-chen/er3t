@@ -24,8 +24,14 @@ def lrt_run(init, verbose=False):
 
     if init.input_dict_extra is not None:
         for key in init.input_dict_extra.keys():
-            content = '%-20s %s\n' % (key, init.input_dict_extra[key])
-            f.write(content)
+            if key not in init.mute_list:
+                if '_add' in key:
+                    ind = key.index('_add')
+                    key_write = key[:ind]
+                    content = '%-20s %s\n' % (key_write, init.input_dict_extra[key])
+                else:
+                    content = '%-20s %s\n' % (key, init.input_dict_extra[key])
+                f.write(content)
 
     if verbose:
         f.write('verbose')

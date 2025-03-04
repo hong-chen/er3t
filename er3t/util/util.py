@@ -824,7 +824,7 @@ def downscale(ndarray, new_shape, operation='mean'):
         ndarray: numpy array, downscaled array
     """
     operation = operation.lower()
-    if operation not in ['sum', 'mean', 'max']:
+    if operation not in ['sum', 'mean', 'max', 'median']:
         raise ValueError('Error [downscale]: Operation of \'%s\' not supported.' % operation)
     if ndarray.ndim != len(new_shape):
         raise ValueError("Error [downscale]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
@@ -832,9 +832,12 @@ def downscale(ndarray, new_shape, operation='mean'):
     compression_pairs = [(d, c//d) for d,c in zip(new_shape, ndarray.shape)]
     flattened = [l for p in compression_pairs for l in p]
     ndarray = ndarray.reshape(flattened)
-    for i in range(len(new_shape)):
-        op = getattr(ndarray, operation)
-        ndarray = op(-1*(i+1))
+    if operation == 'median':
+        ndarray = np.median(ndarray, axis=1)
+    else:
+        for i in range(len(new_shape)):
+            op = getattr(ndarray, operation)
+            ndarray = op(-1*(i+1))
     return ndarray
 
 
@@ -975,15 +978,90 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
 
     return sza, saa
 
+def g0_calc(lat):
+    """
+    Calculate the surface gravity acceleration.
 
+    according to Eq. 11 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
+    """
+    lat_rad = lat * np.pi / 180
+    return 9.806160 * (1 - 0.0026373 * np.cos(2*lat_rad) + 0.0000059 * np.cos(2*lat_rad)**2) # in m/s^2
 
-def cal_mol_ext(wv0, pz1, pz2):
+def g_alt_calc(g0, lat, z):
+    """
+    Calculate the gravity acceleration at z.
+
+    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
+    
+    Input:
+        g0: gravity acceleration at the surface (m/s^2)
+        lat: latitude (degrees)
+        z: height (m)
+    """
+    lat_rad = lat * np.pi / 180
+    g = g0*100 - (3.085462e-4 + 2.27e-7 * np.cos(2 * lat_rad)) * z \
+           + (7.254e-11 + 1.0e-13 * np.cos(2 * lat_rad)) * z**2 \
+           - (1.517e-17 + 6.0e-20 * np.cos(2 * lat_rad)) * z**3
+    return g/100
+
+def cal_mol_ext(wv0, pz1, pz2, atm0):
 
     """
     Input:
         wv0: wavelength (in microns) --- can be an array
         pz1: numpy array, Pressure of lower layer (hPa)
         pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
+        atm0: er3t atmosphere object
+    Output:
+        tauray: extinction
+    Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
+    in Python program:
+        result=bodhaine(0.5,1000,4)
+    Note: If you input an array of wavelengths, the result will also be an
+          array corresponding to the Rayleigh optical depth at these wavelengths.
+    """
+    # avogadro's number
+    A_ = 6.02214179e23
+    try:
+        lat = atm0.lat
+    except AttributeError:
+        lat = 30.0 # default latitude
+    g0 = g0_calc(lat) # m/s^2
+    # g0 = 9.81
+    z = atm0.lay['altitude']['data']
+    z_sfc = atm0.lay['altitude']['data'][0]
+    g = g_alt_calc(g0, lat, z*1000) * 100 # convert to cm/s^2
+
+    g0 = g0 * 100 # convert to cm/s^2
+    ma = 28.9595 + (15.0556 * atm0.lay['co2']['data']/atm0.lay['air']['data'])
+
+    p_lay = atm0.lay['pressure']['data'] * 1000 # convert to dyne/cm^2
+    p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
+    dp_lev = (p_lev[:-1]-p_lev[1:]) # convert to dyne/cm^2
+    num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
+    den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
+    tauray = 0.00210966*(num/den)*(pz1-pz2)/1013.25
+    
+    const = dp_lev * A_ / (g * ma) * 1e-28
+    const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
+    # print(const)
+    print("sum const", np.sum(const))
+    print("const_sfc", const_sfc)
+    print("45N const:", 1013000 * A_ / ((g_alt_calc((g0_calc(45)), 45, 0)) * 100 * 28.9595) * 1e-28)
+    # sys.exit()
+    # tauray = const*(num/den)#
+    tauray = const_sfc*(num/den)*(pz1-pz2)/1013.25
+    return tauray
+
+
+def cal_mol_ext_0(wv0, pz1, pz2, atm0):
+
+    """
+    Input:
+        wv0: wavelength (in microns) --- can be an array
+        pz1: numpy array, Pressure of lower layer (hPa)
+        pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
+        atm0: er3t atmosphere object
     Output:
         tauray: extinction
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
@@ -996,8 +1074,8 @@ def cal_mol_ext(wv0, pz1, pz2):
     num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
     den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
     tauray = 0.00210966*(num/den)*(pz1-pz2)/1013.25
+    
     return tauray
-
 
 
 def cal_ext(cot, cer, dz=1.0, Qe=2.0):
