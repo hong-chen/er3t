@@ -1720,6 +1720,7 @@ class abs_oco_h5:
         self.wvl       = wavelength
         self.wvl_info  = '%.4f nm (applied OCO-2 slit)' % wavelength
 
+
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
             self.load(fname)
@@ -1752,6 +1753,7 @@ class abs_oco_h5:
                 self.coef  = obj.coef
                 self.Ng    = obj.Ng
                 self.wvl_info   = obj.wvl_info
+
             else:
                 sys.exit('Error   [abs_oco_h5]: \'%s\' is not the correct pickle file to load.' % fname)
 

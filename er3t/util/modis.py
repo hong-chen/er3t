@@ -1096,7 +1096,6 @@ class modis_mvcm_cldmsk_l2:
     """
     ID = 'MODIS MVCM Continuity Cloud Mask 5-Min Swath 1 km'
 
-
     def __init__(self, \
                  fname,  \
                  mode = 'auto', \
