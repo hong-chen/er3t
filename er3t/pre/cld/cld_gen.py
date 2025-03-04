@@ -915,7 +915,7 @@ class cld_gen_cop:
 
         # extinction 3d
         #╭──────────────────────────────────────────────────────────────╮#
-        ext_3d      = np.zeros((Nx, Ny, Nz), dtype=np.float64)
+        ext_3d      = np.zeros((Nx, Ny, Nz), dtype=er3t.common.f_dtype)
 
         alt = self.atm.lay['altitude']['data']
 
@@ -988,10 +988,10 @@ class cld_gen_cop:
             dz = self.lay['thickness']['data'][0]
             z_indice = np.arange(Nz)
 
-            cer_2d = np.zeros((Nx, Ny), dtype=np.float64); cer_2d[...] = fill_clear
+            cer_2d = np.zeros((Nx, Ny), dtype=er3t.common.f_dtype); cer_2d[...] = fill_clear
 
-            cth_2d = np.zeros((Nx, Ny), dtype=np.float64); cth_2d[...] = fill_clear
-            cbh_2d = np.zeros((Nx, Ny), dtype=np.float64); cbh_2d[...] = fill_clear
+            cth_2d = np.zeros((Nx, Ny), dtype=er3t.common.f_dtype); cth_2d[...] = fill_clear
+            cbh_2d = np.zeros((Nx, Ny), dtype=er3t.common.f_dtype); cbh_2d[...] = fill_clear
 
             for i in range(Nx):
                 for j in range(Ny):
