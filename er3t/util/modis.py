@@ -1801,7 +1801,7 @@ class modis_07:
             cloud_mask_flag = data[:, 7]
             return cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat
 
-        
+
     def quality_assurance(self, dbyte, byte=0):
         """
         Extract cloud mask QA data to determine confidence
@@ -1828,16 +1828,16 @@ class modis_07:
         except ImportError:
             msg = 'Warning [modis_07]: To use \'modis_07\', \'pyhdf\' needs to be installed.'
             raise ImportError(msg)
-        
+
         f     = SD(fname, SDC.READ)
-        
+
         lon0       = f.select('Longitude')
         lat0       = f.select('Latitude')
         cld_msk0   = f.select('Cloud_Mask')
         qa0        = f.select('Quality_Assurance')
         lon = lon0[:]
         lat = lat0[:]
-        
+
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
         #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1862,21 +1862,21 @@ class modis_07:
         lon       = lon[logic]
         lat       = lat[logic]
         #╰────────────────────────────────────────────────────────────────────────────╯#
- 
+
         p_level = np.array([5, 10, 20, 30, 50, 70, 100, 150, 200, 250, 300, 400, 500, 620, 700, 780, 850, 920, 950, 1000])
-        
+
         # Get cloud mask and flag fields
         #╭──────────────────────────────────────────────────────────────╮#
         cm0_data = get_data_h4(cld_msk0, replace_fill_value=None)
         qa0_data = get_data_h4(qa0, replace_fill_value=None)
         cm = cm0_data.copy()
         qa = qa0_data.copy()
-        
+
         cm = cm[:, :] # read only the first of 6 bytes; rest will be supported in the future if needed
         cm = np.array(cm[logic], dtype='uint8')
         cm = cm.reshape((cm.size, 1))
         cloud_mask_flag, day_night_flag, sunglint_flag, snow_ice_flag, land_water_cat, fov_qa_cat = self.extract_data(cm)
-        
+
         ### fov_qa_cat: 0=cloudy, 1=uncertain, 2=probably clear, 3=confident clear
 
         qa = qa[:, :,] # read only the first byte for confidence (indexed differently from cloud mask SDS)
@@ -1884,17 +1884,17 @@ class modis_07:
         qa = qa.reshape((qa.size, 1))
         use_qa, confidence_qa = self.quality_assurance(qa, byte=0)
         #╰──────────────────────────────────────────────────────────────╯#
-        
+
         T_level_retrieved = np.array(get_data_h4(f.select('Retrieved_Temperature_Profile'))[:, logic])
         h_level_retrieved = np.array(get_data_h4(f.select('Retrieved_Height_Profile'))[:, logic])
         dewT_level_retrieved = np.array(get_data_h4(f.select('Retrieved_Moisture_Profile'))[:, logic])
         wvmx_level_retrieved = np.array(get_data_h4(f.select('Retrieved_WV_Mixing_Ratio_Profile'))[:, logic])
         h_sfc = np.array(get_data_h4(f.select('Surface_Elevation'))[logic])
         p_sfc = np.array(get_data_h4(f.select('Surface_Pressure'))[logic])
-        
+
         for data in [T_level_retrieved, h_level_retrieved, dewT_level_retrieved, wvmx_level_retrieved, h_sfc, p_sfc]:
             data[data < 0] = np.nan
-        
+
         sza = np.array(get_data_h4(f.select('Solar_Zenith'))[logic])
         saa = np.array(get_data_h4(f.select('Solar_Azimuth'))[logic])
         vza = np.array(get_data_h4(f.select('Sensor_Zenith'))[logic])
