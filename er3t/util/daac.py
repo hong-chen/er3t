@@ -5,7 +5,9 @@ import numpy as np
 import warnings
 
 from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime
+import er3t.common
 from er3t.common import fdir_data_tmp
+
 
 __all__ = [
         'format_satname', \
@@ -24,7 +26,6 @@ __all__ = [
         'download_oco2_https', \
         'download_worldview_image', \
         ]
-
 
 
 def format_satname(satellite, instrument):
@@ -226,8 +227,6 @@ def delete_file(
 
     if os.path.exists(fname_local2):
         os.remove(fname_local2)
-
-
 
 def get_local_file(
         fname_file,
@@ -550,7 +549,6 @@ def read_geometa(content):
 
 
 
-
 def cal_proj_xy_geometa(line_data, closed=True):
 
     """
@@ -713,8 +711,8 @@ def cal_lon_lat_utc_geometa(
     N_a = N_along
     N_c = N_cross
 
-    i_a = np.arange(N_a, dtype=np.float32)
-    i_c = np.arange(N_c, dtype=np.float32)
+    i_a = np.arange(N_a, dtype=er3t.common.f_dtype)
+    i_c = np.arange(N_c, dtype=er3t.common.f_dtype)
     ii_a, ii_c = np.meshgrid(i_a, i_c, indexing='ij')
 
     res_a = dist_a/N_a
@@ -758,7 +756,7 @@ def cal_lon_lat_utc_geometa(
     dtime0 = datetime.datetime.strptime(dtime0_s, 'A%Y%j.%H%M')
     jday0 = dtime_to_jday(dtime0)
 
-    jday_out = np.zeros(lon_out.shape, dtype=np.float32)
+    jday_out = np.zeros(lon_out.shape, dtype=er3t.common.f_dtype)
     delta_t0 = delta_t / N_scan
 
     delta_t0_c = delta_t0/3.0/N_c*i_c  # 120 degree coverage thus </3.0>
@@ -1096,7 +1094,7 @@ def get_satfile_tag(
     Ndata = len(data)
     filename_tags = []
 
-    percent_all   = np.array([], dtype=np.float32)
+    percent_all   = np.array([], dtype=er3t.common.f_dtype)
     i_all         = []
     for i in range(Ndata):
 
@@ -1618,11 +1616,11 @@ def download_worldview_image(
             date0 = jday_to_dtime(jday0)
             date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.4f' % extent0 for extent0 in extent]))
 
         except Exception as error:
             print(error)
-            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
+            fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s, ','.join(['%.4f' % extent0 for extent0 in extent]))
         #╰──────────────────────────────────────────────────────────────╯#
 
     elif satellite in ['GOES-West', 'GOES-East']:
@@ -1644,7 +1642,7 @@ def download_worldview_image(
         date0 = date + datetime.timedelta(seconds=sec_offset)
         date_s0 = date0.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.2f' % extent0 for extent0 in extent]))
+        fname  = '%s/%s-%s_%s_%s_(%s).png' % (fdir_out, instrument, satellite, layer_name0.split('_')[-1], date_s0, ','.join(['%.4f' % extent0 for extent0 in extent]))
         #╰──────────────────────────────────────────────────────────────╯#
 
     fname  = os.path.abspath(fname)

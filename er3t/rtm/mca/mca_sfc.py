@@ -6,6 +6,7 @@ import warnings
 import h5py
 import numpy as np
 
+import er3t.common
 
 
 __all__ = ['mca_sfc_2d']
@@ -87,13 +88,13 @@ class mca_sfc_2d:
 
         if ('lambertian' in self.sfc.data['sfc']['name'].lower()) and (np.squeeze(self.sfc.data['sfc']['data']).ndim == 2):
 
-            sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=np.float64)
+            sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=er3t.common.f_dtype)
             self.nml['Sfc_tmps2d'] = dict(data=sfc_tmps, name='Temperature anomalies', units='K')    # temperature anomaly
 
             sfc_jsfc = np.ones((self.sfc.Nx, self.sfc.Ny), dtype=np.int16) # Lambertian
             self.nml['Sfc_jsfc2d'] = dict(data=sfc_jsfc, name='Surface distribution type', units='N/A')
 
-            sfc_psfc = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=np.float64)
+            sfc_psfc = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=er3t.common.f_dtype)
             sfc_alb  = np.squeeze(self.sfc.data['sfc']['data'])
             sfc_alb[sfc_alb<0.0] = 0.0
             sfc_alb[sfc_alb>1.0] = 1.0
@@ -102,14 +103,14 @@ class mca_sfc_2d:
 
         elif ('brdf-lsrt' in self.sfc.data['sfc']['name'].lower()) or (self.sfc.data['sfc']['data'].shape[-1] == 3):
 
-            sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=np.float64)
+            sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=er3t.common.f_dtype)
             self.nml['Sfc_tmps2d'] = dict(data=sfc_tmps, name='Temperature anomalies', units='K')    # temperature anomaly
 
             sfc_jsfc = np.ones((self.sfc.Nx, self.sfc.Ny), dtype=np.int16)
             sfc_jsfc[...] = 4 # LSRT model
             self.nml['Sfc_jsfc2d'] = dict(data=sfc_jsfc, name='Surface distribution type', units='N/A')
 
-            sfc_psfc          = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=np.float64)
+            sfc_psfc          = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=er3t.common.f_dtype)
             sfc_psfc[:, :, 0] = self.sfc.data['sfc']['data'][:, :, 0]
             sfc_psfc[:, :, 1] = self.sfc.data['sfc']['data'][:, :, 1]
             sfc_psfc[:, :, 2] = self.sfc.data['sfc']['data'][:, :, 2]
@@ -117,7 +118,7 @@ class mca_sfc_2d:
 
         elif ('cox-munk' in self.sfc.data['sfc']['name'].lower()) or (self.sfc.data['sfc']['data'].shape[-1] == 5):
 
-            sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=np.float64)
+            sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=er3t.common.f_dtype)
             self.nml['Sfc_tmps2d'] = dict(data=sfc_tmps, name='Temperature anomalies', units='K')    # temperature anomaly
 
             sfc_jsfc = np.ones((self.sfc.Nx, self.sfc.Ny), dtype=np.int16)

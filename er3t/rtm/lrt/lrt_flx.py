@@ -136,6 +136,7 @@ class lrt_init_mono_flx:
                             ('wavelength'        , '%.1f %.1f' % (wavelength_s, wavelength_e)),
                             ('spline'            , '%.3f %.3f %.3f' % (wavelength, wavelength, spectral_resolution)),
                             ('slit_function_file', slit_function_file),
+                            ('data_files_path'   , lrt_cfg['data_files_path']),
                             ('mol_abs_param'     , lrt_cfg['mol_abs_param']),
                             ('zout'              , output_altitude)
                             ])
@@ -439,10 +440,10 @@ class lrt_read_uvspec_flx:
         Nz = len(inits)
 
         self.dims      = {'X':'Wavelength', 'Y':'Altitude', 'Z':'Files'}
-        f_down_direct  = np.zeros((Nx, Ny, Nz), dtype=np.float64)
-        f_down_diffuse = np.zeros((Nx, Ny, Nz), dtype=np.float64)
-        f_down         = np.zeros((Nx, Ny, Nz), dtype=np.float64)
-        f_up           = np.zeros((Nx, Ny, Nz), dtype=np.float64)
+        f_down_direct  = np.zeros((Nx, Ny, Nz), dtype=np.float32)
+        f_down_diffuse = np.zeros((Nx, Ny, Nz), dtype=np.float32)
+        f_down         = np.zeros((Nx, Ny, Nz), dtype=np.float32)
+        f_up           = np.zeros((Nx, Ny, Nz), dtype=np.float32)
 
 
         for i, init in enumerate(inits):

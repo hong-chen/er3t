@@ -12,6 +12,7 @@ This code has been tested under:
 import os
 import sys
 import h5py
+import time
 import numpy as np
 import datetime
 import time
@@ -31,12 +32,13 @@ import er3t
 
 
 # global variables
-#/-----------------------------------------------------------------------------\
+#╭────────────────────────────────────────────────────────────────────────────╮#
 name_tag = '00_er3t_mca'
 fdir0    = er3t.common.fdir_examples
 photons = 1e8
 Ncpu    = 12
-#\-----------------------------------------------------------------------------/
+rcParams['font.size'] = 14
+#╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -59,7 +61,7 @@ def example_01_flux_clear_sky(
         os.makedirs(fdir)
 
     # define an atmosphere object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 1.0, 2.0, ...., 20.0
     levels    = np.linspace(0.0, 20.0, 21)
 
@@ -87,11 +89,11 @@ def example_01_flux_clear_sky(
     #     atm0.lay['o2']['data']
     #     atm0.lay['co2']['data']
     #     atm0.lay['ch4']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an absorption object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
     fname_abs = '%s/abs.pk' % fdir
 
@@ -104,11 +106,11 @@ def example_01_flux_clear_sky(
     #     abs0.coef['slit_func']['data']
     #     abs0.coef['solar']['data']
     #     abs0.coef['weight']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # homogeneous 1d mcarats "atmosphere"
     atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     # data can be accessed at
@@ -126,11 +128,11 @@ def example_01_flux_clear_sky(
     # make them into python list, can contain more than one 1d or 3d mcarats "atmosphere"
     atm_1ds   = [atm1d0]
     atm_3ds   = []
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # run mcarats
     mca0 = er3t.rtm.mca.mcarats_ng(
             atm_1ds=atm_1ds,
@@ -155,11 +157,11 @@ def example_01_flux_clear_sky(
     #     mca0.nml         (Nrun, Ng), e.g., mca0.nml[0][0], namelist for the first g of the first run
     #     mca0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run
     #     mca0.fnames_out  (Nrun, Ng), e.g., mca0.fnames_out[0][0], output file name for the first g of the first run
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats output object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # read mcarats output files (binary) and save the data into h5 file
     # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
     # dimension of number of runs
@@ -176,11 +178,11 @@ def example_01_flux_clear_sky(
     #     out0.data['f_down']['data']
     #     out0.data['f_down_direct']['data']
     #     out0.data['f_down_diffuse']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # plot
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
@@ -190,7 +192,7 @@ def example_01_flux_clear_sky(
         ax1.plot(out0.data['f_down']['data']        , atm0.lev['altitude']['data'], color='blue')
         ax1.plot(out0.data['f_down_direct']['data'] , atm0.lev['altitude']['data'], color='green')
         ax1.plot(out0.data['f_down_diffuse']['data'], atm0.lev['altitude']['data'], color='pink')
-        ax1.set_xlabel('Flux [$\mathrm{W m^{-2} nm^{-1}}$]')
+        ax1.set_xlabel('Flux [$\\mathrm{W m^{-2} nm^{-1}}$]')
         ax1.set_ylabel('Altitude [km]')
         ax1.set_ylim((0.0, 20.0))
         ax1.set_xlim(left=0.0)
@@ -206,17 +208,12 @@ def example_01_flux_clear_sky(
         ax1.set_title('Clear Sky (%s Mode), Flux Profile' % solver)
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # References
-    #/-----------------------------------------------------------------------------\
-    print('\nReferences:')
-    print('-'*80)
-    for reference in er3t.common.references:
-        print(reference)
-    print('-'*80)
-    print()
-    #\-----------------------------------------------------------------------------/
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    er3t.util.print_reference()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -240,7 +237,7 @@ def example_02_flux_les_cloud_3d(
         os.makedirs(fdir)
 
     # define an atmosphere object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 1.0, 2.0, ...., 20.0
     levels    = np.linspace(0.0, 20.0, 21)
 
@@ -268,11 +265,11 @@ def example_02_flux_les_cloud_3d(
     #     atm0.lay['o2']['data']
     #     atm0.lay['co2']['data']
     #     atm0.lay['ch4']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an absorption object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
     fname_abs = '%s/abs.pk' % fdir
 
@@ -285,11 +282,11 @@ def example_02_flux_les_cloud_3d(
     #     abs0.coef['slit_func']['data']
     #     abs0.coef['solar']['data']
     #     abs0.coef['weight']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an cloud object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the netcdf file
     fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % (er3t.common.fdir_examples)
 
@@ -311,11 +308,11 @@ def example_02_flux_les_cloud_3d(
     #     cld0.lay['temperature']['data']
     #
     #     cld0.lev['altitude']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # inhomogeneous 3d mcarats "atmosphere"
     atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % fdir)
     # data can be accessed at
@@ -348,11 +345,11 @@ def example_02_flux_les_cloud_3d(
     # make them into python list, can contain more than one 1d or 3d mcarats "atmosphere"
     atm_1ds   = [atm1d0]
     atm_3ds   = [atm3d0]
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # run mcarats
     mca0 = er3t.rtm.mca.mcarats_ng(
             date=datetime.datetime(2017, 8, 13),
@@ -378,11 +375,11 @@ def example_02_flux_les_cloud_3d(
     #     mca0.nml         (Nrun, Ng), e.g., mca0.nml[0][0], namelist for the first g of the first run
     #     mca0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run
     #     mca0.fnames_out  (Nrun, Ng), e.g., mca0.fnames_out[0][0], output file name for the first g of the first run
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats output object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # read mcarats output files (binary) and save the data into h5 file
     # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
     # dimension of number of runs
@@ -399,13 +396,13 @@ def example_02_flux_les_cloud_3d(
     #     out0.data['f_down']['data']
     #     out0.data['f_down_direct']['data']
     #     out0.data['f_down_diffuse']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # plot
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
-        z_index = 4
+        z_index = 0
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(12, 6))
@@ -414,27 +411,22 @@ def example_02_flux_les_cloud_3d(
         cs = ax1.imshow(np.transpose(out0.data['f_up']['data'][:, :, z_index]), cmap='jet', vmin=0.0, vmax=1.6, origin='lower')
         ax1.set_xlabel('X Index')
         ax1.set_ylabel('Y Index')
-        ax1.set_title('3D Cloud (%s Mode), $\mathrm{F_{up}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
+        ax1.set_title('3D Cloud (%s Mode), $\\mathrm{F_{up}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
 
         ax2 = fig.add_subplot(122)
         cs = ax2.imshow(np.transpose(out0.data['f_down']['data'][:, :, z_index]), cmap='jet', vmin=0.0, vmax=1.6, origin='lower')
         ax2.set_xlabel('X Index')
         ax2.set_ylabel('Y Index')
-        ax2.set_title('3D Cloud (%s Mode), $\mathrm{F_{down}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
+        ax2.set_title('3D Cloud (%s Mode), $\\mathrm{F_{down}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
 
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # References
-    #/-----------------------------------------------------------------------------\
-    print('\nReferences:')
-    print('-'*80)
-    for reference in er3t.common.references:
-        print(reference)
-    print('-'*80)
-    print()
-    #\-----------------------------------------------------------------------------/
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    er3t.util.print_reference()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -458,7 +450,7 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
         os.makedirs(fdir)
 
     # define an atmosphere object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 1.0, 2.0, ...., 20.0
     levels    = np.linspace(0.0, 20.0, 21)
 
@@ -486,11 +478,11 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
     #     atm0.lay['o2']['data']
     #     atm0.lay['co2']['data']
     #     atm0.lay['ch4']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an absorption object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
     fname_abs = '%s/abs.pk' % fdir
 
@@ -503,11 +495,11 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
     #     abs0.coef['slit_func']['data']
     #     abs0.coef['solar']['data']
     #     abs0.coef['weight']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an cloud object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the netcdf file
     fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % (er3t.common.fdir_examples)
 
@@ -529,11 +521,11 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
     #     cld0.lay['temperature']['data']
     #
     #     cld0.lev['altitude']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # inhomogeneous 3d mcarats "atmosphere"
     atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, fname='%s/mca_atm_3d.bin' % fdir)
     # data can be accessed at
@@ -576,11 +568,11 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
     # make them into python list, can contain more than one 1d or 3d mcarats "atmosphere"
     atm_1ds   = [atm1d0]
     atm_3ds   = [atm3d0]
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # run mcarats
     mca0 = er3t.rtm.mca.mcarats_ng(
             date=datetime.datetime(2017, 8, 13),
@@ -605,11 +597,11 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
     #     mca0.nml         (Nrun, Ng), e.g., mca0.nml[0][0], namelist for the first g of the first run
     #     mca0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run
     #     mca0.fnames_out  (Nrun, Ng), e.g., mca0.fnames_out[0][0], output file name for the first g of the first run
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats output object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # read mcarats output files (binary) and save the data into h5 file
     # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
     # dimension of number of runs
@@ -626,11 +618,11 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
     #     out0.data['f_down']['data']
     #     out0.data['f_down_direct']['data']
     #     out0.data['f_down_diffuse']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # plot
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
         z_index = 0
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
@@ -641,27 +633,22 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
         cs = ax1.imshow(np.transpose(out0.data['f_up']['data'][:, :, z_index]), cmap='jet', vmin=0.0, vmax=1.6, origin='lower')
         ax1.set_xlabel('X Index')
         ax1.set_ylabel('Y Index')
-        ax1.set_title('3D Cloud + 1D Aerosol (%s Mode), $\mathrm{F_{up}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
+        ax1.set_title('3D Cloud + 1D Aerosol (%s Mode), $\\mathrm{F_{up}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
 
         ax2 = fig.add_subplot(122)
         cs = ax2.imshow(np.transpose(out0.data['f_down']['data'][:, :, z_index]), cmap='jet', vmin=0.0, vmax=1.6, origin='lower')
         ax2.set_xlabel('X Index')
         ax2.set_ylabel('Y Index')
-        ax2.set_title('3D Cloud + 1D Aerosol (%s Mode), $\mathrm{F_{down}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
+        ax2.set_title('3D Cloud + 1D Aerosol (%s Mode), $\\mathrm{F_{down}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
 
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # References
-    #/-----------------------------------------------------------------------------\
-    print('\nReferences:')
-    print('-'*80)
-    for reference in er3t.common.references:
-        print(reference)
-    print('-'*80)
-    print()
-    #\-----------------------------------------------------------------------------/
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    er3t.util.print_reference()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -685,7 +672,7 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
         os.makedirs(fdir)
 
     # define an atmosphere object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 1.0, 2.0, ...., 20.0
     levels    = np.linspace(0.0, 20.0, 21)
 
@@ -713,11 +700,11 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     #     atm0.lay['o2']['data']
     #     atm0.lay['co2']['data']
     #     atm0.lay['ch4']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an absorption object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
     fname_abs = '%s/abs.pk' % fdir
 
@@ -730,11 +717,11 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     #     abs0.coef['slit_func']['data']
     #     abs0.coef['solar']['data']
     #     abs0.coef['weight']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an cloud object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the netcdf file
     fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % (er3t.common.fdir_examples)
 
@@ -756,23 +743,23 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     #     cld0.lay['temperature']['data']
     #
     #     cld0.lev['altitude']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mca_sca object
-    #/-----------------------------------------------------------------------------\
+    #╭──────────────────────────────────────────────────────────────╮#
     pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    #\-----------------------------------------------------------------------------/
+    #╰──────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # inhomogeneous 3d mcarats "atmosphere"
     atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
 
     # 3d aerosol near surface (mixed with clouds)
-    #/-----------------------------------------------------------------------------\
+    #╭──────────────────────────────────────────────────────────────╮#
     ext3d = np.zeros_like(atm3d0.nml['Atm_extp3d']['data'][:, :, :, 0])
     ext3d[:, :, 0] = 0.00012
     ext3d[:, :, 1] = 0.00008
@@ -783,7 +770,7 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     apf3d = np.zeros_like(atm3d0.nml['Atm_extp3d']['data'][:, :, :, 0])
     apf3d[...] = 0.6
     atm3d0.add_mca_3d_atm(ext3d=ext3d, omg3d=omg3d, apf3d=apf3d)
-    #\-----------------------------------------------------------------------------/
+    #╰──────────────────────────────────────────────────────────────╯#
 
     atm3d0.gen_mca_3d_atm_file(fname='%s/mca_atm_3d.bin' % fdir)
     # data can be accessed at
@@ -816,11 +803,11 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     # make them into python list, can contain more than one 1d or 3d mcarats "atmosphere"
     atm_1ds   = [atm1d0]
     atm_3ds   = [atm3d0]
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # run mcarats
     mca0 = er3t.rtm.mca.mcarats_ng(
             date=datetime.datetime(2017, 8, 13),
@@ -848,11 +835,11 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     #     mca0.nml         (Nrun, Ng), e.g., mca0.nml[0][0], namelist for the first g of the first run
     #     mca0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run
     #     mca0.fnames_out  (Nrun, Ng), e.g., mca0.fnames_out[0][0], output file name for the first g of the first run
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats output object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # read mcarats output files (binary) and save the data into h5 file
     # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
     # dimension of number of runs
@@ -869,11 +856,11 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     #     out0.data['f_down']['data']
     #     out0.data['f_down_direct']['data']
     #     out0.data['f_down_diffuse']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # plot
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
         z_index = 0
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
@@ -884,27 +871,22 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
         cs = ax1.imshow(np.transpose(out0.data['f_up']['data'][:, :, z_index]), cmap='jet', vmin=0.0, vmax=1.6, origin='lower')
         ax1.set_xlabel('X Index')
         ax1.set_ylabel('Y Index')
-        ax1.set_title('3D Cloud + 3D Aerosol (%s Mode), $\mathrm{F_{up}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
+        ax1.set_title('3D Cloud + 3D Aerosol (%s Mode), $\\mathrm{F_{up}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
 
         ax2 = fig.add_subplot(122)
         cs = ax2.imshow(np.transpose(out0.data['f_down']['data'][:, :, z_index]), cmap='jet', vmin=0.0, vmax=1.6, origin='lower')
         ax2.set_xlabel('X Index')
         ax2.set_ylabel('Y Index')
-        ax2.set_title('3D Cloud + 3D Aerosol (%s Mode), $\mathrm{F_{down}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
+        ax2.set_title('3D Cloud + 3D Aerosol (%s Mode), $\\mathrm{F_{down}}$ at %d km' % (solver, atm0.lev['altitude']['data'][z_index]))
 
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # References
-    #/-----------------------------------------------------------------------------\
-    print('\nReferences:')
-    print('-'*80)
-    for reference in er3t.common.references:
-        print(reference)
-    print('-'*80)
-    print()
-    #\-----------------------------------------------------------------------------/
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    er3t.util.print_reference()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -931,7 +913,7 @@ def example_05_rad_les_cloud_3d(
         os.makedirs(fdir)
 
     # define an atmosphere object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 1.0, 2.0, ...., 20.0
     levels    = np.linspace(0.0, 20.0, 21)
 
@@ -959,11 +941,11 @@ def example_05_rad_les_cloud_3d(
     #     atm0.lay['o2']['data']
     #     atm0.lay['co2']['data']
     #     atm0.lay['ch4']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an absorption object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
     fname_abs = '%s/abs.pk' % fdir
 
@@ -976,11 +958,11 @@ def example_05_rad_les_cloud_3d(
     #     abs0.coef['slit_func']['data']
     #     abs0.coef['solar']['data']
     #     abs0.coef['weight']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an cloud object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the netcdf file
     fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % (er3t.common.fdir_examples)
 
@@ -1002,18 +984,18 @@ def example_05_rad_les_cloud_3d(
     #     cld0.lay['temperature']['data']
     #
     #     cld0.lev['altitude']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mca_sca object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # inhomogeneous 3d mcarats "atmosphere"
     atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
     # data can be accessed at
@@ -1047,11 +1029,11 @@ def example_05_rad_les_cloud_3d(
     # make them into python list, can contain more than one 1d or 3d mcarats "atmosphere"
     atm_1ds   = [atm1d0]
     atm_3ds   = [atm3d0]
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # run mcarats
     mca0 = er3t.rtm.mca.mcarats_ng(
             date=datetime.datetime(2017, 8, 13),
@@ -1082,11 +1064,11 @@ def example_05_rad_les_cloud_3d(
     #     mca0.nml         (Nrun, Ng), e.g., mca0.nml[0][0], namelist for the first g of the first run
     #     mca0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run
     #     mca0.fnames_out  (Nrun, Ng), e.g., mca0.fnames_out[0][0], output file name for the first g of the first run
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats output object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # read mcarats output files (binary) and save the data into h5 file
     # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
     # dimension of number of runs
@@ -1100,11 +1082,11 @@ def example_05_rad_les_cloud_3d(
 
     # data can be accessed at
     #     out0.data['rad']['data']
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # plot
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
@@ -1116,17 +1098,12 @@ def example_05_rad_les_cloud_3d(
         ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # References
-    #/-----------------------------------------------------------------------------\
-    print('\nReferences:')
-    print('-'*80)
-    for reference in er3t.common.references:
-        print(reference)
-    print('-'*80)
-    print()
-    #\-----------------------------------------------------------------------------/
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    er3t.util.print_reference()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -1151,18 +1128,18 @@ def example_06_rad_cld_gen_hem(
         os.makedirs(fdir)
 
     # define an atmosphere object
-    #/-----------------------------------------------------------------------------\
-    levels    = np.linspace(0.0, 20.0, 201)
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    levels    = np.linspace(0.0, 20.0, 101)
     fname_atm = '%s/atm.pk' % fdir
     atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an absorption object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     fname_abs = '%s/abs.pk' % fdir
     abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define an cloud object (use cloud generator)
@@ -1175,16 +1152,20 @@ def example_06_rad_cld_gen_hem(
     # <min_dist>      : minimum distance between clouds (in km)
     # <overlap>       : whether clouds can overlap each other
     # <overwrite>     : whether to overwrite
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     fname_cld = '%s/cld.pk' % fdir
     cld0 = er3t.pre.cld.cld_gen_hem(
             fname=fname_cld,
+            Nx=200,
+            Ny=200,
+            dx=0.2,
+            dy=0.2,
             radii=[1.0, 2.0, 4.0],
             weights=[0.6, 0.3, 0.1],
-            altitude=np.arange(2.0, 5.01, 0.1),
+            altitude=np.arange(2.0, 5.01, 0.2),
             cloud_frac_tgt=0.2,
             w2h_ratio=2.0,
-            min_dist=1.5,
+            min_dist=0.2,
             overlap=False,
             overwrite=overwrite
             )
@@ -1223,27 +1204,27 @@ def example_06_rad_cld_gen_hem(
     #         ['altitude']
     #         ['cot_2d']        (x, y)
     #         ['cth_2d']        (x, y)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # define mca_sca object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
     atm3d0  = er3t.rtm.mca.mca_atm_3d(fname='%s/mca_atm_3d.bin' % fdir, cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, overwrite=overwrite)
 
     atm_1ds   = [atm1d0]
     atm_3ds   = [atm3d0]
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     # run mcarats
     mca0 = er3t.rtm.mca.mcarats_ng(
             date=datetime.datetime(2017, 8, 13),
@@ -1267,18 +1248,18 @@ def example_06_rad_cld_gen_hem(
             mp_mode='py',
             overwrite=overwrite
             )
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define mcarats output object
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     fname_h5 = '%s/mca-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
     out0 = er3t.rtm.mca.mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # plot
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
@@ -1308,34 +1289,29 @@ def example_06_rad_cld_gen_hem(
         plt.subplots_adjust(wspace=0.4)
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # References
-    #/-----------------------------------------------------------------------------\
-    print('\nReferences:')
-    print('-'*80)
-    for reference in er3t.common.references:
-        print(reference)
-    print('-'*80)
-    print()
-    #\-----------------------------------------------------------------------------/
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    er3t.util.print_reference()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
 if __name__ == '__main__':
 
     # irradiance simulation
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     example_01_flux_clear_sky()
     example_02_flux_les_cloud_3d()
     example_03_flux_les_cloud_3d_aerosol_1d()
     example_04_flux_les_cloud_3d_aerosol_3d()
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # radiance simulation
-    #/-----------------------------------------------------------------------------\
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     example_05_rad_les_cloud_3d()
     example_06_rad_cld_gen_hem()
-    #\-----------------------------------------------------------------------------/
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass

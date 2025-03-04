@@ -54,6 +54,12 @@ def read_mie(fname):
 
     # phase function
     pha  = f.variables['phase'][...].data
+    
+    # Asymmetry factor
+    if 'gg' in f.variables.keys():
+        gg  = f.variables['gg'][...].data
+    else:
+        gg  = None
 
     f.close()
 
@@ -61,7 +67,7 @@ def read_mie(fname):
     ang  = ang[:, :, 0, :]   # pick the first of 4 stokes
     pha  = pha[:, :, 0, :]   # pick the first of 4 stokes
 
-    return wvl, ref, ssa, ang, pha
+    return wvl, ref, ssa, ang, pha, gg
 
 class pha_mie_wc:
 
@@ -107,12 +113,14 @@ class pha_mie_wc:
                  )),
                  fdir_pha_mie = '%s/pha/mie' % er3t.common.fdir_data_tmp,
                  interpolate=False,
+                 angles_fine=False,
                  overwrite=True,
                  verbose=False):
 
         er3t.util.add_reference(self.reference)
 
         self.interpolate = interpolate
+        self.angles_fine = angles_fine
         self.overwrite   = overwrite
         self.verbose     = verbose
 
@@ -150,7 +158,7 @@ class pha_mie_wc:
             ):
 
         Na = angles.size
-        wvl, ref, ssa, ang_all, pha_all = read_mie(self.fname_coef)
+        wvl, ref, ssa, ang_all, pha_all, asy_all = read_mie(self.fname_coef)
 
         Nwvl, Nreff, Nang = pha_all.shape
 
@@ -159,12 +167,21 @@ class pha_mie_wc:
         else:
             msg = 'Error [pha_mie_wc]: Interpolation has not been implemented.'
             raise ValueError(msg)
+        
+        if self.angles_fine:
+            # use the fine angles in the pre-calculated table
+            ang_iwvl = ang_all[iwvl, :, :]
+            angles = np.array(sorted(set(ang_iwvl[ang_iwvl>=0])))
+            Na = angles.size
 
         pha  = np.zeros((Na, Nreff), dtype=np.float64)
-        asy_ = np.zeros(Nreff, dtype=np.float64)
-        asy  = np.zeros(Nreff, dtype=np.float64)
-        mus  = np.cos(np.deg2rad(angles))
+        if asy_all is None:
+            asy_ = np.zeros(Nreff, dtype=np.float64)
+            asy  = np.zeros(Nreff, dtype=np.float64)
+            mus  = np.cos(np.deg2rad(angles))
 
+
+        
         for ireff in range(Nreff):
 
             ang0_ = ang_all[iwvl, ireff, :]
@@ -176,9 +193,15 @@ class pha_mie_wc:
             f_pha0 = interpolate.interp1d(ang0, pha0, kind='linear')
 
             pha[:, ireff] = f_pha0(angles)
-
-            asy[ireff]  = np.trapz(pha0*mu0, x=mu0)/2.0
-            asy_[ireff] = np.trapz(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
+            
+            if asy_all is None:
+                asy[ireff]  = np.trapz(pha0*mu0, x=mu0)/2.0
+                asy_[ireff] = np.trapz(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
+            
+        if asy_all is not None:
+            # use the pre-calculated asymmetry parameter from the file
+            asy = asy_all[iwvl, :]
+            asy_ = asy_all[iwvl, :]
 
         data = {
                 'id'   : {'data':'Mie'       , 'name':'Mie'                , 'unit':'N/A'},

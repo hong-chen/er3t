@@ -217,7 +217,12 @@ class mca_out_ng:
 
         g = f.create_group(mode)
         for key in self.data.keys():
-            g[key] = self.data[key]['data']
+
+            if isinstance(self.data[key]['data'], np.ndarray):
+                g.create_dataset(key, data=self.data[key]['data'], compression='gzip', compression_opts=9, chunks=True)
+            else:
+                g[key] = self.data[key]['data']
+
             for key0 in self.data[key].keys():
                 if key0 != 'data':
                     if key0 == 'dims_info':
@@ -313,8 +318,8 @@ def read_flux_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
 
     sol_fac = cal_sol_fac(mca_obj.date)
 
-    norm    = np.zeros(Nz, dtype=np.float64)
-    factors = np.zeros((Nz, mca_obj.Ng), dtype=np.float64)
+    norm    = np.zeros(Nz, dtype=np.float32)
+    factors = np.zeros((Nz, mca_obj.Ng), dtype=np.float32)
 
     for iz in range(Nz):
         norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
@@ -332,9 +337,9 @@ def read_flux_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
     dims_info += ['Nr']
     dims      += [mca_obj.Nrun]
 
-    f_down_direct = np.zeros(dims, dtype=np.float64)
-    f_down        = np.zeros(dims, dtype=np.float64)
-    f_up          = np.zeros(dims, dtype=np.float64)
+    f_down_direct = np.zeros(dims, dtype=np.float32)
+    f_down        = np.zeros(dims, dtype=np.float32)
+    f_up          = np.zeros(dims, dtype=np.float32)
 
     for ir in range(mca_obj.Nrun):
         for ig in range(mca_obj.Ng):
@@ -438,8 +443,8 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
 
     sol_fac = cal_sol_fac(mca_obj.date)
 
-    norm    = np.zeros(Nz, dtype=np.float64)
-    factors = np.zeros((Nz, mca_obj.Ng), dtype=np.float64)
+    norm    = np.zeros(Nz, dtype=np.float32)
+    factors = np.zeros((Nz, mca_obj.Ng), dtype=np.float32)
 
     for iz in range(Nz):
         norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
@@ -457,7 +462,7 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
     dims_info += ['Nr']
     dims      += [mca_obj.Nrun]
 
-    rad = np.zeros(dims, dtype=np.float64)
+    rad = np.zeros(dims, dtype=np.float32)
 
     for ir in range(mca_obj.Nrun):
         for ig in range(mca_obj.Ng):

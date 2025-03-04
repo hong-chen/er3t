@@ -13,7 +13,7 @@ from .util import *
 
 
 
-__all__ = ['lrt_init_mono_rad', 'lrt_init_spec_rad', 'lrt_read_uvspec_rad']
+__all__ = ['lrt_init_mono_rad', 'lrt_init_spec_rad', 'lrt_read_uvspec_rad', 'lrt_read_uvspec_rad_toa']
 
 
 def convert_azimuth_angle(azimuth_angle):
@@ -148,6 +148,8 @@ class lrt_init_mono_rad:
             self.Nvar = 2
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
+        if output_format     == 'lambda uu edir':
+            self.Nvar = 3
 
         # sensor azimuth angle
         #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -210,7 +212,6 @@ class lrt_init_mono_rad:
 
         self.input_dict = OD([
                             ('atmosphere_file'   , lrt_cfg['atmosphere_file']),
-                            ('source solar'      , lrt_cfg['solar_file']),
                             ('day_of_year'       , str(day_of_year)),
                             ('albedo'            , '%.6f' % surface_albedo),
                             ('sza'               , '%.4f' % solar_zenith_angle),
@@ -220,12 +221,21 @@ class lrt_init_mono_rad:
                             ('rte_solver'        , lrt_cfg['rte_solver']),
                             ('number_of_streams' , str(lrt_cfg['number_of_streams'])),
                             ('wavelength'        , '%.1f %.1f' % (wavelength_s, wavelength_e)),
-                            ('spline'            , '%.3f %.3f %.3f' % (wavelength, wavelength, spectral_resolution)),
-                            ('slit_function_file', slit_function_file),
+                            ('data_files_path'    , lrt_cfg['data_files_path']),
                             ('mol_abs_param'     , lrt_cfg['mol_abs_param']),
                             ('output_user'       , output_format),
-                            ('zout'              , output_altitude)
+                            ('zout'              , output_altitude),
                             ])
+        
+        if lrt_cfg['solar_file'] is not None:
+            self.input_dict['source solar'] = lrt_cfg['solar_file']
+            self.input_dict['spline'] = '%.3f %.3f %.3f' % (wavelength, wavelength, spectral_resolution)
+            self.input_dict['slit_function_file'] = slit_function_file
+        
+        if lrt_cfg['rte_solver'] == 'mystic':
+            self.input_dict['mc_photons'] = lrt_cfg['mc_photons']
+            self.input_dict['mc_vroom'] = lrt_cfg['mc_vroom']
+            self.input_dict['mc_spherical'] = lrt_cfg['mc_spherical']
 
 
         self.input_dict_extra = input_dict_extra
@@ -556,7 +566,7 @@ class lrt_read_uvspec_rad:
         Nvar = inits[0].Nvar
 
         self.dims  = {'X':'Wavelength', 'Y':'Altitude', 'Z':'Files'}
-        rad  = np.zeros((Nx, Ny, Nz, Nvar-1), dtype=np.float64)
+        rad  = np.zeros((Nx, Ny, Nz, Nvar-1), dtype=np.float32)
 
         for i, init in enumerate(inits):
 
@@ -572,6 +582,52 @@ class lrt_read_uvspec_rad:
 
         return self
 
+
+class lrt_read_uvspec_rad_toa:
+
+    """
+    Input:
+        list of lrt_init objects
+
+    return:
+        self.rad      : radiance
+
+        f_down, f_down_direct, f_down_diffuse, f_up have the dimension of
+        (Nx, Ny, Nz), where
+        Nx: number of wavelength, for monochromatic, Nx=1
+        Ny: number of output altitude
+        Nz: number of lrt_init objects
+
+        one can use numpy.squeeze to remove the axis where the Nx/Ny/Nz = 1.
+    """
+
+
+    def __init__(self, inits):
+
+        Nx = inits[0].Nx
+        Ny = inits[0].Ny
+        Nz = len(inits)
+        Nvar = inits[0].Nvar
+
+        self.dims  = {'X':'Wavelength', 'Y':'Altitude', 'Z':'Files'}
+        rad  = np.zeros((Nx, Ny, Nz, 1), dtype=np.float64)
+        fdown_dir  = np.zeros((Nx, Ny, Nz, 1), dtype=np.float64)
+
+        for i, init in enumerate(inits):
+
+            data = np.loadtxt(init.output_file).reshape((Nx, Ny, Nvar))
+            rad[:, :, i, :]  = data[:, :, 1]/1000.0
+            fdown_dir[:, :, i, :]  = data[:, :, 2]/1000.0
+
+        self.rad = rad
+        self.toa = fdown_dir 
+
+
+    def __add__(self, data):
+
+        self.rad = np.vstack((self.rad, data.rad))
+        self.toa = np.vstack((self.toa, data.toa))
+        return self
 
 
 if __name__ == '__main__':

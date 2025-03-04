@@ -4,6 +4,8 @@ import copy
 import pickle
 import warnings
 import numpy as np
+
+import er3t.common
 from er3t.pre.atm import atm_atmmod
 from er3t.util import downscale, check_equidistant
 
@@ -537,33 +539,33 @@ class cld_gen_hom:
         self.verbose = verbose     # verbose tag
 
         # check for pickle file
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
 
         # if pickle file exists - load the data directly from pickle file
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         if ((self.fname is not None) and (os.path.exists(self.fname)) and (not overwrite)):
 
             self.load(self.fname)
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # if pickle file does not exist or overwrite is specified - run the program and save
         # data into pickle file
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         elif ((self.fname is not None) and (os.path.exists(self.fname)) and (overwrite)) or \
              ((self.fname is not None) and (not os.path.exists(self.fname))):
 
             self.run(cot0, cer0, atm_obj=atm_obj)
             self.dump(self.fname)
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # if pickle file doesn't get specified
-        #/--------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         else:
 
             self.run(cot0, cer0, atm_obj=atm_obj)
-        #\--------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
     def load(self, fname):
 
@@ -632,13 +634,13 @@ class cld_gen_hom:
         self.lay['thickness'] = {'data':thickness, 'name':'Layer thickness', 'units':'km'}
 
         # get temperature profile
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if atm_obj is None:
             atm_obj = atm_atmmod(levels=alt_lev)
             t_1d = atm_obj.lay['temperature']['data']
         else:
             t_1d = np.interp(self.lay['altitude']['data'], atm_obj.lay['altitude']['data'], atm_obj.lay['temperature']['data'])
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         t_3d = np.empty((self.Nx, self.Ny, self.Nz), dtype=t_1d.dtype)
         t_3d[...] = t_1d[None, None, :]
@@ -664,35 +666,35 @@ class cld_gen_hom:
         cot_scale=: keyword argument, default=1.0, scale factor for cloud optical thickness
         """
 
-        data0 = np.zeros((self.Nx, self.Ny, self.Nz), dtype=np.float64)
+        data0 = np.zeros((self.Nx, self.Ny, self.Nz), dtype=er3t.common.f_dtype)
 
         # cloud effective radius (3D)
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         data = data0.copy()
         data[...] = cer0
         self.lay['cer'] = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # extinction coefficients (3D)
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         cot0_ = cot0*cot_scale/self.Nz
         ext0 = cot0_/self.dz/1000.0
         data = data0.copy()
         data[...] = ext0
         self.lay['extinction'] = {'data':data, 'name':'Extinction coefficients', 'units':'m^-1'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # cloud optical thickness (3D)
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         data = data0.copy()
         data[...] = cot0_
         self.lay['cot'] = {'data':data, 'name':'Cloud optical thickness', 'units':'N/A'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # column integrated cloud optical thickness
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         self.lev['cot_2d'] = {'data':np.sum(data, axis=-1), 'name':'Cloud optical thickness', 'units':'N/A'}
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
