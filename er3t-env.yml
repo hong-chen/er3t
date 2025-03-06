@@ -20,5 +20,5 @@ dependencies:
   - mscorefonts
   - font-ttf-source-code-pro
   - vim
-  #- sphinx_rtd_theme=0.4.*
-  #- sphinx=4.4.*
+  - sphinx_rtd_theme
+  - sphinx
