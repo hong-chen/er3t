@@ -33,9 +33,8 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 
 |
 
-.. warning::
-
-    We are preparing for an upcoming release, so please anticipate frequent changes to the main branch.
+We are preparing for an upcoming release, so please anticipate frequent changes to the main branch.
+------------
 
 |
 
