@@ -20,5 +20,3 @@ dependencies:
   - mscorefonts
   - font-ttf-source-code-pro
   - vim
-  - sphinx_rtd_theme
-  - sphinx
