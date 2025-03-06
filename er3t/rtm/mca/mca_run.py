@@ -5,6 +5,7 @@ import datetime
 import warnings
 import multiprocessing as mp
 import numpy as np
+
 import er3t.common
 
 
@@ -48,7 +49,7 @@ class mca_run:
                  optimize   = True,   \
                  has_mpi    = er3t.common.has_mpi, \
                  fname_sh   = None,   \
-                 verbose    = True,   \
+                 verbose    = er3t.common.params['verbose'],   \
                  quiet      = False   \
                 ):
 
@@ -56,12 +57,12 @@ class mca_run:
             if er3t.common.has_mcarats:
                 executable = os.environ['MCARATS_V010_EXE']
             else:
-                msg = 'Error [mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>.'
+                msg = '\nError [mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>.'
                 raise OSError(msg)
 
         Nfile = len(fnames_inp)
         if len(fnames_out) != Nfile:
-            msg = 'Error [mca_run]: Inconsistent input and output files.'
+            msg = '\nError [mca_run]: Inconsistent input and output files.'
             raise OSError(msg)
 
         self.Ncpu    = Ncpu
@@ -86,7 +87,7 @@ class mca_run:
         elif mp_mode in ['batch', 'shell', 'bash', 'hpc', 'sh']:
             mp_mode = 'sh'
         else:
-            msg = 'Error [mca_run]: Cannot understand input <mp_mode=\'%s\'>.' % mp_mode
+            msg = '\nError [mca_run]: Cannot understand input <mp_mode=\'%s\'>.' % mp_mode
             raise OSError(msg)
         self.mp_mode = mp_mode
 
@@ -119,8 +120,11 @@ class mca_run:
             self.save(fname=fname_sh)
 
 
-
     def run(self):
+
+        if self.verbose:
+            for command in self.commands:
+                print('Message [mca_run]: Executing <%s> ...' % command)
 
         if self.mp_mode == 'mpi':
 
@@ -128,7 +132,6 @@ class mca_run:
                 from tqdm import tqdm
 
                 with tqdm(total=len(self.commands)) as pbar:
-
                     for command in self.commands:
                         execute_command(command)
                         pbar.update(1)
@@ -137,7 +140,6 @@ class mca_run:
 
                 for command in self.commands:
                     execute_command(command)
-
 
         elif self.mp_mode == 'py':
 
@@ -157,7 +159,6 @@ class mca_run:
                     pool.join()
 
 
-
     def save(self, fname=None):
 
         if fname is None:
@@ -175,10 +176,8 @@ class mca_run:
 
 
 
-def execute_command(command, verbose=False):
+def execute_command(command):
 
-    if verbose:
-        print('Message [mca_run]: Executing <%s> ...' % command)
     os.system(command)
 
 
@@ -199,45 +198,45 @@ def rearrange_jobs(Ncpu, weights_in):
     """
 
     # make input weights an array
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     weights_in = np.array(weights_in.ravel())
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # weights
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     weights = weights_in.copy()
     weights += weights.min()
     Nweight = weights.size
     ids = np.arange(Nweight)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # sort weights in descending order
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     indices = np.argsort(weights)[::-1]
     ids     = ids[indices]
     weights = weights[indices]
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # make jobs (python list)
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     jobs = list(zip(ids, weights))
     Njob = len(jobs)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define workers (python dict)
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     workers = {iworker:[] for iworker in range(Ncpu)}
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # assign jobs to workers in a way that the difference between the work load of
     # workers is minimized
-    #/----------------------------------------------------------------------------\#
-    loads_now = np.zeros(Ncpu, dtype=np.float64)
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    loads_now = np.zeros(Ncpu, dtype=er3t.common.f_dtype)
     while Njob > 0:
 
         job0 = jobs[0]
@@ -253,11 +252,11 @@ def rearrange_jobs(Ncpu, weights_in):
 
         jobs.pop(0)
         Njob = len(jobs)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # sorted workers with number of jobs in descending order
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     rounds = [len(workers[i]) for i in range(Ncpu)]
     indices = np.argsort(np.array(rounds))[::-1]
     workers_sorted = {iworker:[] for iworker in range(Ncpu)}
@@ -266,11 +265,11 @@ def rearrange_jobs(Ncpu, weights_in):
         workers_sorted[i] = workers[indices[i]]
 
     # workers_sorted_ = copy.deepcopy(workers_sorted) # variable backup
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # rearrange jobs
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     rounds = [len(workers_sorted[i]) for i in range(Ncpu)]
     Nround = max(rounds)
 
@@ -281,7 +280,7 @@ def rearrange_jobs(Ncpu, weights_in):
 
     while Nround > 0:
 
-        weight0_round = np.array([], dtype=np.float64)
+        weight0_round = np.array([], dtype=er3t.common.f_dtype)
         index0_round = np.array([], dtype=np.int32)
 
         for i in i_next_round:
@@ -311,7 +310,7 @@ def rearrange_jobs(Ncpu, weights_in):
         Nround = max(len(workers_sorted[i]) for i in range(Ncpu))
 
     indices_out = np.array(indices_out)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return indices_out
 

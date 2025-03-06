@@ -80,9 +80,9 @@ class oco2_rad_nadir:
 
         Nspec, Nfoot, Ncoef = wvl_coef.shape
 
-        wvl_o2_a       = np.zeros((Nfoot, Nchan), dtype=np.float64)
-        wvl_co2_weak   = np.zeros((Nfoot, Nchan), dtype=np.float64)
-        wvl_co2_strong = np.zeros((Nfoot, Nchan), dtype=np.float64)
+        wvl_o2_a       = np.zeros((Nfoot, Nchan), dtype=np.float32)
+        wvl_co2_weak   = np.zeros((Nfoot, Nchan), dtype=np.float32)
+        wvl_co2_strong = np.zeros((Nfoot, Nchan), dtype=np.float32)
 
         chan = np.arange(1, Nchan+1)
         for i in range(Nfoot):
@@ -262,7 +262,7 @@ class oco2_std:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if self.extent is None:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
@@ -276,7 +276,7 @@ class oco2_std:
         xco2      = xco2[logic]
 
         f.close()
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         if hasattr(self, 'data'):
 
@@ -402,7 +402,7 @@ class oco2_met:
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if self.extent is None:
             lon_range = [-180.0, 180.0]
             lat_range = [-90.0 , 90.0]
@@ -416,7 +416,7 @@ class oco2_met:
         xco2      = xco2[logic]
 
         f.close()
-        # -------------------------------------------------------------------------------------------------
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         if hasattr(self, 'data'):
 

@@ -8,6 +8,7 @@ import multiprocessing as mp
 import numpy as np
 
 import er3t.common
+import er3t.util
 from er3t.rtm.mca import mca_inp_file
 from er3t.rtm.mca import mca_run
 
@@ -55,7 +56,7 @@ class mcarats_ng:
         MCARaTS output files created under path specified by 'fdir'
     """
 
-    reference = 'Iwabuchi, H.: Efficient Monte Carlo methods for radiative transfer modeling, J. Atmos. Sci., 63, 2324-2339, doi:10.1175/JAS3755.1, 2006.'
+    reference = '\nMCARaTS (Iwabuchi, 2006; Iwabuchi and Okamura, 2017):\n- Iwabuchi, H.: Efficient Monte Carlo methods for radiative transfer modeling, J. Atmos. Sci., 63, 2324-2339, https://doi.org/10.1175/JAS3755.1, 2006.\n- Iwabuchi, H., and Okamura, R.: Multispectral Monte Carlo radiative transfer simulation by using the maximum cross-section method, Journal of Quantitative Spectroscopy and Radiative Transfer, 193, 40-46, https://doi.org/10.1016/j.jqsrt.2017.01.025, 2017.'
 
 
     def __init__(self,                                          \
@@ -97,6 +98,8 @@ class mcarats_ng:
                  quiet               = False                    \
                  ):
 
+        er3t.util.add_reference(self.reference)
+
         fdir = os.path.abspath(fdir)
 
         if not os.path.exists(fdir):
@@ -106,9 +109,6 @@ class mcarats_ng:
         else:
             if verbose:
                 print('Message [mcarats_ng]: Directory <%s> already exists.' % fdir)
-
-        if self.reference not in er3t.common.references:
-            er3t.common.references.append(self.reference)
 
         self.Ng      = Ng
         self.date    = date
@@ -147,17 +147,17 @@ class mcarats_ng:
         self.target  = target
 
         # Nx, Ny
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if len(atm_3ds) > 0:
             self.Nx = atm_3ds[0].nml['Atm_nx']['data']
             self.Ny = atm_3ds[0].nml['Atm_ny']['data']
         else:
             self.Nx = 1
             self.Ny = 1
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # photon distribution over gs of correlated-k
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if weights is None:
             self.np_mode = 'evenly'
             weights = np.repeat(1.0/self.Ng, Ng)
@@ -168,10 +168,10 @@ class mcarats_ng:
 
         self.photons = np.tile(photons_dist, Nrun)
         self.photons_per_set = photons_dist.sum()
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Determine how many CPUs to utilize
-        #/----------------------------------------------------------------------------\#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         Ncpu_total = mp.cpu_count()
         self.Ncpu_total = Ncpu_total
         if Ncpu == 'auto':
@@ -184,7 +184,7 @@ class mcarats_ng:
         else:
             msg = 'Error [mcarats_ng]: Cannot understand <Ncpu=%s>.' % Ncpu
             raise OSError(msg)
-        #\----------------------------------------------------------------------------/#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # in file names, 'r' indicates #run, 'g' indicates #g, index of 'r' and 'g' both start from 0
         # self.fnames_inp/self.fnames_out is a list embeded with lists
@@ -390,7 +390,7 @@ class mcarats_ng:
             if self.verbose:
                 print('Message [mcarats_ng]: Assume Lambertian surface ...')
 
-            if isinstance(surface_albedo, float):
+            if isinstance(surface_albedo, float) or isinstance(surface_albedo, np.float32) or isinstance(surface_albedo, np.float64):
 
                 self.nml[ig]['Sfc_mbrdf'] = np.array([1, 0, 0, 0])
                 self.nml[ig]['Sfc_mtype'] = 1
@@ -485,7 +485,7 @@ class mcarats_ng:
 
     def print_info(self):
 
-        print('----------------------------------------------------------')
+        print('╭────────────────────────────────────────────────────────╮')
         print('                 General Information                      ')
         print('               Simulation : %s %s' % (self.solver, self.target.title()))
         print('               Wavelength : %s' % (self.wvl_info))
@@ -520,7 +520,7 @@ class mcarats_ng:
         print('  Number of Photons / Set : %.1e (%s over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
         print('           Number of Runs : %s (g) * %d (set)' % (self.Ng, self.Nrun))
         print('           Number of CPUs : %d (used) of %d (total)' % (self.Ncpu, self.Ncpu_total))
-        print('----------------------------------------------------------')
+        print('╰────────────────────────────────────────────────────────╯')
 
 
 
