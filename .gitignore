@@ -43,3 +43,4 @@ future_dev
 !docs/assets/*
 !docs/source/*
 !docs/source/other/*
+!docs/requirements.txt
