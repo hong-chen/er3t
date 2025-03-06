@@ -1,52 +1,86 @@
 import os
 import sys
-import shutil
+import fnmatch
 import datetime
-import time
-import requests
-import urllib.request
-from io import StringIO
 import numpy as np
-from scipy import interpolate, stats
-from scipy.spatial import KDTree
 import warnings
 
-import er3t
+import er3t.common
 
 
+EARTH_RADIUS = er3t.common.params['earth_radius']
 
-
-__all__ = ['all_files', 'check_equal', 'check_equidistant', 'send_email', \
+__all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
+           'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'find_nearest', 'move_correlate', \
            'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
-           'get_doy_tag', 'get_satfile_tag', \
-           'download_laads_https', 'download_lance_https', 'download_worldview_rgb'] + \
-          ['combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
+           'get_doy_tag', 'add_reference', 'print_reference', \
+           'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat']
+           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
+           'format_time', 'region_parser', 'parse_geojson', 'unpack_uint_to_bits']
 
 
-# tools
-#/---------------------------------------------------------------------------\
+def get_all_files(fdir, pattern='*'):
 
-def all_files(root_dir):
+    fnames = []
+    for fdir_root, fdir_sub, fnames_tmp in os.walk(fdir):
+        for fname_tmp in fnames_tmp:
+            if fnmatch.fnmatch(fname_tmp, pattern):
+                fnames.append(os.path.join(fdir_root, fname_tmp))
+    return sorted(fnames)
 
-    """
-    Go through all the subdirectories of the input directory and return all the file paths
-    Input:
-        root_dir: string, the directory to walk through
-    Output:
-        allfiles: Python list, all the file paths under the 'root_dir'
-    """
 
-    allfiles = []
-    for root_dir, dirs, files in os.walk(root_dir):
-        for f in files:
-            allfiles.append(os.path.join(root_dir, f))
 
-    return sorted(allfiles)
+def get_all_folders(fdir, pattern='*'):
+
+    fnames = get_all_files(fdir)
+
+    folders = []
+    for fname in fnames:
+        folder_tmp = os.path.abspath(os.path.dirname(os.path.relpath(fname)))
+        if (folder_tmp not in folders) and fnmatch.fnmatch(folder_tmp, pattern):
+                folders.append(folder_tmp)
+
+    return folders
+
+
+
+def load_h5(fname):
+
+    import h5py
+
+    def get_variable_names(obj, prefix=''):
+
+        """
+        Purpose: Walk through the file and extract information of data groups and data variables
+
+        Input: h5py file object <f>, e.g., f = h5py.File('file.h5', 'r')
+
+        Outputs:
+            data variable path in the format of <['group1/variable1']> to
+            mimic the style of accessing HDF5 data variables using h5py, e.g.,
+            <f['group1/variable1']>
+        """
+
+        for key in obj.keys():
+
+            item = obj[key]
+            path = '{prefix}/{key}'.format(prefix=prefix, key=key)
+            if isinstance(item, h5py.Dataset):
+                yield path
+            elif isinstance(item, h5py.Group):
+                yield from get_variable_names(item, prefix=path)
+
+    data = {}
+    f = h5py.File(fname, 'r')
+    keys = get_variable_names(f)
+    for key in keys:
+        data[key[1:]] = f[key[1:]][...]
+    f.close()
+    return data
 
 
 
@@ -148,8 +182,9 @@ def send_email(
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, [receiver], msg.as_string())
         server.quit()
-    except:
-        raise OSError("Error [send_email]: Failed to send the email.")
+    except Exception as err:
+        raise OSError(err, "Error [send_email]: Failed to send the email.")
+
 
 
 
@@ -243,35 +278,71 @@ def jday_to_dtime(jday):
     return dtime
 
 
+def get_data_h4(hdf_dset, init_dtype=None, replace_fill_value=np.nan):
+    """
+    Retrieves data from an HDF dataset and performs optional data type conversion and fill value replacement.
 
-def get_data_nc(nc_dset, nan=True):
+    Args:
+    ----
+        hdf_dset (h5py.Dataset): The HDF dataset to retrieve data from.
+        init_dtype (dtype, optional): The desired data type for the retrieved data. Defaults to None.
+        replace_fill_value (float or int, optional): The value to replace the fill value with. Defaults to np.nan.
 
-    nc_dset.set_auto_maskandscale(True)
-    data  = nc_dset[:]
+    Returns:
+        numpy.ndarray: The retrieved data with optional data type conversion and fill value replacement.
+    """
 
-    if nan == True:
-        data.filled(fill_value=np.nan)
+    attrs = hdf_dset.attributes()
+    data  = hdf_dset[:]
+    if init_dtype is not None:
+        data = np.array(data, dtype=init_dtype)
 
+    # Check if the dataset has a fill value attribute and if fill value replacement is requested
+    if '_FillValue' in attrs and replace_fill_value is not None:
+        # If the replacement fill value is NaN, convert the fill value attribute to float64
+        if np.isnan(replace_fill_value):
+            _FillValue = np.array(attrs['_FillValue'], dtype='float64')
+            data = data.astype('float64')
+
+        else: # otherwise let the fill value be the same data type as the dataset
+            _FillValue = np.array(attrs['_FillValue'], dtype=data.dtype)
+
+        # Replace the fill values in the dataset with the replacement fill value
+        data[data == _FillValue] = replace_fill_value
+
+    # If the dataset has an add_offset attribute, subtract it from the data
+    if 'add_offset' in attrs:
+        data = data - attrs['add_offset']
+
+    # If the dataset has a scale_factor attribute, multiply it with the data
+    if 'scale_factor' in attrs:
+        data = data * attrs['scale_factor']
+
+    # Return the processed data
     return data
 
 
 
-def get_data_h4(hdf_dset):
+def get_data_nc(nc_dset, replace_fill_value=np.nan):
 
-    attrs = hdf_dset.attributes()
-    data  = hdf_dset[:]
+    nc_dset.set_auto_maskandscale(True)
+    data  = nc_dset[:]
 
-    if 'scale_factor' in attrs:
-        data = data * attrs['scale_factor']
-
-    if 'add_offset' in attrs:
-        data = data + attrs['add_offset']
+    if replace_fill_value is not None:
+        data = data.astype('float32')
+        data.filled(fill_value=replace_fill_value)
 
     return data
 
 
 
 def move_correlate(data0, data, Ndx=5, Ndy=5):
+
+    try:
+        from scipy import stats
+    except ImportError:
+        msg = '\nError [move_correlate]: `scipy` installation is required.'
+        raise ImportError(msg)
 
     Nx, Ny = data.shape
     x = np.arange(Nx, dtype=np.int32)
@@ -282,7 +353,7 @@ def move_correlate(data0, data, Ndx=5, Ndy=5):
     yy0 = yy.copy()
     valid = np.ones((Nx, Ny), dtype=np.int32)
 
-    corr_coef = np.zeros((2*Ndx+1, 2*Ndy+1), dtype=np.float64)
+    corr_coef = np.zeros((2*Ndx+1, 2*Ndy+1), dtype=np.float32)
     dxx = np.arange(-Ndx, Ndx+1)
     dyy = np.arange(-Ndy, Ndy+1)
 
@@ -332,16 +403,22 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
         data_out: gridded data
     """
 
+    try:
+        from scipy.spatial import KDTree
+    except ImportError:
+        msg = 'Error [find_nearest]: `scipy` installation is required.'
+        raise ImportError(msg)
+
     # only support output at maximum dimension of 2
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if x_out.ndim > 2:
         msg = '\nError [find_nearest]: Only supports <x_out.ndim<=2> and <y_out.ndim<=2>.'
         raise ValueError(msg)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # preprocess raw data
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     x = np.array(x_raw).ravel()
     y = np.array(y_raw).ravel()
     data = np.array(data_raw).ravel()
@@ -350,37 +427,38 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
     x = x[logic_valid]
     y = y[logic_valid]
     data = data[logic_valid]
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # create KDTree
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     points = np.transpose(np.vstack((x, y)))
     tree_xy = KDTree(points)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # search KDTree for the nearest neighbor
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     points_query = np.transpose(np.vstack((x_out.ravel(), y_out.ravel())))
     dist_xy, indices_xy = tree_xy.query(points_query, workers=-1)
+    indices_xy[indices_xy>=data.size] = -1
 
     dist_out = dist_xy.reshape(x_out.shape)
     data_out = data[indices_xy].reshape(x_out.shape)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # use fill value to fill in grids that are "two far"* away from raw data
     #   * by default 1 grid away is defined as "too far"
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if Ngrid_limit is None:
 
         logic_out = np.repeat(False, data_out.size).reshape(x_out.shape)
 
     else:
 
-        dx = np.zeros_like(x_out, dtype=np.float64)
-        dy = np.zeros_like(y_out, dtype=np.float64)
+        dx = np.zeros_like(x_out, dtype=np.float32)
+        dy = np.zeros_like(y_out, dtype=np.float32)
 
         dx[1:, ...] = x_out[1:, ...] - x_out[:-1, ...]
         dx[0, ...]  = dx[1, ...]
@@ -391,9 +469,9 @@ def find_nearest(x_raw, y_raw, data_raw, x_out, y_out, Ngrid_limit=1, fill_value
         dist_limit = np.sqrt((dx*Ngrid_limit)**2+(dy*Ngrid_limit)**2)
         logic_out = (dist_out>dist_limit)
 
-    logic_out = logic_out | (indices_xy.reshape(data_out.shape)==indices_xy.size)
+    logic_out = logic_out | (indices_xy.reshape(data_out.shape)==indices_xy.size) | (indices_xy.reshape(data_out.shape)==-1)
     data_out[logic_out] = fill_value
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return data_out
 
@@ -419,26 +497,34 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
         lon, lat, data = grid_by_extent(lon0, lat0, data0, extent=[10, 15, 10, 20])
     """
 
+    try:
+        from scipy import interpolate
+    except ImportError:
+        msg = '\nError [grid_by_extent]: `scipy` installation is required.'
+        raise ImportError(msg)
+
     # flatten lon/lat/data
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon = np.array(lon).ravel()
     lat = np.array(lat).ravel()
     data = np.array(data).ravel()
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     if extent is None:
         extent = [lon.min(), lon.max(), lat.min(), lat.max()]
+    else:
+        extent = np.float_(np.array(extent))
 
     if NxNy is None:
         xy = (extent[1]-extent[0])*(extent[3]-extent[2])
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
     else:
         Nx, Ny = NxNy
@@ -484,12 +570,18 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         lon, lat, data = grid_by_lonlat(lon0, lat0, data0, lon_1d=np.linspace(10.0, 15.0, 100), lat_1d=np.linspace(10.0, 20.0, 100))
     """
 
+    try:
+        from scipy import interpolate
+    except ImportError:
+        msg = '\nError [grid_by_lonlat]: `scipy` installation is required.'
+        raise ImportError(msg)
+
     # flatten lon/lat/data
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon = np.array(lon).ravel()
     lat = np.array(lat).ravel()
     data = np.array(data).ravel()
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     if lon_1d is None or lat_1d is None:
 
@@ -499,11 +591,11 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
 
         lon_1d0 = np.linspace(extent[0], extent[1], Nx+1)
@@ -528,7 +620,7 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
 
 
 
-def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', fill_value=0.0, Ngrid_limit=1):
+def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest', mode='min', fill_value=0.0, Ngrid_limit=1, R_earth=EARTH_RADIUS):
 
     """
     Grid irregular data into a regular xy grid by input 'extent' (westmost, eastmost, southmost, northmost)
@@ -548,84 +640,91 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
         lon, lat, data = grid_by_dxdy(lon0, lat0, data0, dx=250.0, dy=250.0)
     """
 
+    try:
+        from scipy import interpolate
+    except ImportError:
+        msg = '\nError [grid_by_dxdy]: `scipy` installation is required.'
+        raise ImportError(msg)
+
     # flatten lon/lat/data
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon = np.array(lon).ravel()
     lat = np.array(lat).ravel()
-    data = np.array(data).ravel()
-    #\----------------------------------------------------------------------------/#
+    data = np.array(data).ravel()*1.0
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get extent
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if extent is None:
         extent = [np.nanmin(lon), np.nanmax(lon), np.nanmin(lat), np.nanmax(lat)]
-    #\----------------------------------------------------------------------------/#
+    else:
+        extent = np.float_(np.array(extent))
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # dist_x and dist_y
-    #/----------------------------------------------------------------------------\#
-    lon0 = [extent[0], extent[0]]
-    lat0 = [extent[2], extent[3]]
-    lon1 = [extent[1], extent[1]]
-    lat1 = [extent[2], extent[3]]
-    dist_x = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    if mode == 'min':
+        dist_x = np.abs(extent[1]-extent[0])/180.0*np.pi*R_earth*np.cos(np.deg2rad(np.abs(extent[2:]).max()))*1000.0
+    elif mode == 'max':
+        dist_x = np.abs(extent[1]-extent[0])/180.0*np.pi*R_earth*np.cos(np.deg2rad(np.abs(extent[2:]).min()))*1000.0
 
     lon0 = [extent[0], extent[1]]
     lat0 = [extent[2], extent[2]]
     lon1 = [extent[0], extent[1]]
     lat1 = [extent[3], extent[3]]
-    dist_y = er3t.util.cal_geodesic_dist(lon0, lat0, lon1, lat1).min()
-    #\----------------------------------------------------------------------------/#
+    dist_y = cal_geodesic_dist(lon0, lat0, lon1, lat1).max()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get Nx/Ny and dx/dy
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     if dx is None or dy is None:
 
         # Nx and Ny
-        #/----------------------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         xy = (extent[1]-extent[0])*(extent[3]-extent[2])
         N0 = np.sqrt(lon.size/xy)
         Nx = int(N0*(extent[1]-extent[0]))
         Ny = int(N0*(extent[3]-extent[2]))
-        #\----------------------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
         # dx and dy
-        #/----------------------------------------------------------------------------\#
+        #╭──────────────────────────────────────────────────────────────╮#
         dx = dist_x / Nx
         dy = dist_y / Ny
-        #\----------------------------------------------------------------------------/#
+        #╰──────────────────────────────────────────────────────────────╯#
 
     else:
 
         Nx = int(dist_x // dx)
         Ny = int(dist_y // dy)
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get west-most lon_1d/lat_1d
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     lon_1d = np.repeat(extent[0], Ny)
     lat_1d = np.repeat(extent[2], Ny)
     for i in range(1, Ny):
-        lon_1d[i], lat_1d[i] = er3t.util.cal_geodesic_lonlat(lon_1d[i-1], lat_1d[i-1], dy, 0.0)
-    #\----------------------------------------------------------------------------/#
+        lon_1d[i], lat_1d[i] = cal_geodesic_lonlat(lon_1d[i-1], lat_1d[i-1], dy, 0.0)
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # get lon_2d/lat_2d
-    #/----------------------------------------------------------------------------\#
-    lon_2d = np.zeros((Nx, Ny), dtype=np.float64)
-    lat_2d = np.zeros((Nx, Ny), dtype=np.float64)
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    lon_2d = np.zeros((Nx, Ny), dtype=np.float32)
+    lat_2d = np.zeros((Nx, Ny), dtype=np.float32)
     lon_2d[0, :] = lon_1d
     lat_2d[0, :] = lat_1d
     for i in range(1, Nx):
-        lon_2d[i, :], lat_2d[i, :] = er3t.util.cal_geodesic_lonlat(lon_2d[i-1, :], lat_2d[i-1, :], dx, 90.0)
-    #\----------------------------------------------------------------------------/#
+        lon_2d[i, :], lat_2d[i, :] = cal_geodesic_lonlat(lon_2d[i-1, :], lat_2d[i-1, :], dx, 90.0)
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # gridding
-    #/----------------------------------------------------------------------------\#
+    #╭────────────────────────────────────────────────────────────────────────────╮#
     points   = np.transpose(np.vstack((lon, lat)))
 
     if method == 'nearest':
@@ -637,7 +736,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     data_2d[logic] = fill_value
 
     return lon_2d, lat_2d, data_2d
-    #\----------------------------------------------------------------------------/#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
 
@@ -663,740 +762,26 @@ def get_doy_tag(date, day_interval=8):
 
 
 
-def get_satfile_tag(
-             date,
-             lon,
-             lat,
-             satellite='aqua',
-             instrument='modis',
-             server='https://ladsweb.modaps.eosdis.nasa.gov',
-             local='./',
-             verbose=False):
+def add_reference(reference, reference_list=er3t.common.references):
 
-    """
-    Input:
-        date: Python datetime.datetime object
-        lon : longitude of, e.g. flight track
-        lat : latitude of, e.g. flight track
-        satellite=: default "aqua", can also change to "terra", 'snpp', 'noaa20'
-        instrument=: default "modis", can also change to "viirs"
-        server=: string, data server
-        fdir_prefix=: string, data directory on NASA server
-        verbose=: Boolen type, verbose tag
-    output:
-        filename_tags: Python list of file name tags
-    """
+    if reference not in reference_list:
 
-    # check cartopy and matplotlib
-    #/----------------------------------------------------------------------------\#
-    try:
-        import cartopy.crs as ccrs
-    except ImportError:
-        msg = '\nError [get_satfile_tag]: Please install <cartopy> to proceed.'
-        raise ImportError(msg)
+        reference_list.append(reference)
 
-    try:
-        import matplotlib.path as mpl_path
-    except ImportError:
-        msg = '\nError [get_satfile_tag]: Please install <matplotlib> to proceed.'
-        raise ImportError(msg)
-    #\----------------------------------------------------------------------------/#
 
 
-    # check satellite and instrument
-    #/----------------------------------------------------------------------------\#
-    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
-        instrument = instrument.upper()
-        satellite  = satellite.lower().title()
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper()
-    else:
-        msg = 'Error [get_satfile_tag]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
-        raise NameError(msg)
-    #\----------------------------------------------------------------------------/#
+def print_reference():
 
+    print('\nReferences:')
+    print('╭────────────────────────────────────────────────────────────────────────────╮')
+    for reference in er3t.common.references:
+        print(reference)
+    print('╰────────────────────────────────────────────────────────────────────────────╯')
+    print()
 
-    # check login
-    #/----------------------------------------------------------------------------\#
-    try:
-        username = os.environ['EARTHDATA_USERNAME']
-        password = os.environ['EARTHDATA_PASSWORD']
-    except:
-        msg = '\nError [get_satfile_tag]: cannot find environment variables \'EARTHDATA_USERNAME\' and \'EARTHDATA_PASSWORD\'.'
-        raise OSError(msg)
-    #\----------------------------------------------------------------------------/#
+    return
 
 
-    # generate satellite filename on LAADS DAAC server
-    #/----------------------------------------------------------------------------\#
-    vname  = '%s|%s' % (satellite, instrument)
-    date_s = date.strftime('%Y-%m-%d')
-    fnames_server = {
-        'Aqua|MODIS'  : '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'           % (server, date.year, date_s),
-        'Terra|MODIS' : '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'          % (server, date.year, date_s),
-        'NOAA20|VIIRS': '%s/archive/geoMetaJPSS/5200/JPSS1/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
-        'SNPP|VIIRS'  : '%s/archive/geoMetaJPSS/5110/NPP/%4.4d/VNP03MOD_%s.txt'   % (server, date.year, date_s),
-        }
-    fname_server = fnames_server[vname]
-    #\----------------------------------------------------------------------------/#
-
-
-    # convert longitude in [-180, 180] range
-    # since the longitude in GeoMeta dataset is in the range of [-180, 180]
-    #/----------------------------------------------------------------------------\#
-    lon[lon>180.0] -= 360.0
-    logic = (lon>=-180.0)&(lon<=180.0) & (lat>=-90.0)&(lat<=90.0)
-    lon   = lon[logic]
-    lat   = lat[logic]
-    #\----------------------------------------------------------------------------/#
-
-
-    # try to access the server
-    #/----------------------------------------------------------------------------\#
-
-    # try to get information from local
-    # check two locations:
-    #   1) <tmp-data/satfile> directory under er3t main directory
-    #   2) current directory;
-    #/--------------------------------------------------------------\#
-    fdir_satfile_tmp = '%s/satfile' % er3t.common.fdir_data_tmp
-    if not os.path.exists(fdir_satfile_tmp):
-        os.makedirs(fdir_satfile_tmp)
-
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_satfile_tmp, os.path.basename(fname_server)))
-    fname_local2 = os.path.abspath('%s/%s' % (local           , os.path.basename(fname_server)))
-
-    if os.path.exists(fname_local1):
-        with open(fname_local1, 'r') as f_:
-            content = f_.read()
-
-    elif os.path.exists(fname_local2):
-        os.system('cp %s %s' % (fname_local2, fname_local1))
-        with open(fname_local2, 'r') as f_:
-            content = f_.read()
-    #\--------------------------------------------------------------/#
-
-    else:
-
-        # get information from server
-        #/--------------------------------------------------------------\#
-        try:
-            with requests.Session() as session:
-                session.auth = (username, password)
-                r1     = session.request('get', fname_server)
-                r      = session.get(r1.url, auth=(username, password))
-        except:
-            msg = '\nError [get_satfile_tag]: cannot access <%s>.' % fname_server
-            raise OSError(msg)
-
-        if r.ok:
-            content = r.content.decode('utf-8')
-        else:
-            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.' % fname_server
-            raise OSError(msg)
-        #\--------------------------------------------------------------/#
-    #\----------------------------------------------------------------------------/#
-
-    # extract granule information from <content>
-    # after the following session, granule information will be stored under <data>
-    # data['GranuleID'].decode('UTF-8') to get the file name of MODIS granule
-    # data['StartDateTime'].decode('UTF-8') to get the time stamp of MODIS granule
-    # variable names can be found through
-    # print(data.dtype.names)
-    #/----------------------------------------------------------------------------\#
-
-    if vname in ['Aqua|MODIS', 'Terra|MODIS']:
-        dtype = ['|S41', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
-    elif vname in ['NOAA20|VIIRS', 'SNPP|VIIRS']:
-        dtype = ['|S43', '|S1','<f8','<f8','<f8','<f8','<f8','<f8','<f8','<f8']
-    usecols = (0, 4, 9, 10, 11, 12, 13, 14, 15, 16)
-
-    #\----------------------------------------------------------------------------/#
-    # LAADS DAAC servers are known to cause some issues occasionally while
-    # accessing the metadata. We will attempt to read the txt file online directly
-    # on the server but as a backup, we will download the txt file locally and
-    # access the data there
-    #/----------------------------------------------------------------------------\#
-    try:
-        data  = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
-    except ValueError:
-
-        msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nAttempting to download the file to access the data...\n' % fname_server
-        print(msg)
-
-        try:
-            token = os.environ['EARTHDATA_TOKEN']
-        except KeyError:
-            token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
-
-        if verbose:
-            msg = '\nWarning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
-            warnings.warn(msg)
-
-        try:
-            command = "wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 {} --header \"Authorization: Bearer {}\" -O {}".format(fname_server, token, fname_local1)
-            os.system(command)
-            with open(fname_local1, 'r') as f_:
-                content = f_.read()
-            data = np.genfromtxt(StringIO(content), delimiter=',', skip_header=2, names=True, dtype=dtype, invalid_raise=False, loose=True, usecols=usecols)
-        except ValueError:
-            msg = '\nError [get_satfile_tag]: failed to retrieve information from <%s>.\nThis is likely an issue with LAADS DAAC servers, please try downloading the files manually or try again later.\n' % fname_server
-            raise OSError(msg)
-
-    #\----------------------------------------------------------------------------/#
-    # loop through all the "MODIS granules" constructed through four corner points
-    # and find which granules contain the input data
-    #/----------------------------------------------------------------------------\#
-    Ndata = data.size
-    filename_tags = []
-    proj_ori = ccrs.PlateCarree()
-    for i in range(Ndata):
-
-        line = data[i]
-        xx0  = np.array([line['GRingLongitude1'], line['GRingLongitude2'], line['GRingLongitude3'], line['GRingLongitude4'], line['GRingLongitude1']])
-        yy0  = np.array([line['GRingLatitude1'] , line['GRingLatitude2'] , line['GRingLatitude3'] , line['GRingLatitude4'] , line['GRingLatitude1']])
-
-        if (abs(xx0[0]-xx0[1])>180.0) | (abs(xx0[0]-xx0[2])>180.0) | \
-           (abs(xx0[0]-xx0[3])>180.0) | (abs(xx0[1]-xx0[2])>180.0) | \
-           (abs(xx0[1]-xx0[3])>180.0) | (abs(xx0[2]-xx0[3])>180.0):
-
-            xx0[xx0<0.0] += 360.0
-
-        # roughly determine the center of granule
-        #/----------------------------------------------------------------------------\#
-        xx = xx0[:-1]
-        yy = yy0[:-1]
-        center_lon = xx.mean()
-        center_lat = yy.mean()
-        #\----------------------------------------------------------------------------/#
-
-        # find the precise center point of MODIS granule
-        #/----------------------------------------------------------------------------\#
-        proj_tmp   = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
-        LonLat_tmp = proj_tmp.transform_points(proj_ori, xx, yy)[:, [0, 1]]
-        center_xx  = LonLat_tmp[:, 0].mean(); center_yy = LonLat_tmp[:, 1].mean()
-        center_lon, center_lat = proj_ori.transform_point(center_xx, center_yy, proj_tmp)
-        #\----------------------------------------------------------------------------/#
-
-        proj_new = ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat)
-        LonLat_in = proj_new.transform_points(proj_ori, lon, lat)[:, [0, 1]]
-        LonLat_modis  = proj_new.transform_points(proj_ori, xx0, yy0)[:, [0, 1]]
-
-        modis_granule  = mpl_path.Path(LonLat_modis, closed=True)
-        pointsIn       = modis_granule.contains_points(LonLat_in)
-        percentIn      = float(pointsIn.sum()) / float(pointsIn.size) * 100.0
-        if pointsIn.sum()>0 and data[i]['DayNightFlag'].decode('UTF-8')=='D':
-            filename = data[i]['GranuleID'].decode('UTF-8')
-            filename_tag = '.'.join(filename.split('.')[1:3])
-            filename_tags.append(filename_tag)
-    #\----------------------------------------------------------------------------/#
-
-    return filename_tags
-
-
-
-def download_laads_https(
-             date,
-             dataset_tag,
-             filename_tag,
-             server='https://ladsweb.modaps.eosdis.nasa.gov',
-             fdir_prefix='/archive/allData',
-             day_interval=1,
-             fdir_out='tmp-data',
-             data_format=None,
-             run=True,
-             verbose=True):
-
-
-    """
-    Downloads products from the LAADS Data Archive (DAAC).
-
-    Input:
-        date: Python datetime object
-        dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
-        filename_tag: string, string pattern in the filename, e.g. '.2035.'
-        server=: string, data server
-        fdir_prefix=: string, data directory on NASA server
-        day_interval=: integer, for 8 day data, day_interval=8
-        fdir_out=: string, output data directory
-        data_format=None: e.g., 'hdf'
-        run=: boolean type, if False, the command will only be displayed but not run
-        verbose=: boolean type, verbose tag
-
-    Output:
-        fnames_local: Python list that contains downloaded satellite data file paths
-    """
-
-    try:
-        token = os.environ['EARTHDATA_TOKEN']
-    except KeyError:
-        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
-        if verbose:
-            msg = '\nWarning [download_laads_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
-            warnings.warn(msg)
-
-    if shutil.which('curl'):
-        command_line_tool = 'curl'
-    elif shutil.which('wget'):
-        command_line_tool = 'wget'
-    else:
-        msg = '\nError [download_laads_https]: <download_laads_https> needs <curl> or <wget> to be installed.'
-        raise OSError(msg)
-
-    year_str = str(date.timetuple().tm_year).zfill(4)
-    if day_interval == 1:
-        doy_str  = str(date.timetuple().tm_yday).zfill(3)
-    else:
-        doy_str = get_doy_tag(date, day_interval=day_interval)
-
-    fdir_data = '%s/%s/%s/%s' % (fdir_prefix, dataset_tag, year_str, doy_str)
-
-    fdir_server = server + fdir_data
-
-    #\----------------------------------------------------------------------------/#
-    # Use error handling to overcome occasional issues with LAADS DAAC servers
-    #/----------------------------------------------------------------------------\#
-    try:
-        webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-    except urllib.error.HTTPError:
-        msg = "The LAADS DAAC servers appear to be down. Attempting again in 10 seconds..."
-        print(msg)
-        time.sleep(10)
-        try:
-            webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
-        except urllib.error.HTTPError:
-            msg = '\nError [download_laads_https]: cannot access <%s>.' % fdir_server
-            raise OSError(msg)
-    content  = webpage.read().decode('utf-8')
-    lines    = content.split('\n')
-
-    commands = []
-    fnames_local = []
-    for line in lines:
-        filename = line.strip().split(',')[0]
-        if filename_tag in filename:
-            fname_server = '%s/%s' % (fdir_server, filename)
-            fname_local  = '%s/%s' % (fdir_out, filename)
-            fnames_local.append(fname_local)
-            if command_line_tool == 'curl':
-                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
-            elif command_line_tool == 'wget':
-                command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
-            else:
-                msg = '\nError [download_laads_https]: command line tool %s is not currently supported. Please use one of `curl` or `wget`.' % command_line_tool
-                raise OSError(msg)
-            commands.append(command)
-
-    if not run:
-        print('Message [download_laads_https]: The commands to run are:')
-        for command in commands:
-            print(command)
-
-    else:
-
-        for i, command in enumerate(commands):
-
-            if verbose:
-                print('Message [download_laads_https]: Downloading %s ...' % fnames_local[i])
-            os.system(command)
-
-            fname_local = fnames_local[i]
-
-            if data_format is None:
-                data_format = os.path.basename(fname_local).split('.')[-1]
-
-            if data_format == 'hdf':
-
-                try:
-                    from pyhdf.SD import SD, SDC
-                    import pyhdf
-                except ImportError:
-                    msg = '\nError [download_laads_https]: To use \'download_laads_https\', \'pyhdf\' needs to be installed.'
-                    raise ImportError(msg)
-
-                #\----------------------------------------------------------------------------/#
-                # Attempt to download files. In case of an HDF4Error, attempt to re-download
-                # afer a time period as this could be caused by an internal timeout at
-                # the server side
-                #/----------------------------------------------------------------------------\#
-                try:
-                    if verbose:
-                        print('Message [download_laads_https]: Reading \'%s\' ...\n' % fname_local)
-                    f = SD(fname_local, SDC.READ)
-                    f.end()
-                    if verbose:
-                        print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
-
-                except pyhdf.error.HDF4Error:
-                    print('Message [download_laads_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
-                    try:
-                        os.remove(fname_local)
-                        time.sleep(10) # wait 10 seconds
-                        os.system(command) # re-download
-                        f = SD(fname_local, SDC.READ)
-                        f.end()
-                        if verbose:
-                            print('Message [download_laads_https]: \'%s\' has been downloaded.\n' % fname_local)
-                    except pyhdf.error.HDF4Error:
-                        print('Message [download_laads_https]: WARNING: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local)
-                        fnames_local.remove(fname_local)
-                        os.remove(fname_local)
-                        continue
-
-
-            elif data_format == 'nc':
-
-                try:
-                    from netCDF4 import Dataset
-                    f = Dataset(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-
-            elif data_format == 'h5':
-
-                try:
-                    import h5py
-                    f = h5py.File(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_laads_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-            else:
-
-                msg = '\nWarning [download_laads_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                warnings.warn(msg)
-
-    return fnames_local
-
-
-
-def download_lance_https(
-             date,
-             dataset_tag,
-             filename_tag,
-             server='https://nrt3.modaps.eosdis.nasa.gov/api/v2/content',
-             fdir_prefix='/archives/allData',
-             day_interval=1,
-             fdir_out='tmp-data',
-             data_format=None,
-             run=True,
-             verbose=True):
-
-
-    """
-    Downloads products from the LANCE Near Real Time (NRT) Data Archive (DAAC).
-
-    Input:
-        date: Python datetime object
-        dataset_tag: string, collection + dataset name, e.g. '61/MYD06_L2'
-        filename_tag: string, string pattern in the filename, e.g. '.2035.'
-        server=: string, data server
-        fdir_prefix=: string, data directory on NASA server
-        day_interval=: integer, for 8 day data, day_interval=8
-        fdir_out=: string, output data directory
-        data_format=None: e.g., 'hdf'
-        run=: boolean type, if False, the command will only be displayed but not run
-        verbose=: boolean type, verbose tag
-
-    Output:
-        fnames_local: Python list that contains downloaded satellite data file paths
-    """
-
-    try:
-        token = os.environ['EARTHDATA_TOKEN']
-    except KeyError:
-        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
-        if verbose:
-            msg = '\nWarning [download_lance_https]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
-            warnings.warn(msg)
-
-    if shutil.which('curl'):
-        command_line_tool = 'curl'
-    elif shutil.which('wget'):
-        command_line_tool = 'wget'
-    else:
-        msg = '\nError [download_lance_https]: <download_lance_https> needs <curl> or <wget> to be installed.'
-        raise OSError(msg)
-
-    year_str = str(date.timetuple().tm_year).zfill(4)
-    if day_interval == 1:
-        doy_str  = str(date.timetuple().tm_yday).zfill(3)
-    else:
-        doy_str = get_doy_tag(date, day_interval=day_interval)
-
-    fdir_csv_prefix = '/details/allData'
-    fdir_csv_format = '?fields=all&formats=csv'
-    fdir_csv_data   = '%s/%s/%s/%s%s' % (fdir_csv_prefix, dataset_tag, year_str, doy_str, fdir_csv_format)
-
-    fdir_data       = '%s/%s/%s/%s.csv' % (fdir_prefix, dataset_tag, year_str, doy_str)
-    fdir_server     = server + fdir_data
-    fdir_csv_server = server + fdir_csv_data
-
-    #\----------------------------------------------------------------------------/#
-    # Use error handling to overcome occasional issues with LANCE DAAC servers
-    #/----------------------------------------------------------------------------\#
-    try:
-        webpage = urllib.request.urlopen(fdir_csv_server)
-    except urllib.error.HTTPError:
-        msg = "The LANCE DAAC servers appear to be down or there could be an error with the fetch request. Attempting again in 10 seconds..."
-        print(msg)
-        time.sleep(10)
-        try:
-            webpage = urllib.request.urlopen(fdir_csv_server)
-        except urllib.error.HTTPError:
-            msg = '\nError [download_lance_https]: cannot access <%s>.' % fdir_server
-            raise OSError(msg)
-
-    content  = webpage.read().decode('utf-8')
-    lines    = content.split('\n')
-
-    commands = []
-    fnames_local = []
-    for line in lines:
-        filename = line.strip().split(',')[0]
-        if (filename_tag in filename) and (filename.endswith('.hdf')):
-            fname_server = '%s/%s' % (fdir_server, filename)
-            fname_local  = '%s/%s' % (fdir_out, filename)
-            fnames_local.append(fname_local)
-            if command_line_tool == 'curl':
-                command = 'mkdir -p %s && curl -H \'Authorization: Bearer %s\' -L -C - \'%s\' -o \'%s\' --max-time 300' % (fdir_out, token, fname_server, fname_local)
-            elif command_line_tool == 'wget':
-                command = 'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s' % (fdir_out, fname_server, token, fname_local)
-            else:
-                msg = '\nError [download_lance_https]: command line tool %s is not currently supported. Please use one of `curl` or `wget`.' % command_line_tool
-                raise OSError(msg)
-            commands.append(command)
-
-    if not run:
-        print('Message [download_lance_https]: The commands to run are:')
-        for command in commands:
-            print(command)
-
-    else:
-
-        for i, command in enumerate(commands):
-
-            if verbose:
-                print('Message [download_lance_https]: Downloading %s ...' % fnames_local[i])
-            os.system(command)
-
-            fname_local = fnames_local[i]
-
-            if data_format is None:
-                data_format = os.path.basename(fname_local).split('.')[-1]
-
-            if data_format == 'hdf':
-
-                try:
-                    from pyhdf.SD import SD, SDC
-                    import pyhdf
-                except ImportError:
-                    msg = '\nError [download_lance_https]: To use \'download_lance_https\', \'pyhdf\' needs to be installed.'
-                    raise ImportError(msg)
-
-                #\----------------------------------------------------------------------------/#
-                # Attempt to download files. In case of an HDF4Error, attempt to re-download
-                # afer a time period as this could be caused by an internal timeout at
-                # the server side
-                #/----------------------------------------------------------------------------\#
-                try:
-                    if verbose:
-                        print('Message [download_lance_https]: Reading \'%s\' ...\n' % fname_local)
-                    f = SD(fname_local, SDC.READ)
-                    f.end()
-                    if verbose:
-                        print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
-
-                except pyhdf.error.HDF4Error:
-                    print('Message [download_lance_https]: Encountered an error with \'%s\', trying again ...\n' % fname_local)
-                    try:
-                        os.remove(fname_local)
-                        time.sleep(10) # wait 10 seconds
-                        os.system(command) # re-download
-                        f = SD(fname_local, SDC.READ)
-                        f.end()
-                        if verbose:
-                            print('Message [download_lance_https]: \'%s\' has been downloaded.\n' % fname_local)
-                    except pyhdf.error.HDF4Error:
-                        msg = 'Warning [download_lance_https]: Failed to read \'%s\'. File will be deleted as it might not be downloaded correctly. \n' % fname_local
-                        warnings.warn(msg)
-                        fnames_local.remove(fname_local)
-                        os.remove(fname_local)
-                        continue
-
-
-            elif data_format == 'nc':
-
-                try:
-                    from netCDF4 import Dataset
-                    f = Dataset(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-
-            elif data_format == 'h5':
-
-                try:
-                    import h5py
-                    f = h5py.File(fname_local, 'r')
-                    f.close()
-                    if verbose:
-                        print('Message [download_lance_https]: <%s> has been downloaded.\n' % fname_local)
-                except:
-                    msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                    warnings.warn(msg)
-
-            else:
-
-                msg = '\nWarning [download_lance_https]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n' % (data_format, fname_local)
-                warnings.warn(msg)
-
-    return fnames_local
-
-
-
-def download_worldview_rgb(
-        date,
-        extent,
-        fdir_out='tmp-data',
-        instrument='modis',
-        satellite='aqua',
-        wmts_cgi='https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi',
-        proj=None,
-        coastline=False,
-        fmt='png',
-        run=True
-        ):
-
-    """
-    Purpose: download satellite RGB imagery from NASA Worldview for a user-specified date and region
-    Inputs:
-        date: date object of <datetime.datetime>
-        extent: rectangular region, Python list of [west_most_longitude, east_most_longitude, south_most_latitude, north_most_latitude]
-        fdir_out=: directory to store RGB imagery from NASA Worldview
-        instrument=: satellite instrument, currently only supports 'modis' and 'viirs'
-        satellite=: satellite, currently only supports 'aqua' and 'terra' for 'modis', and 'snpp' and 'noaa20' for 'viirs'
-        wmts_cgi=: cgi link to NASA Worldview GIBS (Global Imagery Browse Services)
-        proj=: map projection for plotting the RGB imagery
-        coastline=: boolen type, whether to plot coastline
-        fmt=: can be either 'png' or 'h5'
-        run=: boolen type, whether to plot
-    Output:
-        fname: file name of the saved RGB file (png format)
-    Usage example:
-        import datetime
-        fname = download_wordview_rgb(datetime.datetime(2022, 5, 18), [-94.26,-87.21,31.86,38.91], instrument='modis', satellite='aqua')
-    """
-
-    if instrument.lower() == 'modis' and (satellite.lower() in ['aqua', 'terra']):
-        instrument = instrument.upper()
-        satellite  = satellite.lower().title()
-    elif instrument.lower() == 'viirs' and (satellite.lower() in ['noaa20', 'snpp']):
-        instrument = instrument.upper()
-        satellite  = satellite.upper()
-    else:
-        msg = 'Error [download_worldview_rgb]: Currently do not support <%s> onboard <%s>.' % (instrument, satellite)
-        raise NameError(msg)
-
-    date_s = date.strftime('%Y-%m-%d')
-    fname  = '%s/%s-%s_rgb_%s_(%s).png' % (fdir_out, instrument, satellite, date_s, ','.join(['%.2f' % extent0 for extent0 in extent]))
-    fname  = os.path.abspath(fname)
-
-    if run:
-
-        try:
-            import matplotlib as mpl
-            mpl.use('Agg')
-            import matplotlib.pyplot as plt
-            import matplotlib.image as mpl_img
-        except ImportError:
-            msg = 'Error [download_worldview_rgb]: Please install <matplotlib> to proceed.'
-            raise ImportError(msg)
-
-        try:
-            import cartopy.crs as ccrs
-        except ImportError:
-            msg = 'Error [download_worldview_rgb]: Please install <cartopy> to proceed.'
-            raise ImportError(msg)
-
-        if not os.path.exists(fdir_out):
-            os.makedirs(fdir_out)
-
-        layer_name = '%s_%s_CorrectedReflectance_TrueColor' % (instrument, satellite)
-
-        if proj is None:
-            proj=ccrs.PlateCarree()
-
-        fig = plt.figure(figsize=(12, 6))
-        ax1 = fig.add_subplot(111, projection=proj)
-        ax1.add_wmts(wmts_cgi, layer_name, wmts_kwargs={'time': date_s})
-        if coastline:
-            ax1.coastlines(resolution='10m', color='black', linewidth=0.5, alpha=0.8)
-        ax1.set_extent(extent, crs=ccrs.PlateCarree())
-        ax1.outline_patch.set_visible(False)
-        ax1.axis('off')
-        plt.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=300)
-        plt.close(fig)
-
-    if fmt == 'png':
-
-        pass
-
-    elif fmt == 'h5':
-
-        try:
-            import h5py
-        except ImportError:
-            msg = 'Error [download_worldview_rgb]: Please install <h5py> to proceed.'
-            raise ImportError(msg)
-
-        data = mpl_img.imread(fname)
-
-        lon  = np.linspace(extent[0], extent[1], data.shape[1])
-        lat  = np.linspace(extent[2], extent[3], data.shape[0])
-
-        fname = fname.replace('.png', '.h5')
-
-        f = h5py.File(fname, 'w')
-
-        f['extent'] = extent
-
-        f['lon'] = lon
-        f['lon'].make_scale('Longitude')
-
-        f['lat'] = lat
-        f['lat'].make_scale('Latitude')
-
-        f['rgb'] = np.swapaxes(data[::-1, :, :3], 0, 1)
-        f['rgb'].dims[0].label = 'Longitude'
-        f['rgb'].dims[0].attach_scale(f['lon'])
-        f['rgb'].dims[1].label = 'Latitude'
-        f['rgb'].dims[1].attach_scale(f['lat'])
-        f['rgb'].dims[2].label = 'RGB'
-
-        f.close()
-
-    return fname
-
-#\---------------------------------------------------------------------------/
-
-
-
-# physics
-#/---------------------------------------------------------------------------\
 
 def combine_alt(atm_z, cld_z):
 
@@ -1462,7 +847,7 @@ def downscale(ndarray, new_shape, operation='mean'):
         ndarray: numpy array, downscaled array
     """
     operation = operation.lower()
-    if not operation in ['sum', 'mean', 'max']:
+    if operation not in ['sum', 'mean', 'max', 'median']:
         raise ValueError('Error [downscale]: Operation of \'%s\' not supported.' % operation)
     if ndarray.ndim != len(new_shape):
         raise ValueError("Error [downscale]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
@@ -1470,9 +855,12 @@ def downscale(ndarray, new_shape, operation='mean'):
     compression_pairs = [(d, c//d) for d,c in zip(new_shape, ndarray.shape)]
     flattened = [l for p in compression_pairs for l in p]
     ndarray = ndarray.reshape(flattened)
-    for i in range(len(new_shape)):
-        op = getattr(ndarray, operation)
-        ndarray = op(-1*(i+1))
+    if operation == 'median':
+        ndarray = np.median(ndarray, axis=1)
+    else:
+        for i in range(len(new_shape)):
+            op = getattr(ndarray, operation)
+            ndarray = op(-1*(i+1))
     return ndarray
 
 
@@ -1554,9 +942,9 @@ def cal_sol_fac(dtime):
     """
 
     doy = dtime.timetuple().tm_yday
-    eps = 0.01673
-    perh= 2.0
-    rsun = (1.0 - eps*np.cos(2.0*np.pi*(doy-perh)/365.0))
+    eps = 0.0167086
+    perh= 4.0
+    rsun = (1.0 - eps*np.cos(0.017202124161707175*(doy-perh)))
     solfac = 1.0/(rsun**2)
 
     return solfac
@@ -1595,33 +983,108 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
         sza[i] = sza_i
 
         saa_i = pysolar.solar.get_azimuth(latitude[i], longitude[i], dtime_i, elevation=altitude[i])
-        if saa_i >= 0.0:
-            if 0.0<=saa_i<=180.0:
-                saa_i = 180.0 - saa_i
-            elif 180.0<saa_i<=360.0:
-                saa_i = 540.0 - saa_i
-            else:
-                saa_i = np.nan
-        elif saa_i < 0.0:
-            if -180.0<=saa_i<0.0:
-                saa_i = -saa_i + 180.0
-            elif -360.0<=saa_i<-180.0:
-                saa_i = -saa_i - 180.0
-            else:
-                saa_i = np.nan
+        # if saa_i >= 0.0:
+        #     if 0.0<=saa_i<=180.0:
+        #         saa_i = 180.0 - saa_i
+        #     elif 180.0<saa_i<=360.0:
+        #         saa_i = 540.0 - saa_i
+        #     else:
+        #         saa_i = np.nan
+        # elif saa_i < 0.0:
+        #     if -180.0<=saa_i<0.0:
+        #         saa_i = -saa_i + 180.0
+        #     elif -360.0<=saa_i<-180.0:
+        #         saa_i = -saa_i - 180.0
+        #     else:
+        #         saa_i = np.nan
         saa[i] = saa_i
 
     return sza, saa
 
+def g0_calc(lat):
+    """
+    Calculate the surface gravity acceleration.
 
+    according to Eq. 11 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
+    """
+    lat_rad = lat * np.pi / 180
+    return 9.806160 * (1 - 0.0026373 * np.cos(2*lat_rad) + 0.0000059 * np.cos(2*lat_rad)**2) # in m/s^2
 
-def cal_mol_ext(wv0, pz1, pz2):
+def g_alt_calc(g0, lat, z):
+    """
+    Calculate the gravity acceleration at z.
+
+    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
+    
+    Input:
+        g0: gravity acceleration at the surface (m/s^2)
+        lat: latitude (degrees)
+        z: height (m)
+    """
+    lat_rad = lat * np.pi / 180
+    g = g0*100 - (3.085462e-4 + 2.27e-7 * np.cos(2 * lat_rad)) * z \
+           + (7.254e-11 + 1.0e-13 * np.cos(2 * lat_rad)) * z**2 \
+           - (1.517e-17 + 6.0e-20 * np.cos(2 * lat_rad)) * z**3
+    return g/100
+
+def cal_mol_ext(wv0, pz1, pz2, atm0):
 
     """
     Input:
         wv0: wavelength (in microns) --- can be an array
         pz1: numpy array, Pressure of lower layer (hPa)
         pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
+        atm0: er3t atmosphere object
+    Output:
+        tauray: extinction
+    Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
+    in Python program:
+        result=bodhaine(0.5,1000,4)
+    Note: If you input an array of wavelengths, the result will also be an
+          array corresponding to the Rayleigh optical depth at these wavelengths.
+    """
+    # avogadro's number
+    A_ = 6.02214179e23
+    try:
+        lat = atm0.lat
+    except AttributeError:
+        lat = 30.0 # default latitude
+    g0 = g0_calc(lat) # m/s^2
+    # g0 = 9.81
+    z = atm0.lay['altitude']['data']
+    z_sfc = atm0.lay['altitude']['data'][0]
+    g = g_alt_calc(g0, lat, z*1000) * 100 # convert to cm/s^2
+
+    g0 = g0 * 100 # convert to cm/s^2
+    ma = 28.9595 + (15.0556 * atm0.lay['co2']['data']/atm0.lay['air']['data'])
+
+    p_lay = atm0.lay['pressure']['data'] * 1000 # convert to dyne/cm^2
+    p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
+    dp_lev = (p_lev[:-1]-p_lev[1:]) # convert to dyne/cm^2
+    num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
+    den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
+    tauray = 0.00210966*(num/den)*(pz1-pz2)/1013.25
+    
+    const = dp_lev * A_ / (g * ma) * 1e-28
+    const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
+    # print(const)
+    print("sum const", np.sum(const))
+    print("const_sfc", const_sfc)
+    print("45N const:", 1013000 * A_ / ((g_alt_calc((g0_calc(45)), 45, 0)) * 100 * 28.9595) * 1e-28)
+    # sys.exit()
+    # tauray = const*(num/den)#
+    tauray = const_sfc*(num/den)*(pz1-pz2)/1013.25
+    return tauray
+
+
+def cal_mol_ext_0(wv0, pz1, pz2, atm0):
+
+    """
+    Input:
+        wv0: wavelength (in microns) --- can be an array
+        pz1: numpy array, Pressure of lower layer (hPa)
+        pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
+        atm0: er3t atmosphere object
     Output:
         tauray: extinction
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
@@ -1634,8 +1097,8 @@ def cal_mol_ext(wv0, pz1, pz2):
     num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
     den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
     tauray = 0.00210966*(num/den)*(pz1-pz2)/1013.25
+    
     return tauray
-
 
 
 def cal_ext(cot, cer, dz=1.0, Qe=2.0):
@@ -1759,8 +1222,155 @@ def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
 
     return lon1, lat1
 
-#\---------------------------------------------------------------------------/
 
-if __name__ == '__main__':
 
-    pass
+def parse_geojson(geojson_fpath):
+
+    import json
+    with open(geojson_fpath, 'r') as f:
+        data = json.load(f)
+        # n_coords = len(data['features'][0]['geometry']['coordinates'][0])
+
+    coords = data['features'][0]['geometry']['coordinates']
+
+    lons = np.array(coords[0])[:, 0]
+    lats = np.array(coords[0])[:, 1]
+    return lons, lats
+
+
+
+def region_parser(extent, lons, lats, geojson_fpath):
+    """
+    Parse region specifications and return longitude and latitude arrays.
+    This function processes different forms of region specifications: extent, lon/lat coordinates, or a geoJSON file.
+    It validates inputs and returns arrays of longitudes and latitudes that define the region.
+    Args:
+    ----
+        extent (list or None): Region extent as [lon_min, lon_max, lat_min, lat_max]
+            (i.e., West, East, South, North).
+        lons (list or None): Longitude bounds as [lon_min, lon_max].
+        lats (list or None): Latitude bounds as [lat_min, lat_max].
+        geojson_fpath (str or None): File path to a geoJSON file containing region information.
+
+    Returns:
+    -------
+        tuple: A tuple containing:
+            - llons (numpy.ndarray): Array of longitudes linearly spaced across the region.
+            - llats (numpy.ndarray): Array of latitudes linearly spaced across the region.
+    Raises:
+        SystemExit: If inputs are invalid or insufficient to define a region.
+    """
+
+    if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
+        print('Error [region_parser]: Must provide either extent or lon/lat coordinates or a geoJSON file')
+        sys.exit()
+
+    if (extent is not None) and ((lats is not None) or (lons is not None)) and (geojson_fpath is not None):
+        print('Warning [region_parser]: Received multiple regions of interest. Only `extent` will be used.')
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
+
+
+    if (extent is not None):
+        if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
+            print('Error [region_parser]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+            sys.exit()
+
+        # check to make sure extent is correct
+        if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
+            msg = 'Error [region_parser]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
+            print(msg)
+            sys.exit()
+
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
+
+    elif (lats is not None) and (lons is not None):
+        if ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
+            llons = np.linspace(lons[0], lons[1], 100)
+            llats = np.linspace(lats[0], lats[1], 100)
+            return llons, llats
+        else:
+            print('Error [region_parser]: Must provide two coorect bounds each for `--lons` and `--lats`')
+            sys.exit()
+
+
+    elif (geojson_fpath is not None):
+        llons, llats = parse_geojson(geojson_fpath)
+        return llons, llats
+
+
+
+def format_time(total_seconds):
+    """
+    Convert seconds to hours, minutes, seconds, and milliseconds.
+
+    Parameters:
+    - total_seconds: The total number of seconds to convert.
+
+    Returns:
+    - A tuple containing hours, minutes, seconds, and milliseconds.
+    """
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    milliseconds = (total_seconds - int(total_seconds)) * 1000
+
+    return (int(hours), int(minutes), int(seconds), int(milliseconds))
+
+
+
+def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
+    """
+    Unpack a uint16 or 32 or 64 array into binary bits.
+    """
+
+    # convert to right dtype
+    uint_array = uint_array.astype('uint{}'.format(num_bits))
+
+    if num_bits == 8: # just use numpy
+        bits = np.unpackbits(uint_array.flatten(), bitorder=bitorder)
+        # num_bits has to be the last dimensions to get the right array
+        bits = bits.reshape(list(uint_array.shape) + [num_bits])
+        # now we can transpose
+        return np.transpose(bits, axes=(2, 0, 1))
+
+    elif (num_bits == 16) or (num_bits == 32) or (num_bits == 64):
+
+        # Convert uintxx array to uint8 array
+        uint8_array = uint_array.view(np.uint8).reshape(-1, int(num_bits/8))
+
+        # Unpack bits from uint8 array
+        # force little endian since big endian seems to pad an extra 0
+        # and then reverse it if needed
+        bits = np.unpackbits(uint8_array, bitorder='little', axis=1)
+
+        # Reshape to match original uint16 array shape with an additional dimension for bits
+        # note that num_bits must be the last dimension here to get the right reshaped array
+        bits = bits.reshape(list(uint_array.shape) + [num_bits])
+
+    else:
+        raise ValueError("Only uint8, uint16, uint32, and uint64 dtypes are supported. `num_bits` must be >=8 ")
+
+    if bitorder == 'big': # reverse the order
+        return np.transpose(bits[:, :, ::-1], axes=(2, 0, 1))
+
+    return np.transpose(bits, axes=(2, 0, 1))
+
+
+def has_common_substring(input_str, substring_list):
+    """
+    Check if the input string contains any of the substrings from the list without using for loops.
+
+    Args:
+    ----
+        input_str (str): The string to check against.
+        substring_list (list): List of substrings to look for in the input string.
+
+    Returns:
+    -------
+        bool: True if input_str contains any substring from substring_list, False otherwise.
+    """
+    return any(substring in input_str for substring in substring_list)

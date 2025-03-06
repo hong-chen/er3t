@@ -321,7 +321,7 @@ def generate_message(data_dict, dataType, dash_extra=2):
 
     body = ''
     for vname in vnames:
-        dashed_line = '-'*(Nmax-len(vname))
+        dashed_line = '─'*(Nmax-len(vname))
         data_info   = data_dict[vname]
         line = '{vname} {dashed_line} : {data_info}\n'.format(vname=vname, dashed_line=dashed_line, data_info=data_info)
         body += line

@@ -69,6 +69,7 @@ def test_abs_16g(fdir):
     abs_obj = er3t.pre.abs.abs_16g(fname=fname_abs, atm_obj=atm0, verbose=True)
 
 
+
 def test_abs_rrtmg(fdir='tmp-data'):
 
     if not os.path.exists(fdir):
@@ -84,15 +85,15 @@ def test_abs_rrtmg(fdir='tmp-data'):
     # read out abs coef for USSA (US standard atmosphere)
     # provided by Xiuhong Chen, gives <alt_ref> and <coef_ref>
     #/----------------------------------------------------------------------------\#
-    Nz = 39; Nb = 14; Ng = 16
-    fname    = 'data/coef_sw_ussa.txt'
-    data     = np.genfromtxt(fname)
-    alt_ref0  = data[:, 0]
-    coef_ref0 = data[:, 1:].reshape((Nz, Nb, Ng))
+    # Nz = 39; Nb = 14; Ng = 16
+    # fname    = 'data/coef_sw_ussa.txt'
+    # data     = np.genfromtxt(fname)
+    # alt_ref0  = data[:, 0]
+    # coef_ref0 = data[:, 1:].reshape((Nz, Nb, Ng))
 
-    logic = (alt_ref0>=atm0.lay['altitude']['data'][0]) & (alt_ref0<=atm0.lay['altitude']['data'][-1])
-    alt_ref  = alt_ref0[logic]
-    coef_ref = coef_ref0[logic, ...]
+    # logic = (alt_ref0>=atm0.lay['altitude']['data'][0]) & (alt_ref0<=atm0.lay['altitude']['data'][-1])
+    # alt_ref  = alt_ref0[logic]
+    # coef_ref = coef_ref0[logic, ...]
     #\----------------------------------------------------------------------------/#
 
 
@@ -155,67 +156,93 @@ def test_abs_rrtmg(fdir='tmp-data'):
     sys.exit()
 
 
+
 def test_abs_reptran(fdir='tmp-data'):
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
+
+    wavelength = 770.0
 
     # create atm file
     #/----------------------------------------------------------------------------\#
     levels = np.arange(0.5, 20.6, 1.0) # to match layer altitude with <alt_ref>
     fname_atm  = '%s/atm.pk' % fdir
     atm0 = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=True)
+    alt0 = atm0.lay['altitude']['data']
     #\----------------------------------------------------------------------------/#
 
-    # abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis')
-    abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis', atm_obj=atm0, band_name='modis_terra_b15')
-
-    # for gas_type in atm0.gases:
-    #     vmrs_atm = atm0.lay[gas_type.lower()]['data']/atm0.lay['factor']['data']
-    #     print(gas_type)
-    #     print(vmrs_atm)
-    # sys.exit()
-
-    # for band in range(1, 21):
-    #     mod_rep = abs_rep(band='B%2.2d' % band, atm_obj=atm0)
-    #     print(mod_rep.name_tag)
-    #     print('Solar      :', mod_rep.sol)
-    #     print('Wavelength :', mod_rep.wvl)
-    #     print('Gas species:', mod_rep.gases)
-    #     print('Ng         :', mod_rep.Ng)
-    #     print('-'*60)
-        # sys.exit()
-
-
-    # read out abs coef for USSA (US standard atmosphere)
-    # provided by Xiuhong Chen, gives <alt_ref> and <coef_ref>
+    # create abs file
     #/----------------------------------------------------------------------------\#
-    # Nz = 39; Nb = 14; Ng = 16
-    # fname    = 'data/coef_sw_ussa.txt'
-    # data     = np.genfromtxt(fname)
-    # alt_ref0  = data[:, 0]
-    # coef_ref0 = data[:, 1:].reshape((Nz, Nb, Ng))
-
-    # logic = (alt_ref0>=atm0.lay['altitude']['data'][0]) & (alt_ref0<=atm0.lay['altitude']['data'][-1])
-    # alt_ref  = alt_ref0[logic]
-    # coef_ref = coef_ref0[logic, ...]
+    # fname_abs  = '%s/abs.pk' % fdir
+    # abs0 = er3t.pre.abs.abs_16g(wavelength=wavelength, atm_obj=atm0, overwrite=True)
+    # coef0 = np.zeros_like(atm0.lay['altitude']['data'])
+    # for i in range(coef0.size):
+    #     coef0[i] = (abs0.coef['abso_coef']['data'][i, :] * abs0.coef['weight']['data'] * abs0.coef['slit_func']['data'][i, :]).sum()
+    # print(coef0)
     #\----------------------------------------------------------------------------/#
 
-
-    # compare
+    # reptran
     #/----------------------------------------------------------------------------\#
-    # coef_ref0 = coef_ref[:, iband, :]
-
-    # iband = 0
-    # abs0 = er3t.pre.abs.abs_rrtmg_sw(iband=iband, atm_obj=atm0)
-    # print(abs0.coef['weight']['data'].sum())
-
-    # for iband in range(14):
-    #     abs0 = er3t.pre.abs.abs_rrtmg_sw(iband=iband, atm_obj=atm0)
+    wvls  = np.arange(300.0, 2401.0, 5.0)
+    coef1 = np.zeros((wvls.size, alt0.size), dtype=np.float64)
+    for i, wavelength in enumerate(wvls):
+        try:
+            # abs1 = er3t.pre.abs.abs_rep(wavelength=wavelength, target='modis', atm_obj=atm0, band_name='modis_aqua_b01')
+            abs1 = er3t.pre.abs.abs_rep(wavelength=wavelength, target='fine', atm_obj=atm0)
+            print(i, wavelength)
+            print(abs1.wvl_info)
+            for j in range(alt0.size):
+                coef1[i, j] = (abs1.coef['abso_coef']['data'][j, :] * abs1.coef['weight']['data']).sum()
+        except Exception as error:
+            print(error)
     #\----------------------------------------------------------------------------/#
 
     sys.exit()
 
+    # figure
+    #/----------------------------------------------------------------------------\#
+    if True:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111)
+        ax1.plot(wvls, coef1[:, 0], color='r')
+        ax1.plot(wvls, coef1[:, 10], color='g')
+        ax1.plot(wvls, coef1[:, -1], color='b')
+        # ax1.plot(coef0, alt0, c='k', lw=1.0)
+        # ax1.plot(coef1, alt0, c='r', lw=1.0)
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.plot([0, 1], [0, 1], color='k', ls='--')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
+    #\----------------------------------------------------------------------------/#
+
+    # print(coef0)
+    # print(abs0.coef['solar']['data'])
+    # print(coef1)
+    # print(abs1.coef['solar']['data'])
+
+    # abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis')
+    # abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis', atm_obj=atm0)
+    # abs0 = er3t.pre.abs.abs_rep(wavelength=650.0, target='modis', atm_obj=atm0, band_name='modis_terra_b15')
+    # abs0 = er3t.pre.abs.abs_rep(wavelength=760.0, target='coarse', atm_obj=atm0)
 
 
     # figures
@@ -253,19 +280,64 @@ def test_abs_reptran(fdir='tmp-data'):
             #\----------------------------------------------------------------------------/#
     #\----------------------------------------------------------------------------/#
 
-    # create abs file, but we will need to input the created atm file
+
+
+def test_abs_16g_solar(fdir):
+
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
+    # create atm file
+    levels = np.linspace(0.0, 35.0, 71)
+    fname_atm  = '%s/atm.pk' % fdir
+    atm0 = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=True)
+
+    wvls = np.arange(300.0, 2500.1, 1.0)
+    solar = np.zeros_like(wvls)
+    for i, wavelength in enumerate(wvls):
+        print(wavelength)
+        abs_obj = er3t.pre.abs.abs_16g(wavelength=wavelength, atm_obj=atm0, verbose=True)
+        solar[i] = np.sum(abs_obj.coef['solar']['data'] * abs_obj.coef['weight']['data'])
+
+    # figure
     #/----------------------------------------------------------------------------\#
-    # fname_abs  = '%s/abs.pk' % fdir
-    # wavelength = 500.0
-    # abs_obj = abs_16g(wavelength=wavelength, atm_obj=atm0, verbose=True)
+    if True:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot
+        #/--------------------------------------------------------------\#
+        ax1 = fig.add_subplot(111)
+        # cs = ax1.imshow(.T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        ax1.scatter(wvls, solar, s=6, c='k', lw=0.0)
+        # ax1.hist(.ravel(), bins=100, histtype='stepfilled', alpha=0.5, color='black')
+        # ax1.plot([0, 1], [0, 1], color='k', ls='--')
+        # ax1.set_xlim(())
+        # ax1.set_ylim(())
+        # ax1.set_xlabel('')
+        # ax1.set_ylabel('')
+        # ax1.set_title('')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #\--------------------------------------------------------------/#
+        # save figure
+        #/--------------------------------------------------------------\#
+        # fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        # _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        # fig.savefig('%s.png' % _metadata['Function'], bbox_inches='tight', metadata=_metadata)
+        #\--------------------------------------------------------------/#
+        plt.show()
+        sys.exit()
     #\----------------------------------------------------------------------------/#
-    sys.exit()
+
 
 
 if __name__ == '__main__':
 
-    # test_abs_16g('tmp-data/abs_16g')
+    # fdir = 'tmp-data/abs_16g'
+    # test_abs_16g(fdir)
 
-    # test_abs_rrtmg()
+    test_abs_rrtmg()
 
-    test_abs_reptran()
+    # test_abs_reptran()
+    # test_abs_16g_solar(fdir)

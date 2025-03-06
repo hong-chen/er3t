@@ -1,36 +1,36 @@
 """
 by Hong Chen (hong.chen@lasp.colorado.edu)
-   Vikas Nataraja
 
-This code serves as an example code to reproduce 3D MODIS radiance simulation for App. 2 in Chen et al. (2022).
+This code serves as an example code to reproduce 3D/IPA OCO-2 radiance simulation for App. 1 in Chen et al. (2022).
 
 The processes include:
-    1) `main_pre()`: automatically download and pre-process satellite data products (~390MB data will be
-       downloaded and stored under data/02_modis_rad-sim/download) from NASA data archive
+    1) automatically download and pre-process satellite data products (~1.9 GB data will be downloaded and
+       stored under data/01_oco2_rad-sim/download) from NASA data archive
         a) MODIS-Aqua_rgb_2019-09-02_(-109.10,-106.90,36.90,39.10).png
         b) MYD02QKM.A2019245.2025.061.2019246161115.hdf
         c) MYD03.A2019245.2025.061.2019246155053.hdf
         d) MYD06_L2.A2019245.2025.061.2019246164334.hdf
         e) MCD43A3.A2019245.h09v05.061.2020311120758.hdf
+        f) oco2_L1bScND_27502a_190902_B10003r_200220035234.h5
+        g) oco2_L2MetND_27502a_190902_B10003r_200124030754.h5
+        h) oco2_L2StdND_27502a_190902_B10004r_200226231039.h5
 
-    2) `main_sim()`: run simulation
+    2) run simulation
         a) 3D mode
-        b) IPA mode (turned off by default, this can be used
-             for sanity check of IPA radiance self-consistency,
-             but will require a lot of photons to reach decent
-             accuracy)
+        b) IPA mode
 
     3) `main_post()`: post-process data
         a) extract radiance observations from pre-processed data
-        b) extract 3D (IPA if available) radiance simulations of EaR3T
+        b) extract 3D and IPA radiance simulations of EaR3T
         c) plot
 
 This code has been tested under:
-    1) Linux on 2023-06-22 by Hong Chen
+    1) Linux on 2023-06-27 by Hong Chen
       Operating System: Red Hat Enterprise Linux
            CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
                 Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
           Architecture: x86-64
+
 """
 
 import os
@@ -42,7 +42,7 @@ from pyhdf.SD import SD, SDC
 import numpy as np
 import datetime
 from scipy.io import readsav
-from scipy import interpolate, stats
+from scipy import interpolate
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -53,24 +53,27 @@ import matplotlib.gridspec as gridspec
 from matplotlib import rcParams, ticker
 from matplotlib.ticker import FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-mpl.use('Agg')
-
+# import cartopy.crs as ccrs
+# mpl.use('Agg')
 
 
 import er3t
-
 
 
 # global variables
 #/--------------------------------------------------------------\#
 params = {
          'name_tag' : os.path.relpath(__file__).replace('.py', ''),
-       'wavelength' : 650.0,
              'date' : datetime.datetime(2019, 9, 2),
+       'wavelength' : 768.5151,
+         'oco_band' : 'o2a',
            'region' : [-109.1, -106.9, 36.9, 39.1],
+               'dx' : 250.0,
+               'dy' : 250.0,
            'photon' : 1e9,
              'Ncpu' : 12,
        'photon_ipa' : 2e7,
+   'wavelength_ipa' : 650.0,
           'cot_ipa' : np.concatenate((       \
                np.arange(0.0, 2.0, 0.5),     \
                np.arange(2.0, 30.0, 2.0),    \
@@ -78,8 +81,6 @@ params = {
                np.arange(60.0, 100.0, 10.0), \
                np.arange(100.0, 201.0, 50.0) \
                )),
-               'dx' : 250.0,
-               'dy' : 250.0,
         }
 #\--------------------------------------------------------------/#
 
@@ -93,18 +94,16 @@ class satellite_download:
             date=None,
             extent=None,
             fname=None,
-            satellite='aqua',
             fdir_out='data',
             overwrite=False,
             quiet=False,
             verbose=False):
 
-        self.date      = date
-        self.extent    = extent
-        self.satellite = satellite
-        self.fdir_out  = fdir_out
-        self.quiet     = quiet
-        self.verbose   = verbose
+        self.date     = date
+        self.extent   = extent
+        self.fdir_out = fdir_out
+        self.quiet    = quiet
+        self.verbose  = verbose
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -122,8 +121,7 @@ class satellite_download:
 
         else:
 
-            msg = '\nError [satellite_download]: Please check if <%s> exists or provide <date> and <extent> to proceed.' % fname
-            raise OSError(msg)
+            sys.exit('Error   [satellite_download]: Please check if \'%s\' exists or provide \'date\' and \'extent\' to proceed.' % fname)
 
     def load(self, fname):
 
@@ -137,8 +135,7 @@ class satellite_download:
                 self.fnames   = obj.fnames
                 self.fdir_out = obj.fdir_out
             else:
-                msg = '\nError [satellite_download]: File <%s> is not the correct pickle file to load.' % fname
-                raise OSError(msg)
+                sys.exit('Error   [satellite_download]: File \'%s\' is not the correct pickle file to load.' % fname)
 
     def run(self, run=True):
 
@@ -146,44 +143,44 @@ class satellite_download:
         lat0 = np.linspace(self.extent[2], self.extent[3], 100)
         lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
 
-        # create prefixes for the satellite products
-        if self.satellite.lower() == 'aqua':
-            dataset_tags = ['61/MYD03', '61/MYD06_L2', '61/MYD02QKM']
-        elif self.satellite.lower() == 'terra':
-            dataset_tags = ['61/MOD03', '61/MOD06_L2', '61/MOD02QKM']
-        else:
-            msg = '\nError [satellite_download]: Satellite must be either \'Aqua\' or \'Terra\'. %s is currently not supported' % self.satellite
-            raise ValueError(msg)
-
         self.fnames = {}
 
-        # MODIS RGB imagery
-        self.fnames['mod_rgb'] = [er3t.util.download_worldview_rgb(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.dev.daac.download_worldview_image(self.date, self.extent, fdir_out=self.fdir_out, satellite='aqua', instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
-
-        filename_tags_03 = er3t.util.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
-        if self.verbose:
-           print('Message [satellite_download]: Found %s %s overpasses' % (len(filename_tags_03), self.satellite))
+        filename_tags_03 = er3t.dev.daac.get_satfile_tag(self.date, lon, lat, satellite='aqua', instrument='modis')
 
         for filename_tag in filename_tags_03:
-            fnames_03     = er3t.util.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = er3t.util.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = er3t.util.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-
+            fnames_03     = er3t.dev.daac.download_laads_https(self.date, '61/MYD03'   , filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = er3t.dev.daac.download_laads_https(self.date, '61/MYD06_L2', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = er3t.dev.daac.download_laads_https(self.date, '61/MYD02QKM', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02
             self.fnames['mod_03'] += fnames_03
 
         # MODIS surface product
         self.fnames['mod_43'] = []
-        filename_tags_43 = er3t.util.get_sinusoidal_grid_tag(lon, lat)
+        filename_tags_43 = er3t.util.modis.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_43:
-            fnames_43 = er3t.util.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_43 = er3t.dev.daac.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_43'] += fnames_43
+
+        # OCO2 std and met file
+        self.fnames['oco_std'] = []
+        self.fnames['oco_met'] = []
+        self.fnames['oco_l1b'] = []
+        for filename_tag in filename_tags_03:
+            dtime = datetime.datetime.strptime(filename_tag, 'A%Y%j.%H%M') + datetime.timedelta(minutes=7.0)
+            fnames_std = er3t.dev.daac.download_oco2_https(dtime, 'OCO2_L2_Standard.10r', fdir_out=self.fdir_out, run=run)
+            fnames_met = er3t.dev.daac.download_oco2_https(dtime, 'OCO2_L2_Met.10r'     , fdir_out=self.fdir_out, run=run)
+            fnames_l1b = er3t.dev.daac.download_oco2_https(dtime, 'OCO2_L1B_Science.10r', fdir_out=self.fdir_out, run=run)
+            self.fnames['oco_std'] += fnames_std
+            self.fnames['oco_met'] += fnames_met
+            self.fnames['oco_l1b'] += fnames_l1b
+
 
     def dump(self, fname):
 
@@ -193,25 +190,91 @@ class satellite_download:
                 print('Message [satellite_download]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
 
+def cal_sat_delta_t(sat):
+
+    # estimate average OCO-2 passing time for the scene
+    #/----------------------------------------------------------------------------\#
+    f = h5py.File(sat.fnames['oco_l1b'][0], 'r')
+    lon_oco_l1b = f['SoundingGeometry/sounding_longitude'][...]
+    lat_oco_l1b = f['SoundingGeometry/sounding_latitude'][...]
+    logic = (lon_oco_l1b>=sat.extent[0]) & (lon_oco_l1b<=sat.extent[1]) & (lat_oco_l1b>=sat.extent[2]) & (lat_oco_l1b<=sat.extent[3])
+    utc_oco_byte = f['SoundingGeometry/sounding_time_string'][...][logic]
+    f.close()
+    utc_oco = np.zeros(utc_oco_byte.size, dtype=np.float64)
+    for i, utc_oco_byte0 in enumerate(utc_oco_byte):
+        utc_oco_str0 = utc_oco_byte0.decode('utf-8').split('.')[0]
+        utc_oco[i] = (datetime.datetime.strptime(utc_oco_str0, '%Y-%m-%dT%H:%M:%S')-datetime.datetime(1993, 1, 1)).total_seconds()
+    #\----------------------------------------------------------------------------/#
+
+    # estimate average MODIS passing time for the scene
+    #/----------------------------------------------------------------------------\#
+    f = SD(sat.fnames['mod_03'][0], SDC.READ)
+    lon_mod = f.select('Longitude')[:][::10, :]
+    lat_mod = f.select('Latitude')[:][::10, :]
+    utc_mod = f.select('SD start time')[:]
+    f.end()
+    logic = (lon_mod>=sat.extent[0]) & (lon_mod<=sat.extent[1]) & (lat_mod>=sat.extent[2]) & (lat_mod<=sat.extent[3])
+    logic = (np.sum(logic, axis=1)>0)
+    utc_mod = utc_mod[logic]
+    #\----------------------------------------------------------------------------/#
+
+    return utc_oco.mean()-utc_mod.mean()
+
+def func(x, a):
+
+    return a*x
+
+def cal_sfc_alb_2d(x_ref, y_ref, data_ref, x_bkg_2d, y_bkg_2d, data_bkg_2d, scale=True, replace=True):
+
+    logic = (x_ref>=x_bkg_2d.min()) & (x_ref<=x_bkg_2d.max()) & (y_ref>=y_bkg_2d.min()) & (y_ref<=y_bkg_2d.max())
+    x_ref = x_ref[logic]
+    y_ref = y_ref[logic]
+    data_ref = data_ref[logic]
+
+    points = np.transpose(np.vstack((x_bkg_2d.ravel(), y_bkg_2d.ravel())))
+    data_bkg = interpolate.griddata(points, data_bkg_2d.ravel(), (x_ref, y_ref), method='nearest')
+
+    logic_valid = (data_bkg>0.0) & (data_ref>0.0)
+    x_ref = x_ref[logic_valid]
+    y_ref = y_ref[logic_valid]
+    data_bkg = data_bkg[logic_valid]
+    data_ref = data_ref[logic_valid]
+
+    if scale:
+        popt, pcov = curve_fit(func, data_bkg, data_ref)
+        slope = popt[0]
+    else:
+        slope = 1.0
+
+    print('Message [cal_sfc_alb_2d]: slope:', slope)
+    data_2d = data_bkg_2d*slope
+
+    dx = x_bkg_2d[1, 0] - x_bkg_2d[0, 0]
+    dy = y_bkg_2d[0, 1] - y_bkg_2d[0, 0]
+
+    if replace:
+        indices_x = np.int_(np.round((x_ref-x_bkg_2d[0, 0])/dx, decimals=0))
+        indices_y = np.int_(np.round((y_ref-y_bkg_2d[0, 0])/dy, decimals=0))
+        data_2d[indices_x, indices_y] = data_ref
+
+    return data_2d
+
 def cdata_sat_raw(
-        wvl=params['wavelength'],
+        oco_band=params['oco_band'],
         dx=params['dx'],
         dy=params['dy'],
         ):
 
     # process wavelength
     #/----------------------------------------------------------------------------\#
-    index = {650: 0, 860: 1}
-
-    if (wvl>=620) & (wvl<=670):
+    if oco_band.lower() == 'o2a':
         wvl = 650
-    elif (wvl>=841) & (wvl<=876):
-        wvl = 860
+        index_wvl = 0      # select MODIS 650 nm band radiance/reflectance for IPA cloud retrieval
+        wvl_sfc = 860
+        index_wvl_sfc = 1  # select MODIS 860 nm band surface albedo for scaling
     else:
-        msg = '\nError [cdata_sat_raw]: do not support wavelength of %d nm.' % wvl
-        raise ValueError(msg)
-
-    index_wvl = index[wvl]
+        msg = '\nError [cdata_sat_raw]: Currently, only <oco_band=\'o2a\'> is supported.>'
+        sys.exit(msg)
     #\----------------------------------------------------------------------------/#
 
 
@@ -267,7 +330,7 @@ def cdata_sat_raw(
     g1['rad_%4.4d' % wvl] = rad_2d
     g1['ref_%4.4d' % wvl] = ref_2d
 
-    print('Message [cdata_saw_raw]: the processing of MODIS L1B radiance/reflectance at %d nm is complete.' % wvl)
+    print('Message [cdata_sat_raw]: the processing of MODIS L1B radiance/reflectance at %d nm is complete.' % wvl)
 
     f0['lon'] = lon_2d
     f0['lat'] = lat_2d
@@ -345,13 +408,101 @@ def cdata_sat_raw(
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
     mod43 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, sfc_43 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
-    sfc_43[sfc_43<0.0] = 0.0
-    sfc_43[sfc_43>1.0] = 1.0
+    lon_2d_sfc, lat_2d_sfc, sfc_43_0 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    sfc_43_0[sfc_43_0<0.0] = 0.0
+    sfc_43_0[sfc_43_0>1.0] = 1.0
 
-    g3['alb_43_%4.4d' % wvl] = sfc_43
+    lon_2d_sfc, lat_2d_sfc, sfc_43_1 = er3t.util.grid_by_dxdy(mod43.data['lon']['data'], mod43.data['lat']['data'], mod43.data['wsa']['data'][index_wvl_sfc, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    sfc_43_1[sfc_43_1<0.0] = 0.0
+    sfc_43_1[sfc_43_1>1.0] = 1.0
+
+    g3['lon'] = lon_2d_sfc
+    g3['lat'] = lat_2d_sfc
+
+    g3['alb_43_%4.4d' % wvl]     = sfc_43_0
+    g3['alb_43_%4.4d' % wvl_sfc] = sfc_43_1
 
     print('Message [cdata_sat_raw]: the processing of MODIS surface properties is complete.')
+    #\--------------------------------------------------------------/#
+
+
+    # OCO-2 data groups in the HDF file
+    #/--------------------------------------------------------------\#
+    gg = f0.create_group('oco')
+    gg1 = gg.create_group('o2a')
+    gg2 = gg.create_group('geo')
+    gg3 = gg.create_group('met')
+    gg4 = gg.create_group('sfc')
+    #\--------------------------------------------------------------/#
+
+    # Read OCO-2 radiance and wavelength data
+    #/--------------------------------------------------------------\#
+    oco = er3t.util.oco2_rad_nadir(sat0)
+
+    wvl_o2a  = np.zeros_like(oco.rad_o2_a, dtype=np.float64)
+    for i in range(oco.rad_o2_a.shape[0]):
+        for j in range(oco.rad_o2_a.shape[1]):
+            wvl_o2a[i, j, :]  = oco.get_wvl_o2_a(j)
+    #\--------------------------------------------------------------/#
+
+    # OCO L1B
+    #/--------------------------------------------------------------\#
+    gg['lon'] = oco.lon_l1b
+    gg['lat'] = oco.lat_l1b
+    gg['logic']  = oco.logic_l1b
+    gg['snd_id'] = oco.snd_id
+    gg1['rad']   = oco.rad_o2_a
+    gg1['wvl']   = wvl_o2a
+    gg2['sza'] = oco.sza
+    gg2['saa'] = oco.saa
+    gg2['vza'] = oco.vza
+    gg2['vaa'] = oco.vaa
+    print('Message [cdata_sat_raw]: the processing of OCO-2 radiance is complete.')
+    #\--------------------------------------------------------------/#
+
+    # OCO wind speed
+    #/--------------------------------------------------------------\#
+    # extract wind speed (10m wind)
+    f = h5py.File(sat0.fnames['oco_met'][0], 'r')
+    lon_oco_met0 = f['SoundingGeometry/sounding_longitude'][...]
+    lat_oco_met0 = f['SoundingGeometry/sounding_latitude'][...]
+    u_10m0 = f['Meteorology/windspeed_u_met'][...]
+    v_10m0 = f['Meteorology/windspeed_v_met'][...]
+    logic = (np.abs(u_10m0)<50.0) & (np.abs(v_10m0)<50.0) & \
+            (lon_oco_met0>=sat0.extent[0]) & (lon_oco_met0<=sat0.extent[1]) & \
+            (lat_oco_met0>=sat0.extent[2]) & (lat_oco_met0<=sat0.extent[3])
+    f.close()
+
+    gg3['lon'] = lon_oco_met0[logic]
+    gg3['lat'] = lat_oco_met0[logic]
+    gg3['u_10m'] = u_10m0[logic]
+    gg3['v_10m'] = v_10m0[logic]
+    gg3['delta_t'] = cal_sat_delta_t(sat0)
+    print('Message [cdata_sat_raw]: the processing of OCO-2 meteorological data is complete.')
+    #\--------------------------------------------------------------/#
+
+
+    # OCO-2 surface reflectance
+    #/--------------------------------------------------------------\#
+    # process wavelength
+    if oco_band.lower() == 'o2a':
+        vname = 'brdf_reflectance_o2'
+    else:
+        msg = '\nError [cdata_sat_raw]: Currently, only <oco_band=\'o2a\'> is supported.>'
+        sys.exit(msg)
+
+    oco = er3t.util.oco2_std(fnames=sat0.fnames['oco_std'], vnames=['BRDFResults/%s' % vname], extent=sat0.extent)
+
+    oco_sfc_alb = oco.data[vname]['data']
+    oco_sfc_alb[oco_sfc_alb<0.0] = 0.0
+
+    gg4['lon'] = oco.data['lon']['data']
+    gg4['lat'] = oco.data['lat']['data']
+    gg4['alb_%s' % oco_band.lower()] = oco_sfc_alb
+
+    oco_sfc_alb_2d = cal_sfc_alb_2d(oco.data['lon']['data'], oco.data['lat']['data'], oco_sfc_alb, lon_2d_sfc, lat_2d_sfc, sfc_43_1, scale=True, replace=True)
+    gg4['alb_%s_2d' % oco_band.lower()] = oco_sfc_alb_2d
+    print('Message [cdata_sat_raw]: the processing of OCO-2 surface reflectance is complete.')
     #\--------------------------------------------------------------/#
 
     f0.close()
@@ -359,7 +510,8 @@ def cdata_sat_raw(
 
 def plot_sat_raw():
 
-    wvl = params['wavelength']
+    wvl = 650.0
+    wvl_sfc = 860.0
 
     f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
 
@@ -381,7 +533,7 @@ def plot_sat_raw():
     cth = f0['mod/cld/cth_l2'][...]
     sfh = f0['mod/geo/sfh'][...]
 
-    alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
+    alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl_sfc][...]
 
     f0.close()
 
@@ -566,7 +718,7 @@ def plot_sat_raw():
     ax13.set_ylim((extent[2:]))
     ax13.set_xlabel('Longitude [$^\circ$]')
     ax13.set_ylabel('Latitude [$^\circ$]')
-    ax13.set_title('43A3 WSA')
+    ax13.set_title('43A3 WSA (860 nm)')
 
     divider = make_axes_locatable(ax13)
     cax = divider.append_axes('right', '5%', pad='3%')
@@ -591,9 +743,9 @@ def cloud_mask_rgb(
         lon_2d,
         lat_2d,
         frac=0.5,
-        a_r=1.0,
-        a_g=1.0,
-        a_b=1.0,
+        a_r=1.06,
+        a_g=1.06,
+        a_b=1.06,
         logic_good=None
         ):
 
@@ -653,14 +805,43 @@ def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, verbose=True):
 
     return lon, lat
 
-def cdata_cld_ipa(wvl=params['wavelength']):
+def wind_corr(lon0, lat0, u, v, dt, verbose=True):
+
+    """
+    Wind correction for the cloud positions
+
+    lon0: input longitude
+    lat0: input latitude
+    u   : meridional wind [meter/second], positive when eastward
+    v   : zonal wind [meter/second], positive when northward
+    dt  : delta time [second]
+    """
+
+    if verbose:
+        print('Message [wind_corr]: Please make sure the units of <u> and <v> are in the units of <m/s> and <dt> is in the units of <s>.')
+
+    lon, _ = er3t.util.cal_geodesic_lonlat(lon0, lat0, u*dt, 90.0)
+    _, lat = er3t.util.cal_geodesic_lonlat(lon0, lat0, v*dt, 0.0)
+
+    return lon, lat
+
+def cdata_cld_ipa(oco_band=params['oco_band'], plot=True):
+
+    # process wavelength
+    #/----------------------------------------------------------------------------\#
+    if oco_band.lower() == 'o2a':
+        wvl = 650
+    else:
+        msg = '\nError [cdata_sat_raw]: Currently, only <oco_band=\'o2a\'> is supported.>'
+        sys.exit(msg)
+    #\----------------------------------------------------------------------------/#
 
     # read in data
     #/----------------------------------------------------------------------------\#
     f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
     extent = f0['extent'][...]
-    ref_2d = f0['mod/rad/ref_%4.4d' % wvl][...]
-    rad_2d = f0['mod/rad/rad_%4.4d' % wvl][...]
+    ref_2d = f0['mod/rad/ref_%4.4d' % params['wavelength_ipa']][...]
+    rad_2d = f0['mod/rad/rad_%4.4d' % params['wavelength_ipa']][...]
     rgb    = f0['mod/rgb'][...]
     cot_l2 = f0['mod/cld/cot_l2'][...]
     cer_l2 = f0['mod/cld/cer_l2'][...]
@@ -672,7 +853,11 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     saa = f0['mod/geo/saa'][...]
     vza = f0['mod/geo/vza'][...]
     vaa = f0['mod/geo/vaa'][...]
-    alb = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
+    alb = f0['mod/sfc/alb_43_%4.4d' % params['wavelength_ipa']][...]
+    alb_oco = f0['oco/sfc/alb_%s_2d' % oco_band.lower()][...]
+    u_10m = f0['oco/met/u_10m'][...]
+    v_10m = f0['oco/met/v_10m'][...]
+    delta_t = f0['oco/met/delta_t'][...]
     f0.close()
     #\----------------------------------------------------------------------------/#
 
@@ -776,13 +961,13 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     # two relationships: one for geometrically thick clouds, one for geometrically thin clouds
     # ipa relationship of reflectance vs cloud optical thickness
     #/--------------------------------------------------------------\#
-    fdir  = 'tmp-data/ipa-%06.1fnm_thick_alb-%04.2f' % (wvl, alb.mean())
+    fdir  = 'tmp-data/ipa-%06.1fnm_thick_alb-%04.2f' % (params['wavelength_ipa'], alb.mean())
     f_mca_thick = er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=25.0,
             fdir=fdir,
             date=params['date'],
-            wavelength=wvl,
+            wavelength=params['wavelength_ipa'],
             surface_albedo=alb.mean(),
             solar_zenith_angle=sza.mean(),
             solar_azimuth_angle=saa.mean(),
@@ -795,13 +980,13 @@ def cdata_cld_ipa(wvl=params['wavelength']):
             overwrite=False
             )
 
-    fdir  = 'tmp-data/ipa-%06.1fnm_thin_alb-%04.2f' % (wvl, alb.mean())
+    fdir  = 'tmp-data/ipa-%06.1fnm_thin_alb-%04.2f' % (params['wavelength_ipa'], alb.mean())
     f_mca_thin= er3t.rtm.mca.func_ref_vs_cot(
             params['cot_ipa'],
             cer0=10.0,
             fdir=fdir,
             date=params['date'],
-            wavelength=wvl,
+            wavelength=params['wavelength_ipa'],
             surface_albedo=alb.mean(),
             solar_zenith_angle=sza.mean(),
             solar_azimuth_angle=saa.mean(),
@@ -836,15 +1021,56 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     #\----------------------------------------------------------------------------/#
 
 
-    # Parallax correction (for the cloudy pixels detected previously)
+    # for IPA calculation (only wind correction)
     #/----------------------------------------------------------------------------\#
+    # wind correction
+    # calculate new lon_corr, lat_corr based on wind speed
+    #/--------------------------------------------------------------\#
+    lon_corr, lat_corr  = wind_corr(lon_cld, lat_cld, np.nanmedian(u_10m), np.nanmedian(v_10m), delta_t)
+    #\--------------------------------------------------------------/#
+
+    # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
+    #/--------------------------------------------------------------\#
+    Nx, Ny = ref_2d.shape
+    cot_ipa_ = np.zeros_like(ref_2d)
+    cer_ipa_ = np.zeros_like(ref_2d)
+    cth_ipa_ = np.zeros_like(ref_2d)
+    cld_msk_  = np.zeros(ref_2d.shape, dtype=np.int32)
+    for i in range(indices_x.size):
+        ix = indices_x[i]
+        iy = indices_y[i]
+
+        lon_corr0 = lon_corr[i]
+        lat_corr0 = lat_corr[i]
+
+        ix_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_2d[0, 0], lat_corr0) // params['dx'])
+        iy_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_corr0, lat_2d[0, 0]) // params['dy'])
+
+        if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
+            cot_ipa_[ix_corr, iy_corr] = cot_ipa0[ix, iy]
+            cer_ipa_[ix_corr, iy_corr] = cer_ipa0[ix, iy]
+            cth_ipa_[ix_corr, iy_corr] = cth_ipa0[ix, iy]
+            cld_msk_[ix_corr, iy_corr] = 1
+    #\--------------------------------------------------------------/#
+    #\----------------------------------------------------------------------------/#
+
+
+    # for 3D calculation (parallax correction and wind correction)
+    #/----------------------------------------------------------------------------\#
+    # parallax correction
     # calculate new lon_corr, lat_corr based on cloud, surface and sensor geometries
     #/--------------------------------------------------------------\#
     vza_cld = vza[indices_x, indices_y]
     vaa_cld = vaa[indices_x, indices_y]
     sfh_cld = sfh[indices_x, indices_y] * 1000.0  # convert to meter from km
     cth_cld = cth_ipa0[indices_x, indices_y] * 1000.0 # convert to meter from km
-    lon_corr, lat_corr  = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
+    lon_corr_p, lat_corr_p = para_corr(lon_cld, lat_cld, vza_cld, vaa_cld, cth_cld, sfh_cld)
+    #\--------------------------------------------------------------/#
+
+    # wind correction
+    # calculate new lon_corr, lat_corr based on wind speed
+    #/--------------------------------------------------------------\#
+    lon_corr, lat_corr  = wind_corr(lon_corr_p, lat_corr_p, np.nanmedian(u_10m), np.nanmedian(v_10m), delta_t)
     #\--------------------------------------------------------------/#
 
     # perform parallax correction on cot_ipa0, cer_ipa0, and cot_ipa0
@@ -874,8 +1100,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     print(msg)
     #\--------------------------------------------------------------/#
 
-
-    # fill-in the empty cracks due to parallax and wind correction
+    # fill-in the empty cracks originated from parallax and wind correction
     #/--------------------------------------------------------------\#
     Npixel = 2
     frac_a = 0.7
@@ -884,14 +1109,14 @@ def cdata_cld_ipa(wvl=params['wavelength']):
         ix = indices_x[i]
         iy = indices_y[i]
         if (ix>=Npixel) and (ix<Nx-Npixel) and (iy>=Npixel) and (iy<Ny-Npixel) and \
-           (cot_ipa[ix, iy] == 0.0) and (cot_ipa0[ix, iy] > 0.0):
-               data_cot_ipa0 = cot_ipa0[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
+           (cot_ipa[ix, iy] == 0.0) and (cot_ipa_[ix, iy] > 0.0):
+               data_cot_ipa_ = cot_ipa_[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
 
                data_cot_ipa  = cot_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
                data_cer_ipa  = cer_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
                data_cth_ipa  = cth_ipa[ix-Npixel:ix+Npixel, iy-Npixel:iy+Npixel]
 
-               logic_cld0 = (data_cot_ipa0>0.0)
+               logic_cld0 = (data_cot_ipa_>0.0)
                logic_cld  = (data_cot_ipa>0.0)
 
                if (logic_cld0.sum() > int(frac_a * logic_cld0.size)) and \
@@ -914,10 +1139,11 @@ def cdata_cld_ipa(wvl=params['wavelength']):
         f0['mod/cld/cot_ipa'] = cot_ipa
         f0['mod/cld/cer_ipa'] = cer_ipa
         f0['mod/cld/cth_ipa'] = cth_ipa
-        f0['mod/cld/cot_ipa0'] = cot_ipa0
-        f0['mod/cld/cer_ipa0'] = cer_ipa0
-        f0['mod/cld/cth_ipa0'] = cth_ipa0
+        f0['mod/cld/cot_ipa0'] = cot_ipa_
+        f0['mod/cld/cer_ipa0'] = cer_ipa_
+        f0['mod/cld/cth_ipa0'] = cth_ipa_
         f0['mod/cld/logic_cld'] = (cld_msk==1)
+        f0['mod/cld/logic_cld0'] = (cld_msk_==1)
     except:
         del(f0['mod/cld/cot_ipa'])
         del(f0['mod/cld/cer_ipa'])
@@ -926,6 +1152,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
         del(f0['mod/cld/cer_ipa0'])
         del(f0['mod/cld/cth_ipa0'])
         del(f0['mod/cld/logic_cld'])
+        del(f0['mod/cld/logic_cld0'])
         f0['mod/cld/cot_ipa'] = cot_ipa
         f0['mod/cld/cer_ipa'] = cer_ipa
         f0['mod/cld/cth_ipa'] = cth_ipa
@@ -933,6 +1160,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
         f0['mod/cld/cer_ipa0'] = cer_ipa0
         f0['mod/cld/cth_ipa0'] = cth_ipa0
         f0['mod/cld/logic_cld'] = (cld_msk==1)
+        f0['mod/cld/logic_cld0'] = (cld_msk_==1)
     try:
         g0 = f0.create_group('cld_msk')
         g0['indices_x0'] = indices_x0
@@ -976,12 +1204,35 @@ def cdata_cld_ipa(wvl=params['wavelength']):
         g0['cot'] = f_mca_thin.cot
         g0['ref'] = f_mca_thin.ref
         g0['ref_std'] = f_mca_thin.ref_std
+    try:
+        g0 = f0.create_group('cld_corr')
+        g0['lon_ori'] = lon_cld
+        g0['lat_ori'] = lat_cld
+        g0['lon_corr_p'] = lon_corr_p
+        g0['lat_corr_p'] = lat_corr_p
+        g0['lon_corr'] = lon_corr
+        g0['lat_corr'] = lat_corr
+    except:
+        del(f0['cld_corr/lon_ori'])
+        del(f0['cld_corr/lat_ori'])
+        del(f0['cld_corr/lon_corr_p'])
+        del(f0['cld_corr/lat_corr_p'])
+        del(f0['cld_corr/lon_corr'])
+        del(f0['cld_corr/lat_corr'])
+        del(f0['cld_corr'])
+        g0 = f0.create_group('cld_corr')
+        g0['lon_ori'] = lon_cld
+        g0['lat_ori'] = lat_cld
+        g0['lon_corr_p'] = lon_corr_p
+        g0['lat_corr_p'] = lat_corr_p
+        g0['lon_corr'] = lon_corr
+        g0['lat_corr'] = lat_corr
     f0.close()
     #\----------------------------------------------------------------------------/#
 
 def plot_cld_ipa():
 
-    wvl = params['wavelength']
+    wvl = 650.0
 
     f0 = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
 
@@ -1011,7 +1262,7 @@ def plot_cld_ipa():
     cer_ipa = f0['mod/cld/cer_ipa'][...]
     cth_ipa = f0['mod/cld/cth_ipa'][...]
 
-    alb43 = f0['mod/sfc/alb_43_%4.4d' % wvl][...]
+    alb43 = f0['oco/sfc/alb_o2a_2d'][...]
 
     f0.close()
 
@@ -1244,7 +1495,7 @@ def plot_cld_ipa():
     ax16.set_ylim((extent[2:]))
     ax16.set_xlabel('Longitude [$^\circ$]')
     ax16.set_ylabel('Latitude [$^\circ$]')
-    ax16.set_title('43A3 WSA')
+    ax16.set_title('43A3 WSA (filled and scaled)')
 
     divider = make_axes_locatable(ax16)
     cax = divider.append_axes('right', '5%', pad='3%')
@@ -1264,10 +1515,10 @@ def plot_cld_ipa():
 
 
 
-def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite=False):
+def cal_mca_rad(sat, wavelength, fname_idl, fdir='tmp-data', solver='3D', photon=params['photon'], overwrite=False):
 
     """
-    Simulate MODIS radiance
+    Simulate OCO-2 radiance
     """
 
     if not os.path.exists(fdir):
@@ -1283,16 +1534,18 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
 
 
     # abs object
+    # special note: in the future, we will implement OCO2 MET file for this
     #/----------------------------------------------------------------------------\#
     fname_abs = '%s/abs.pk' % fdir
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_oco_idl(wavelength=wavelength, fname=fname_abs, fname_idl=fname_idl, atm_obj=atm0, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
     # sfc object
     #/----------------------------------------------------------------------------\#
+    data = {}
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    alb_2d = f['mod/sfc/alb_43_%4.4d' % wavelength][...]
+    alb_2d = f['oco/sfc/alb_%s_2d' % params['oco_band'].lower()][...]
     f.close()
 
     fname_sfc = '%s/sfc.pk' % fdir
@@ -1357,15 +1610,16 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
 
     # solar zenith/azimuth angles and sensor zenith/azimuth angles
     #/----------------------------------------------------------------------------\#
-    f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
-    sza = f['mod/geo/sza'][...].mean()
-    saa = f['mod/geo/saa'][...].mean()
-    if solver.lower() == 'ipa':
+    f = h5py.File('data/01_oco2_rad-sim/pre-data.h5', 'r')
+    logic_valid = f['oco/logic'][...]
+    sza = f['oco/geo/sza'][...][logic_valid].mean()
+    saa = f['oco/geo/saa'][...][logic_valid].mean()
+    if solver.lower() == '3d':
+        vza = f['oco/geo/vza'][...][logic_valid].mean()
+        vaa = f['oco/geo/vaa'][...][logic_valid].mean()
+    elif solver.lower() == 'ipa':
         vza = 0.0
         vaa = 0.0
-    elif solver.lower() == '3d':
-        vza = f['mod/geo/vza'][...].mean()
-        vaa = f['mod/geo/vaa'][...].mean()
     f.close()
     #\----------------------------------------------------------------------------/#
 
@@ -1398,19 +1652,19 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
 
     # mcarats output
     #/----------------------------------------------------------------------------\#
-    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-modis-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    out0 = er3t.rtm.mca.mca_out_ng(fname='%s/mca-out-rad-oco2-%s_%.4fnm.h5' % (fdir, solver.lower(), wavelength), mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
 
 
 
 
-def main_pre(wvl=params['wavelength'], plot=True):
+def main_pre(oco_band='o2a', plot=True):
 
     # 1) Download and pre-process MODIS data products
     # MODIS data products will be downloaded at <data/02_modis_rad-sim/download>
     # pre-processed data will be saved at <data/02_modis_rad-sim/pre_data.h5>,
-    # which will contain (data dimension might vary)
+    # which will contain
     # extent ----------------- : Dataset  (4,)
     # lat -------------------- : Dataset  (846, 846)
     # lon -------------------- : Dataset  (846, 846)
@@ -1426,10 +1680,30 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # mod/rad/ref_0650 ------- : Dataset  (846, 846)
     # mod/rgb ---------------- : Dataset  (1386, 1386, 4)
     # mod/sfc/alb_43_0650 ---- : Dataset  (472, 472)
+    # mod/sfc/alb_43_0860 ---- : Dataset  (472, 472)
     # mod/sfc/lat ------------ : Dataset  (472, 472)
     # mod/sfc/lon ------------ : Dataset  (472, 472)
+    # oco/geo/saa ------------ : Dataset  (112, 8)
+    # oco/geo/sza ------------ : Dataset  (112, 8)
+    # oco/geo/vaa ------------ : Dataset  (112, 8)
+    # oco/geo/vza ------------ : Dataset  (112, 8)
+    # oco/lat ---------------- : Dataset  (112, 8)
+    # oco/logic -------------- : Dataset  (112, 8)
+    # oco/lon ---------------- : Dataset  (112, 8)
+    # oco/met/delta_t -------- : Data     1
+    # oco/met/lat ------------ : Dataset  (794,)
+    # oco/met/lon ------------ : Dataset  (794,)
+    # oco/met/u_10m ---------- : Dataset  (794,)
+    # oco/met/v_10m ---------- : Dataset  (794,)
+    # oco/o2a/rad ------------ : Dataset  (112, 8, 1016)
+    # oco/o2a/wvl ------------ : Dataset  (112, 8, 1016)
+    # oco/sfc/alb_o2a -------- : Dataset  (377,)
+    # oco/sfc/alb_o2a_2d ----- : Dataset  (472, 472)
+    # oco/sfc/lat ------------ : Dataset  (377,)
+    # oco/sfc/lon ------------ : Dataset  (377,)
+    # oco/snd_id ------------- : Dataset  (112, 8)
     #/----------------------------------------------------------------------------\#
-    cdata_sat_raw(wvl=wvl)
+    cdata_sat_raw(oco_band=oco_band)
     if plot:
         plot_sat_raw()
     #\----------------------------------------------------------------------------/#
@@ -1441,11 +1715,7 @@ def main_pre(wvl=params['wavelength'], plot=True):
     #        used for 3D radiance self-consistency check to ensure their physical processes
     #        are consistent
     # additional data will be saved at <data/02_modis_rad-sim/pre_data.h5>,
-    # which are (data dimension might vary)
-    # cld_msk/indices_x ------ : Dataset  (156443,)
-    # cld_msk/indices_x0 ----- : Dataset  (188638,)
-    # cld_msk/indices_y ------ : Dataset  (156443,)
-    # cld_msk/indices_y0 ----- : Dataset  (188638,)
+    # which are
     # mca_ipa_thick/cot ------ : Dataset  (31,)
     # mca_ipa_thick/ref ------ : Dataset  (31,)
     # mca_ipa_thick/ref_std -- : Dataset  (31,)
@@ -1459,13 +1729,14 @@ def main_pre(wvl=params['wavelength'], plot=True):
     # mod/cld/cth_ipa -------- : Dataset  (846, 846)
     # mod/cld/cth_ipa0 ------- : Dataset  (846, 846)
     # mod/cld/logic_cld ------ : Dataset  (846, 846)
+    # mod/cld/logic_cld0 ----- : Dataset  (846, 846)
     #/----------------------------------------------------------------------------\#
-    cdata_cld_ipa(wvl=wvl)
+    cdata_cld_ipa(oco_band=oco_band, plot=True)
     if plot:
         plot_cld_ipa()
     #\----------------------------------------------------------------------------/#
 
-def main_sim(wvl=params['wavelength'], run_ipa=False):
+def main_sim(oco_band='o2a'):
 
     # create data directory (for storing data) if the directory does not exist
     #/----------------------------------------------------------------------------\#
@@ -1475,190 +1746,154 @@ def main_sim(wvl=params['wavelength'], run_ipa=False):
     #\----------------------------------------------------------------------------/#
 
 
-    # create tmp-data/02_modis_rad-sim directory if it does not exist
+    # create tmp-data/01_oco2_rad-sim directory if it does not exist
     #/----------------------------------------------------------------------------\#
-    fdir_tmp  = 'tmp-data/%s/sim-%06.1fnm' % (params['name_tag'], params['wavelength'])
+    fdir_tmp = os.path.abspath('tmp-data/%s' % (params['name_tag']))
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
     #\----------------------------------------------------------------------------/#
 
 
-    # run radiance simulations under both 3D mode
+    # read out wavelength information from absorption file
     #/----------------------------------------------------------------------------\#
-    cal_mca_rad(sat0, wvl, params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D' , overwrite=True)
-    if run_ipa:
-        cal_mca_rad(sat0, wvl, 1e9, fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
-    #\----------------------------------------------------------------------------/#
-
-def main_post(wvl=params['wavelength'], plot=False):
-
-    # create data directory (for storing data) if the directory does not exist
-    #/----------------------------------------------------------------------------\#
-    fdir_data = os.path.abspath('data/%s' % params['name_tag'])
-    if not os.path.exists(fdir_data):
-        os.makedirs(fdir_data)
+    fname_idl = 'data/%s/aux/atm_abs_%s_11.out' % (params['name_tag'], oco_band.lower())
+    f = readsav(fname_idl)
+    wvls = f.lamx*1000.0
     #\----------------------------------------------------------------------------/#
 
 
-    # read in MODIS measured radiance
+    # run radiance simulations under both 3D and IPA modes
+    #/----------------------------------------------------------------------------\#
+    index = np.argmin(np.abs(wvls-params['wavelength']))
+    wavelength = wvls[index]
+    cal_mca_rad(sat0, wavelength, fname_idl, photon=params['photon'], fdir='%s/3d'  % fdir_tmp, solver='3D', overwrite=True)
+    cal_mca_rad(sat0, wavelength, fname_idl, photon=1e9             , fdir='%s/ipa' % fdir_tmp, solver='IPA', overwrite=True)
+    #\----------------------------------------------------------------------------/#
+
+def main_post(plot=True):
+
+    wvl0 = params['wavelength']
+
+    # read in OCO-2 measured radiance
     #/----------------------------------------------------------------------------\#
     f = h5py.File('data/%s/pre-data.h5' % params['name_tag'], 'r')
     extent = f['extent'][...]
-    lon_mod = f['lon'][...]
-    lat_mod = f['lat'][...]
-    rad_mod = f['mod/rad/rad_%4.4d' % wvl][...]
+    lon_2d = f['lon'][...]
+    lat_2d = f['lat'][...]
+    lon_oco = f['oco/lon'][...]
+    lat_oco = f['oco/lat'][...]
+    wvl_oco = f['oco/o2a/wvl'][...]
+    rad_oco = f['oco/o2a/rad'][...][:, :, np.argmin(np.abs(wvl_oco[0, 0, :]-wvl0))]
+    logic_oco = f['oco/logic'][...]
     f.close()
     #\----------------------------------------------------------------------------/#
 
 
-    # read in EaR3T simulations (IPA)
+    # read in EaR3T simulations (3D and IPA)
     #/----------------------------------------------------------------------------\#
-    fname = 'tmp-data/%s/sim-%06.1fnm/ipa/mca-out-rad-modis-ipa_%.4fnm.h5' % (params['name_tag'], wvl, wvl)
-    if os.path.exists(fname):
-        f = h5py.File(fname, 'r')
-        rad_rtm_ipa     = f['mean/rad'][...]
-        rad_rtm_ipa_std = f['mean/rad_std'][...]
-        f.close()
-        has_ipa = True
-    else:
-        has_ipa = False
-    #\----------------------------------------------------------------------------/#
-
-
-    # read in EaR3T simulations (3D)
-    #/----------------------------------------------------------------------------\#
-    fname = 'tmp-data/%s/sim-%06.1fnm/3d/mca-out-rad-modis-3d_%.4fnm.h5' % (params['name_tag'], wvl, wvl)
+    fname = 'tmp-data/%s/3d/mca-out-rad-oco2-3d_%.4fnm.h5' % (params['name_tag'], wvl0)
     f = h5py.File(fname, 'r')
-    rad_rtm_3d     = f['mean/rad'][...]
-    rad_rtm_3d_std = f['mean/rad_std'][...]
+    rad_3d     = f['mean/rad'][...]
+    rad_3d_std = f['mean/rad_std'][...]
     f.close()
+
+    fname = 'tmp-data/%s/ipa/mca-out-rad-oco2-ipa_%.4fnm.h5' % (params['name_tag'], wvl0)
+    f = h5py.File(fname, 'r')
+    rad_ipa    = f['mean/rad'][...]
+    rad_ipa_std = f['mean/rad_std'][...]
+    f.close()
+    #\----------------------------------------------------------------------------/#
+
+
+    # collocate EaR3T simulations (2D domain) to OCO-2 measurement locations
+    #/----------------------------------------------------------------------------\#
+    rad_mca_3d = np.zeros_like(rad_oco)
+    rad_mca_3d_std = np.zeros_like(rad_oco)
+    rad_mca_ipa = np.zeros_like(rad_oco)
+    rad_mca_ipa_std = np.zeros_like(rad_oco)
+
+    for i in range(lon_oco.shape[0]):
+        for j in range(lon_oco.shape[1]):
+            lon0 = lon_oco[i, j]
+            lat0 = lat_oco[i, j]
+
+            index_lon = np.argmin(np.abs(lon_2d[:, 0]-lon0))
+            index_lat = np.argmin(np.abs(lat_2d[0, :]-lat0))
+
+            rad_mca_ipa[i, j]  = rad_ipa[index_lon, index_lat]
+            rad_mca_3d[i, j]   = rad_3d[index_lon, index_lat]
+
+            rad_mca_ipa_std[i, j]  = rad_ipa_std[index_lon, index_lat]
+            rad_mca_3d_std[i, j]   = rad_3d_std[index_lon, index_lat]
     #\----------------------------------------------------------------------------/#
 
 
     # save data
     #/----------------------------------------------------------------------------\#
     f = h5py.File('data/%s/post-data.h5' % params['name_tag'], 'w')
-    f['wvl'] = wvl
-    f['lon'] = lon_mod
-    f['lat'] = lat_mod
-    f['extent']         = extent
-    f['rad_obs']        = rad_mod
-    f['rad_sim_3d']     = rad_rtm_3d
-    f['rad_sim_3d_std'] = rad_rtm_3d_std
-    if has_ipa:
-        f['rad_sim_ipa']     = rad_rtm_ipa
-        f['rad_sim_ipa_std'] = rad_rtm_ipa_std
+    f['wvl'] = wvl0
+    f['lon'] = lon_oco
+    f['lat'] = lat_oco
+    f['rad_obs'] = rad_oco
+    f['rad_sim_3d'] = rad_mca_3d
+    f['rad_sim_ipa'] = rad_mca_ipa
+    f['rad_sim_3d_std'] = rad_mca_3d_std
+    f['rad_sim_ipa_std'] = rad_mca_ipa_std
     f.close()
     #\----------------------------------------------------------------------------/#
 
+
     if plot:
 
+        # average over latitude grid (0.01 degree)
         #/----------------------------------------------------------------------------\#
-        fig = plt.figure(figsize=(13, 8))
+        lat0 = np.arange(37.0, 39.01, 0.01)
+        lat = (lat0[1:] + lat0[:-1])/2.0
 
-        if has_ipa:
-            # 2D plot: rad_obs
-            #/--------------------------------------------------------------\#
-            ax1 = fig.add_subplot(231)
-            ax1.pcolormesh(lon_mod, lat_mod, rad_mod, cmap='viridis', vmin=0.0, vmax=0.5)
-            ax1.set_xlabel('Longititude [$^\circ$]')
-            ax1.set_ylabel('Latitude [$^\circ$]')
-            ax1.set_xlim((extent[0]+0.1, extent[1]-0.1))
-            ax1.set_ylim((extent[2]+0.1, extent[3]-0.1))
-            ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
-            ax1.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
-            ax1.set_title('Measured Radiance')
-            #\--------------------------------------------------------------/#
+        oco_rad = np.zeros_like(lat)
+        oco_rad_std = np.zeros_like(lat)
 
-            # 2D plot: rad_sim_ipa
-            #/--------------------------------------------------------------\#
-            ax2 = fig.add_subplot(232)
-            ax2.pcolormesh(lon_mod, lat_mod, rad_rtm_ipa, cmap='viridis', vmin=0.0, vmax=0.5)
-            ax2.set_xlabel('Longititude [$^\circ$]')
-            ax2.set_ylabel('Latitude [$^\circ$]')
-            ax2.set_xlim((extent[0]+0.1, extent[1]-0.1))
-            ax2.set_ylim((extent[2]+0.1, extent[3]-0.1))
-            ax2.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
-            ax2.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
-            ax2.set_title('Simulated IPA Radiance')
-            #\--------------------------------------------------------------/#
+        mca_rad_3d = np.zeros_like(lat)
+        mca_rad_3d_std = np.zeros_like(lat)
 
-            # heatmap: rad_sim_ipa vs rad_obs
-            #/--------------------------------------------------------------\#
-            logic = (lon_mod>=extent[0]+0.1) & (lon_mod<=extent[1]-0.1) & (lat_mod>=extent[2]+0.1) & (lat_mod<=extent[3]-0.1)
+        mca_rad_ipa = np.zeros_like(lat)
+        mca_rad_ipa_std = np.zeros_like(lat)
 
-            xedges = np.arange(-0.01, 0.81, 0.005)
-            yedges = np.arange(-0.01, 0.81, 0.005)
-            heatmap, xedges, yedges = np.histogram2d(rad_mod[logic], rad_rtm_ipa[logic], bins=(xedges, yedges))
-            YY, XX = np.meshgrid((yedges[:-1]+yedges[1:])/2.0, (xedges[:-1]+xedges[1:])/2.0)
+        for i in range(lat.size):
+            logic = (lat_oco>=lat0[i]) & (lat_oco<lat0[i+1])
+            oco_rad[i] = np.mean(rad_oco[logic])
+            oco_rad_std[i] = np.std(rad_oco[logic])
 
-            levels = np.concatenate((np.arange(1.0, 10.0, 1.0),
-                                     np.arange(10.0, 200.0, 10.0),
-                                     np.arange(200.0, 1000.0, 100.0),
-                                     np.arange(1000.0, 10001.0, 5000.0)))
+            mca_rad_3d[i] = np.mean(rad_mca_3d[logic])
+            mca_rad_3d_std[i] = np.std(rad_mca_3d[logic])
 
-            ax3 = fig.add_subplot(233)
-            cs = ax3.contourf(XX, YY, heatmap, levels, extend='both', locator=ticker.LogLocator(), cmap='jet')
-            ax3.plot([0.0, 1.0], [0.0, 1.0], lw=1.0, ls='--', color='gray', zorder=3)
-            ax3.set_xlim(0.0, 0.6)
-            ax3.set_ylim(0.0, 0.6)
-            ax3.set_xlabel('Measured Radiance')
-            ax3.set_ylabel('Simulated IPA Radiance')
-            #\--------------------------------------------------------------/#
+            mca_rad_ipa[i] = np.mean(rad_mca_ipa[logic])
+            mca_rad_ipa_std[i] = np.std(rad_mca_ipa[logic])
+        #\----------------------------------------------------------------------------/#
 
 
-        # 2D plot: rad_obs
-        #/--------------------------------------------------------------\#
-        ax4 = fig.add_subplot(234)
-        ax4.pcolormesh(lon_mod, lat_mod, rad_mod, cmap='viridis', vmin=0.0, vmax=0.5)
-        ax4.set_xlabel('Longititude [$^\circ$]')
-        ax4.set_ylabel('Latitude [$^\circ$]')
-        ax4.set_xlim((extent[0]+0.1, extent[1]-0.1))
-        ax4.set_ylim((extent[2]+0.1, extent[3]-0.1))
-        ax4.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
-        ax4.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
-        ax4.set_title('Measured Radiance')
-        #\--------------------------------------------------------------/#
+        # plot
+        #/----------------------------------------------------------------------------\#
+        fig = plt.figure(figsize=(10, 6.18))
+        ax1 = fig.add_subplot(111)
+        ax1.fill_between(lat, mca_rad_ipa-mca_rad_ipa_std, mca_rad_ipa+mca_rad_ipa_std, color='b', alpha=0.3, lw=0.0, zorder=0)
+        ax1.fill_between(lat, oco_rad-oco_rad_std        , oco_rad+oco_rad_std        , color='k', alpha=0.3, lw=0.0, zorder=1)
+        ax1.fill_between(lat, mca_rad_3d-mca_rad_3d_std  , mca_rad_3d+mca_rad_3d_std  , color='r', alpha=0.3, lw=0.0, zorder=2)
+        ax1.plot(lat, mca_rad_ipa, color='b', lw=1.5, alpha=0.8, zorder=0)
+        ax1.plot(lat, oco_rad    , color='k', lw=1.5, alpha=0.8, zorder=1)
+        ax1.plot(lat, mca_rad_3d , color='r', lw=1.5, alpha=0.8, zorder=2)
+        ax1.set_xlim(extent[2]+0.1, extent[3]-0.1)
+        ax1.set_ylim((0.0, 0.4))
+        ax1.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
+        ax1.set_xlabel('Latitude [$^\circ$]')
+        ax1.set_ylabel('Radiance [$\mathrm{W m^{-2} nm^{-1} sr^{-1}}$]')
 
-
-        # 2D plot: rad_sim_3d
-        #/--------------------------------------------------------------\#
-        ax5 = fig.add_subplot(235)
-        ax5.pcolormesh(lon_mod, lat_mod, rad_rtm_3d, cmap='viridis', vmin=0.0, vmax=0.5)
-        ax5.set_xlabel('Longititude [$^\circ$]')
-        ax5.set_ylabel('Latitude [$^\circ$]')
-        ax5.set_xlim((extent[0]+0.1, extent[1]-0.1))
-        ax5.set_ylim((extent[2]+0.1, extent[3]-0.1))
-        ax5.xaxis.set_major_locator(FixedLocator(np.arange(-180.0, 181.0, 0.5)))
-        ax5.yaxis.set_major_locator(FixedLocator(np.arange(-90.0, 91.0, 0.5)))
-        ax5.set_title('Simulated 3D Radiance')
-        #\--------------------------------------------------------------/#
-
-
-        # heatmap: rad_sim_3d vs rad_obs
-        #/--------------------------------------------------------------\#
-        logic = (lon_mod>=extent[0]+0.1) & (lon_mod<=extent[1]-0.1) & (lat_mod>=extent[2]+0.1) & (lat_mod<=extent[3]-0.1)
-
-        xedges = np.arange(-0.01, 0.81, 0.005)
-        yedges = np.arange(-0.01, 0.81, 0.005)
-        heatmap, xedges, yedges = np.histogram2d(rad_mod[logic], rad_rtm_3d[logic], bins=(xedges, yedges))
-        YY, XX = np.meshgrid((yedges[:-1]+yedges[1:])/2.0, (xedges[:-1]+xedges[1:])/2.0)
-
-        levels = np.concatenate((np.arange(1.0, 10.0, 1.0),
-                                 np.arange(10.0, 200.0, 10.0),
-                                 np.arange(200.0, 1000.0, 100.0),
-                                 np.arange(1000.0, 10001.0, 5000.0)))
-
-        ax6 = fig.add_subplot(236)
-        cs = ax6.contourf(XX, YY, heatmap, levels, extend='both', locator=ticker.LogLocator(), cmap='jet')
-        ax6.plot([0.0, 1.0], [0.0, 1.0], lw=1.0, ls='--', color='gray', zorder=3)
-        ax6.set_xlim(0.0, 0.6)
-        ax6.set_ylim(0.0, 0.6)
-        ax6.set_xlabel('Measured Radiance')
-        ax6.set_ylabel('Simulated 3D Radiance')
-        #\--------------------------------------------------------------/#
-
-        plt.subplots_adjust(hspace=0.4, wspace=0.4)
+        patches_legend = [
+                    mpatches.Patch(color='black' , label='OCO-2'),
+                    mpatches.Patch(color='red'   , label='RTM 3D'),
+                    mpatches.Patch(color='blue'  , label='RTM IPA')
+                    ]
+        ax1.legend(handles=patches_legend, loc='upper right', fontsize=12)
 
         plt.savefig('%s.png' % params['name_tag'], bbox_inches='tight')
         plt.close(fig)
@@ -1671,26 +1906,23 @@ def main_post(wvl=params['wavelength'], plot=False):
 if __name__ == '__main__':
 
     # Step 1. Download and Pre-process data, after run
-    #   a. <pre-data.h5> will be created under data/02_modis_rad-sim
-    #   b. <02_modis_rad-sim_<plot_sat_raw>.png> will be created under current directory
-    #   c. <02_modis_rad-sim_<plot_cld_ipa>.png> will be created under current directory
+    #   a. <pre-data.h5> will be created under data/01_oco2_rad-sim
+    #   b. <01_oco2_rad-sim_<cdata_sat_raw>.png> will be created under current directory
+    #   c. <01_oco2_rad-sim_<cdata_cld_ipa>.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
     main_pre()
     #\----------------------------------------------------------------------------/#
 
-    # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
-    #   a. <mca-out-rad-modis-3d_650.0000nm.h5> will be created under tmp-data/02_modis_rad-sim/3d
-    #   b*. <mca-out-rad-modis-ipa_650.0000nm.h5> will be created under tmp-data/02_modis_rad-sim/ipa
-    # Special note: b is turned off by default as IPA calculations for a large domain
-    #   require a lot of photons (thus long computational time) to achieve relatively
-    #   high accuracy
+    # Step 2. Use EaR3T to run radiance simulations for OCO-2, after run
+    #   a. <mca-out-rad-oco2-3d_768.5151nm.h5>  will be created under tmp-data/01_oco2_rad-sim/3d
+    #   b. <mca-out-rad-oco2-ipa_768.5151nm.h5> will be created under tmp-data/01_oco2_rad-sim/ipa
     #/----------------------------------------------------------------------------\#
-    main_sim(run_ipa=False)
+    main_sim()
     #\----------------------------------------------------------------------------/#
 
-    # Step 3. Post-process radiance observations and simulations for MODIS, after run
-    #   a. <post-data.h5> will be created under data/02_modis_rad-sim
-    #   b. <02_modis_rad-sim.png> will be created under current directory
+    # Step 3. Post-process radiance observations and simulations for OCO-2, after run
+    #   a. <post-data.h5> will be created under data/01_oco2_rad-sim
+    #   b. <01_oco2_rad-sim.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
     main_post(plot=True)
     #\----------------------------------------------------------------------------/#

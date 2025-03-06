@@ -13,7 +13,7 @@ from .util import *
 
 
 
-__all__ = ['lrt_init_mono_rad', 'lrt_init_spec_rad', 'lrt_read_uvspec_rad']
+__all__ = ['lrt_init_mono_rad', 'lrt_init_spec_rad', 'lrt_read_uvspec_rad', 'lrt_read_uvspec_rad_toa']
 
 
 def convert_azimuth_angle(azimuth_angle):
@@ -71,53 +71,88 @@ class lrt_init_mono_rad:
         # executable file
         self.executable_file = lrt_cfg['executable_file']
 
+
         # input file
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if input_file is None:
             dtime_tmp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             input_file = 'lrt_input_%s.txt' % dtime_tmp
             if verbose:
                 print('Message [lrt_init_mono]: <input_file> is missing, assigning input_file = %s.' % input_file)
         self.input_file = input_file
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
         # output file
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if output_file is None:
             output_file = 'lrt_output_%s.txt' % dtime_tmp
             if verbose:
                 print('Message [lrt_init_mono]: <output_file> is missing, assigning output_file = %s.' % output_file)
         self.output_file = output_file
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
         # date
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if date is None:
             date = datetime.date.today()
             if verbose:
                 print('Message [lrt_init_mono]: <date> is missing, assigning date = datetime.date.today().')
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
         # surface albedo
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if surface_albedo is None:
             surface_albedo = 0.03
             if verbose:
                 print('Message [lrt_init_mono]: <surface_albedo> is missing, assigning surface_albedo = 0.03.')
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
         # solar zenith angle
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if solar_zenith_angle is None:
             solar_zenith_angle = 0.0
             if verbose:
                 print('Message [lrt_init_mono]: <solar_zenith_angle> is missing, assigning solar_zenith_angle = 0.0.')
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
         # solar azimuth angle
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if solar_azimuth_angle is None:
             solar_azimuth_angle = 0.0
             if verbose:
                 print('Message [lrt_init_mono]: <solar_azimuth_angle> is missing, assigning solar_azimuth_angle = 0.0.')
         solar_azimuth_angle = convert_azimuth_angle(solar_azimuth_angle)
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
         # sensor zenith angle
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if sensor_zenith_angle is None:
             sensor_zenith_angle = 0.0
             if verbose:
                 print('Message [lrt_init_mono]: <sensor_zenith_angle> is missing, assigning sensor_zenith_angle = 0.0.')
 
+        if not isinstance(sensor_zenith_angle, str):
+            if isinstance(sensor_zenith_angle, (list, np.ndarray)):
+                self.Nvar = len(sensor_zenith_angle) + 1
+                sensor_zenith_angle = ' '.join('{:.8f}'.format(vza0) for vza0 in np.cos(np.deg2rad(sensor_zenith_angle)))
+            else:
+                sensor_zenith_angle = '{:.8f}'.format(np.cos(np.deg2rad(sensor_zenith_angle)))
+                self.Nvar = 2
+        else:
+            self.Nvar = 2
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+        if output_format     == 'lambda uu edir':
+            self.Nvar = 3
+
         # sensor azimuth angle
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if sensor_azimuth_angle is None:
             sensor_azimuth_angle = 0.0
             if verbose:
@@ -126,20 +161,24 @@ class lrt_init_mono_rad:
 
         if not isinstance(sensor_azimuth_angle, str):
             if isinstance(sensor_azimuth_angle, (list, np.ndarray)):
-                self.Nvar = len(sensor_azimuth_angle) + 1
+                self.Nvar = 1 + len(sensor_azimuth_angle)*(self.Nvar-1)
                 sensor_azimuth_angle = ' '.join(str(vaa0) for vaa0 in sensor_azimuth_angle)
             else:
                 sensor_azimuth_angle = str(sensor_azimuth_angle)
-                self.Nvar = 2
+                self.Nvar = 1 + (self.Nvar-1)
         else:
-            self.Nvar = 2
+            self.Nvar = 1 + (self.Nvar-1)
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
         # wavelength
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if wavelength is None:
             wavelength = 500.0
             if verbose:
                 print('Message [lrt_init_mono]: <wavelength> is missing, assigning wavelength = 500.0.')
         self.Nx = 1
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # slit function
         if wavelength < 950.0:
@@ -168,25 +207,35 @@ class lrt_init_mono_rad:
         day_of_year = date.timetuple().tm_yday
         wavelength_s  = np.round(wavelength-wavelength_half_width-spectral_resolution, decimals=int(-math.log10(spectral_resolution)))
         wavelength_e  = np.round(wavelength+wavelength_half_width+spectral_resolution, decimals=int(-math.log10(spectral_resolution)))
+        # wavelength_s  = np.round(wavelength, decimals=int(-math.log10(spectral_resolution)))
+        # wavelength_e  = np.round(wavelength, decimals=int(-math.log10(spectral_resolution)))
 
         self.input_dict = OD([
                             ('atmosphere_file'   , lrt_cfg['atmosphere_file']),
-                            ('source solar'      , lrt_cfg['solar_file']),
                             ('day_of_year'       , str(day_of_year)),
                             ('albedo'            , '%.6f' % surface_albedo),
                             ('sza'               , '%.4f' % solar_zenith_angle),
                             ('phi0'              , '%.4f' % solar_azimuth_angle),
-                            ('umu'               , '%.8f' % np.cos(np.deg2rad(sensor_zenith_angle))),
+                            ('umu'               , sensor_zenith_angle),
                             ('phi'               , sensor_azimuth_angle),
                             ('rte_solver'        , lrt_cfg['rte_solver']),
                             ('number_of_streams' , str(lrt_cfg['number_of_streams'])),
                             ('wavelength'        , '%.1f %.1f' % (wavelength_s, wavelength_e)),
-                            ('spline'            , '%.3f %.3f %.3f' % (wavelength, wavelength, spectral_resolution)),
-                            ('slit_function_file', slit_function_file),
+                            ('data_files_path'    , lrt_cfg['data_files_path']),
                             ('mol_abs_param'     , lrt_cfg['mol_abs_param']),
                             ('output_user'       , output_format),
-                            ('zout'              , output_altitude)
+                            ('zout'              , output_altitude),
                             ])
+        
+        if lrt_cfg['solar_file'] is not None:
+            self.input_dict['source solar'] = lrt_cfg['solar_file']
+            self.input_dict['spline'] = '%.3f %.3f %.3f' % (wavelength, wavelength, spectral_resolution)
+            self.input_dict['slit_function_file'] = slit_function_file
+        
+        if lrt_cfg['rte_solver'] == 'mystic':
+            self.input_dict['mc_photons'] = lrt_cfg['mc_photons']
+            self.input_dict['mc_vroom'] = lrt_cfg['mc_vroom']
+            self.input_dict['mc_spherical'] = lrt_cfg['mc_spherical']
 
 
         self.input_dict_extra = input_dict_extra
@@ -517,7 +566,7 @@ class lrt_read_uvspec_rad:
         Nvar = inits[0].Nvar
 
         self.dims  = {'X':'Wavelength', 'Y':'Altitude', 'Z':'Files'}
-        rad  = np.zeros((Nx, Ny, Nz, Nvar-1), dtype=np.float64)
+        rad  = np.zeros((Nx, Ny, Nz, Nvar-1), dtype=np.float32)
 
         for i, init in enumerate(inits):
 
@@ -533,6 +582,52 @@ class lrt_read_uvspec_rad:
 
         return self
 
+
+class lrt_read_uvspec_rad_toa:
+
+    """
+    Input:
+        list of lrt_init objects
+
+    return:
+        self.rad      : radiance
+
+        f_down, f_down_direct, f_down_diffuse, f_up have the dimension of
+        (Nx, Ny, Nz), where
+        Nx: number of wavelength, for monochromatic, Nx=1
+        Ny: number of output altitude
+        Nz: number of lrt_init objects
+
+        one can use numpy.squeeze to remove the axis where the Nx/Ny/Nz = 1.
+    """
+
+
+    def __init__(self, inits):
+
+        Nx = inits[0].Nx
+        Ny = inits[0].Ny
+        Nz = len(inits)
+        Nvar = inits[0].Nvar
+
+        self.dims  = {'X':'Wavelength', 'Y':'Altitude', 'Z':'Files'}
+        rad  = np.zeros((Nx, Ny, Nz, 1), dtype=np.float64)
+        fdown_dir  = np.zeros((Nx, Ny, Nz, 1), dtype=np.float64)
+
+        for i, init in enumerate(inits):
+
+            data = np.loadtxt(init.output_file).reshape((Nx, Ny, Nvar))
+            rad[:, :, i, :]  = data[:, :, 1]/1000.0
+            fdown_dir[:, :, i, :]  = data[:, :, 2]/1000.0
+
+        self.rad = rad
+        self.toa = fdown_dir 
+
+
+    def __add__(self, data):
+
+        self.rad = np.vstack((self.rad, data.rad))
+        self.toa = np.vstack((self.toa, data.toa))
+        return self
 
 
 if __name__ == '__main__':

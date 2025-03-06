@@ -82,14 +82,15 @@ class mca_atm_1d:
 
             self.nml[ig]['Atm_nz']    = {'data':nz                                     , 'units':'N/A', 'name':'Number of z grid points'}
 
+            # Use Bodhaine formula to calculate Rayleigh Optical Depth
+            atm_sca = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:], self.atm) \
+                     / (self.atm.lay['thickness']['data']*1000.0)
+
             # Absorption coefficient
             atm_abs = self.abs.coef['abso_coef']['data'][:, ig] / (self.atm.lay['thickness']['data']*1000.0)
             self.nml[ig]['Atm_abs1d(1:, 1)'] = {'data':atm_abs, 'units':'/m' , 'name':'Absorption coefficients'}
 
-            # Extinction coefficient
-            # Use Bodhaine formula to calculate Rayleigh Optical Deption
-            atm_ext = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:]) \
-                     / (self.atm.lay['thickness']['data']*1000.0)
+            atm_ext = atm_sca
             self.nml[ig]['Atm_ext1d(1:, 1)'] = {'data':atm_ext, 'units':'/m' , 'name':'Extinction coefficients'}
 
             # Single Scattering Albedo
@@ -119,7 +120,7 @@ class mca_atm_1d:
 
             atm_apf = np.zeros(nz)
             atm_apf[:] = apf1d
-
+            
             if z_bottom is not None:
                 atm_ext[self.atm.lay['altitude']['data']<z_bottom] = 0.0
                 atm_omg[self.atm.lay['altitude']['data']<z_bottom] = 0.0
@@ -232,6 +233,8 @@ class mca_atm_3d:
         self.nml= {}
 
         lay_index = get_lay_index(self.cld.lay['altitude']['data'], self.atm.lay['altitude']['data'])
+        print("self.atm.lay['altitude']['data'] len:", len(self.atm.lay['altitude']['data']))
+        print("self.cld.lay['altitude']['data'] len:", len(self.cld.lay['altitude']['data']))
 
         nx   = self.cld.lay['nx']['data']
         ny   = self.cld.lay['ny']['data']
@@ -282,27 +285,35 @@ class mca_atm_3d:
 
                 ref = self.pha.data['ref']['data']
                 ssa = self.pha.data['ssa']['data']
+                asy = self.pha.data['asy']['data']
                 ind = np.arange(float(ref.size)) + 1.0
 
                 f_interp_ssa = interpolate.interp1d(ref, ssa, bounds_error=False, fill_value='extrapolate')
                 f_interp_ind = interpolate.interp1d(ref, ind, bounds_error=False, fill_value='extrapolate')
+                f_interp_asy = interpolate.interp1d(ref, asy, bounds_error=False, fill_value='extrapolate')
 
+                print("atm_omg shape:", atm_omg.shape)
+                print("logic_cld shape:", logic_cld.shape)
+                print("cer shape:", cer.shape)  
+                
                 atm_omg[logic_cld, 0] = f_interp_ssa(cer[logic_cld])
-                atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
+                
+                atm_apf[logic_cld, 0] = f_interp_asy(cer[logic_cld])
 
+                # atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
                 # set left-outbound to left-most value
-                #/--------------------------------------------------------------\#
-                logic0 = (atm_apf>0.0) & (atm_apf<ind[0])
-                atm_omg[logic0] = ssa[0]
-                atm_apf[logic0] = ind[0]
-                #\--------------------------------------------------------------/#
+                #╭────────────────────────────────────────────────────────────────────────────╮#
+                # logic0 = (atm_apf>0.0) & (atm_apf<ind[0])
+                # atm_omg[logic0] = ssa[0]
+                # atm_apf[logic0] = ind[0]
+                #╰────────────────────────────────────────────────────────────────────────────╯#
 
                 # set right-outbound to right-most value
-                #/--------------------------------------------------------------\#
-                logic1 = (atm_apf>ind[-1])
-                atm_omg[logic1] = ssa[-1]
-                atm_apf[logic1] = ind[-1]
-                #\--------------------------------------------------------------/#
+                #╭────────────────────────────────────────────────────────────────────────────╮#
+                # logic1 = (atm_apf>ind[-1])
+                # atm_omg[logic1] = ssa[-1]
+                # atm_apf[logic1] = ind[-1]
+                #╰────────────────────────────────────────────────────────────────────────────╯#
 
         self.nml['Atm_nx']     = copy.deepcopy(self.cld.lay['nx'])
         self.nml['Atm_ny']     = copy.deepcopy(self.cld.lay['ny'])

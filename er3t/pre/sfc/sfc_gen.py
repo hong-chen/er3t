@@ -4,27 +4,31 @@ import copy
 import pickle
 import numpy as np
 
-import er3t
+
+import er3t.common
+import er3t.util
+from .util import *
 
 
 
 __all__ = ['sfc_2d_gen']
 
 
+
 class sfc_2d_gen:
 
     """
     Input:
-        alb_2d=   : keyword argument, default=None, 2D array of surface albedo
+        sfc_2d=   : keyword argument, default=None, 2D array of surface albedo
         fname=    : keyword argument, default=None, the file path of the Python pickle file
         overwrite=: keyword argument, default=False, whether to overwrite or not
         verbose=  : keyword argument, default=False, verbose tag
 
     Output:
-        self.sfc
+        self.data
                 ['nx']
                 ['ny']
-                ['alb']
+                ['sfc']
     """
 
 
@@ -32,13 +36,13 @@ class sfc_2d_gen:
 
 
     def __init__(self, \
-                 alb_2d    = None, \
+                 sfc_2d    = None, \
                  fname     = None, \
                  overwrite = False, \
                  verbose   = False):
 
 
-        self.alb        = alb_2d
+        self.sfc        = sfc_2d
         self.fname      = fname       # file name of the pickle file
         self.verbose    = verbose     # verbose tag
 
@@ -47,19 +51,19 @@ class sfc_2d_gen:
 
             self.load(self.fname)
 
-        elif ((self.alb is not None) and (self.fname is not None) and (os.path.exists(self.fname)) and (overwrite)) or \
-             ((self.alb is not None) and (self.fname is not None) and (not os.path.exists(self.fname))):
+        elif ((self.sfc is not None) and (self.fname is not None) and (os.path.exists(self.fname)) and (overwrite)) or \
+             ((self.sfc is not None) and (self.fname is not None) and (not os.path.exists(self.fname))):
 
             self.run()
             self.dump(self.fname)
 
-        elif ((self.alb is not None) and (self.fname is None)):
+        elif ((self.sfc is not None) and (self.fname is None)):
 
             self.run()
 
         else:
 
-            msg = 'Error [sfc_2d_gen]: Please check if <%s> exists or provide <alb_2d> to proceed.' % self.fname
+            msg = 'Error [sfc_2d_gen]: Please check if <%s> exists or provide <sfc_2d> to proceed.' % self.fname
             raise OSError(msg)
 
 
@@ -81,7 +85,7 @@ class sfc_2d_gen:
 
     def run(self):
 
-        self.pre_alb()
+        self.pre_sfc()
 
 
     def dump(self, fname):
@@ -93,18 +97,67 @@ class sfc_2d_gen:
             pickle.dump(self, f)
 
 
-    def pre_alb(self):
+    def pre_sfc(self):
 
         self.data = {}
 
-        Nx, Ny = self.alb.shape
+        if isinstance(self.sfc, np.ndarray):
 
-        self.data['nx']   = {'data':Nx             , 'name':'Nx'            , 'units':'N/A'}
-        self.data['ny']   = {'data':Ny             , 'name':'Ny'            , 'units':'N/A'}
-        self.data['alb']  = {'data':self.alb.copy(), 'name':'Surface albedo', 'units':'N/A'}
+            Nx, Ny = self.sfc.shape
+            sfc = np.zeros((Nx, Ny, 1), dtype=er3t.common.f_dtype)
+            sfc[:, :, 0] = self.sfc[:, :]
+
+            self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
+            self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
+            self.data['sfc']  = {'data':sfc, 'name':'Surface albedo (Lambertian)', 'units':'N/A'}
+
+        elif isinstance(self.sfc, dict):
+
+            keys = {key.lower().replace('_', ''):key for key in self.sfc.keys()}
+            keys_check = [key for key in keys.keys()]
+
+            if ('fiso' in keys_check) and ('fvol' in keys_check) and ('fgeo' in keys_check):
+
+                Nx, Ny = self.sfc[keys['fiso']].shape
+                sfc = np.zeros((Nx, Ny, 3), dtype=er3t.common.f_dtype)
+                sfc[:, :, 0] = self.sfc[keys['fiso']][:, :]
+                sfc[:, :, 1] = self.sfc[keys['fgeo']][:, :]
+                sfc[:, :, 2] = self.sfc[keys['fvol']][:, :]
+
+                self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
+                self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
+                self.data['sfc']  = {'data':sfc, 'name':'Surface BRDF-LSRT (Isotropic, LiSparseR, RossThick)', 'units':'N/A'}
+
+            elif ('diffusealb' in keys_check) and ('diffusefrac' in keys_check) and \
+               ('refracr'    in keys_check) and ('refraci'     in keys_check) and \
+               ('slope'      in keys_check):
+
+                Nx, Ny = self.sfc[keys['slope']].shape
+                sfc = np.zeros((Nx, Ny, 5), dtype=er3t.common.f_dtype)
+                sfc[:, :, 0] = self.sfc[keys['diffusealb']][:, :]
+                sfc[:, :, 1] = self.sfc[keys['diffusefrac']][:, :]
+                sfc[:, :, 2] = self.sfc[keys['refracr']][:, :]
+                sfc[:, :, 3] = self.sfc[keys['refraci']][:, :]
+                sfc[:, :, 4] = self.sfc[keys['slope']][:, :]
+
+                self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
+                self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
+                self.data['sfc']  = {'data':sfc, 'name':'Surface BRDF-DSM (Diffuse-Specular Mixture)', 'units':'N/A'}
+
+            else:
+
+                msg = '\nError [sfc_2d_gen]: Currently we only support 2D surface albedo or BRDF.'
+                raise OSError(msg)
+
+        else:
+
+            msg = '\nError [sfc_2d_gen]: Currently we only support 2D numpy array or Python dictionary.'
+            raise OSError(msg)
+
 
         self.Nx = Nx
         self.Ny = Ny
+
 
 
 if __name__ == '__main__':
