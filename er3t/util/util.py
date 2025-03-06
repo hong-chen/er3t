@@ -187,7 +187,6 @@ def send_email(
 
 
 
-
 def nice_array_str(array1d, numPerLine=6):
 
     """
@@ -1001,14 +1000,18 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
 
     return sza, saa
 
+
+
 def g0_calc(lat):
     """
     Calculate the surface gravity acceleration.
 
-    according to Eq. 11 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
+    according to Eq. 11 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
     """
     lat_rad = lat * np.pi / 180
     return 9.806160 * (1 - 0.0026373 * np.cos(2*lat_rad) + 0.0000059 * np.cos(2*lat_rad)**2) # in m/s^2
+
+
 
 def g_alt_calc(g0, lat, z):
     """
@@ -1026,6 +1029,8 @@ def g_alt_calc(g0, lat, z):
            + (7.254e-11 + 1.0e-13 * np.cos(2 * lat_rad)) * z**2 \
            - (1.517e-17 + 6.0e-20 * np.cos(2 * lat_rad)) * z**3
     return g/100
+
+
 
 def cal_mol_ext(wv0, pz1, pz2, atm0):
 
@@ -1077,6 +1082,7 @@ def cal_mol_ext(wv0, pz1, pz2, atm0):
     return tauray
 
 
+
 def cal_mol_ext_0(wv0, pz1, pz2, atm0):
 
     """
@@ -1099,6 +1105,7 @@ def cal_mol_ext_0(wv0, pz1, pz2, atm0):
     tauray = 0.00210966*(num/den)*(pz1-pz2)/1013.25
     
     return tauray
+
 
 
 def cal_ext(cot, cer, dz=1.0, Qe=2.0):
@@ -1360,6 +1367,7 @@ def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
     return np.transpose(bits, axes=(2, 0, 1))
 
 
+
 def has_common_substring(input_str, substring_list):
     """
     Check if the input string contains any of the substrings from the list without using for loops.
@@ -1374,3 +1382,9 @@ def has_common_substring(input_str, substring_list):
         bool: True if input_str contains any substring from substring_list, False otherwise.
     """
     return any(substring in input_str for substring in substring_list)
+
+
+
+if __name__ == '__main__':
+
+    pass

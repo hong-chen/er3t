@@ -1800,7 +1800,7 @@ class abs_oco_h5:
             slit_func[...]  = slit_func0[:, None]
             solar           = f['solx'][index_wvl, :Ng].T
             weight          = slit_func0/slit_func0.sum()
-            
+
             self.Ng         = Ng
             self.nwl        = wvls.size
             self.coef = {'wvl'       : {'name':'Wavelength'                     , 'data':self.wvl, 'units':'nm'},

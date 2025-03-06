@@ -269,7 +269,6 @@ class viirs_03:
 
 
 
-
 class viirs_l1b:
 
     """
@@ -1390,6 +1389,7 @@ class viirs_09:
         f.end()
 
 
+
 class viirs_09a1:
 
     """
@@ -1508,7 +1508,6 @@ class viirs_09a1:
             self.data['x']   = dict(name='X of sinusoidal grid', data=x  , units='m')
             self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
             self.data['ref'] = dict(name='Surface reflectance' , data=ref, units='N/A')
-
 
 
 
@@ -1650,7 +1649,6 @@ class viirs_43ma3:
             self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
             self.data['bsa'] = dict(name='Blue/Black-Sky surface albedo', data=bsky_alb, units='N/A')
             self.data['wsa'] = dict(name='White-Sky surface albedo'     , data=wsky_alb, units='N/A')
-
 
 
 

@@ -1076,6 +1076,7 @@ class modis_35_l2:
             self.data['lat_5km']         = dict(name='Latitude at 5km',      data=lat_5km,         units='degrees')
 
 
+
 class modis_mvcm_cldmsk_l2:
     """
     A class for extracting data from MODIS/Aqua Cloud Mask 5-Min Swath 1 km files (CLDMSK_L2).
@@ -1753,6 +1754,7 @@ class modis_09:
         f.end()
 
 
+
 class modis_07:
 
     """
@@ -1905,7 +1907,7 @@ class modis_07:
         p_sfc = np.array(get_data_h4(f.select('Surface_Pressure'))[logic])
 
         t_skin = np.array(get_data_h4(f.select('Skin_Temperature'))[logic])
-        
+
         for data in [T_level_retrieved, h_level_retrieved, dewT_level_retrieved, wvmx_level_retrieved, h_sfc, p_sfc]:
             data[data < 0] = np.nan
 
@@ -1949,6 +1951,7 @@ class modis_07:
             self.data['saa'] = dict(name='Solar Azimuth Angle' , data=saa, units='degrees')
             self.data['vza'] = dict(name='Sensor Zenith Angle' , data=vza, units='degrees')
             self.data['vaa'] = dict(name='Sensor Azimuth Angle', data=vaa, units='degrees')
+
 
 
 class modis_09a1:
@@ -2075,6 +2078,7 @@ class modis_09a1:
             self.data['x']   = dict(name='X of sinusoidal grid', data=x  , units='m')
             self.data['y']   = dict(name='Y of sinusoidal grid', data=y  , units='m')
             self.data['ref'] = dict(name='Surface reflectance' , data=ref, units='N/A')
+
 
 
 class modis_29:
@@ -2204,6 +2208,7 @@ class modis_29:
 
         f.end()
         #------------------------------------------------------------------------------------------------------------------------------#
+
 
 
 class modis_43a1:

@@ -58,6 +58,7 @@ def format_satname(satellite, instrument):
     return satname
 
 
+
 def get_token_earthdata():
     """ Get Earthdata token to access data on NASA servers """
 
@@ -71,6 +72,7 @@ def get_token_earthdata():
         warnings.warn(msg)
 
     return token
+
 
 
 def gen_file_earthdata(
@@ -108,6 +110,7 @@ def gen_file_earthdata(
     secret['cookies'] = fname_cookies
 
     return secret
+
 
 
 def get_command_earthdata(
@@ -233,6 +236,8 @@ def delete_file(
 
     if os.path.exists(fname_local2):
         os.remove(fname_local2)
+
+
 
 def get_local_file(
         fname_file,
@@ -375,6 +380,7 @@ def get_online_file(
         content = None
 
     return content
+
 
 
 def get_nsidc_file_list(
@@ -1270,6 +1276,7 @@ def get_satfile_tag(
     return filename_tags
 
 
+
 def download_laads_https(
              date,
              dataset_tag,
@@ -1385,6 +1392,7 @@ def download_laads_https(
 
 
     return fnames_local
+
 
 
 def download_lance_https(
@@ -1511,6 +1519,7 @@ def download_lance_https(
     return fnames_local
 
 
+
 def download_nsidc_https(
                         date,
                         extent,
@@ -1624,6 +1633,7 @@ def download_nsidc_https(
     #\----------------------------------------------------------------------------/#
 
     return fnames_local
+
 
 
 def download_oco2_https(
