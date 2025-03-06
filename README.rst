@@ -17,7 +17,7 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
     :target: https://github.com/hong-chen/er3t/stargazers
     :alt: GitHub Repo Stars
 
-.. image:: https://img.shields.io/badge/cited_by-7-blue
+.. image:: https://img.shields.io/badge/cited_by-8-blue
     :target: https://er3t.readthedocs.io/en/latest/source/other/highlight.html#publications
     :alt: Citation Counts
 
