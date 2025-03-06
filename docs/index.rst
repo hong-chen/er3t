@@ -62,15 +62,20 @@ If you find EaR³T is helpful and would like to cite it, here are the references
 
 * `Publication <https://doi.org/10.5194/amt-16-1971-2023>`_
 
-   Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
+   - Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
    Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
    Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
    Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
+   - Chen, Y.-W., Schmidt, K. S., Chen, H., Massie, S. T., Kulawik, S. S., and Iwabuchi, H.: Mitigation of
+   satellite OCO-2 CO2 biases in the vicinity of clouds with 3D calculations using the Education and Research
+   3D Radiative Transfer Toolbox (EaR³T), EGUsphere [preprint], doi:10.5194/egusphere-2024-1936, 2024.
+
+
 * `Software <https://github.com/hong-chen/er3t>`_
 
-   Chen, H., Schmidt, K. S., Nataraja, V., Hirata, K., and Chen, Y-W: hong-chen/er3t: er3t-v0.1.1 (v0.1.1),
-   Zenodo [code], https://doi.org/10.5281/zenodo.4093737, 2023. 
+   Nataraja, V., Chen, Y-W, Hirata, K., Chen, H., and Schmidt, K. S.: hong-chen/er3t: er3t-v0.2.0 (v0.2.0),
+   Zenodo [code], https://doi.org/10.5281/zenodo.4093737, 2025. 
 
 
 |

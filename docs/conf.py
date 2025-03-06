@@ -13,13 +13,14 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../assets'))
+sys.path.insert(0, os.path.abspath('assets'))
+sys.path.insert(0, os.path.abspath('source'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'EaR³T'
-copyright = '2025, Hong Chen, Sebastian Schmidt, Vikas Nataraja, Ken Hirata, Yu-Wen Chen'
+copyright = '2025, Education and Research 3D Radiative Transfer Toolbox'
 author = 'Vikas Nataraja, Yu-Wen Chen, Ken Hirata, Hong Chen, Sebastian Schmidt'
 
 # The full version, including alpha/beta/rc tags

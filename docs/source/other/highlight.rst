@@ -71,7 +71,7 @@ So far, EaR³T has been used in the following publications:
    Chen, Y.-W., Schmidt, K. S., Chen, H., Massie, S. T., Kulawik, S. S., and Iwabuchi, H.: Mitigation of
    satellite OCO-2 CO2 biases in the vicinity of clouds with 3D calculations using the Education and Research
    3D Radiative Transfer Toolbox (EaR³T), EGUsphere [preprint], doi:10.5194/egusphere-2024-1936, 2024.
-   
+
 
 #. `Gristey et al., 2023 <https://doi.org/10.5194/amt-16-3609-2023>`__
 
