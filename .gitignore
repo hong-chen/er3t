@@ -17,6 +17,7 @@ build
 
 # data files
 *log*
+*logs
 *model*
 *data*
 *.hdf
