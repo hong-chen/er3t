@@ -20,8 +20,12 @@ setup(
         ],
      keywords = '3D radiation radiative transfer',
      url = 'https://github.com/hong-chen/er3t',
-     author = 'Vikas Nataraja, Hong Chen, Yu-Wen Chen, Ken Hirata, Sebastian Schmidt',
-     author_email = 'vikas.hanasogenataraja@lasp.colorado.edu, hong.chen@lasp.colorado.edu, sebastian.schmidt@lasp.colorado.edu',
+     author = 'Vikas Nataraja, Yu-Wen Chen, Ken Hirata, Hong Chen, Sebastian Schmidt',
+     author_email = 'vikas.hanasogenataraja@lasp.colorado.edu,\
+                     yu-wen.chen@colorado.edu,\
+                     ken.hirata@colorado.edu,\
+                     hong.chen@lasp.colorado.edu,\
+                     sebastian.schmidt@lasp.colorado.edu',
      license = 'GNU GPLv3',
      packages = find_packages(),
      install_requires = [

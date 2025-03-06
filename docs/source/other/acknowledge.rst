@@ -32,6 +32,12 @@ Acknowledgements
     calculations - description and examples of use, Atmos. Chem. Phys., 5, 1855–1877,
     doi:10.5194/acp-5-1855-2005, 2005.
 
+*  REPTRAN was created by `Gasteiger et al. (2014) <https://doi.org/10.1016/j.jqsrt.2014.06.024>`_ and can be downloaded `here <https://www.libradtran.org/doku.php?id=download>`_.
+
+    Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler, S., and Lemke, O.: Representative wavelengths
+    absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Ra.,
+    148, 99–115, doi:10.1016/j.jqsrt.2014.06.024, 2014.
+
 
 *  `SHDOM <https://coloradolinux.com/shdom/>`_ is a 3D radiative transfer solver developed by `Evans (1998) <https://doi.org/10.1175/1520-0469(1998)055%3C0429:TSHDOM%3E2.0.CO;2>`_.
 
