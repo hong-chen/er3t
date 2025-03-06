@@ -20,10 +20,10 @@ sys.path.insert(0, os.path.abspath('../assets'))
 
 project = 'EaR³T'
 copyright = '2025, Hong Chen, Sebastian Schmidt, Vikas Nataraja, Ken Hirata, Yu-Wen Chen'
-author = 'Hong Chen, Sebastian Schmidt, Vikas Nataraja, Ken Hirata, Yu-Wen Chen'
+author = 'Vikas Nataraja, Yu-Wen Chen, Ken Hirata, Hong Chen, Sebastian Schmidt'
 
 # The full version, including alpha/beta/rc tags
-release = '0.2'
+release = '0.2.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -35,7 +35,10 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
-    'sphinx_rtd_theme',
+    'sphinx.ext.duration',
+    'sphinx.ext.doctest',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.intersphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
