@@ -32,6 +32,11 @@ Current and past contributors are:
 
    - implemented command line tool for satellite data download (``bin/sdown``)
 
+* `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
+
+   - added support for MODIS 04 product (functions in ``er3t/util/modis.py``)
+
+   - implementing spectroscopy support for OCO-2 (work in progress, functions in ``er3t/pre/abs/abs_oco.py``)
 
 * `Ken Hirata <Ken.Hirata@colorado.edu>`_ (Jan., 2023 - current)
 
@@ -39,8 +44,3 @@ Current and past contributors are:
 
    - implementing the Mie scattering phase function support for aerosols (work in progress)
 
-* `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
-
-   - added support for MODIS 04 product (functions in ``er3t/util/modis.py``)
-
-   - implementing spectroscopy support for OCO-2 (work in progress, functions in ``er3t/pre/abs/abs_oco.py``)

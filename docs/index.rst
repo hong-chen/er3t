@@ -42,9 +42,9 @@ Additionally, EaR³T has been actively contributed by the following developers:
 
 * `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (Dec., 2022 - current)
 
-* `Ken Hirata <Ken.Hirata@colorado.edu>`_ (Jan., 2023 - current)
-
 * `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
+
+* `Ken Hirata <Ken.Hirata@colorado.edu>`_ (Jan., 2023 - current)
 
 
 Community Support
@@ -63,13 +63,13 @@ If you find EaR³T is helpful and would like to cite it, here are the references
 * `Publication <https://doi.org/10.5194/amt-16-1971-2023>`_
 
    - Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
-   Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
-   Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
-   Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
+     Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
+     Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
+     Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
    - Chen, Y.-W., Schmidt, K. S., Chen, H., Massie, S. T., Kulawik, S. S., and Iwabuchi, H.: Mitigation of
-   satellite OCO-2 CO2 biases in the vicinity of clouds with 3D calculations using the Education and Research
-   3D Radiative Transfer Toolbox (EaR³T), EGUsphere [preprint], doi:10.5194/egusphere-2024-1936, 2024.
+     satellite OCO-2 CO2 biases in the vicinity of clouds with 3D calculations using the Education and Research
+     3D Radiative Transfer Toolbox (EaR³T), EGUsphere [preprint], doi:10.5194/egusphere-2024-1936, 2024.
 
 
 * `Software <https://github.com/hong-chen/er3t>`_
