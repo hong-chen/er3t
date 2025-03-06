@@ -50,9 +50,11 @@ Additionally, EaR³T has been actively contributed by the following developers:
 Community Support
 -----------------
 
-We believe only we together can we do better and go futher. Thus we created a Discord server with aspiration
-to foster an informal radiative transfer and remote sensing focused community and to facilitate discussions
-and collaborations. Please `join us on Discord <https://discord.gg/ntqsguwaWv>`_ to hang out together.
+We believe that only together can we achieve more and go further. With this in mind,
+we created a Discord server aimed at fostering an informal community focused on
+radiative transfer and remote sensing, while also facilitating discussions and
+collaborations. `Join us on Discord <https://discord.gg/ntqsguwaWv>`_ to
+connect and hang out together.
 
 
 How to Cite
@@ -60,14 +62,18 @@ How to Cite
 
 If you find EaR³T is helpful and would like to cite it, here are the references:
 
-* `Publication <https://doi.org/10.5194/amt-16-1971-2023>`_
+* `Publications <https://doi.org/10.5194/amt-16-1971-2023>`_
 
-   - Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
+   - `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
+
+     Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G.,
      Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) -
      Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals,
      Atmos. Meas. Tech., 16, 1971–2000, doi:10.5194/amt-16-1971-2023, 2023.
 
-   - Chen, Y.-W., Schmidt, K. S., Chen, H., Massie, S. T., Kulawik, S. S., and Iwabuchi, H.: Mitigation of
+   - `Chen et al., 2024 <https://doi.org/10.5194/egusphere-2024-1936>`_
+
+     Chen, Y.-W., Schmidt, K. S., Chen, H., Massie, S. T., Kulawik, S. S., and Iwabuchi, H.: Mitigation of
      satellite OCO-2 CO2 biases in the vicinity of clouds with 3D calculations using the Education and Research
      3D Radiative Transfer Toolbox (EaR³T), EGUsphere [preprint], doi:10.5194/egusphere-2024-1936, 2024.
 
