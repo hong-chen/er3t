@@ -62,7 +62,7 @@ How to Cite
 
 If you find EaR³T is helpful and would like to cite it, here are the references:
 
-* `Publications <https://doi.org/10.5194/amt-16-1971-2023>`_
+* Publications
 
    - `Chen et al., 2023 <https://doi.org/10.5194/amt-16-1971-2023>`_
 
@@ -80,9 +80,12 @@ If you find EaR³T is helpful and would like to cite it, here are the references
 
 * `Software <https://github.com/hong-chen/er3t>`_
 
-   Nataraja, V., Chen, Y-W, Hirata, K., Chen, H., and Schmidt, K. S.: hong-chen/er3t: er3t-v0.2.0 (v0.2.0),
-   Zenodo [code], https://doi.org/10.5281/zenodo.4093737, 2025. 
+   - `Latest release <https://github.com/hong-chen/er3t/releases/latest>`_
 
+     Nataraja, V., Chen, Y-W, Hirata, K., Chen, H., and Schmidt, K. S.: hong-chen/er3t: er3t-v0.2.0 (v0.2.0),
+     Zenodo [code], doi:10.5281/zenodo.4093737, 2025. 
+
+   - `All the releases <https://github.com/hong-chen/er3t/releases>`_
 
 |
 |
