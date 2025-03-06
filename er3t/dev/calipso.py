@@ -12,8 +12,6 @@ import requests
 from er3t import common
 from er3t.util import check_equal, get_doy_tag, get_data_h4, get_data_nc, unpack_uint_to_bits
 from er3t.util.daac import final_file_check, get_command_earthdata
-import ccplot.utils
-from ccplot.hdf import HDF
 # import h5py
 
 __all__ = [
@@ -353,14 +351,18 @@ def read_calipso_vfm(filename, extent, x_range=(0, 1000), y_range=(0, 20), fig_o
     """
     # This function is modified from NASA VOCAL calipso code on github:
         https://github.com/NASA-DEVELOP/VOCAL/blob/master/calipso
-    
+
     _summary_
     """
+
+    import ccplot.utils
+    from ccplot.hdf import HDF
+
     # 15 profiles are in 1 record of VFM data. At the highest altitudes 5 profiles are averaged
     # together. In the mid altitudes 3 are averaged and at roughly 8 km or less, there are
     # separate profiles.
     prof_per_row = 15
-    
+
     # constant variables
     alt_len = 545
     first_alt = y_range[0]
