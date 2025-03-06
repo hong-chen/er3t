@@ -20,11 +20,11 @@ sys.path.insert(0, os.path.abspath('source'))
 # -- Project information -----------------------------------------------------
 
 project = 'EaR³T'
-copyright = '2023, Hong Chen, Sebastian Schmidt, Vikas Nataraja, Ken Hirata, Yu-Wen Chen'
+copyright = '2025, Hong Chen, Sebastian Schmidt, Vikas Nataraja, Ken Hirata, Yu-Wen Chen'
 author = 'Hong Chen, Sebastian Schmidt, Vikas Nataraja, Ken Hirata, Yu-Wen Chen'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.1'
+release = '0.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -33,6 +33,7 @@ release = '0.1.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx_rtd_theme',
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
