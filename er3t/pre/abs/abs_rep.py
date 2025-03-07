@@ -102,6 +102,9 @@ class abs_rep:
                 self.Ng    = obj.Ng
                 self.coef  = obj.coef
                 self.wvl_info = obj.wvl_info
+                self.wvl_     = obj.wvl_
+                self.wvl_min_ = obj.wvl_min_
+                self.wvl_max_ = obj.wvl_max_
             else:
                 msg = '\nError [abs_rep]: <%s> is not the correct pickle file to load.' % fname
                 raise OSError(msg)
@@ -208,6 +211,8 @@ class abs_rep:
 
         self.wvl_all = f0.variables['wvl'][:].data
         self.wvl_  = wvl
+        self.wvl_min_ = wvl_min0
+        self.wvl_max_ = wvl_max0
         self.sol   = sol
         self.wgt   = wvl_weights
         self.gases = [gases[index] for index in gas_indices]
@@ -337,10 +342,10 @@ class abs_rep:
 
                             # vmr_ = np.log(self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data'])
                             vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
-                            
+
                             if vmr_.max() > vmr_ref.max():
                                 vmr_[vmr_>vmr_ref.max()] = vmr_ref.max()
-                            
+
                             f_points = np.transpose(np.vstack((dt_, vmr_, p_)))
                         #╰──────────────────────────────────────────────────────────────╯#
 

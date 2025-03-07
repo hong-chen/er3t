@@ -1,5 +1,5 @@
-Version 0.2.0 (in plan)
------------------------
+Version 0.2.0
+-------------
 Important updates from previous version (v0.1.1):
 
 * Initiates documentation at https://er3t.readthedocs.io/;

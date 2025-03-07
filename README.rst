@@ -17,7 +17,7 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
     :target: https://github.com/hong-chen/er3t/stargazers
     :alt: GitHub Repo Stars
 
-.. image:: https://img.shields.io/badge/cited_by-7-blue
+.. image:: https://img.shields.io/badge/cited_by-8-blue
     :target: https://er3t.readthedocs.io/en/latest/source/other/highlight.html#publications
     :alt: Citation Counts
 
@@ -31,6 +31,12 @@ EaR³T (Education and Research 3D Radiative Transfer Toolbox)
     :width: 400
     :align: center
 
+|
+
+We are preparing for an upcoming release, so please anticipate frequent changes to the main branch.
+------------
+
+|
 
 `EaR³T <https://er3t.readthedocs.io/en/latest/>`_ (pronounced /ɜːt/) is a Python software package
 developed for cutting-edge radiative transfer and remote sensing applications. It provides high-level
