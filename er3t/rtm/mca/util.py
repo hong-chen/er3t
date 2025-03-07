@@ -324,7 +324,7 @@ class func_ref_vs_cot_multi_pixel:
         if atm0 is None:
             levels = np.arange(0.0, 20.1, 0.1)
             fname_atm = '%s/atm_wvl-%06.1fnm.pk' % (self.fdir, self.wvl0)
-            atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=self.fname_atm, overwrite=False)        
+            atm0   = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, fname_atmmod=self.fname_atm, overwrite=False)
         else:
             atm0 = atm0
         #╰────────────────────────────────────────────────────────────────────────────╯#
