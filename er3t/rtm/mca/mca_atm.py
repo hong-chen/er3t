@@ -7,7 +7,7 @@ import h5py
 import numpy as np
 from scipy import interpolate
 
-from er3t.util import cal_mol_ext, cal_sol_fac, get_lay_index
+from er3t.util import cal_mol_ext, cal_sol_fac, get_lay_index, cal_mol_ext_atm
 
 
 
@@ -83,8 +83,9 @@ class mca_atm_1d:
             self.nml[ig]['Atm_nz']    = {'data':nz                                     , 'units':'N/A', 'name':'Number of z grid points'}
 
             # Use Bodhaine formula to calculate Rayleigh Optical Depth
-            atm_sca = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:], self.atm) \
-                     / (self.atm.lay['thickness']['data']*1000.0)
+            # atm_sca = cal_mol_ext(self.abs.wvl*0.001, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:]) \
+            #          / (self.atm.lay['thickness']['data']*1000.0)
+            atm_sca = cal_mol_ext_atm(self.abs.wvl*0.001, self.atm) / (self.atm.lay['thickness']['data']*1000.0)
 
             # Absorption coefficient
             atm_abs = self.abs.coef['abso_coef']['data'][:, ig] / (self.atm.lay['thickness']['data']*1000.0)
@@ -291,15 +292,13 @@ class mca_atm_3d:
                 f_interp_ssa = interpolate.interp1d(ref, ssa, bounds_error=False, fill_value='extrapolate')
                 f_interp_ind = interpolate.interp1d(ref, ind, bounds_error=False, fill_value='extrapolate')
                 f_interp_asy = interpolate.interp1d(ref, asy, bounds_error=False, fill_value='extrapolate')
-
-                print("atm_omg shape:", atm_omg.shape)
-                print("logic_cld shape:", logic_cld.shape)
-                print("cer shape:", cer.shape)  
                 
                 atm_omg[logic_cld, 0] = f_interp_ssa(cer[logic_cld])
-                
                 atm_apf[logic_cld, 0] = f_interp_asy(cer[logic_cld])
-
+                
+                # if preffered to use the previous version's index interpolation setting
+                # for the phase function, uncomment the following lines
+                
                 # atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
                 # set left-outbound to left-most value
                 #╭────────────────────────────────────────────────────────────────────────────╮#

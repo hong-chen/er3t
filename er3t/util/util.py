@@ -18,7 +18,7 @@ __all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
            'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
            'get_doy_tag', 'add_reference', 'print_reference', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
-           'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
+           'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext_atm', 'mol_ext_wvl', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
            'format_time', 'region_parser', 'parse_geojson', 'unpack_uint_to_bits']
 
@@ -187,7 +187,6 @@ def send_email(
 
 
 
-
 def nice_array_str(array1d, numPerLine=6):
 
     """
@@ -278,24 +277,47 @@ def jday_to_dtime(jday):
     return dtime
 
 
+def get_data_h4(hdf_dset, init_dtype=None, replace_fill_value=np.nan):
+    """
+    Retrieves data from an HDF dataset and performs optional data type conversion and fill value replacement.
 
-def get_data_h4(hdf_dset, replace_fill_value=np.nan):
+    Args:
+    ----
+        hdf_dset (h5py.Dataset): The HDF dataset to retrieve data from.
+        init_dtype (dtype, optional): The desired data type for the retrieved data. Defaults to None.
+        replace_fill_value (float or int, optional): The value to replace the fill value with. Defaults to np.nan.
+
+    Returns:
+        numpy.ndarray: The retrieved data with optional data type conversion and fill value replacement.
+    """
 
     attrs = hdf_dset.attributes()
     data  = hdf_dset[:]
+    if init_dtype is not None:
+        data = np.array(data, dtype=init_dtype)
 
+    # Check if the dataset has a fill value attribute and if fill value replacement is requested
+    if '_FillValue' in attrs and replace_fill_value is not None:
+        # If the replacement fill value is NaN, convert the fill value attribute to float64
+        if np.isnan(replace_fill_value):
+            _FillValue = np.array(attrs['_FillValue'], dtype='float64')
+            data = data.astype('float64')
+
+        else: # otherwise let the fill value be the same data type as the dataset
+            _FillValue = np.array(attrs['_FillValue'], dtype=data.dtype)
+
+        # Replace the fill values in the dataset with the replacement fill value
+        data[data == _FillValue] = replace_fill_value
+
+    # If the dataset has an add_offset attribute, subtract it from the data
     if 'add_offset' in attrs:
         data = data - attrs['add_offset']
 
+    # If the dataset has a scale_factor attribute, multiply it with the data
     if 'scale_factor' in attrs:
         data = data * attrs['scale_factor']
-    else:
-        data = data * 1.0
 
-    if '_FillValue' in attrs and replace_fill_value is not None:
-        _FillValue = np.float32(attrs['_FillValue'])
-        data[data == _FillValue] = replace_fill_value
-
+    # Return the processed data
     return data
 
 
@@ -978,14 +1000,18 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
 
     return sza, saa
 
+
+
 def g0_calc(lat):
     """
     Calculate the surface gravity acceleration.
 
-    according to Eq. 11 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
+    according to Eq. 11 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
     """
     lat_rad = lat * np.pi / 180
     return 9.806160 * (1 - 0.0026373 * np.cos(2*lat_rad) + 0.0000059 * np.cos(2*lat_rad)**2) # in m/s^2
+
+
 
 def g_alt_calc(g0, lat, z):
     """
@@ -1004,7 +1030,9 @@ def g_alt_calc(g0, lat, z):
            - (1.517e-17 + 6.0e-20 * np.cos(2 * lat_rad)) * z**3
     return g/100
 
-def cal_mol_ext(wv0, pz1, pz2, atm0):
+
+
+def cal_mol_ext_atm(wv0, atm0, method='atm'):
 
     """
     Input:
@@ -1012,6 +1040,7 @@ def cal_mol_ext(wv0, pz1, pz2, atm0):
         pz1: numpy array, Pressure of lower layer (hPa)
         pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
         atm0: er3t atmosphere object
+        method: string, 'sfc' or 'lay'
     Output:
         tauray: extinction
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
@@ -1025,43 +1054,61 @@ def cal_mol_ext(wv0, pz1, pz2, atm0):
     try:
         lat = atm0.lat
     except AttributeError:
-        lat = 30.0 # default latitude
+        lat = 0.0 # default latitude is 0 degree
+        
     g0 = g0_calc(lat) # m/s^2
-    # g0 = 9.81
+    g0 = g0_calc(0) # m/s^2
     z = atm0.lay['altitude']['data']
-    z_sfc = atm0.lay['altitude']['data'][0]
     g = g_alt_calc(g0, lat, z*1000) * 100 # convert to cm/s^2
 
     g0 = g0 * 100 # convert to cm/s^2
     ma = 28.9595 + (15.0556 * atm0.lay['co2']['data']/atm0.lay['air']['data'])
 
-    p_lay = atm0.lay['pressure']['data'] * 1000 # convert to dyne/cm^2
     p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
     dp_lev = (p_lev[:-1]-p_lev[1:]) # convert to dyne/cm^2
-    num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
-    den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
-    tauray = 0.00210966*(num/den)*(pz1-pz2)/1013.25
+    crs = mol_ext_wvl(wv0)
     
-    const = dp_lev * A_ / (g * ma) * 1e-28
-    const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
-    # print(const)
-    print("sum const", np.sum(const))
-    print("const_sfc", const_sfc)
-    print("45N const:", 1013000 * A_ / ((g_alt_calc((g0_calc(45)), 45, 0)) * 100 * 28.9595) * 1e-28)
-    # sys.exit()
-    # tauray = const*(num/den)#
-    tauray = const_sfc*(num/den)*(pz1-pz2)/1013.25
+    # original calculation
+    # tauray = 0.00210966*(crs)*(p_lev[:-1]-p_lev[1:])/1013.25
+        
+    if method == 'sfc':
+        const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
+        tauray = const_sfc*(crs)*(p_lev[:-1]-p_lev[1:])/p_lev[0]
+    elif method == 'lay':
+        const_lay = dp_lev * A_ / (g * ma) * 1e-28
+        tauray = const_lay*(crs)
+    elif method == 'atm':
+        tauray = (crs) * 1e-28 * atm0.lay['air']['data'] * atm0.lay['thickness']['data'] * 1000 * 100
+    else:
+        raise ValueError("Error [cal_mol_ext_atm]: method not supported.")
+
     return tauray
 
 
-def cal_mol_ext_0(wv0, pz1, pz2, atm0):
+def mol_ext_wvl(wv0):
+    """
+    Calculate the rayleigh scattering cross-section for given wavelength.
+
+    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
+    
+    Input:
+        wv0: wavelength (in microns)
+    """
+
+    num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
+    den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
+    crs = num/den
+    
+    return crs   # in 10^-28 cm^2/molecule
+
+
+def cal_mol_ext(wv0, pz1, pz2):
 
     """
     Input:
         wv0: wavelength (in microns) --- can be an array
         pz1: numpy array, Pressure of lower layer (hPa)
         pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
-        atm0: er3t atmosphere object
     Output:
         tauray: extinction
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
@@ -1071,11 +1118,10 @@ def cal_mol_ext_0(wv0, pz1, pz2, atm0):
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
 
-    num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
-    den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
-    tauray = 0.00210966*(num/den)*(pz1-pz2)/1013.25
+    tauray = 0.00210966 * mol_ext_wvl(wv0) * (pz1-pz2) / 1013.25
     
     return tauray
+
 
 
 def cal_ext(cot, cer, dz=1.0, Qe=2.0):
@@ -1217,13 +1263,33 @@ def parse_geojson(geojson_fpath):
 
 
 def region_parser(extent, lons, lats, geojson_fpath):
+    """
+    Parse region specifications and return longitude and latitude arrays.
+    This function processes different forms of region specifications: extent, lon/lat coordinates, or a geoJSON file.
+    It validates inputs and returns arrays of longitudes and latitudes that define the region.
+    Args:
+    ----
+        extent (list or None): Region extent as [lon_min, lon_max, lat_min, lat_max]
+            (i.e., West, East, South, North).
+        lons (list or None): Longitude bounds as [lon_min, lon_max].
+        lats (list or None): Latitude bounds as [lat_min, lat_max].
+        geojson_fpath (str or None): File path to a geoJSON file containing region information.
+
+    Returns:
+    -------
+        tuple: A tuple containing:
+            - llons (numpy.ndarray): Array of longitudes linearly spaced across the region.
+            - llats (numpy.ndarray): Array of latitudes linearly spaced across the region.
+    Raises:
+        SystemExit: If inputs are invalid or insufficient to define a region.
+    """
 
     if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
-        print('Error [sdown]: Must provide either extent or lon/lat coordinates or a geoJSON file')
+        print('Error [region_parser]: Must provide either extent or lon/lat coordinates or a geoJSON file')
         sys.exit()
 
     if (extent is not None) and ((lats is not None) or (lons is not None)) and (geojson_fpath is not None):
-        print('Warning [sdown]: Received multiple regions of interest. Only `extent` will be used.')
+        print('Warning [region_parser]: Received multiple regions of interest. Only `extent` will be used.')
         llons = np.linspace(extent[0], extent[1], 100)
         llats = np.linspace(extent[2], extent[3], 100)
         return llons, llats
@@ -1231,12 +1297,12 @@ def region_parser(extent, lons, lats, geojson_fpath):
 
     if (extent is not None):
         if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
-            print('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+            print('Error [region_parser]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
             sys.exit()
 
         # check to make sure extent is correct
         if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-            msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
+            msg = 'Error [region_parser]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
             print(msg)
             sys.exit()
 
@@ -1250,7 +1316,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
             llats = np.linspace(lats[0], lats[1], 100)
             return llons, llats
         else:
-            print('Error [sdown]: Must provide two coorect bounds each for `--lons` and `--lats`')
+            print('Error [region_parser]: Must provide two coorect bounds each for `--lons` and `--lats`')
             sys.exit()
 
 
@@ -1315,6 +1381,23 @@ def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
         return np.transpose(bits[:, :, ::-1], axes=(2, 0, 1))
 
     return np.transpose(bits, axes=(2, 0, 1))
+
+
+
+def has_common_substring(input_str, substring_list):
+    """
+    Check if the input string contains any of the substrings from the list without using for loops.
+
+    Args:
+    ----
+        input_str (str): The string to check against.
+        substring_list (list): List of substrings to look for in the input string.
+
+    Returns:
+    -------
+        bool: True if input_str contains any substring from substring_list, False otherwise.
+    """
+    return any(substring in input_str for substring in substring_list)
 
 
 

@@ -1,32 +1,38 @@
 import os
 import sys
+import requests
 import datetime
 import numpy as np
 import warnings
 
-from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime
+
+from er3t.util.util import get_doy_tag, dtime_to_jday, jday_to_dtime, has_common_substring
 import er3t.common
 from er3t.common import fdir_data_tmp
 
 
 __all__ = [
-        'format_satname', \
-        'get_token_earthdata', \
-        'get_fname_geometa', \
-        'get_local_file', \
-        'get_online_file', \
-        'final_file_check', \
-        'read_geometa', \
-        'cal_proj_xy_geometa', \
-        'cal_lon_lat_utc_geometa', \
-        'cal_sec_offset_abi', \
-        'get_satfile_tag', \
-        'download_laads_https', \
-        'download_lance_https',\
-        'download_oco2_https', \
-        'download_worldview_image', \
-        ]
-
+    'format_satname', \
+    'get_token_earthdata', \
+    'gen_file_earthdata', \
+    'get_command_earthdata', \
+    'get_fname_geometa', \
+    'delete_file', \
+    'get_local_file', \
+    'get_online_file', \
+    'get_nsidc_file_list', \
+    'final_file_check', \
+    'read_geometa', \
+    'cal_proj_xy_geometa', \
+    'cal_lon_lat_utc_geometa', \
+    'cal_sec_offset_abi', \
+    'get_satfile_tag', \
+    'download_laads_https', \
+    'download_lance_https', \
+    'download_nsidc_https', \
+    'download_oco2_https', \
+    'download_worldview_image', \
+    ]
 
 def format_satname(satellite, instrument):
     """ Format satellite and instrument name """
@@ -52,6 +58,7 @@ def format_satname(satellite, instrument):
     return satname
 
 
+
 def get_token_earthdata():
     """ Get Earthdata token to access data on NASA servers """
 
@@ -65,6 +72,7 @@ def get_token_earthdata():
         warnings.warn(msg)
 
     return token
+
 
 
 def gen_file_earthdata(
@@ -102,6 +110,7 @@ def gen_file_earthdata(
     secret['cookies'] = fname_cookies
 
     return secret
+
 
 
 def get_command_earthdata(
@@ -227,6 +236,8 @@ def delete_file(
 
     if os.path.exists(fname_local2):
         os.remove(fname_local2)
+
+
 
 def get_local_file(
         fname_file,
@@ -369,6 +380,125 @@ def get_online_file(
         content = None
 
     return content
+
+
+
+def get_nsidc_file_list(
+        product_id,
+        version,
+        instrument,
+        extent,
+        start_dt_hhmm,
+        end_dt_hhmm,
+        ):
+    """
+    Get a list of files available from an NSIDC URL directory.
+    Modeled after Jupyter Notebook from the official NSIDC Github repo:
+    https://github.com/nsidc/NSIDC-Data-Access-Notebook/blob/master/notebooks/Customize%20and%20Access%20NSIDC%20Data.ipynb
+
+    Args:
+    ----
+        url : str
+            The URL of the NSIDC directory to list files from.
+        fdir_save : str, optional
+            Directory to save temporary files.
+        verbose : bool, optional
+            Whether to print verbose messages.
+
+    Returns:
+    --------
+        list
+            A list of filenames available in the directory.
+    """
+
+    #\----------------------------------------------------------------------------------------------------------------------/#
+    # first we need to check that collections for this product exist given the time and region. An example URL:
+    # https://cmr.earthdata.nasa.gov/search/collections.json?instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85&has_granules=true
+
+    # build search params
+    temporal = start_dt_hhmm.strftime('%Y-%m-%dT%H:%M:%SZ') + ',' + end_dt_hhmm.strftime('%Y-%m-%dT%H:%M:%SZ')
+    bbox     = f'{extent[0]},{extent[2]},{extent[1]},{extent[3]}' # bottom lonlat, top lonlat
+    search_params = dict(instrument=instrument,
+                         short_name=product_id,
+                         version=version, # collection version like "61" for MODIS collection 6.1
+                         temporal=temporal,
+                         bounding_box=bbox)
+
+    cmr_collections_url = 'https://cmr.earthdata.nasa.gov/search/collections.json?has_granules=True'
+    search_params_string = '&'.join('{}={}'.format(k, v) for (k, v) in search_params.items())
+    cmr_collections_url = f'{cmr_collections_url}&{search_params_string}'
+    session = requests.session()
+    response = session.get(cmr_collections_url, timeout=10)
+    if response.status_code != 200:
+        print(f'Message [get_nsidc_file_list]: Could not submit query to {cmr_collections_url} as it resulted in a status code {response.status_code}')
+        return []
+
+    json_results = response.json()
+    results = json_results['feed']['entry']
+    if len(results) == 0:
+        print(f'Message [get_nsidc_file_list]: Could not find any results on {cmr_collections_url}')
+        return []
+    # print('Message [get_nsidc_file_list]: Found dataset {}'.format(results[0]['dataset_id'])) # debug statement
+
+    # loop through results just to make sure data is on the NSIDC servers
+    nsidc_counts = 0
+    for result in results:
+        if 'NSIDC' in result['archive_center'].upper():
+            nsidc_counts += 1
+
+    if nsidc_counts == 0:
+        print('Message [get_nsidc_file_list]: Could not find any data on NSIDC data centers')
+        return []
+
+    #\----------------------------------------------------------------------------------------------------------------------/#
+
+    # now that we have found and verified that the collection and product exists, we need to query granules.
+    # granules are indexed by page numbers and page size (defaults to 10) so we need to go through each page.
+    # example url: # https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=true&instrument=MODIS&short_name=MOD29&temporal=2024-05-31T00:00:00Z,2024-05-31T23:00:00Z&bounding_box=-100,80,-50,85
+
+    cmr_granules_base_url = 'https://cmr.earthdata.nasa.gov/search/granules.json?downloadable=True'
+    # update search params with page info
+    search_params['page_num'] = 1
+    search_params['page_size'] = 10 # do not make this too big as query will take too long
+
+    # create list for links
+    nsidc_download_links = []
+
+    # set up input parameters
+    headers = {'Accept': 'application/json'}
+    application_formats = ('application/x-hdfeos', 'application/x-netcdf')
+    data_formats        = ('hdf', 'nc', 'hdf5', 'hdf4')
+
+    # send queries until we run out of pages
+    while True:
+        # update search params and url
+        search_params_string = '&'.join('{}={}'.format(k, v) for (k, v) in search_params.items())
+        cmr_granules_url = f'{cmr_granules_base_url}&{search_params_string}'
+
+        response = requests.get(cmr_granules_url, headers=headers, timeout=30)
+        if response.status_code != 200:
+            print(f'Message [get_nsidc_file_list]: Could not submit query to {cmr_granules_url} as it resulted in a status code {response.status_code}')
+            return []
+
+        json_results = response.json()
+        results = json_results['feed']['entry']
+        if len(results) == 0: # out of results, so break out of loop
+            break
+
+        # loop through to get downloadable links
+        for granule in results:
+            links = granule['links']
+            for link in links:
+                if link['href'].lower().endswith(data_formats):
+                    nsidc_download_links.append(link['href']) # add link to list
+
+        # update page number for next request query
+        search_params['page_num'] += 1
+    #\----------------------------------------------------------------------------------------------------------------------/#
+
+    print(f'Message [get_nsidc_file_list]: Found {len(nsidc_download_links)} granules')
+    return nsidc_download_links
+
 
 
 def final_file_check(fname_local, data_format, verbose):
@@ -1027,13 +1157,11 @@ def get_satfile_tag(
     import matplotlib.path as mpl_path
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # get formatted satellite tag
     #╭────────────────────────────────────────────────────────────────────────────╮#
     satname = format_satname(satellite, instrument)
     satellite, instrument = satname.split('|')
     #╰────────────────────────────────────────────────────────────────────────────╯#
-
 
     # get satellite geometa filename on the appropriate DAAC server
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1045,7 +1173,6 @@ def get_satfile_tag(
     fname_geometa = get_fname_geometa(date, satname, server=server)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # convert longitude in [-180, 180] range
     # since the longitude in GeoMeta dataset is in the range of [-180, 180]
     # or check overlap within region of interest
@@ -1056,7 +1183,6 @@ def get_satfile_tag(
     lat   = lat[logic]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # get geometa info
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
 
@@ -1065,7 +1191,7 @@ def get_satfile_tag(
 
     # try to get geometa information online
     if (content is None) or ('<!DOCTYPE html>' in content):
-        content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+        content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
     # content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
@@ -1075,8 +1201,6 @@ def get_satfile_tag(
 
     if data is None:
         return []
-
-
 
     # loop through all the satellite "granules" constructed through four corner points
     # and find which granules contain the input data
@@ -1129,7 +1253,6 @@ def get_satfile_tag(
             percent_all = np.append(percent_all, percent_in)
             i_all.append(i)
     #╰────────────────────────────────────────────────────────────────────────────╯#
-
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1225,8 +1348,7 @@ def download_laads_https(
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
-                fnames_local.append(fname_local)
-                print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
+                print("Message [download_laads_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)

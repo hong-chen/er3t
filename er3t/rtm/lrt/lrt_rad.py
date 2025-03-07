@@ -148,8 +148,10 @@ class lrt_init_mono_rad:
             self.Nvar = 2
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
-        if output_format     == 'lambda uu edir':
-            self.Nvar = 3
+        if output_format     == 'lambda uu edir edn':
+            self.Nvar = 4
+        elif output_format     == 'lambda uu edir':
+            self.Nvar = 3    
 
         # sensor azimuth angle
         #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -212,6 +214,7 @@ class lrt_init_mono_rad:
 
         self.input_dict = OD([
                             ('atmosphere_file'   , lrt_cfg['atmosphere_file']),
+                            # ('source solar'      , lrt_cfg['solar_file']),
                             ('day_of_year'       , str(day_of_year)),
                             ('albedo'            , '%.6f' % surface_albedo),
                             ('sza'               , '%.4f' % solar_zenith_angle),
@@ -229,7 +232,8 @@ class lrt_init_mono_rad:
         
         if lrt_cfg['solar_file'] is not None:
             self.input_dict['source solar'] = lrt_cfg['solar_file']
-            self.input_dict['spline'] = '%.3f %.3f %.3f' % (wavelength, wavelength, spectral_resolution)
+            self.input_dict['output_process'] = lrt_cfg['output_process']
+            self.input_dict['spline'] =  '%.3f %.3f %.3f' % (wavelength, wavelength, spectral_resolution)
             self.input_dict['slit_function_file'] = slit_function_file
         
         if lrt_cfg['rte_solver'] == 'mystic':
@@ -583,6 +587,7 @@ class lrt_read_uvspec_rad:
         return self
 
 
+
 class lrt_read_uvspec_rad_toa:
 
     """
@@ -611,16 +616,21 @@ class lrt_read_uvspec_rad_toa:
 
         self.dims  = {'X':'Wavelength', 'Y':'Altitude', 'Z':'Files'}
         rad  = np.zeros((Nx, Ny, Nz, 1), dtype=np.float64)
-        fdown_dir  = np.zeros((Nx, Ny, Nz, 1), dtype=np.float64)
+        fdown_dir  = np.zeros((Nx, Ny, Nz, 1), dtype=np.float32)
+        if Nvar == 4:
+            fdown_diff = np.zeros((Nx, Ny, Nz, 1), dtype=np.float32)
 
         for i, init in enumerate(inits):
 
             data = np.loadtxt(init.output_file).reshape((Nx, Ny, Nvar))
             rad[:, :, i, :]  = data[:, :, 1]/1000.0
             fdown_dir[:, :, i, :]  = data[:, :, 2]/1000.0
+            if Nvar == 4:
+                fdown_diff[:, :, i, :] = data[:, :, 3]/1000.0
 
         self.rad = rad
-        self.toa = fdown_dir 
+        self.toa = fdown_dir
+        self.toa_diffuse = fdown_diff
 
 
     def __add__(self, data):
@@ -628,6 +638,7 @@ class lrt_read_uvspec_rad_toa:
         self.rad = np.vstack((self.rad, data.rad))
         self.toa = np.vstack((self.toa, data.toa))
         return self
+
 
 
 if __name__ == '__main__':
