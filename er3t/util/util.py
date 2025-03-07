@@ -18,7 +18,7 @@ __all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
            'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
            'get_doy_tag', 'add_reference', 'print_reference', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
-           'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
+           'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext_atm', 'mol_ext_wvl', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
            'format_time', 'region_parser', 'parse_geojson', 'unpack_uint_to_bits']
 
@@ -1032,7 +1032,7 @@ def g_alt_calc(g0, lat, z):
 
 
 
-def cal_mol_ext(wv0, pz1, pz2, atm0):
+def cal_mol_ext_atm(wv0, atm0, method='atm'):
 
     """
     Input:
@@ -1040,6 +1040,7 @@ def cal_mol_ext(wv0, pz1, pz2, atm0):
         pz1: numpy array, Pressure of lower layer (hPa)
         pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
         atm0: er3t atmosphere object
+        method: string, 'sfc' or 'lay'
     Output:
         tauray: extinction
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
@@ -1053,44 +1054,62 @@ def cal_mol_ext(wv0, pz1, pz2, atm0):
     try:
         lat = atm0.lat
     except AttributeError:
-        lat = 30.0 # default latitude
+        lat = 0.0 # default latitude is 0 degree
+        
     g0 = g0_calc(lat) # m/s^2
-    # g0 = 9.81
+    g0 = g0_calc(0) # m/s^2
     z = atm0.lay['altitude']['data']
-    z_sfc = atm0.lay['altitude']['data'][0]
     g = g_alt_calc(g0, lat, z*1000) * 100 # convert to cm/s^2
 
     g0 = g0 * 100 # convert to cm/s^2
     ma = 28.9595 + (15.0556 * atm0.lay['co2']['data']/atm0.lay['air']['data'])
 
-    p_lay = atm0.lay['pressure']['data'] * 1000 # convert to dyne/cm^2
     p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
     dp_lev = (p_lev[:-1]-p_lev[1:]) # convert to dyne/cm^2
-    num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
-    den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
-    tauray = 0.00210966*(num/den)*(pz1-pz2)/1013.25
+    crs = mol_ext_wvl(wv0)
     
-    const = dp_lev * A_ / (g * ma) * 1e-28
-    const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
-    # print(const)
-    print("sum const", np.sum(const))
-    print("const_sfc", const_sfc)
-    print("45N const:", 1013000 * A_ / ((g_alt_calc((g0_calc(45)), 45, 0)) * 100 * 28.9595) * 1e-28)
-    # sys.exit()
-    # tauray = const*(num/den)#
-    tauray = const_sfc*(num/den)*(pz1-pz2)/1013.25
+    # original calculation
+    # tauray = 0.00210966*(crs)*(p_lev[:-1]-p_lev[1:])/1013.25
+        
+    if method == 'sfc':
+        const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
+        tauray = const_sfc*(crs)*(p_lev[:-1]-p_lev[1:])/p_lev[0]
+    elif method == 'lay':
+        const_lay = dp_lev * A_ / (g * ma) * 1e-28
+        tauray = const_lay*(crs)
+    elif method == 'atm':
+        tauray = (crs) * 1e-28 * atm0.lay['air']['data'] * atm0.lay['thickness']['data'] * 1000 * 100
+    else:
+        raise ValueError("Error [cal_mol_ext_atm]: method not supported.")
+
     return tauray
 
 
+def mol_ext_wvl(wv0):
+    """
+    Calculate the rayleigh scattering cross-section for given wavelength.
 
-def cal_mol_ext_0(wv0, pz1, pz2, atm0):
+    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
+    
+    Input:
+        wv0: wavelength (in microns)
+    """
+
+    num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
+    den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
+    crs = num/den
+    
+    return crs   # in 10^-28 cm^2/molecule
+
+  
+  
+def cal_mol_ext(wv0, pz1, pz2):
 
     """
     Input:
         wv0: wavelength (in microns) --- can be an array
         pz1: numpy array, Pressure of lower layer (hPa)
         pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
-        atm0: er3t atmosphere object
     Output:
         tauray: extinction
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
@@ -1100,9 +1119,7 @@ def cal_mol_ext_0(wv0, pz1, pz2, atm0):
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
 
-    num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
-    den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
-    tauray = 0.00210966*(num/den)*(pz1-pz2)/1013.25
+    tauray = 0.00210966 * mol_ext_wvl(wv0) * (pz1-pz2) / 1013.25
     
     return tauray
 
