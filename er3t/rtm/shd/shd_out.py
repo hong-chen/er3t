@@ -19,13 +19,12 @@ __all__ = ['get_shd_data_out', 'get_shd_data_out_ori']
 
 def get_shd_data_out_ori(
         fname,
-        verbose=False,
+        verbose=True,
         ):
 
     if verbose:
         print('Reading SHDOM output file:\n <%s> ...' % os.path.abspath(fname))
         print('╭────────────────────────────────────────────────────────────────────────────╮')
-
 
     headers = []
     with open(fname, 'r') as f:
@@ -70,12 +69,14 @@ def get_shd_data_out_ori(
         Nset = 1
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-    shape = (Nx, Ny, Nz, Nset, Nvar)
-    data = np.zeros(shape, dtype=np.float32)
-    for j in range(Nvar):
+    data = np.zeros((Nset, Ny, Nx, Nz, Nvar), dtype=np.float32)
+    for i in range(Nvar):
+        data[..., i] = data_[:, i].reshape((Nset, Ny, Nx, Nz))
 
-        # works for x, y, z in ori
-        data[:, :, :, :, j] = np.moveaxis(data_[:, j].reshape((Nset, Ny, Nx, Nz)), [0, 1, 2, 3], [3, 1, 0, 2])
+    # from (Nset, Ny, Nx, Nz, Nvar) to (Ny, Nx, Nz, Nset, Nvar)
+    data = np.moveaxis(data, 0, -2)
+    # from (Ny, Nx, Nz, Nset, Nvar) to (Nx, Ny, Nz, Nset, Nvar)
+    data = np.moveaxis(data, 0, 1)
 
     if verbose:
         print('%s (Nx, Ny, Nz, Nset, Nvar): %s' % (output_type.title(), data.shape))
