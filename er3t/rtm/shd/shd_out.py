@@ -122,6 +122,7 @@ def get_shd_data_out(
 
         msg = 'Warning [get_shd_data_out]: Currently <OUTPUT_TYPE=%s> is NOT fully supported.' % output_type.upper()
         warnings.warn(msg)
+        fname_data = fname
         data = get_shd_data_out_ori(fname, verbose=False)
 
     if verbose:
