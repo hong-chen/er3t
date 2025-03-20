@@ -23,7 +23,7 @@ def get_shd_data_out_ori(
         ):
 
     if verbose:
-        print('Reading SHDOM output file:\n <%s> ...' % os.path.abspath(fname))
+        print('Message [get_shd_data_out]: Reading SHDOM output ...')
         print('╭────────────────────────────────────────────────────────────────────────────╮')
 
     headers = []
@@ -79,6 +79,7 @@ def get_shd_data_out_ori(
     data = np.moveaxis(data, 0, 1)
 
     if verbose:
+        print('target file: <%s>' % os.path.abspath(fname))
         print('%s (Nx, Ny, Nz, Nset, Nvar): %s' % (output_type.title(), data.shape))
         print('╰────────────────────────────────────────────────────────────────────────────╯')
 
@@ -91,7 +92,7 @@ def get_shd_data_out(
         ):
 
     if verbose:
-        print('Reading SHDOM output file:\n <%s> ...' % os.path.abspath(fname))
+        print('Message [get_shd_data_out]: Reading SHDOM output ...')
         print('╭────────────────────────────────────────────────────────────────────────────╮')
 
     with open(fname, 'r') as f:
@@ -119,11 +120,13 @@ def get_shd_data_out(
 
     else:
 
-        msg = 'Warning [shd_out]: Currently <OUTPUT_TYPE=%s> is fully supported.' % output_type.upper()
+        msg = 'Warning [get_shd_data_out]: Currently <OUTPUT_TYPE=%s> is NOT fully supported.' % output_type.upper()
         warnings.warn(msg)
         data = get_shd_data_out_ori(fname, verbose=False)
 
     if verbose:
+        print('target file: <%s>' % os.path.abspath(fname))
+        print('  data file: <%s>' % os.path.abspath(fname_data))
         print('%s (Nx, Ny, Nz, Nset, Nvar): %s' % (output_type.title(), data.shape))
         print('╰────────────────────────────────────────────────────────────────────────────╯')
 
