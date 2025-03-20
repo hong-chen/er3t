@@ -1409,7 +1409,6 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
             overwrite=overwrite
             )
     #\----------------------------------------------------------------------------/#
-    sys.exit()
 
 
     # mca_sca object
@@ -1441,7 +1440,12 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
         vaa = f['mod/geo/vaa'][...].mean()
     f.close()
     #\----------------------------------------------------------------------------/#
-
+    print(er3t.util.cal_sol_fac(params['date']))
+    print(sza)
+    print(saa)
+    print(vza)
+    print(vaa)
+    sys.exit()
 
     # run mcarats
     #/----------------------------------------------------------------------------\#
@@ -1748,7 +1752,7 @@ if __name__ == '__main__':
     #   b. <02_modis_rad-sim_<plot_sat_raw>.png> will be created under current directory
     #   c. <02_modis_rad-sim_<plot_cld_ipa>.png> will be created under current directory
     #/----------------------------------------------------------------------------\#
-    main_pre()
+    # main_pre()
     #\----------------------------------------------------------------------------/#
 
     # Step 2. Use EaR3T to run radiance simulations for MODIS, after run
@@ -1758,7 +1762,7 @@ if __name__ == '__main__':
     #   require a lot of photons (thus long computational time) to achieve relatively
     #   high accuracy
     #/----------------------------------------------------------------------------\#
-    # main_sim(run_ipa=False)
+    main_sim(run_ipa=False)
     #\----------------------------------------------------------------------------/#
 
     # Step 3. Post-process radiance observations and simulations for MODIS, after run

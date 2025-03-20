@@ -121,7 +121,7 @@ class mca_atm_1d:
 
             atm_apf = np.zeros(nz)
             atm_apf[:] = apf1d
-            
+
             if z_bottom is not None:
                 atm_ext[self.atm.lay['altitude']['data']<z_bottom] = 0.0
                 atm_omg[self.atm.lay['altitude']['data']<z_bottom] = 0.0
@@ -234,8 +234,8 @@ class mca_atm_3d:
         self.nml= {}
 
         lay_index = get_lay_index(self.cld.lay['altitude']['data'], self.atm.lay['altitude']['data'])
-        print("self.atm.lay['altitude']['data'] len:", len(self.atm.lay['altitude']['data']))
-        print("self.cld.lay['altitude']['data'] len:", len(self.cld.lay['altitude']['data']))
+        # print("self.atm.lay['altitude']['data'] len:", len(self.atm.lay['altitude']['data']))
+        # print("self.cld.lay['altitude']['data'] len:", len(self.cld.lay['altitude']['data']))
 
         nx   = self.cld.lay['nx']['data']
         ny   = self.cld.lay['ny']['data']
@@ -292,13 +292,13 @@ class mca_atm_3d:
                 f_interp_ssa = interpolate.interp1d(ref, ssa, bounds_error=False, fill_value='extrapolate')
                 f_interp_ind = interpolate.interp1d(ref, ind, bounds_error=False, fill_value='extrapolate')
                 f_interp_asy = interpolate.interp1d(ref, asy, bounds_error=False, fill_value='extrapolate')
-                
+
                 atm_omg[logic_cld, 0] = f_interp_ssa(cer[logic_cld])
                 atm_apf[logic_cld, 0] = f_interp_asy(cer[logic_cld])
-                
+
                 # if preffered to use the previous version's index interpolation setting
                 # for the phase function, uncomment the following lines
-                
+
                 # atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
                 # set left-outbound to left-most value
                 #╭────────────────────────────────────────────────────────────────────────────╮#
