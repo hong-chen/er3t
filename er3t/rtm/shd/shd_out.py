@@ -181,7 +181,7 @@ def get_shd_data_out(
     # output data variable
     #╭────────────────────────────────────────────────────────────────────────────╮#
     mode = headers[-3].replace('!', '').strip().upper()
-    if mode in ['R', 'F1', 'F2', 'F3', 'F4', 'F5']:
+    if mode in ['R', 'F1', 'F2', 'F3', 'F4', 'F5', 'H1', 'H2', 'H3']:
         binary = True
     else:
         binary = False
