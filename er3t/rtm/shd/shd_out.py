@@ -250,7 +250,7 @@ def get_shd_data_out(
     # output data variable
     #╭────────────────────────────────────────────────────────────────────────────╮#
     mode = headers[-3].replace('!', '').strip().upper()
-    if mode in ['R', 'F1', 'F2', 'F3', 'F4', 'F5', 'H1', 'H2', 'H3']:
+    if mode in ['R', 'F1', 'F2', 'F3', 'F4', 'F5', 'H1', 'H2', 'H3', 'S1', 'S2', 'J1', 'J2', 'M1', 'M2']:
         binary = True
     else:
         binary = False
@@ -261,7 +261,7 @@ def get_shd_data_out(
 
         fname_data = fname + headers[-2].replace('!', '').strip()
 
-        if mode in ['F5', 'H3']:
+        if mode in ['F5', 'H3', 'S2', 'J2', 'M2']:
 
             Ndata, Nvar = [int(num_s.strip()) for num_s in headers[-1].replace('!', '').split(',')]
             shape = (Ndata, Nvar)
