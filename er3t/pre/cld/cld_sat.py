@@ -200,6 +200,8 @@ class cld_sat:
         self.lay['lon']      = copy.deepcopy(self.sat.data['lon_2d'])
         self.lay['lat']      = copy.deepcopy(self.sat.data['lat_2d'])
         self.lay['cot']      = copy.deepcopy(self.sat.data['cot_2d'])
+        if 'cth_2d' in self.sat.data.keys():
+            self.lay['cth'] = copy.deepcopy(self.sat.data['cth_2d'])
 
         self.lev['altitude'] = copy.deepcopy(self.atm.lev['altitude'])
 
