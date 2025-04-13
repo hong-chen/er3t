@@ -134,6 +134,14 @@ class cld_sat:
 
     def process(self, sat_obj, cloud_geometrical_thickness=1.0, cloud_top_height=3.0, layer_thickness=1.0):
 
+        if isinstance(cloud_top_height, np.ndarray):
+            if np.nanmax(cloud_top_height) < (2.0*layer_thickness):
+                indices = np.where(cloud_top_height==np.nanmax(cloud_top_height))
+                cloud_top_height[indices[0][0], indices[1][0]] = 2.0*layer_thickness
+        else:
+            if cloud_top_height < (2.0*layer_thickness):
+                cloud_top_height = 2.0*layer_thickness
+
         self.lay = {}
         self.lev = {}
 
@@ -236,7 +244,6 @@ class cld_sat:
                 indices =  np.where((alt>=cbh0) & (alt<=cth0))[0]
                 if indices.size == 0:
                     indices = np.array([-1])
-
 
                 dz    = self.atm.lay['thickness']['data'][indices].sum() * 1000.0
                 ext_3d[i, j, indices] = cot0/dz

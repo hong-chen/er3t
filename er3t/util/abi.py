@@ -149,7 +149,7 @@ class abi_l2:
             self.data['cer']   = dict(name='Cloud effective radius'    , data=cer    , units='micron')
 
 
-    def read_vars(self, fname, vnames=[], resolution='5km'):
+    def read_vars(self, fname, vnames=[], resolution='3km'):
 
         try:
             import netCDF4 as nc4
