@@ -63,8 +63,6 @@ def load_shd_inp_nml():
     GRIDTYPE   : E for even Z base grid between bottom and top,
                  P for Z base grid levels from property file,
                  F for Z base grid levels from file: <zgrid.inp>.
-
-    SRCTYPE    : 'S' for solar source, 'T' for thermal source, 'B' for both
     '''
 
     shdom_nml_init = OrderedDict([
@@ -88,7 +86,6 @@ def load_shd_inp_nml():
              ('IPFLAG', 0),
              ('DELTAM', '.TRUE.'),
              ('GRIDTYPE', 'P'),
-             ('SRCTYPE', 'S'),
         ])
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -97,6 +94,8 @@ def load_shd_inp_nml():
     """
     UNITS      : 'R' for radiance units (W/m^2 ster),
                  'T' for brightness temperature (Rayleigh-Jeans assumed)
+
+    SRCTYPE    : 'S' for solar source, 'T' for thermal source, 'B' for both
 
     SOLARFLUX  : top of medium solar flux on a horizontal surface (any units)
                    For k-distribution this is a multiplier for the solar flux
@@ -128,6 +127,7 @@ def load_shd_inp_nml():
 
     shdom_nml_rad = OrderedDict([
              ('UNITS', 'R'),
+             ('SRCTYPE', 'S'),
              ('SOLARFLUX', 1.0),
              ('SOLARMU', 1.0),
              ('SOLARAZ', 0.0),
@@ -183,7 +183,7 @@ def load_shd_inp_nml():
     CELL_TO_POINT_RATIO : ratio of number of grid cells to grid points
     """
     shdom_nml_param = OrderedDict([
-             ('ACCELFLAG', '.true.'),
+             ('ACCELFLAG', '.TRUE.'),
              ('SOLACC', 1.0E-5),
              ('MAXITER', 100),
              ('SPLITACC', 0.1),
@@ -234,15 +234,40 @@ def load_shd_inp_nml_info():
                           1 for open in X,\n\
                           2 for open in Y,\n\
                           3 for open in X & Y.'),
+            ('IPFLAG',''),
+            ('DELTAM',''),
+            ('GRIDTYPE',''),
 
+            ('UNITS',''),
+            ('SRCTYPE',''),
+            ('SOLARFLUX',''),
+            ('SOLARMU',''),
+            ('SOLARAZ',''),
+            ('SKYRAD',''),
+            ('GNDALBEDO',''),
+            ('GNDTEMP',''),
+            ('WAVELEN',''),
+            ('WAVENO',''),
+
+            ('ACCELFLAG',''),
+            ('SOLACC',''),
+            ('MAXITER',''),
+            ('SPLITACC',''),
+            ('SHACC',''),
+            ('MAX_TOTAL_MB',''),
+            ('ADAPT_GRID_FACTOR',''),
+            ('NUM_SH_TERM_FACTOR',''),
+            ('CELL_TO_POINT_RATIO',''),
+
+            ('NUMOUT',''),
+            ('OutFileNC',''),
             ])
     #╰────────────────────────────────────────────────────────────────────────────╯#
-
 
     return shdom_nml_all_info
 
 
-def shd_inp_nml(input_dict, verbose=True, comment=True):
+def shd_inp_nml(input_dict, verbose=True, comment=False):
 
     shdom_nml_all      = load_shd_inp_nml()
     shdom_nml_all_info = load_shd_inp_nml_info()
@@ -261,8 +286,8 @@ def shd_inp_nml(input_dict, verbose=True, comment=True):
     #
     # If not
     #   1. If is a typo in input variables, exit with error message
-    #   2. If in array-like way, e.g., 'Atm_ext1d(1:, 1)' is similar to
-    #      'Atm_ext1d', update dictionary with new variable and assign data
+    #   2. If in array-like way, e.g., 'OUTPARMS(1,1)' is similar to
+    #      'OUTPARMS', update dictionary with new variable and assign data
     #      to the updated variable.
     #
     # `shdom_nml_all` and `shdom_nml_all_info` will be updated in the loop
@@ -295,14 +320,13 @@ def shd_inp_nml(input_dict, verbose=True, comment=True):
 
     # create a full dictionary to link variable back to namelist section
     # examples:
-    #   'Wld_mverb': 'mcarWld_nml_init'
-    #   'Atm_zgrd0': 'mcarAtm_nml_job'
+    #   'RUNNAME': 'shdom_nml_init'
     shdom_nml_input = OrderedDict(zip(nml_ordered_keys_full, nml_ordered_item_full))
 
     return shdom_nml_all, shdom_nml_all_info, shdom_nml_input
 
 
-def shd_inp_file(input_fname, input_dict, verbose=True, comment=True):
+def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
 
     shdom_nml_all, shdom_nml_all_info, shdom_nml_input \
         = shd_inp_nml(input_dict, verbose=verbose, comment=comment)
@@ -368,7 +392,4 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=True):
 
 if __name__ == '__main__':
 
-
-    # for key in nml.keys():
-    #     print(key, nml[key])
-    # pass
+    pass
