@@ -69,8 +69,8 @@ class shdom_ng:
                  Ng                  = 16,                      \
                  weights             = None,                    \
 
-                 fdir                = 'tmp-data/sim',          \
-                 Nrun                = 3,                       \
+                 fdir                = 'tmp-data/sim-shd',          \
+                 Nrun                = 1,                       \
                  Ncpu                = 'auto',                  \
                  mp_mode             = 'py',                    \
                  overwrite           = True,                    \
