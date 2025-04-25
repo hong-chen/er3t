@@ -1027,11 +1027,11 @@ def example_05_rad_les_cloud_3d(
             )
 
     # data can be accessed at
-    #     mca0.Nrun
-    #     mca0.Ng
-    #     mca0.nml         (Nrun, Ng), e.g., mca0.nml[0][0], namelist for the first g of the first run
-    #     mca0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run
-    #     mca0.fnames_out  (Nrun, Ng), e.g., mca0.fnames_out[0][0], output file name for the first g of the first run
+    #     shd0.Nrun
+    #     shd0.Ng
+    #     shd0.nml         (Nrun, Ng), e.g., mca0.nml[0][0], namelist for the first g of the first run
+    #     shd0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run
+    #     shd0.fnames_out  (Nrun, Ng), e.g., mca0.fnames_out[0][0], output file name for the first g of the first run
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
