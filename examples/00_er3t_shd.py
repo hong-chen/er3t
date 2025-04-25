@@ -1016,13 +1016,14 @@ def example_05_rad_les_cloud_3d(
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
             sensor_altitude=705000.0,
-            sensor_res_dx=cld0.lay['dx']['data'],
-            sensor_res_dy=cld0.lay['dy']['data'],
+            sensor_res_dx=cld0.lay['dx']['data']*1000.0,
+            sensor_res_dy=cld0.lay['dy']['data']*1000.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             solver=solver,
             Ncpu=Ncpu,
             mp_mode='mpi',
-            overwrite=overwrite
+            overwrite=overwrite,
+            force=False,
             )
 
     # data can be accessed at

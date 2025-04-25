@@ -29,7 +29,6 @@ class shdom_ng:
 
         Ng=    : integer, number of gs, e.g., for abs_16g, Ng=16
         target=: string type, can be one of 'flux', 'radiance', and 'heating rate'
-        fdir=  : string type, this will be a directory to store input/output files
 
         date=  : keyword argument, datetime.datetime object, the date to calculate sun-earth distance
         target=: keyword argument, string, can be 'flux', 'radiance', default='flux'
@@ -40,11 +39,8 @@ class shdom_ng:
         Nrun=     : keyword argument, integer, number of runs to calculate mean/std statistics, default=1
 
         solver=   : keyword argument, integer, 0:3d mode, 1:partial-3d mode, 2:ipa mode, default=0
-        photons=  : keyword argument, integer, number of photons, default=1e6
         Ncpu=     : keyword argument, integer, number of CPUs to use, default=1
-        tune=     : keyword argument, boolen, whether to tune the SHDOM calculation, default=False
         overwrite=: keyword argument, boolen, whether to overwrite existing SHDOM output files (rerun SHDOM), default=True
-        np_mode=: keyword argument, string, photon distribution, can be 'even', 'weight', default='even'
         mp_mode=: keyword argument, string, multiprocessing mode, can be 'py', 'sh', 'mpi', default='py'
 
         fdir=   : keyword argument, string, path to store SHDOM input and output files
@@ -81,15 +77,16 @@ class shdom_ng:
 
                  sensor_zenith_angles  = np.array([0.0]),       \
                  sensor_azimuth_angles = np.array([0.0]),       \
-                 sensor_altitude       = 705000.0,  \
-                 sensor_res_dx         = 0.1,                   \
-                 sensor_res_dy         = 0.1,                   \
+                 sensor_altitude       = 705000.0,              \
+                 sensor_res_dx         = 100.0,                 \
+                 sensor_res_dy         = 100.0,                 \
 
                  target              = 'flux',                  \
                  solver              = '3d',                    \
 
                  comment             = False,                   \
                  overwrite           = True,                    \
+                 force               = False,                   \
                  verbose             = False,                   \
                  quiet               = False,                   \
                  ):
@@ -112,6 +109,7 @@ class shdom_ng:
         self.verbose = verbose
         self.quiet   = quiet
         self.overwrite = overwrite
+        self.force     = force
         self.mp_mode   = mp_mode.lower()
 
         self.surface_albedo      = surface_albedo
@@ -157,8 +155,8 @@ class shdom_ng:
             self.Ny = 1
             self.Nz = atm_1ds[0].nml['NZ']['data']
 
-        self.dx = sensor_res_dx*1000.0
-        self.dy = sensor_res_dy*1000.0
+        self.dx = sensor_res_dx
+        self.dy = sensor_res_dy
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Determine how many CPUs to utilize
@@ -238,8 +236,12 @@ class shdom_ng:
             self.nml[ig]['PROPFILE'] = self.fname_prp
             self.nml[ig]['SFCFILE']  = '/Users/hchen/Work/mygit/shdom/data/shdom-sfc_land-lsrt.txt'
             self.nml[ig]['CKDFILE']  = self.fname_ckd
-            self.nml[ig]['INSAVEFILE']  = self.fnames_sav[ig]
-            self.nml[ig]['OUTSAVEFILE'] = self.fnames_sav[ig]
+            if self.overwrite and self.force:
+                self.nml[ig]['INSAVEFILE']  = 'NONE'
+                self.nml[ig]['OUTSAVEFILE'] = self.fnames_sav[ig]
+            else:
+                self.nml[ig]['INSAVEFILE']  = self.fnames_sav[ig]
+                self.nml[ig]['OUTSAVEFILE'] = self.fnames_sav[ig]
 
             self.nml[ig]['NSTOKES'] = 1
             self.nml[ig]['NX'] = self.Nx
@@ -302,7 +304,7 @@ class shdom_ng:
         elif self.target.lower() in ['radiance', 'rad']:
             self.target = 'radiance'
         else:
-            msg = 'Error [mcarats_ng]: Cannot understand <target=%s>.' % self.target
+            msg = 'Error [shdom_ng]: Cannot understand <target=%s>.' % self.target
             raise OSError(msg)
 
         for ig in range(self.Ng):
@@ -319,17 +321,22 @@ class shdom_ng:
 
                 self.nml[ig]['OUTTYPES(1)'] = 'R'
                 self.nml[ig]['OUTPARMS(1,1)'] = '%.4f, %.4f, %.4f, 0.0, 0.0, %d,\n%s'\
-                        % (alt0/1000.0, dx, dy, vza_new.size, '\n'.join([' %.8f, %.4f,' % tuple(item) for item in zip(vza_new, vaa_new)]))
+                        % (alt0/1000.0, dx/1000.0, dy/1000.0, vza_new.size, '\n'.join([' %.8f, %.4f,' % tuple(item) for item in zip(vza_new, vaa_new)]))
 
-                self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of last comma
+                self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
 
             elif self.target == 'flux':
+
                 self.nml[ig]['OUTTYPES(1)'] = 'F'
                 self.nml[ig]['OUTPARMS(1,1)'] = 4
+
             elif self.target == 'flux0':
+
                 self.nml[ig]['OUTTYPES(1)'] = 'F'
                 self.nml[ig]['OUTPARMS(1,1)'] = 1
+
             elif self.target == 'heating rate':
+
                 self.nml[ig]['OUTTYPES(1)'] = 'H'
                 self.nml[ig]['OUTPARMS(1,1)'] = 2
 
