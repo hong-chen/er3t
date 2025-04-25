@@ -340,6 +340,8 @@ class cld_gen_hem:
         # cloud effective radius (3D)
         data = self.space_3d.copy()
         data[data>0] = cer0
+        data[data<=1.0] = 1.0
+        data[data>=25.0] = 25.0
         self.lay['cer'] = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
 
         # extinction coefficients (3D)
@@ -942,6 +944,10 @@ class cld_gen_cop:
         cer_3d[...] = cloud_effective_radius[:, :, None]
 
         cer_3d[ext_3d<=0.0] = 0.0
+
+        cer_3d[cer_3d<=1.0] = 1.0
+        cer_3d[cer_3d>=25.0] = 25.0
+
         self.lay['cer'] = {'data':cer_3d, 'name':'Cloud Effective radius', 'units':'micron'}
         #╰──────────────────────────────────────────────────────────────╯#
 
