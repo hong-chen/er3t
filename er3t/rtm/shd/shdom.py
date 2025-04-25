@@ -10,7 +10,6 @@ import numpy as np
 import er3t.common
 import er3t.util
 from er3t.rtm.shd import shd_inp_file
-from er3t.rtm.shd import shd_run
 
 
 
@@ -56,46 +55,40 @@ class shdom_ng:
         SHDOM output files created under path specified by 'fdir'
     """
 
-    reference = '\nSHDOM (Evans, 1998):\n- Evans, K. F.: The Spherical Harmonics Discrete Ordinate Method for Three-Dimensional Atmospheric Radiative Trans- fer, J. Atmos. Sci., 55, 429–446, https://doi.org/10.1175/1520-0469(1998)055<0429:TSHDOM>2.0.CO;2, 1998.'
+    reference = '\nSHDOM (Evans, 1998):\n- Evans, K. F.: The Spherical Harmonics Discrete Ordinate Method for Three-Dimensional Atmospheric Radiative Transfer, J. Atmos. Sci., 55, 429–446, https://doi.org/10.1175/1520-0469(1998)055<0429:TSHDOM>2.0.CO;2, 1998.'
 
 
     def __init__(self,                                          \
 
+                 date                = datetime.datetime.now(), \
+
                  atm_1ds             = [],                      \
                  atm_3ds             = [],                      \
+                 Nxyz                = (1, 1, 1),               \
 
-                 sca                 = None,                    \
+                 Ng                  = 1,                       \
 
-                 Ng                  = 16,                      \
-                 weights             = None,                    \
-
-                 fdir                = 'tmp-data/sim-shd',          \
+                 fdir                = 'tmp-data/sim-shd',      \
                  Nrun                = 1,                       \
                  Ncpu                = 'auto',                  \
                  mp_mode             = 'py',                    \
-                 overwrite           = True,                    \
 
-                 date                = datetime.datetime.now(), \
-                 comment             = False,                   \
-                 tune                = False,                   \
-                 target              = 'flux',                  \
                  surface_albedo      = 0.03,                    \
+
                  solar_zenith_angle  = 30.0,                    \
                  solar_azimuth_angle = 0.0,                     \
 
                  sensor_zenith_angle = 0.0,                     \
                  sensor_azimuth_angle= 0.0,                     \
                  sensor_altitude     = 705000.0,                \
-                 sensor_type         = 'satellite',             \
-                 sensor_xpos         = 0.5,                     \
-                 sensor_ypos         = 0.5,                     \
 
+                 target              = 'flux',                  \
                  solver              = '3d',                    \
-                 photons             = 1e7,                     \
-                 base_ratio          = 0.05,                    \
 
+                 comment             = False,                   \
+                 overwrite           = True,                    \
                  verbose             = False,                   \
-                 quiet               = False                    \
+                 quiet               = False,                   \
                  ):
 
         er3t.util.add_reference(self.reference)
@@ -118,8 +111,6 @@ class shdom_ng:
         self.overwrite = overwrite
         self.mp_mode   = mp_mode.lower()
 
-        self.sca                 = sca
-
         self.surface_albedo      = surface_albedo
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
@@ -127,17 +118,12 @@ class shdom_ng:
         self.sensor_zenith_angle = sensor_zenith_angle
         self.sensor_azimuth_angle= sensor_azimuth_angle
         self.sensor_altitude     = sensor_altitude
-        self.sensor_type         = sensor_type
-        self.sensor_xpos         = sensor_xpos
-        self.sensor_ypos         = sensor_ypos
 
         self.Nrun    = Nrun
 
         solver = solver.lower()
         if solver in ['3d', '3 d', 'three d']:
             self.solver = '3D'
-        elif solver in ['p3d', 'p-3d', 'partial 3d', 'partial-3d']:
-            self.solver = 'Partial 3D'
         elif solver in ['ipa', 'independent pixel approximation']:
             self.solver = 'IPA'
         else:
@@ -148,26 +134,7 @@ class shdom_ng:
 
         # Nx, Ny
         #╭────────────────────────────────────────────────────────────────────────────╮#
-        if len(atm_3ds) > 0:
-            self.Nx = atm_3ds[0].nml['Atm_nx']['data']
-            self.Ny = atm_3ds[0].nml['Atm_ny']['data']
-        else:
-            self.Nx = 1
-            self.Ny = 1
-        #╰────────────────────────────────────────────────────────────────────────────╯#
-
-        # photon distribution over gs of correlated-k
-        #╭────────────────────────────────────────────────────────────────────────────╮#
-        if weights is None:
-            self.np_mode = 'evenly'
-            weights = np.repeat(1.0/self.Ng, Ng)
-        else:
-            self.np_mode = 'weighted'
-
-        photons_dist = distribute_photon(photons, weights, base_ratio=base_ratio)
-
-        self.photons = np.tile(photons_dist, Nrun)
-        self.photons_per_set = photons_dist.sum()
+        self.Nx, self.Ny, self.Nz = Nxyz
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Determine how many CPUs to utilize
@@ -193,14 +160,16 @@ class shdom_ng:
         self.fnames_out = []
         for ir in range(self.Nrun):
             self.fnames_inp.append(['%s/r%2.2d.g%3.3d.inp.txt' % (self.fdir, ir, ig) for ig in range(self.Ng)])
-            self.fnames_out.append(['%s/r%2.2d.g%3.3d.out.bin' % (self.fdir, ir, ig) for ig in range(self.Ng)])
+            self.fnames_out.append(['%s/r%2.2d.g%3.3d.out.txt' % (self.fdir, ir, ig) for ig in range(self.Ng)])
 
         if not self.quiet and not self.overwrite:
             print('Message [shdom_ng]: Reading mode ...')
 
+        sys.exit()
+
         if overwrite:
 
-            # initialize namelist (list contains 16 Python dictionaries)
+            # initialize namelist (list contains Ng Python dictionaries)
             self.nml = [{} for ig in range(self.Ng)]
 
             # SHDOM wld initialization
@@ -229,99 +198,6 @@ class shdom_ng:
 
         if self.mp_mode not in ['batch', 'shell', 'bash', 'hpc', 'sh']:
             self.run_check()
-
-
-    def init_wld(self, tune=False, verbose=False, \
-        sensor_zenith_angle=0.0, sensor_azimuth_angle=0.0, \
-        sensor_type='satellite', sensor_altitude=705000.0, sensor_xpos=0.5, sensor_ypos=0.5):
-
-        if self.target.lower() in ['f', 'flux', 'irradiance']:
-            self.target = 'flux'
-        elif self.target.lower() in ['f0', 'flux0', 'irradiance0']:
-            self.target = 'flux0'
-        elif self.target.lower() in ['heating rate', 'hr']:
-            self.target = 'heating rate'
-        elif self.target.lower() in ['radiance', 'rad']:
-            self.target = 'radiance'
-        else:
-            msg = 'Error [shdom_ng]: Cannot understand <target=%s>.' % self.target
-            raise OSError(msg)
-
-        for ig in range(self.Ng):
-
-            if verbose:
-                self.nml[ig]['Wld_mverb'] = 3
-            else:
-                self.nml[ig]['Wld_mverb'] = 0
-
-            if tune:
-                self.nml[ig]['Wld_moptim'] = 2
-            else:
-                self.nml[ig]['Wld_moptim'] = 0
-
-
-            self.nml[ig]['Wld_mbswap'] = 0
-            self.nml[ig]['Wld_njob']   = 1
-
-
-            if self.target == 'flux' :
-
-                self.nml[ig]['Wld_mtarget'] = 1
-                self.nml[ig]['Flx_mflx']    = 3
-                self.nml[ig]['Flx_mhrt']    = 0
-
-            elif self.target == 'flux0' :
-
-                self.nml[ig]['Wld_mtarget'] = 1
-                self.nml[ig]['Flx_mflx']    = 1
-                self.nml[ig]['Flx_mhrt']    = 0
-
-            elif self.target == 'heating rate':
-
-                self.nml[ig]['Wld_mtarget'] = 1
-                self.nml[ig]['Flx_mflx']    = 3
-                self.nml[ig]['Flx_mhrt']    = 1
-
-            elif self.target == 'radiance':
-
-                self.nml[ig]['Wld_mtarget'] = 2
-
-                if 'satellite' in sensor_type.lower():
-                    self.nml[ig]['Rad_mrkind']  = 2
-                elif 'all-sky' in sensor_type.lower():
-                    self.nml[ig]['Rad_mrkind'] = 1
-                    self.nml[ig]['Rad_qmax']   = 178.0
-                    self.nml[ig]['Rad_apsize'] = 0.05
-                    self.nml[ig]['Rad_xpos'] = sensor_xpos
-                    self.nml[ig]['Rad_ypos'] = sensor_ypos
-
-
-                self.nml[ig]['Rad_mplen']   = 0
-                self.nml[ig]['Rad_mpmap']   = 1
-                self.nml[ig]['Rad_nrad']    = 1
-
-                self.nml[ig]['Rad_difr0']   = 7.5
-                self.nml[ig]['Rad_difr1']   = 0.0025
-                self.nml[ig]['Rad_the']     = 180.0 - sensor_zenith_angle
-                self.nml[ig]['Rad_phi']     = cal_shd_azimuth(sensor_azimuth_angle)
-                self.nml[ig]['Rad_zloc']    = sensor_altitude
-
-            else:
-                msg = 'Error [shdom_ng]: Cannot understand <target=%s>.' % self.target
-                raise OSError(msg)
-
-
-    def init_sca(self, sca=None):
-
-        for ig in range(self.Ng):
-            # this parameter is important, otherwise random memory segmentation error will occur
-            if sca is None:
-                self.nml[ig]['Sca_npf'] = 0
-            else:
-                for key in sca.nml.keys():
-                    if os.path.exists(sca.nml['Sca_inpfile']['data']):
-                        sca.nml['Sca_inpfile']['data'] = os.path.relpath(sca.nml['Sca_inpfile']['data'], start=self.fdir)
-                    self.nml[ig][key] = sca.nml[key]['data']
 
 
     def init_atm(self, atm_1ds=[], atm_3ds=[]):

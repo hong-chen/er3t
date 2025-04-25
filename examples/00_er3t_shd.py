@@ -991,6 +991,10 @@ def example_05_rad_les_cloud_3d(
 
     # generate property file for SHDOM
     #╭────────────────────────────────────────────────────────────────────────────╮#
+    Nx = cld0.lay['nx']['data']
+    Ny = cld0.lay['ny']['data']
+    Nz = atm0.lay['altitude']['data'].size
+
     fname_ckd = '%s/shdom-ckd_les.txt' % fdir
     fname_ckd = er3t.rtm.shd.gen_ckd_file(fname_ckd, atm0, abs0)
 
@@ -999,29 +1003,26 @@ def example_05_rad_les_cloud_3d(
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
-    # define mcarats object
+    # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # run mcarats
-    mca0 = er3t.rtm.mca.mcarats_ng(
+    # run shdom
+    shd0 = er3t.rtm.shd.shdom_ng(
             date=datetime.datetime(2017, 8, 13),
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
+            Nxyz=(Nx, Ny, Nz),
+            atm_1ds=[],
+            atm_3ds=[],
             Ng=abs0.Ng,
             target='radiance',
             surface_albedo=0.03,
-            sca=sca,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=45.0,
             sensor_zenith_angle=0.0,
             sensor_azimuth_angle=0.0,
             sensor_altitude=705000.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
-            Nrun=3,
-            photons=photons,
-            weights=abs0.coef['weight']['data'],
             solver=solver,
             Ncpu=Ncpu,
-            mp_mode='py',
+            mp_mode='mpi',
             overwrite=overwrite
             )
 
