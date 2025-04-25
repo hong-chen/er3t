@@ -36,8 +36,7 @@ import er3t
 #╭────────────────────────────────────────────────────────────────────────────╮#
 name_tag = '00_er3t_shd'
 fdir0    = er3t.common.fdir_examples
-photons = 1e8
-Ncpu    = 12
+Ncpu    = 4
 rcParams['font.size'] = 14
 #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -972,7 +971,7 @@ def example_05_rad_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -1032,6 +1031,7 @@ def example_05_rad_les_cloud_3d(
     #     shd0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run
     #     shd0.fnames_out  (Nrun, Ng), e.g., mca0.fnames_out[0][0], output file name for the first g of the first run
     #╰────────────────────────────────────────────────────────────────────────────╯#
+    sys.exit()
 
 
     # define mcarats output object

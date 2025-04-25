@@ -11,6 +11,7 @@ import numpy as np
 import er3t.common
 import er3t.util
 from er3t.rtm.shd import shd_inp_file
+from er3t.rtm.shd import shd_run
 
 
 
@@ -220,8 +221,6 @@ class shdom_ng:
             # Run SHDOM to get output files (Binary)
             self.gen_shd_out()
 
-            sys.exit()
-
 
     def nml_init(
             self, \
@@ -234,7 +233,7 @@ class shdom_ng:
             self.nml[ig]['_header'] = '$SHDOMINPUT'
             self.nml[ig]['RUNNAME'] = 'shdom-run_g-%3.3d' % ig
             self.nml[ig]['PROPFILE'] = self.fname_prp
-            self.nml[ig]['SFCFILE'] = '/Users/hchen/Work/mygit/shdom/data/shdom-sfc_land-lsrt-fast.txt'
+            self.nml[ig]['SFCFILE'] = '/Users/hchen/Work/mygit/shdom/data/shdom-sfc_land-lsrt.txt'
             self.nml[ig]['CKDFILE'] = self.fname_ckd
             self.nml[ig]['INSAVEFILE'] = 'NONE'
             self.nml[ig]['OUTSAVEFILE'] = 'NONE'
@@ -391,7 +390,7 @@ class shdom_ng:
         if not self.quiet:
             self.print_info()
 
-        # run0 = shd_run(fnames_inp, fnames_out, photons=self.photons, solver=solvers[self.solver], Ncpu=self.Ncpu, verbose=self.verbose, quiet=self.quiet, mp_mode=self.mp_mode)
+        run0 = shd_run(fnames_inp, Ncpu=self.Ncpu, verbose=self.verbose, quiet=self.quiet, mp_mode=self.mp_mode)
 
 
     def print_info(self):

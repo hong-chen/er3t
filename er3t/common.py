@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import datetime
 import importlib.util
 import numpy as np
@@ -7,6 +8,7 @@ import numpy as np
 f_dtype = np.float32
 i_dtype = np.int16
 
+has_shdom       = ('SHDOM_EXE' in dict(os.environ))
 has_mcarats     = ('MCARATS_V010_EXE' in dict(os.environ))
 has_libradtran  = ('LIBRADTRAN_V2_DIR' in dict(os.environ))
 has_token       = ('EARTHDATA_TOKEN' in dict(os.environ))
@@ -14,7 +16,7 @@ has_netcdf4     = (importlib.util.find_spec('netCDF4') is not None)
 has_hdf4        = (importlib.util.find_spec('pyhdf') is not None)
 has_hdf5        = (importlib.util.find_spec('h5py') is not None)
 has_xarray      = (importlib.util.find_spec('xarray') is not None)
-has_mpi         = False
+has_mpi         = (shutil.which('mpirun') is not None)
 
 fdir_er3t        = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
 
