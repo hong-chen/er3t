@@ -234,7 +234,7 @@ class shdom_ng:
             self.nml[ig]['_header'] = '$SHDOMINPUT'
             self.nml[ig]['RUNNAME'] = 'shdom-run_g-%3.3d' % ig
             self.nml[ig]['PROPFILE'] = self.fname_prp
-            self.nml[ig]['SFCFILE']  = '/Users/hchen/Work/mygit/shdom/data/shdom-sfc_land-lsrt.txt'
+            self.nml[ig]['SFCFILE']  = '%s/shdom/data/shdom-sfc_land-lsrt.txt' % (os.environ['MYGIT'])
             self.nml[ig]['CKDFILE']  = self.fname_ckd
             if self.overwrite and self.force:
                 self.nml[ig]['INSAVEFILE']  = 'NONE'

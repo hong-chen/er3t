@@ -86,7 +86,7 @@ class shd_run:
                 os.system('mkdir -p %s' % fdir_out)
 
             if (Ncpu > 1) and has_mpi:
-                command = 'mpirun -np %d %s %s' % (Ncpu, executable, input_file)
+                command = 'mpirun --oversubscribe -np %d %s %s' % (Ncpu, executable, input_file)
             else:
                 command = '%s %s' % (executable, input_file)
 

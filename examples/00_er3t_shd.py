@@ -36,7 +36,7 @@ import er3t
 #╭────────────────────────────────────────────────────────────────────────────╮#
 name_tag = '00_er3t_shd'
 fdir0    = er3t.common.fdir_examples
-Ncpu    = 4
+Ncpu    = 16
 rcParams['font.size'] = 14
 #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -971,7 +971,7 @@ def example_05_rad_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
