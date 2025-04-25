@@ -138,6 +138,7 @@ class shdom_ng:
         self.wvl_info = atm_1ds[0].wvl_info
         self.wvl  = atm_1ds[0].nml['WAVELEN']['data']*1000.0
         self.wvln = atm_1ds[0].nml['WAVENO']['data']
+
         self.fname_ckd = atm_1ds[0].nml['CKDFILE']['data']
         self.fname_prp = atm_3ds[0].nml['PROPFILE']['data']
 
@@ -181,9 +182,11 @@ class shdom_ng:
         # E.g, in order to get the input file name of the 1st g in 1st run, self.fnames_inp[0][0]
         self.fnames_inp = []
         self.fnames_out = []
+        self.fnames_sav = []
         for ig in range(self.Ng):
             self.fnames_inp.append('%s/shdom-inp_g-%3.3d.txt' % (self.fdir, ig))
             self.fnames_out.append('%s/shdom-out_g-%3.3d.txt' % (self.fdir, ig))
+            self.fnames_sav.append('%s/shdom-sav_g-%3.3d.bin' % (self.fdir, ig))
 
         if not self.quiet and not self.overwrite:
             print('Message [shdom_ng]: Reading mode ...')
@@ -233,16 +236,16 @@ class shdom_ng:
             self.nml[ig]['_header'] = '$SHDOMINPUT'
             self.nml[ig]['RUNNAME'] = 'shdom-run_g-%3.3d' % ig
             self.nml[ig]['PROPFILE'] = self.fname_prp
-            self.nml[ig]['SFCFILE'] = '/Users/hchen/Work/mygit/shdom/data/shdom-sfc_land-lsrt.txt'
-            self.nml[ig]['CKDFILE'] = self.fname_ckd
-            self.nml[ig]['INSAVEFILE'] = 'NONE'
-            self.nml[ig]['OUTSAVEFILE'] = 'NONE'
+            self.nml[ig]['SFCFILE']  = '/Users/hchen/Work/mygit/shdom/data/shdom-sfc_land-lsrt.txt'
+            self.nml[ig]['CKDFILE']  = self.fname_ckd
+            self.nml[ig]['INSAVEFILE']  = self.fnames_sav[ig]
+            self.nml[ig]['OUTSAVEFILE'] = self.fnames_sav[ig]
 
             self.nml[ig]['NSTOKES'] = 1
             self.nml[ig]['NX'] = self.Nx
             self.nml[ig]['NY'] = self.Ny
             self.nml[ig]['NZ'] = self.Nz
-            self.nml[ig]['NMU'] = Nmu
+            self.nml[ig]['NMU']  = Nmu
             self.nml[ig]['NPHI'] = Nphi
 
             self.nml[ig]['BCFLAG'] = 0

@@ -971,7 +971,7 @@ def example_05_rad_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -1027,9 +1027,10 @@ def example_05_rad_les_cloud_3d(
 
     # data can be accessed at
     #     shd0.Ng
-    #     shd0.nml         (Nrun, Ng), e.g., mca0.nml[0][0], namelist for the first g of the first run
-    #     shd0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run
-    #     shd0.fnames_out  (Nrun, Ng), e.g., mca0.fnames_out[0][0], output file name for the first g of the first run
+    #     shd0.nml         (Ng), e.g., shd0.nml[0], namelist for the first g of the first run
+    #     shd0.fnames_inp  (Ng), e.g., shd0.fnames_inp[0], input file name for the first g of the first run
+    #     shd0.fnames_out  (Ng), e.g., shd0.fnames_out[0], output file name for the first g of the first run
+    #     shd0.fnames_sav  (Ng), e.g., shd0.fnames_sav[0], state-sav file name for the first g of the first run
     #╰────────────────────────────────────────────────────────────────────────────╯#
     sys.exit()
 
