@@ -72,15 +72,15 @@ def load_shd_inp_nml():
              ('PROPFILE','shdom-prp.txt'),
              ('SFCFILE', 'NONE'),
              ('CKDFILE', 'NONE'),
-             ('INSAVEFILE', 'shdom-sav.bin'),
+             ('INSAVEFILE', 'NONE'),
              ('OUTSAVEFILE', 'NONE'),
 
              ('NSTOKES', 1),
-             ('NX', 64),
-             ('NY', 64),
-             ('NZ', 22),
-             ('NMU', 18),
-             ('NPHI', 9),
+             ('NX', 100),
+             ('NY', 100),
+             ('NZ', 20),
+             ('NMU', 9),
+             ('NPHI', 18),
 
              ('BCFLAG', 0),
              ('IPFLAG', 0),
@@ -340,20 +340,26 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
     f = open(input_fname, 'w')
 
     for nml_key in shdom_nml_all.keys():
-        f.write('&%s\n' % nml_key)
 
         vars_key = [xx for xx in shdom_nml_input.keys() if shdom_nml_input[xx]==nml_key]
         for var_key in vars_key:
-            var = shdom_nml_all[nml_key][var_key]
-            if var is not None:
 
-                if isinstance(var, (int, float, np.int32, np.int64, np.float32, np.float64)):
-                    f.write(' %-15s = %-.16g\n' % (var_key, var))
-                elif isinstance(var, str):
-                    if '*' in var:
+            var = shdom_nml_all[nml_key][var_key]
+
+            if (var_key[0] != '_'):
+
+                if isinstance(var, str):
+
+                    if '*' in var or (var_key in ['DELTAM', 'WAVENO', 'OUTPARMS(1,1)', 'ACCELFLAG']):
                         f.write(' %-15s = %s\n' % (var_key, var))
                     else:
                         f.write(' %-15s = \'%s\'\n' % (var_key, var))
+
+                elif isinstance(var, (int, float, np.int32, np.int64, np.float32, np.float64)):
+
+                    f.write(' %-15s = %-.16g\n' % (var_key, var))
+
+
                 elif isinstance(var, np.ndarray):
 
                     if var.size > 1:
@@ -385,7 +391,8 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
                     f.write(' !-----------------------------------------------------------------------------------------------------------\n')
                     f.write('\n')
 
-        f.write('/\n')
+            else:
+                f.write(' %s\n' % (var))
 
     f.close()
 

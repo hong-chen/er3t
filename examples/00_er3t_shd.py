@@ -991,34 +991,34 @@ def example_05_rad_les_cloud_3d(
 
     # generate property file for SHDOM
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    Nx = cld0.lay['nx']['data']
-    Ny = cld0.lay['ny']['data']
-    Nz = atm0.lay['altitude']['data'].size
+    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_les.txt' % fdir, overwrite=overwrite)
+    atm_1ds = [atm1d0]
 
-    fname_ckd = '%s/shdom-ckd_les.txt' % fdir
-    fname_ckd = er3t.rtm.shd.gen_ckd_file(fname_ckd, atm0, abs0)
-
-    fname_prp = '%s/shdom-prp_les.txt' % fdir
-    fname_prp = er3t.rtm.shd.gen_prp_file(fname_prp, wavelength, atm0, cld0)
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp_les.txt' % fdir, overwrite=overwrite)
+    atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
+    vaa = np.arange(0.0, 360.0, 15.0)
+    vza = np.repeat(30.0, vaa.size)
+
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
             date=datetime.datetime(2017, 8, 13),
-            Nxyz=(Nx, Ny, Nz),
-            atm_1ds=[],
-            atm_3ds=[],
+            atm_1ds=atm_1ds,
+            atm_3ds=atm_3ds,
             Ng=abs0.Ng,
             target='radiance',
             surface_albedo=0.03,
             solar_zenith_angle=30.0,
-            solar_azimuth_angle=45.0,
-            sensor_zenith_angle=0.0,
-            sensor_azimuth_angle=0.0,
+            solar_azimuth_angle=0.0,
+            sensor_zenith_angles=vza,
+            sensor_azimuth_angles=vaa,
             sensor_altitude=705000.0,
+            sensor_res_dx=cld0.lay['dx']['data'],
+            sensor_res_dy=cld0.lay['dy']['data'],
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             solver=solver,
             Ncpu=Ncpu,
@@ -1027,7 +1027,6 @@ def example_05_rad_les_cloud_3d(
             )
 
     # data can be accessed at
-    #     shd0.Nrun
     #     shd0.Ng
     #     shd0.nml         (Nrun, Ng), e.g., mca0.nml[0][0], namelist for the first g of the first run
     #     shd0.fnames_inp  (Nrun, Ng), e.g., mca0.fnames_inp[0][0], input file name for the first g of the first run

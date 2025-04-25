@@ -2,6 +2,7 @@ import os
 import sys
 import copy
 import time
+import psutil
 import datetime
 import warnings
 import multiprocessing as mp
@@ -64,12 +65,11 @@ class shdom_ng:
 
                  atm_1ds             = [],                      \
                  atm_3ds             = [],                      \
-                 Nxyz                = (1, 1, 1),               \
 
                  Ng                  = 1,                       \
+                 Niter               = 100,                     \
 
                  fdir                = 'tmp-data/sim-shd',      \
-                 Nrun                = 1,                       \
                  Ncpu                = 'auto',                  \
                  mp_mode             = 'py',                    \
 
@@ -78,9 +78,11 @@ class shdom_ng:
                  solar_zenith_angle  = 30.0,                    \
                  solar_azimuth_angle = 0.0,                     \
 
-                 sensor_zenith_angle = 0.0,                     \
-                 sensor_azimuth_angle= 0.0,                     \
-                 sensor_altitude     = 705000.0,                \
+                 sensor_zenith_angles  = np.array([0.0]),       \
+                 sensor_azimuth_angles = np.array([0.0]),       \
+                 sensor_altitude       = 705000.0,  \
+                 sensor_res_dx         = 0.1,                   \
+                 sensor_res_dy         = 0.1,                   \
 
                  target              = 'flux',                  \
                  solver              = '3d',                    \
@@ -115,11 +117,9 @@ class shdom_ng:
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
 
-        self.sensor_zenith_angle = sensor_zenith_angle
-        self.sensor_azimuth_angle= sensor_azimuth_angle
+        self.sensor_zenith_angle = sensor_zenith_angles
+        self.sensor_azimuth_angle= sensor_azimuth_angles
         self.sensor_altitude     = sensor_altitude
-
-        self.Nrun    = Nrun
 
         solver = solver.lower()
         if solver in ['3d', '3 d', 'three d']:
@@ -132,9 +132,31 @@ class shdom_ng:
 
         self.target  = target
 
-        # Nx, Ny
+        # params
         #╭────────────────────────────────────────────────────────────────────────────╮#
-        self.Nx, self.Ny, self.Nz = Nxyz
+        self.wvl_info = atm_1ds[0].wvl_info
+        self.wvl  = atm_1ds[0].nml['WAVELEN']['data']*1000.0
+        self.wvln = atm_1ds[0].nml['WAVENO']['data']
+        self.fname_ckd = atm_1ds[0].nml['CKDFILE']['data']
+        self.fname_prp = atm_3ds[0].nml['PROPFILE']['data']
+
+        self.sfc_alb  = surface_albedo
+        self.sfc_temp = atm_1ds[0].nml['GNDTEMP']['data']
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+        # Nx, Ny, Nz
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        if len(atm_3ds) > 0:
+            self.Nx = atm_3ds[0].nml['NX']['data']
+            self.Ny = atm_3ds[0].nml['NY']['data']
+            self.Nz = atm_3ds[0].nml['NZ']['data']
+        else:
+            self.Nx = 1
+            self.Ny = 1
+            self.Nz = atm_1ds[0].nml['NZ']['data']
+
+        self.dx = sensor_res_dx*1000.0
+        self.dy = sensor_res_dy*1000.0
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Determine how many CPUs to utilize
@@ -158,36 +180,39 @@ class shdom_ng:
         # E.g, in order to get the input file name of the 1st g in 1st run, self.fnames_inp[0][0]
         self.fnames_inp = []
         self.fnames_out = []
-        for ir in range(self.Nrun):
-            self.fnames_inp.append(['%s/r%2.2d.g%3.3d.inp.txt' % (self.fdir, ir, ig) for ig in range(self.Ng)])
-            self.fnames_out.append(['%s/r%2.2d.g%3.3d.out.txt' % (self.fdir, ir, ig) for ig in range(self.Ng)])
+        for ig in range(self.Ng):
+            self.fnames_inp.append('%s/shdom-inp_g-%3.3d.txt' % (self.fdir, ig))
+            self.fnames_out.append('%s/shdom-out_g-%3.3d.txt' % (self.fdir, ig))
 
         if not self.quiet and not self.overwrite:
             print('Message [shdom_ng]: Reading mode ...')
-
-        sys.exit()
 
         if overwrite:
 
             # initialize namelist (list contains Ng Python dictionaries)
             self.nml = [{} for ig in range(self.Ng)]
 
-            # SHDOM wld initialization
-            self.init_wld(verbose=verbose, tune=tune,
-                sensor_zenith_angle=sensor_zenith_angle, sensor_azimuth_angle=sensor_azimuth_angle, \
-                sensor_type=sensor_type, sensor_altitude=sensor_altitude, sensor_xpos=sensor_xpos, sensor_ypos=sensor_ypos)
+            # SHDOM namelist init
+            self.nml_init()
 
-            # SHDOM scattering initialization
-            self.init_sca(sca=sca)
+            # SHDOM namelist rad
+            self.nml_rad(
+                    solar_zenith_angle,
+                    solar_azimuth_angle,
+                    )
 
-            # SHDOM atm initialization
-            self.init_atm(atm_1ds=atm_1ds, atm_3ds=atm_3ds)
+            # SHDOM namelist param
+            self.nml_param(Niter)
 
-            # SHDOM surface initialization
-            self.init_sfc(surface_albedo=surface_albedo)
 
-            # SHDOM source (e.g., solar) initialization
-            self.init_src(solar_zenith_angle=solar_zenith_angle, solar_azimuth_angle=solar_azimuth_angle)
+            # SHDOM namelist out
+            self.nml_out(
+                    sensor_zenith_angles,
+                    sensor_azimuth_angles,
+                    sensor_altitude,
+                    sensor_res_dx,
+                    sensor_res_dy
+                    )
 
             # Create SHDOM input files (ASCII)
             self.gen_shd_inp(comment=comment)
@@ -195,99 +220,138 @@ class shdom_ng:
             # Run SHDOM to get output files (Binary)
             self.gen_shd_out()
 
-
-        if self.mp_mode not in ['batch', 'shell', 'bash', 'hpc', 'sh']:
-            self.run_check()
+            sys.exit()
 
 
-    def init_atm(self, atm_1ds=[], atm_3ds=[]):
+    def nml_init(
+            self, \
+            Nmu=8,
+            Nphi=16,
+        ):
 
         for ig in range(self.Ng):
 
-            if len(atm_1ds) == 0:
-                msg = 'Error [shdom_ng]: need <atm_1ds> to proceed.'
-                raise OSError(msg)
+            self.nml[ig]['_header'] = '$SHDOMINPUT'
+            self.nml[ig]['RUNNAME'] = 'shdom-run_g-%3.3d' % ig
+            self.nml[ig]['PROPFILE'] = self.fname_prp
+            self.nml[ig]['SFCFILE'] = '/Users/hchen/Work/mygit/shdom/data/shdom-sfc_land-lsrt-fast.txt'
+            self.nml[ig]['CKDFILE'] = self.fname_ckd
+            self.nml[ig]['INSAVEFILE'] = 'NONE'
+            self.nml[ig]['OUTSAVEFILE'] = 'NONE'
+
+            self.nml[ig]['NSTOKES'] = 1
+            self.nml[ig]['NX'] = self.Nx
+            self.nml[ig]['NY'] = self.Ny
+            self.nml[ig]['NZ'] = self.Nz
+            self.nml[ig]['NMU'] = Nmu
+            self.nml[ig]['NPHI'] = Nphi
+
+            self.nml[ig]['BCFLAG'] = 0
+
+            if (self.solver == '3D'):
+                self.nml[ig]['IPFLAG'] = 0
+            elif (self.solver == 'IPA'):
+                self.nml[ig]['IPFLAG'] = 3
+
+            self.nml[ig]['DELTAM'] = '.TRUE.'
+            self.nml[ig]['GRIDTYPE'] = 'P'
+
+
+    def nml_rad(
+            self, \
+            sza0, \
+            saa0, \
+        ):
+
+        for ig in range(self.Ng):
+
+            if self.wvl < 5025.0:
+                self.nml[ig]['UNITS'] = 'R'
+                self.nml[ig]['SRCTYPE'] = 'S'
             else:
+                self.nml[ig]['UNITS'] = 'T'
+                self.nml[ig]['SRCTYPE'] = 'T'
 
-                for i, atm_1d in enumerate(atm_1ds):
-
-                    for key in atm_1d.nml[ig].keys():
-
-                        self.nml[ig][key] = atm_1d.nml[ig][key]['data']
-
-                self.wvl_info = atm_1d.wvl_info
-
-            if len(atm_3ds) > 0:
-
-                for atm_3d in atm_3ds:
-
-                    for key in atm_3d.nml.keys():
-
-                        if key not in ['Atm_tmpa3d', 'Atm_abst3d', 'Atm_extp3d', 'Atm_omgp3d', 'Atm_apfp3d']:
-                            if os.path.exists(atm_3d.nml['Atm_inpfile']['data']):
-                                atm_3d.nml['Atm_inpfile']['data'] = os.path.relpath(atm_3d.nml['Atm_inpfile']['data'], start=self.fdir)
-                            self.nml[ig][key] = atm_3d.nml[key]['data']
-
-                self.Nx = atm_3d.nml['Atm_nx']['data']
-                self.Ny = atm_3d.nml['Atm_ny']['data']
-                self.dx = atm_3d.nml['Atm_dx']['data']
-                self.dy = atm_3d.nml['Atm_dy']['data']
-
-                if self.target == 'radiance':
-                    if 'satellite' in self.sensor_type.lower():
-                        if 'Atm_nx' in atm_3d.nml.keys() and 'Atm_ny' in atm_3d.nml.keys():
-                            self.nml[ig]['Rad_nxr'] = atm_3d.nml['Atm_nx']['data']
-                            self.nml[ig]['Rad_nyr'] = atm_3d.nml['Atm_ny']['data']
-                        else:
-                            self.nml[ig]['Rad_nxr'] = 1
-                            self.nml[ig]['Rad_nyr'] = 1
-
-                    elif 'all-sky' in self.sensor_type.lower():
-                        self.nml[ig]['Rad_nxr'] = 500
-                        self.nml[ig]['Rad_nyr'] = 500
+            self.nml[ig]['SOLARFLUX'] = er3t.util.cal_sol_fac(self.date)
+            self.nml[ig]['SOLARMU'] = np.cos(np.deg2rad(sza0))
+            self.nml[ig]['SOLARAZ'] = er3t.rtm.shd.cal_shd_saa(saa0)
+            self.nml[ig]['SKYRAD'] = 0.0
+            self.nml[ig]['GNDALBEDO'] = self.sfc_alb
+            self.nml[ig]['GNDTEMP'] = self.sfc_temp
+            self.nml[ig]['WAVELEN'] = self.wvl/1000.0
+            self.nml[ig]['WAVENO'] = self.wvln
 
 
-    def init_src(self, solar_zenith_angle=0.0, solar_azimuth_angle=0.0):
+    def nml_out(
+            self, \
+            vza, \
+            vaa, \
+            alt0, \
+            dx,
+            dy,
+        ):
 
-        for ig in range(self.Ng):
-            self.nml[ig]['Src_flx']   = 1.0
-            self.nml[ig]['Src_qmax']  = 0.533133
-            self.nml[ig]['Src_dwlen'] = 0.0
-            self.nml[ig]['Src_mtype'] = 1
-            self.nml[ig]['Src_mphi']  = 0
-            self.nml[ig]['Src_the']   = 180.0 - solar_zenith_angle
-            self.nml[ig]['Src_phi']   = cal_shd_azimuth(solar_azimuth_angle)
-
-
-    def init_sfc(self, surface_albedo=0.03):
+        if self.target.lower() in ['f', 'flux', 'irradiance']:
+            self.target = 'flux'
+        elif self.target.lower() in ['f0', 'flux0', 'irradiance0']:
+            self.target = 'flux0'
+        elif self.target.lower() in ['heating rate', 'hr']:
+            self.target = 'heating rate'
+        elif self.target.lower() in ['radiance', 'rad']:
+            self.target = 'radiance'
+        else:
+            msg = 'Error [mcarats_ng]: Cannot understand <target=%s>.' % self.target
+            raise OSError(msg)
 
         for ig in range(self.Ng):
 
-            if self.verbose:
-                print('Message [shdom_ng]: Assume Lambertian surface ...')
+            self.nml[ig]['NUMOUT'] = 1
 
-            if isinstance(surface_albedo, float) or isinstance(surface_albedo, np.float32) or isinstance(surface_albedo, np.float64):
+            if self.target == 'radiance':
 
-                self.nml[ig]['Sfc_mbrdf'] = np.array([1, 0, 0, 0])
-                self.nml[ig]['Sfc_mtype'] = 1
-                self.nml[ig]['Sfc_param(1)'] = surface_albedo
+                vza_new = np.cos(np.deg2rad(np.array(vza)))
+                vaa_new = np.zeros_like(vza)
 
-                self.sfc_2d = False
+                for i, vaa0 in enumerate(vaa):
+                    vaa_new[i] = er3t.rtm.shd.cal_shd_vaa(vaa0)
 
-            elif isinstance(surface_albedo, er3t.rtm.shd.shd_sfc_2d):
+                self.nml[ig]['OUTTYPES(1)'] = 'R'
+                self.nml[ig]['OUTPARMS(1,1)'] = '%.4f, %.4f, %.4f, 0.0, 0.0, %d,\n%s'\
+                        % (alt0/1000.0, dx, dy, vza_new.size, '\n'.join([' %.8f, %.4f,' % tuple(item) for item in zip(vza_new, vaa_new)]))
 
-                for key in surface_albedo.nml.keys():
-                    if '2d' not in key:
-                        if os.path.exists(surface_albedo.nml['Sfc_inpfile']['data']):
-                            surface_albedo.nml['Sfc_inpfile']['data'] = os.path.relpath(surface_albedo.nml['Sfc_inpfile']['data'], start=self.fdir)
-                        self.nml[ig][key] = surface_albedo.nml[key]['data']
+                self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of last comma
 
-                self.sfc_2d = True
+            elif self.target == 'flux':
+                self.nml[ig]['OUTTYPES(1)'] = 'F'
+                self.nml[ig]['OUTPARMS(1,1)'] = 4
+            elif self.target == 'flux0':
+                self.nml[ig]['OUTTYPES(1)'] = 'F'
+                self.nml[ig]['OUTPARMS(1,1)'] = 1
+            elif self.target == 'heating rate':
+                self.nml[ig]['OUTTYPES(1)'] = 'H'
+                self.nml[ig]['OUTPARMS(1,1)'] = 2
 
-            else:
+            self.nml[ig]['OUTFILES(1)'] = self.fnames_out[ig]
+            self.nml[ig]['OutFileNC'] = 'NONE'
 
-                msg = '\nError [shdom_ng]: Cannot ingest <surface_albedo>.'
-                raise ValueError(msg)
+
+    def nml_param(
+            self, \
+            Niter,
+        ):
+
+        for ig in range(self.Ng):
+
+            self.nml[ig]['ACCELFLAG'] = '.TRUE.'
+            self.nml[ig]['SOLACC'] = 1.0e-5
+            self.nml[ig]['MAXITER'] = Niter
+            self.nml[ig]['SPLITACC'] = 0.01
+            self.nml[ig]['SHACC'] = 0.003
+            self.nml[ig]['MAX_TOTAL_MB'] = psutil.virtual_memory().total / 1024.0**2.0 / 2.0
+            self.nml[ig]['ADAPT_GRID_FACTOR'] = 2.2
+            self.nml[ig]['NUM_SH_TERM_FACTOR'] = 0.6
+            self.nml[ig]['CELL_TO_POINT_RATIO'] = 1.5
+            self.nml[ig]['_footer'] = '$END'
 
 
     def gen_shd_inp(self, comment=False):
@@ -305,13 +369,8 @@ class shdom_ng:
         """
 
         # create input files for SHDOM
-        Nseed = int(time.time())
-        rands = np.arange(self.Nrun*self.Ng).reshape((self.Nrun, self.Ng))
-        np.random.shuffle(rands)
-        for ir in range(self.Nrun):
-            for ig in range(self.Ng):
-                self.nml[ig]['Wld_jseed'] = Nseed + rands[ir, ig]
-                shd_inp_file(self.fnames_inp[ir][ig], self.nml[ig], comment=comment)
+        for ig in range(self.Ng):
+            shd_inp_file(self.fnames_inp[ig], self.nml[ig], comment=comment)
 
         if not self.quiet:
             print('Message [shdom_ng]: Created SHDOM input files under <%s>.' % self.fdir)
@@ -323,17 +382,8 @@ class shdom_ng:
         Run SHDOM to get SHDOM output files
         """
 
-        # solver:
-        #   0: Full 3D radiative transfer
-        #   1: Partial 3D radiative transfer
-        #   2: Independent Column Approximation
-        solvers = {'3D':0, 'Partial 3D':1, 'IPA':2}
-
-        fnames_inp = []
-        fnames_out = []
-        for ir in range(self.Nrun):
-            fnames_inp += self.fnames_inp[ir]
-            fnames_out += self.fnames_out[ir]
+        fnames_inp = self.fnames_inp
+        fnames_out = self.fnames_out
 
         if not self.quiet:
             print('Message [shdom_ng]: Running SHDOM to get output files under <%s> ...' % self.fdir)
@@ -341,22 +391,7 @@ class shdom_ng:
         if not self.quiet:
             self.print_info()
 
-        run0 = shd_run(fnames_inp, fnames_out, photons=self.photons, solver=solvers[self.solver], Ncpu=self.Ncpu, verbose=self.verbose, quiet=self.quiet, mp_mode=self.mp_mode)
-
-
-    def run_check(self):
-
-        check = []
-        for ir in range(self.Nrun):
-            for ig in range(self.Ng):
-                fname = self.fnames_out[ir][ig]
-                if not os.path.exists(fname):
-                    check.append(False)
-                else:
-                    check.append(True)
-        if not all(check):
-            msg = 'Error [shdom_ng]: Missing some output files.'
-            raise OSError(msg)
+        # run0 = shd_run(fnames_inp, fnames_out, photons=self.photons, solver=solvers[self.solver], Ncpu=self.Ncpu, verbose=self.verbose, quiet=self.quiet, mp_mode=self.mp_mode)
 
 
     def print_info(self):
@@ -372,29 +407,25 @@ class shdom_ng:
         print('      Solar Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.solar_azimuth_angle)
 
         if self.target == 'radiance':
-            if self.sensor_zenith_angle < 90.0:
-                print('      Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % self.sensor_zenith_angle)
-            else:
-                print('      Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % self.sensor_zenith_angle)
-            print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
+            for i, vza0 in enumerate(self.sensor_zenith_angle):
+                vaa0 = self.sensor_azimuth_angle[i]
+
+                if vza0 < 90.0:
+                    print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % (i, vza0))
+                else:
+                    print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % (i, vza0))
+
+                print('[%2.2d] Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % (i, vaa0))
             print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
 
-        if not self.sfc_2d:
-            print('           Surface Albedo : %.2f' % self.surface_albedo)
-        else:
-            print('           Surface Albedo : 2D domain')
+        print('           Surface Albedo : 2D domain')
 
-        if self.sca is None:
-            print('           Phase Function : Henyey-Greenstein')
-        else:
-            print('           Phase Function : %s' % self.sca.pha.ID)
+        print('           Phase Function : %s' % 'Mie (Water Clouds)')
 
         if (self.Nx > 1) | (self.Ny > 1):
             print('     Domain Size (Nx, Ny) : (%d, %d)' % (self.Nx, self.Ny))
             print('      Pixel Res. (dx, dy) : (%.2f km, %.2f km)' % (self.dx/1000.0, self.dy/1000.0))
 
-        print('  Number of Photons / Set : %.1e (%s over %d g)' % (self.photons_per_set, self.np_mode, self.Ng))
-        print('           Number of Runs : %s (g) * %d (set)' % (self.Ng, self.Nrun))
         print('           Number of CPUs : %d (used) of %d (total)' % (self.Ncpu, self.Ncpu_total))
         print('╰────────────────────────────────────────────────────────╯')
 

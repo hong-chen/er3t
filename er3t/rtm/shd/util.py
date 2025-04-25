@@ -14,10 +14,8 @@ import er3t.common
 __all__ = [
         'cal_shd_saa',
         'cal_shd_vaa',
-        'gen_ckd_file',
         'gen_mie_file',
         'gen_ext_file',
-        'gen_prp_file',
         ]
 
 
@@ -69,51 +67,6 @@ def cal_shd_vaa(normal_azimuth_angle):
         shd_vaa += 360.0
 
     return shd_vaa
-
-
-def gen_ckd_file(fname, atm0, abs0, Nband=1):
-
-    with open(fname, 'w') as f:
-
-        f.write('! correlated k-distribution file for SHDOM\n')
-        f.write('%d ! number of bands\n' % 1)
-        f.write('! Band# | Wave#1 | Wave#2 | SolFlx | Ng | g1 | g2 | ...\n')
-
-        # wave number cm^-1
-        wvln_min = 1.0/abs0.wvl_max_*1e7
-        wvln_max = 1.0/abs0.wvl_min_*1e7
-
-        sol = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
-
-        Ng = abs0.coef['weight']['data'].size
-
-        g = ' '.join(['%.6f' % value for value in abs0.coef['weight']['data']])
-
-        for iband in range(Nband):
-            f.write('%d %.2f %.2f %.6f %d %s\n' % (iband+1, wvln_min, wvln_max, sol, Ng, g))
-
-        f.write('%d\n' % atm0.lay['altitude']['data'].size)
-
-        f.write('!\n')
-        f.write('! Alt [km] | Pres [mb] | Temp [K]\n')
-
-        alt = atm0.lay['altitude']['data'][::-1]
-        # pres = atm0.lay['pressure']['data'][::-1]
-        # temp = atm0.lay['temperature']['data'][::-1]
-
-        indices_sort = np.argsort(abs0.coef['weight']['data'])
-        kabs = abs0.coef['abso_coef']['data'][::-1, indices_sort]
-
-        for j in range(alt.size):
-            # f.write('%.6f %.2f %.2f\n' % (alt[j], pres[j], temp[j]))
-            f.write('%.6f\n' % (alt[j]))
-
-        f.write('! iBand | iLay | AbsCoef [km^-1]\n')
-
-        for iband in range(Nband):
-            for j in range(alt.size):
-                kabs_s = ' '.join(['%15.6e' % kabs0 for kabs0 in kabs[j, :]])
-                f.write('%d %d %s\n' % (iband+1, j+1, kabs_s))
 
 
 def gen_ext_file(
@@ -208,52 +161,6 @@ def gen_mie_file(
 
     return fname
 
-
-def gen_prp_file(
-        fname,
-        wavelength,
-        atm0,
-        cld0,
-        Npha_max=1000,
-        asy_tol=1.0e-2,
-        pha_tol=1.0e-1,
-        pol_tag='U',
-        put_exe='put',
-        prp_exe='propgen',
-        ):
-
-    fname_mie = er3t.rtm.shd.gen_mie_file(wavelength, wavelength)
-
-    fname_ext = er3t.rtm.shd.gen_ext_file(fname.replace('prp', 'ext'), cld0)
-
-    logic_z_extra = np.logical_not(np.array([np.any((atm0.lay['altitude']['data'][i]-cld0.lay['altitude']['data'])<1.0e-6) for i in range(atm0.lay['altitude']['data'].size)]))
-    Nz_extra = logic_z_extra.sum()
-    z_extra = '%s' % '\n'.join(['%.4e %.4e' % tuple(item) for item in zip(atm0.lay['altitude']['data'][logic_z_extra], atm0.lay['temperature']['data'][logic_z_extra])])
-
-    if len(z_extra) > 1000:
-        msg = 'Error [gen_prp_file]: <z_extra> is greater than 1000-character-limit.'
-        raise OSError(msg)
-
-    wavelength /= 1000.0
-
-    command = '%s "1"\
- "%s" "1" "F" "%s"\
- "%d" "%.4e" "%.4e"\
- "%15.8e" "%.4f"\
- "%d" "%s"\
- "%s" "%s"\
- | %s' %\
-        (put_exe,\
-        fname_mie, fname_ext,\
-        Npha_max, asy_tol, pha_tol,\
-        wavelength, atm0.lev['pressure']['data'][0],\
-        Nz_extra, z_extra,\
-        pol_tag, fname,\
-        prp_exe)
-
-    os.system(command)
-
-    return fname
 
 
 if __name__ == '__main__':
