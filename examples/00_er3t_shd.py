@@ -11,6 +11,7 @@ This code has been tested under:
 
 import os
 import sys
+import warnings
 import h5py
 import time
 import numpy as np
@@ -33,7 +34,7 @@ import er3t
 
 # global variables
 #╭────────────────────────────────────────────────────────────────────────────╮#
-name_tag = '00_er3t_mca'
+name_tag = '00_er3t_shd'
 fdir0    = er3t.common.fdir_examples
 photons = 1e8
 Ncpu    = 12
@@ -988,48 +989,13 @@ def example_05_rad_les_cloud_3d(
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
-    # define mca_sca object
+    # generate property file for SHDOM
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
-    sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+    fname_ckd = '%s/shdom-ckd_les.txt' % fdir
+    fname_ckd = er3t.rtm.shd.gen_ckd_file(fname_ckd, atm0, abs0)
 
-
-    # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    # inhomogeneous 3d mcarats "atmosphere"
-    atm3d0  = er3t.rtm.mca.mca_atm_3d(cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname='%s/mca_atm_3d.bin' % fdir, overwrite=overwrite)
-    # data can be accessed at
-    #     atm3d0.nml['Atm_nx']['data']
-    #     atm3d0.nml['Atm_ny']['data']
-    #     atm3d0.nml['Atm_dx']['data']
-    #     atm3d0.nml['Atm_dy']['data']
-    #     atm3d0.nml['Atm_nz3']['data']
-    #     atm3d0.nml['Atm_iz3l']['data']
-    #     atm3d0.nml['Atm_tmpa3d']['data']
-    #     atm3d0.nml['Atm_abst3d']['data']
-    #     atm3d0.nml['Atm_extp3d']['data']
-    #     atm3d0.nml['Atm_omgp3d']['data']
-    #     atm3d0.nml['Atm_apfp3d']['data']
-
-    # homogeneous 1d mcarats "atmosphere"
-    atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
-    # data can be accessed at
-    #     atm1d0.nml[ig]['Atm_zgrd0']['data']
-    #     atm1d0.nml[ig]['Atm_wkd0']['data']
-    #     atm1d0.nml[ig]['Atm_mtprof']['data']
-    #     atm1d0.nml[ig]['Atm_tmp1d']['data']
-    #     atm1d0.nml[ig]['Atm_nkd']['data']
-    #     atm1d0.nml[ig]['Atm_nz']['data']
-    #     atm1d0.nml[ig]['Atm_ext1d']['data']
-    #     atm1d0.nml[ig]['Atm_abs1d']['data']
-    #     atm1d0.nml[ig]['Atm_omg1d']['data']
-    #     atm1d0.nml[ig]['Atm_apf1d']['data']
-
-
-    # make them into python list, can contain more than one 1d or 3d mcarats "atmosphere"
-    atm_1ds   = [atm1d0]
-    atm_3ds   = [atm3d0]
+    fname_prp = '%s/shdom-prp_les.txt' % fdir
+    fname_prp = er3t.rtm.shd.gen_prp_file(fname_prp, wavelength, atm0, cld0)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 

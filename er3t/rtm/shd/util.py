@@ -15,7 +15,9 @@ __all__ = [
         'cal_shd_saa',
         'cal_shd_vaa',
         'gen_ckd_file',
+        'gen_mie_file',
         'gen_ext_file',
+        'gen_prp_file',
         ]
 
 
@@ -117,6 +119,7 @@ def gen_ckd_file(fname, atm0, abs0, Nband=1):
 def gen_ext_file(
         fname,
         cld0,
+        postfix='.sHdOm-ext',
         ):
 
     # retrieve optical properties
@@ -149,7 +152,6 @@ def gen_ext_file(
             fb.write(struct.pack('<%df' % ext.size, *ext.T.flatten(order='F')))
             fb.write(struct.pack('<%df' % cer.size, *cer.T.flatten(order='F')))
         #╰──────────────────────────────────────────────────────────────╯#
-
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return fname
@@ -208,17 +210,50 @@ def gen_mie_file(
 
 
 def gen_prp_file(
-        fname_mie=None,
+        fname,
+        wavelength,
+        atm0,
+        cld0,
+        Npha_max=1000,
+        asy_tol=1.0e-2,
+        pha_tol=1.0e-1,
+        pol_tag='U',
+        put_exe='put',
+        prp_exe='propgen',
         ):
 
-    # fname_mie = gen_mie_file(650.0, 650.0, fname=fname_mie, overwrite=False)
-    # print(fname_mie)
+    fname_mie = er3t.rtm.shd.gen_mie_file(wavelength, wavelength)
 
-    # fname_ext = gen_ext_file()
+    fname_ext = er3t.rtm.shd.gen_ext_file(fname.replace('prp', 'ext'), cld0)
 
-    fname_prp = ''
+    logic_z_extra = np.logical_not(np.array([np.any((atm0.lay['altitude']['data'][i]-cld0.lay['altitude']['data'])<1.0e-6) for i in range(atm0.lay['altitude']['data'].size)]))
+    Nz_extra = logic_z_extra.sum()
+    z_extra = '%s' % '\n'.join(['%.4e %.4e' % tuple(item) for item in zip(atm0.lay['altitude']['data'][logic_z_extra], atm0.lay['temperature']['data'][logic_z_extra])])
 
-    return fname_prp
+    if len(z_extra) > 1000:
+        msg = 'Error [gen_prp_file]: <z_extra> is greater than 1000-character-limit.'
+        raise OSError(msg)
+
+    wavelength /= 1000.0
+
+    command = '%s "1"\
+ "%s" "1" "F" "%s"\
+ "%d" "%.4e" "%.4e"\
+ "%15.8e" "%.4f"\
+ "%d" "%s"\
+ "%s" "%s"\
+ | %s' %\
+        (put_exe,\
+        fname_mie, fname_ext,\
+        Npha_max, asy_tol, pha_tol,\
+        wavelength, atm0.lev['pressure']['data'][0],\
+        Nz_extra, z_extra,\
+        pol_tag, fname,\
+        prp_exe)
+
+    os.system(command)
+
+    return fname
 
 
 if __name__ == '__main__':
