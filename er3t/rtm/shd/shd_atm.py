@@ -233,7 +233,6 @@ class shd_atm_3d:
 
         self.nml['NX'] = copy.deepcopy(self.cld.lay['nx'])
         self.nml['NY'] = copy.deepcopy(self.cld.lay['ny'])
-        self.nml['NZ'] = {'data':self.atm.lay['altitude']['data'].size, 'name':'Nz', 'units':'N/A'}
 
         self.nml['WAVELEN'] = {'data':self.abs.wvl/1000.0, 'units':'micron', 'name':'Wavelength'}
 
@@ -265,6 +264,8 @@ class shd_atm_3d:
         logic_z_extra = np.logical_not(np.array([np.any(np.abs(atm0.lay['altitude']['data'][i]-cld0.lay['altitude']['data'])<1.0e-6) for i in range(atm0.lay['altitude']['data'].size)]))
         Nz_extra = logic_z_extra.sum()
         z_extra = '%s' % '\n'.join(['%.4e %.4e' % tuple(item) for item in zip(atm0.lay['altitude']['data'][logic_z_extra], atm0.lay['temperature']['data'][logic_z_extra])])
+
+        self.nml['NZ'] = {'data':Nz_extra+cld0.lay['altitude']['data'].size, 'name':'Nz', 'units':'N/A'}
 
         if len(z_extra) > 1000:
             msg = 'Error [shd_atm_3d]: <z_extra> is greater than 1000-character-limit.'

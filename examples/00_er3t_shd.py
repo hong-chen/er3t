@@ -971,7 +971,7 @@ def example_05_rad_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 5], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -991,8 +991,8 @@ def example_05_rad_les_cloud_3d(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
     sfc_dict = {
-            'dx': 0.25,
-            'dy': 0.25,
+            'dx': 0.12,
+            'dy': 0.12,
             'fiso': f['mod/sfc/fiso_43_0650'][...],
             'fvol': f['mod/sfc/fvol_43_0650'][...],
             'fgeo': f['mod/sfc/fgeo_43_0650'][...],
