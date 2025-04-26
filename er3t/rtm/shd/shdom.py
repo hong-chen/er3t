@@ -359,7 +359,12 @@ class shdom_ng:
             self.nml[ig]['ACCELFLAG'] = '.TRUE.'
             self.nml[ig]['SOLACC'] = 1.0e-5
             self.nml[ig]['MAXITER'] = Niter
-            self.nml[ig]['SPLITACC'] = 0.01
+
+            if (self.dx <= 0.1) or (self.dy <= 0.1):
+                self.nml[ig]['SPLITACC'] = 0.0
+            else:
+                self.nml[ig]['SPLITACC'] = 0.01
+
             self.nml[ig]['SHACC'] = 0.003
             self.nml[ig]['MAX_TOTAL_MB'] = psutil.virtual_memory().total / 1024.0**2.0 / 2.0
             self.nml[ig]['ADAPT_GRID_FACTOR'] = 2.2

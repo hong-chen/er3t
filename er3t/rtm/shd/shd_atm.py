@@ -97,7 +97,7 @@ class shd_atm_1d:
             ):
 
         if not self.quiet:
-            print('Message [shd_atm_1d]: Creating 3D atm file <%s> for SHDOM...' % fname)
+            print('Message [shd_atm_1d]: Creating 1D CKDFile <%s> for SHDOM...' % fname)
 
         with open(fname, 'w') as f:
 
@@ -248,6 +248,7 @@ class shd_atm_3d:
 
         self.nml['NZ'] = {'data':self.Nz_extra+self.cld.lay['altitude']['data'].size, 'name':'Nz', 'units':'N/A'}
 
+
     def gen_shd_prp_file(
             self,
             fname,
@@ -288,7 +289,7 @@ class shd_atm_3d:
             prp_exe)
 
         if not self.quiet:
-            print('Message [shd_atm_3d]: Creating 3D atm file <%s> for SHDOM...' % fname)
+            print('Message [shd_atm_3d]: Creating 3D PROPFile <%s> for SHDOM...' % fname)
 
         os.system(command)
 

@@ -121,7 +121,7 @@ class shd_sfc_2d:
         fname = os.path.abspath(fname)
 
         if not self.quiet:
-            print('Message [shd_sfc_2d]: Creating 2D sfc file <%s> for SHDOM...' % fname)
+            print('Message [shd_sfc_2d]: Creating 2D SFCFile <%s> for SHDOM...' % fname)
 
         with open(fname, 'w') as f:
             f.write('%s\n' % self.nml['header']['data'])
