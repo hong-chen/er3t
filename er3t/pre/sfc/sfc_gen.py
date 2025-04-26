@@ -38,13 +38,13 @@ class sfc_2d_gen:
 
 
     def __init__(self, \
-                 sfc_2d    = None, \
+                 sfc_dict  = None, \
                  fname     = None, \
                  overwrite = False, \
                  verbose   = False):
 
 
-        self.sfc        = sfc_2d
+        self.sfc        = sfc_dict
         self.fname      = fname       # file name of the pickle file
         self.verbose    = verbose     # verbose tag
 
@@ -65,7 +65,7 @@ class sfc_2d_gen:
 
         else:
 
-            msg = 'Error [sfc_2d_gen]: Please check if <%s> exists or provide <sfc_2d> to proceed.' % self.fname
+            msg = 'Error [sfc_2d_gen]: Please check if <%s> exists or provide <sfc_dict> to proceed.' % self.fname
             raise OSError(msg)
 
 

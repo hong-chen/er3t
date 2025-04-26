@@ -75,7 +75,7 @@ Features
 
   * **downloader**: `Worldview <https://worldview.earthdata.nasa.gov>`_ | `LAADS DAAC <https://ladsweb.modaps.eosdis.nasa.gov/archive/>`_ | `GES DISC <https://oco2.gesdisc.eosdis.nasa.gov/data/>`_ | `LANCE <https://nrt3.modaps.eosdis.nasa.gov/archive>`_
 
-  * **reader**: `MODIS <https://modis.gsfc.nasa.gov>`_ | `VIIRS <https://ncc.nesdis.noaa.gov/VIIRS/>`_ | `OCO-2 <https://ocov2.jpl.nasa.gov>`_ | `AHI <https://www.data.jma.go.jp/mscweb/en/index.html>`_
+  * **reader**: `MODIS <https://modis.gsfc.nasa.gov>`_ | `VIIRS <https://ncc.nesdis.noaa.gov/VIIRS/>`_ | `OCO-2 <https://ocov2.jpl.nasa.gov>`_ | `AHI <https://www.data.jma.go.jp/mscweb/en/index.html>`_ | `ABI <https://www.goes-r.gov/spacesegment/abi.html>`_
 
   * **simulator**: `ARISE <https://zenodo.org/record/4029241>`_ | `CAMP²Ex <https://zenodo.org/record/7358509>`_
 
