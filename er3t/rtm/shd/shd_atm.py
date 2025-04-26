@@ -242,6 +242,11 @@ class shd_atm_3d:
 
         self.nml['GNDTEMP'] = {'data':self.atm.lay['temperature']['data'][0], 'units':'K', 'name':'Surface Temperature'}
 
+        logic_z_extra = np.logical_not(np.array([np.any(np.abs(self.atm.lay['altitude']['data'][i]-self.cld.lay['altitude']['data'])<1.0e-6) for i in range(self.atm.lay['altitude']['data'].size)]))
+        self.Nz_extra = logic_z_extra.sum()
+        self.z_extra = '%s' % '\n'.join(['%.4e %.4e' % tuple(item) for item in zip(self.atm.lay['altitude']['data'][logic_z_extra], self.atm.lay['temperature']['data'][logic_z_extra])])
+
+        self.nml['NZ'] = {'data':self.Nz_extra+self.cld.lay['altitude']['data'].size, 'name':'Nz', 'units':'N/A'}
 
     def gen_shd_prp_file(
             self,
@@ -261,13 +266,7 @@ class shd_atm_3d:
 
         fname_ext = er3t.rtm.shd.gen_ext_file(fname.replace('prp', 'ext'), cld0)
 
-        logic_z_extra = np.logical_not(np.array([np.any(np.abs(atm0.lay['altitude']['data'][i]-cld0.lay['altitude']['data'])<1.0e-6) for i in range(atm0.lay['altitude']['data'].size)]))
-        Nz_extra = logic_z_extra.sum()
-        z_extra = '%s' % '\n'.join(['%.4e %.4e' % tuple(item) for item in zip(atm0.lay['altitude']['data'][logic_z_extra], atm0.lay['temperature']['data'][logic_z_extra])])
-
-        self.nml['NZ'] = {'data':Nz_extra+cld0.lay['altitude']['data'].size, 'name':'Nz', 'units':'N/A'}
-
-        if len(z_extra) > 1000:
+        if len(self.z_extra) > 1000:
             msg = 'Error [shd_atm_3d]: <z_extra> is greater than 1000-character-limit.'
             raise OSError(msg)
 
@@ -284,7 +283,7 @@ class shd_atm_3d:
             fname_mie, fname_ext,\
             Npha_max, asy_tol, pha_tol,\
             wavelength, atm0.lev['pressure']['data'][0],\
-            Nz_extra, z_extra,\
+            self.Nz_extra, self.z_extra,\
             pol_tag, fname,\
             prp_exe)
 

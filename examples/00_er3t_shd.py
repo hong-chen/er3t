@@ -992,10 +992,10 @@ def example_05_rad_les_cloud_3d(
     f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
     sfc_dict = {
             'dx': 0.12,
-            'dy': 0.12,
-            'fiso': f['mod/sfc/fiso_43_0650'][...],
-            'fvol': f['mod/sfc/fvol_43_0650'][...],
-            'fgeo': f['mod/sfc/fgeo_43_0650'][...],
+            'dy': 0.1,
+            'fiso': f['mod/sfc/fiso_43_0650'][...][:400, :480],
+            'fvol': f['mod/sfc/fvol_43_0650'][...][:400, :480],
+            'fgeo': f['mod/sfc/fgeo_43_0650'][...][:400, :480],
             }
     f.close()
 
