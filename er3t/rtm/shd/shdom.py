@@ -326,7 +326,7 @@ class shdom_ng:
 
                 self.nml[ig]['OUTTYPES(1)'] = 'R'
                 self.nml[ig]['OUTPARMS(1,1)'] = '%.4f, %.4f, %.4f, 0.0, 0.0, %d,\n%s'\
-                        % (alt0/1000.0, dx/1000.0, dy/1000.0, vza_new.size, '\n'.join([' %.8f, %.4f,' % tuple(item) for item in zip(vza_new, vaa_new)]))
+                        % (alt0/1000.0, dx/1000.0, dy/1000.0, vza_new.size, '\n'.join([' %.16f, %.4f,' % tuple(item) for item in zip(vza_new, vaa_new)]))
 
                 self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
 
