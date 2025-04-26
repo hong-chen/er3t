@@ -71,6 +71,7 @@ class shdom_ng:
                  mp_mode             = 'py',                    \
 
                  surface_albedo      = 0.03,                    \
+                 sfc_2d              = None,                    \
 
                  solar_zenith_angle  = 30.0,                    \
                  solar_azimuth_angle = 0.0,                     \
@@ -137,6 +138,10 @@ class shdom_ng:
         self.wvl  = atm_1ds[0].nml['WAVELEN']['data']*1000.0
         self.wvln = atm_1ds[0].nml['WAVENO']['data']
 
+        if sfc_2d is None:
+            self.fname_sfc = 'NONE'
+        else:
+            self.fname_sfc = sfc_2d.nml['SFCFILE']['data']
         self.fname_ckd = atm_1ds[0].nml['CKDFILE']['data']
         self.fname_prp = atm_3ds[0].nml['PROPFILE']['data']
 
@@ -234,7 +239,7 @@ class shdom_ng:
             self.nml[ig]['_header'] = '$SHDOMINPUT'
             self.nml[ig]['RUNNAME'] = 'shdom-run_g-%3.3d' % ig
             self.nml[ig]['PROPFILE'] = self.fname_prp
-            self.nml[ig]['SFCFILE']  = '%s/shdom/data/shdom-sfc_land-lsrt.txt' % (os.environ['MYGIT'])
+            self.nml[ig]['SFCFILE']  = self.fname_sfc
             self.nml[ig]['CKDFILE']  = self.fname_ckd
             if self.overwrite and self.force:
                 self.nml[ig]['INSAVEFILE']  = 'NONE'

@@ -987,9 +987,26 @@ def example_05_rad_les_cloud_3d(
     #     cld0.lev['altitude']['data']
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
-    # generate property file for SHDOM
+    # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
+    f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
+    sfc_dict = {
+            'dx': 0.25,
+            'dy': 0.25,
+            'fiso': f['mod/sfc/fiso_43_0650'][...],
+            'fvol': f['mod/sfc/fvol_43_0650'][...],
+            'fgeo': f['mod/sfc/fgeo_43_0650'][...],
+            }
+    f.close()
+
+    fname_sfc = '%s/sfc.pk' % fdir
+    sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_2d=sfc_dict, fname=fname_sfc, overwrite=overwrite)
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    # generate surface, property files for SHDOM
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc_les.txt' % fdir, overwrite=overwrite)
+
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_les.txt' % fdir, overwrite=overwrite)
     atm_1ds = [atm1d0]
 
@@ -1000,12 +1017,13 @@ def example_05_rad_les_cloud_3d(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.0, 15.0)
+    vaa = np.arange(0.0, 360.0, 5.0)
     vza = np.repeat(30.0, vaa.size)
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
             date=datetime.datetime(2017, 8, 13),
+            sfc_2d=sfc_2d,
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             Ng=abs0.Ng,
@@ -1214,7 +1232,6 @@ def example_06_rad_cld_gen_hem(
     #         ['cth_2d']        (x, y)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # generate property file for SHDOM
     #╭────────────────────────────────────────────────────────────────────────────╮#
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_hem.txt' % fdir, overwrite=overwrite)
@@ -1409,8 +1426,8 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # example_05_rad_les_cloud_3d()
-    example_06_rad_cld_gen_hem()
+    example_05_rad_les_cloud_3d()
+    # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass

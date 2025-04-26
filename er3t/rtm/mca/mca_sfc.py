@@ -116,7 +116,7 @@ class mca_sfc_2d:
             sfc_psfc[:, :, 2] = self.sfc.data['sfc']['data'][:, :, 2]
             self.nml['Sfc_psfc2d'] = dict(data=sfc_psfc, name='Surface distribution parameters', units='N/A')
 
-        elif ('cox-munk' in self.sfc.data['sfc']['name'].lower()) or (self.sfc.data['sfc']['data'].shape[-1] == 5):
+        elif ('brdf-dsm' in self.sfc.data['sfc']['name'].lower()) or (self.sfc.data['sfc']['data'].shape[-1] == 5):
 
             sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=er3t.common.f_dtype)
             self.nml['Sfc_tmps2d'] = dict(data=sfc_tmps, name='Temperature anomalies', units='K')    # temperature anomaly
