@@ -26,6 +26,7 @@ build
 *.pk
 *.html
 *.txt
+*slurm*
 
 # libRadtran
 randomseed

@@ -131,7 +131,7 @@ class shd_sfc_2d:
                     string1 = '%d %d %.2f ' % ((ix+1), (iy+1), self.atm.lay['temperature']['data'][0])
                     string2 = ('%.6e ' * self.sfc_data[ix, iy, :].size) % tuple(self.sfc_data[ix, iy, :])
                     string3 = '\n'
-                    f.write(string1+string2+string3)
+                    f.write(string1+string2[:-1]+string3) # [:-1] is used to get rid of last empty space
 
         self.nml['SFCFILE'] = {'data':fname}
 
