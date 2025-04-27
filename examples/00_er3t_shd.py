@@ -1117,7 +1117,7 @@ def example_06_rad_cld_gen_hem(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 1.0, 2.0, ...., 20.0
-    levels    = np.linspace(0.0, 8.0, 41)
+    levels    = np.linspace(0.0, 20.0, 21)
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -1184,7 +1184,7 @@ def example_06_rad_cld_gen_hem(
             dy=0.2,
             radii=[1.0, 2.0, 4.0],
             weights=[0.6, 0.3, 0.1],
-            altitude=np.arange(2.1, 5.11, 0.2),
+            altitude=np.arange(1.0, 5.01, 0.2),
             cloud_frac_tgt=0.2,
             w2h_ratio=2.0,
             min_dist=0.2,
@@ -1254,7 +1254,7 @@ def example_06_rad_cld_gen_hem(
             atm_3ds=atm_3ds,
             Ng=abs0.Ng,
             target='radiance',
-            surface_albedo=0.03,
+            surface_albedo=0.1,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,
@@ -1426,8 +1426,8 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_05_rad_les_cloud_3d()
-    # example_06_rad_cld_gen_hem()
+    # example_05_rad_les_cloud_3d()
+    example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass
