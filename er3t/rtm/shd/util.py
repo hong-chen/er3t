@@ -16,6 +16,7 @@ __all__ = [
         'cal_shd_vaa',
         'gen_mie_file',
         'gen_ext_file',
+        'gen_lwc_file',
         ]
 
 
@@ -69,47 +70,6 @@ def cal_shd_vaa(normal_azimuth_angle):
     return shd_vaa
 
 
-def gen_ext_file(
-        fname,
-        cld0,
-        postfix='.sHdOm-ext',
-        ):
-
-    # retrieve optical properties
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    cer = cld0.lay['cer']['data']
-    ext = cld0.lay['extinction']['data'] * 1000.0
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-    # generate extinction file
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    temp = cld0.lay['temperature']['data']
-
-    Nx, Ny, Nz = ext.shape
-
-    with open(fname, 'w') as f:
-        f.write('2 parameter extinction file for SHDOM\n')
-        f.write('%d %d %d\n' % ext.shape)
-        f.write('%.4f %.4f\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
-        f.write('%s\n' % ' '.join([str('%.4f' % alt0) for alt0 in cld0.lay['altitude']['data']]))
-        f.write('%s\n' % ' '.join([str('%.4f' % np.mean(temp[:, :, iz])) for iz in range(Nz)]))
-
-        f.write('! The following provides information for interpreting binary data:\n')
-        f.write('! %s\n' % postfix)
-        f.write('! %6d,%6d,%6d,%6d\n' % (Nx, Ny, Nz, 2))
-
-        # save gridded data into binary file
-        #╭──────────────────────────────────────────────────────────────╮#
-        with open('%s%s' % (fname, postfix), 'wb') as fb:
-            # ext.T/cer.T converts the dimention from (Nx, Ny, Nz) to (Nz, Ny, Nx)
-            fb.write(struct.pack('<%df' % ext.size, *ext.T.flatten(order='F')))
-            fb.write(struct.pack('<%df' % cer.size, *cer.T.flatten(order='F')))
-        #╰──────────────────────────────────────────────────────────────╯#
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-    return fname
-
-
 def gen_mie_file(
         wavelength_s,
         wavelength_e,
@@ -161,6 +121,85 @@ def gen_mie_file(
 
     return fname
 
+
+def gen_ext_file(
+        fname,
+        cld0,
+        postfix='.sHdOm-ext',
+        ):
+
+    # retrieve optical properties
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    cer = cld0.lay['cer']['data']
+    ext = cld0.lay['extinction']['data'] * 1000.0
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    # generate extinction file
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    temp = cld0.lay['temperature']['data']
+
+    Nx, Ny, Nz = ext.shape
+
+    with open(fname, 'w') as f:
+        f.write('2 parameter extinction file for SHDOM\n')
+        f.write('%d %d %d\n' % ext.shape)
+        f.write('%.4f %.4f\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
+        f.write('%s\n' % ' '.join([str('%.4f' % alt0) for alt0 in cld0.lay['altitude']['data']]))
+        f.write('%s\n' % ' '.join([str('%.4f' % np.mean(temp[:, :, iz])) for iz in range(Nz)]))
+
+        f.write('! The following provides information for interpreting binary data:\n')
+        f.write('! %s\n' % postfix)
+        f.write('! %6d,%6d,%6d,%6d\n' % (Nx, Ny, Nz, 2))
+
+        # save gridded data into binary file
+        #╭──────────────────────────────────────────────────────────────╮#
+        with open('%s%s' % (fname, postfix), 'wb') as fb:
+            # ext.T/cer.T converts the dimention from (Nx, Ny, Nz) to (Nz, Ny, Nx)
+            fb.write(struct.pack('<%df' % ext.size, *ext.T.flatten(order='F')))
+            fb.write(struct.pack('<%df' % cer.size, *cer.T.flatten(order='F')))
+        #╰──────────────────────────────────────────────────────────────╯#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    return fname
+
+
+def gen_lwc_file(
+        fname,
+        cld0,
+        q_factor=2.0,
+        ):
+
+    # retrieve optical properties
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    cer = cld0.lay['cer']['data']
+
+    const0 = 0.75*q_factor/(1000.0*1.0e-6)
+    lwc = cld0.lay['extinction']['data']/(const0/cer) * 1000.0
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    # generate LWC file
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    temp = cld0.lay['temperature']['data']
+
+    Nx, Ny, Nz = lwc.shape
+
+    with open(fname, 'w') as f:
+        f.write('2 parameter LWC file for SHDOM\n')
+        f.write('%d %d %d\n' % lwc.shape)
+        f.write('%.4f %.4f\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
+        f.write('%s\n' % ' '.join([str('%.4f' % alt0) for alt0 in cld0.lay['altitude']['data']]))
+        f.write('%s\n' % ' '.join([str('%.4f' % np.mean(temp[:, :, iz])) for iz in range(Nz)]))
+
+        # save gridded data into ascii file
+        #╭──────────────────────────────────────────────────────────────╮#
+        for ix in np.arange(Nx):
+            for iy in np.arange(Ny):
+                for iz in np.arange(Nz):
+                    f.write('%d %d %d %.6e %.6e\n' % ((ix+1), (iy+1), (iz+1), lwc[ix, iy, iz], cer[ix, iy, iz]))
+        #╰──────────────────────────────────────────────────────────────╯#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    return fname
 
 
 if __name__ == '__main__':

@@ -180,12 +180,14 @@ class shd_atm_3d:
                  abs_obj   = None, \
                  cld_obj   = None, \
                  fname     = None, \
+                 ext_mode  = True, \
                  overwrite = True, \
                  force     = False,\
                  verbose   = False,\
                  quiet     = False \
                  ):
 
+        self.ext_mode  = ext_mode
         self.overwrite = overwrite
         self.verbose   = verbose
         self.quiet     = quiet
@@ -221,10 +223,10 @@ class shd_atm_3d:
 
         if not self.overwrite:
             if (not os.path.exists(fname)) and (not force):
-                self.gen_shd_prp_file(fname, self.abs.wvl, self.atm, self.cld)
+                self.gen_shd_prp_file(fname, self.abs.wvl, self.atm, self.cld, ext_mode=self.ext_mode)
             self.nml['PROPFILE'] = {'data':fname}
         else:
-            self.gen_shd_prp_file(fname, self.abs.wvl, self.atm, self.cld)
+            self.gen_shd_prp_file(fname, self.abs.wvl, self.atm, self.cld, ext_mode=self.ext_mode)
 
 
     def pre_shd_3d_atm(self):
@@ -261,11 +263,15 @@ class shd_atm_3d:
             pol_tag='U',
             put_exe='put',
             prp_exe='propgen',
+            ext_mode=True,
             ):
 
         fname_mie = er3t.rtm.shd.gen_mie_file(wavelength, wavelength)
 
-        fname_ext = er3t.rtm.shd.gen_ext_file(fname.replace('prp', 'ext'), cld0)
+        if ext_mode:
+            fname_inp = er3t.rtm.shd.gen_ext_file(fname.replace('prp', 'ext'), cld0)
+        else:
+            fname_inp = er3t.rtm.shd.gen_lwc_file(fname.replace('prp', 'lwc'), cld0)
 
         if len(self.z_extra) > 1000:
             msg = 'Error [shd_atm_3d]: <z_extra> is greater than 1000-character-limit.'
@@ -281,7 +287,7 @@ class shd_atm_3d:
  "%s" "%s"\
  | %s' %\
             (put_exe,\
-            fname_mie, fname_ext,\
+            fname_mie, fname_inp,\
             Npha_max, asy_tol, pha_tol,\
             wavelength, atm0.lev['pressure']['data'][0],\
             self.Nz_extra, self.z_extra,\
