@@ -163,26 +163,27 @@ def example_05_rad_les_cloud_3d(
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_les.txt' % fdir, overwrite=overwrite)
     atm_1ds = [atm1d0]
 
-    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp_les.txt' % fdir, overwrite=overwrite)
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp_les.txt' % fdir, overwrite=False)
     atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.0, 5.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.0, 5.0)
+    # vza = np.repeat(30.0, vaa.size)
+    vaa = np.arange(45.0, 46.0, 1.0)
+    vza = np.repeat(0.0, vaa.size)
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
             date=datetime.datetime(2017, 8, 13),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            sfc_2d=sfc_2d,
+            surface=sfc_2d,
             Ng=abs0.Ng,
             Niter=50,
             target='radiance',
-            surface_albedo=0.03,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,
@@ -406,9 +407,9 @@ def example_06_rad_cld_gen_hem(
             date=datetime.datetime(2017, 8, 13),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
+            surface=0.1,
             Ng=abs0.Ng,
             target='radiance',
-            surface_albedo=0.1,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,

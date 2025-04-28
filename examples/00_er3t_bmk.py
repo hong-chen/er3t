@@ -144,7 +144,7 @@ def mca_flux_one_clear(
             solar_zenith_angle=params['solar_zenith_angle'],
             photons=1e7,
             weights=abs0.coef['weight']['data'],
-            surface_albedo=params['surface_albedo'],
+            surface=params['surface_albedo'],
             solver=solver,
             mp_mode='py',
             overwrite=overwrite
@@ -485,7 +485,7 @@ def test_02_rad_cloud(params, overwrite=False):
             fdir=fdir,
             date=params['date'],
             wavelength=params['wavelength'],
-            surface_albedo=params['surface_albedo'],
+            surface=params['surface_albedo'],
             solar_zenith_angle=params['solar_zenith_angle'],
             solar_azimuth_angle=params['solar_azimuth_angle'],
             sensor_zenith_angle=params['sensor_zenith_angle'],

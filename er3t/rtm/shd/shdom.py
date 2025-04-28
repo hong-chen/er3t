@@ -30,9 +30,9 @@ class shdom_ng:
         Ng=    : integer, number of gs, e.g., for abs_16g, Ng=16
         target=: string type, can be one of 'flux', 'radiance', and 'heating rate'
 
-        date=  : keyword argument, datetime.datetime object, the date to calculate sun-earth distance
-        target=: keyword argument, string, can be 'flux', 'radiance', default='flux'
-        surface_albedo=     : keyword argument, float, surface albedo, default=0.03
+        date=   : keyword argument, datetime.datetime object, the date to calculate sun-earth distance
+        target= : keyword argument, string, can be 'flux', 'radiance', default='flux'
+        surface=: keyword argument, float, surface albedo, default=0.03
         solar_zenith_angle= : keyword argument, float, solar zenith angle, default=30.0
         solar_azimuth_angle=: keyword argument, float, solar azimuth angle, default=0.0
 
@@ -63,8 +63,7 @@ class shdom_ng:
                  atm_1ds             = [],                      \
                  atm_3ds             = [],                      \
 
-                 sfc_2d              = None,                    \
-                 surface_albedo      = 0.03,                    \
+                 surface             = None,                    \
 
                  Ng                  = 1,                       \
                  Niter               = 100,                     \
@@ -113,7 +112,12 @@ class shdom_ng:
         self.force     = force
         self.mp_mode   = mp_mode.lower()
 
-        self.surface_albedo      = surface_albedo
+        self.surface = surface
+        if isinstance(self.surface, float) or isinstance(self.surface, np.float32) or isinstance(self.surface, np.float64):
+            self.sfc_2d = False
+        elif isinstance(surface, er3t.rtm.shd.shd_sfc_2d):
+            self.sfc_2d = True
+
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
 
@@ -138,14 +142,14 @@ class shdom_ng:
         self.wvl  = atm_1ds[0].nml['WAVELEN']['data']*1000.0
         self.wvln = atm_1ds[0].nml['WAVENO']['data']
 
-        if sfc_2d is None:
+        if not self.sfc_2d:
             self.fname_sfc = 'NONE'
         else:
-            self.fname_sfc = sfc_2d.nml['SFCFILE']['data']
+            self.fname_sfc = self.surface.nml['SFCFILE']['data']
+
         self.fname_ckd = atm_1ds[0].nml['CKDFILE']['data']
         self.fname_prp = atm_3ds[0].nml['PROPFILE']['data']
 
-        self.sfc_alb  = surface_albedo
         self.sfc_temp = atm_1ds[0].nml['GNDTEMP']['data']
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -285,7 +289,11 @@ class shdom_ng:
             self.nml[ig]['SOLARMU'] = np.cos(np.deg2rad(sza0))
             self.nml[ig]['SOLARAZ'] = er3t.rtm.shd.cal_shd_saa(saa0)
             self.nml[ig]['SKYRAD']  = 0.0
-            self.nml[ig]['GNDALBEDO'] = self.sfc_alb
+
+            if not self.sfc_2d:
+                self.nml[ig]['GNDALBEDO'] = self.surface
+            else:
+                self.nml[ig]['GNDALBEDO'] = 0.0
             self.nml[ig]['GNDTEMP'] = self.sfc_temp   # K
             self.nml[ig]['WAVELEN'] = self.wvl/1000.0 # micron
             self.nml[ig]['WAVENO']  = self.wvln       # cm^-1
@@ -459,7 +467,10 @@ class shdom_ng:
             print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
 
 
-        print('           Surface Albedo : 2D domain')
+        if self.sfc_2d:
+            print('             Surface BRDF : 2D domain')
+        else:
+            print('           Surface Albedo : %.4f' % self.surface)
 
         print('           Phase Function : %s' % 'Mie (Water Clouds)')
 

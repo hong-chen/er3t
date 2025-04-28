@@ -10,9 +10,11 @@ Important updates from previous version (v0.1.1):
 
 * Adds time estimation and stamping (accuracy within seconds) for NASA Worldview imagery;
 
-* Implements BRDF surface support for Cox-Munk (ocean) and LSRT (land, e.g., MCD43A1 product);
+* Implements surface BRDF support for ocean (Cox-Munk) and land (LSRT);
 
-* Implements gas absorption support for REPTRAN.
+* Implements gas absorption support for REPTRAN;
+
+* Implements simulation support for SHDOM.
 
 
 Version 0.1.1

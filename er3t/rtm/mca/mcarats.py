@@ -30,9 +30,9 @@ class mcarats_ng:
         target=: string type, can be one of 'flux', 'radiance', and 'heating rate'
         fdir=  : string type, this will be a directory to store input/output files
 
-        date=  : keyword argument, datetime.datetime object, the date to calculate sun-earth distance
-        target=: keyword argument, string, can be 'flux', 'radiance', default='flux'
-        surface_albedo=     : keyword argument, float, surface albedo, default=0.03
+        date=   : keyword argument, datetime.datetime object, the date to calculate sun-earth distance
+        target= : keyword argument, string, can be 'flux', 'radiance', default='flux'
+        surface=: keyword argument, float, surface albedo, default=0.03
         solar_zenith_angle= : keyword argument, float, solar zenith angle, default=30.0
         solar_azimuth_angle=: keyword argument, float, solar azimuth angle, default=0.0
 
@@ -79,7 +79,7 @@ class mcarats_ng:
                  comment             = False,                   \
                  tune                = False,                   \
                  target              = 'flux',                  \
-                 surface_albedo      = 0.03,                    \
+                 surface             = 0.03,                    \
                  solar_zenith_angle  = 30.0,                    \
                  solar_azimuth_angle = 0.0,                     \
 
@@ -118,9 +118,9 @@ class mcarats_ng:
         self.overwrite = overwrite
         self.mp_mode   = mp_mode.lower()
 
-        self.sca                 = sca
+        self.sca = sca
 
-        self.surface_albedo      = surface_albedo
+        self.surface = surface
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
 
@@ -215,7 +215,7 @@ class mcarats_ng:
             self.init_atm(atm_1ds=atm_1ds, atm_3ds=atm_3ds)
 
             # MCARaTS surface initialization
-            self.init_sfc(surface_albedo=surface_albedo)
+            self.init_sfc(surface=surface)
 
             # MCARaTS source (e.g., solar) initialization
             self.init_src(solar_zenith_angle=solar_zenith_angle, solar_azimuth_angle=solar_azimuth_angle)
@@ -383,34 +383,34 @@ class mcarats_ng:
             self.nml[ig]['Src_phi']   = cal_mca_azimuth(solar_azimuth_angle)
 
 
-    def init_sfc(self, surface_albedo=0.03):
+    def init_sfc(self, surface=0.03):
 
         for ig in range(self.Ng):
 
             if self.verbose:
                 print('Message [mcarats_ng]: Assume Lambertian surface ...')
 
-            if isinstance(surface_albedo, float) or isinstance(surface_albedo, np.float32) or isinstance(surface_albedo, np.float64):
+            if isinstance(surface, float) or isinstance(surface, np.float32) or isinstance(surface, np.float64):
 
                 self.nml[ig]['Sfc_mbrdf'] = np.array([1, 0, 0, 0])
                 self.nml[ig]['Sfc_mtype'] = 1
-                self.nml[ig]['Sfc_param(1)'] = surface_albedo
+                self.nml[ig]['Sfc_param(1)'] = surface
 
                 self.sfc_2d = False
 
-            elif isinstance(surface_albedo, er3t.rtm.mca.mca_sfc_2d):
+            elif isinstance(surface, er3t.rtm.mca.mca_sfc_2d):
 
-                for key in surface_albedo.nml.keys():
+                for key in surface.nml.keys():
                     if '2d' not in key:
-                        if os.path.exists(surface_albedo.nml['Sfc_inpfile']['data']):
-                            surface_albedo.nml['Sfc_inpfile']['data'] = os.path.relpath(surface_albedo.nml['Sfc_inpfile']['data'], start=self.fdir)
-                        self.nml[ig][key] = surface_albedo.nml[key]['data']
+                        if os.path.exists(surface.nml['Sfc_inpfile']['data']):
+                            surface.nml['Sfc_inpfile']['data'] = os.path.relpath(surface.nml['Sfc_inpfile']['data'], start=self.fdir)
+                        self.nml[ig][key] = surface.nml[key]['data']
 
                 self.sfc_2d = True
 
             else:
 
-                msg = '\nError [mcarats_ng]: Cannot ingest <surface_albedo>.'
+                msg = '\nError [mcarats_ng]: Cannot ingest <surface>.'
                 raise ValueError(msg)
 
 
@@ -504,7 +504,7 @@ class mcarats_ng:
             print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
 
         if not self.sfc_2d:
-            print('           Surface Albedo : %.2f' % self.surface_albedo)
+            print('           Surface Albedo : %.2f' % self.surface)
         else:
             print('           Surface Albedo : 2D domain')
 

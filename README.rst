@@ -69,7 +69,7 @@ Features
 
   * **clouds**: `Mie (water) <https://doi.org/10.1364/AO.19.001505>`_
 
-  * **surface**: `Cox-Munk (ocean) <https://doi.org/10.1364/JOSA.44.000838>`_ | `LSRT Model (land) <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
+  * **surface**: `Ocean BRDF (Cox-Munk) <https://doi.org/10.1364/JOSA.44.000838>`_ | `Land BRDF (LSRT) <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
 
 :Remote Sensing:
 
@@ -77,7 +77,7 @@ Features
 
   * **reader**: `MODIS <https://modis.gsfc.nasa.gov>`_ | `VIIRS <https://ncc.nesdis.noaa.gov/VIIRS/>`_ | `OCO-2 <https://ocov2.jpl.nasa.gov>`_ | `AHI <https://www.data.jma.go.jp/mscweb/en/index.html>`_ | `ABI <https://www.goes-r.gov/spacesegment/abi.html>`_
 
-  * **simulator**: `ARISE <https://zenodo.org/record/4029241>`_ | `CAMP²Ex <https://zenodo.org/record/7358509>`_
+  * **simulator**: `ARISE <https://zenodo.org/record/4029241>`_ | `CAMP²Ex <https://zenodo.org/record/7358509>`_ | `ARCSIX <https://espo.nasa.gov/arcsix>`_
 
 
 Resources
