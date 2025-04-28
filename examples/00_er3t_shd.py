@@ -1184,7 +1184,7 @@ def example_06_rad_cld_gen_hem(
             dy=0.2,
             radii=[1.0, 2.0, 4.0],
             weights=[0.6, 0.3, 0.1],
-            altitude=np.arange(1.0, 5.01, 0.2),
+            altitude=np.arange(2.0, 6.01, 0.2),
             cloud_frac_tgt=0.2,
             w2h_ratio=2.0,
             min_dist=0.2,
