@@ -367,6 +367,9 @@ class shdom_ng:
 
             if (self.dx/1000.0 <= 0.100001) or (self.dy/1000.0 <= 0.100001):
                 # encounter error when grid resolution is fine, this is a temporary solution
+                # bug details [from shdom]:
+                # Note: The following floating-point exceptions are signalling: IEEE_DIVIDE_BY_ZERO IEEE_UNDERFLOW_FLAG
+                # STOP Error [_matchGridPnt]: No split direction.
                 self.nml[ig]['SPLITACC'] = 0.0
             else:
                 self.nml[ig]['SPLITACC'] = 0.01
