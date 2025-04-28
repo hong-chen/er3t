@@ -915,7 +915,7 @@ def example_05_rad_les_cloud_3d(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 1.0, 2.0, ...., 20.0
-    levels    = np.linspace(0.0, 20.0, 21)
+    levels = np.append(np.arange(0.0, 4.0, 0.2), np.arange(4.0, 20.0, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -1003,6 +1003,7 @@ def example_05_rad_les_cloud_3d(
     sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
+
     # generate surface, property files for SHDOM
     #╭────────────────────────────────────────────────────────────────────────────╮#
     sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc_les.txt' % fdir, overwrite=overwrite)
@@ -1023,10 +1024,11 @@ def example_05_rad_les_cloud_3d(
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
             date=datetime.datetime(2017, 8, 13),
-            sfc_2d=sfc_2d,
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
+            sfc_2d=sfc_2d,
             Ng=abs0.Ng,
+            Niter=50,
             target='radiance',
             surface_albedo=0.03,
             solar_zenith_angle=30.0,
@@ -1034,8 +1036,8 @@ def example_05_rad_les_cloud_3d(
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
             sensor_altitude=705000.0,
-            sensor_res_dx=cld0.lay['dx']['data']*1000.0,
-            sensor_res_dy=cld0.lay['dy']['data']*1000.0,
+            sensor_dx=cld0.lay['dx']['data']*1000.0,
+            sensor_dy=cld0.lay['dy']['data']*1000.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             solver=solver,
             Ncpu=Ncpu,
@@ -1426,8 +1428,8 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # example_05_rad_les_cloud_3d()
-    example_06_rad_cld_gen_hem()
+    example_05_rad_les_cloud_3d()
+    # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass

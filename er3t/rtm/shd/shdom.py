@@ -63,6 +63,9 @@ class shdom_ng:
                  atm_1ds             = [],                      \
                  atm_3ds             = [],                      \
 
+                 sfc_2d              = None,                    \
+                 surface_albedo      = 0.03,                    \
+
                  Ng                  = 1,                       \
                  Niter               = 100,                     \
 
@@ -70,17 +73,14 @@ class shdom_ng:
                  Ncpu                = 'auto',                  \
                  mp_mode             = 'py',                    \
 
-                 surface_albedo      = 0.03,                    \
-                 sfc_2d              = None,                    \
-
                  solar_zenith_angle  = 30.0,                    \
                  solar_azimuth_angle = 0.0,                     \
 
                  sensor_zenith_angles  = np.array([0.0]),       \
                  sensor_azimuth_angles = np.array([0.0]),       \
                  sensor_altitude       = 705000.0,              \
-                 sensor_res_dx         = 100.0,                 \
-                 sensor_res_dy         = 100.0,                 \
+                 sensor_dx             = 100.0,                 \
+                 sensor_dy             = 100.0,                 \
 
                  target              = 'flux',                  \
                  solver              = '3d',                    \
@@ -160,8 +160,8 @@ class shdom_ng:
             self.Ny = 1
             self.Nz = atm_1ds[0].nml['NZ']['data']
 
-        self.dx = sensor_res_dx
-        self.dy = sensor_res_dy
+        self.dx = sensor_dx
+        self.dy = sensor_dy
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Determine how many CPUs to utilize
@@ -211,20 +211,19 @@ class shdom_ng:
             # SHDOM namelist param
             self.nml_param(Niter)
 
-
             # SHDOM namelist out
             self.nml_out(
                     sensor_zenith_angles,
                     sensor_azimuth_angles,
                     sensor_altitude,
-                    sensor_res_dx,
-                    sensor_res_dy
+                    sensor_dx,
+                    sensor_dy
                     )
 
             # Create SHDOM input files (ASCII)
             self.gen_shd_inp(comment=comment)
 
-            # Run SHDOM to get output files (Binary)
+            # Run SHDOM to get output files (ASCII[info] + Binary[data])
             self.gen_shd_out()
 
 
@@ -241,6 +240,7 @@ class shdom_ng:
             self.nml[ig]['PROPFILE'] = self.fname_prp
             self.nml[ig]['SFCFILE']  = self.fname_sfc
             self.nml[ig]['CKDFILE']  = self.fname_ckd
+
             if self.overwrite and self.force:
                 self.nml[ig]['INSAVEFILE']  = 'NONE'
                 self.nml[ig]['OUTSAVEFILE'] = self.fnames_sav[ig]
@@ -284,11 +284,11 @@ class shdom_ng:
             self.nml[ig]['SOLARFLUX'] = er3t.util.cal_sol_fac(self.date)
             self.nml[ig]['SOLARMU'] = np.cos(np.deg2rad(sza0))
             self.nml[ig]['SOLARAZ'] = er3t.rtm.shd.cal_shd_saa(saa0)
-            self.nml[ig]['SKYRAD'] = 0.0
+            self.nml[ig]['SKYRAD']  = 0.0
             self.nml[ig]['GNDALBEDO'] = self.sfc_alb
-            self.nml[ig]['GNDTEMP'] = self.sfc_temp
-            self.nml[ig]['WAVELEN'] = self.wvl/1000.0
-            self.nml[ig]['WAVENO'] = self.wvln
+            self.nml[ig]['GNDTEMP'] = self.sfc_temp   # K
+            self.nml[ig]['WAVELEN'] = self.wvl/1000.0 # micron
+            self.nml[ig]['WAVENO']  = self.wvln       # cm^-1
 
 
     def nml_out(
@@ -345,6 +345,11 @@ class shdom_ng:
                 self.nml[ig]['OUTTYPES(1)'] = 'H'
                 self.nml[ig]['OUTPARMS(1,1)'] = 2
 
+            else:
+
+                msg = 'Error [shdom_ng]: Does NOT support <target=%s>.' % (self.target)
+                raise OSError(msg)
+
             self.nml[ig]['OUTFILES(1)'] = self.fnames_out[ig]
             self.nml[ig]['OutFileNC'] = 'NONE'
 
@@ -360,7 +365,8 @@ class shdom_ng:
             self.nml[ig]['SOLACC'] = 1.0e-5
             self.nml[ig]['MAXITER'] = Niter
 
-            if (self.dx <= 0.1) or (self.dy <= 0.1):
+            if (self.dx/1000.0 <= 0.100001) or (self.dy/1000.0 <= 0.100001):
+                # encounter error when grid resolution is fine, this is a temporary solution
                 self.nml[ig]['SPLITACC'] = 0.0
             else:
                 self.nml[ig]['SPLITACC'] = 0.01
@@ -426,16 +432,29 @@ class shdom_ng:
         print('      Solar Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.solar_azimuth_angle)
 
         if self.target == 'radiance':
-            for i, vza0 in enumerate(self.sensor_zenith_angle):
+            for i, vza0 in enumerate(self.sensor_zenith_angle[:min([2, self.sensor_zenith_angle.size])]):
                 vaa0 = self.sensor_azimuth_angle[i]
 
                 if vza0 < 90.0:
                     print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % (i, vza0))
                 else:
                     print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % (i, vza0))
-
                 print('[%2.2d] Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % (i, vaa0))
+
+            if self.sensor_zenith_angle.size >= 3:
+                if self.sensor_zenith_angle.size > 3:
+                    print('                         ...')
+                i = self.sensor_zenith_angle.size
+                vza0 = self.sensor_zenith_angle[-1]
+                vaa0 = self.sensor_azimuth_angle[-1]
+                if vza0 < 90.0:
+                    print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % (i, vza0))
+                else:
+                    print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % (i, vza0))
+                print('[%2.2d] Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % (i, vaa0))
+
             print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
+
 
         print('           Surface Albedo : 2D domain')
 
