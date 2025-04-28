@@ -247,6 +247,9 @@ class shd_atm_3d:
         logic_z_extra = np.logical_not(np.array([np.any(np.abs(self.atm.lay['altitude']['data'][i]-self.cld.lay['altitude']['data'])<1.0e-6) for i in range(self.atm.lay['altitude']['data'].size)]))
         self.Nz_extra = logic_z_extra.sum()
         self.z_extra = '%s' % '\n'.join(['%.4e %.4e' % tuple(item) for item in zip(self.atm.lay['altitude']['data'][logic_z_extra], self.atm.lay['temperature']['data'][logic_z_extra])])
+        if (self.atm.lay['altitude']['data'][0]>=0.001) and (self.cld.lay['altitude']['data'][0]>=0.001):
+            self.z_extra = '%s\n%.4e %.4e' % (self.z_extra, 0.0, self.atm.lev['temperature']['data'][0])
+            self.Nz_extra += 1
 
         self.nml['NZ'] = {'data':self.Nz_extra+self.cld.lay['altitude']['data'].size, 'name':'Nz', 'units':'N/A'}
 

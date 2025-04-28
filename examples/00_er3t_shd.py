@@ -67,7 +67,7 @@ def example_05_rad_les_cloud_3d(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 4.0, 0.2), np.arange(4.0, 20.0, 2.0))
+    levels = np.append(np.arange(0.0, 4.0, 0.2), np.arange(4.0, 20.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
