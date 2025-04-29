@@ -182,7 +182,7 @@ def example_05_rad_les_cloud_3d(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Ng=abs0.Ng,
-            Niter=50,
+            Niter=200,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
@@ -481,7 +481,7 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_05_rad_les_cloud_3d()
+    example_05_rad_les_cloud_3d(solver='IPA')
     # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
