@@ -132,6 +132,8 @@ def gen_ext_file(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     cer = cld0.lay['cer']['data']
     ext = cld0.lay['extinction']['data'] * 1000.0
+
+    zgrid = cld0.lay['altitude']['data'] + cld0.lay['thickness']['data']/2.0
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # generate extinction file
@@ -144,7 +146,7 @@ def gen_ext_file(
         f.write('2 parameter extinction file for SHDOM\n')
         f.write('%d %d %d\n' % ext.shape)
         f.write('%.4f %.4f\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
-        f.write('%s\n' % ' '.join([str('%.4f' % alt0) for alt0 in cld0.lay['altitude']['data']]))
+        f.write('%s\n' % ' '.join([str('%.4f' % alt0) for alt0 in zgrid]))
         f.write('%s\n' % ' '.join([str('%.4f' % np.mean(temp[:, :, iz])) for iz in range(Nz)]))
 
         f.write('! The following provides information for interpreting binary data:\n')
