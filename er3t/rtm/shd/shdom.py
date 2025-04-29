@@ -266,7 +266,11 @@ class shdom_ng:
             elif (self.solver == 'IPA'):
                 self.nml[ig]['IPFLAG'] = 3
 
-            self.nml[ig]['DELTAM'] = '.FALSE.'
+            if self.wvl < 5025.0:
+                self.nml[ig]['DELTAM'] = '.TRUE.'
+            else:
+                self.nml[ig]['DELTAM'] = '.FALSE.'
+
             self.nml[ig]['GRIDTYPE'] = 'P'
 
 
