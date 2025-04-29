@@ -40,7 +40,7 @@ params = {
         'solar_azimuth_angle': 0.0,
         'sensor_zenith_angle': 0.0,
        'sensor_azimuth_angle': 0.0,
-            'sensor_altitude': 705000.0,
+            'sensor_altitude': 705.0,
                      'target': '3d radiance',
                      'solver': 'mcarats',
         'atmospheric_profile': '%s/afglus.dat' % fdir_data_atmmod,

@@ -77,9 +77,9 @@ class shdom_ng:
 
                  sensor_zenith_angles  = np.array([0.0]),       \
                  sensor_azimuth_angles = np.array([0.0]),       \
-                 sensor_altitude       = 705000.0,              \
-                 sensor_dx             = 100.0,                 \
-                 sensor_dy             = 100.0,                 \
+                 sensor_altitude       = 705.0,                 \
+                 sensor_dx             = 0.1,                   \
+                 sensor_dy             = 0.1,                   \
 
                  target              = 'flux',                  \
                  solver              = '3d',                    \
@@ -338,7 +338,7 @@ class shdom_ng:
 
                 self.nml[ig]['OUTTYPES(1)'] = 'R'
                 self.nml[ig]['OUTPARMS(1,1)'] = '%.4f, %.4f, %.4f, 0.0, 0.0, %d,\n%s'\
-                        % (alt0/1000.0, dx/1000.0, dy/1000.0, vza_new.size, '\n'.join([' %.16f, %.4f,' % tuple(item) for item in zip(vza_new, vaa_new)]))
+                        % (alt0, dx, dy, vza_new.size, '\n'.join([' %.16f, %.4f,' % tuple(item) for item in zip(vza_new, vaa_new)]))
 
                 self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
 
@@ -377,7 +377,7 @@ class shdom_ng:
             self.nml[ig]['SOLACC'] = 1.0e-5
             self.nml[ig]['MAXITER'] = Niter
 
-            if (self.dx/1000.0 <= 0.100001) or (self.dy/1000.0 <= 0.100001):
+            if (self.dx <= 0.100001) or (self.dy <= 0.100001):
                 # encounter error when grid resolution is fine, this is a temporary solution
                 # bug details [from shdom]:
                 # Note: The following floating-point exceptions are signalling: IEEE_DIVIDE_BY_ZERO IEEE_UNDERFLOW_FLAG
@@ -468,7 +468,7 @@ class shdom_ng:
                     print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % (i, vza0))
                 print('[%2.2d] Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % (i, vaa0))
 
-            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
+            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude))
 
 
         if self.sfc_2d:
@@ -480,7 +480,7 @@ class shdom_ng:
 
         if (self.Nx > 1) | (self.Ny > 1):
             print('     Domain Size (Nx, Ny) : (%d, %d)' % (self.Nx, self.Ny))
-            print('      Pixel Res. (dx, dy) : (%.2f km, %.2f km)' % (self.dx/1000.0, self.dy/1000.0))
+            print('      Pixel Res. (dx, dy) : (%.2f km, %.2f km)' % (self.dx, self.dy))
 
         print('           Number of CPUs : %d (used) of %d (total)' % (self.Ncpu, self.Ncpu_total))
         print('╰────────────────────────────────────────────────────────╯')

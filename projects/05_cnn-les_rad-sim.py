@@ -61,7 +61,7 @@ params = {
          'solar_azimuth_angle' : 296.83,
          'sensor_zenith_angle' : 0.0,
         'sensor_azimuth_angle' : 0.0,
-             'sensor_altitude' : 705000.0,
+             'sensor_altitude' : 705.0,
                       'photon' : 1e8,
             'cloud_top_height' : 2.0,
  'cloud_geometrical_thickness' : 1.0,

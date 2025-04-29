@@ -971,7 +971,7 @@ def example_05_rad_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 5], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[4, 4, 5], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -1067,7 +1067,7 @@ def example_05_rad_les_cloud_3d(
             solar_azimuth_angle=0.0,
             sensor_zenith_angle=0.0,
             sensor_azimuth_angle=45.0,
-            sensor_altitude=705000.0,
+            sensor_altitude=705,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             photons=photons,
@@ -1261,7 +1261,7 @@ def example_06_rad_cld_gen_hem(
             solar_azimuth_angle=-63.16777636586792,
             sensor_zenith_angle=0.0,
             sensor_azimuth_angle=0.0,
-            sensor_altitude=705000.0,
+            sensor_altitude=705,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             photons=photons,

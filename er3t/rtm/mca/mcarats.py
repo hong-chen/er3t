@@ -79,7 +79,7 @@ class mcarats_ng:
 
                  sensor_zenith_angle = 0.0,                     \
                  sensor_azimuth_angle= 0.0,                     \
-                 sensor_altitude     = 705000.0,                \
+                 sensor_altitude     = 705.0,                   \
                  sensor_type         = 'satellite',             \
                  sensor_xpos         = 0.5,                     \
                  sensor_ypos         = 0.5,                     \
@@ -235,7 +235,7 @@ class mcarats_ng:
 
     def init_wld(self, tune=False, verbose=False, \
         sensor_zenith_angle=0.0, sensor_azimuth_angle=0.0, \
-        sensor_type='satellite', sensor_altitude=705000.0, sensor_xpos=0.5, sensor_ypos=0.5):
+        sensor_type='satellite', sensor_altitude=705.0, sensor_xpos=0.5, sensor_ypos=0.5):
 
         if self.target.lower() in ['f', 'flux', 'irradiance']:
             self.target = 'flux'
@@ -306,7 +306,7 @@ class mcarats_ng:
                 self.nml[ig]['Rad_difr1']   = 0.0025
                 self.nml[ig]['Rad_the']     = 180.0 - sensor_zenith_angle
                 self.nml[ig]['Rad_phi']     = cal_mca_azimuth(sensor_azimuth_angle)
-                self.nml[ig]['Rad_zloc']    = sensor_altitude
+                self.nml[ig]['Rad_zloc']    = sensor_altitude*1000.0
 
             else:
                 msg = 'Error [mcarats_ng]: Cannot understand <target=%s>.' % self.target
@@ -503,7 +503,7 @@ class mcarats_ng:
             else:
                 print('      Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % self.sensor_zenith_angle)
             print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
-            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
+            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude))
 
         if not self.sfc_2d:
             print('           Surface Albedo : %.2f' % self.surface)
