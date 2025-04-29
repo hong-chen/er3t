@@ -266,7 +266,7 @@ class shdom_ng:
             elif (self.solver == 'IPA'):
                 self.nml[ig]['IPFLAG'] = 3
 
-            self.nml[ig]['DELTAM'] = '.TRUE.'
+            self.nml[ig]['DELTAM'] = '.FALSE.'
             self.nml[ig]['GRIDTYPE'] = 'P'
 
 
