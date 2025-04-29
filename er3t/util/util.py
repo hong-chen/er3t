@@ -1003,27 +1003,32 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
 
 
 def g0_calc(lat):
+
     """
     Calculate the surface gravity acceleration.
 
     according to Eq. 11 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
     """
+
     lat_rad = lat * np.pi / 180
+
     return 9.806160 * (1 - 0.0026373 * np.cos(2*lat_rad) + 0.0000059 * np.cos(2*lat_rad)**2) # in m/s^2
 
 
 
 def g_alt_calc(g0, lat, z):
+
     """
     Calculate the gravity acceleration at z.
 
-    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
-    
+    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
+
     Input:
         g0: gravity acceleration at the surface (m/s^2)
         lat: latitude (degrees)
         z: height (m)
     """
+
     lat_rad = lat * np.pi / 180
     g = g0*100 - (3.085462e-4 + 2.27e-7 * np.cos(2 * lat_rad)) * z \
            + (7.254e-11 + 1.0e-13 * np.cos(2 * lat_rad)) * z**2 \
@@ -1049,13 +1054,14 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
     Note: If you input an array of wavelengths, the result will also be an
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
+
     # avogadro's number
     A_ = 6.02214179e23
     try:
         lat = atm0.lat
     except AttributeError:
         lat = 0.0 # default latitude is 0 degree
-        
+
     g0 = g0_calc(lat) # m/s^2
     g0 = g0_calc(0) # m/s^2
     z = atm0.lay['altitude']['data']
@@ -1067,10 +1073,10 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
     p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
     dp_lev = (p_lev[:-1]-p_lev[1:]) # convert to dyne/cm^2
     crs = mol_ext_wvl(wv0)
-    
+
     # original calculation
     # tauray = 0.00210966*(crs)*(p_lev[:-1]-p_lev[1:])/1013.25
-        
+
     if method == 'sfc':
         const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
         tauray = const_sfc*(crs)*(p_lev[:-1]-p_lev[1:])/p_lev[0]
@@ -1085,12 +1091,14 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
     return tauray
 
 
+
 def mol_ext_wvl(wv0):
+
     """
     Calculate the rayleigh scattering cross-section for given wavelength.
 
-    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
-    
+    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
+
     Input:
         wv0: wavelength (in microns)
     """
@@ -1098,11 +1106,11 @@ def mol_ext_wvl(wv0):
     num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
     den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
     crs = num/den
-    
+
     return crs   # in 10^-28 cm^2/molecule
 
-  
-  
+
+
 def cal_mol_ext(wv0, pz1, pz2):
 
     """
@@ -1120,7 +1128,7 @@ def cal_mol_ext(wv0, pz1, pz2):
     """
 
     tauray = 0.00210966 * mol_ext_wvl(wv0) * (pz1-pz2) / 1013.25
-    
+
     return tauray
 
 
