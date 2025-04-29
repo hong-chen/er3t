@@ -23,24 +23,23 @@ class mcarats_ng:
     """
     Input:
 
+        date=   : keyword argument, datetime.datetime object, the date to calculate sun-earth distance
         atm_1ds=: Python list, contains object of atm_1d
         atm_3ds=: Python list, contains object of atm_3d
+        surface=: keyword argument, float, surface, default=0.03 (Lambertian surface albedo if it's a value)
+
+        solver=: keyword argument, integer, 0:3d mode, 1:partial-3d mode, 2:ipa mode, default=0
+        target=: keyword argument, string type, can be one of 'flux', 'radiance', and 'heating rate'
 
         Ng=    : integer, number of gs, e.g., for abs_16g, Ng=16
-        target=: string type, can be one of 'flux', 'radiance', and 'heating rate'
-        fdir=  : string type, this will be a directory to store input/output files
 
-        date=   : keyword argument, datetime.datetime object, the date to calculate sun-earth distance
-        target= : keyword argument, string, can be 'flux', 'radiance', default='flux'
-        surface=: keyword argument, float, surface albedo, default=0.03
         solar_zenith_angle= : keyword argument, float, solar zenith angle, default=30.0
         solar_azimuth_angle=: keyword argument, float, solar azimuth angle, default=0.0
 
-        Nrun=     : keyword argument, integer, number of runs to calculate mean/std statistics, default=1
-
-        solver=   : keyword argument, integer, 0:3d mode, 1:partial-3d mode, 2:ipa mode, default=0
         photons=  : keyword argument, integer, number of photons, default=1e6
+        Nrun=     : keyword argument, integer, number of runs to calculate mean/std statistics, default=1
         Ncpu=     : keyword argument, integer, number of CPUs to use, default=1
+
         tune=     : keyword argument, boolen, whether to tune the MCARaTS calculation, default=False
         overwrite=: keyword argument, boolen, whether to overwrite existing MCARaTS output files (rerun MCARaTS), default=True
         np_mode=: keyword argument, string, photon distribution, can be 'even', 'weight', default='even'
@@ -61,25 +60,20 @@ class mcarats_ng:
 
     def __init__(self,                                          \
 
+                 date                = datetime.datetime.now(), \
+
                  atm_1ds             = [],                      \
                  atm_3ds             = [],                      \
+                 surface             = 0.03,                    \
 
-                 sca                 = None,                    \
+                 target              = 'flux',                  \
+                 solver              = '3d',                    \
 
                  Ng                  = 16,                      \
                  weights             = None,                    \
 
-                 fdir                = 'tmp-data/sim',          \
-                 Nrun                = 3,                       \
-                 Ncpu                = 'auto',                  \
-                 mp_mode             = 'py',                    \
-                 overwrite           = True,                    \
+                 sca                 = None,                    \
 
-                 date                = datetime.datetime.now(), \
-                 comment             = False,                   \
-                 tune                = False,                   \
-                 target              = 'flux',                  \
-                 surface             = 0.03,                    \
                  solar_zenith_angle  = 30.0,                    \
                  solar_azimuth_angle = 0.0,                     \
 
@@ -90,7 +84,15 @@ class mcarats_ng:
                  sensor_xpos         = 0.5,                     \
                  sensor_ypos         = 0.5,                     \
 
-                 solver              = '3d',                    \
+                 fdir                = 'tmp-data/sim',          \
+                 Nrun                = 3,                       \
+                 Ncpu                = 'auto',                  \
+                 mp_mode             = 'py',                    \
+                 overwrite           = True,                    \
+
+                 comment             = False,                   \
+                 tune                = False,                   \
+
                  photons             = 1e7,                     \
                  base_ratio          = 0.05,                    \
 
@@ -506,7 +508,7 @@ class mcarats_ng:
         if not self.sfc_2d:
             print('           Surface Albedo : %.2f' % self.surface)
         else:
-            print('           Surface Albedo : 2D domain')
+            print('             Surface BRDF : 2D domain')
 
         if self.sca is None:
             print('           Phase Function : Henyey-Greenstein')
