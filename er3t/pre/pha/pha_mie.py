@@ -2,6 +2,7 @@ import os
 import sys
 import copy
 import pickle
+from io import StringIO
 import numpy as np
 import warnings
 from scipy import interpolate
@@ -11,7 +12,7 @@ import er3t.util
 
 
 
-__all__ = ['pha_mie_wc']
+__all__ = ['pha_mie_wc', 'pha_mie_wc_shd']
 
 
 
@@ -54,7 +55,7 @@ def read_mie(fname):
 
     # phase function
     pha  = f.variables['phase'][...].data
-    
+
     # Asymmetry factor
     if 'gg' in f.variables.keys():
         gg  = f.variables['gg'][...].data
@@ -167,7 +168,7 @@ class pha_mie_wc:
         else:
             msg = 'Error [pha_mie_wc]: Interpolation has not been implemented.'
             raise ValueError(msg)
-        
+
         if self.angles_fine:
             # use the fine angles in the pre-calculated table
             ang_iwvl = ang_all[iwvl, :, :]
@@ -180,8 +181,6 @@ class pha_mie_wc:
             asy  = np.zeros(Nreff, dtype=np.float64)
             mus  = np.cos(np.deg2rad(angles))
 
-
-        
         for ireff in range(Nreff):
 
             ang0_ = ang_all[iwvl, ireff, :]
@@ -193,11 +192,11 @@ class pha_mie_wc:
             f_pha0 = interpolate.interp1d(ang0, pha0, kind='linear')
 
             pha[:, ireff] = f_pha0(angles)
-            
+
             if asy_all is None:
                 asy[ireff]  = np.trapz(pha0*mu0, x=mu0)/2.0
                 asy_[ireff] = np.trapz(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
-            
+
         if asy_all is not None:
             # use the pre-calculated asymmetry parameter from the file
             asy = asy_all[iwvl, :]
@@ -224,6 +223,194 @@ class pha_mie_wc:
 
 
 
+def read_mie_shd(fname):
+
+    """
+    Read phase function file (ascii) from SHDOM
+
+    Input:
+        fname: file path of the file
+
+    Output:
+        wvl, ref, ssa, pmom = read_pmom_shd(fname)
+
+        wvl: wavelength in nm
+        ref: effective radius in mm
+        ssa: single scattering albedo
+        pmom: pmom coefficients
+    """
+
+    with open(fname, 'r') as f:
+        lines = f.readlines()
+
+    # wavelength
+    wvl  = float(lines[1].split()[0])
+    wvl = wvl * 1000.0       # from micron to nm
+
+    Ndata = int(lines[5].split()[0])
+    ref = np.zeros(Ndata, dtype=np.float32)
+    ssa = np.zeros(Ndata, dtype=np.float32)
+
+    pmom = np.zeros((Ndata, 1000), dtype=np.float32)
+    pmom[...] = np.nan
+
+    idata = 0
+    for iline, line in enumerate(lines[6:]):
+        if 'Reff  Ext  Alb  Nrank' in line:
+            line_data = line.split()
+            ref[idata] = float(line_data[0])
+            ssa[idata] = float(line_data[2])
+            Npmom = int(line_data[3]) + 1
+
+            idata_ = iline+1+6
+            line_pmom = ''
+            while (idata_ < len(lines)) and ('Reff  Ext  Alb  Nrank' not in lines[idata_]):
+                line_pmom += lines[idata_]
+                idata_ += 1
+
+            pmom[idata, :Npmom] = np.array([float(item) for item in line_pmom.split()], dtype=np.float32)
+
+            idata += 1
+
+    return wvl, ref, ssa, pmom
+
+class pha_mie_wc_shd:
+
+    """
+    Calculate Mie phase functions (water clouds) for a given wavelength and angles
+
+    Input:
+        wavelength: wavelength in nm, float value, default is 500.0
+        angles: numpy array, angles to extract mie phase functions at
+        *interpolate: boolen, whether to interpolate phase functions based on the wavelength, default is False
+        overwrite: boolen, whether to overwrite the pre-existing phase functions stored at er3t/data/pha/mie, default is True
+        verbose: boolen, whether to print all the messages, default is False
+
+    Output:
+        phase object, e.g.,
+        pha0 = pha_mie_wc_shd(wavelength=500.0)
+
+        pha0.data['id']: identification
+        pha0.data['wvl0']: given wavelength
+        pha0.data['wvl']: actual wavelength
+        pha0.data['ang']: angles
+        pha0.data['pha']: phase functions
+        pha0.data['ssa']: single scattering albedo
+        pha0.data['asy']: asymmetry parameter
+        pha0.data['ref']: effective radius
+    """
+
+    reference = '\nMie Scattering (Wiscombe, 1980):\n- Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, https://doi.org/10.1364/AO.19.001505, 1980.'
+
+    ID = 'Mie (Water Clouds)'
+
+    def __init__(self,
+                 wavelength=555.0,
+                 angles=np.concatenate((
+                    np.arange(  0.0,   2.0, 0.01),
+                    np.arange(  2.0,   5.0, 0.05),
+                    np.arange(  5.0,  10.0, 0.1),
+                    np.arange( 10.0,  15.0, 0.5),
+                    np.arange( 15.0, 176.0, 1.0),
+                    np.arange(176.0, 180.1, 0.25),
+                 )),
+                 fdir_pha_mie = '%s/pha/mie' % er3t.common.fdir_data_tmp,
+                 overwrite=True,
+                 verbose=False):
+
+        fdir_shd = '%s/shdom' % er3t.common.fdir_data_tmp
+        fname_coef = '%s/shdom-mie_W_F_%.4f-%.4f.txt' % (fdir_shd, wavelength, wavelength)
+        if not os.path.exists(fname_coef):
+            if not os.path.exists(fdir_shd):
+                os.makedirs(fdir_shd)
+            er3t.rtm.shd.gen_mie_file(wavelength, wavelength, fname=fname_coef)
+
+        self.fname_coef = fname_coef
+
+        er3t.util.add_reference(self.reference)
+
+        self.overwrite   = overwrite
+        self.verbose     = verbose
+
+        self.get_data(wavelength, angles, fdir=fdir_pha_mie)
+
+    def get_data(self,
+            wvl0,
+            angles,
+            fdir='%s/pha/mie' % er3t.common.fdir_data_tmp,
+            ):
+
+        if not os.path.exists(fdir):
+            os.makedirs(fdir)
+
+        fname = '%s/pha_mie_wc_shd_%09.4fnm.pk' % (fdir, wvl0)
+
+        if not self.overwrite:
+            if os.path.exists(fname):
+                with open(fname, 'rb') as f0:
+                    data0 = pickle.load(f0)
+                if np.abs(angles-data0['ang']['data']).sum() < 0.00000001:
+                    print('Message [pha_mie_wc_shd]: Re-using phase function from <%s> ...' % fname)
+                    self.data = copy.deepcopy(data0)
+                else:
+                    self.run(fname, wvl0, angles)
+            else:
+                self.run(fname, wvl0, angles)
+        else:
+            self.run(fname, wvl0, angles)
+
+    def run(self,
+            fname,
+            wvl0,
+            angles
+            ):
+
+        wvl, ref, ssa, pmom = read_mie_shd(self.fname_coef)
+
+        Na = angles.size
+        Nreff = ref.size
+
+        pha  = np.zeros((Na, Nreff), dtype=np.float32)
+        asy_ = np.zeros(Nreff, dtype=np.float32)
+        asy  = np.zeros(Nreff, dtype=np.float32)
+        mus  = np.cos(np.deg2rad(angles))
+
+        for ireff in range(Nreff):
+
+            ang0_ = angles.copy()
+            logic0 = (ang0_>=0.0) & (ang0_<=180.0)
+            ang0 = angles[logic0]
+            mu0  = np.cos(np.deg2rad(ang0))
+
+            logic_pmom = ~np.isnan(pmom[ireff, :])
+            pha0 = legendre2phase(pmom[ireff, logic_pmom], angle=ang0, lrt=False, normalize=True, deltascaling=False)
+            f_pha0 = interpolate.interp1d(ang0, pha0, kind='linear')
+
+            pha[:, ireff] = f_pha0(angles)
+
+            asy[ireff]  = np.trapz(pha0*mu0, x=mu0)/2.0
+            asy_[ireff] = np.trapz(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
+
+        data = {
+                'id'   : {'data':'Mie' , 'name':'Mie'                , 'unit':'N/A'},
+                'wvl0' : {'data':wvl0  , 'name':'Given wavelength'   , 'unit':'nm'},
+                'wvl'  : {'data':wvl   , 'name':'Actual wavelength'  , 'unit':'nm'},
+                'ang'  : {'data':angles, 'name':'Angle'              , 'unit':'degree'},
+                'pha'  : {'data':pha   , 'name':'Phase function'     , 'unit':'N/A'},
+                'ssa'  : {'data':ssa   , 'name':'Single scattering albedo', 'unit':'N/A'},
+                'asy'  : {'data':asy   , 'name':'Asymmetry parameter'     , 'unit':'N/A'},
+                'asy_' : {'data':asy_  , 'name':'Asymmetry parameter_'    , 'unit':'N/A'},
+                'ref'  : {'data':ref   , 'name':'Effective radius'        , 'unit':'mm'}
+                }
+
+        with open(fname, 'wb') as f:
+            pickle.dump(data, f)
+
+        print('Message [pha_mie_wc_shd]: Phase function for %.2fnm has been stored at <%s>.' % (wvl0, fname))
+
+        self.data = data
+
+
 
 
 def legendre2phase(
@@ -239,7 +426,8 @@ def legendre2phase(
     if deltascaling:
         poly_coef = (poly_coef-poly_coef[-1])/(1.0-poly_coef[-1])
 
-    poly_coef *= (2.0*np.arange(Npoly)+1.0)
+    if lrt:
+        poly_coef *= (2.0*np.arange(Npoly)+1.0)
 
     if normalize:
         factors = 1.0/poly_coef[0]
@@ -248,12 +436,12 @@ def legendre2phase(
     if angle is None:
         angle = np.arange(0.0, 180.0+step, step)
 
-    mu    = np.cos(np.deg2rad(angle))
+    mu = np.cos(np.deg2rad(angle))
 
     if lrt:
-        phase     = np.zeros_like(mu)
+        phase = np.zeros_like(mu)
         for i, mu0 in enumerate(mu):
-            phase[i]     = mom2phase(poly_coef, mu0)
+            phase[i] = mom2phase(poly_coef, mu0)
     else:
         phase = np.polynomial.legendre.legval(mu, poly_coef)
 

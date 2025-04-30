@@ -18,7 +18,7 @@ import datetime
 import time
 from scipy.io import readsav
 import matplotlib as mpl
-mpl.use('Agg')
+# mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator
 from matplotlib import rcParams
@@ -961,7 +961,6 @@ def example_05_rad_les_cloud_3d(
     #     abs0.coef['weight']['data']
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # define an cloud object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the netcdf file
@@ -990,7 +989,8 @@ def example_05_rad_les_cloud_3d(
 
     # define mca_sca object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
+    # pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
+    pha0 = er3t.pre.pha.pha_mie_wc_shd(wavelength=wavelength)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -1333,6 +1333,7 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
+    example_05_rad_les_cloud_3d(solver='3D')
     example_05_rad_les_cloud_3d(solver='IPA')
     # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
