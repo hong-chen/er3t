@@ -134,7 +134,18 @@ class shdom_ng:
             msg = 'Error [shdom_ng]: Cannot understand <solver=%s>.' % self.solver
             raise OSError(msg)
 
-        self.target  = target
+        target  = target.lower()
+        if target in ['f', 'flux', 'irradiance']:
+            self.target = 'flux'
+        elif target in ['f0', 'flux0', 'irradiance0']:
+            self.target = 'flux0'
+        elif target in ['heating rate', 'hr']:
+            self.target = 'heating rate'
+        elif target in ['radiance', 'rad']:
+            self.target = 'radiance'
+        else:
+            msg = 'Error [shdom_ng]: Cannot understand <target=%s>.' % self.target
+            raise OSError(msg)
 
         # params
         #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -233,8 +244,6 @@ class shdom_ng:
 
     def nml_init(
             self, \
-            Nmu=8,
-            Nphi=16,
         ):
 
         for ig in range(self.Ng):
@@ -256,8 +265,12 @@ class shdom_ng:
             self.nml[ig]['NX'] = self.Nx
             self.nml[ig]['NY'] = self.Ny
             self.nml[ig]['NZ'] = self.Nz
-            self.nml[ig]['NMU']  = Nmu
-            self.nml[ig]['NPHI'] = Nphi
+            if self.target == 'radiance':
+                self.nml[ig]['NMU']  = 12
+                self.nml[ig]['NPHI'] = 24
+            else:
+                self.nml[ig]['NMU']  = 8
+                self.nml[ig]['NPHI'] = 16
 
             self.nml[ig]['BCFLAG'] = 0
 
@@ -312,17 +325,6 @@ class shdom_ng:
             dy,
         ):
 
-        if self.target.lower() in ['f', 'flux', 'irradiance']:
-            self.target = 'flux'
-        elif self.target.lower() in ['f0', 'flux0', 'irradiance0']:
-            self.target = 'flux0'
-        elif self.target.lower() in ['heating rate', 'hr']:
-            self.target = 'heating rate'
-        elif self.target.lower() in ['radiance', 'rad']:
-            self.target = 'radiance'
-        else:
-            msg = 'Error [shdom_ng]: Cannot understand <target=%s>.' % self.target
-            raise OSError(msg)
 
         for ig in range(self.Ng):
 
