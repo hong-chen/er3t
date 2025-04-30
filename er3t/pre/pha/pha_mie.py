@@ -626,14 +626,14 @@ class pha_mie_wc_pmom:
         if not os.path.exists(fdir):
             os.makedirs(fdir)
 
-        fname = '%s/pha_mie_wc_%09.4fnm.pk' % (fdir, wvl0)
+        fname = '%s/pha_mie_wc_pmom_%09.4fnm.pk' % (fdir, wvl0)
 
         if not self.overwrite:
             if os.path.exists(fname):
                 with open(fname, 'rb') as f0:
                     data0 = pickle.load(f0)
                 if np.abs(angles-data0['ang']['data']).sum() < 0.00000001:
-                    print('Message [pha_mie_wc]: Re-using phase function from <%s> ...' % fname)
+                    print('Message [pha_mie_wc_pmom]: Re-using phase function from <%s> ...' % fname)
                     self.data = copy.deepcopy(data0)
                 else:
                     self.run(fname, wvl0, angles)
@@ -672,7 +672,7 @@ class pha_mie_wc_pmom:
 
             pmom0 = pmom0/(2.0*np.arange(Npoly)+1.0)
 
-            pha0 = legendre2phase(pmom0, angle=angles)
+            pha0 = legendre2phase(pmom0, angle=angles, lrt='True', deltascaling=True, normalize=False)
             pha[:, ireff] = pha0
 
             # asymmetry parameter
@@ -693,7 +693,7 @@ class pha_mie_wc_pmom:
         with open(fname, 'wb') as f:
             pickle.dump(data, f)
 
-        print('Message [pha_mie_wc]: Phase function for %.2fnm has been stored at <%s>.' % (wvl0, fname))
+        print('Message [pha_mie_wc_pmom]: Phase function for %.2fnm has been stored at <%s>.' % (wvl0, fname))
 
         self.data = data
 
