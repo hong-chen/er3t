@@ -481,6 +481,7 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
+    example_05_rad_les_cloud_3d(solver='3D')
     example_05_rad_les_cloud_3d(solver='IPA')
     # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#

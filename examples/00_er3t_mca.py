@@ -1067,7 +1067,7 @@ def example_05_rad_les_cloud_3d(
             solar_azimuth_angle=0.0,
             sensor_zenith_angle=0.0,
             sensor_azimuth_angle=45.0,
-            sensor_altitude=705,
+            sensor_altitude=705.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             photons=photons,
