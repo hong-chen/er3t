@@ -223,7 +223,7 @@ class pha_mie_wc:
 
 
 
-def read_mie_shd(fname):
+def read_mie_shd(fname, Npmom_max=1000):
 
     """
     Read phase function file (ascii) from SHDOM
@@ -260,7 +260,8 @@ def read_mie_shd(fname):
             line_data = line.split()
             ref[idata] = float(line_data[0])
             ssa[idata] = float(line_data[2])
-            Npmom = int(line_data[3]) + 1
+
+            Npmom = min([Npmom_max, int(line_data[3])+1])
 
             idata_ = iline+1+6
             line_pmom = ''
@@ -268,7 +269,7 @@ def read_mie_shd(fname):
                 line_pmom += lines[idata_]
                 idata_ += 1
 
-            pmom[idata, :Npmom] = np.array([float(item) for item in line_pmom.split()], dtype=np.float32)
+            pmom[idata, :Npmom] = np.array([float(item) for item in line_pmom.split()], dtype=np.float32)[:Npmom]
 
             idata += 1
 
