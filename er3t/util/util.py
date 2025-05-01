@@ -1063,11 +1063,10 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
         lat = 0.0 # default latitude is 0 degree
 
     g0 = g0_calc(lat) # m/s^2
-    g0 = g0_calc(0) # m/s^2
     z = atm0.lay['altitude']['data']
-    g = g_alt_calc(g0, lat, z*1000) * 100 # convert to cm/s^2
+    g = g_alt_calc(g0, lat, z*1000.0) * 100.0 # convert to cm/s^2
 
-    g0 = g0 * 100 # convert to cm/s^2
+    g0 = g0 * 100.0 # convert to cm/s^2
     ma = 28.9595 + (15.0556 * atm0.lay['co2']['data']/atm0.lay['air']['data'])
 
     p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
@@ -1078,13 +1077,13 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
     # tauray = 0.00210966*(crs)*(p_lev[:-1]-p_lev[1:])/1013.25
 
     if method == 'sfc':
-        const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
+        const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1.0e-28
         tauray = const_sfc*(crs)*(p_lev[:-1]-p_lev[1:])/p_lev[0]
     elif method == 'lay':
-        const_lay = dp_lev * A_ / (g * ma) * 1e-28
+        const_lay = dp_lev * A_ / (g * ma) * 1.0e-28
         tauray = const_lay*(crs)
     elif method == 'atm':
-        tauray = (crs) * 1e-28 * atm0.lay['air']['data'] * atm0.lay['thickness']['data'] * 1000 * 100
+        tauray = (crs) * 1.0e-28 * atm0.lay['air']['data'] * atm0.lay['thickness']['data'] * 1000.0 * 100.0
     else:
         raise ValueError("Error [cal_mol_ext_atm]: method not supported.")
 

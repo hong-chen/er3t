@@ -165,6 +165,7 @@ def example_05_rad_les_cloud_3d(
 
     atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp_les.txt' % fdir, overwrite=False)
     atm_3ds = [atm3d0]
+    sys.exit()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
