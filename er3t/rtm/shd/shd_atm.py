@@ -117,7 +117,7 @@ class shd_atm_1d:
 
             Ng = abs0.coef['weight']['data'].size
 
-            g = ' '.join(['%.6f' % value for value in abs0.coef['weight']['data']])
+            g = ' '.join(['%.12f' % value for value in abs0.coef['weight']['data']])
 
             for iband in range(Nband):
                 f.write('%d %.2f %.2f %.12f %d %s\n' % (iband+1, wvln_min, wvln_max, sol, Ng, g))

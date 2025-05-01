@@ -75,6 +75,8 @@ class abs_16g:
         self.verbose   = verbose
         self.wvl       = wavelength
         self.nwl       = 1
+        self.wvl_min_  = wavelength
+        self.wvl_max_  = wavelength
 
         er3t.util.add_reference(self.reference)
 
@@ -112,6 +114,8 @@ class abs_16g:
                 self.Ng    = obj.Ng
                 self.coef  = obj.coef
                 self.wvl_info = obj.wvl_info
+                self.wvl_min_ = obj.wvl_min_
+                self.wvl_max_ = obj.wvl_max_
             else:
                 msg = '\nError [abs_16g]: <%s> is not the correct pickle file to load.' % fname
                 raise OSError(msg)
