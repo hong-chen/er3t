@@ -124,6 +124,7 @@ class shd_atm_1d:
             f.write('! Alt [km] | Pres [mb] | Temp [K]\n')
 
             alt = atm0.lay['altitude']['data'][::-1]
+            thickness = atm0.lay['thickness']['data'][::-1]
             # pres = atm0.lay['pressure']['data'][::-1]
             # temp = atm0.lay['temperature']['data'][::-1]
 
@@ -138,7 +139,8 @@ class shd_atm_1d:
 
             for iband in range(Nband):
                 for j in range(alt.size):
-                    kabs_s = ' '.join(['%15.6e' % kabs0 for kabs0 in kabs[j, :]])
+                    kabs_ = kabs[j, :]/thickness[j]
+                    kabs_s = ' '.join(['%15.6e' % kabs0 for kabs0 in kabs_])
                     f.write('%d %d %s\n' % (iband+1, j+1, kabs_s))
 
         self.nml['CKDFILE'] = {'data':fname}
