@@ -41,6 +41,7 @@ class shd_atm_1d:
                  quiet     = False \
             ):
 
+        self.fname = fname
         self.overwrite = overwrite
         self.verbose   = verbose
         self.quiet     = quiet
@@ -87,6 +88,9 @@ class shd_atm_1d:
 
         self.nml['GNDTEMP'] = {'data':self.atm.lay['temperature']['data'][0], 'units':'K', 'name':'Surface Temperature'}
 
+        # calculate rayleight extinction
+        self.atm_sca = er3t.util.cal_mol_ext_atm(self.abs.wvl/1000.0, self.atm) / (self.atm.lay['thickness']['data'])
+
 
     def gen_shd_ckd_file(
             self,
@@ -130,8 +134,9 @@ class shd_atm_1d:
             indices_sort = np.argsort(abs0.coef['weight']['data'])
             kabs = abs0.coef['abso_coef']['data'][::-1, indices_sort]
 
+            atm_sca = self.atm_sca[::-1]
             for j in range(zgrid.size):
-                f.write('%.6f\n' % (zgrid[j]))
+                f.write('%.6f %15.6e\n' % (zgrid[j], atm_sca[j]))
 
             f.write('! iBand | iLay | AbsCoef [km^-1]\n')
 
@@ -180,14 +185,14 @@ class shd_atm_3d:
                  abs_obj   = None, \
                  cld_obj   = None, \
                  fname     = None, \
-                 ext_mode  = True, \
                  overwrite = True, \
                  force     = False,\
                  verbose   = False,\
-                 quiet     = False \
+                 quiet     = False,\
+                 fname_atm_1d = None, \
                  ):
 
-        self.ext_mode  = ext_mode
+        self.fname = fname
         self.overwrite = overwrite
         self.verbose   = verbose
         self.quiet     = quiet
@@ -223,10 +228,10 @@ class shd_atm_3d:
 
         if not self.overwrite:
             if (not os.path.exists(fname)) and (not force):
-                self.gen_shd_prp_file(fname, self.abs.wvl, self.atm, self.cld, ext_mode=self.ext_mode)
+                self.gen_shd_prp_file(fname, self.abs.wvl, self.atm, self.cld, fname_atm_1d=fname_atm_1d)
             self.nml['PROPFILE'] = {'data':fname}
         else:
-            self.gen_shd_prp_file(fname, self.abs.wvl, self.atm, self.cld, ext_mode=self.ext_mode)
+            self.gen_shd_prp_file(fname, self.abs.wvl, self.atm, self.cld, fname_atm_1d=fname_atm_1d)
 
 
     def pre_shd_3d_atm(self):
@@ -270,13 +275,13 @@ class shd_atm_3d:
             pol_tag='U',
             put_exe='put',
             prp_exe='propgen',
-            ext_mode=True,
+            fname_atm_1d=None,
             ):
 
         fname_mie = er3t.rtm.shd.gen_mie_file(wavelength, wavelength)
 
-        if ext_mode:
-            fname_inp = er3t.rtm.shd.gen_ext_file(fname.replace('prp', 'ext'), cld0)
+        if fname_atm_1d is not None:
+            fname_inp = er3t.rtm.shd.gen_ext_file(fname.replace('prp', 'ext'), cld0, fname_atm_1d=fname_atm_1d)
         else:
             fname_inp = er3t.rtm.shd.gen_lwc_file(fname.replace('prp', 'lwc'), cld0)
 

@@ -126,6 +126,7 @@ def gen_ext_file(
         fname,
         cld0,
         postfix='.sHdOm-ext',
+        fname_atm_1d=None,
         ):
 
     # retrieve optical properties
@@ -152,6 +153,8 @@ def gen_ext_file(
         f.write('! The following provides information for interpreting binary data:\n')
         f.write('! %s\n' % postfix)
         f.write('! %6d,%6d,%6d,%6d\n' % (Nx, Ny, Nz, 2))
+        if fname_atm_1d is not None:
+            f.write('! %s\n' % fname_atm_1d)
 
         # save gridded data into binary file
         #╭──────────────────────────────────────────────────────────────╮#
