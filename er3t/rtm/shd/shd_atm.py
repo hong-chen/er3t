@@ -120,7 +120,7 @@ class shd_atm_1d:
             g = ' '.join(['%.6f' % value for value in abs0.coef['weight']['data']])
 
             for iband in range(Nband):
-                f.write('%d %.2f %.2f %.6f %d %s\n' % (iband+1, wvln_min, wvln_max, sol, Ng, g))
+                f.write('%d %.2f %.2f %.12f %d %s\n' % (iband+1, wvln_min, wvln_max, sol, Ng, g))
 
             # calculating gas scatter (rayleigh) and gas absorption
             #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -149,14 +149,14 @@ class shd_atm_1d:
             f.write('! Alt [km] | ScaCoef [km^-1]\n')
 
             for j in range(zgrid.size):
-                f.write('%.6f %15.6e\n' % (zgrid[j], atm_sca[j]))
+                f.write('%10.6f %15.6e\n' % (zgrid[j], atm_sca[j]))
 
             f.write('! iBand | iLay | AbsCoef [km^-1]\n')
 
             for iband in range(Nband):
                 for j in range(zgrid.size):
                     atm_abs_s = ' '.join(['%15.6e' % atm_abs0 for atm_abs0 in atm_abs[j, :]])
-                    f.write('%d %d %s\n' % (iband+1, j+1, atm_abs_s))
+                    f.write('%4d %4d %s\n' % (iband+1, j+1, atm_abs_s))
 
         self.nml['CKDFILE'] = {'data':fname}
 
