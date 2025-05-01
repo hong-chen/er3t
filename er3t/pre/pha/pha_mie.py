@@ -388,7 +388,10 @@ class pha_mie_wc_shd:
 
             pha[:, ireff] = f_pha0(angles)
 
-            asy[ireff]  = np.trapz(pha0*mu0, x=mu0)/2.0
+            # asymmetry parameter
+            # half of the integral of: from cos(ang)=-1 to cos(ang)=1 for function pha(ang)*cos(ang)
+            asy[ireff] = np.trapz(pha0[::-1]*mus[::-1], x=mus[::-1])/2.0
+
             asy_[ireff] = np.trapz(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
 
         data = {
