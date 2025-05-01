@@ -125,20 +125,18 @@ class shd_atm_1d:
 
             alt = atm0.lay['altitude']['data'][::-1]
             thickness = atm0.lay['thickness']['data'][::-1]
-            # pres = atm0.lay['pressure']['data'][::-1]
-            # temp = atm0.lay['temperature']['data'][::-1]
+            zgrid = alt + thickness/2.0
 
             indices_sort = np.argsort(abs0.coef['weight']['data'])
             kabs = abs0.coef['abso_coef']['data'][::-1, indices_sort]
 
-            for j in range(alt.size):
-                # f.write('%.6f %.2f %.2f\n' % (alt[j], pres[j], temp[j]))
-                f.write('%.6f\n' % (alt[j]))
+            for j in range(zgrid.size):
+                f.write('%.6f\n' % (zgrid[j]))
 
             f.write('! iBand | iLay | AbsCoef [km^-1]\n')
 
             for iband in range(Nband):
-                for j in range(alt.size):
+                for j in range(zgrid.size):
                     kabs_ = kabs[j, :]/thickness[j]
                     kabs_s = ' '.join(['%15.6e' % kabs0 for kabs0 in kabs_])
                     f.write('%d %d %s\n' % (iband+1, j+1, kabs_s))
