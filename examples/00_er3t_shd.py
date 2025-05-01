@@ -206,7 +206,6 @@ def example_05_rad_les_cloud_3d(
     #     shd0.fnames_out  (Ng), e.g., shd0.fnames_out[0], output file name for the first g of the first run
     #     shd0.fnames_sav  (Ng), e.g., shd0.fnames_sav[0], state-sav file name for the first g of the first run
     #╰────────────────────────────────────────────────────────────────────────────╯#
-    sys.exit()
 
 
     # define shdom output object
@@ -219,8 +218,8 @@ def example_05_rad_les_cloud_3d(
     # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/mca-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    out0 = er3t.rtm.mca.mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    # fname_h5 = '%s/mca-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    # out0 = er3t.rtm.mca.mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -229,7 +228,7 @@ def example_05_rad_les_cloud_3d(
 
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    if plot:
+    if False:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(8, 6))
@@ -481,7 +480,7 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # example_05_rad_les_cloud_3d(solver='3D')
+    example_05_rad_les_cloud_3d(solver='3D')
     example_05_rad_les_cloud_3d(solver='IPA')
     # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
