@@ -122,19 +122,32 @@ class shd_atm_1d:
             for iband in range(Nband):
                 f.write('%d %.2f %.2f %.6f %d %s\n' % (iband+1, wvln_min, wvln_max, sol, Ng, g))
 
-            f.write('%d\n' % atm0.lay['altitude']['data'].size)
-
-            f.write('!\n')
-            f.write('! Alt [km] | Pres [mb] | Temp [K]\n')
-
+            # calculating gas scatter (rayleigh) and gas absorption
+            #╭────────────────────────────────────────────────────────────────────────────╮#
             alt = atm0.lay['altitude']['data'][::-1]
             thickness = atm0.lay['thickness']['data'][::-1]
             zgrid = alt + thickness/2.0
 
-            indices_sort = np.argsort(abs0.coef['weight']['data'])
-            kabs = abs0.coef['abso_coef']['data'][::-1, indices_sort]
-
+            # gas scattering
             atm_sca = self.atm_sca[::-1]
+
+            # gas absorption
+            indices_sort = np.argsort(abs0.coef['weight']['data'])
+            atm_abs = abs0.coef['abso_coef']['data'][::-1, indices_sort]
+            for i in range(atm_abs.shape[0]):
+                atm_abs[i, :] = atm_abs[i, :]/thickness[i]
+
+            if zgrid[-1] >= 1.0e-6:
+                zgrid   = np.append(zgrid, 0.0)
+                atm_sca = np.append(atm_sca, 0.0)
+                atm_abs = np.concatenate((atm_abs, np.zeros((1, indices_sort.size), dtype=np.float32)))
+            #╰────────────────────────────────────────────────────────────────────────────╯#
+
+            f.write('%d\n' % zgrid.size)
+
+            f.write('!\n')
+            f.write('! Alt [km] | ScaCoef [km^-1]\n')
+
             for j in range(zgrid.size):
                 f.write('%.6f %15.6e\n' % (zgrid[j], atm_sca[j]))
 
@@ -142,9 +155,8 @@ class shd_atm_1d:
 
             for iband in range(Nband):
                 for j in range(zgrid.size):
-                    kabs_ = kabs[j, :]/thickness[j]
-                    kabs_s = ' '.join(['%15.6e' % kabs0 for kabs0 in kabs_])
-                    f.write('%d %d %s\n' % (iband+1, j+1, kabs_s))
+                    atm_abs_s = ' '.join(['%15.6e' % atm_abs0 for atm_abs0 in atm_abs[j, :]])
+                    f.write('%d %d %s\n' % (iband+1, j+1, atm_abs_s))
 
         self.nml['CKDFILE'] = {'data':fname}
 
