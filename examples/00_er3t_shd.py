@@ -67,6 +67,7 @@ def example_05_rad_les_cloud_3d(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
+    # levels = np.append(np.arange(0.0, 4.0, 1.0), np.arange(4.0, 20.1, 4.0))
     levels = np.append(np.arange(0.0, 4.0, 0.2), np.arange(4.0, 20.1, 2.0))
 
     # file name of the pickle file for atmosphere
@@ -102,8 +103,8 @@ def example_05_rad_les_cloud_3d(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    # abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='modis', band_name='modis_aqua_b01', atm_obj=atm0, overwrite=overwrite)
+    # abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='modis', band_name='modis_aqua_b01', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -123,6 +124,7 @@ def example_05_rad_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
+    # cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
     cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[4, 4, 5], overwrite=overwrite)
 
     # data can be accessed at
