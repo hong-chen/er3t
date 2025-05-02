@@ -216,12 +216,12 @@ def example_05_rad_les_cloud_3d(
     # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
     # dimension of number of runs
     # e.g.,
-    # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
-    # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
-    # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
+    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
+    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
+    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    # fname_h5 = '%s/mca-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    # out0 = er3t.rtm.mca.mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -273,7 +273,7 @@ def example_06_rad_cld_gen_hem(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 1.0, 2.0, ...., 20.0
-    levels    = np.linspace(0.0, 20.0, 21)
+    levels = np.append(np.arange(0.0, 6.0, 0.4), np.arange(6.0, 20.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -336,11 +336,11 @@ def example_06_rad_cld_gen_hem(
             fname=fname_cld,
             Nx=200,
             Ny=200,
-            dx=0.2,
-            dy=0.2,
+            dx=0.4,
+            dy=0.4,
             radii=[1.0, 2.0, 4.0],
             weights=[0.6, 0.3, 0.1],
-            altitude=np.arange(2.0, 6.01, 0.2),
+            altitude=np.arange(2.0, 6.01, 0.4),
             cloud_frac_tgt=0.2,
             w2h_ratio=2.0,
             min_dist=0.2,
@@ -409,15 +409,14 @@ def example_06_rad_cld_gen_hem(
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             surface=0.1,
-            Ng=abs0.Ng,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
             sensor_altitude=705.0,
-            sensor_res_dx=cld0.lay['dx']['data'],
-            sensor_res_dy=cld0.lay['dy']['data'],
+            sensor_dx=cld0.lay['dx']['data'],
+            sensor_dy=cld0.lay['dy']['data'],
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             solver=solver,
             Ncpu=Ncpu,
@@ -433,7 +432,6 @@ def example_06_rad_cld_gen_hem(
     #     shd0.fnames_out  (Ng), e.g., shd0.fnames_out[0], output file name for the first g of the first run
     #     shd0.fnames_sav  (Ng), e.g., shd0.fnames_sav[0], state-sav file name for the first g of the first run
     #╰────────────────────────────────────────────────────────────────────────────╯#
-    sys.exit()
 
 
     # define shdom output object
@@ -442,12 +440,12 @@ def example_06_rad_cld_gen_hem(
     # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
     # dimension of number of runs
     # e.g.,
-    # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
-    # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
-    # out0 = mca_out_ng(fname='mca-out-rad-3d_les.h5', mca_obj=mca0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
+    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
+    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
+    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/mca-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    out0 = er3t.rtm.mca.mca_out_ng(fname=fname_h5, mca_obj=mca0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -456,7 +454,7 @@ def example_06_rad_cld_gen_hem(
 
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    if plot:
+    if False:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(8, 6))
@@ -482,9 +480,9 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_05_rad_les_cloud_3d(solver='3D')
-    example_05_rad_les_cloud_3d(solver='IPA')
-    # example_06_rad_cld_gen_hem()
+    # example_05_rad_les_cloud_3d(solver='3D')
+    # example_05_rad_les_cloud_3d(solver='IPA')
+    example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass

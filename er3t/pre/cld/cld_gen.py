@@ -192,7 +192,9 @@ class cld_gen_hem:
         self.y = np.arange(self.Ny) * self.dy
 
         self.dz = dz[0]
-        altitude_new  = np.arange(self.altitude[0], min([self.altitude[-1], max(self.radii)/self.w2h_ratio+self.altitude[0]])+self.dz, self.dz)
+        zlay_start = self.altitude[0]+self.dz/2.0
+        zlay_end   = min([self.altitude[-1], max(self.radii)/self.w2h_ratio+self.altitude[0]])+self.dz/2.0*1.01
+        altitude_new  = np.arange(zlay_start, zlay_end, self.dz)
         self.altitude = altitude_new
         self.z  = self.altitude-self.altitude[0]
         self.Nz = self.z.size
