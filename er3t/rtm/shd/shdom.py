@@ -205,7 +205,7 @@ class shdom_ng:
         for ig in range(self.Ng):
             self.fnames_inp.append('%s/shdom-inp_g-%3.3d.txt' % (self.fdir, ig))
             self.fnames_out.append('%s/shdom-out_g-%3.3d.txt' % (self.fdir, ig))
-            self.fnames_sav.append('%s/shdom-sav_g-%3.3d.bin' % (self.fdir, ig))
+            self.fnames_sav.append('%s/shdom-sav_g-%3.3d.sHdOm-sav' % (self.fdir, ig))
 
         if not self.quiet and not self.overwrite:
             print('Message [shdom_ng]: Reading mode ...')
