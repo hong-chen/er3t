@@ -107,7 +107,7 @@ class shd_atm_1d:
 
             f.write('! correlated k-distribution file for SHDOM\n')
             f.write('%d ! number of bands\n' % 1)
-            f.write('! Band# | Wave#1 | Wave#2 | SolFlx | Ng | g1 | g2 | ...\n')
+            f.write('! Band# | Wave#1 [%.4f nm] | Wave#2 [%.4f nm] | SolFlx | Ng | g1 | g2 | ...\n' % (abs0.wvl_max_, abs0.wvl_min_))
 
             # wave number cm^-1
             wvln_min = 1.0/abs0.wvl_max_*1e7
@@ -124,23 +124,33 @@ class shd_atm_1d:
 
             # calculating gas scatter (rayleigh) and gas absorption
             #╭────────────────────────────────────────────────────────────────────────────╮#
+            # altitude
+            #╭──────────────────────────────────────────────────────────────╮#
             alt = atm0.lay['altitude']['data'][::-1]
             thickness = atm0.lay['thickness']['data'][::-1]
             zgrid = alt + thickness/2.0
+            #╰──────────────────────────────────────────────────────────────╯#
 
             # gas scattering
+            #╭──────────────────────────────────────────────────────────────╮#
             atm_sca = self.atm_sca[::-1]
+            #╰──────────────────────────────────────────────────────────────╯#
 
             # gas absorption
+            #╭──────────────────────────────────────────────────────────────╮#
             indices_sort = np.argsort(abs0.coef['weight']['data'])
             atm_abs = abs0.coef['abso_coef']['data'][::-1, indices_sort]
             for i in range(atm_abs.shape[0]):
                 atm_abs[i, :] = atm_abs[i, :]/thickness[i]
+            #╰──────────────────────────────────────────────────────────────╯#
 
+            # add surface (z=0.0 km)
+            #╭──────────────────────────────────────────────────────────────╮#
             if zgrid[-1] >= 1.0e-6:
                 zgrid   = np.append(zgrid, 0.0)
                 atm_sca = np.append(atm_sca, 0.0)
                 atm_abs = np.concatenate((atm_abs, np.zeros((1, indices_sort.size), dtype=np.float32)))
+            #╰──────────────────────────────────────────────────────────────╯#
             #╰────────────────────────────────────────────────────────────────────────────╯#
 
             f.write('%d\n' % zgrid.size)
