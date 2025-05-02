@@ -107,7 +107,7 @@ class shd_atm_1d:
 
             f.write('! correlated k-distribution file for SHDOM\n')
             f.write('%d ! number of bands\n' % 1)
-            f.write('! Band# | Wave#1 [%.4f nm] | Wave#2 [%.4f nm] | SolFlx | Ng | g1 | g2 | ...\n' % (abs0.wvl_max_, abs0.wvl_min_))
+            f.write('! Band# | Wave#1 [%.2f nm] | Wave#2 [%.2f nm] | SolFlx | Ng | g1 | g2 | ...\n' % (abs0.wvl_max_, abs0.wvl_min_))
 
             # wave number cm^-1
             wvln_min = 1.0/abs0.wvl_max_*1e7
