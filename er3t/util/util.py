@@ -1041,25 +1041,25 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
 
     """
     Input:
-        wv0: wavelength (in microns) --- can be an array
-        pz1: numpy array, Pressure of lower layer (hPa)
-        pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
-        atm0: er3t atmosphere object
-        method: string, 'sfc' or 'lay'
+        wv0    : wavelength (in microns) --- can be an array
+        atm0   : er3t atmosphere object
+        method=: string, 'sfc', 'atm', or 'lay'
     Output:
         tauray: extinction
-    Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
+
     in Python program:
-        result=bodhaine(0.5,1000,4)
+        result=cal_mol_ext_atm(0.5, atm0)
     Note: If you input an array of wavelengths, the result will also be an
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
 
+    reference = 'Rayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
+
     # avogadro's number
     A_ = 6.02214179e23
-    try:
+    if hasattr(atm0, 'lat'):
         lat = atm0.lat
-    except AttributeError:
+    else:
         lat = 0.0 # default latitude is 0 degree
 
     g0 = g0_calc(lat) # m/s^2
@@ -1069,7 +1069,7 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
     g0 = g0 * 100.0 # convert to cm/s^2
     ma = 28.9595 + (15.0556 * atm0.lay['co2']['data']/atm0.lay['air']['data'])
 
-    p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
+    p_lev = atm0.lev['pressure']['data'] * 1000.0 # convert to dyne/cm^2
     dp_lev = (p_lev[:-1]-p_lev[1:]) # convert to dyne/cm^2
     crs = mol_ext_wvl(wv0)
 
@@ -1085,7 +1085,10 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
     elif method == 'atm':
         tauray = (crs) * 1.0e-28 * atm0.lay['air']['data'] * atm0.lay['thickness']['data'] * 1000.0 * 100.0
     else:
-        raise ValueError("Error [cal_mol_ext_atm]: method not supported.")
+        msg = 'Error [cal_mol_ext_atm]: method not supported.'
+        raise ValueError(msg)
+
+    add_reference(reference)
 
     return tauray
 
@@ -1121,12 +1124,16 @@ def cal_mol_ext(wv0, pz1, pz2):
         tauray: extinction
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
     in Python program:
-        result=bodhaine(0.5,1000,4)
+        result = cal_mol_ext(0.5,1000,4)
     Note: If you input an array of wavelengths, the result will also be an
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
 
+    reference = 'Rayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
+
     tauray = 0.00210966 * mol_ext_wvl(wv0) * (pz1-pz2) / 1013.25
+
+    add_reference(reference)
 
     return tauray
 
