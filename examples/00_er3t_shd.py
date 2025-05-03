@@ -396,9 +396,9 @@ def example_06_rad_cld_gen_hem(
     # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     sfc_dict = {
-            'dx': 80.0,
-            'dy': 80.0,
-            'windspeed': np.array([1.0]).reshape((1, 1)),
+            'dx': cld0.dx*cld0.Nx,
+            'dy': cld0.dy*cld0.Ny,
+            'windspeed': np.array([8.0]).reshape((1, 1)),
             'pigment': np.array([0.01]).reshape((1, 1)),
             }
 
