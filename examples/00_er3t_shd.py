@@ -171,14 +171,14 @@ def example_01_rad_atm1d_clear_over_ocean(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # vaa = np.arange(0.0, 360.1, 2.0)
-    # vza = np.repeat(30.0, vaa.size)
+    vaa = np.arange(0.0, 360.1, 2.0)
+    vza = np.repeat(30.0, vaa.size)
 
-    vaa_1d = np.arange(0.0, 360.1, 1.0)
-    vza_1d = np.arange(1.0, 89.1, 1.0)
-    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    vaa = vaa.ravel()
-    vza = vza.ravel()
+    # vaa_1d = np.arange(0.0, 360.1, 1.0)
+    # vza_1d = np.arange(1.0, 89.1, 1.0)
+    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    # vaa = vaa.ravel()
+    # vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -383,14 +383,14 @@ def example_02_rad_atm1d_clear_over_land(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # vaa = np.arange(0.0, 360.1, 2.0)
-    # vza = np.repeat(30.0, vaa.size)
+    vaa = np.arange(0.0, 360.1, 2.0)
+    vza = np.repeat(30.0, vaa.size)
 
-    vaa_1d = np.arange(0.0, 360.1, 1.0)
-    vza_1d = np.arange(1.0, 89.1, 1.0)
-    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    vaa = vaa.ravel()
-    vza = vza.ravel()
+    # vaa_1d = np.arange(0.0, 360.1, 1.0)
+    # vza_1d = np.arange(1.0, 89.1, 1.0)
+    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    # vaa = vaa.ravel()
+    # vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -594,14 +594,14 @@ def example_03_rad_atm1d_cloud_over_ocean(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # vaa = np.arange(0.0, 360.1, 2.0)
-    # vza = np.repeat(30.0, vaa.size)
+    vaa = np.arange(0.0, 360.1, 2.0)
+    vza = np.repeat(30.0, vaa.size)
 
-    vaa_1d = np.arange(0.0, 360.1, 1.0)
-    vza_1d = np.arange(1.0, 89.1, 1.0)
-    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    vaa = vaa.ravel()
-    vza = vza.ravel()
+    # vaa_1d = np.arange(0.0, 360.1, 1.0)
+    # vza_1d = np.arange(1.0, 89.1, 1.0)
+    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    # vaa = vaa.ravel()
+    # vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
