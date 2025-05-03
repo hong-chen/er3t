@@ -104,7 +104,8 @@ def example_01_rad_1d_clear_over_ocean(
 
     # absorption object
     abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='coarse', atm_obj=atm0, overwrite=overwrite)
-    abs0.coef['solar']['data'][...] = 1.6142
+    print(abs0.coef['solar']['data'])
+    # abs0.coef['solar']['data'][...] = 1.609535
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -330,7 +331,8 @@ def example_02_rad_1d_cloud_over_ocean(
 
     # absorption object
     abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='coarse', atm_obj=atm0, overwrite=overwrite)
-    abs0.coef['solar']['data'][...] = 1.6142
+    print(abs0.coef['solar']['data'])
+    # abs0.coef['solar']['data'][...] = 1.609535
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
