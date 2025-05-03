@@ -67,6 +67,7 @@ class shdom_ng:
 
                  Ng                  = 1,                       \
                  Niter               = 100,                     \
+                 solution_acc        = 1e-5,                    \
 
                  fdir                = 'tmp-data/sim-shd',      \
                  Ncpu                = 'auto',                  \
@@ -186,7 +187,7 @@ class shdom_ng:
         self.Ncpu_total = Ncpu_total
         if Ncpu == 'auto':
             self.Ncpu = Ncpu_total - 1
-        elif Ncpu > 1:
+        elif Ncpu >= 1:
             if Ncpu > Ncpu_total:
                 self.Ncpu = Ncpu_total
             else:
@@ -194,6 +195,9 @@ class shdom_ng:
         else:
             msg = 'Error [shdom_ng]: Cannot understand <Ncpu=%s>.' % Ncpu
             raise OSError(msg)
+
+        if (self.Nx == 1) and (self.Ny == 1):
+            self.Ncpu = 1
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # in file names, 'r' indicates #run, 'g' indicates #g, index of 'r' and 'g' both start from 0
@@ -225,7 +229,7 @@ class shdom_ng:
                     )
 
             # SHDOM namelist param
-            self.nml_param(Niter)
+            self.nml_param(Niter, solution_acc)
 
             # SHDOM namelist out
             self.nml_out(
@@ -372,12 +376,13 @@ class shdom_ng:
     def nml_param(
             self, \
             Niter,
+            solution_acc,
         ):
 
         for ig in range(self.Ng):
 
             self.nml[ig]['ACCELFLAG'] = '.TRUE.'
-            self.nml[ig]['SOLACC'] = 1.0e-5
+            self.nml[ig]['SOLACC'] = solution_acc
             self.nml[ig]['MAXITER'] = Niter
 
             if (self.dx <= 0.100001) or (self.dy <= 0.100001):
