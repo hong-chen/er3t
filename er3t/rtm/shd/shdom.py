@@ -271,8 +271,15 @@ class shdom_ng:
             self.nml[ig]['NY'] = self.Ny
             self.nml[ig]['NZ'] = self.Nz
             if self.target == 'radiance':
-                self.nml[ig]['NMU']  = 12
-                self.nml[ig]['NPHI'] = 24
+                if (self.Nx == 1) and (self.Ny == 1):
+                    self.nml[ig]['NMU']  = 64
+                    self.nml[ig]['NPHI'] = 128
+                elif (self.Nx > 64) and (self.Ny > 64):
+                    self.nml[ig]['NMU']  = 12
+                    self.nml[ig]['NPHI'] = 24
+                else:
+                    self.nml[ig]['NMU']  = 18
+                    self.nml[ig]['NPHI'] = 36
             else:
                 self.nml[ig]['NMU']  = 8
                 self.nml[ig]['NPHI'] = 16
