@@ -194,7 +194,7 @@ def example_01_rad_atm1d_clear_over_ocean(
             Ncpu=1,
             mp_mode='mpi',
             overwrite=overwrite,
-            force=False,
+            force=True,
             )
 
     # data can be accessed at
@@ -400,7 +400,7 @@ def example_02_rad_atm1d_clear_over_land(
             Ncpu=1,
             mp_mode='mpi',
             overwrite=overwrite,
-            force=False,
+            force=True,
             )
 
     # data can be accessed at
@@ -605,7 +605,7 @@ def example_03_rad_atm1d_cloud_over_ocean(
             Ncpu=1,
             mp_mode='mpi',
             overwrite=overwrite,
-            force=False,
+            force=True,
             )
 
     # data can be accessed at
