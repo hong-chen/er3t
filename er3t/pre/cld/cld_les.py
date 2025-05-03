@@ -206,6 +206,8 @@ class cld_les:
         self.Nx = Nx
         self.Ny = Ny
         self.Nz = Nz
+        self.dx = abs(x[1]-x[0])
+        self.dy = abs(y[1]-y[0])
 
         # layer property
         #╭──────────────────────────────────────────────────────────────╮#

@@ -125,7 +125,7 @@ def example_05_rad_les_cloud_3d(
 
     # cloud object
     # cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[4, 4, 5], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 5], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -143,24 +143,31 @@ def example_05_rad_les_cloud_3d(
 
     # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
-    fiso = f['mod/sfc/fiso_43_0650'][...][:400, :480]
-    fvol = f['mod/sfc/fvol_43_0650'][...][:400, :480]
-    fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
+    # f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
+    # fiso = f['mod/sfc/fiso_43_0650'][...][:400, :480]
+    # fvol = f['mod/sfc/fvol_43_0650'][...][:400, :480]
+    # fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
 
-    lon, lat = np.meshgrid(np.linspace(0.0, 48.0, 400), np.linspace(0.0, 48.0, 480), indexing='ij')
-    x, y, fiso = er3t.util.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    x, y, fvol = er3t.util.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    x, y, fgeo = er3t.util.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    # lon, lat = np.meshgrid(np.linspace(0.0, 48.0, 400), np.linspace(0.0, 48.0, 480), indexing='ij')
+    # x, y, fiso = er3t.util.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    # x, y, fvol = er3t.util.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    # x, y, fgeo = er3t.util.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+
+    # sfc_dict = {
+    #         'dx': cld0.lay['dx']['data'],
+    #         'dy': cld0.lay['dy']['data'],
+    #         'fiso': fiso,
+    #         'fvol': fvol,
+    #         'fgeo': fgeo,
+    #         }
+    # f.close()
 
     sfc_dict = {
-            'dx': cld0.lay['dx']['data'],
-            'dy': cld0.lay['dy']['data'],
-            'fiso': fiso,
-            'fvol': fvol,
-            'fgeo': fgeo,
+            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
+            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
+            'windspeed': np.array([8.0]).reshape((1, 1)),
+            'pigment': np.array([0.01]).reshape((1, 1)),
             }
-    f.close()
 
     fname_sfc = '%s/sfc.pk' % fdir
     sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
@@ -396,8 +403,8 @@ def example_06_rad_cld_gen_hem(
     # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     sfc_dict = {
-            'dx': cld0.dx*cld0.Nx,
-            'dy': cld0.dy*cld0.Ny,
+            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
+            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
             'windspeed': np.array([8.0]).reshape((1, 1)),
             'pigment': np.array([0.01]).reshape((1, 1)),
             }
@@ -500,9 +507,9 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # example_05_rad_les_cloud_3d(solver='3D')
-    # example_05_rad_les_cloud_3d(solver='IPA')
-    example_06_rad_cld_gen_hem()
+    example_05_rad_les_cloud_3d(solver='3D')
+    example_05_rad_les_cloud_3d(solver='IPA')
+    # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass
