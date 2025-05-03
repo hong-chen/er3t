@@ -104,7 +104,7 @@ class shd_sfc_2d:
 
         elif ('brdf-ocean' in self.sfc.data['sfc']['name'].lower()):
 
-            self.nml['header'] = dict(data='T', name='Header for SHDOM Surface File', units='N/A')
+            self.nml['header'] = dict(data='O', name='Header for SHDOM Surface File', units='N/A')
             self.sfc_data = self.sfc.data['sfc']['data']
 
         else:

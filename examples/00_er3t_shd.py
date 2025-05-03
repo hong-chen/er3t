@@ -357,10 +357,6 @@ def example_06_rad_cld_gen_hem(
             overwrite=overwrite
             )
 
-    # print(atm0.lay['altitude']['data'])
-    # print(cld0.lay['altitude']['data'])
-    # sys.exit()
-
     # after run, the cld0 will contain
     #
     # .fname     : absolute file path to the pickle file
@@ -397,8 +393,23 @@ def example_06_rad_cld_gen_hem(
     #         ['cth_2d']        (x, y)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
+    # sfc object
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    sfc_dict = {
+            'dx': 80.0,
+            'dy': 80.0,
+            'windspeed': np.array([1.0]).reshape((1, 1)),
+            'pigment': np.array([0.01]).reshape((1, 1)),
+            }
+
+    fname_sfc = '%s/sfc.pk' % fdir
+    sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
     # generate property file for SHDOM
     #╭────────────────────────────────────────────────────────────────────────────╮#
+    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc_hem.txt' % fdir, overwrite=overwrite)
+
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_hem.txt' % fdir, overwrite=overwrite)
     atm_1ds = [atm1d0]
 
@@ -417,7 +428,7 @@ def example_06_rad_cld_gen_hem(
             date=datetime.datetime(2017, 8, 13),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            surface=0.1,
+            surface=sfc_2d,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
@@ -489,9 +500,9 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_05_rad_les_cloud_3d(solver='3D')
-    example_05_rad_les_cloud_3d(solver='IPA')
-    # example_06_rad_cld_gen_hem()
+    # example_05_rad_les_cloud_3d(solver='3D')
+    # example_05_rad_les_cloud_3d(solver='IPA')
+    example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass
