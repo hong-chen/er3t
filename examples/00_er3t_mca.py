@@ -998,12 +998,21 @@ def example_05_rad_les_cloud_3d(
     # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
+    fiso = f['mod/sfc/fiso_43_0650'][...][:400, :480]
+    fvol = f['mod/sfc/fvol_43_0650'][...][:400, :480]
+    fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
+
+    lon, lat = np.meshgrid(np.linspace(0.0, 48.0, 400), np.linspace(0.0, 48.0, 480), indexing='ij')
+    x, y, fiso = er3t.util.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fvol = er3t.util.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fgeo = er3t.util.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+
     sfc_dict = {
-            'dx': 0.12,
-            'dy': 0.1,
-            'fiso': f['mod/sfc/fiso_43_0650'][...][:400, :480],
-            'fvol': f['mod/sfc/fvol_43_0650'][...][:400, :480],
-            'fgeo': f['mod/sfc/fgeo_43_0650'][...][:400, :480],
+            'dx': cld0.lay['dx']['data'],
+            'dy': cld0.lay['dy']['data'],
+            'fiso': fiso,
+            'fvol': fvol,
+            'fgeo': fgeo,
             }
     f.close()
 
