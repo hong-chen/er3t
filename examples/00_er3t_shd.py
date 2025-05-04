@@ -42,7 +42,7 @@ rcParams['font.size'] = 14
 
 
 
-def example_01_rad_atm1d_clear_over_ocean(
+def example_01_rad_atm1d_clear_over_land(
         wavelength=550.0,
         solver='IPA',
         overwrite=True,
@@ -67,7 +67,7 @@ def example_01_rad_atm1d_clear_over_ocean(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 1.2, 0.1), np.arange(1.0, 20.1, 1.0))
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 20.1, 1.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -102,218 +102,7 @@ def example_01_rad_atm1d_clear_over_ocean(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='coarse', atm_obj=atm0, overwrite=overwrite)
-
-    # data can be accessed at
-    #     abs0.coef['wavelength']['data']
-    #     abs0.coef['abso_coef']['data']
-    #     abs0.coef['slit_func']['data']
-    #     abs0.coef['solar']['data']
-    #     abs0.coef['weight']['data']
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-
-    # define an cloud object
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    fname_cld = '%s/cld.pk' % fdir
-
-    cld0 = er3t.pre.cld.cld_gen_cop(
-            fname=fname_cld,
-            cot=np.array([0.0]).reshape((1, 1)),
-            cer=np.array([1.0]).reshape((1, 1)),
-            cth=np.array([1.0]).reshape((1, 1)),
-            cgt=np.array([0.5]).reshape((1, 1)),
-            dz=0.1,
-            extent_xy=[0.0, 1.0, 0.0, 1.0],
-            atm_obj=atm0,
-            overwrite=overwrite
-            )
-
-    # data can be accessed at
-    #     cld0.lay['x']['data']
-    #     cld0.lay['y']['data']
-    #     cld0.lay['nx']['data']
-    #     cld0.lay['ny']['data']
-    #     cld0.lay['dx']['data']
-    #     cld0.lay['dy']['data']
-    #     cld0.lay['altitude']['data']
-    #     cld0.lay['extinction']['data']
-    #     cld0.lay['temperature']['data']
-    #
-    #     cld0.lev['altitude']['data']
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-    # sfc object
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    sfc_dict = {
-            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
-            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
-            'windspeed': np.array([1.0]).reshape((1, 1)),
-            'pigment': np.array([0.01]).reshape((1, 1)),
-            }
-
-    fname_sfc = '%s/sfc.pk' % fdir
-    sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-
-    # generate surface, property files for SHDOM
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc.txt' % fdir, overwrite=overwrite)
-
-    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd.txt' % fdir, overwrite=overwrite)
-    atm_1ds = [atm1d0]
-
-    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
-    atm_3ds = [atm3d0]
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-
-    # define shdom object
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.1, 2.0)
-    vza = np.repeat(30.0, vaa.size)
-
-    # vaa_1d = np.arange(0.0, 360.1, 1.0)
-    # vza_1d = np.arange(1.0, 89.1, 1.0)
-    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    # vaa = vaa.ravel()
-    # vza = vza.ravel()
-
-    # run shdom
-    shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2024, 5, 18),
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            surface=sfc_2d,
-            Niter=1000,
-            solution_acc=1.0e-7,
-            target='radiance',
-            solar_zenith_angle=30.0,
-            solar_azimuth_angle=0.0,
-            sensor_zenith_angles=vza,
-            sensor_azimuth_angles=vaa,
-            sensor_altitude=705.0,
-            sensor_dx=cld0.lay['dx']['data'],
-            sensor_dy=cld0.lay['dy']['data'],
-            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
-            solver=solver,
-            Ncpu=1,
-            mp_mode='mpi',
-            overwrite=overwrite,
-            force=True,
-            )
-
-    # data can be accessed at
-    #     shd0.Ng
-    #     shd0.nml         (Ng), e.g., shd0.nml[0], namelist for the first g of the first run
-    #     shd0.fnames_inp  (Ng), e.g., shd0.fnames_inp[0], input file name for the first g of the first run
-    #     shd0.fnames_out  (Ng), e.g., shd0.fnames_out[0], output file name for the first g of the first run
-    #     shd0.fnames_sav  (Ng), e.g., shd0.fnames_sav[0], state-sav file name for the first g of the first run
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-
-    # define shdom output object
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    # read shdom output files (binary) and save the data into h5 file
-    # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
-    # dimension of number of runs
-    # e.g.,
-    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
-    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
-    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
-
-    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
-
-    # data can be accessed at
-    #     out0.data['rad']['data']
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-
-    # plot
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    if False:
-        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
-
-        fig = plt.figure(figsize=(8, 6))
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
-        ax1.set_xlabel('X Index')
-        ax1.set_ylabel('Y Index')
-        ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
-        plt.savefig(fname_png, bbox_inches='tight')
-        plt.close(fig)
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-    # References
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-
-
-def example_02_rad_atm1d_clear_over_land(
-        wavelength=550.0,
-        solver='IPA',
-        overwrite=True,
-        plot=True
-        ):
-
-    """
-    Similar to test_02 but for calculating radiance fields using LES data (nadir radiance at
-    the satellite altitude of 705km)
-
-    Additionally, Mie phase function is used instead of HG that was used in test_01 - test_04
-
-    To run this test, we will need data/00_er3t_mca/aux/les.nc
-    """
-
-    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
-
-    if not os.path.exists(fdir):
-        os.makedirs(fdir)
-
-    # define an atmosphere object
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 1.2, 0.1), np.arange(1.0, 20.1, 1.0))
-
-    # file name of the pickle file for atmosphere
-    fname_atm = '%s/atm.pk' % fdir
-
-    # atmosphere object
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
-
-    # data can be accessed at
-    #     atm0.lev['altitude']['data']
-    #     atm0.lev['pressure']['data']
-    #     atm0.lev['temperature']['data']
-    #     atm0.lev['h2o']['data']
-    #     atm0.lev['o3']['data']
-    #     atm0.lev['o2']['data']
-    #     atm0.lev['co2']['data']
-    #     atm0.lev['ch4']['data']
-    #
-    #     atm0.lay['altitude']['data']
-    #     atm0.lay['pressure']['data']
-    #     atm0.lay['temperature']['data']
-    #     atm0.lay['h2o']['data']
-    #     atm0.lay['o3']['data']
-    #     atm0.lay['o2']['data']
-    #     atm0.lay['co2']['data']
-    #     atm0.lay['ch4']['data']
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-
-    # define an absorption object
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    # file name of the pickle file for absorption
-    fname_abs = '%s/abs.pk' % fdir
-
-    # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='coarse', atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -465,7 +254,7 @@ def example_02_rad_atm1d_clear_over_land(
 
 
 
-def example_03_rad_atm1d_cloud_over_ocean(
+def example_02_rad_atm1d_clear_over_ocean(
         wavelength=550.0,
         solver='IPA',
         overwrite=True,
@@ -490,7 +279,7 @@ def example_03_rad_atm1d_cloud_over_ocean(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 1.2, 0.1), np.arange(1.0, 20.1, 1.0))
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 20.1, 1.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -525,7 +314,218 @@ def example_03_rad_atm1d_cloud_over_ocean(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='coarse', atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+
+    # data can be accessed at
+    #     abs0.coef['wavelength']['data']
+    #     abs0.coef['abso_coef']['data']
+    #     abs0.coef['slit_func']['data']
+    #     abs0.coef['solar']['data']
+    #     abs0.coef['weight']['data']
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+    # define an cloud object
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    fname_cld = '%s/cld.pk' % fdir
+
+    cld0 = er3t.pre.cld.cld_gen_cop(
+            fname=fname_cld,
+            cot=np.array([0.0]).reshape((1, 1)),
+            cer=np.array([1.0]).reshape((1, 1)),
+            cth=np.array([1.0]).reshape((1, 1)),
+            cgt=np.array([0.5]).reshape((1, 1)),
+            dz=0.1,
+            extent_xy=[0.0, 1.0, 0.0, 1.0],
+            atm_obj=atm0,
+            overwrite=overwrite
+            )
+
+    # data can be accessed at
+    #     cld0.lay['x']['data']
+    #     cld0.lay['y']['data']
+    #     cld0.lay['nx']['data']
+    #     cld0.lay['ny']['data']
+    #     cld0.lay['dx']['data']
+    #     cld0.lay['dy']['data']
+    #     cld0.lay['altitude']['data']
+    #     cld0.lay['extinction']['data']
+    #     cld0.lay['temperature']['data']
+    #
+    #     cld0.lev['altitude']['data']
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    # sfc object
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    sfc_dict = {
+            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
+            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
+            'windspeed': np.array([1.0]).reshape((1, 1)),
+            'pigment': np.array([0.01]).reshape((1, 1)),
+            }
+
+    fname_sfc = '%s/sfc.pk' % fdir
+    sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+    # generate surface, property files for SHDOM
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc.txt' % fdir, overwrite=overwrite)
+
+    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd.txt' % fdir, overwrite=overwrite)
+    atm_1ds = [atm1d0]
+
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
+    atm_3ds = [atm3d0]
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+    # define shdom object
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    vaa = np.arange(0.0, 360.1, 2.0)
+    vza = np.repeat(30.0, vaa.size)
+
+    # vaa_1d = np.arange(0.0, 360.1, 1.0)
+    # vza_1d = np.arange(1.0, 89.1, 1.0)
+    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    # vaa = vaa.ravel()
+    # vza = vza.ravel()
+
+    # run shdom
+    shd0 = er3t.rtm.shd.shdom_ng(
+            date=datetime.datetime(2024, 5, 18),
+            atm_1ds=atm_1ds,
+            atm_3ds=atm_3ds,
+            surface=sfc_2d,
+            Niter=1000,
+            solution_acc=1.0e-7,
+            target='radiance',
+            solar_zenith_angle=30.0,
+            solar_azimuth_angle=0.0,
+            sensor_zenith_angles=vza,
+            sensor_azimuth_angles=vaa,
+            sensor_altitude=705.0,
+            sensor_dx=cld0.lay['dx']['data'],
+            sensor_dy=cld0.lay['dy']['data'],
+            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
+            solver=solver,
+            Ncpu=1,
+            mp_mode='mpi',
+            overwrite=overwrite,
+            force=True,
+            )
+
+    # data can be accessed at
+    #     shd0.Ng
+    #     shd0.nml         (Ng), e.g., shd0.nml[0], namelist for the first g of the first run
+    #     shd0.fnames_inp  (Ng), e.g., shd0.fnames_inp[0], input file name for the first g of the first run
+    #     shd0.fnames_out  (Ng), e.g., shd0.fnames_out[0], output file name for the first g of the first run
+    #     shd0.fnames_sav  (Ng), e.g., shd0.fnames_sav[0], state-sav file name for the first g of the first run
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+    # define shdom output object
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # read shdom output files (binary) and save the data into h5 file
+    # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
+    # dimension of number of runs
+    # e.g.,
+    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
+    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
+    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
+
+    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+
+    # data can be accessed at
+    #     out0.data['rad']['data']
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+    # plot
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    if False:
+        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
+
+        fig = plt.figure(figsize=(8, 6))
+        ax1 = fig.add_subplot(111)
+        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
+        ax1.set_xlabel('X Index')
+        ax1.set_ylabel('Y Index')
+        ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
+        plt.savefig(fname_png, bbox_inches='tight')
+        plt.close(fig)
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    # References
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    er3t.util.print_reference()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+
+def example_03_rad_atm1d_cloud_over_ocean(
+        wavelength=550.0,
+        solver='IPA',
+        overwrite=True,
+        plot=True
+        ):
+
+    """
+    Similar to test_02 but for calculating radiance fields using LES data (nadir radiance at
+    the satellite altitude of 705km)
+
+    Additionally, Mie phase function is used instead of HG that was used in test_01 - test_04
+
+    To run this test, we will need data/00_er3t_mca/aux/les.nc
+    """
+
+    _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir='%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
+
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
+    # define an atmosphere object
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 20.1, 1.0))
+
+    # file name of the pickle file for atmosphere
+    fname_atm = '%s/atm.pk' % fdir
+
+    # atmosphere object
+    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+
+    # data can be accessed at
+    #     atm0.lev['altitude']['data']
+    #     atm0.lev['pressure']['data']
+    #     atm0.lev['temperature']['data']
+    #     atm0.lev['h2o']['data']
+    #     atm0.lev['o3']['data']
+    #     atm0.lev['o2']['data']
+    #     atm0.lev['co2']['data']
+    #     atm0.lev['ch4']['data']
+    #
+    #     atm0.lay['altitude']['data']
+    #     atm0.lay['pressure']['data']
+    #     atm0.lay['temperature']['data']
+    #     atm0.lay['h2o']['data']
+    #     atm0.lay['o3']['data']
+    #     atm0.lay['o2']['data']
+    #     atm0.lay['co2']['data']
+    #     atm0.lay['ch4']['data']
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+    # define an absorption object
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # file name of the pickle file for absorption
+    fname_abs = '%s/abs.pk' % fdir
+
+    # absorption object
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -1141,8 +1141,8 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_01_rad_atm1d_clear_over_ocean()
-    example_02_rad_atm1d_clear_over_land()
+    example_01_rad_atm1d_clear_over_land()
+    example_02_rad_atm1d_clear_over_ocean()
     example_03_rad_atm1d_cloud_over_ocean()
 
     # example_05_rad_les_cloud_3d(solver='3D')
