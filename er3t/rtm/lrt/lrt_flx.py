@@ -159,14 +159,14 @@ class lrt_init_mono_flx:
 
                 if self.input_dict_extra is not None:
 
-                    self.input_dict_extra['%s_file 1D '       % prefix] = cld_cfg['cloud_file']
+                    self.input_dict_extra['%s_file 1D'        % prefix] = cld_cfg['cloud_file']
                     self.input_dict_extra['%s_properties %s'  % (prefix, cld_cfg['%s_properties' % prefix])] = 'interpolate'
                     self.input_dict_extra['%s_modify tau set' % prefix] = str(cld_cfg['cloud_optical_thickness'])
 
                 else:
 
                     self.input_dict_extra = OD([
-                        ('%s_file 1D '       % prefix                                     , cld_cfg['cloud_file']),
+                        ('%s_file 1D'        % prefix                                     , cld_cfg['cloud_file']),
                         ('%s_properties %s'  % (prefix, cld_cfg['%s_properties' % prefix]), 'interpolate'),
                         ('%s_modify tau set' % prefix                                     , str(cld_cfg['cloud_optical_thickness']))
                         ])
@@ -370,7 +370,7 @@ class lrt_init_spec_flx:
                     prefix = 'ic'
 
                 self.input_dict_extra = OD([
-                    ('%s_file 1D '       % prefix                                     , cld_cfg['cloud_file']),
+                    ('%s_file 1D'        % prefix                                     , cld_cfg['cloud_file']),
                     ('%s_properties %s'  % (prefix, cld_cfg['%s_properties' % prefix]), 'interpolate'),
                     ('%s_modify tau set' % prefix                                     , str(cld_cfg['cloud_optical_thickness']))
                     ])
