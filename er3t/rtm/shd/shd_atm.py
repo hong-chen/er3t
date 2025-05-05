@@ -35,6 +35,7 @@ class shd_atm_1d:
                  atm_obj = None, \
                  abs_obj = None, \
                  fname   = None, \
+                 alt_toa = 30.0, \
                  overwrite = True, \
                  force     = False,\
                  verbose   = False,\
@@ -68,10 +69,10 @@ class shd_atm_1d:
 
         if not self.overwrite:
             if (not os.path.exists(fname)) and (not force):
-                self.gen_shd_ckd_file(fname, self.atm, self.abs)
+                self.gen_shd_ckd_file(fname, self.atm, self.abs, alt_toa=alt_toa)
             self.nml['CKDFILE'] = {'data':fname}
         else:
-            self.gen_shd_ckd_file(fname, self.atm, self.abs)
+            self.gen_shd_ckd_file(fname, self.atm, self.abs, alt_toa=alt_toa)
 
 
     def pre_shd_1d_atm(self):
@@ -97,7 +98,8 @@ class shd_atm_1d:
             fname,
             atm0,
             abs0,
-            Nband=1
+            Nband=1,
+            alt_toa=100.0,
             ):
 
         if not self.quiet:
@@ -150,6 +152,16 @@ class shd_atm_1d:
                 zgrid   = np.append(zgrid, 0.0)
                 atm_sca = np.append(atm_sca, 0.0)
                 atm_abs = np.concatenate((atm_abs, np.zeros((1, indices_sort.size), dtype=np.float32)))
+                self.nml['NZ']['data'] += 1
+            #╰──────────────────────────────────────────────────────────────╯#
+
+            # add toa (z=alt_toa[100.0] km)
+            #╭──────────────────────────────────────────────────────────────╮#
+            if zgrid[0] <= (alt_toa-1.0e-6):
+                zgrid   = np.append(alt_toa, zgrid)
+                atm_sca = np.append(0.0, atm_sca)
+                atm_abs = np.concatenate((np.zeros((1, indices_sort.size), dtype=np.float32), atm_abs))
+                self.nml['NZ']['data'] += 1
             #╰──────────────────────────────────────────────────────────────╯#
             #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -207,6 +219,7 @@ class shd_atm_3d:
                  abs_obj   = None, \
                  cld_obj   = None, \
                  fname     = None, \
+                 alt_toa   = 30.0, \
                  overwrite = True, \
                  force     = False,\
                  verbose   = False,\
@@ -243,7 +256,7 @@ class shd_atm_3d:
             msg = 'Error [shd_atm_3d]: Incorrect number of cloud layers (%d) vs layer thicknesses (%d).' % (self.cld.lay['altitude']['data'].size, self.cld.lay['thickness']['data'].size)
             raise ValueError(msg)
 
-        self.pre_shd_3d_atm()
+        self.pre_shd_3d_atm(alt_toa=alt_toa)
 
         if fname is None:
             fname = 'shdom-prp.txt'
@@ -256,7 +269,7 @@ class shd_atm_3d:
             self.gen_shd_prp_file(fname, self.abs.wvl, self.atm, self.cld, fname_atm_1d=fname_atm_1d)
 
 
-    def pre_shd_3d_atm(self):
+    def pre_shd_3d_atm(self, alt_toa=30.0):
 
         self.nml= {}
 
@@ -278,8 +291,13 @@ class shd_atm_3d:
         logic_z_extra = np.logical_not(np.array([np.any(np.abs(zgrid_atm[i]-zgrid_cld)<1.0e-6) for i in range(zgrid_atm.size)]))
         self.Nz_extra = logic_z_extra.sum()
         self.z_extra = '%s' % '\n'.join(['%.4e %.4e' % tuple(item) for item in zip(zgrid_atm[logic_z_extra], temp_atm[logic_z_extra])])
-        if (zgrid_atm[0]>=0.001) and (zgrid_cld[0]>=0.001):
-            self.z_extra = '%s\n%.4e %.4e' % (self.z_extra, 0.0, self.atm.lev['temperature']['data'][0])
+        if (zgrid_atm[0]>=1.0e-6) and (zgrid_cld[0]>=1.0e-6):
+            self.z_extra = '%.4e %.4e\n%s' % (0.0, self.atm.lev['temperature']['data'][0], self.z_extra)
+            self.Nz_extra += 1
+
+        thickness0 = self.atm.lay['thickness']['data'][-1]
+        if (zgrid_atm[-1]<=(alt_toa-1.0e-6-thickness0)) and (zgrid_cld[-1]<=(alt_toa-1.0e-6-thickness0)):
+            self.z_extra = '%s\n%.4e %.4e' % (self.z_extra, zgrid_atm[-1]+thickness0, self.atm.lev['temperature']['data'][-1])
             self.Nz_extra += 1
 
         self.nml['NZ'] = {'data':self.Nz_extra+self.cld.lay['altitude']['data'].size, 'name':'Nz', 'units':'N/A'}

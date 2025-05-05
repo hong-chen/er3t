@@ -67,7 +67,7 @@ def example_01_rad_atm1d_clear_over_land(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 20.1, 1.0))
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 30.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -279,7 +279,7 @@ def example_02_rad_atm1d_clear_over_ocean(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 20.1, 1.0))
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 30.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -490,7 +490,7 @@ def example_03_rad_atm1d_cloud_over_ocean(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 20.1, 1.0))
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 30.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
