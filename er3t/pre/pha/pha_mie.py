@@ -60,7 +60,7 @@ def read_mie(fname):
     if 'gg' in f.variables.keys():
         gg  = f.variables['gg'][...].data
     else:
-        gg  = None
+        gg  = f.variables['pmom'][...].data[:, :, 0, 1]/3.0
 
     f.close()
 
@@ -175,11 +175,10 @@ class pha_mie_wc:
             angles = np.array(sorted(set(ang_iwvl[ang_iwvl>=0])))
             Na = angles.size
 
-        pha  = np.zeros((Na, Nreff), dtype=np.float64)
-        if asy_all is None:
-            asy_ = np.zeros(Nreff, dtype=np.float64)
-            asy  = np.zeros(Nreff, dtype=np.float64)
-            mus  = np.cos(np.deg2rad(angles))
+        pha  = np.zeros((Na, Nreff), dtype=np.float32)
+        asy  = np.zeros(Nreff, dtype=np.float32)
+        asy_ = np.zeros(Nreff, dtype=np.float32)
+        mus  = np.cos(np.deg2rad(angles))
 
         for ireff in range(Nreff):
 
@@ -193,14 +192,9 @@ class pha_mie_wc:
 
             pha[:, ireff] = f_pha0(angles)
 
-            if asy_all is None:
-                asy[ireff]  = np.trapz(pha0*mu0, x=mu0)/2.0
-                asy_[ireff] = np.trapz(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
-
-        if asy_all is not None:
-            # use the pre-calculated asymmetry parameter from the file
-            asy = asy_all[iwvl, :]
-            asy_ = asy_all[iwvl, :]
+            asy[ireff] = asy_all[iwvl, ireff]
+            asy_[ireff]  = np.trapz(pha0*mu0, x=mu0)/2.0
+            # asy_[ireff] = np.trapz(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
 
         data = {
                 'id'   : {'data':'Mie'       , 'name':'Mie'                , 'unit':'N/A'},
@@ -391,9 +385,11 @@ class pha_mie_wc_shd:
 
             # asymmetry parameter
             # half of the integral of: from cos(ang)=-1 to cos(ang)=1 for function pha(ang)*cos(ang)
-            asy[ireff] = np.trapz(pha0[::-1]*mus[::-1], x=mus[::-1])/2.0
+            # asy[ireff] = np.trapz(pha0[::-1]*mus[::-1], x=mus[::-1])/2.0
+            asy[ireff] = pmom[ireff, 1]/3.0 # consistent with SHDOM
 
-            asy_[ireff] = np.trapz(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
+            asy_[ireff] = asy[ireff]
+
 
         data = {
                 'id'   : {'data':'Mie' , 'name':'Mie'                , 'unit':'N/A'},

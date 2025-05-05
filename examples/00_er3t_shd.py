@@ -165,21 +165,21 @@ def example_01_rad_atm1d_clear_over_land(
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd.txt' % fdir, overwrite=overwrite)
     atm_1ds = [atm1d0]
 
-    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=overwrite)
     atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.1, 2.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.1, 2.0)
+    # vza = np.repeat(30.0, vaa.size)
 
-    # vaa_1d = np.arange(0.0, 360.1, 1.0)
-    # vza_1d = np.arange(1.0, 89.1, 1.0)
-    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    # vaa = vaa.ravel()
-    # vza = vza.ravel()
+    vaa_1d = np.arange(0.0, 360.1, 1.0)
+    vza_1d = np.arange(1.0, 89.1, 1.0)
+    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa.ravel()
+    vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -376,21 +376,21 @@ def example_02_rad_atm1d_clear_over_ocean(
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd.txt' % fdir, overwrite=overwrite)
     atm_1ds = [atm1d0]
 
-    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=overwrite)
     atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.1, 2.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.1, 2.0)
+    # vza = np.repeat(30.0, vaa.size)
 
-    # vaa_1d = np.arange(0.0, 360.1, 1.0)
-    # vza_1d = np.arange(1.0, 89.1, 1.0)
-    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    # vaa = vaa.ravel()
-    # vza = vza.ravel()
+    vaa_1d = np.arange(0.0, 360.1, 1.0)
+    vza_1d = np.arange(1.0, 89.1, 1.0)
+    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa.ravel()
+    vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -587,21 +587,20 @@ def example_03_rad_atm1d_cloud_over_ocean(
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd.txt' % fdir, overwrite=overwrite)
     atm_1ds = [atm1d0]
 
-    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=overwrite)
     atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.1, 2.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.1, 2.0)
+    # vza = np.repeat(30.0, vaa.size)
 
-    # vaa_1d = np.arange(0.0, 360.1, 1.0)
-    # vza_1d = np.arange(1.0, 89.1, 1.0)
-    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    # vaa = vaa.ravel()
-    # vza = vza.ravel()
+    vaa_1d = np.arange(0.0, 360.1, 1.0)
+    vza_1d = np.arange(1.0, 89.1, 1.0)
+    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa.ravel()
+    vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -701,8 +700,8 @@ def example_05_rad_les_cloud_3d(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    # levels = np.append(np.arange(0.0, 4.0, 1.0), np.arange(4.0, 20.1, 4.0))
-    levels = np.append(np.arange(0.0, 4.0, 0.2), np.arange(4.0, 20.1, 4.0))
+    # levels = np.append(np.arange(0.0, 4.0, 0.2), np.arange(4.0, 20.1, 4.0))
+    levels = np.append(np.arange(0.0, 4.0, 0.2), np.arange(4.0, 20.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -759,7 +758,7 @@ def example_05_rad_les_cloud_3d(
 
     # cloud object
     # cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[2, 2, 5], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[4, 4, 5], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -777,31 +776,31 @@ def example_05_rad_les_cloud_3d(
 
     # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
-    # fiso = f['mod/sfc/fiso_43_0650'][...][:400, :480]
-    # fvol = f['mod/sfc/fvol_43_0650'][...][:400, :480]
-    # fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
+    f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
+    fiso = f['mod/sfc/fiso_43_0650'][...][:400, :480]
+    fvol = f['mod/sfc/fvol_43_0650'][...][:400, :480]
+    fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
 
-    # lon, lat = np.meshgrid(np.linspace(0.0, 48.0, 400), np.linspace(0.0, 48.0, 480), indexing='ij')
-    # x, y, fiso = er3t.util.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    # x, y, fvol = er3t.util.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    # x, y, fgeo = er3t.util.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-
-    # sfc_dict = {
-    #         'dx': cld0.lay['dx']['data'],
-    #         'dy': cld0.lay['dy']['data'],
-    #         'fiso': fiso,
-    #         'fvol': fvol,
-    #         'fgeo': fgeo,
-    #         }
-    # f.close()
+    lon, lat = np.meshgrid(np.linspace(0.0, 48.0, 400), np.linspace(0.0, 48.0, 480), indexing='ij')
+    x, y, fiso = er3t.util.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fvol = er3t.util.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fgeo = er3t.util.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
 
     sfc_dict = {
-            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
-            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
-            'windspeed': np.array([8.0]).reshape((1, 1)),
-            'pigment': np.array([0.01]).reshape((1, 1)),
+            'dx': cld0.lay['dx']['data'],
+            'dy': cld0.lay['dy']['data'],
+            'fiso': fiso,
+            'fvol': fvol,
+            'fgeo': fgeo,
             }
+    f.close()
+
+    # sfc_dict = {
+    #         'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
+    #         'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
+    #         'windspeed': np.array([8.0]).reshape((1, 1)),
+    #         'pigment': np.array([0.01]).reshape((1, 1)),
+    #         }
 
     fname_sfc = '%s/sfc.pk' % fdir
     sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
