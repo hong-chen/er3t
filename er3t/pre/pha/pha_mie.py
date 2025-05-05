@@ -397,6 +397,7 @@ class pha_mie_wc_shd:
                 'wvl'  : {'data':wvl   , 'name':'Actual wavelength'  , 'unit':'nm'},
                 'ang'  : {'data':angles, 'name':'Angle'              , 'unit':'degree'},
                 'pha'  : {'data':pha   , 'name':'Phase function'     , 'unit':'N/A'},
+                'pmom' : {'data':pmom  , 'name':'Legendre moments'   , 'unit':'N/A'},
                 'ssa'  : {'data':ssa   , 'name':'Single scattering albedo', 'unit':'N/A'},
                 'asy'  : {'data':asy   , 'name':'Asymmetry parameter'     , 'unit':'N/A'},
                 'asy_' : {'data':asy_  , 'name':'Asymmetry parameter_'    , 'unit':'N/A'},
