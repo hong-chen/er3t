@@ -272,8 +272,9 @@ class shdom_ng:
             self.nml[ig]['NZ'] = self.Nz
             if self.target == 'radiance':
                 if (self.Nx == 1) and (self.Ny == 1):
-                    self.nml[ig]['NMU']  = 90
-                    self.nml[ig]['NPHI'] = 180
+                    # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
+                    self.nml[ig]['NMU']  = 128
+                    self.nml[ig]['NPHI'] = 256
                 elif (self.Nx > 64) and (self.Ny > 64):
                     self.nml[ig]['NMU']  = 12
                     self.nml[ig]['NPHI'] = 24
@@ -399,7 +400,12 @@ class shdom_ng:
                 # STOP Error [_matchGridPnt]: No split direction.
                 self.nml[ig]['SPLITACC'] = 0.0
             else:
-                self.nml[ig]['SPLITACC'] = 0.01
+                if (self.Nx == 1) and (self.Ny == 1):
+                    self.nml[ig]['SPLITACC'] = 0.00003 # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
+                elif (self.Nx > 64) and (self.Ny > 64):
+                    self.nml[ig]['SPLITACC'] = 0.01
+                else:
+                    self.nml[ig]['SPLITACC'] = 0.001
 
             self.nml[ig]['SHACC'] = 0.003
             self.nml[ig]['MAX_TOTAL_MB'] = psutil.virtual_memory().total / 1024.0**2.0 / 2.0
