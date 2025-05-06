@@ -67,7 +67,9 @@ class shdom_ng:
 
                  Ng                  = 1,                       \
                  Niter               = 100,                     \
-                 solution_acc        = 1e-5,                    \
+                 sol_acc             = 1.0e-5,                  \
+                 split_acc           = None,                    \
+                 sh_acc              = None,                    \
 
                  fdir                = 'tmp-data/sim-shd',      \
                  Ncpu                = 'auto',                  \
@@ -229,7 +231,7 @@ class shdom_ng:
                     )
 
             # SHDOM namelist param
-            self.nml_param(Niter, solution_acc)
+            self.nml_param(Niter, sol_acc=sol_acc, split_acc=split_acc, sh_acc=sh_acc)
 
             # SHDOM namelist out
             self.nml_out(
@@ -382,32 +384,41 @@ class shdom_ng:
 
 
     def nml_param(
-            self, \
-            Niter,
-            solution_acc,
+            self,  \
+            Niter, \
+            sol_acc=1e-5,   \
+            split_acc=None, \
+            sh_acc=None,    \
         ):
 
         for ig in range(self.Ng):
 
             self.nml[ig]['ACCELFLAG'] = '.TRUE.'
-            self.nml[ig]['SOLACC'] = solution_acc
+            self.nml[ig]['SOLACC'] = sol_acc
             self.nml[ig]['MAXITER'] = Niter
 
-            if (self.dx <= 0.100001) or (self.dy <= 0.100001):
-                # encounter error when grid resolution is fine, this is a temporary solution
-                # bug details [from shdom]:
-                # Note: The following floating-point exceptions are signalling: IEEE_DIVIDE_BY_ZERO IEEE_UNDERFLOW_FLAG
-                # STOP Error [_matchGridPnt]: No split direction.
-                self.nml[ig]['SPLITACC'] = 0.0
-            else:
-                if (self.Nx == 1) and (self.Ny == 1):
-                    self.nml[ig]['SPLITACC'] = 0.00003 # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
-                elif (self.Nx > 64) and (self.Ny > 64):
-                    self.nml[ig]['SPLITACC'] = 0.01
+            if split_acc is None:
+                if (self.dx <= 0.100001) or (self.dy <= 0.100001):
+                    # encounter error when grid resolution is fine, this is a temporary solution
+                    # bug details [from shdom]:
+                    # Note: The following floating-point exceptions are signalling: IEEE_DIVIDE_BY_ZERO IEEE_UNDERFLOW_FLAG
+                    # STOP Error [_matchGridPnt]: No split direction.
+                    self.nml[ig]['SPLITACC'] = 0.0
                 else:
-                    self.nml[ig]['SPLITACC'] = 0.001
+                    if (self.Nx == 1) and (self.Ny == 1):
+                        self.nml[ig]['SPLITACC'] = 0.00003 # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
+                    elif (self.Nx > 64) and (self.Ny > 64):
+                        self.nml[ig]['SPLITACC'] = 0.01
+                    else:
+                        self.nml[ig]['SPLITACC'] = 0.001
+            else:
+                self.nml[ig]['SPLITACC'] = split_acc
 
-            self.nml[ig]['SHACC'] = 0.003
+            if sh_acc is None:
+                self.nml[ig]['SHACC'] = 0.003
+            else:
+                self.nml[ig]['SHACC'] = sh_acc
+
             self.nml[ig]['MAX_TOTAL_MB'] = psutil.virtual_memory().total / 1024.0**2.0 / 2.0
             self.nml[ig]['ADAPT_GRID_FACTOR'] = 2.2
             self.nml[ig]['NUM_SH_TERM_FACTOR'] = 0.6
