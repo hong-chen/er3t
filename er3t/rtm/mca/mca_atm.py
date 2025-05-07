@@ -93,6 +93,8 @@ class mca_atm_1d:
             atm_apf = np.repeat(-1 , nz)
             self.nml[ig]['Atm_apf1d(1:, 1)'] = {'data':atm_apf, 'units':'N/A', 'name':'Phase function'}
 
+            self.nml[ig]['Atm_iipfd1d(1)']   = {'data':1,       'units':'N/A', 'name':'Phase function file index'}
+
 
     def add_mca_1d_atm(self, ext1d=None, omg1d=None, apf1d=None, z_bottom=None, z_top=None):
 
@@ -127,6 +129,7 @@ class mca_atm_1d:
             self.nml[ig]['Atm_ext1d(1:, %d)' % N] = {'data':atm_ext, 'units':'/m' , 'name':'Extinction coefficients'}
             self.nml[ig]['Atm_omg1d(1:, %d)' % N] = {'data':atm_omg, 'units':'N/A', 'name':'Single scattering albedo'}
             self.nml[ig]['Atm_apf1d(1:, %d)' % N] = {'data':atm_apf, 'units':'N/A', 'name':'Phase function'}
+            self.nml[ig]['Atm_iipfd1d(%d)' % N]   = {'data':1,       'units':'N/A', 'name':'Phase function file index'}
 
             self.nml[ig]['Atm_np1d']['data'] += 1
 
@@ -316,7 +319,9 @@ class mca_atm_3d:
         self.nml['Atm_extp3d'] = {'data':atm_ext, 'units':'/m' , 'name':'Extinction coefficients'}
         self.nml['Atm_omgp3d'] = {'data':atm_omg, 'units':'N/A', 'name':'Single scattering Albedo'}
         self.nml['Atm_apfp3d'] = {'data':atm_apf, 'units':'N/A', 'name':'Phase function'}
-        self.nml['Atm_np3d']   = {'data':1      , 'units':'N/A', 'name': 'Number of 3D atmospheric constituents'}
+        self.nml['Atm_iipfd3d(1)']   = {'data':1,       'units':'N/A', 'name':'Phase function file index'}
+        self.nml['Atm_np3d']     = {'data':1, 'units':'N/A', 'name': 'Number of 3D atmospheric constituents'}
+        self.nml['Atm_atm3dabs'] = {'data':1, 'units':'N/A', 'name':'Gas abosorption included in the 3D atmosphere'}
 
 
     def add_mca_3d_atm(self, ext3d=None, omg3d=None, apf3d=None):
@@ -346,9 +351,13 @@ class mca_atm_3d:
         atm_omg = np.concatenate((self.nml['Atm_omgp3d']['data'], omg3d[..., np.newaxis]), axis=-1)
         atm_apf = np.concatenate((self.nml['Atm_apfp3d']['data'], apf3d[..., np.newaxis]), axis=-1)
 
+        N = self.nml['Atm_np3d']['data'] + 1
+
         self.nml['Atm_extp3d']['data'] = atm_ext
         self.nml['Atm_omgp3d']['data'] = atm_omg
         self.nml['Atm_apfp3d']['data'] = atm_apf
+        self.nml['Atm_iipfd3d(%d)' % N]   = {'data':1,       'units':'N/A', 'name':'Phase function file index'}
+
         self.nml['Atm_np3d']['data'] += 1
 
 
@@ -367,7 +376,7 @@ class mca_atm_3d:
             f.write(struct.pack('<%df' % self.nml['Atm_extp3d']['data'][..., i].size, *self.nml['Atm_extp3d']['data'][..., i][..., np.newaxis].flatten(order='F')))
             f.write(struct.pack('<%df' % self.nml['Atm_omgp3d']['data'][..., i].size, *self.nml['Atm_omgp3d']['data'][..., i][..., np.newaxis].flatten(order='F')))
             f.write(struct.pack('<%df' % self.nml['Atm_apfp3d']['data'][..., i].size, *self.nml['Atm_apfp3d']['data'][..., i][..., np.newaxis].flatten(order='F')))
-            f.write(struct.pack('<%df' % self.nml['Atm_abst3d']['data'].size, *self.nml['Atm_abst3d']['data'].flatten(order='F')))
+        f.write(struct.pack('<%df' % self.nml['Atm_abst3d']['data'].size, *self.nml['Atm_abst3d']['data'].flatten(order='F')))
         f.close()
 
         if not self.quiet:

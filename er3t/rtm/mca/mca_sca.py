@@ -23,8 +23,8 @@ class mca_sca:
     Output:
         self.nml: Python dictionary
                 ['Sca_npfd']
+                ['Sca_npf']
                 ['Sca_nskip']
-                ['Sca_nanci']
                 ['Sca_nangi']
                *['Sca_inpfile']
 
@@ -64,7 +64,7 @@ class mca_sca:
         if not self.overwrite:
             if (not os.path.exists(fname)) and (not force):
                 self.gen_mca_sca_file(fname)
-            self.nml['Sca_inpfile'] = {'data':fname}
+            self.nml['Sca_inpfile(1)'] = {'data':fname}
         else:
             self.gen_mca_sca_file(fname)
 
@@ -73,21 +73,21 @@ class mca_sca:
 
         self.nml= {}
 
-        self.nml['Sca_npfd']   = dict(data=self.pha.data['pha']['data'].shape[1], name='Number of tabulated phase functions', units='N/A')
-        self.nml['Sca_nskip'] = dict(data=nskip, name='Number of phase functions to be skipped', units='N/A')
-        self.nml['Sca_nanci'] = dict(data=nanci, name='Number of ancillary data', units='N/A')
-        self.nml['Sca_nangi'] = dict(data=self.pha.data['ang']['data'].size, name='Number of angles', units='N/A')
+        self.nml['Sca_npfd']     = dict(data=1, name='Number of tabulated phase function files', units='N/A')
+        self.nml['Sca_npf(1)']   = dict(data=self.pha.data['pha']['data'].shape[1], name='Number of tabulated phase functions', units='N/A')
+        self.nml['Sca_nskip(1)'] = dict(data=nskip, name='Number of phase functions to be skipped', units='N/A')
+        self.nml['Sca_nangi(1)'] = dict(data=self.pha.data['ang']['data'].size, name='Number of angles', units='N/A')
 
 
     def gen_mca_sca_file(self, fname):
 
         fname = os.path.abspath(fname)
 
-        self.nml['Sca_inpfile'] = {'data':fname}
+        self.nml['Sca_inpfile(1)'] = {'data':fname}
 
         f = open(fname, 'wb')
         f.write(struct.pack('<%df' % self.pha.data['ang']['data'].size, *self.pha.data['ang']['data'].flatten(order='F')))
-        for i in range(self.nml['Sca_npfd']['data']):
+        for i in range(self.nml['Sca_npf(1)']['data']):
             f.write(struct.pack('<%df' % self.pha.data['pha']['data'][:, i].size, *self.pha.data['pha']['data'][:, i].flatten(order='F')))
         f.close()
 
@@ -99,7 +99,7 @@ class mca_sca:
 
         fname = os.path.abspath(fname)
 
-        self.nml['Sca_inpfile'] = {'data':fname}
+        self.nml['Sca_inpfile(1)'] = {'data':fname}
 
         f = h5py.File(fname, 'w')
         for key in self.nml.keys():

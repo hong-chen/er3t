@@ -326,9 +326,9 @@ class mcarats_ng:
                 self.nml[ig]['Sca_npfd'] = 0
             else:
                 for key in sca.nml.keys():
-                    if os.path.exists(sca.nml['Sca_inpfile']['data']):
-                        self.dirname_data = os.path.dirname(os.path.abspath(sca.nml['Sca_inpfile']['data']))
-                        sca.nml['Sca_inpfile']['data'] = os.path.basename(sca.nml['Sca_inpfile']['data'])
+                    if os.path.exists(sca.nml['Sca_inpfile(1)']['data']):
+                        self.dirname_data = os.path.dirname(os.path.abspath(sca.nml['Sca_inpfile(1)']['data']))
+                        sca.nml['Sca_inpfile(1)']['data'] = os.path.basename(sca.nml['Sca_inpfile(1)']['data'])
                         # sca.nml['Sca_inpfile']['data'] = os.path.relpath(sca.nml['Sca_inpfile']['data'], start=self.fdir)
                     self.nml[ig][key] = sca.nml[key]['data']
 

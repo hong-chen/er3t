@@ -45,18 +45,18 @@ def load_mca_inp_nml():
 
     """
     KNDFL=100
+    Sca_npfd=0            : # of scattering phase function data files
     Sca_inpfile(KNDFL)=' ': file names for scattering phase functions
     Sca_npf(KNDFL)=0      : # of tabulated phase functions in each file
-    Sca_nanci(KNDFL)=0    : # of ancillary file
     Sca_nangi(KNDFL)=100  : # of angles in each file
     Sca_nskip(KNDFL)=0    : # of data record lines to be skipped
-    Sca_npfd=0            : # of scattering phase function data files
     Sca_nchi=4            : # of orders for truncation approximation (>= 2)
     Sca_ntg=20000         : # of table grids for angles & probabilities
     Sca_qtfmax=20.0       : geometrical truncation angle (deg.)
 
     KNP1D=KNP3D=100
     Atm_atm3dfile=' '     : file name for input of 3D otpical properties
+    Atm_atm3dabs=1      : 0 (off) or 1 (on) to give the 3D gas absorption coefficinents
     Atm_np1d=1          : # of scattering components in 1D medium
     Atm_np3d=1          : # of scattering components in 3D medium
     Atm_nx=1            : # of X grid points
@@ -126,17 +126,17 @@ def load_mca_inp_nml():
     Pho_pfpeak=30.0    : phase function peak threshold
     """
     mcarats_init = OrderedDict([
+                       ('Sca_npfd'   , None),
                        ('Sca_inpfile', None),
                        ('Sca_npf'    , None),
-                       ('Sca_nanci'  , None),
                        ('Sca_nangi'  , None),
                        ('Sca_nskip'  , None),
-                       ('Sca_npfd'   , None),
                        ('Sca_nchi'   , None),
                        ('Sca_ntg'    , None),
                        ('Sca_qtfmax' , None),
 
                        ('Atm_atm3dfile', None),
+                       ('Atm_atm3dabs' , None),
                        ('Atm_np1d'   , None),
                        ('Atm_np3d'   , None),
                        ('Atm_nx'     , None),
@@ -372,16 +372,18 @@ def load_mca_inp_nml_info():
     ('Wld_njob'   , 'default=1 : # of jobs in a single experiment'),
     ('Wld_nwl'    , 'default=1 : # of wavelengths or CKD terms in a single experiment'),
 
+    ('Sca_npfd'    , 'default=0 : # of scattering phase function data files'),
     ('Sca_inpfile' , 'default(KNDFL)=\' \' : file names for scattering phase functions'),
     ('Sca_npf'     , 'default(KNDFL)=0 : # of tabulated phase functions in each file'),
     ('Sca_nangi'   , 'default(KNDFL)=100 : # of angles in each file'),
     ('Sca_nskip'   , 'default(KNDFL)=0 : # of data record lines to be skipped'),
-    ('Sca_npfd'    , 'default=0 : # of scattering phase function data files'),
     ('Sca_nchi'    , 'default=4 : # of orders for truncation approximation (>= 2)'),
     ('Sca_ntg'     , 'default=20000 : # of table grids for angles & probabilities'),
     ('Sca_qtfmax'  , 'default=20.0  : geometrical truncation angle (deg.)'),
 
     ('Atm_atm3dfile' , 'default=\' \' : file name for input of 3D otpical properties'),
+    ('Atm_atm3dabs'  , 'default=1 :  0 (off) or 1 (on) to give the 3D (perturbations of) \n\
+        gaseous absorption coefficinents in the data file Atm_atm3dfile'),
     ('Atm_np1d'    , 'default=1 : # of scattering components in 1D medium'),
     ('Atm_np3d'    , 'default=1 : # of scattering components in 3D medium'),
     ('Atm_nx'      , 'default=1 : # of X grid points'),
