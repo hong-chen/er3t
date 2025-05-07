@@ -12,7 +12,7 @@ import er3t.util
 
 
 
-__all__ = ['pha_mie_wc', 'pha_mie_wc_shd']
+__all__ = ['pha_mie_wc', 'pha_mie_wc_shd', 'legendre2phase']
 
 
 
@@ -309,7 +309,8 @@ class pha_mie_wc_shd:
                     np.arange( 15.0, 176.0, 1.0),
                     np.arange(176.0, 180.1, 0.25),
                  )),
-                 fdir_pha_mie = '%s/pha/mie' % er3t.common.fdir_data_tmp,
+                 fdir_pha_mie='%s/pha/mie' % er3t.common.fdir_data_tmp,
+                 Npmom_max=1000,
                  overwrite=True,
                  verbose=False):
 
@@ -327,12 +328,13 @@ class pha_mie_wc_shd:
         self.overwrite   = overwrite
         self.verbose     = verbose
 
-        self.get_data(wavelength, angles, fdir=fdir_pha_mie)
+        self.get_data(wavelength, angles, fdir=fdir_pha_mie, Npmom_max=Npmom_max)
 
     def get_data(self,
             wvl0,
             angles,
             fdir='%s/pha/mie' % er3t.common.fdir_data_tmp,
+            Npmom_max=1000,
             ):
 
         if not os.path.exists(fdir):
@@ -348,19 +350,20 @@ class pha_mie_wc_shd:
                     print('Message [pha_mie_wc_shd]: Re-using phase function from <%s> ...' % fname)
                     self.data = copy.deepcopy(data0)
                 else:
-                    self.run(fname, wvl0, angles)
+                    self.run(fname, wvl0, angles, Npmom_max=Npmom_max)
             else:
-                self.run(fname, wvl0, angles)
+                self.run(fname, wvl0, angles, Npmom_max=Npmom_max)
         else:
-            self.run(fname, wvl0, angles)
+            self.run(fname, wvl0, angles, Npmom_max=Npmom_max)
 
     def run(self,
             fname,
             wvl0,
-            angles
+            angles,
+            Npmom_max=1000,
             ):
 
-        wvl, ref, ssa, pmom = read_mie_shd(self.fname_coef)
+        wvl, ref, ssa, pmom = read_mie_shd(self.fname_coef, Npmom_max=Npmom_max)
 
         Na = angles.size
         Nreff = ref.size
@@ -378,7 +381,7 @@ class pha_mie_wc_shd:
             mu0  = np.cos(np.deg2rad(ang0))
 
             logic_pmom = ~np.isnan(pmom[ireff, :])
-            pha0 = legendre2phase(pmom[ireff, logic_pmom], angle=ang0, lrt=False, normalize=True, deltascaling=False)
+            pha0 = er3t.pre.pha.legendre2phase(pmom[ireff, logic_pmom], angle=ang0, lrt=False, normalize=True, deltascaling=False)
             f_pha0 = interpolate.interp1d(ang0, pha0, kind='linear')
 
             pha[:, ireff] = f_pha0(angles)
@@ -673,7 +676,7 @@ class pha_mie_wc_pmom:
 
             pmom0 = pmom0/(2.0*np.arange(Npoly)+1.0)
 
-            pha0 = legendre2phase(pmom0, angle=angles, lrt='True', deltascaling=True, normalize=False)
+            pha0 = er3t.pre.pha.legendre2phase(pmom0, angle=angles, lrt='True', deltascaling=True, normalize=False)
             pha[:, ireff] = pha0
 
             # asymmetry parameter
@@ -702,5 +705,4 @@ class pha_mie_wc_pmom:
 
 
 if __name__ == '__main__':
-
-    pass
+   pass
