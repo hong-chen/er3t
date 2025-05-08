@@ -139,6 +139,11 @@ class cld_merra:
         # referenced from https://www.weather.gov/media/epz/wxcalc/pressureAltitude.pdf
         z0 = (1.0 - (p0/1013.25)**0.190284) * 145366.45 * 0.3048 / 1000.0
 
+        qc_3d[qc_3d>10.0]  = 10.0
+        qc_3d[qc_3d>100.0] = 0.0
+        qc_3d[qc_3d<0.0]   = 0.0
+
+
         # in vertical dimension, only select data where clouds exist to shrink data size
         # and accelerate calculation
         #╭──────────────────────────────────────────────────────────────╮#
@@ -161,9 +166,12 @@ class cld_merra:
         qv_3d  = f.variables['QV'][index_t, :index_e, :, :].data*1000.0 # specific humidity, convert from kg/kg to g/kg
         t_3d   = f.variables['T'][index_t, :index_e, :, :].data         # absolute temperature
 
+        qv_3d[qv_3d>40.0]  = 40.0
+        qv_3d[qv_3d>100.0] = 0.0
+        qv_3d[qv_3d<0.0]   = 0.0
+
         t_3d[t_3d>283.15] = 283.15
         t_3d[t_3d<0.0]    = 0.0
-        #╰──────────────────────────────────────────────────────────────╯#
 
         f.close()
         #╰────────────────────────────────────────────────────────────────────────────╯#

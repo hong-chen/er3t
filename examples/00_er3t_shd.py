@@ -1263,7 +1263,7 @@ def example_07_at3d_rad_cloud_merra(
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd.txt' % fdir, overwrite=overwrite)
     atm_1ds = [atm1d0]
 
-    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=overwrite)
     atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -1283,6 +1283,7 @@ def example_07_at3d_rad_cloud_merra(
             surface=sfc_2d,
             Ng=abs0.Ng,
             Niter=20,
+            split_acc=0.0,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,

@@ -301,10 +301,10 @@ class shd_atm_3d:
             self.z_extra = '%.4e %.4e\n%s' % (0.0, self.atm.lev['temperature']['data'][0], self.z_extra)
             self.Nz_extra += 1
 
-        thickness0 = self.atm.lay['thickness']['data'][-1]
-        if (zgrid_atm[-1]<=(alt_toa-1.0e-6-thickness0)) and (zgrid_cld[-1]<=(alt_toa-1.0e-6-thickness0)):
-            self.z_extra = '%s\n%.4e %.4e' % (self.z_extra, zgrid_atm[-1]+thickness0, self.atm.lev['temperature']['data'][-1])
-            self.Nz_extra += 1
+        # thickness0 = self.atm.lay['thickness']['data'][-1]
+        # if (zgrid_atm[-1]<=(alt_toa-1.0e-6-thickness0)) and (zgrid_cld[-1]<=(alt_toa-1.0e-6-thickness0)):
+        #     self.z_extra = '%s\n%.4e %.4e' % (self.z_extra, zgrid_atm[-1]+thickness0, self.atm.lev['temperature']['data'][-1])
+        #     self.Nz_extra += 1
 
         self.nml['NZ'] = {'data':self.Nz_extra+self.cld.lay['altitude']['data'].size, 'name':'Nz', 'units':'N/A'}
 
