@@ -128,9 +128,11 @@ class shd_atm_1d:
             #╭────────────────────────────────────────────────────────────────────────────╮#
             # altitude
             #╭──────────────────────────────────────────────────────────────╮#
-            alt = atm0.lay['altitude']['data'][::-1]
+            # alt = atm0.lay['altitude']['data'][::-1]
+            # thickness = atm0.lay['thickness']['data'][::-1]
+            # zgrid = alt + thickness/2.0
             thickness = atm0.lay['thickness']['data'][::-1]
-            zgrid = alt + thickness/2.0
+            zgrid = atm0.lev['altitude']['data'][1:][::-1]
             #╰──────────────────────────────────────────────────────────────╯#
 
             # gas scattering
@@ -284,9 +286,13 @@ class shd_atm_3d:
 
         self.nml['GNDTEMP'] = {'data':self.atm.lev['temperature']['data'][0], 'units':'K', 'name':'Surface Temperature'}
 
-        zgrid_atm = self.atm.lay['altitude']['data']+self.atm.lay['thickness']['data']/2.0
+        # zgrid_atm = self.atm.lay['altitude']['data']+self.atm.lay['thickness']['data']/2.0
+        zgrid_atm = self.atm.lev['altitude']['data'][1:]
+
         temp_atm  = self.atm.lay['temperature']['data']
-        zgrid_cld = self.cld.lay['altitude']['data']+self.cld.lay['thickness']['data']/2.0
+
+        # zgrid_cld = self.cld.lay['altitude']['data']+self.cld.lay['thickness']['data']/2.0
+        zgrid_cld = self.cld.lev['altitude']['data'][1:]
 
         logic_z_extra = np.logical_not(np.array([np.any(np.abs(zgrid_atm[i]-zgrid_cld)<1.0e-6) for i in range(zgrid_atm.size)]))
         self.Nz_extra = logic_z_extra.sum()
