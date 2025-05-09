@@ -99,7 +99,7 @@ def example_01_rad_atm1d_clear_over_land(
     # define an absorption object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
-    fname_abs = '%s/abs.pk' % fdir
+    fname_abs = '%s/abs_%4.4d.pk' % (fdir, wavelength)
 
     # absorption object
     abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
@@ -311,7 +311,7 @@ def example_02_rad_atm1d_clear_over_ocean(
     # define an absorption object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
-    fname_abs = '%s/abs.pk' % fdir
+    fname_abs = '%s/abs_%4.4d.pk' % (fdir, wavelength)
 
     # absorption object
     abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
@@ -522,7 +522,7 @@ def example_03_rad_atm1d_cloud_over_ocean(
     # define an absorption object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
-    fname_abs = '%s/abs.pk' % fdir
+    fname_abs = '%s/abs_%4.4d.pk' % (fdir, wavelength)
 
     # absorption object
     abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
@@ -703,7 +703,7 @@ def example_05_rad_les_cloud_3d(
     fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % (er3t.common.fdir_examples)
 
     # file name of the pickle file for cloud
-    fname_les = '%s/les.pk' % fdir
+    fname_les = '%s/cld.pk' % fdir
 
     # cloud object
     # cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
@@ -760,10 +760,9 @@ def example_05_rad_les_cloud_3d(
     # define an absorption object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
-    fname_abs = '%s/abs.pk' % fdir
+    fname_abs = '%s/abs_%4.4d.pk' % (fdir, wavelength)
 
     # absorption object
-    # abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
     abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='modis', band_name='modis_aqua_b01', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
@@ -811,9 +810,9 @@ def example_05_rad_les_cloud_3d(
 
     # generate surface, property files for SHDOM
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc_les.txt' % fdir, overwrite=overwrite)
+    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc.txt' % fdir, overwrite=overwrite)
 
-    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_les.txt' % fdir, overwrite=overwrite)
+    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_%4.4d.txt' % (fdir, wavelength), overwrite=overwrite)
     atm_1ds = [atm1d0]
 
     atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp_les.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=overwrite)
@@ -830,7 +829,7 @@ def example_05_rad_les_cloud_3d(
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2017, 8, 13),
+            date=datetime.datetime(2024, 5, 18),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             surface=sfc_2d,
@@ -956,7 +955,7 @@ def example_06_rad_cld_gen_hem(
     # define an absorption object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
-    fname_abs = '%s/abs.pk' % fdir
+    fname_abs = '%s/abs_%4.4d.pk' % (fdir, wavelength)
 
     # absorption object
     # abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)

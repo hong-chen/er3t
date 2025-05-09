@@ -1065,7 +1065,7 @@ def example_05_rad_les_cloud_3d(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # run mcarats
     mca0 = er3t.rtm.mca.mcarats_ng(
-            date=datetime.datetime(2017, 8, 13),
+            date=datetime.datetime(2024, 5, 18),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             surface=sfc_2d,
