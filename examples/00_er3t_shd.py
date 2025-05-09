@@ -1227,11 +1227,10 @@ def example_07_at3d_rad_cloud_merra(
     # define an absorption object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
-    fname_abs = '%s/abs.pk' % fdir
+    fname_abs = '%s/abs_%4.4d.pk' % (fdir, wavelength)
 
     # absorption object
-    # abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='modis', band_name='modis_aqua_b01', atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -1260,7 +1259,7 @@ def example_07_at3d_rad_cloud_merra(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc.txt' % fdir, overwrite=overwrite)
 
-    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd.txt' % fdir, overwrite=overwrite)
+    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_%4.4d.txt' % (fdir, wavelength), overwrite=overwrite)
     atm_1ds = [atm1d0]
 
     atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
@@ -1364,9 +1363,9 @@ if __name__ == '__main__':
     # example_05_rad_les_cloud_3d(solver='IPA')
     # example_06_rad_cld_gen_hem()
 
-    # example_07_at3d_rad_cloud_merra(wavelength=650.0, overwrite=True)
-    example_07_at3d_rad_cloud_merra(wavelength=550.0, overwrite=False)
-    example_07_at3d_rad_cloud_merra(wavelength=450.0, overwrite=False)
+    example_07_at3d_rad_cloud_merra(wavelength=650.0)
+    example_07_at3d_rad_cloud_merra(wavelength=550.0)
+    example_07_at3d_rad_cloud_merra(wavelength=450.0)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass
