@@ -602,11 +602,13 @@ def read_flux_shd_out(shd_obj, abs_obj, squeeze=True):
     norm    = np.zeros(Nz, dtype=np.float32)
     factors = np.zeros((Nz, shd_obj.Ng), dtype=np.float32)
 
-    factors[...] = 1.0
-    # for iz in range(Nz):
-    #     norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
-    #     for ig in range(shd_obj.Ng):
-    #         factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
+    if len(abs_obj.coef['weight']['data']) > 1:
+        msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
+        raise OSError(msg)
+    for iz in range(Nz):
+        norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
+        for ig in range(shd_obj.Ng):
+            factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
     # -
 
 
@@ -696,11 +698,13 @@ def read_radiance_shd_out(shd_obj, abs_obj, squeeze=True):
     norm    = np.zeros(Nz, dtype=np.float32)
     factors = np.zeros((Nz, shd_obj.Ng), dtype=np.float32)
 
-    factors[...] = 1.0
-    # for iz in range(Nz):
-    #     norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
-    #     for ig in range(shd_obj.Ng):
-    #         factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
+    if len(abs_obj.coef['weight']['data']) > 1:
+        msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
+        raise OSError(msg)
+    for iz in range(Nz):
+        norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
+        for ig in range(shd_obj.Ng):
+            factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
     # -
 
 
