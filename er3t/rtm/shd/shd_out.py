@@ -13,8 +13,10 @@ from scipy import interpolate
 
 import er3t.common
 
+from er3t.util import cal_sol_fac, h5dset_to_pydict
 
-__all__ = ['get_shd_data_out', 'get_shd_data_out_ori']
+
+__all__ = ['get_shd_data_out', 'get_shd_data_out_ori', 'shd_out_ng', 'shd_out_raw']
 
 
 def get_shd_data_out_ori(
@@ -319,10 +321,10 @@ class shd_out_ng:
             print('Message [shd_out_ng]: Reading <%s> ...' % self.shd.target.lower())
 
         if self.shd.target in ['flux', 'flux0']: # ['f', 'flux', 'irradiance', 'heating rate', 'hr']:
-            self.data = read_flux_shd_out(self.shd, self.abs, mode=self.mode, squeeze=self.squeeze)
+            self.data = read_flux_shd_out(self.shd, self.abs, squeeze=self.squeeze)
 
         elif self.shd.target == 'radiance':
-            self.data = read_radiance_shd_out(self.shd, self.abs, mode=self.mode, squeeze=self.squeeze)
+            self.data = read_radiance_shd_out(self.shd, self.abs, squeeze=self.squeeze)
 
 
     def dump(self):
@@ -360,88 +362,163 @@ class shd_out_raw:
     Read a single SHDOM output binary file based on the information provided in the .ctl file
 
     Input:
-        fname_bin: positional argument, string type, file path of the shdom binary file
+        fname_txt: positional argument, string type, file path of the shdom binary file
 
     Output:
         self.data: Python list
     """
 
 
-    def __init__(self, fname_bin):
+    def __init__(self, fname_txt, verbose=False):
+        self.verbose = verbose
 
-        if not os.path.isfile(fname_bin):
-            msg = 'Error [shd_out_raw]: Cannot find <%s>.' % fname_bin
+        if not os.path.isfile(fname_txt):
+            msg = 'Error [shd_out_raw]: Cannot find <%s>.' % fname_txt
             raise OSError(msg)
 
-        fname_ctl = fname_bin + '.ctl'
-        if not os.path.isfile(fname_ctl):
-            msg = 'Error [shd_out_raw]: Cannot find <%s>.' % fname_ctl
-            raise OSError(msg)
-
-        self.fname_bin = fname_bin
-        self.fname_ctl = fname_ctl
+        self.fname_txt = fname_txt
 
         self.data = []
-        self.read_ctl()
-        self.read_bin()
+        self.read_txt()
 
 
-    def read_ctl(self):
+    def read_txt(self):
 
-        f     = open(self.fname_ctl, 'r')
-        lines = f.readlines()
-
-        Ns = 0
-        for i, line in enumerate(lines):
-            line = line.strip()
-
-            if 'XDEF' in line:
-                line = line.replace('XDEF', '').replace('LINEAR', '').strip()
-                Nx, S, I = np.int_(line.split())
-
-            elif 'YDEF' in line:
-                line = line.replace('YDEF', '').replace('LINEAR', '').strip()
-                Ny, S, I = np.int_(line.split())
-
-            elif 'TDEF' in line:
-                line = line.replace('TDEF', '').strip()
-                Nt = int(line.split()[0])
-
-            elif 'VARS' in line and 'ENDVARS' not in line:
-                line      = line.replace('VARS', '').strip()
-                Nvar      = int(line)
-                self.Nvar = Nvar
-
-                for j in range(i+1, i+Nvar+1):
-                    line       = lines[j].strip()
-                    words      = line.split()
-                    vname      = ' '.join(([words[0]]+['(%s)' % ' '.join(words[3:])]))
-
-                    Nz         = int(words[1])
-                    dims       = [Nx, Ny, Nz, Nt]
-
-                    Ne         = Ns + Nx*Ny*Nz*Nt
-
-                    self.data.append({'name':vname, 'dims':dims, 'dims_info': ['Nx', 'Ny', 'Nz', 'Nt'], \
-                            'Index_Start':Ns, 'Index_End':Ne})
-
-                    Ns         = Ne
-
-                i = j
-
-        f.close()
+        if self.verbose:
+            print('Message [get_shd_data_out]: Reading SHDOM output ...')
+            print('╭────────────────────────────────────────────────────────────────────────────╮')
 
 
-    def read_bin(self, dtype='<f4'):
+        # read headers
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        headers = []
+        with open(self.fname_txt, 'r') as f:
+            line = f.readline().strip()
+            while (line) and (line[0]=='!'):
+                headers.append(line)
+                line = f.readline().strip()
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
-        data_bin  = np.fromfile(self.fname_bin, dtype=dtype)
+        # extract information
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        Nline_output_type = [i for i in range(len(headers)) if ('OUTPUT_TYPE=' in headers[i])][0]
+        output_type = headers[Nline_output_type].split('=')[-1].lower().strip()
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
-        for i, info in enumerate(self.data):
+        # Nx, Ny
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        line_xy = [line for line in headers[Nline_output_type:] if ('NXO=' in line) or ('NYO=' in line)]
+        if len(line_xy) == 1:
+            Nx = int(line_xy[0][1:].split('NXO=')[1].split()[0])
+            Ny = int(line_xy[0][1:].split('NYO=')[1].split()[0])
+        elif len(line_xy) == 0:
+            Nx = int(headers[2][1:].split('NX=')[1].split()[0])
+            Ny = int(headers[2][1:].split('NY=')[1].split()[0])
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
-            self.data[i]['name']      = info['name']
-            self.data[i]['dims']      = info['dims']
-            self.data[i]['dims_info'] = info['dims_info']
-            self.data[i]['data']      = data_bin[info['Index_Start']:info['Index_End']].reshape(info['dims'], order='F')
+
+        # output data variable
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        mode = headers[-3].replace('!', '').strip().upper()
+        if mode in ['R', 'F1', 'F2', 'F3', 'F4', 'F5', 'H1', 'H2', 'H3', 'S1', 'S2', 'J1', 'J2', 'M1', 'M2']:
+            binary = True
+        else:
+            binary = False
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+        if binary:
+
+            fname_data = self.fname_txt + headers[-2].replace('!', '').strip()
+
+            if mode in ['F5', 'H3', 'S2', 'J2', 'M2']:
+
+                Ndata, Nvar = [int(num_s.strip()) for num_s in headers[-1].replace('!', '').split(',')]
+                shape = (Ndata, Nvar)
+
+                data = np.fromfile(fname_data, dtype='<f4').reshape(shape, order='F')
+
+            else:
+
+                Nx_, Ny_, Nz, Nset, Nvar = [int(num_s.strip()) for num_s in headers[-1].replace('!', '').split(',')]
+
+                if mode in ['R', 'F2']:
+
+                    shape = (Nz, Nx_, Ny_, Nset, Nvar)
+                    axes_swap = [2, 0, 1, 3, 4]
+
+                else:
+
+                    shape = (Nz, Ny_, Nx_, Nset, Nvar)
+                    axes_swap = [2, 1, 0, 3, 4]
+
+                data_ = np.fromfile(fname_data, dtype='<f4').reshape(shape, order='F')
+
+                data = np.moveaxis(data_, [0, 1, 2, 3, 4], axes_swap)
+                data = data[:Nx, :Ny, :, :, :]
+
+        else:
+
+            # Nvar
+            #╭────────────────────────────────────────────────────────────────────────────╮#
+            line_xy = [line for line in headers[Nline_output_type:] if ('  X  ' in line) or ('  Y  ' in line) or (' Z ' in line)][0]
+            Nvar_s = 0
+            if '  X  ' in line_xy:
+                Nvar_s += 1
+            if '  Y  ' in line_xy:
+                Nvar_s += 1
+            if ' Z ' in line_xy:
+                Nvar_s += 1
+
+            data_ = np.loadtxt(self.fname_txt, comments='!')[:, Nvar_s:]
+            Nvar = data_.shape[-1]
+            #╰────────────────────────────────────────────────────────────────────────────╯#
+
+            # Nx, Ny, Nz
+            #╭────────────────────────────────────────────────────────────────────────────╮#
+            line_xy = [line for line in headers[Nline_output_type:] if ('NXO=' in line) or ('NYO=' in line)]
+            if len(line_xy) == 1:
+                Nz = 1
+                Nx = int(line_xy[0][1:].split('NXO=')[1].split()[0])
+                Ny = int(line_xy[0][1:].split('NYO=')[1].split()[0])
+                if 'NDIR' in line_xy[0]:
+                    Nset = int(line_xy[0][1:].split('NDIR=')[1].split()[0])
+                else:
+                    Nset = 1
+            elif len(line_xy) == 0:
+                Nx = int(headers[2][1:].split('NX=')[1].split()[0])
+                Ny = int(headers[2][1:].split('NY=')[1].split()[0])
+                Nz = data_.shape[0]//Nx//Ny
+                Nset = 1
+            #╰────────────────────────────────────────────────────────────────────────────╯#
+
+            fname_data = self.fname_txt
+
+            data = np.zeros((Nset, Ny, Nx, Nz, Nvar), dtype=np.float32)
+            for i in range(Nvar):
+                data[..., i] = data_[:, i].reshape((Nset, Ny, Nx, Nz))
+
+            # from (Nset, Ny, Nx, Nz, Nvar) to (Ny, Nx, Nz, Nset, Nvar)
+            data = np.moveaxis(data, 0, -2)
+
+            # from (Ny, Nx, Nz, Nset, Nvar) to (Nx, Ny, Nz, Nset, Nvar)
+            data = np.moveaxis(data, 0, 1)
+
+        if self.verbose:
+            print('target file: <%s>' % os.path.abspath(self.fname_txt))
+            print('  data file: <%s>' % os.path.abspath(fname_data))
+            if data.ndim > 2:
+                print('%s (Nx, Ny, Nz, Nset, Nvar): %s' % (output_type.title(), data.shape))
+            else:
+                print('%s (Ndata, Nvar): %s' % (output_type.title(), data.shape))
+            print('╰────────────────────────────────────────────────────────────────────────────╯')
+
+        self.data = [{} for i in range(Nvar)]
+        for i in range(Nvar):
+            self.data[i]['name']      = 'var_%02d' % (i)
+            self.data[i]['dims']      = [Ny, Nx, Nz, Nset]
+            self.data[i]['dims_info'] = ['Nx', 'Ny', 'Nz', 'Nset']
+            self.data[i]['data']      = data[..., i]
 
 def save_h5_shd_out(fname, shd_obj, abs_obj, mode='mean', squeeze=True):
 
@@ -487,14 +564,13 @@ def save_h5_shd_out(fname, shd_obj, abs_obj, mode='mean', squeeze=True):
 
     f.close()
 
-def read_flux_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
+def read_flux_shd_out(shd_obj, abs_obj, squeeze=True):
 
     """
     Read fluxes from SHDOM output files
     Input:
         shd_obj : positional argument, shd object, e.g., shd_obj = shdom(...)
         abs_obj : positional argument, abs object, e.g., abs_obj = abs_16g(...)
-        mode=   : keyword argument, string, default='mean', can be 'mean', 'all'
         squeeze=: keyword argument, boolen, default=True, whether to keep axis that has dimension of 1 or not, True:remove, False:keep
 
     Output:
@@ -505,11 +581,9 @@ def read_flux_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
             data['f_down_diffuse']  : Diffuse downwelling irradiance (mean/std/raw)
     """
 
-    mode = mode.lower()
-
     # +
     # read one file to get the information of dataset dimension
-    out0      = shd_out_raw(shd_obj.fnames_out[0][0])
+    out0      = shd_out_raw(shd_obj.fnames_out[0], verbose=False)
     dims_info = out0.data[0]['dims_info']
     dims      = out0.data[0]['dims']
     # -
@@ -528,6 +602,9 @@ def read_flux_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
     norm    = np.zeros(Nz, dtype=np.float32)
     factors = np.zeros((Nz, shd_obj.Ng), dtype=np.float32)
 
+    if len(abs_obj.coef['weight']['data']) > 1:
+        msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
+        raise OSError(msg)
     for iz in range(Nz):
         norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
         for ig in range(shd_obj.Ng):
@@ -542,35 +619,33 @@ def read_flux_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
         dims       = [i for i in dims if i>1]
 
     dims_info += ['Nr']
-    dims      += [shd_obj.Nrun]
 
     f_down_direct = np.zeros(dims, dtype=np.float32)
     f_down        = np.zeros(dims, dtype=np.float32)
     f_up          = np.zeros(dims, dtype=np.float32)
 
-    for ir in range(shd_obj.Nrun):
-        for ig in range(shd_obj.Ng):
+    for ig in range(shd_obj.Ng):
 
-            fname0         = shd_obj.fnames_out[ir][ig]
+        fname0         = shd_obj.fnames_out[ig]
 
-            out0           = shd_out_raw(fname0)
-            f_down_direct0 = out0.data[0]['data']
-            f_down0        = out0.data[1]['data']
-            f_up0          = out0.data[2]['data']
+        out0           = shd_out_raw(fname0, verbose=False)
+        f_down_direct0 = out0.data[0]['data']
+        f_down0        = out0.data[1]['data']
+        f_up0          = out0.data[2]['data']
 
-            for iz in range(Nz):
-                f_down_direct0[:, :, iz, :] *= factors[iz, ig]
-                f_down0[:, :, iz, :]        *= factors[iz, ig]
-                f_up0[:, :, iz, :]          *= factors[iz, ig]
+        for iz in range(Nz):
+            f_down_direct0[:, :, iz, :] *= factors[iz, ig]
+            f_down0[:, :, iz, :]        *= factors[iz, ig]
+            f_up0[:, :, iz, :]          *= factors[iz, ig]
 
-            if squeeze:
-                f_down_direct[..., ir] += np.squeeze(f_down_direct0)
-                f_down[..., ir]        += np.squeeze(f_down0)
-                f_up[..., ir]          += np.squeeze(f_up0)
-            else:
-                f_down_direct[..., ir] += f_down_direct0
-                f_down[..., ir]        += f_down0
-                f_up[..., ir]          += f_up0
+        if squeeze:
+            f_down_direct[...] += np.squeeze(f_down_direct0)
+            f_down[...]        += np.squeeze(f_down0)
+            f_up[...]          += np.squeeze(f_up0)
+        else:
+            f_down_direct[...] += f_down_direct0
+            f_down[...]        += f_down0
+            f_up[...]          += f_up0
     # -
 
 
@@ -581,45 +656,21 @@ def read_flux_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
     toa = np.sum(sol_fac * abs_obj.coef['solar']['data'] * abs_obj.coef['weight']['data'])
     data_dict['toa'] = {'data':toa, 'name':'TOA without SZA' , 'units':'W/m^2/nm'}
 
-    if mode == 'all':
-
-        data_dict['f_down']          = {'data':f_down              , 'name':'Global downwelling flux' , 'units':'W/m^2/nm', 'dims_info':dims_info}
-        data_dict['f_up']            = {'data':f_up                , 'name':'Global upwelling flux'   , 'units':'W/m^2/nm', 'dims_info':dims_info}
-        data_dict['f_down_direct']   = {'data':f_down_direct       , 'name':'Direct downwelling flux' , 'units':'W/m^2/nm', 'dims_info':dims_info}
-        data_dict['f_down_diffuse']  = {'data':f_down-f_down_direct, 'name':'Diffuse downwelling flux', 'units':'W/m^2/nm', 'dims_info':dims_info}
-
-        data_dict['N_run']           = {'data':shd_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
-
-    elif mode == 'mean':
-
-        data_dict['f_down']          = {'data':np.mean(f_down              , axis=-1), 'name':'Global downwelling flux (mean)' , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
-        data_dict['f_up']            = {'data':np.mean(f_up                , axis=-1), 'name':'Global upwelling flux (mean)'   , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
-        data_dict['f_down_direct']   = {'data':np.mean(f_down_direct       , axis=-1), 'name':'Direct downwelling flux (mean)' , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
-        data_dict['f_down_diffuse']  = {'data':np.mean(f_down-f_down_direct, axis=-1), 'name':'Diffuse downwelling flux (mean)', 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
-
-        data_dict['f_down_std']          = {'data':np.std(f_down              , axis=-1), 'name':'Global downwelling flux (standard deviation)' , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
-        data_dict['f_up_std']            = {'data':np.std(f_up                , axis=-1), 'name':'Global upwelling flux (standard deviation)'   , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
-        data_dict['f_down_direct_std']   = {'data':np.std(f_down_direct       , axis=-1), 'name':'Direct downwelling flux (standard deviation)' , 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
-        data_dict['f_down_diffuse_std']  = {'data':np.std(f_down-f_down_direct, axis=-1), 'name':'Diffuse downwelling flux (standard deviation)', 'units':'W/m^2/nm', 'dims_info':dims_info[:-1]}
-
-        data_dict['N_run']           = {'data':shd_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
-
-    else:
-
-        msg = 'Error [read_flux_shd_out]: Do not support <mode=%s>.' % mode
-        raise OSError(msg)
+    data_dict['f_down']          = {'data':f_down              , 'name':'Global downwelling flux' , 'units':'W/m^2/nm', 'dims_info':dims_info}
+    data_dict['f_up']            = {'data':f_up                , 'name':'Global upwelling flux'   , 'units':'W/m^2/nm', 'dims_info':dims_info}
+    data_dict['f_down_direct']   = {'data':f_down_direct       , 'name':'Direct downwelling flux' , 'units':'W/m^2/nm', 'dims_info':dims_info}
+    data_dict['f_down_diffuse']  = {'data':f_down-f_down_direct, 'name':'Diffuse downwelling flux', 'units':'W/m^2/nm', 'dims_info':dims_info}
 
     return data_dict
     # -
 
-def read_radiance_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
+def read_radiance_shd_out(shd_obj, abs_obj, squeeze=True):
 
     """
     Read fluxes from SHDOM output files
     Input:
         shd_obj : positional argument, shd object, e.g., shd_obj = shdom(...)
         abs_obj : positional argument, abs object, e.g., abs_obj = abs_16g(...)
-        mode=   : keyword argument, string, default='mean', can be 'mean', 'all'
         squeeze=: keyword argument, boolen, default=True, whether to keep axis that has dimension of 1 or not, True:remove, False:keep
 
     Output:
@@ -627,11 +678,9 @@ def read_radiance_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
             data['rad']            : Radiance (mean/std/raw)
     """
 
-    mode = mode.lower()
-
     # +
     # read one file to get the information of dataset dimension
-    out0      = shd_out_raw(shd_obj.fnames_out[0][0])
+    out0      = shd_out_raw(shd_obj.fnames_out[0], verbose=False)
     dims_info = out0.data[0]['dims_info']
     dims      = out0.data[0]['dims']
     # -
@@ -649,6 +698,9 @@ def read_radiance_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
     norm    = np.zeros(Nz, dtype=np.float32)
     factors = np.zeros((Nz, shd_obj.Ng), dtype=np.float32)
 
+    if len(abs_obj.coef['weight']['data']) > 1:
+        msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
+        raise OSError(msg)
     for iz in range(Nz):
         norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
         for ig in range(shd_obj.Ng):
@@ -663,25 +715,23 @@ def read_radiance_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
         dims       = [i for i in dims if i>1]
 
     dims_info += ['Nr']
-    dims      += [shd_obj.Nrun]
 
     rad = np.zeros(dims, dtype=np.float32)
 
-    for ir in range(shd_obj.Nrun):
-        for ig in range(shd_obj.Ng):
+    for ig in range(shd_obj.Ng):
 
-            fname0 = shd_obj.fnames_out[ir][ig]
+        fname0 = shd_obj.fnames_out[ig]
 
-            out0   = shd_out_raw(fname0)
-            rad0   = out0.data[0]['data']
+        out0   = shd_out_raw(fname0, verbose=False)
+        rad0   = out0.data[0]['data']
 
-            for iz in range(Nz):
-                rad0[:, :, iz, :] *= factors[iz, ig]
+        for iz in range(Nz):
+            rad0[:, :, iz, :] *= factors[iz, ig]
 
-            if squeeze:
-                rad[..., ir] += np.squeeze(rad0)
-            else:
-                rad[..., ir] += rad0
+        if squeeze:
+            rad[...] += np.squeeze(rad0)
+        else:
+            rad[...] += rad0
     # -
 
 
@@ -692,16 +742,7 @@ def read_radiance_shd_out(shd_obj, abs_obj, mode='mean', squeeze=True):
     toa = np.sum(sol_fac * abs_obj.coef['solar']['data'] * abs_obj.coef['weight']['data'])
     data_dict['toa'] = {'data':toa, 'name':'TOA without SZA' , 'units':'W/m^2/nm'}
 
-    if mode == 'all':
-        data_dict['rad']      = {'data':rad, 'name':'Radiance' , 'units':'W/m^2/nm/sr', 'dims_info':dims_info}
-        data_dict['N_run']    = {'data':shd_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
-    elif mode == 'mean':
-        data_dict['rad']      = {'data':np.mean(rad, axis=-1), 'name':'Radiance (mean)' , 'units':'W/m^2/nm/sr', 'dims_info':dims_info[:-1]}
-        data_dict['rad_std']  = {'data':np.std(rad, axis=-1), 'name':'Radiance (standard deviation)' , 'units':'W/m^2/nm/sr', 'dims_info':dims_info[:-1]}
-        data_dict['N_run']    = {'data':shd_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
-    else:
-        msg = 'Error [read_radiance_shd_out]: Do not support <mode=%s>.' % mode
-        raise OSError(msg)
+    data_dict['rad']      = {'data':rad, 'name':'Radiance' , 'units':'W/m^2/nm/sr', 'dims_info':dims_info}
 
     return data_dict
     # -

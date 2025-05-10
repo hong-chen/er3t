@@ -188,7 +188,7 @@ def example_01_rad_atm1d_clear_over_land(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            sol_acc=1.0e-7,
+            solution_acc=1.0e-7,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
@@ -224,8 +224,8 @@ def example_01_rad_atm1d_clear_over_land(
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -234,15 +234,15 @@ def example_01_rad_atm1d_clear_over_land(
 
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    if False:
+    if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(8, 6))
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
-        ax1.set_xlabel('X Index')
-        ax1.set_ylabel('Y Index')
-        ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
+        ax1 = fig.add_subplot(111, projection='polar')
+        ax1.set_theta_direction(-1)
+        ax1.set_theta_offset(np.pi/2.)
+        cs = ax1.scatter(np.deg2rad(vaa), out0.data['rad']['data'][:], c='black', s=3)
+        ax1.set_title('Radiance at %.1f nm at VZA= %5.1f deg (%s Mode)' % (wavelength, np.mean(vza), solver))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -399,7 +399,7 @@ def example_02_rad_atm1d_clear_over_ocean(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            sol_acc=1.0e-7,
+            solution_acc=1.0e-7,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
@@ -435,8 +435,8 @@ def example_02_rad_atm1d_clear_over_ocean(
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -445,15 +445,15 @@ def example_02_rad_atm1d_clear_over_ocean(
 
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    if False:
+    if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(8, 6))
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
-        ax1.set_xlabel('X Index')
-        ax1.set_ylabel('Y Index')
-        ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
+        ax1 = fig.add_subplot(111, projection='polar')
+        ax1.set_theta_direction(-1)
+        ax1.set_theta_offset(np.pi/2.)
+        cs = ax1.scatter(np.deg2rad(vaa), out0.data['rad']['data'][:], c='black', s=3)
+        ax1.set_title('Radiance at %.1f nm at VZA= %5.1f deg (%s Mode)' % (wavelength, np.mean(vza), solver))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -609,7 +609,7 @@ def example_03_rad_atm1d_cloud_over_ocean(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            sol_acc=1.0e-7,
+            solution_acc=1.0e-7,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
@@ -645,8 +645,8 @@ def example_03_rad_atm1d_cloud_over_ocean(
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -655,15 +655,15 @@ def example_03_rad_atm1d_cloud_over_ocean(
 
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    if False:
+    if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(8, 6))
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
-        ax1.set_xlabel('X Index')
-        ax1.set_ylabel('Y Index')
-        ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
+        ax1 = fig.add_subplot(111, projection='polar')
+        ax1.set_theta_direction(-1)
+        ax1.set_theta_offset(np.pi/2.)
+        cs = ax1.scatter(np.deg2rad(vaa), out0.data['rad']['data'][:], c='black', s=3)
+        ax1.set_title('Radiance at %.1f nm at VZA= %5.1f deg (%s Mode)' % (wavelength, np.mean(vza), solver))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -777,7 +777,7 @@ def example_05_rad_les_cloud_3d(
 
     # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
+    f = h5py.File('%s/data/pre-data.h5' % (er3t.common.fdir_examples), 'r')
     fiso = f['mod/sfc/fiso_43_0650'][...][:400, :480]
     fvol = f['mod/sfc/fvol_43_0650'][...][:400, :480]
     fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
@@ -870,8 +870,8 @@ def example_05_rad_les_cloud_3d(
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -880,7 +880,7 @@ def example_05_rad_les_cloud_3d(
 
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    if False:
+    if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(8, 6))
@@ -1105,8 +1105,8 @@ def example_06_rad_cld_gen_hem(
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -1115,17 +1115,18 @@ def example_06_rad_cld_gen_hem(
 
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    if False:
-        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
+    if plot:
+        for ivaa in range(vaa.size):
+            fname_png = '%s-%s_%s_%02d.png' % (name_tag, _metadata['Function'], solver.lower(), ivaa)
 
-        fig = plt.figure(figsize=(8, 6))
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
-        ax1.set_xlabel('X Index')
-        ax1.set_ylabel('Y Index')
-        ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
-        plt.savefig(fname_png, bbox_inches='tight')
-        plt.close(fig)
+            fig = plt.figure(figsize=(8, 6))
+            ax1 = fig.add_subplot(111)
+            cs = ax1.imshow(np.transpose(out0.data['rad']['data'][:, :, ivaa]), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
+            ax1.set_xlabel('X Index')
+            ax1.set_ylabel('Y Index')
+            ax1.set_title('Radiance at %.2f nm, vaa=%.f deg (%s Mode)' % (wavelength, vaa[ivaa], solver))
+            plt.savefig(fname_png, bbox_inches='tight')
+            plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # References
