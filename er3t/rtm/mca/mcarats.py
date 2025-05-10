@@ -613,7 +613,10 @@ def check_and_broadcast_sensor_params(sensor_zenith_angle, sensor_azimuth_angle,
         return sensor_params[0], sensor_params[1], sensor_params[2], sensor_params[3], sensor_params[4], max_length
     
     elif max_length == 1:
-        return sensor_zenith_angle, sensor_azimuth_angle, sensor_altitude, sensor_xpos, sensor_ypos, 1
+        for i, param in enumerate(sensor_params):
+            if isinstance(param, list):
+                sensor_params[i] = np.array(param)
+        return sensor_params[0], sensor_params[1], sensor_params[2], sensor_params[3], sensor_params[4], 1
 
 
 

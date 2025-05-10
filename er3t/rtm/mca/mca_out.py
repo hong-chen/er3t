@@ -453,6 +453,8 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
             factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
     # -
 
+    dims_info += ['Nsensor']
+    dims      += [mca_obj.Nsensor]
 
     # +
     # calculate radiances
@@ -460,8 +462,6 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
         dims_info  = [dims_info[i] for i in range(len(dims)) if dims[i] > 1]
         dims       = [i for i in dims if i>1]
 
-    dims_info += ['Nsensor']
-    dims      += [mca_obj.Nsensor]
     
     dims_info += ['Nr']
     dims      += [mca_obj.Nrun]
@@ -481,10 +481,16 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
                 for iz in range(Nz):
                     rad0[:, :, iz, :] *= factors[iz, ig]
 
-                if squeeze:
-                    rad[..., isensor, ir] += np.squeeze(rad0)
+                if 'Nsensor' in dims_info:
+                    if squeeze:
+                        rad[..., isensor, ir] += np.squeeze(rad0)
+                    else:
+                        rad[..., isensor, ir] += rad0
                 else:
-                    rad[..., isensor, ir] += rad0
+                    if squeeze:
+                        rad[..., ir] += np.squeeze(rad0)
+                    else:
+                        rad[..., ir] += rad0
     # -
 
 
