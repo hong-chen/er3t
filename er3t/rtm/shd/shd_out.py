@@ -605,10 +605,12 @@ def read_flux_shd_out(shd_obj, abs_obj, squeeze=True):
     if len(abs_obj.coef['weight']['data']) > 1:
         msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
         raise OSError(msg)
-    for iz in range(Nz):
-        norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
-        for ig in range(shd_obj.Ng):
-            factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
+    ##### Currrently CKD factors are aleady included in the SHDOM input
+    factors[:, :] = 1.0
+    # for iz in range(Nz):
+    #     norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
+    #     for ig in range(shd_obj.Ng):
+    #         factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
     # -
 
 
@@ -620,32 +622,32 @@ def read_flux_shd_out(shd_obj, abs_obj, squeeze=True):
 
     dims_info += ['Nr']
 
-    f_down_direct = np.zeros(dims, dtype=np.float32)
-    f_down        = np.zeros(dims, dtype=np.float32)
-    f_up          = np.zeros(dims, dtype=np.float32)
+    f_down_direct  = np.zeros(dims, dtype=np.float32)
+    f_down_diffuse = np.zeros(dims, dtype=np.float32)
+    f_up           = np.zeros(dims, dtype=np.float32)
 
     for ig in range(shd_obj.Ng):
 
         fname0         = shd_obj.fnames_out[ig]
 
         out0           = shd_out_raw(fname0, verbose=False)
-        f_down_direct0 = out0.data[0]['data']
-        f_down0        = out0.data[1]['data']
-        f_up0          = out0.data[2]['data']
+        f_up0           = out0.data[0]['data']
+        f_down_diffuse0 = out0.data[1]['data']
+        f_down_direct0  = out0.data[2]['data']
 
         for iz in range(Nz):
-            f_down_direct0[:, :, iz, :] *= factors[iz, ig]
-            f_down0[:, :, iz, :]        *= factors[iz, ig]
-            f_up0[:, :, iz, :]          *= factors[iz, ig]
+            f_down_direct0[:, :, iz, :]  *= factors[iz, ig]
+            f_down_diffuse0[:, :, iz, :] *= factors[iz, ig]
+            f_up0[:, :, iz, :]           *= factors[iz, ig]
 
         if squeeze:
-            f_down_direct[...] += np.squeeze(f_down_direct0)
-            f_down[...]        += np.squeeze(f_down0)
-            f_up[...]          += np.squeeze(f_up0)
+            f_down_direct[...]  += np.squeeze(f_down_direct0)
+            f_down_diffuse[...] += np.squeeze(f_down_diffuse0)
+            f_up[...]           += np.squeeze(f_up0)
         else:
-            f_down_direct[...] += f_down_direct0
-            f_down[...]        += f_down0
-            f_up[...]          += f_up0
+            f_down_direct[...]  += f_down_direct0
+            f_down_diffuse[...] += f_down_diffuse0
+            f_up[...]           += f_up0
     # -
 
 
@@ -656,10 +658,10 @@ def read_flux_shd_out(shd_obj, abs_obj, squeeze=True):
     toa = np.sum(sol_fac * abs_obj.coef['solar']['data'] * abs_obj.coef['weight']['data'])
     data_dict['toa'] = {'data':toa, 'name':'TOA without SZA' , 'units':'W/m^2/nm'}
 
-    data_dict['f_down']          = {'data':f_down              , 'name':'Global downwelling flux' , 'units':'W/m^2/nm', 'dims_info':dims_info}
+    data_dict['f_down']          = {'data':f_down_direct + f_down_diffuse, 'name':'Global downwelling flux' , 'units':'W/m^2/nm', 'dims_info':dims_info}
     data_dict['f_up']            = {'data':f_up                , 'name':'Global upwelling flux'   , 'units':'W/m^2/nm', 'dims_info':dims_info}
     data_dict['f_down_direct']   = {'data':f_down_direct       , 'name':'Direct downwelling flux' , 'units':'W/m^2/nm', 'dims_info':dims_info}
-    data_dict['f_down_diffuse']  = {'data':f_down-f_down_direct, 'name':'Diffuse downwelling flux', 'units':'W/m^2/nm', 'dims_info':dims_info}
+    data_dict['f_down_diffuse']  = {'data':f_down_diffuse      , 'name':'Diffuse downwelling flux', 'units':'W/m^2/nm', 'dims_info':dims_info}
 
     return data_dict
     # -
@@ -701,10 +703,12 @@ def read_radiance_shd_out(shd_obj, abs_obj, squeeze=True):
     if len(abs_obj.coef['weight']['data']) > 1:
         msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
         raise OSError(msg)
-    for iz in range(Nz):
-        norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
-        for ig in range(shd_obj.Ng):
-            factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
+    ##### Currrently CKD factors are aleady included in the SHDOM input
+    factors[:, :] = 1.0
+    # for iz in range(Nz):
+    #     norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
+    #     for ig in range(shd_obj.Ng):
+    #         factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
     # -
 
 
