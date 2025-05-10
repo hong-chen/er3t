@@ -172,14 +172,14 @@ def example_01_rad_atm1d_clear_over_land(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.1, 2.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.1, 2.0)
+    # vza = np.repeat(30.0, vaa.size)
 
-    # vaa_1d = np.arange(0.0, 360.1, 1.0)
-    # vza_1d = np.arange(1.0, 89.1, 1.0)
-    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    # vaa = vaa.ravel()
-    # vza = vza.ravel()
+    vaa_1d = np.arange(0.0, 360.1, 1.0)
+    vza_1d = np.arange(1.0, 89.1, 1.0)
+    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa.ravel()
+    vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -256,6 +256,9 @@ def example_01_rad_atm1d_clear_over_land(
 
 def example_02_rad_atm1d_clear_over_ocean(
         wavelength=550.0,
+        windspeed=1.0,
+        pigment=0.01,
+        sza=30.0,
         solver='IPA',
         overwrite=True,
         plot=True
@@ -271,7 +274,7 @@ def example_02_rad_atm1d_clear_over_ocean(
     """
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s/%04.1f_%04.2f_%04.1f' % (fdir0, name_tag, _metadata['Function'], windspeed, pigment, sza)
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -360,8 +363,8 @@ def example_02_rad_atm1d_clear_over_ocean(
     sfc_dict = {
             'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
             'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
-            'windspeed': np.array([1.0]).reshape((1, 1)),
-            'pigment': np.array([0.01]).reshape((1, 1)),
+            'windspeed': np.array([windspeed]).reshape((1, 1)),
+            'pigment': np.array([pigment]).reshape((1, 1)),
             }
 
     fname_sfc = '%s/sfc.pk' % fdir
@@ -383,14 +386,14 @@ def example_02_rad_atm1d_clear_over_ocean(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.1, 2.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.1, 2.0)
+    # vza = np.repeat(30.0, vaa.size)
 
-    # vaa_1d = np.arange(0.0, 360.1, 1.0)
-    # vza_1d = np.arange(1.0, 89.1, 1.0)
-    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    # vaa = vaa.ravel()
-    # vza = vza.ravel()
+    vaa_1d = np.arange(0.0, 360.1, 1.0)
+    vza_1d = np.arange(1.0, 89.1, 1.0)
+    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa.ravel()
+    vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -401,7 +404,7 @@ def example_02_rad_atm1d_clear_over_ocean(
             Niter=1000,
             solution_acc=1.0e-7,
             target='radiance',
-            solar_zenith_angle=30.0,
+            solar_zenith_angle=sza,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
@@ -467,6 +470,11 @@ def example_02_rad_atm1d_clear_over_ocean(
 
 def example_03_rad_atm1d_cloud_over_ocean(
         wavelength=550.0,
+        cot=10.0,
+        cer=12.0,
+        sza=30.0,
+        windspeed=1.0,
+        pigment=0.01,
         solver='IPA',
         overwrite=True,
         plot=True
@@ -483,6 +491,7 @@ def example_03_rad_atm1d_cloud_over_ocean(
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     fdir='%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s/%04.1f_%04.1f_%04.1f' % (fdir0, name_tag, _metadata['Function'], cot, cer, sza)
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -542,8 +551,8 @@ def example_03_rad_atm1d_cloud_over_ocean(
 
     cld0 = er3t.pre.cld.cld_gen_cop(
             fname=fname_cld,
-            cot=np.array([12.0]).reshape((1, 1)),
-            cer=np.array([10.0]).reshape((1, 1)),
+            cot=np.array([cot]).reshape((1, 1)),
+            cer=np.array([cer]).reshape((1, 1)),
             cth=np.array([1.0]).reshape((1, 1)),
             cgt=np.array([0.5]).reshape((1, 1)),
             dz=0.1,
@@ -571,8 +580,8 @@ def example_03_rad_atm1d_cloud_over_ocean(
     sfc_dict = {
             'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
             'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
-            'windspeed': np.array([1.0]).reshape((1, 1)),
-            'pigment': np.array([0.01]).reshape((1, 1)),
+            'windspeed': np.array([windspeed]).reshape((1, 1)),
+            'pigment': np.array([pigment]).reshape((1, 1)),
             }
 
     fname_sfc = '%s/sfc.pk' % fdir
@@ -593,14 +602,14 @@ def example_03_rad_atm1d_cloud_over_ocean(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.1, 2.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.1, 2.0)
+    # vza = np.repeat(30.0, vaa.size)
 
-    # vaa_1d = np.arange(0.0, 360.1, 1.0)
-    # vza_1d = np.arange(1.0, 89.1, 1.0)
-    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    # vaa = vaa.ravel()
-    # vza = vza.ravel()
+    vaa_1d = np.arange(0.0, 360.1, 1.0)
+    vza_1d = np.arange(1.0, 89.1, 1.0)
+    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa.ravel()
+    vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -609,9 +618,9 @@ def example_03_rad_atm1d_cloud_over_ocean(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            solution_acc=1.0e-7,
+            sol_acc=1.0e-7,
             target='radiance',
-            solar_zenith_angle=30.0,
+            solar_zenith_angle=sza,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
@@ -1356,16 +1365,24 @@ if __name__ == '__main__':
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # example_01_rad_atm1d_clear_over_land()
-    # example_02_rad_atm1d_clear_over_ocean()
-    # example_03_rad_atm1d_cloud_over_ocean()
+
+    # for windspeed in np.arange(1.0, 24.1, 0.1):
+    #     example_02_rad_atm1d_clear_over_ocean(windspeed=windspeed)
+    # for sza in np.append(np.arange(0.0, 90.0, 3.0), 89.9):
+    #     example_02_rad_atm1d_clear_over_ocean(sza=sza)
+
+    # for cer in np.arange(1.0, 25.1, 1.0):
+    #     example_03_rad_atm1d_cloud_over_ocean(cer=cer)
+    for sza in np.append(np.arange(0.0, 90.0, 3.0), 89.9):
+        example_03_rad_atm1d_cloud_over_ocean(sza=sza)
 
     # example_05_rad_les_cloud_3d(solver='3D')
     # example_05_rad_les_cloud_3d(solver='IPA')
     # example_06_rad_cld_gen_hem()
 
-    example_07_at3d_rad_cloud_merra(wavelength=650.0)
-    example_07_at3d_rad_cloud_merra(wavelength=550.0)
-    example_07_at3d_rad_cloud_merra(wavelength=450.0)
+    # example_07_at3d_rad_cloud_merra(wavelength=650.0)
+    # example_07_at3d_rad_cloud_merra(wavelength=550.0)
+    # example_07_at3d_rad_cloud_merra(wavelength=450.0)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass

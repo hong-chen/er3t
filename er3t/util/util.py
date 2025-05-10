@@ -1053,7 +1053,7 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
 
-    reference = 'Rayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
+    reference = '\nRayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
 
     # avogadro's number
     A_ = 6.02214179e23
