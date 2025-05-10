@@ -997,7 +997,7 @@ def example_05_rad_les_cloud_3d(
 
     # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
+    f = h5py.File('./data/pre-data.h5', 'r')
     fiso = f['mod/sfc/fiso_43_0650'][...][:400, :480]
     fvol = f['mod/sfc/fvol_43_0650'][...][:400, :480]
     fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
@@ -1074,8 +1074,8 @@ def example_05_rad_les_cloud_3d(
             sca=sca,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
-            sensor_zenith_angle=0.0,
-            sensor_azimuth_angle=45.0,
+            sensor_zenith_angle=[60.0, 0.0, 60.0],
+            sensor_azimuth_angle=[0.0, 0.0, 180.0],
             sensor_altitude=705.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
@@ -1120,13 +1120,24 @@ def example_05_rad_les_cloud_3d(
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
         extent = [0, 48, 0, 48]
 
-        fig = plt.figure(figsize=(6, 6))
-        ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower', extent=extent, aspect='auto')
-        # ax1.set_xlabel('X Index')
-        # ax1.set_ylabel('Y Index')
-        # ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
-        ax1.axis('off')
+        if out0.data['N_sensor']['data'] == 1:
+            fig = plt.figure(figsize=(6, 6))
+            ax1 = fig.add_subplot(111)
+            cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower', extent=extent, aspect='auto')
+            # ax1.set_xlabel('X Index')
+            # ax1.set_ylabel('Y Index')
+            # ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
+            ax1.axis('off')
+        elif out0.data['N_sensor']['data'] > 1:
+            fig = plt.figure(figsize=(out0.data['N_sensor']['data']*6 + 2, 6))
+            for isensor in range(out0.data['N_sensor']['data']):
+                ax = fig.add_subplot(1, out0.data['N_sensor']['data'], isensor + 1)
+                cs = ax.imshow(np.transpose(out0.data['rad']['data'][:, :, isensor]), 
+                               cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower', extent=extent, aspect='auto')
+                # ax.set_xlabel('X Index')
+                # ax.set_ylabel('Y Index')
+                # ax.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
+                ax.axis('off')
         plt.savefig(fname_png, bbox_inches='tight', transparent=False, pad_inches=0.0)
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -1243,7 +1254,6 @@ def example_06_rad_cld_gen_hem(
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-
     # define mcarats 1d and 3d "atmosphere", can represent aersol, cloud, atmosphere
     #╭────────────────────────────────────────────────────────────────────────────╮#
     atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
@@ -1262,14 +1272,13 @@ def example_06_rad_cld_gen_hem(
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             surface=0.2,
-            sfc_2d=sfc_2d,
             Ng=abs0.Ng,
             target='radiance',
             sca=sca,
             solar_zenith_angle=29.162360459281544,
             solar_azimuth_angle=-63.16777636586792,
-            sensor_zenith_angle=0.0,
-            sensor_azimuth_angle=0.0,
+            sensor_zenith_angle=[60.0, 0.0, 60.0], #0.0,
+            sensor_azimuth_angle=[0.0, 0.0, 180.0], #0.0,
             sensor_altitude=705,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
@@ -1295,30 +1304,60 @@ def example_06_rad_cld_gen_hem(
     if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
-        fig = plt.figure(figsize=(16, 5.0))
+        if out0.data['N_sensor']['data'] == 1:
 
-        ax1 = fig.add_subplot(131, projection='3d')
-        cmap = mpl.cm.get_cmap('jet').copy()
-        cs = ax1.plot_surface(cld0.x_3d[:, :, 0], cld0.y_3d[:, :, 0], cld0.lev['cth_2d']['data'], cmap=cmap, alpha=0.8, antialiased=False)
-        ax1.set_zlim((0, 10))
-        ax1.set_xlabel('X [km]')
-        ax1.set_ylabel('Y [km]')
-        ax1.set_zlabel('Z [km]')
-        ax1.set_title('Cloud Top Height (3D View)')
+            fig = plt.figure(figsize=(16, 5.0))
 
-        ax2 = fig.add_subplot(132)
-        cs = ax2.imshow(cld0.lev['cot_2d']['data'].T, cmap=cmap, origin='lower', vmin=0.0, vmax=80.0)
-        ax2.set_xlabel('X Index')
-        ax2.set_ylabel('Y Index')
-        ax2.set_title('Cloud Optical Thickness')
+            ax1 = fig.add_subplot(131, projection='3d')
+            cmap = mpl.cm.get_cmap('jet').copy()
+            cs = ax1.plot_surface(cld0.x_3d[:, :, 0], cld0.y_3d[:, :, 0], cld0.lev['cth_2d']['data'], cmap=cmap, alpha=0.8, antialiased=False)
+            ax1.set_zlim((0, 10))
+            ax1.set_xlabel('X [km]')
+            ax1.set_ylabel('Y [km]')
+            ax1.set_zlabel('Z [km]')
+            ax1.set_title('Cloud Top Height (3D View)')
 
-        ax3 = fig.add_subplot(133)
-        cs = ax3.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
-        ax3.set_xlabel('X Index')
-        ax3.set_ylabel('Y Index')
-        ax3.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
+            ax2 = fig.add_subplot(132)
+            cs = ax2.imshow(cld0.lev['cot_2d']['data'].T, cmap=cmap, origin='lower', vmin=0.0, vmax=80.0)
+            ax2.set_xlabel('X Index')
+            ax2.set_ylabel('Y Index')
+            ax2.set_title('Cloud Optical Thickness')
 
-        plt.subplots_adjust(wspace=0.4)
+            ax3 = fig.add_subplot(133)
+            cs = ax3.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
+            ax3.set_xlabel('X Index')
+            ax3.set_ylabel('Y Index')
+            ax3.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
+
+            plt.subplots_adjust(wspace=0.4)
+        
+        elif out0.data['N_sensor']['data'] > 1:
+
+            fig = plt.figure(figsize=(11 + 5*out0.data['N_sensor']['data'], 5))
+
+            ax1 = fig.add_subplot(1, 2 + out0.data['N_sensor']['data'], 1, projection='3d')
+            cmap = mpl.cm.get_cmap('jet').copy()
+            cs = ax1.plot_surface(cld0.x_3d[:, :, 0], cld0.y_3d[:, :, 0], cld0.lev['cth_2d']['data'], cmap=cmap, alpha=0.8, antialiased=False)
+            ax1.set_zlim((0, 10))
+            ax1.set_xlabel('X [km]')
+            ax1.set_ylabel('Y [km]')
+            ax1.set_zlabel('Z [km]')
+            ax1.set_title('Cloud Top Height (3D View)')
+
+            ax2 = fig.add_subplot(1, 2 + out0.data['N_sensor']['data'], 2)
+            cs = ax2.imshow(cld0.lev['cot_2d']['data'].T, cmap=cmap, origin='lower', vmin=0.0, vmax=80.0)
+            ax2.set_xlabel('X Index')
+            ax2.set_ylabel('Y Index')
+            ax2.set_title('Cloud Optical Thickness')
+
+            for isensor in range(out0.data['N_sensor']['data']):
+                ax3 = fig.add_subplot(1, 2 + out0.data['N_sensor']['data'], 3 + isensor)
+                cs = ax3.imshow(np.transpose(out0.data['rad']['data'][:, :, isensor]), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
+                ax3.set_xlabel('X Index')
+                ax3.set_ylabel('Y Index')
+                ax3.set_title('Radiance at %.2f nm (%s:ang=%d)' % (wavelength, solver, isensor + 1))
+
+            plt.subplots_adjust(wspace=0.4)
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#

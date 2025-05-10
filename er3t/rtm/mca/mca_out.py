@@ -431,6 +431,7 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
     out0      = mca_out_raw(mca_obj.fnames_out[0][0])
     dims_info = out0.data[0]['dims_info']
     dims      = out0.data[0]['dims']
+    
     # -
 
     # +
@@ -459,6 +460,9 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
         dims_info  = [dims_info[i] for i in range(len(dims)) if dims[i] > 1]
         dims       = [i for i in dims if i>1]
 
+    dims_info += ['Nsensor']
+    dims      += [mca_obj.Nsensor]
+    
     dims_info += ['Nr']
     dims      += [mca_obj.Nrun]
 
@@ -470,15 +474,17 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
             fname0 = mca_obj.fnames_out[ir][ig]
 
             out0   = mca_out_raw(fname0)
-            rad0   = out0.data[0]['data']
 
-            for iz in range(Nz):
-                rad0[:, :, iz, :] *= factors[iz, ig]
+            for isensor in range(mca_obj.Nsensor):
+                rad0   = out0.data[isensor]['data']
 
-            if squeeze:
-                rad[..., ir] += np.squeeze(rad0)
-            else:
-                rad[..., ir] += rad0
+                for iz in range(Nz):
+                    rad0[:, :, iz, :] *= factors[iz, ig]
+
+                if squeeze:
+                    rad[..., isensor, ir] += np.squeeze(rad0)
+                else:
+                    rad[..., isensor, ir] += rad0
     # -
 
 
@@ -493,11 +499,13 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
         data_dict['rad']      = {'data':rad, 'name':'Radiance' , 'units':'W/m^2/nm/sr', 'dims_info':dims_info}
         data_dict['N_photon'] = {'data':mca_obj.photons     , 'name': 'Number of photons'      , 'units': 'N/A'}
         data_dict['N_run']    = {'data':mca_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
+        data_dict['N_sensor'] = {'data':mca_obj.Nsensor     , 'name': 'Number of sensors'      , 'units': 'N/A'}
     elif mode == 'mean':
         data_dict['rad']      = {'data':np.mean(rad, axis=-1), 'name':'Radiance (mean)' , 'units':'W/m^2/nm/sr', 'dims_info':dims_info[:-1]}
         data_dict['rad_std']  = {'data':np.std(rad, axis=-1), 'name':'Radiance (standard deviation)' , 'units':'W/m^2/nm/sr', 'dims_info':dims_info[:-1]}
         data_dict['N_photon'] = {'data':mca_obj.photons     , 'name': 'Number of photons'      , 'units': 'N/A'}
         data_dict['N_run']    = {'data':mca_obj.Nrun        , 'name': 'Number of runs'         , 'units': 'N/A'}
+        data_dict['N_sensor'] = {'data':mca_obj.Nsensor     , 'name': 'Number of sensors'      , 'units': 'N/A'}
     else:
         msg = 'Error [read_radiance_mca_out]: Do not support <mode=%s>.' % mode
         raise OSError(msg)

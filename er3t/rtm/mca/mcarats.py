@@ -199,6 +199,10 @@ class mcarats_ng:
 
         if not self.quiet and not self.overwrite:
             print('Message [mcarats_ng]: Reading mode ...')
+        
+        # count and broadcast sensor parameters
+        self.sensor_zenith_angle, self.sensor_azimuth_angle, self.sensor_altitude, self.sensor_xpos, self.sensor_ypos, self.Nsensor \
+        = check_and_broadcast_sensor_params(self.sensor_zenith_angle, self.sensor_azimuth_angle, self.sensor_altitude, self.sensor_xpos, self.sensor_ypos)
 
         if overwrite:
 
@@ -206,9 +210,7 @@ class mcarats_ng:
             self.nml = [{} for ig in range(self.Ng)]
 
             # MCARaTS wld initialization
-            self.init_wld(verbose=verbose, tune=tune,
-                sensor_zenith_angle=sensor_zenith_angle, sensor_azimuth_angle=sensor_azimuth_angle, \
-                sensor_type=sensor_type, sensor_altitude=sensor_altitude, sensor_xpos=sensor_xpos, sensor_ypos=sensor_ypos)
+            self.init_wld(verbose=verbose, tune=tune, sensor_type=sensor_type)
 
             # MCARaTS scattering initialization
             self.init_sca(sca=sca)
@@ -233,9 +235,7 @@ class mcarats_ng:
             self.run_check()
 
 
-    def init_wld(self, tune=False, verbose=False, \
-        sensor_zenith_angle=0.0, sensor_azimuth_angle=0.0, \
-        sensor_type='satellite', sensor_altitude=705.0, sensor_xpos=0.5, sensor_ypos=0.5):
+    def init_wld(self, tune=False, verbose=False, sensor_type='satellite'):
 
         if self.target.lower() in ['f', 'flux', 'irradiance']:
             self.target = 'flux'
@@ -294,19 +294,19 @@ class mcarats_ng:
                     self.nml[ig]['Rad_mrkind'] = 1
                     self.nml[ig]['Rad_qmax']   = 178.0
                     self.nml[ig]['Rad_apsize'] = 0.05
-                    self.nml[ig]['Rad_xpos'] = sensor_xpos
-                    self.nml[ig]['Rad_ypos'] = sensor_ypos
+                    self.nml[ig]['Rad_xpos'] = self.sensor_xpos
+                    self.nml[ig]['Rad_ypos'] = self.sensor_ypos
 
 
                 self.nml[ig]['Rad_mplen']   = 0
                 self.nml[ig]['Rad_mpmap']   = 1
-                self.nml[ig]['Rad_nrad']    = 1
+                self.nml[ig]['Rad_nrad']    = self.Nsensor #1
 
                 self.nml[ig]['Rad_difr0']   = 7.5
                 self.nml[ig]['Rad_difr1']   = 0.0025
-                self.nml[ig]['Rad_the']     = 180.0 - sensor_zenith_angle
-                self.nml[ig]['Rad_phi']     = cal_mca_azimuth(sensor_azimuth_angle)
-                self.nml[ig]['Rad_zloc']    = sensor_altitude*1000.0
+                self.nml[ig]['Rad_the']     = 180.0 - self.sensor_zenith_angle
+                self.nml[ig]['Rad_phi']     = cal_mca_azimuth(self.sensor_azimuth_angle)
+                self.nml[ig]['Rad_zloc']    = self.sensor_altitude*1000.0
 
             else:
                 msg = 'Error [mcarats_ng]: Cannot understand <target=%s>.' % self.target
@@ -498,12 +498,21 @@ class mcarats_ng:
         print('      Solar Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.solar_azimuth_angle)
 
         if self.target == 'radiance':
-            if self.sensor_zenith_angle < 90.0:
-                print('      Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % self.sensor_zenith_angle)
-            else:
-                print('      Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % self.sensor_zenith_angle)
-            print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
-            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude))
+            if self.Nsensor == 1:
+                if self.sensor_zenith_angle < 90.0:
+                    print('      Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % self.sensor_zenith_angle)
+                else:
+                    print('      Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % self.sensor_zenith_angle)
+                print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
+                print('          Sensor Altitude : %.1f km' % (self.sensor_altitude))
+            elif self.Nsensor > 1:
+                for isensor in range(self.Nsensor):
+                    if self.sensor_zenith_angle[isensor] < 90.0:
+                        print('      Sensor Zenith Angle (no. %d) : %.4f° (looking down, 0 straight down)' % (isensor + 1, self.sensor_zenith_angle[isensor]))
+                    else:
+                        print('      Sensor Zenith Angle (no. %d) : %.4f° (looking up, 180° straight up)' % (isensor + 1, self.sensor_zenith_angle[isensor]))
+                    print('     Sensor Azimuth Angle (no. %d) : %.4f° (0 at north; 90° at east)' % (isensor + 1, self.sensor_azimuth_angle[isensor]))
+                    print('          Sensor Altitude (no. %d) : %.1f km' % (isensor + 1, self.sensor_altitude[isensor]))
 
         if not self.sfc_2d:
             print('           Surface Albedo : %.2f' % self.surface)
@@ -532,21 +541,32 @@ def cal_mca_azimuth(normal_azimuth_angle):
     Convert normal azimuth angle (0 pointing north, positive when clockwise) to photon azimuth in MCARaTS
 
     Input:
-        normal_azimuth_angle: float/integer, normal azimuth angle (0 pointing north, positive when clockwise)
+        normal_azimuth_angle: float/integer or np.ndarray, normal azimuth angle (0 pointing north, positive when clockwise)
 
     Output:
         MCARaTS azimuth angle (0 sun shining from west, positive when counterclockwise)
     """
 
-    while normal_azimuth_angle < 0.0:
-        normal_azimuth_angle += 360.0
+    if isinstance(normal_azimuth_angle, np.ndarray):
+        while np.any(normal_azimuth_angle < 0.0):
+            normal_azimuth_angle[normal_azimuth_angle < 0.0] += 360.0
 
-    while normal_azimuth_angle > 360.0:
-        normal_azimuth_angle -= 360.0
+        while np.any(normal_azimuth_angle > 360.0):
+            normal_azimuth_angle[normal_azimuth_angle > 360.0] -= 360.0
 
-    mca_azimuth = 270.0 - normal_azimuth_angle
-    if mca_azimuth < 0.0:
-        mca_azimuth += 360.0
+        mca_azimuth = 270.0 - normal_azimuth_angle
+        mca_azimuth[mca_azimuth < 0.0] += 360.0
+
+    else:
+        while normal_azimuth_angle < 0.0:
+            normal_azimuth_angle += 360.0
+
+        while normal_azimuth_angle > 360.0:
+            normal_azimuth_angle -= 360.0
+
+        mca_azimuth = 270.0 - normal_azimuth_angle
+        if mca_azimuth < 0.0:
+            mca_azimuth += 360.0
 
     return mca_azimuth
 
@@ -565,6 +585,35 @@ def distribute_photon(Nphoton, weights, base_ratio=0.05):
         photons_dist[np.argmax(weights)] += Ndiff
 
     return photons_dist
+
+def check_and_broadcast_sensor_params(sensor_zenith_angle, sensor_azimuth_angle, sensor_altitude, sensor_xpos, sensor_ypos):
+
+    """
+    Check lengths of sensor parameters and broadcast them if necessary.
+    Ensures all sensor parameters have the same length or are broadcastable.
+    Return the length of the longest parameter.
+    """
+
+    sensor_param_name = ['sensor_zenith_angle', 'sensor_azimuth_angle', 'sensor_altitude', 'sensor_xpos', 'sensor_ypos']
+    sensor_params = [sensor_zenith_angle, sensor_azimuth_angle, sensor_altitude, sensor_xpos, sensor_ypos]
+    lengths = [len(param) if isinstance(param, (list, np.ndarray)) else 1 for param in sensor_params]
+    max_length = max(lengths)
+    
+    if max_length > 1:
+        for i, param in enumerate(sensor_params):
+            if lengths[i] == 1:
+                sensor_params[i] = np.full(max_length, param if isinstance(param, (int, float)) else param[0])
+            elif lengths[i] == max_length:
+                if isinstance(param, list):
+                    sensor_params[i] = np.array(param)
+            else:
+                msg = 'Error [mcarats_ng]: All sensor parameters must either have the same length ' + \
+                    'or be broadcastable to the same length.\nlen(%s) = %d' % (sensor_param_name[i], lengths[i])
+                raise OSError(msg)
+        return sensor_params[0], sensor_params[1], sensor_params[2], sensor_params[3], sensor_params[4], max_length
+    
+    elif max_length == 1:
+        return sensor_zenith_angle, sensor_azimuth_angle, sensor_altitude, sensor_xpos, sensor_ypos, 1
 
 
 
