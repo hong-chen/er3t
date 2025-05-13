@@ -326,7 +326,8 @@ class mca_atm_3d:
         self.nml['Atm_dy']['units']  = 'm'
 
         self.nml['Atm_nz3']    = {'data':nz3   , 'unit':'N/A', 'name':'number of 3D layer'}
-        self.nml['Atm_iz3l']   = {'data':iz3l+1, 'unit':'N/A', 'name':'layer index of first 3D layer'}
+        # self.nml['Atm_iz3l']   = {'data':iz3l+1, 'unit':'N/A', 'name':'layer index of first 3D layer'}
+        self.nml['Atm_iz3l']   = {'data':iz3l, 'unit':'N/A', 'name':'layer index of first 3D layer'}
 
         self.nml['Atm_tmpa3d'] = {'data':atm_tmp, 'units':'K'  , 'name':'Temperature deviation'}
         self.nml['Atm_abst3d'] = {'data':atm_abs, 'units':'/m' , 'name':'Absorption coefficients deviation'}
