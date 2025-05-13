@@ -293,6 +293,7 @@ class shd_atm_3d:
 
         # zgrid_cld = self.cld.lay['altitude']['data']+self.cld.lay['thickness']['data']/2.0
         zgrid_cld = self.cld.lev['altitude']['data'][1:]
+        # zgrid_cld = self.cld.lev['altitude']['data'][:-1]
 
         logic_z_extra = np.logical_not(np.array([np.any(np.abs(zgrid_atm[i]-zgrid_cld)<1.0e-6) for i in range(zgrid_atm.size)]))
         self.Nz_extra = logic_z_extra.sum()

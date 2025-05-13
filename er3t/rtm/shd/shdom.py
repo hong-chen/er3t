@@ -285,8 +285,7 @@ class shdom_ng:
                     self.nml[ig]['NPHI'] = 36
             else:
                 if (self.Nx == 1) and (self.Ny == 1):
-                    # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
-                    self.nml[ig]['NMU']  = 90
+                    self.nml[ig]['NMU']  = 360
                     self.nml[ig]['NPHI'] = 180
                 elif (self.Nx > 64) and (self.Ny > 64):
                     self.nml[ig]['NMU']  = 8
