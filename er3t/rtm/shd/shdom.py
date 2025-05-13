@@ -431,8 +431,8 @@ class shdom_ng:
                 self.nml[ig]['ADAPT_GRID_FACTOR'] = 10.0
                 self.nml[ig]['CELL_TO_POINT_RATIO'] = 2.0
             else:
-                self.nml[ig]['ADAPT_GRID_FACTOR'] = 2.2
-                self.nml[ig]['CELL_TO_POINT_RATIO'] = 1.5
+                self.nml[ig]['ADAPT_GRID_FACTOR'] = 3.2
+                self.nml[ig]['CELL_TO_POINT_RATIO'] = 1.6
             self.nml[ig]['NUM_SH_TERM_FACTOR'] = 0.6
             self.nml[ig]['_footer'] = '$END'
 
