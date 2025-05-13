@@ -521,7 +521,7 @@ def lrt_flux_one(params):
 
     data = {
                 'f_up': np.squeeze(data0.f_up),
-              'f_down': np.squeeze(data0.f_down),
+              'f_down': np.squeeze(data0.f_down)-np.squeeze(data0.f_up),
       'f_down_diffuse': np.squeeze(data0.f_down_diffuse),
        'f_down_direct': np.squeeze(data0.f_down_direct),
             }
@@ -805,8 +805,8 @@ def test_200_flux_one_cloud(wavelength, plot=True):
         fig.suptitle('Wavelength %.1f nm [Error %.1f%%]' % (params['wavelength'], error.mean()))
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(121)
-        # ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='--')
-        # ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='--')
+        ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='--')
+        ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='--')
         ax1.plot(data_shd['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='-')
         ax1.plot(data_shd['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='-')
         ax1.plot(data_mca['f_up']          , params['output_altitude'], color='red'    , lw=2.0, alpha=0.6, ls=':')
@@ -820,8 +820,8 @@ def test_200_flux_one_cloud(wavelength, plot=True):
         ax1.set_ylim((0.0, 3.0))
 
         ax2 = fig.add_subplot(122)
-        # ax2.plot(data_lrt['f_down']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='--')
-        # ax2.plot(data_lrt['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='--')
+        ax2.plot(data_lrt['f_down']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='--')
+        ax2.plot(data_lrt['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='--')
         ax2.plot(data_shd['f_down']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
         ax2.plot(data_shd['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='-')
         ax2.plot(data_mca['f_down']       , params['output_altitude'], color='blue', lw=2.0, alpha=0.6, ls=':')
