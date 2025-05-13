@@ -521,7 +521,8 @@ def lrt_flux_one(params):
 
     data = {
                 'f_up': np.squeeze(data0.f_up),
-              'f_down': np.squeeze(data0.f_down)-np.squeeze(data0.f_up),
+              'f_down': np.squeeze(data0.f_down),
+              'f_net' : np.squeeze(data0.f_down)-np.squeeze(data0.f_up),
       'f_down_diffuse': np.squeeze(data0.f_down_diffuse),
        'f_down_direct': np.squeeze(data0.f_down_direct),
             }
@@ -595,8 +596,8 @@ def mca_flux_one(
 
     data = {
       'f_up': out0.data['f_up']['data'],\
-      # 'f_down': out0.data['f_down']['data'],\
-      'f_down': (out0.data['f_down']['data']-out0.data['f_up']['data']),\
+      'f_down': out0.data['f_down']['data'],\
+      'f_net': (out0.data['f_down']['data']-out0.data['f_up']['data']),\
       'f_down_diffuse': out0.data['f_down_diffuse']['data'],\
       'f_down_direct': out0.data['f_down_direct']['data'],\
       'f_up_std': out0.data['f_up_std']['data'],\
@@ -669,7 +670,8 @@ def shd_flux_one(
 
     data = {
       'f_up': out0[:, 0],\
-              'f_down': (out0[:, 1]+out0[:, 2]-out0[:, 0]),\
+      'f_down': (out0[:, 1]+out0[:, 2]),\
+      'f_net': (out0[:, 1]+out0[:, 2]-out0[:, 0]),\
       'f_down_diffuse': out0[:, 1],\
       'f_down_direct': out0[:, 2],\
             }
@@ -820,11 +822,11 @@ def test_200_flux_one_cloud(wavelength, plot=True):
         ax1.set_ylim((0.0, 3.0))
 
         ax2 = fig.add_subplot(122)
-        ax2.plot(data_lrt['f_down']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='--')
+        ax2.plot(data_lrt['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='--')
         ax2.plot(data_lrt['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='--')
-        ax2.plot(data_shd['f_down']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
+        ax2.plot(data_shd['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
         ax2.plot(data_shd['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='-')
-        ax2.plot(data_mca['f_down']       , params['output_altitude'], color='blue', lw=2.0, alpha=0.6, ls=':')
+        ax2.plot(data_mca['f_net']       , params['output_altitude'], color='blue', lw=2.0, alpha=0.6, ls=':')
         ax2.plot(data_mca['f_down_direct'], params['output_altitude'], color='cyan', lw=2.0, alpha=0.6, ls=':')
         # ax2.errorbar(data_mca['f_down']       , params['output_altitude'], xerr=data_mca['f_down_std']       , color='blue', lw=1.0, alpha=1.0)
         # ax2.errorbar(data_mca['f_down_direct'], params['output_altitude'], xerr=data_mca['f_down_direct_std'], color='cyan', lw=1.0, alpha=1.0)
