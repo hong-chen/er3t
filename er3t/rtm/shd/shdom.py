@@ -428,7 +428,7 @@ class shdom_ng:
 
             self.nml[ig]['MAX_TOTAL_MB'] = psutil.virtual_memory().total / 1024.0**2.0 / 2.0
             if (self.Nx == 1) and (self.Ny == 1):
-                self.nml[ig]['ADAPT_GRID_FACTOR'] = 4.0
+                self.nml[ig]['ADAPT_GRID_FACTOR'] = 5.0
                 self.nml[ig]['CELL_TO_POINT_RATIO'] = 2.0
             else:
                 self.nml[ig]['ADAPT_GRID_FACTOR'] = 2.2

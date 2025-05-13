@@ -797,10 +797,10 @@ def test_200_flux_one_cloud(wavelength, plot=True):
     data_shd = shd_flux_one(params, overwrite=True)
 
     # data_mca = mca_flux_one(params, overwrite=True)
-    # data_mca = mca_flux_one(params, overwrite=False)
+    data_mca = mca_flux_one(params, overwrite=False)
 
     # error = np.abs(data_mca['f_down']-data_lrt['f_down'])/data_lrt['f_down']*100.0
-    error = np.abs(data_lrt['f_net']-data_shd['f_net'])/data_lrt['f_net']*100.0
+    error = np.abs(data_mca['f_net']-data_shd['f_net'])/data_mca['f_net']*100.0
 
     # figure
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -810,12 +810,12 @@ def test_200_flux_one_cloud(wavelength, plot=True):
         fig.suptitle('Wavelength %.1f nm [Error %.1f%%]' % (params['wavelength'], error.mean()))
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(121)
-        ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='--')
-        ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='--')
+        # ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='--')
+        # ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='--')
         ax1.plot(data_shd['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='-')
         ax1.plot(data_shd['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='-')
-        # ax1.plot(data_mca['f_up']          , params['output_altitude'], color='red'    , lw=2.0, alpha=0.6, ls=':')
-        # ax1.plot(data_mca['f_down_diffuse'], params['output_altitude'], color='magenta', lw=2.0, alpha=0.6, ls=':')
+        ax1.plot(data_mca['f_up']          , params['output_altitude'], color='red'    , lw=2.0, alpha=0.6, ls=':')
+        ax1.plot(data_mca['f_down_diffuse'], params['output_altitude'], color='magenta', lw=2.0, alpha=0.6, ls=':')
         # ax1.errorbar(data_mca['f_up']          , params['output_altitude'], xerr=data_mca['f_up_std']          , color='red'     , lw=1.0, alpha=1.0)
         # ax1.errorbar(data_mca['f_down_diffuse'], params['output_altitude'], xerr=data_mca['f_down_diffuse_std'],  color='magenta', lw=1.0, alpha=1.0)
         ax1.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
@@ -825,12 +825,12 @@ def test_200_flux_one_cloud(wavelength, plot=True):
         ax1.set_ylim((0.0, 3.0))
 
         ax2 = fig.add_subplot(122)
-        ax2.plot(data_lrt['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='--')
-        ax2.plot(data_lrt['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='--')
+        # ax2.plot(data_lrt['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='--')
+        # ax2.plot(data_lrt['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='--')
         ax2.plot(data_shd['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
         ax2.plot(data_shd['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='-')
-        # ax2.plot(data_mca['f_net']       , params['output_altitude'], color='blue', lw=2.0, alpha=0.6, ls=':')
-        # ax2.plot(data_mca['f_down_direct'], params['output_altitude'], color='cyan', lw=2.0, alpha=0.6, ls=':')
+        ax2.plot(data_mca['f_net']       , params['output_altitude'], color='blue', lw=2.0, alpha=0.6, ls=':')
+        ax2.plot(data_mca['f_down_direct'], params['output_altitude'], color='cyan', lw=2.0, alpha=0.6, ls=':')
         # ax2.errorbar(data_mca['f_down']       , params['output_altitude'], xerr=data_mca['f_down_std']       , color='blue', lw=1.0, alpha=1.0)
         # ax2.errorbar(data_mca['f_down_direct'], params['output_altitude'], xerr=data_mca['f_down_direct_std'], color='cyan', lw=1.0, alpha=1.0)
         ax2.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
