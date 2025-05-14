@@ -1,12 +1,9 @@
 """
 by Hong Chen (hong.chen.cu@gmail.com)
+   Ken Hirata (ken.hirata@colorado.edu)
 
 This code has been tested under:
-    1) Linux on 2023-06-27 by Hong Chen
-      Operating System: Red Hat Enterprise Linux
-           CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
-                Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
-          Architecture: x86-64
+    1) MacBook Air M2 on 2025-05-14 by Hong Chen
 """
 
 import os
@@ -172,14 +169,14 @@ def example_01_rad_atm1d_clear_over_land(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # vaa = np.arange(0.0, 360.1, 2.0)
-    # vza = np.repeat(30.0, vaa.size)
+    vaa = np.arange(0.0, 360.1, 2.0)
+    vza = np.repeat(30.0, vaa.size)
 
-    vaa_1d = np.arange(0.0, 360.1, 1.0)
-    vza_1d = np.arange(1.0, 89.1, 1.0)
-    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    vaa = vaa.ravel()
-    vza = vza.ravel()
+    # vaa_1d = np.arange(0.0, 360.1, 1.0)
+    # vza_1d = np.arange(1.0, 89.1, 1.0)
+    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    # vaa = vaa.ravel()
+    # vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -188,7 +185,7 @@ def example_01_rad_atm1d_clear_over_land(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            solution_acc=1.0e-7,
+            sol_acc=1.0e-7,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
@@ -386,14 +383,14 @@ def example_02_rad_atm1d_clear_over_ocean(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # vaa = np.arange(0.0, 360.1, 2.0)
-    # vza = np.repeat(30.0, vaa.size)
+    vaa = np.arange(0.0, 360.1, 2.0)
+    vza = np.repeat(30.0, vaa.size)
 
-    vaa_1d = np.arange(0.0, 360.1, 1.0)
-    vza_1d = np.arange(1.0, 89.1, 1.0)
-    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    vaa = vaa.ravel()
-    vza = vza.ravel()
+    # vaa_1d = np.arange(0.0, 360.1, 1.0)
+    # vza_1d = np.arange(1.0, 89.1, 1.0)
+    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    # vaa = vaa.ravel()
+    # vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -402,7 +399,7 @@ def example_02_rad_atm1d_clear_over_ocean(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            solution_acc=1.0e-7,
+            sol_acc=1.0e-7,
             target='radiance',
             solar_zenith_angle=sza,
             solar_azimuth_angle=0.0,
@@ -602,14 +599,14 @@ def example_03_rad_atm1d_cloud_over_ocean(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # vaa = np.arange(0.0, 360.1, 2.0)
-    # vza = np.repeat(30.0, vaa.size)
+    vaa = np.arange(0.0, 360.1, 2.0)
+    vza = np.repeat(30.0, vaa.size)
 
-    vaa_1d = np.arange(0.0, 360.1, 1.0)
-    vza_1d = np.arange(1.0, 89.1, 1.0)
-    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    vaa = vaa.ravel()
-    vza = vza.ravel()
+    # vaa_1d = np.arange(0.0, 360.1, 1.0)
+    # vza_1d = np.arange(1.0, 89.1, 1.0)
+    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    # vaa = vaa.ravel()
+    # vza = vza.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -1364,7 +1361,9 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # example_01_rad_atm1d_clear_over_land()
+    example_01_rad_atm1d_clear_over_land()
+    example_02_rad_atm1d_clear_over_ocean()
+    example_03_rad_atm1d_cloud_over_ocean()
 
     # for windspeed in np.arange(1.0, 24.1, 0.1):
     #     example_02_rad_atm1d_clear_over_ocean(windspeed=windspeed)
@@ -1373,8 +1372,8 @@ if __name__ == '__main__':
 
     # for cer in np.arange(1.0, 25.1, 1.0):
     #     example_03_rad_atm1d_cloud_over_ocean(cer=cer)
-    for cot in np.concatenate((np.arange(0.1, 1.0, 0.1), np.arange(1.0, 10.0, 1.0), np.arange(10.0, 50.1, 5.0))):
-        example_03_rad_atm1d_cloud_over_ocean(cot=cot)
+    # for cot in np.concatenate((np.arange(0.1, 1.0, 0.1), np.arange(1.0, 10.0, 1.0), np.arange(10.0, 50.1, 5.0))):
+    #     example_03_rad_atm1d_cloud_over_ocean(cot=cot)
     # for sza in np.append(np.arange(0.0, 90.0, 3.0), 89.9):
     #     example_03_rad_atm1d_cloud_over_ocean(sza=sza)
 
