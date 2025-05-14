@@ -784,7 +784,7 @@ def test_200_flux_one_cloud(wavelength, plot=True):
                   'surface_albedo': 0.03,
               'solar_zenith_angle': 0.0,
                       'wavelength': wavelength,
-         'cloud_optical_thickness': 0.0,
+         'cloud_optical_thickness': 20.0,
           'cloud_effective_radius': 12.0,
                 'cloud_top_height': 1.5,
        'cloud_geometric_thickness': 1.0,
