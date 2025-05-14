@@ -1129,7 +1129,7 @@ def cal_mol_ext(wv0, pz1, pz2):
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
 
-    reference = 'Rayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
+    reference = '\nRayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
 
     tauray = 0.00210966 * mol_ext_wvl(wv0) * (pz1-pz2) / 1013.25
 

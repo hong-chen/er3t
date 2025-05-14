@@ -90,6 +90,7 @@ class shd_atm_1d:
         self.nml['GNDTEMP'] = {'data':self.atm.lay['temperature']['data'][0], 'units':'K', 'name':'Surface Temperature'}
 
         # calculate rayleight extinction
+        # self.atm_sca = er3t.util.cal_mol_ext(self.abs.wvl/1000.0, self.atm.lev['pressure']['data'][:-1], self.atm.lev['pressure']['data'][1:]) / (self.atm.lay['thickness']['data'])
         self.atm_sca = er3t.util.cal_mol_ext_atm(self.abs.wvl/1000.0, self.atm) / (self.atm.lay['thickness']['data'])
 
 
