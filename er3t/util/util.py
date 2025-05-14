@@ -207,13 +207,13 @@ def nice_array_str(array1d, numPerLine=6):
     for iLine in range(numLine):
         lineS = ''
         for iNum in range(numPerLine):
-            lineS += '  %12g' % array1d[iLine*numPerLine + iNum]
+            lineS += '  %20.6g' % array1d[iLine*numPerLine + iNum]
         lineS += '\n'
         niceString += lineS
     if numRest != 0:
         lineS = ''
         for iNum in range(numRest):
-            lineS += '  %12g' % array1d[numLine*numPerLine + iNum]
+            lineS += '  %20.8g' % array1d[numLine*numPerLine + iNum]
         lineS += '\n'
         niceString += lineS
 

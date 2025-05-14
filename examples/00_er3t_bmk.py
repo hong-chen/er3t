@@ -784,7 +784,7 @@ def test_200_flux_one_cloud(wavelength, plot=True):
                   'surface_albedo': 0.03,
               'solar_zenith_angle': 0.0,
                       'wavelength': wavelength,
-         'cloud_optical_thickness': 20.0,
+         'cloud_optical_thickness': 0.0,
           'cloud_effective_radius': 12.0,
                 'cloud_top_height': 1.5,
        'cloud_geometric_thickness': 1.0,
@@ -810,8 +810,8 @@ def test_200_flux_one_cloud(wavelength, plot=True):
         fig.suptitle('Wavelength %.1f nm [Error %.1f%%]' % (params['wavelength'], error.mean()))
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(121)
-        ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='--')
-        ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='--')
+        # ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='--')
+        # ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='--')
         ax1.plot(data_shd['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='-')
         ax1.plot(data_shd['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='-')
         ax1.plot(data_mca['f_up']          , params['output_altitude'], color='red'    , lw=2.0, alpha=0.6, ls=':')
@@ -825,8 +825,8 @@ def test_200_flux_one_cloud(wavelength, plot=True):
         ax1.set_ylim((0.0, 3.0))
 
         ax2 = fig.add_subplot(122)
-        ax2.plot(data_lrt['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='--')
-        ax2.plot(data_lrt['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='--')
+        # ax2.plot(data_lrt['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='--')
+        # ax2.plot(data_lrt['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='--')
         ax2.plot(data_shd['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
         ax2.plot(data_shd['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='-')
         ax2.plot(data_mca['f_net']       , params['output_altitude'], color='blue', lw=2.0, alpha=0.6, ls=':')
@@ -838,8 +838,9 @@ def test_200_flux_one_cloud(wavelength, plot=True):
         # ax2.set_xlim(0.0, 2.0)
         ax2.set_ylim((0.0, 3.0))
 
-        ax1.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.3)
-        ax2.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.3)
+        if params['cloud_optical_thickness'] > 0.0:
+            ax1.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.3)
+            ax2.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.3)
         #╰──────────────────────────────────────────────────────────────╯#
 
         patches_legend = [
