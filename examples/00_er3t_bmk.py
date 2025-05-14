@@ -784,7 +784,7 @@ def test_200_flux_one_cloud(wavelength, plot=True):
                   'surface_albedo': 0.03,
               'solar_zenith_angle': 0.0,
                       'wavelength': wavelength,
-         'cloud_optical_thickness': 50.0,
+         'cloud_optical_thickness': 20.0,
           'cloud_effective_radius': 12.0,
                 'cloud_top_height': 1.5,
        'cloud_geometric_thickness': 1.0,
@@ -796,8 +796,8 @@ def test_200_flux_one_cloud(wavelength, plot=True):
 
     data_shd = shd_flux_one(params, overwrite=True)
 
-    # data_mca = mca_flux_one(params, overwrite=True)
-    data_mca = mca_flux_one(params, overwrite=False)
+    data_mca = mca_flux_one(params, overwrite=True)
+    # data_mca = mca_flux_one(params, overwrite=False)
 
     # error = np.abs(data_mca['f_down']-data_lrt['f_down'])/data_lrt['f_down']*100.0
     error = np.abs(data_mca['f_net']-data_shd['f_net'])/data_mca['f_net']*100.0

@@ -285,7 +285,7 @@ class shdom_ng:
                     self.nml[ig]['NPHI'] = 36
             else:
                 if (self.Nx == 1) and (self.Ny == 1):
-                    self.nml[ig]['NMU']  = 128
+                    self.nml[ig]['NMU']  = 360
                     self.nml[ig]['NPHI'] = 1
                 elif (self.Nx > 64) and (self.Ny > 64):
                     self.nml[ig]['NMU']  = 8
