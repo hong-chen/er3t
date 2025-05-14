@@ -135,8 +135,8 @@ def gen_ext_file(
     ext = cld0.lay['extinction']['data'] * 1000.0
 
     # zgrid = cld0.lay['altitude']['data'] + cld0.lay['thickness']['data']/2.0
-    # zgrid = cld0.lev['altitude']['data'][1:]
-    zgrid = cld0.lev['altitude']['data'][:-1]
+    zgrid = cld0.lev['altitude']['data'][1:]
+    # zgrid = cld0.lev['altitude']['data'][:-1]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # generate extinction file
