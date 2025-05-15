@@ -608,13 +608,14 @@ def mca_flux_one(
     data = {
       'f_up': out0.data['f_up']['data'],\
       'f_down': out0.data['f_down']['data'],\
-      'f_net': (out0.data['f_down']['data']-out0.data['f_up']['data']),\
       'f_down_diffuse': out0.data['f_down_diffuse']['data'],\
       'f_down_direct': out0.data['f_down_direct']['data'],\
       'f_up_std': out0.data['f_up_std']['data'],\
       'f_down_std': out0.data['f_down_std']['data'],\
       'f_down_diffuse_std': out0.data['f_down_diffuse_std']['data'],\
       'f_down_direct_std': out0.data['f_down_direct_std']['data'],\
+      'f_net': (out0.data['f_down']['data']-out0.data['f_up']['data']),\
+      'f_net_std': np.sqrt(out0.data['f_down_std']['data']**2 + out0.data['f_up_std']['data']**2),\
             }
 
     return data
@@ -704,11 +705,11 @@ def test_100_flux(wavelength, plot=True, overwrite=True):
                   'surface_albedo': 0.3,
               'solar_zenith_angle': 0.0,
                       'wavelength': wavelength,
-         'cloud_optical_thickness': 5.0,
-          'cloud_effective_radius': 12.0,
+         'cloud_optical_thickness': 10.0,
+          'cloud_effective_radius': 5.0,
                 'cloud_top_height': 1.5,
        'cloud_geometric_thickness': 1.0,
-                         'photons': 1.0e7,
+                         'photons': 1.0e5,
                  'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 30.1, 2.0)),
          }
 
@@ -718,7 +719,6 @@ def test_100_flux(wavelength, plot=True, overwrite=True):
 
     data_mca = mca_flux_one(params, overwrite=overwrite)
 
-    # error = np.abs(data_mca['f_down']-data_lrt['f_down'])/data_lrt['f_down']*100.0
     error = np.abs(data_mca['f_net']-data_shd['f_net'])/data_mca['f_net']*100.0
 
     # figure
@@ -726,40 +726,34 @@ def test_100_flux(wavelength, plot=True, overwrite=True):
     if plot:
         plt.close('all')
         fig = plt.figure(figsize=(8, 6))
-        fig.suptitle('Wavelength %.1f nm [Error %.1f%%]' % (params['wavelength'], error.mean()))
+        fig.suptitle('Wavelength %.1f nm [Diff. %.1f%%]' % (params['wavelength'], error.mean()))
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(121)
         ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='--')
         ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='--')
         ax1.plot(data_shd['f_up']          , params['output_altitude'], color='red'    , lw=1.0, alpha=1.0, ls='-')
         ax1.plot(data_shd['f_down_diffuse'], params['output_altitude'], color='magenta', lw=1.0, alpha=1.0, ls='-')
-        ax1.plot(data_mca['f_up']          , params['output_altitude'], color='red'    , lw=2.0, alpha=0.6, ls=':')
-        ax1.plot(data_mca['f_down_diffuse'], params['output_altitude'], color='magenta', lw=2.0, alpha=0.6, ls=':')
-        # ax1.errorbar(data_mca['f_up']          , params['output_altitude'], xerr=data_mca['f_up_std']          , color='red'     , lw=1.0, alpha=1.0)
-        # ax1.errorbar(data_mca['f_down_diffuse'], params['output_altitude'], xerr=data_mca['f_down_diffuse_std'],  color='magenta', lw=1.0, alpha=1.0)
+        ax1.fill_betweenx(params['output_altitude'], data_mca['f_up']-data_mca['f_up_std'], data_mca['f_up']+data_mca['f_up_std'], color='red', lw=0.0, alpha=0.8, zorder=1)
+        ax1.fill_betweenx(params['output_altitude'], data_mca['f_down_diffuse']-data_mca['f_down_diffuse_std'], data_mca['f_down_diffuse']+data_mca['f_down_diffuse_std'], color='magenta', lw=0.0, alpha=0.8, zorder=1)
         ax1.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax1.set_xlabel('Flux Density [$\\mathrm{W m^{-2} nm^{-1}}$]')
         ax1.set_ylabel('Altitude [km]')
-        # ax1.set_xlim(0.0, 0.5)
-        ax1.set_ylim((0.0, 3.0))
+        ax1.set_ylim((max(0.0, params['cloud_top_height']-params['cloud_geometric_thickness']-1.0), params['cloud_top_height']+1.0))
 
         ax2 = fig.add_subplot(122)
         ax2.plot(data_lrt['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='--')
         ax2.plot(data_lrt['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='--')
         ax2.plot(data_shd['f_net']       , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
         ax2.plot(data_shd['f_down_direct'], params['output_altitude'], color='cyan', lw=1.0, alpha=1.0, ls='-')
-        ax2.plot(data_mca['f_net']       , params['output_altitude'], color='blue', lw=2.0, alpha=0.6, ls=':')
-        ax2.plot(data_mca['f_down_direct'], params['output_altitude'], color='cyan', lw=2.0, alpha=0.6, ls=':')
-        # ax2.errorbar(data_mca['f_down']       , params['output_altitude'], xerr=data_mca['f_down_std']       , color='blue', lw=1.0, alpha=1.0)
-        # ax2.errorbar(data_mca['f_down_direct'], params['output_altitude'], xerr=data_mca['f_down_direct_std'], color='cyan', lw=1.0, alpha=1.0)
+        ax2.fill_betweenx(params['output_altitude'], data_mca['f_net']-data_mca['f_net_std'], data_mca['f_net']+data_mca['f_net_std'], color='blue', lw=0.0, alpha=0.8, zorder=1)
+        ax2.fill_betweenx(params['output_altitude'], data_mca['f_down_direct']-data_mca['f_down_direct_std'], data_mca['f_down_direct']+data_mca['f_down_direct_std'], color='cyan', lw=0.0, alpha=0.8, zorder=1)
         ax2.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax2.set_xlabel('Flux Density [$\\mathrm{W m^{-2} nm^{-1}}$]')
-        # ax2.set_xlim(0.0, 2.0)
-        ax2.set_ylim((0.0, 3.0))
+        ax2.set_ylim((max(0.0, params['cloud_top_height']-params['cloud_geometric_thickness']-1.0), params['cloud_top_height']+1.0))
 
         if params['cloud_optical_thickness'] > 0.0:
-            ax1.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.3)
-            ax2.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.3)
+            ax1.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.2, zorder=0)
+            ax2.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.2, zorder=0)
         #╰──────────────────────────────────────────────────────────────╯#
 
         patches_legend = [
