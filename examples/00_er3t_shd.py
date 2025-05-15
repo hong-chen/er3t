@@ -698,7 +698,7 @@ def example_05_rad_les_cloud_3d(
     """
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s_fine-res' % (fdir0, name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -713,7 +713,7 @@ def example_05_rad_les_cloud_3d(
 
     # cloud object
     # cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[4, 4, 5], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 5], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -821,17 +821,17 @@ def example_05_rad_les_cloud_3d(
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_%4.4d.txt' % (fdir, wavelength), overwrite=overwrite)
     atm_1ds = [atm1d0]
 
-    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp_les.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=overwrite)
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp_les.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
     atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # vaa = np.arange(0.0, 360.0, 5.0)
-    # vza = np.repeat(30.0, vaa.size)
-    vaa = np.arange(45.0, 46.0, 1.0)
-    vza = np.repeat(0.0, vaa.size)
+    vaa = np.arange(0.0, 360.0, 5.0)
+    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(45.0, 46.0, 1.0)
+    # vza = np.repeat(0.0, vaa.size)
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -841,6 +841,7 @@ def example_05_rad_les_cloud_3d(
             surface=sfc_2d,
             Ng=abs0.Ng,
             Niter=200,
+            split_acc=0.001,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
@@ -854,7 +855,7 @@ def example_05_rad_les_cloud_3d(
             Ncpu=Ncpu,
             mp_mode='mpi',
             overwrite=overwrite,
-            force=True,
+            force=False,
             )
 
     # data can be accessed at
@@ -876,8 +877,8 @@ def example_05_rad_les_cloud_3d(
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
-    out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    # fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    # out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -1367,7 +1368,7 @@ if __name__ == '__main__':
 
 
     example_05_rad_les_cloud_3d(solver='3D')
-    example_05_rad_les_cloud_3d(solver='IPA')
+    # example_05_rad_les_cloud_3d(solver='IPA')
     # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
