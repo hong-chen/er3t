@@ -1,12 +1,9 @@
 """
 by Hong Chen (hong.chen.cu@gmail.com)
+   Ken Hirata (ken.hirata@colorado.edu)
 
 This code has been tested under:
-    1) Linux on 2023-06-27 by Hong Chen
-      Operating System: Red Hat Enterprise Linux
-           CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
-                Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
-          Architecture: x86-64
+    1) MacBook Air M2 on 2025-05-14 by Hong Chen
 """
 
 import os
@@ -997,7 +994,7 @@ def example_05_rad_les_cloud_3d(
 
     # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    f = h5py.File('/Users/hchen/Work/mygit/er3t/projects/data/02_modis_rad-sim/pre-data.h5', 'r')
+    f = h5py.File('%s/data/pre-data.h5' % er3t.common.fdir_examples, 'r')
     fiso = f['mod/sfc/fiso_43_0650'][...][:400, :480]
     fvol = f['mod/sfc/fvol_43_0650'][...][:400, :480]
     fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]

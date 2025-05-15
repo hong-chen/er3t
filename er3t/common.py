@@ -30,6 +30,7 @@ fdir_data_ssfr   = os.path.join(fdir_data_slit, 'ssfr')
 
 fdir_data_tmp    = os.path.join(fdir_er3t, 'tmp-data')
 fdir_examples    = os.path.join(fdir_er3t, 'examples')
+fdir_projects    = os.path.join(fdir_er3t, 'projects')
 fdir_tests       = os.path.join(fdir_er3t, 'tests')
 fdir_logs        = os.path.join(fdir_er3t, 'logs')
 

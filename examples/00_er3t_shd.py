@@ -1361,15 +1361,20 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_01_rad_atm1d_clear_over_land()
-    example_02_rad_atm1d_clear_over_ocean()
-    example_03_rad_atm1d_cloud_over_ocean()
+    # example_01_rad_atm1d_clear_over_land()
+    # example_02_rad_atm1d_clear_over_ocean()
+    # example_03_rad_atm1d_cloud_over_ocean()
+
+
+    example_05_rad_les_cloud_3d(solver='3D')
+    example_05_rad_les_cloud_3d(solver='IPA')
+    # example_06_rad_cld_gen_hem()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # for windspeed in np.arange(1.0, 24.1, 0.1):
     #     example_02_rad_atm1d_clear_over_ocean(windspeed=windspeed)
     # for sza in np.append(np.arange(0.0, 90.0, 3.0), 89.9):
     #     example_02_rad_atm1d_clear_over_ocean(sza=sza)
-
     # for cer in np.arange(1.0, 25.1, 1.0):
     #     example_03_rad_atm1d_cloud_over_ocean(cer=cer)
     # for cot in np.concatenate((np.arange(0.1, 1.0, 0.1), np.arange(1.0, 10.0, 1.0), np.arange(10.0, 50.1, 5.0))):
@@ -1377,13 +1382,8 @@ if __name__ == '__main__':
     # for sza in np.append(np.arange(0.0, 90.0, 3.0), 89.9):
     #     example_03_rad_atm1d_cloud_over_ocean(sza=sza)
 
-    # example_05_rad_les_cloud_3d(solver='3D')
-    # example_05_rad_les_cloud_3d(solver='IPA')
-    # example_06_rad_cld_gen_hem()
-
     # example_07_at3d_rad_cloud_merra(wavelength=650.0)
     # example_07_at3d_rad_cloud_merra(wavelength=550.0)
     # example_07_at3d_rad_cloud_merra(wavelength=450.0)
-    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass
