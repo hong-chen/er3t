@@ -696,12 +696,12 @@ def shd_flux_one(
 
 
 
-def test_100_flux(wavelength, plot=True):
+def test_100_flux(wavelength, plot=True, overwrite=True):
 
     params = {
                             'date': datetime.datetime(2024, 5, 18),
                  'atmosphere_file': '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
-                  'surface_albedo': 0.03,
+                  'surface_albedo': 0.3,
               'solar_zenith_angle': 0.0,
                       'wavelength': wavelength,
          'cloud_optical_thickness': 5.0,
@@ -712,11 +712,11 @@ def test_100_flux(wavelength, plot=True):
                  'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 30.1, 2.0)),
          }
 
-    data_lrt = lrt_flux_one(params)
+    data_lrt = lrt_flux_one(params, overwrite=overwrite)
 
-    data_shd = shd_flux_one(params)
+    data_shd = shd_flux_one(params, overwrite=overwrite)
 
-    data_mca = mca_flux_one(params)
+    data_mca = mca_flux_one(params, overwrite=overwrite)
 
     # error = np.abs(data_mca['f_down']-data_lrt['f_down'])/data_lrt['f_down']*100.0
     error = np.abs(data_mca['f_net']-data_shd['f_net'])/data_mca['f_net']*100.0
