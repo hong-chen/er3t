@@ -11,6 +11,8 @@ Now supports:
                 MOD021KM, MYD021KM
                 MOD06_L2, MYD06_L2
                 MOD35_L2, MYD35_L2
+                          MYD_CLDMSK_L2 (or Aqua_CLDMSK_L2)
+                MOD09,    MYD09
                 MCD43
 
     VIIRS data: VNPRGB,         VJ1RGB,         VJ2RGB,
@@ -19,6 +21,8 @@ Now supports:
                 VNP03MOD,       VJ103MOD,       VJ203MOD
                 VNP02MOD,       VJ102MOD,       VJ202MOD
                 VNP_CLDPROP_L2, VJ1_CLDPROP_L2
+                VNP_CLDMSK_L2,  VJ1_CLDMSK_L2,  VJ2_CLDMSK_L2
+                VNP09,          VJ109
 
     OCO-2 data: coming soon...
 
@@ -46,9 +50,10 @@ import sys
 from argparse import ArgumentParser, RawTextHelpFormatter
 import numpy as np
 import datetime
-
+import multiprocessing
 
 import er3t.util.daac
+import er3t.util.util
 import er3t.common
 from er3t.util.logger import Ear3tLogger
 
@@ -68,7 +73,7 @@ _description_ = '=' * _width_ + '\n\n' + \
 _prog_        = os.path.basename(sys.argv[0])
 
 # product tags
-# this <_sat_tags_support_> will be updated over time
+# this <_sat_tags_support_> will be updated over time in common.py
 #/----------------------------------------------------------------------------\#
 _today_dt    = datetime.datetime.now(datetime.timezone.utc)
 _today_dt    = _today_dt.replace(tzinfo=None) # so that timedelta does not raise an error
@@ -84,374 +89,59 @@ _noaa21_viirs_start_date = datetime.datetime(2023, 2, 10)
 # Near Real Time (NRT) is available only for the most recent ~ 7 days
 _nrt_oldest_dt = _today_dt - datetime.timedelta(days=7)
 
-_sat_tags_support_ = {
+########################################################################################
 
-        'MODRGB': {
-                'dataset_tag': 'MODRGB',
-                   'dict_key': 'mod_rgb',
-                'description': 'Terra MODIS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
+def create_args_parallel(date_list,
+                         start_dt_hhmm,
+                         end_dt_hhmm,
+                         lons,
+                         lats,
+                         fdir_out,
+                         nrt,
+                         iou,
+                         focus_extent,
+                         products,
+                         verbose):
+    """
+    Create a list of arguments for parallel processing.
 
-        'MYDRGB': {
-                'dataset_tag': 'MYDRGB',
-                   'dict_key': 'myd_rgb',
-                'description': 'Aqua MODIS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
+    Args:
+        date_list (list): List of dates.
+        start_dt_hhmm (str): Start time in HHMM format.
+        end_dt_hhmm (str): End time in HHMM format.
+        fdir_out (str): Output directory.
+        nrt (bool): Flag indicating if the data is near real-time.
+        iou (float): Intersection over Union threshold.
+        focus_extent (str): Extent to focus on.
+        products (list): List of products.
+        verbose (bool): Flag indicating if verbose output is enabled.
 
-        'MOD03': {
-                'dataset_tag': '61/MOD03',
-                   'dict_key': 'mod_03',
-                'description': 'Terra MODIS Geolocation Fields Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD03.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD03.061 (last access: %s), 2017.' % _date_today_,
-                },
+    Returns:
+        list: List of argument lists.
 
-        'MYD03': {
-                'dataset_tag': '61/MYD03',
-                   'dict_key': 'myd_03',
-                'description': 'Aqua MODIS Geolocation Fields Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD03.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD03.061 (last access: %s), 2017.' % _date_today_,
-                },
+    """
+    arg_list = []
+    for i in range(len(date_list)):
+        mini_list = []
 
-        'MOD02QKM': {
-                'dataset_tag': '61/MOD02QKM',
-                   'dict_key': 'mod_02',
-                'description': 'Terra MODIS Level 1b (250m) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD02QKM.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02QKM.061 (last access: %s), 2017.' % _date_today_,
-                },
+        mini_list.append(date_list[i])
+        mini_list.append(start_dt_hhmm)
+        mini_list.append(end_dt_hhmm)
+        mini_list.append(lons)
+        mini_list.append(lats)
+        mini_list.append(fdir_out[i])
+        mini_list.append(nrt)
+        mini_list.append(iou)
+        mini_list.append(focus_extent)
+        mini_list.append(products)
+        mini_list.append(verbose)
 
-        'MYD02QKM': {
-                'dataset_tag': '61/MYD02QKM',
-                   'dict_key': 'myd_02',
-                'description': 'Aqua MODIS Level 1b (250m) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD02QKM.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02QKM.061 (last access: %s), 2017.' % _date_today_,
-                },
+        arg_list.append(mini_list)
 
-        'MOD02HKM': {
-                'dataset_tag': '61/MOD02HKM',
-                   'dict_key': 'mod_02',
-                'description': 'Terra MODIS Level 1b (500m) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD02HKM.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02HKM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MYD02HKM': {
-                'dataset_tag': '61/MYD02HKM',
-                   'dict_key': 'myd_02',
-                'description': 'Aqua MODIS Level 1b (250m) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD02HKM.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02HKM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MOD021KM': {
-                'dataset_tag': '61/MOD021KM',
-                   'dict_key': 'mod_02',
-                'description': 'Terra MODIS Level 1b (1km) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD021KM.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD021KM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MYD021KM': {
-                'dataset_tag': '61/MYD021KM',
-                   'dict_key': 'myd_02',
-                'description': 'Aqua MODIS Level 1b (1km) Calibrated Radiances Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD021KM.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD021KM.061 (last access: %s), 2017.' % _date_today_,
-                },
-
-        'MOD06_L2': {
-                'dataset_tag': '61/MOD06_L2',
-                   'dict_key': 'mod_l2',
-                'description': 'Terra MODIS Atmosphere Level 2 Cloud Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD06_L2.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % _date_today_,
-                },
-
-        'MYD06_L2': {
-                'dataset_tag': '61/MYD06_L2',
-                   'dict_key': 'myd_l2',
-                'description': 'Aqua MODIS Atmosphere Level 2 Cloud Product',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD06_L2.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015.' % _date_today_,
-                },
-
-        'MOD35_L2': {
-                'dataset_tag': '61/MOD35_L2',
-                   'dict_key': 'mod_l2',
-                'description': 'Terra MODIS Atmosphere Level 2 Cloud Mask',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MOD35_L2.061',
-                  'satellite': 'Terra',
-                 'instrument': 'MODIS',
-                  'reference': 'Ackerman, S., P. Menzel, R. Frey, B.Baum, 2017. MODIS Atmosphere L2 Cloud Mask Product. NASA MODIS Adaptive Processing System, Goddard Space Flight Center, [doi:10.5067/MODIS/MOD35_L2.061'
-                },
-
-        'MYD35_L2': {
-                'dataset_tag': '61/MYD35_L2',
-                   'dict_key': 'myd_l2',
-                'description': 'Aqua MODIS Atmosphere Level 2 Cloud Mask',
-                    'website': 'http://dx.doi.org/10.5067/MODIS/MYD35_L2.061',
-                  'satellite': 'Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'Ackerman, S., P. Menzel, R. Frey, B.Baum, 2017. MODIS Atmosphere L2 Cloud Mask Product. NASA MODIS Adaptive Processing System, Goddard Space Flight Center, [doi:10.5067/MODIS/MYD35_L2.061]'
-                },
-
-        'MCD43A3': {
-                'dataset_tag': '61/MCD43A3',
-                   'dict_key': 'mod_43',
-                'description': 'MODIS BRDF/Albedo Level 3 Surface Product',
-                    'website': 'https://doi.org/10.5067/MODIS/MCD43A3.061',
-                  'satellite': 'Terra & Aqua',
-                 'instrument': 'MODIS',
-                  'reference': 'Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: %s), 2021.' % _date_today_,
-                },
-
-        'VNP02IMG': {
-                'dataset_tag': '5200/VNP02IMG',
-                   'dict_key': 'vnp_02',
-                'description': 'Suomi-NPP VIIRS Level 1b (375m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VNP02IMG.002',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2016-09-01. VIIRS/NPP Imagery Resolution 6-Min L1B Swath 375m. Version 1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP02IMG.001',
-                },
-
-        'VJ102IMG': {
-                'dataset_tag': '5201/VJ102IMG',
-                   'dict_key': 'vj1_02',
-                'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (375m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ102IMG.021',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Imagery Resolution 6-Min L1B Swath 375m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102IMG.002',
-                },
-
-         'VJ202IMG': {
-                'dataset_tag': '5200/VJ202IMG',
-                   'dict_key': 'vj2_02',
-                'description': 'JPSS2 (NOAA-21) VIIRS Level 1b (375m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ202IMG.021',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS2 Imagery Resolution 6-Min L1B Swath 375m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ202IMG.002',
-                },
-
-        'VNP02MOD': {
-                'dataset_tag': '5200/VNP02MOD',
-                   'dict_key': 'vnp_02',
-                'description': 'Suomi-NPP VIIRS Level 1b (750m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VNP02MOD.002',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2021-07-12. VIIRS/NPP Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750 m . Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP02MOD.002.',
-                },
-
-        'VJ102MOD': {
-                'dataset_tag': '5201/VJ102MOD',
-                   'dict_key': 'vj1_02',
-                'description': 'JPSS1 (NOAA-20) VIIRS Level 1b (750m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ102MOD.021',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution 6-Min L1B Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ102MOD.002',
-                },
-
-        'VJ202MOD': {
-                'dataset_tag': '5200/VJ202MOD',
-                   'dict_key': 'vj2_02',
-                'description': 'JPSS2 (NOAA-21) VIIRS Level 1b (750m) Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ202MOD.021',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS2 Moderate Resolution 6-Min L1B Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ202MOD.002',
-                },
-
-        'VNP03IMG': {
-                'dataset_tag': '5200/VNP03IMG',
-                   'dict_key': 'vnp_03',
-                'description': 'Suomi-NPP VIIRS (375m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VNP03IMG.002',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. VIIRS/NPP Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP03IMGLL.001',
-                },
-
-        'VJ103IMG': {
-                'dataset_tag': '5201/VJ103IMG',
-                   'dict_key': 'vj1_03',
-                'description': 'JPSS1 (NOAA-20) VIIRS (375m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ103IMG.021',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. VIIRS/JPSS1 Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103IMG.021',
-                },
-
-        'VJ203IMG': {
-                'dataset_tag': '5200/VJ203IMG',
-                   'dict_key': 'vj2_03',
-                'description': 'JPSS2 (NOAA-21) VIIRS (375m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ203IMG.021',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. VIIRS/JPSS2 Imagery Resolution Terrain-Corrected Geolocation 6-Min L1 Swath 375m Light. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ203IMG.021',
-                },
-
-        'VNP03MOD': {
-                'dataset_tag': '5200/VNP03MOD',
-                   'dict_key': 'vnp_03',
-                'description': 'Suomi-NPP VIIRS (750m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VNP03MOD.002',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2021-07-12. VIIRS/NPP Moderate Resolution Terrain-Corrected Geolocation L1 6-Min Swath 750 m. Version 2. LAADS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VNP03MOD.002',
-                },
-
-        'VJ103MOD': {
-                'dataset_tag': '5201/VJ103MOD',
-                   'dict_key': 'vj1_03',
-                'description': 'JPSS1 (NOAA-20) VIIRS (750m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ103MOD.021',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ103MOD.002',
-                },
-
-         'VJ203MOD': {
-                'dataset_tag': '5200/VJ203MOD',
-                   'dict_key': 'vj2_03',
-                'description': 'JPSS2 (NOAA-21) VIIRS (750m) Geolocation Fields Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/VJ203MOD.021',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'VCST Team. 2019-08-01. VIIRS/JPSS1 Moderate Resolution Terrain Corrected Geolocation 6-Min L1 Swath 750m. Version 2. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS). https://doi.org/10.5067/VIIRS/VJ203MOD.002',
-                },
-
-        'VNPRGB': {
-                'dataset_tag': '5200/VNPRGB',
-                   'dict_key': 'vnp_rgb',
-                'description': 'Suomi-NPP VIIRS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
-
-        'VJ1RGB': {
-                'dataset_tag': '5201/VJ1RGB',
-                   'dict_key': 'vj1_rgb',
-                'description': 'JPSS1 (NOAA-20) VIIRS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
-
-        'VJ2RGB': {
-                'dataset_tag': '5200/VJ2RGB',
-                   'dict_key': 'vj2_rgb',
-                'description': 'JPSS2 (NOAA-21) VIIRS True Color (RGB) Imagery',
-                    'website': 'https://worldview.earthdata.nasa.gov',
-                  'satellite': 'NOAA21',
-                 'instrument': 'VIIRS',
-                  'reference': 'We acknowledge the use of imagery from the NASA Worldview application (https://worldview.earthdata.nasa.gov/), part of the NASA Earth Observing System Data and Information System (EOSDIS).',
-                },
-
-        'VNP_CLDPROP_L2': {
-                'dataset_tag': '5111/CLDPROP_L2_VIIRS_SNPP',
-                   'dict_key': 'vnp_l2',
-                'description': 'Suomi-NPP VIIRS Cloud Properties Product',
-                    'website': 'https://doi.org/10.5067/VIIRS/CLDPROP_L2_VIIRS_SNPP.011',
-                  'satellite': 'SNPP',
-                 'instrument': 'VIIRS',
-                  'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/SNPP Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
-                },
-
-        'VJ1_CLDPROP_L2': {
-                'dataset_tag': '5111/CLDPROP_L2_VIIRS_NOAA20',
-                   'dict_key': 'vj1_l2',
-                'description': 'JPSS1 (NOAA-20) VIIRS Cloud Properties Product',
-                    'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA20',
-                  'satellite': 'NOAA20',
-                 'instrument': 'VIIRS',
-                  'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/JPSS1 Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
-                },
-
-        ## commenting this out as cloud products for NOAA-21 are not available yet
-        # 'VJ2_CLDPROP_L2': {
-        #         'dataset_tag': '5111/CLDPROP_L2_VIIRS_NOAA21',
-        #            'dict_key': 'vj2_l2',
-        #         'description': 'JPSS2 (NOAA-21) VIIRS Cloud Properties Product',
-        #             'website': 'https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/CLDPROP_L2_VIIRS_NOAA21',
-        #           'satellite': 'NOAA21',
-        #          'instrument': 'VIIRS',
-        #           'reference': 'NASA VIIRS Atmosphere SIPS. 2019-11-15. VIIRS/JPSS2 Cloud Properties 6-min L2 Swath 750m. Version 1.1. MODAPS at NASA/GSFC. Archived by National Aeronautics and Space Administration, U.S. Government, L1 and Atmosphere Archive and Distribution System (LAADS).',
-        #         },
-
-        'oco2_L1bScND': {
-                'dataset_tag': 'oco2_L1bScND',
-                   'dict_key': 'oco_l1b',
-                'description': 'OCO-2 L1B Calibrated Radiances Product',
-                    'website': 'https://doi.org/10.5067/6O3GEUK7U2JG',
-                  'satellite': 'OCO-2',
-                 'instrument': 'OCO-2',
-                  'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 1B calibrated, geolocated science spectra, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6O3GEUK7U2JG (last access: %s), 2019.' % _date_today_,
-                },
-
-        'oco2_L2MetND': {
-                'dataset_tag': 'oco2_L2MetND',
-                   'dict_key': 'oco_met_l2',
-                'description': 'OCO-2 L2 Meteorological Parameters Product',
-                    'website': 'https://doi.org/10.5067/OJZZW0LIGSDH',
-                  'satellite': 'OCO-2',
-                 'instrument': 'OCO-2',
-                  'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 meteorological parameters interpolated from global assimilation model for each sounding, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/OJZZW0LIGSDH (last access: %s), 2019.' % _date_today_,
-                },
-
-        'oco2_L2StdND': {
-                'dataset_tag': 'oco2_L2StdND',
-                   'dict_key': 'oco_ret_l2',
-                'description': 'OCO-2 L2 XCO2 Retrieval Product',
-                    'website': 'https://doi.org/10.5067/6SBROTA57TFH',
-                  'satellite': 'OCO-2',
-                 'instrument': 'OCO-2',
-                  'reference': 'OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 geolocated XCO2 retrievals results, physical model, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6SBROTA57TFH (last access: %s), 2020.' % _date_today_,
-                },
-
-        }
-#\----------------------------------------------------------------------------/#
+    return arg_list
 
 
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, focus_extent, geojson_fpath, products, verbose, parallel):
 
 
     ########################################################################################################
@@ -459,7 +149,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
     ########################################################################################################
 
     if products is None:
-        msg = 'Error [sdown]: Please specify a product to download. \nWe currently support the following:\n{}'.format('\n'.join(_sat_tags_support_.keys()))
+        msg = 'Error [sdown]: Please specify a product to download. \nWe currently support the following:\n{}'.format('\n'.join(er3t.common._sat_tags_support_.keys()))
         satlogger.error(msg)
         sys.exit()
 
@@ -472,24 +162,6 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         viirs_noaa21 = list(filter(lambda x: x.upper().startswith('VJ2'), products))
 
 
-    if (extent is None) and ((lats is None) or (lons is None)):
-        satlogger.error('Error [sdown]: Must provide either extent or lon/lat coordinates')
-        sys.exit()
-
-    elif (extent is not None) and (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
-        satlogger.error('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
-        sys.exit()
-
-    elif (extent is None) and (lats is not None) and (lons is not None) and ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
-        extent = [lons[0], lons[1], lats[0], lats[1]]
-
-
-    # check to make sure extent is correct
-    if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-        msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
-        satlogger.error(msg)
-        sys.exit()
-
     if focus_extent is not None:
         if len(focus_extent) != 4:
             satlogger.error('Error [sdown]: `focus_extent` must be in [lon1 lon2 lat1 lat2] format')
@@ -500,10 +172,19 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within `extent` coordinates {}'.format(focus_extent, extent))
                 sys.exit()
 
-        if (lats is not None) and (lons is not None):
+        elif (lats is not None) and (lons is not None):
             if (focus_extent[0] < lons[0]) or (focus_extent[1] > lons[1]) or (focus_extent[2] < lats[2]) or (focus_extent[3] > lats[3]):
                 satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided by `lats` {} and `lons` {}'.format(focus_extent, lats, lons))
                 sys.exit()
+
+        elif geojson_fpath is not None:
+            lons0, lats0 = er3t.util.util.parse_geojson(geojson_fpath)
+            if (focus_extent[0] < np.nanmin(lons0)) or (focus_extent[1] > np.nanmax(lons0)) or (focus_extent[2] < np.nanmin(lats0)) or (focus_extent[3] > np.nanmax(lats0)):
+                satlogger.error('Error [sdown]: `focus_extent` coordinates {} must be within the coordinates provided in the geojson file {}'.format(focus_extent, geojson_fpath))
+                sys.exit()
+
+
+    llons, llats = er3t.util.util.region_parser(extent, lons, lats, geojson_fpath)
 
     if not os.path.exists(fdir_out):
         os.makedirs(fdir_out)
@@ -511,8 +192,8 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             satlogger.info('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
 
     # error handling for dates
-    if (date is None) and ((start_date is None) or (end_date is None)):
-        satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date')
+    if (date is None) and ((start_date is None) or (end_date is None)) and ((nrt)):
+        satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date ')
         sys.exit()
 
     elif (date is not None) and ((start_date is None) or (end_date is None)):
@@ -521,7 +202,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
         end_dt_hhmm    = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]), 23, 59)
         single_dt      = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
 
-        if (datetime.timedelta((_today_dt - single_dt).days).days < 0):
+        if single_dt > end_dt_hhmm:
             msg = 'Error [sdown]: Provided date is in the future. Data will only be downloaded until today\'s date.' + \
                   '\n\nReceived date   : %s\nToday\'s date is : %s UTC' % (single_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.error(msg)
@@ -564,21 +245,22 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = 'Message [sdown]: Data will be downloaded for %s' % single_dt.strftime("%d %B, %Y")
             satlogger.info(msg)
 
-        fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y_%m_%d')) # save files in dirs with dates specified
+        fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y-%m-%d')) # save files in dirs with dates specified
         if not os.path.exists(fdir_out_dt):
             os.makedirs(fdir_out_dt)
 
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
             f.write("Date: {}\n".format(single_dt))
-            f.write("Extent: {}\n".format(extent))
+            f.write("Extent: {}\n".format([np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)]))
 
         if verbose:
-            satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(single_dt.strftime("%d %B, %Y"), extent[0], extent[1], extent[2], extent[3]))
+            satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(single_dt.strftime("%d %B, %Y"), np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)))
 
         run(date=single_dt,
             start_dt_hhmm=start_dt_hhmm,
             end_dt_hhmm=end_dt_hhmm,
-            extent=extent,
+            lons=llons,
+            lats=llats,
             fdir_out=fdir_out_dt,
             nrt=nrt,
             iou=iou,
@@ -587,40 +269,46 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             verbose=verbose)
 
 
-    elif (start_date is not None) and (end_date is not None):
+    else:
+        if (start_date is not None) and (end_date is not None):
 
-        # start at 0 UTC unless specified by user
-        start_hr = 0
-        start_min = 0
-        if len(start_date) == 12:
-            start_hr, start_min = int(start_date[8:10]), int(start_date[10:12])
+            # start at 0 UTC unless specified by user
+            start_hr = 0
+            start_min = 0
+            if len(start_date) == 12:
+                start_hr, start_min = int(start_date[8:10]), int(start_date[10:12])
 
-        # look for data until the last minute of the day
-        end_hr = 23
-        end_min = 59
-        if (len(end_date) == 12):
-            if (int(end_date[8:10]) < end_hr): # update only if different
-                end_hr = int(end_date[8:10])
+            # look for data until the last minute of the day
+            end_hr = 23
+            end_min = 59
+            if (len(end_date) == 12):
+                if (int(end_date[8:10]) < end_hr): # update only if different
+                    end_hr = int(end_date[8:10])
 
-            if (int(end_date[10:12]) < end_min):
-                end_min = int(end_date[10:12])
+                if (int(end_date[10:12]) < end_min):
+                    end_min = int(end_date[10:12])
 
 
-        start_dt  = datetime.datetime(int(start_date[:4]), int(start_date[4:6]), int(start_date[6:8]), start_hr, start_min)
-        end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]), end_hr, end_min)
+            start_dt  = datetime.datetime(int(start_date[:4]), int(start_date[4:6]), int(start_date[6:8]), start_hr, start_min)
+            end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]), end_hr, end_min)
 
-        if datetime.timedelta((end_dt - start_dt).days).days < 0:
+        else:
+                satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date or --latest_nhours. Note that --latest_nhours is only valid for near-real time data')
+                sys.exit()
+
+
+        if start_dt == end_dt:
             msg = 'Warning [sdown]: `end_date` %s UTC and `start_date` %s UTC are both the same' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.warn(msg)
 
 
-        if (datetime.timedelta((_today_dt - start_dt).days).days < 0):
+        if start_dt > _today_dt:
             msg = 'Error [sdown]: `start_date` cannot be in the future.' + \
                   '\n\nReceived start date: %s UTC \nToday\'s date is    : %s UTC' % (start_dt.strftime("%d %B, %Y: %H%M"), _today_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.error(msg)
             sys.exit()
 
-        if (datetime.timedelta((_today_dt - end_dt).days).days < 0):
+        if end_dt > _today_dt:
             msg = 'Warning [sdown]: End date is in the future. Data will only be downloaded until today\'s date.' + \
                   '\n\nReceived end date: %s UTC\nToday\'s date is : %s UTC' % (end_dt.strftime("%d %B, %Y: %H%M"), _today_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.warn(msg)
@@ -667,50 +355,79 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             msg = 'Message [sdown]: Data will be downloaded for dates beginning %s UTC to %s UTC' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
             satlogger.info(msg)
 
-        date_list = [start_dt + datetime.timedelta(days=x) for x in range((end_dt - start_dt).days + 1)]
-        for date_x in date_list: # download products date by date
-            fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y_%m_%d')) # save files in dirs with dates specified
-            if not os.path.exists(fdir_out_dt):
-                os.makedirs(fdir_out_dt)
+        date_list = [start_dt.date() + datetime.timedelta(days=x) for x in range((end_dt.date() - start_dt.date()).days + 1)]
+        if parallel:
+            # Experimental: delegate dates for parallel computing
+            msg = 'Warning [sdown]: Parallelization enabled. This is currently in experimental mode, downloads may fail.\n'
+            satlogger.warning(msg)
 
-            # Save metadata
-            with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-                f.write('Date: {}\n'.format(date_x))
-                f.write('Extent: {}\n'.format(extent))
+            # need to create dirs and write metadata before
+            fdir_out_dt_list = []
+            for date_x in date_list: # download products date by date
+                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y-%m-%d')) # save files in dirs with dates specified
+                if not os.path.exists(fdir_out_dt):
+                    os.makedirs(fdir_out_dt)
 
+                fdir_out_dt_list.append(fdir_out_dt)
+                # Save metadata
+                with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
+                    f.write('Date: {}\n'.format(date_x))
+                    f.write('Extent: {}\n'.format(extent))
+
+            p_args = create_args_parallel(date_list, start_dt, end_dt, llons, llats, fdir_out_dt_list, nrt, iou, focus_extent, products, verbose)
             if verbose:
-                satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
+                satlogger.info("Message [sdown]: Found {} CPUs. Downloads will be spread over all available CPUs.".format(multiprocessing.cpu_count()))
+            # start parallelization
+            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+            pool.starmap(run, p_args)
+            pool.close()
+
+        else: # run as usual
+            for date_x in date_list: # download products date by date
+                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y-%m-%d')) # save files in dirs with dates specified
+                if not os.path.exists(fdir_out_dt):
+                    os.makedirs(fdir_out_dt)
+
+                # Save metadata
+                with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
+                    f.write('Date: {}\n'.format(date_x))
+                    f.write('Extent: {}\n'.format(extent))
+
+                if verbose:
+                    satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
 
 
-            run(date=date_x,
-                start_dt_hhmm=start_dt,
-                end_dt_hhmm=end_dt,
-                extent=extent,
-                fdir_out=fdir_out_dt,
-                nrt=nrt,
-                iou=iou,
-                focus_extent=focus_extent,
-                products=products,
-                verbose=verbose)
+                run(date=date_x,
+                    start_dt_hhmm=start_dt,
+                    end_dt_hhmm=end_dt,
+                    lons=llons,
+                    lats=llats,
+                    fdir_out=fdir_out_dt,
+                    nrt=nrt,
+                    iou=iou,
+                    focus_extent=focus_extent,
+                    products=products,
+                    verbose=verbose)
 
 
 
-
-def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_extent, products, verbose):
+def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, focus_extent, products, verbose):
 
     if focus_extent is not None:
-        lon0 = np.linspace(focus_extent[0], focus_extent[1], 100)
-        lat0 = np.linspace(focus_extent[2], focus_extent[3], 100)
-    else:
-        lon0 = np.linspace(extent[0], extent[1], 100)
-        lat0 = np.linspace(extent[2], extent[3], 100)
+        lons = np.linspace(focus_extent[0], focus_extent[1], 200)
+        lats = np.linspace(focus_extent[2], focus_extent[3], 200)
+    # else: # disabled since we are now pre-calculating lons and lats
+    #     lons = np.linspace(extent[0], extent[1], 100)
+    #     lats = np.linspace(extent[2], extent[3], 100)
 
-    lon, lat = np.meshgrid(lon0, lat0, indexing='ij')
+    lon, lat = np.meshgrid(lons, lats, indexing='ij')
 
     references = []
     fnames = {}
+    download_counter = 0 # overall tracker for all products
     for product in products:
 
+        product_download_counter = 0 # update counter per product
         product_info = get_sat_info_from_product_tag(product)
         fnames[product_info['dict_key']] = []
 
@@ -727,11 +444,13 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                                                                 instrument=product_info['instrument'],
                                                                 coastline=False)]
             fnames[product_info['dict_key']] += p_fnames
+            product_download_counter += 1 # update counter only by 1 since it is always a single RGB image per satellite per date
 
         # MODIS surface product
         elif '43' in product.upper():
             from er3t.util.modis import get_sinusoidal_grid_tag
             filename_tags_43 = get_sinusoidal_grid_tag(lon, lat)
+            product_download_counter += len(filename_tags_43) # update counter
 
             for filename_tag in filename_tags_43:
                 p_fnames = er3t.util.daac.download_laads_https(date=date,
@@ -743,11 +462,11 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                 fnames[product_info['dict_key']] += p_fnames
 
         # MODIS Level-1b radiances, Level-2 cloud products, and solar/viewing geoemetries
-        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
+        elif product.upper().endswith(('QKM', 'HKM', '1KM', 'L2', '03', '09', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
             if nrt:
                 if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
                     msg = 'Warning [sdown]: VIIRS cloud products are not available in near real time (NRT)'
-                    satlogger.warn(msg)
+                    satlogger.warning(msg)
                     continue
                 # sys.exit()
 
@@ -757,7 +476,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                       'for faster generation of products and therefore may not be the same quality. '\
                       'For a complete breakdown of how NASA generates these NRT products, visit:\n'\
                       ' %s' % link_to_nrt
-                satlogger.warn(msg)
+                satlogger.warning(msg)
 
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
@@ -768,6 +487,8 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                                                                   instrument=product_info['instrument'],
                                                                   percent0=iou,
                                                                   nrt=True)
+
+                product_download_counter += len(filename_tags_03) # update counter
 
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
@@ -782,12 +503,6 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                     fnames[product_info['dict_key']] += p_fnames
 
             else:
-                #TODO: Keep track of this to remove this if condition once the product goes online
-                if product.upper().startswith(('VJ2')):
-                    msg = 'Warning [sdown]: Standard (non near-real time) products are not available yet for VIIRS onboard NOAA-21\n'\
-                          'This is because geoMetaVIIRS data is still unavailable.\n'
-                    satlogger.warn(msg)
-                    continue
 
                 filename_tags_03 = er3t.util.daac.get_satfile_tag(date=date,
                                                                   start_dt_hhmm=start_dt_hhmm,
@@ -798,6 +513,9 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                                                                   instrument=product_info['instrument'],
                                                                   percent0=iou,
                                                                   nrt=False)
+
+                product_download_counter += len(filename_tags_03) # update counter
+
                 if verbose:
                     satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
 
@@ -811,14 +529,22 @@ def run(date, start_dt_hhmm, end_dt_hhmm, extent, fdir_out, nrt, iou, focus_exte
                     fnames[product_info['dict_key']] += p_fnames
 
         else:
-            msg = 'Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(_sat_tags_support_.keys()))
+            msg = 'Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(er3t.common._sat_tags_support_.keys()))
             satlogger.error(msg)
             raise OSError()
 
         references.append(product_info['reference'])
+        download_counter += product_download_counter
+        if verbose:
+            satlogger.info('Message [sdown]: Downloaded {} files for {} ({} onboard {})'.format(product_download_counter, product_info['dataset_tag'], product_info['instrument'], product_info['satellite']))
 
-    satlogger.info('If you would like to cite the use of this data:\n\n%s' % '\n\n'.join(references))
-    satlogger.info('Message [sdown]: Finished downloading satellite files! You can find them in %s' % fdir_out)
+
+    if download_counter > 0:
+        satlogger.info('If you would like to cite the use of this data:\n\n%s' % '\n\n'.join(references))
+        satlogger.info('Message [sdown]: Finished downloading {} satellite files! You can find them in {}'.format(download_counter, fdir_out))
+
+    else: # could not find suitable downloads so no references needed
+        satlogger.info('Message [sdown]: No satellite files were found for the given parameters')
 
 
 def get_sat_info_from_product_tag(tag_):
@@ -826,8 +552,8 @@ def get_sat_info_from_product_tag(tag_):
     # make all variable names (keys) upper case
     #/----------------------------------------------------------------------------\#
     tags_support = {}
-    for key in _sat_tags_support_.keys():
-        tags_support[key.upper()] = _sat_tags_support_[key]
+    for key in er3t.common._sat_tags_support_.keys():
+        tags_support[key.upper()] = er3t.common._sat_tags_support_[key]
     #\----------------------------------------------------------------------------/#
 
     # return satellite product information
@@ -836,7 +562,7 @@ def get_sat_info_from_product_tag(tag_):
     if (tag in tags_support.keys()):
         return tags_support[tag]
     else:
-        msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (tag_, '\n'.join(_sat_tags_support_.keys()))
+        msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (tag_, '\n'.join(er3t.common._sat_tags_support_.keys()))
         satlogger.error(msg)
         raise OSError()
     #\----------------------------------------------------------------------------/#
@@ -845,49 +571,55 @@ def get_sat_info_from_product_tag(tag_):
 
 if __name__ == '__main__':
 
+    exec_start_dt = datetime.datetime.now() # to time sdown
+
     parser = ArgumentParser(prog='sdown', formatter_class=RawTextHelpFormatter,
                             description=_description_)
-    parser.add_argument('-f', '--fdir', type=str, metavar='', default='sat-data/',
+    parser.add_argument('--fdir', type=str, metavar='', default='sat-data/',
                         help='Directory where the files will be downloaded\n'\
                         'By default, files will be downloaded to \'sat-data/\'\n \n')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Pass --verbose if status of your request should be reported frequently.\n \n'\
                         'This is disabled by default.\n \n')
-    parser.add_argument('-r', '--run_demo', action='store_true',
+    parser.add_argument('--run_demo', action='store_true',
                         help='Pass --run_demo if you would like to view a demonstration of this tool.\n \n')
-    required = parser.add_argument_group('Required Arguments')
-    required.add_argument('-d', '--date', type=str, metavar='', default=None,
+    parser.add_argument('-d', '--date', type=str, metavar='', default=None,
                         help='Date for which you would like to download data. '\
                         'Use yyyymmdd format.\n'\
                         'Example: --date 20210404\n \n')
-    required.add_argument('-t', '--start_date', type=str, metavar='', default=None,
+    parser.add_argument('--start_date', type=str, metavar='', default=None,
                         help='The start date of the range of dates for which you would like to download data. '\
                         'Use yyyymmdd or yyyymmddhhmm format.\n'\
                         'Example: --start_date 20210404\n \n')
-    required.add_argument('-u', '--end_date', type=str, metavar='', default=None,
+    parser.add_argument('--end_date', type=str, metavar='', default=None,
                         help='The end date of the range of dates for which you would like to download data. '\
                         'Use yyyymmdd or yyyymmddhhmm format.\n'\
                         'Example: --end_date 20210414\n \n')
-    required.add_argument('--iou', type=int, metavar='', default=0,
+    parser.add_argument('--iou', type=int, metavar='', default=0,
                         help='Percentage of points within the region of interest that must overlap with the satellite granule. \n'\
                         'If the overlap < iou, then the granule file will not be downloaded.\n'\
                         'Example:  --iou 60\n \n')
-    required.add_argument('-e', '--extent', nargs='+', type=float, metavar='',
+    parser.add_argument('-e', '--extent', nargs='+', type=float, metavar='',
                         help='Extent of region of interest \nlon1 lon2 lat1 lat2 in West East South North format.\n'\
                         'Example:  --extent -10 -5 25 30\n \n')
-    required.add_argument('-x', '--lons', nargs='+', type=float, metavar='',
+    parser.add_argument('-x', '--lons', nargs='+', type=float, metavar='',
                         help='The west-most and east-most longitudes of the region.\nAlternative to providing the first two terms in `extent`.\n'\
                         'Example:  --lons -10 -5\n \n')
-    required.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
+    parser.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
                         help='The south-most and north-most latitudes of the region.\nAlternative to providing the last two terms in `extent`.\n'\
                         'Example:  --lats 25 30\n \n')
-    required.add_argument('-a', '--focus_extent', nargs='+', type=float, metavar='',
+    parser.add_argument('--geojson', type=str, metavar='',
+                        help='Path to a geoJSON file containing the extent of interest coordinates\n'\
+                        'Example:  --geojson my/path/to/geofile.json\n \n')
+    parser.add_argument('--focus_extent', nargs='+', type=float, metavar='',
                         help='Extent of a smaller focus region of interest \nlon1 lon2 lat1 lat2 in West East South North format.')
-    required.add_argument('-n', '--nrt', action='store_true',
+    parser.add_argument('--parallel', action='store_true',
+                        help='Pass --parallel to enable parallelization of downloads spread over multiple CPUs.\n')
+    parser.add_argument('--nrt', action='store_true',
                         help='Pass --nrt if Near Real Time products should be downloaded.\n'\
                              'This is disabled by default to automatically download standard products.\n'\
                              'Currently, only MODIS and VIIRS NRT products can be downloaded.\n')
-    required.add_argument('-p', '--products', type=str, nargs='+', metavar='',
+    parser.add_argument('--products', type=str, nargs='+', metavar='',
                         help='Short prefix (case insensitive) for the product name.\n'\
                         'Example:  --products MOD02QKM\n'
                         '\nTo see a list of supported products, type --help.\n'\
@@ -905,10 +637,12 @@ if __name__ == '__main__':
         lons       = None
         lats       = None
         fdir       = 'sat-data/'
-        products   = ['MODRGB', 'VNP02IMG']
+        products   = ['MOD06_L2', 'VNP02IMG']
         nrt        = False
         iou        = 0
+        geojson    = None
         focus_extent = None
+        parallel   = False
         verbose    = 1
 
         # initialize logger
@@ -923,8 +657,10 @@ if __name__ == '__main__':
                                   fdir_out=fdir,
                                   nrt=nrt,
                                   iou=iou,
+                                  geojson_fpath=geojson,
                                   focus_extent=focus_extent,
                                   products=products,
+                                  parallel=parallel,
                                   verbose=verbose)
     else:
 
@@ -940,6 +676,13 @@ if __name__ == '__main__':
                                   fdir_out=args.fdir,
                                   nrt=args.nrt,
                                   iou=args.iou,
+                                  geojson_fpath=args.geojson,
                                   focus_extent=args.focus_extent,
                                   products=args.products,
+                                  parallel=args.parallel,
                                   verbose=args.verbose)
+
+    exec_stop_dt = datetime.datetime.now() # to time sdown
+    exec_total_time = exec_stop_dt - exec_start_dt
+    sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs = er3t.util.util.format_time(exec_total_time.total_seconds())
+    print('\n\nTotal Execution Time: {}:{}:{}.{}\n\n'.format(sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs))

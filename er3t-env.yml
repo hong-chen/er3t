@@ -10,6 +10,7 @@ dependencies:
   - gdown=4.5.*
   - numpy=1.21.*
   - scipy=1.7.*
+  - scikit-image=0.18.*
   - matplotlib=3.5.*
   - pyhdf=0.10.*
   - h5py=3.6.*

@@ -1,5 +1,6 @@
 import os
 import sys
+import fnmatch
 import datetime
 import numpy as np
 import warnings
@@ -9,7 +10,8 @@ import er3t.common
 
 EARTH_RADIUS = er3t.common.params['earth_radius']
 
-__all__ = ['check_equal', 'check_equidistant', 'send_email', \
+__all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
+           'check_equal', 'check_equidistant', 'send_email', \
            'nice_array_str', 'h5dset_to_pydict', 'dtime_to_jday', 'jday_to_dtime', \
            'get_data_nc', 'get_data_h4', \
            'find_nearest', 'move_correlate', \
@@ -17,7 +19,68 @@ __all__ = ['check_equal', 'check_equidistant', 'send_email', \
            'get_doy_tag', 'add_reference', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
            'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext', 'cal_ext', \
-           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat']
+           'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
+           'format_time', 'region_parser', 'parse_geojson', 'unpack_uint_to_bits']
+
+
+def get_all_files(fdir, pattern='*'):
+
+    fnames = []
+    for fdir_root, fdir_sub, fnames_tmp in os.walk(fdir):
+        for fname_tmp in fnames_tmp:
+            if fnmatch.fnmatch(fname_tmp, pattern):
+                fnames.append(os.path.join(fdir_root, fname_tmp))
+    return sorted(fnames)
+
+
+
+def get_all_folders(fdir, pattern='*'):
+
+    fnames = get_all_files(fdir)
+
+    folders = []
+    for fname in fnames:
+        folder_tmp = os.path.abspath(os.path.dirname(os.path.relpath(fname)))
+        if (folder_tmp not in folders) and fnmatch.fnmatch(folder_tmp, pattern):
+                folders.append(folder_tmp)
+
+    return folders
+
+
+
+def load_h5(fname):
+
+    import h5py
+
+    def get_variable_names(obj, prefix=''):
+
+        """
+        Purpose: Walk through the file and extract information of data groups and data variables
+
+        Input: h5py file object <f>, e.g., f = h5py.File('file.h5', 'r')
+
+        Outputs:
+            data variable path in the format of <['group1/variable1']> to
+            mimic the style of accessing HDF5 data variables using h5py, e.g.,
+            <f['group1/variable1']>
+        """
+
+        for key in obj.keys():
+
+            item = obj[key]
+            path = '{prefix}/{key}'.format(prefix=prefix, key=key)
+            if isinstance(item, h5py.Dataset):
+                yield path
+            elif isinstance(item, h5py.Group):
+                yield from get_variable_names(item, prefix=path)
+
+    data = {}
+    f = h5py.File(fname, 'r')
+    keys = get_variable_names(f)
+    for key in keys:
+        data[key[1:]] = f[key[1:]][...]
+    f.close()
+    return data
 
 
 
@@ -119,8 +182,8 @@ def send_email(
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, [receiver], msg.as_string())
         server.quit()
-    except:
-        raise OSError("Error [send_email]: Failed to send the email.")
+    except Exception as err:
+        raise OSError(err, "Error [send_email]: Failed to send the email.")
 
 
 
@@ -219,12 +282,13 @@ def get_data_h4(hdf_dset, replace_fill_value=np.nan):
     attrs = hdf_dset.attributes()
     data  = hdf_dset[:]
 
-    # data = (integer_value - attrs['add_offset']) * attrs['scale_factor']
     if 'add_offset' in attrs:
         data = data - attrs['add_offset']
 
     if 'scale_factor' in attrs:
         data = data * attrs['scale_factor']
+    else:
+        data = data * 1.0
 
     if '_FillValue' in attrs and replace_fill_value is not None:
         _FillValue = np.float64(attrs['_FillValue'])
@@ -429,11 +493,11 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
     else:
         Nx, Ny = NxNy
@@ -500,11 +564,11 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
 
         lon_1d0 = np.linspace(extent[0], extent[1], Nx+1)
@@ -559,7 +623,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     #/----------------------------------------------------------------------------\#
     lon = np.array(lon).ravel()
     lat = np.array(lat).ravel()
-    data = np.array(data).ravel()
+    data = np.array(data).ravel()*1.0
     #\----------------------------------------------------------------------------/#
 
 
@@ -747,7 +811,7 @@ def downscale(ndarray, new_shape, operation='mean'):
         ndarray: numpy array, downscaled array
     """
     operation = operation.lower()
-    if not operation in ['sum', 'mean', 'max']:
+    if operation not in ['sum', 'mean', 'max']:
         raise ValueError('Error [downscale]: Operation of \'%s\' not supported.' % operation)
     if ndarray.ndim != len(new_shape):
         raise ValueError("Error [downscale]: Shape mismatch: {} -> {}".format(ndarray.shape, new_shape))
@@ -1044,7 +1108,120 @@ def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
 
     return lon1, lat1
 
+
+def parse_geojson(geojson_fpath):
+
+    import json
+    with open(geojson_fpath, 'r') as f:
+        data = json.load(f)
+        # n_coords = len(data['features'][0]['geometry']['coordinates'][0])
+
+    coords = data['features'][0]['geometry']['coordinates']
+
+    lons = np.array(coords[0])[:, 0]
+    lats = np.array(coords[0])[:, 1]
+    return lons, lats
+
+
+def region_parser(extent, lons, lats, geojson_fpath):
+
+    if (extent is None) and ((lats is None) or (lons is None)) and (geojson_fpath is None):
+        print('Error [sdown]: Must provide either extent or lon/lat coordinates or a geoJSON file')
+        sys.exit()
+
+    if (extent is not None) and ((lats is not None) or (lons is not None)) and (geojson_fpath is not None):
+        print('Warning [sdown]: Received multiple regions of interest. Only `extent` will be used.')
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
+
+
+    if (extent is not None):
+        if (len(extent) != 4) and ((lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)):
+            print('Error [sdown]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats')
+            sys.exit()
+
+        # check to make sure extent is correct
+        if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
+            msg = 'Error [sdown]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North.' % extent
+            print(msg)
+            sys.exit()
+
+        llons = np.linspace(extent[0], extent[1], 100)
+        llats = np.linspace(extent[2], extent[3], 100)
+        return llons, llats
+
+    elif (lats is not None) and (lons is not None):
+        if ((len(lats) == 2) and (len(lons) == 2)) and (lons[0] < lons[1]) and (lats[0] < lats[1]):
+            llons = np.linspace(lons[0], lons[1], 100)
+            llats = np.linspace(lats[0], lats[1], 100)
+            return llons, llats
+        else:
+            print('Error [sdown]: Must provide two coorect bounds each for `--lons` and `--lats`')
+            sys.exit()
+
+
+    elif (geojson_fpath is not None):
+        llons, llats = parse_geojson(geojson_fpath)
+        return llons, llats
+
+
+def format_time(total_seconds):
+    """
+    Convert seconds to hours, minutes, seconds, and milliseconds.
+
+    Parameters:
+    - total_seconds: The total number of seconds to convert.
+
+    Returns:
+    - A tuple containing hours, minutes, seconds, and milliseconds.
+    """
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    milliseconds = (total_seconds - int(total_seconds)) * 1000
+
+    return (int(hours), int(minutes), int(seconds), int(milliseconds))
 #\---------------------------------------------------------------------------/
+
+def unpack_uint_to_bits(uint_array, num_bits, bitorder='big'):
+    """
+    Unpack a uint16 or 32 or 64 array into binary bits.
+    """
+
+    # convert to right dtype
+    uint_array = uint_array.astype('uint{}'.format(num_bits))
+
+    if num_bits == 8: # just use numpy
+        bits = np.unpackbits(uint_array.flatten(), bitorder=bitorder)
+        # num_bits has to be the last dimensions to get the right array
+        bits = bits.reshape(list(uint_array.shape) + [num_bits])
+        # now we can transpose
+        return np.transpose(bits, axes=(2, 0, 1))
+
+    elif (num_bits == 16) or (num_bits == 32) or (num_bits == 64):
+
+        # Convert uintxx array to uint8 array
+        uint8_array = uint_array.view(np.uint8).reshape(-1, int(num_bits/8))
+
+        # Unpack bits from uint8 array
+        # force little endian since big endian seems to pad an extra 0
+        # and then reverse it if needed
+        bits = np.unpackbits(uint8_array, bitorder='little', axis=1)
+
+        # Reshape to match original uint16 array shape with an additional dimension for bits
+        # note that num_bits must be the last dimension here to get the right reshaped array
+        bits = bits.reshape(list(uint_array.shape) + [num_bits])
+
+    else:
+        raise ValueError("Only uint8, uint16, uint32, and uint64 dtypes are supported. `num_bits` must be >=8 ")
+
+    if bitorder == 'big': # reverse the order
+        return np.transpose(bits[:, :, ::-1], axes=(2, 0, 1))
+
+    return np.transpose(bits, axes=(2, 0, 1))
+
+
 
 if __name__ == '__main__':
 

@@ -58,7 +58,8 @@ def get_token_earthdata():
     try:
         token = os.environ['EARTHDATA_TOKEN']
     except KeyError:
-        token = 'aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk'
+        token = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImhvY2g0MjQwIiwiZXhwIjoxNzMyOTA5MjczLCJpYXQiOjE3Mjc3MjUyNzMsImlzcyI6Imh0dHBzOi8vdXJzLmVhcnRoZGF0YS5uYXNhLmdvdiJ9.HT6ZMvq-JQuoeZZmkQJBcyCVLtzoomJpPwo9IyNLAGYbViqVFyPxaj0-vlwy70Dv8Y4BWl5DHXKA5P4QSKttYhNFsXB86WLw6vzPO6RHRLwBh6j055TMo_JcSO2Pfvu2nguo2O_hXUL_P0Xpwdi0R6x4HTmN5Qk1S_nh1hondH_Oj2TnCukuV773FXGtkYGpKml-8uH2YA1J971tgTBUWoI1fu1sh9QbW-qZfTdK41F0NI-3PKVyPbALH8dzd5LbErA7nL1kfm-J0-Erwvp41EiKP-2CDTw1ZY07LSLcVwvQh3miFWa4rOJW_d2VnaQMc7yZBgVy4zhNG4wpNfZhDw'
+
 
         msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
         warnings.warn(msg)
@@ -110,7 +111,7 @@ def get_command_earthdata(
         primary_tool='curl',
         backup_tool='wget',
         fdir_save='%s/satfile' % fdir_data_tmp,
-        verbose=1):
+        verbose=False):
 
     """
     Get the LINUX/UNIX download command using curl or wget as the download tool.
@@ -122,21 +123,20 @@ def get_command_earthdata(
 
     fname_save = '%s/%s' % (fdir_save, filename)
 
-
-    if token_mode:
+    if token_mode: # recommended
 
         token = get_token_earthdata()
         header = '"Authorization: Bearer %s"' % token
 
         if verbose:
             options = {
-                    'curl': '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
-                    'wget': '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document="%s" "%s"' % (header, fname_save, fname_target),
+                    'curl': '--header %s --connect-timeout 60.0 --retry 1 --max-time 60.0 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                    'wget': '--header=%s --continue --timeout=60 --tries=2 --show-progress --output-document="%s" "%s"' % (header, fname_save, fname_target),
                     }
         else:
             options = {
-                    'curl': '-s --header %s --connect-timeout 120.0 --retry 3 --location --continue-at - "%s" "%s"' % (header, fname_save, fname_target),
-                    'wget': '--header=%s --continue --timeout=120 --tries=3  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
+                    'curl': '-sS --no-progress-bar --header %s --connect-timeout 60.0 --max-time 60.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                    'wget': '--header=%s --continue --timeout=60 --tries=2  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
                     }
 
 
@@ -146,13 +146,13 @@ def get_command_earthdata(
 
         if verbose:
             options = {
-                    'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
-                    'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                    'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 60.0 --max-time 60.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                    'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --keep-session-cookies --content-disposition --timeout=60 --tries=2 --show-progress --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                     }
         else:
             options = {
-                'curl': '-s --netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
-                'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --quiet --keep-session-cookies --content-disposition --timeout=120 --tries=3 --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                'curl': '-s --netrc --cookie-jar %s --cookie %s --connect-timeout 60.0 --max-time 60.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --quiet --keep-session-cookies --content-disposition --timeout=60 --tries=2 --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                 }
 
     if not os.path.exists(fdir_save):
@@ -241,23 +241,23 @@ def get_local_file(
 
     # try to get information from local
     # check two locations:
-    #   1) <tmp-data/satfile> directory under er3t main directory
-    #   2) current directory;
+    #   1) current directory;
+    #   2) <tmp-data/satfile> directory under er3t main directory
     #/--------------------------------------------------------------\#
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
-    fname_local1 = os.path.abspath('%s/%s' % (fdir_save,  filename))
-    fname_local2 = os.path.abspath('%s/%s' % (fdir_local, filename))
+    fname_local1 = os.path.abspath('%s/%s' % (fdir_local, filename))
+    fname_local2 = os.path.abspath('%s/%s' % (fdir_save,  filename))
 
     if os.path.exists(fname_local1):
 
+        os.system('cp %s %s' % (fname_local1, fname_local2))
         with open(fname_local1, 'r') as f_:
             content = f_.read()
 
     elif os.path.exists(fname_local2):
 
-        os.system('cp %s %s' % (fname_local2, fname_local1))
         with open(fname_local2, 'r') as f_:
             content = f_.read()
 
@@ -273,12 +273,13 @@ def get_local_file(
 def get_online_file(
         fname_file,
         geometa,
+        csv,
         filename=None,
         download=True,
         primary_tool='curl',
         backup_tool='wget',
         fdir_save='%s/satfile' % fdir_data_tmp,
-        verbose=1):
+        verbose=False):
 
     if filename is None:
         filename = os.path.basename(fname_file)
@@ -297,8 +298,11 @@ def get_online_file(
         # as a last resort, attempt with backup tool.
         try:
             # delete local version of the geometa first as this seems to cause issues downstream
-            if geometa:
+            if (geometa is True) or (csv is True): # they can be None so make True explicit
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
+            # if primary_tool == 'wget': # force wget to timeout
+            #     primary_command = "timeout 60 " + primary_command
+
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
         except Exception as message:
@@ -314,13 +318,17 @@ def get_online_file(
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
 
                 try:
+                    # if backup_tool == 'wget':
+                    #     backup_command = "timeout 60 " + backup_command
+                    # print("Executing following operation as a backup...\n{}".format(backup_command))
+
                     os.system(backup_command)
                     content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
                 except Exception as message:
                     print(message, "\n")
                     msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(fname_file)
                     delete_file(fname_file, filename=filename, fdir_save=fdir_save)
-                    raise OSError(msg)
+                    return None
 
     else:
 
@@ -362,7 +370,6 @@ def get_online_file(
         content = None
 
     return content
-
 
 
 def final_file_check(fname_local, data_format, verbose):
@@ -440,6 +447,7 @@ def final_file_check(fname_local, data_format, verbose):
 
 
 
+
 def read_geometa(content):
 
     """
@@ -476,9 +484,18 @@ def read_geometa(content):
 
     lines = content.split('\n')
 
+    if len(lines) == 1:
+        msg = 'Error [read_geometa]: Could not download the geoMeta text file. This could be an issue with either the download tool or the Earthdata token'
+        if (lines[0][0] == '{') and (lines[0][-1] == '}'):
+            msg = msg + ' or the date for which you are looking to download does not have data.\n'
+
+        print(msg)
+        return None
+
     if lines[0] == '<!DOCTYPE html>' or lines[1] == '<!DOCTYPE html>':
         msg = 'Error [read_geometa]: Could not download the geoMeta text file. This could be an issue with either the download tool or the Earthdata token.\n'
-        raise OSError(msg)
+        print(msg)
+        return None
 
     index_header = 0
     while (len(lines[index_header]) > 0) and lines[index_header][0] == '#':
@@ -488,7 +505,8 @@ def read_geometa(content):
 
     if index_header == -1:
         msg = 'Error [read_geometa]: Cannot locate header in the provided content.\n'
-        raise OSError(msg)
+        print(msg)
+        return None
 
     header_line = lines[index_header]
     vnames = [word.strip() for word in header_line[1:].split(',')]
@@ -513,6 +531,10 @@ def read_geometa(content):
                 data0['Satellite']  = 'NOAA-20'
                 data0['Instrument'] = 'VIIRS'
                 data0['Orbit']      = 'Ascending'
+            elif 'VJ203' in data0_[0].split('.')[0]:
+                data0['Satellite']  = 'NOAA-21'
+                data0['Instrument'] = 'VIIRS'
+                data0['Orbit']      = 'Ascending'
             elif 'VNP03' in data0_[0].split('.')[0]:
                 data0['Satellite']  = 'S-NPP'
                 data0['Instrument'] = 'VIIRS'
@@ -525,6 +547,7 @@ def read_geometa(content):
             data.append(data0)
 
     return data
+
 
 
 
@@ -984,7 +1007,7 @@ def get_satfile_tag(
     """
     Get filename tag/overpass information for standard products.
     Currently supported satellites/instruments are:
-    Aqua/MODIS, Terra/MODIS, SNPP/VIIRS, NOAA-20/VIIRS.
+    Aqua/MODIS, Terra/MODIS, SNPP/VIIRS, NOAA-20/VIIRS, NOAA-21/VIIRS.
 
     Input:
         date: Python datetime.datetime object
@@ -1037,25 +1060,24 @@ def get_satfile_tag(
 
 
     # get geometa info
-    #/----------------------------------------------------------------------------\#
     filename_geometa = '%s_%s' % (server.replace('https://', '').split('.')[0], os.path.basename(fname_geometa))
 
     # try to get geometa information from local
-    # content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
+    content = get_local_file(fname_geometa, filename=filename_geometa, fdir_local=fdir_local, fdir_save=fdir_save)
 
     # try to get geometa information online
-    # if content is None:
-    #     content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
+    if (content is None) or ('<!DOCTYPE html>' in content):
+        content = get_online_file(fname_geometa, geometa=True, filename=filename_geometa, fdir_save=fdir_save)
 
     # for now, always use online file since local seems to cause downstream issues
-    content = get_online_file(fname_geometa, geometa-True, filename=filename_geometa, fdir_save=fdir_save)
-    #\----------------------------------------------------------------------------/#
-
+    content = get_online_file(fname_geometa, geometa=True, csv=None, filename=filename_geometa, fdir_save=fdir_save)
 
     # read in geometa info
-    #/----------------------------------------------------------------------------\#
     data = read_geometa(content)
-    #\----------------------------------------------------------------------------/#
+
+    if data is None:
+        return []
+
 
 
     # loop through all the satellite "granules" constructed through four corner points
@@ -1105,9 +1127,11 @@ def get_satfile_tag(
                     filename = line['GranuleID']
                     filename_tag = '.'.join(filename.split('.')[1:3])
                     filename_tags.append(filename_tag)
-                    percent_all = np.append(percent_all, percent_in)
-                    i_all.append(i)
+
+            percent_all = np.append(percent_all, percent_in)
+            i_all.append(i)
     #\----------------------------------------------------------------------------/#
+
 
     # sort by percentage-in and time if <percent0> is specified or <wordview=True>
     #/----------------------------------------------------------------------------\#
@@ -1125,6 +1149,7 @@ def get_satfile_tag(
 
         filename_tags = [filename_tags[i] for i in indices_sort]
     # #\----------------------------------------------------------------------------/#
+
     return filename_tags
 
 
@@ -1184,14 +1209,14 @@ def download_laads_https(
 
     # try to get geometa information online
     if content is None:
-        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
+        content = get_online_file(fname_csv, geometa=False, csv=True, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
     # get download commands
     #/----------------------------------------------------------------------------\#
-    lines    = content.split('\n')
-
+    exist_count = 0 # to prevent re-downloading. TODO: Add `overwrite` option instead for user
+    lines = content.split('\n')
     primary_commands = []
     backup_commands  = []
     fnames_local = []
@@ -1201,11 +1226,16 @@ def download_laads_https(
         if filename_tag in filename:
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
-            fnames_local.append(fname_local)
+            if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
+                exist_count += 1
+            else:
+                fnames_local.append(fname_local)
+                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+                primary_commands.append(primary_command)
+                backup_commands.append(backup_command)
 
-            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
-            primary_commands.append(primary_command)
-            backup_commands.append(backup_command)
+    print("Message [download_laads_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #\----------------------------------------------------------------------------/#
 
 
@@ -1221,9 +1251,15 @@ def download_laads_https(
                 print('Message [download_laads_https]: Downloading %s ...' % fname_local)
             os.system(primary_commands[i])
 
+            # if primary command fails, execute backup command.
+            # if that fails again, then delete the file and remove from list
             if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
                 os.system(backup_commands[i])
 
+                if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                    print("Message [download_laads_https]: Could not complete the download of or something is wrong with {}...deleting...".format(fname_local))
+                    os.remove(fname_local)
+                    fnames_local.remove(fname_local) #remove from list
     else:
 
         print('Message [download_laads_https]: The commands to run are:')
@@ -1298,14 +1334,14 @@ def download_lance_https(
 
     # try to get geometa information online
     if content is None:
-        content = get_online_file(fname_csv, geometa=False, filename=filename_csv, fdir_save=fdir_save)
+        content = get_online_file(fname_csv, geometa=False, csv=True, filename=filename_csv, fdir_save=fdir_save)
     #\----------------------------------------------------------------------------/#
 
 
     # get download commands
     #/----------------------------------------------------------------------------\#
-    lines    = content.split('\n')
-
+    exist_count = 0
+    lines = content.split('\n')
     primary_commands = []
     backup_commands  = []
     fnames_local = []
@@ -1315,12 +1351,20 @@ def download_lance_https(
         if (filename_tag in filename) and ('.met' not in filename):
             fname_server = '%s/api/v2/content%s/%s' % (server, fdir_data, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
-            fnames_local.append(fname_local)
 
-            primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
-            primary_commands.append(primary_command)
-            backup_commands.append(backup_command)
+
+            if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
+                exist_count += 1
+            else:
+                fnames_local.append(fname_local)
+                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, primary_tool='curl', backup_tool='wget', verbose=verbose)
+                primary_commands.append(primary_command)
+                backup_commands.append('timeout 60 ' + backup_command) # force timeout for wget
+
+    print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #\----------------------------------------------------------------------------/#
+
 
 
     # run/print command
@@ -1332,15 +1376,21 @@ def download_lance_https(
             fname_local = fnames_local[i]
 
             if verbose:
-                print('Message [download_laads_https]: Downloading %s ...' % fname_local)
+                print('Message [download_lance_https]: Downloading %s ...' % fname_local)
             os.system(primary_commands[i])
 
+            # if primary command fails, execute backup command.
+            # if that fails again, then delete the file and remove from list
             if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
                 os.system(backup_commands[i])
 
+                if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                    print("Message [download_lance_https]: Could not complete the download of or something is wrong with {}...deleting...".format(fname_local))
+                    os.remove(fname_local)
+                    fnames_local.remove(fname_local) #remove from list
     else:
 
-        print('Message [download_laads_https]: The commands to run are:')
+        print('Message [download_lance_https]: The commands to run are:')
         for command in primary_commands:
             print(command)
     #\----------------------------------------------------------------------------/#
@@ -1540,6 +1590,11 @@ def download_worldview_image(
         try:
             lon__ = np.arange(extent[0], extent[1], 500.0/111000.0)
             lat__ = np.arange(extent[2], extent[3], 500.0/111000.0)
+
+            if (lon__.size>800) or (lat__.size>800):
+                lon__ = np.linspace(extent[0], extent[1], 800)
+                lat__ = np.linspace(extent[2], extent[3], 800)
+
             lon_, lat_ = np.meshgrid(lon__, lat__, indexing='ij')
 
             line_data = get_satfile_tag(date, lon_, lat_, satellite=satellite, instrument=instrument, nrt=False, geometa=True, percent0=25.0, worldview=True)[0]
