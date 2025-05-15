@@ -887,7 +887,7 @@ def example_05_rad_les_cloud_3d(
 
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    if plot:
+    if False:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
         fig = plt.figure(figsize=(8, 6))
