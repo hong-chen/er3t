@@ -488,7 +488,7 @@ class mcarats_ng:
     def print_info(self):
 
         print('╭────────────────────────────────────────────────────────╮')
-        print('                 General Information                      ')
+        print('                 General Information')
         print('               Simulation : %s %s' % (self.solver, self.target.title()))
         print('               Wavelength : %s' % (self.wvl_info))
 

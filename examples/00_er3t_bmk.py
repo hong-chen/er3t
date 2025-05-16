@@ -825,15 +825,15 @@ if __name__ == '__main__':
         #     test_01_flux_one_clear(wavelength)
         # test_02_rad_cloud(params, overwrite=False)
 
-        icount = 0
-        for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 10.0, 2.0), np.arange(10.0, 50.1, 5.0))):
-            for cer in np.arange(1.0, 25.1, 1.0):
-                test_100_flux(2130.0, cot, cer, icount, plot=True, overwrite=True)
-                icount += 1
+        # icount = 0
+        # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
+        #     for cer in np.arange(1.0, 25.1, 2.0):
+        #         test_100_flux(2130.0, cot, cer, icount, plot=True, overwrite=True)
+        #         icount += 1
 
         icount = 0
-        for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 10.0, 2.0), np.arange(10.0, 50.1, 5.0))):
-            for cer in np.arange(1.0, 25.1, 1.0):
+        for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
+            for cer in np.arange(1.0, 25.1, 2.0):
                 test_100_flux(650.0, cot, cer, icount, plot=True, overwrite=True)
                 icount += 1
 
