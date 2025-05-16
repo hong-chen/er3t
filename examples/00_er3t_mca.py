@@ -32,7 +32,7 @@ import er3t
 #╭────────────────────────────────────────────────────────────────────────────╮#
 name_tag = '00_er3t_mca'
 fdir0    = er3t.common.fdir_examples
-photons = 1e9
+photons = 5e8
 Ncpu    = 4
 rcParams['font.size'] = 14
 #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -967,7 +967,7 @@ def example_05_rad_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 5], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[6, 6, 5], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -1071,7 +1071,8 @@ def example_05_rad_les_cloud_3d(
             sca=sca,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
-            sensor_zenith_angle=30.0,
+            # sensor_zenith_angle=30.0,
+            sensor_zenith_angle=0.0,
             sensor_azimuth_angle=45.0,
             sensor_altitude=705.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),

@@ -698,7 +698,8 @@ def example_05_rad_les_cloud_3d(
     """
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='%s/tmp-data/%s/%s_fine-res' % (fdir0, name_tag, _metadata['Function'])
+    # fdir='%s/tmp-data/%s/%s_fine-res' % (fdir0, name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -712,8 +713,8 @@ def example_05_rad_les_cloud_3d(
     fname_les = '%s/cld.pk' % fdir
 
     # cloud object
-    # cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[5, 6, 25], overwrite=overwrite)
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 5], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[6, 6, 5], overwrite=overwrite)
+    # cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 5], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -821,17 +822,17 @@ def example_05_rad_les_cloud_3d(
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_%4.4d.txt' % (fdir, wavelength), overwrite=overwrite)
     atm_1ds = [atm1d0]
 
-    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp_les.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp_les.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=overwrite)
     atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.0, 5.0)
-    vza = np.repeat(30.0, vaa.size)
-    # vaa = np.arange(45.0, 46.0, 1.0)
-    # vza = np.repeat(0.0, vaa.size)
+    # vaa = np.arange(0.0, 360.0, 5.0)
+    # vza = np.repeat(30.0, vaa.size)
+    vaa = np.arange(45.0, 46.0, 1.0)
+    vza = np.repeat(0.0, vaa.size)
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -855,7 +856,7 @@ def example_05_rad_les_cloud_3d(
             Ncpu=Ncpu,
             mp_mode='mpi',
             overwrite=overwrite,
-            force=False,
+            force=True,
             )
 
     # data can be accessed at
@@ -1367,8 +1368,8 @@ if __name__ == '__main__':
     # example_03_rad_atm1d_cloud_over_ocean()
 
 
+    example_05_rad_les_cloud_3d(solver='IPA')
     example_05_rad_les_cloud_3d(solver='3D')
-    # example_05_rad_les_cloud_3d(solver='IPA')
     # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
