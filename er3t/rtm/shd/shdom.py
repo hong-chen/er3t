@@ -68,6 +68,8 @@ class shdom_ng:
                  Ng                  = 1,                       \
                  Niter               = 100,                     \
                  sol_acc             = 1.0e-5,                  \
+                 Nmu                 = None,
+                 Nphi                = None,
                  split_acc           = None,                    \
                  sh_acc              = None,                    \
 
@@ -166,6 +168,9 @@ class shdom_ng:
         self.fname_prp = atm_3ds[0].nml['PROPFILE']['data']
 
         self.sfc_temp = atm_1ds[0].nml['GNDTEMP']['data']
+
+        self.Nmu = Nmu
+        self.Nphi= Nphi
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Nx, Ny, Nz
@@ -272,27 +277,44 @@ class shdom_ng:
             self.nml[ig]['NX'] = self.Nx
             self.nml[ig]['NY'] = self.Ny
             self.nml[ig]['NZ'] = self.Nz
-            if self.target == 'radiance':
-                if (self.Nx == 1) and (self.Ny == 1):
-                    # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
-                    self.nml[ig]['NMU']  = 128
-                    self.nml[ig]['NPHI'] = 256
-                elif (self.Nx > 64) and (self.Ny > 64):
-                    self.nml[ig]['NMU']  = 12
-                    self.nml[ig]['NPHI'] = 24
+
+            if self.Nmu is None:
+                if self.target == 'radiance':
+                    if (self.Nx == 1) and (self.Ny == 1):
+                        # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
+                        self.nml[ig]['NMU']  = 128
+                    elif (self.Nx > 64) and (self.Ny > 64):
+                        self.nml[ig]['NMU']  = 12
+                    else:
+                        self.nml[ig]['NMU']  = 18
                 else:
-                    self.nml[ig]['NMU']  = 18
-                    self.nml[ig]['NPHI'] = 36
+                    if (self.Nx == 1) and (self.Ny == 1):
+                        self.nml[ig]['NMU']  = 360
+                    elif (self.Nx > 64) and (self.Ny > 64):
+                        self.nml[ig]['NMU']  = 8
+                    else:
+                        self.nml[ig]['NMU']  = 12
             else:
-                if (self.Nx == 1) and (self.Ny == 1):
-                    self.nml[ig]['NMU']  = 360
-                    self.nml[ig]['NPHI'] = 1
-                elif (self.Nx > 64) and (self.Ny > 64):
-                    self.nml[ig]['NMU']  = 8
-                    self.nml[ig]['NPHI'] = 16
+                self.nml[ig]['NMU']  = self.Nmu
+
+            if self.Nphi is None:
+                if self.target == 'radiance':
+                    if (self.Nx == 1) and (self.Ny == 1):
+                        # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
+                        self.nml[ig]['NPHI'] = 256
+                    elif (self.Nx > 64) and (self.Ny > 64):
+                        self.nml[ig]['NPHI'] = 24
+                    else:
+                        self.nml[ig]['NPHI'] = 36
                 else:
-                    self.nml[ig]['NMU']  = 12
-                    self.nml[ig]['NPHI'] = 24
+                    if (self.Nx == 1) and (self.Ny == 1):
+                        self.nml[ig]['NPHI'] = 1
+                    elif (self.Nx > 64) and (self.Ny > 64):
+                        self.nml[ig]['NPHI'] = 16
+                    else:
+                        self.nml[ig]['NPHI'] = 24
+            else:
+                self.nml[ig]['NPHI']  = self.Nphi
 
             self.nml[ig]['BCFLAG'] = 0
 
