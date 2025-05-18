@@ -1135,8 +1135,8 @@ def test_100_rad(
         # ax1.plot(data_shd['f_down_diffuse'], params['output_altitude'], color='k', lw=0.5, alpha=1.0, ls='-')
         # ax1.fill_betweenx(params['output_altitude'], data_mca['f_down_diffuse']-data_mca['f_down_diffuse_std'], data_mca['f_down_diffuse']+data_mca['f_down_diffuse_std'], color='red', lw=0.2, alpha=1.0, zorder=1)
         # ax1.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
-        # ax1.set_xlabel('Flux Density [$\\mathrm{W m^{-2} nm^{-1}}$]')
-        # ax1.set_ylabel('Altitude [km]')
+        ax1.set_xlabel('Viewing Azimuth Angle [$^\\circ$]')
+        ax1.set_ylabel('Radiance [$\\mathrm{W m^{-2} nm^{-1} sr^{-1}}$]')
         # ax1.set_title('Down Diffuse & Upwelling')
         # ax1.set_yscale('log')
         # ax1.set_ylim((0.1, 30.0))
@@ -1220,11 +1220,11 @@ if __name__ == '__main__':
 
         # test_100_flux(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
-        test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
+        # test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
         # test_100_rad(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
-        # test_100_rad(550.0, 0.0, 1.0, 100, plot=True, overwrite=False)
+        test_100_rad(550.0, 0.0, 1.0, 100, plot=True, overwrite=False)
         # test_100_rad(550.0, 10.0, 12.0, 100, plot=True, overwrite=True)
 
     else:
