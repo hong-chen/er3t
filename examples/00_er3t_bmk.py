@@ -1220,12 +1220,12 @@ if __name__ == '__main__':
 
         # test_100_flux(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
-        # test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=False)
+        test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
         # test_100_rad(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
         # test_100_rad(550.0, 0.0, 1.0, 100, plot=True, overwrite=False)
-        test_100_rad(550.0, 10.0, 12.0, 100, plot=True, overwrite=True)
+        # test_100_rad(550.0, 10.0, 12.0, 100, plot=True, overwrite=True)
 
     else:
 
