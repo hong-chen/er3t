@@ -32,7 +32,6 @@ def cal_ocean_brdf(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     try:
         Nx, Ny = u10.shape
-        u10 = np.float_(u10)
         ndim = u10.ndim
     except Exception as error:
         # print(error)

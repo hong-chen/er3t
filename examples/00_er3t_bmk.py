@@ -810,6 +810,7 @@ def test_100_flux(
 
 def lrt_rad_one(
         params,
+        surface='ocean',
         overwrite=False,
         ):
 
@@ -838,12 +839,16 @@ def lrt_rad_one(
         overwrite = True
 
     mute_list = ['source solar', 'slit_function_file', 'wavelength', 'spline', 'albedo']
+
     input_dict_extra = {
-            'brdf_ambrals iso': params['f_iso'],
-            'brdf_ambrals vol': params['f_vol'],
-            'brdf_ambrals geo': params['f_geo'],
             'wavelength_add': '%.1f %.1f' % (params['wavelength'], params['wavelength']),
             }
+    if surface == 'land':
+        input_dict_extra['brdf_ambrals iso'] = params['f_iso']
+        input_dict_extra['brdf_ambrals vol'] = params['f_vol']
+        input_dict_extra['brdf_ambrals geo'] = params['f_geo']
+    elif surface == 'ocean':
+        input_dict_extra['brdf_cam'] = 'u10 %.2f' % params['windspeed']
 
     inits = []
     init_rad = er3t.rtm.lrt.lrt_init_mono_rad(
@@ -894,6 +899,7 @@ def mca_rad_one(
         params,
         f_toa=None,
         solver='3D',
+        surface='ocean',
         overwrite=False,
         ):
 
@@ -930,13 +936,22 @@ def mca_rad_one(
     pha0 = er3t.pre.pha.pha_mie_wc_shd(wavelength=params['wavelength'], overwrite=overwrite)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir_tmp, overwrite=overwrite)
 
-    sfc_dict = {
-            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
-            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
-            'fiso': np.array([params['f_iso']]).reshape((1, 1)),
-            'fvol': np.array([params['f_vol']]).reshape((1, 1)),
-            'fgeo': np.array([params['f_geo']]).reshape((1, 1)),
-            }
+    if surface == 'ocean':
+        sfc_dict = er3t.pre.sfc.cal_ocean_brdf(
+                wvl=params['wavelength'],
+                u10=np.array([params['windspeed']]).reshape((1, 1)),
+                pcl=np.array([params['pigment']]).reshape((1, 1)),
+                whitecaps=True,
+                )
+    elif surface == 'land':
+        sfc_dict = {}
+        sfc_dict['fiso'] = np.array([params['f_iso']]).reshape((1, 1))
+        sfc_dict['fvol'] = np.array([params['f_vol']]).reshape((1, 1))
+        sfc_dict['fgeo'] = np.array([params['f_geo']]).reshape((1, 1))
+
+    sfc_dict['dx'] = cld0.lay['dx']['data']*cld0.lay['nx']['data']
+    sfc_dict['dy'] = cld0.lay['dy']['data']*cld0.lay['ny']['data']
+
     fname_sfc = '%s/sfc.pk' % fdir_tmp
     sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
 
@@ -994,6 +1009,7 @@ def shd_rad_one(
         params,
         solver='IPA',
         f_toa=None,
+        surface='ocean',
         overwrite=False,
         ):
 
@@ -1027,13 +1043,19 @@ def shd_rad_one(
             overwrite=overwrite
             )
 
-    sfc_dict = {
-            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
-            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
-            'fiso': np.array([params['f_iso']]).reshape((1, 1)),
-            'fvol': np.array([params['f_vol']]).reshape((1, 1)),
-            'fgeo': np.array([params['f_geo']]).reshape((1, 1)),
-            }
+    if surface == 'ocean':
+        sfc_dict = {}
+        sfc_dict['windspeed'] = np.array([params['windspeed']]).reshape((1, 1))
+        sfc_dict['pigment'] = np.array([params['pigment']]).reshape((1, 1))
+    elif surface == 'land':
+        sfc_dict = {}
+        sfc_dict['fiso'] = np.array([params['f_iso']]).reshape((1, 1))
+        sfc_dict['fvol'] = np.array([params['f_vol']]).reshape((1, 1))
+        sfc_dict['fgeo'] = np.array([params['f_geo']]).reshape((1, 1))
+
+    sfc_dict['dx'] = cld0.lay['dx']['data']*cld0.lay['nx']['data']
+    sfc_dict['dy'] = cld0.lay['dy']['data']*cld0.lay['ny']['data']
+
     fname_sfc = '%s/sfc.pk' % fdir_tmp
     sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
 
@@ -1084,6 +1106,7 @@ def test_100_rad(
         cot,
         cer,
         icount,
+        surface='ocean',
         plot=True,
         overwrite=False,
         ):
@@ -1101,19 +1124,21 @@ def test_100_rad(
           'cloud_effective_radius': cer,
                 'cloud_top_height': 1.5,
        'cloud_geometric_thickness': 1.0,
-                         'photons': 1.0e8,
+                         'photons': 1.0e6,
                            'f_iso': 0.12472048343113448,
                            'f_vol': 0.05460690884637945,
                            'f_geo': 0.03384929843579787,
+                       'windspeed': 1.0,
+                         'pigment': 0.01,
                  'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 4.0)),
          }
 
-    data_lrt = lrt_rad_one(params, overwrite=overwrite)
+    data_lrt = lrt_rad_one(params, surface=surface, overwrite=overwrite)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_mca = mca_rad_one(params, f_toa=f_toa, overwrite=overwrite)
+    data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
 
-    data_shd = shd_rad_one(params, f_toa=f_toa, overwrite=overwrite)
+    data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
 
     error_shd_rad = np.nanmean(np.abs(data_lrt['rad']-data_shd['rad'])/data_lrt['rad']*100.0)
     error_mca_rad = np.nanmean(np.abs(data_lrt['rad']-data_mca['rad'])/data_lrt['rad']*100.0)
@@ -1166,7 +1191,7 @@ def test_100_rad(
                           mpatches.Patch(color='red'    , label='MCARaTS (%.1f%%)' % error_mca_rad), \
                           mpatches.Patch(color='blue'   , label='libRadtran'), \
                          ]
-        ax1.legend(handles=patches_legend, loc='upper center', fontsize=12)
+        ax1.legend(handles=patches_legend, loc='upper right', fontsize=12)
 
         # patches_legend = [
         #                   mpatches.Patch(color='black'  , label='SHDOM (%.1f%%)' % error_shd_net), \
@@ -1220,11 +1245,11 @@ if __name__ == '__main__':
 
         # test_100_flux(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
-        # test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
+        # test_100_flux(550.0, 0.5, 20.0, 200, plot=True, overwrite=True)
 
         # test_100_rad(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
-        test_100_rad(550.0, 0.0, 1.0, 100, plot=True, overwrite=False)
+        test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=False)
         # test_100_rad(550.0, 10.0, 12.0, 100, plot=True, overwrite=True)
 
     else:
