@@ -1379,12 +1379,12 @@ if __name__ == '__main__':
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # example_01_rad_atm1d_clear_over_land()
-    example_02_rad_atm1d_clear_over_ocean()
+    # example_02_rad_atm1d_clear_over_ocean()
     # example_03_rad_atm1d_cloud_over_ocean()
 
 
-    # example_05_rad_les_cloud_3d(solver='IPA')
-    # example_05_rad_les_cloud_3d(solver='3D')
+    example_05_rad_les_cloud_3d(solver='IPA')
+    example_05_rad_les_cloud_3d(solver='3D')
     # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 

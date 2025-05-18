@@ -726,9 +726,9 @@ def test_100_flux(
          }
 
     data_lrt = lrt_flux_one(params, overwrite=overwrite)
-    f_toa = data_lrt['f_down_direct'][-1]/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
+    f_toa = data_lrt['f_down'][-1]/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_shd = shd_flux_one(params, f_toa=f_toa, overwrite=overwrite)
+    data_shd = shd_flux_one(params, f_toa=f_toa, overwrite=True)
 
     data_mca = mca_flux_one(params, f_toa=f_toa, overwrite=overwrite)
 
@@ -927,7 +927,7 @@ def mca_rad_one(
             overwrite=overwrite
             )
 
-    pha0 = er3t.pre.pha.pha_mie_wc_shd(wavelength=params['wavelength'])
+    pha0 = er3t.pre.pha.pha_mie_wc_shd(wavelength=params['wavelength'], overwrite=overwrite)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir_tmp, overwrite=overwrite)
 
     sfc_dict = {
@@ -1095,13 +1095,13 @@ def test_100_rad(
               'solar_zenith_angle': 30.0,
              'solar_azimuth_angle': 0.0,
              'sensor_zenith_angle': 30.0,
-            'sensor_azimuth_angle': np.arange(0.0, 360.1, 2.0),
+            'sensor_azimuth_angle': np.arange(0.0, 360.1, 10.0),
                       'wavelength': wavelength,
          'cloud_optical_thickness': cot,
           'cloud_effective_radius': cer,
                 'cloud_top_height': 1.5,
        'cloud_geometric_thickness': 1.0,
-                         'photons': 1.0e5,
+                         'photons': 1.0e8,
                            'f_iso': 0.12472048343113448,
                            'f_vol': 0.05460690884637945,
                            'f_geo': 0.03384929843579787,
@@ -1220,7 +1220,12 @@ if __name__ == '__main__':
 
         # test_100_flux(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
-        test_100_rad(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
+        # test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=False)
+
+        # test_100_rad(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
+
+        # test_100_rad(550.0, 0.0, 1.0, 100, plot=True, overwrite=False)
+        test_100_rad(550.0, 10.0, 12.0, 100, plot=True, overwrite=True)
 
     else:
 
