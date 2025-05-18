@@ -1118,7 +1118,7 @@ def test_100_rad(
               'solar_zenith_angle': 30.0,
              'solar_azimuth_angle': 0.0,
              'sensor_zenith_angle': 30.0,
-            'sensor_azimuth_angle': np.arange(0.0, 360.1, 10.0),
+            'sensor_azimuth_angle': np.arange(0.0, 180.1, 10.0),
                       'wavelength': wavelength,
          'cloud_optical_thickness': cot,
           'cloud_effective_radius': cer,
@@ -1128,7 +1128,7 @@ def test_100_rad(
                            'f_iso': 0.12472048343113448,
                            'f_vol': 0.05460690884637945,
                            'f_geo': 0.03384929843579787,
-                       'windspeed': 1.0,
+                       'windspeed': 20.0,
                          'pigment': 0.01,
                  'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 4.0)),
          }
@@ -1139,6 +1139,17 @@ def test_100_rad(
     data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
 
     data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+
+    # add the other half (180.0 - 360.0)
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    params['sensor_azimuth_angle'] = np.append(params['sensor_azimuth_angle'], 180.0+params['sensor_azimuth_angle'][1:])
+    data_lrt['rad'] = np.append(data_lrt['rad'], data_lrt['rad'][:-1][::-1])
+
+    data_mca['rad'] = np.append(data_mca['rad'], data_mca['rad'][:-1][::-1])
+    data_mca['rad_std'] = np.append(data_mca['rad_std'], data_mca['rad_std'][:-1][::-1])
+
+    data_shd['rad'] = np.append(data_shd['rad'], data_shd['rad'][:-1][::-1])
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     error_shd_rad = np.nanmean(np.abs(data_lrt['rad']-data_shd['rad'])/data_lrt['rad']*100.0)
     error_mca_rad = np.nanmean(np.abs(data_lrt['rad']-data_mca['rad'])/data_lrt['rad']*100.0)
