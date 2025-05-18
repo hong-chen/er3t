@@ -1249,9 +1249,9 @@ if __name__ == '__main__':
 
         # test_100_rad(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
-        # test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=False)
+        test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad(550.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=False)
-        test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=True)
+        # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=True)
 
     else:
 
