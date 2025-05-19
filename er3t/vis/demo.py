@@ -29,16 +29,15 @@ import er3t
 
 
 
-def anim_phase_mie():
+def anim_phase_mie(index, cer0=1.0, Nstart=5, Nend=751):
 
-    cer0 = 10.0
     angles = np.linspace(0.0, 180.0, 1800)
     pha_r_ = er3t.pre.pha.pha_mie_wc_shd(wavelength=650.0, Npmom_max=1000, angles=angles, overwrite=True)
     pha_g_ = er3t.pre.pha.pha_mie_wc_shd(wavelength=550.0, Npmom_max=1000, angles=angles, overwrite=True)
     pha_b_ = er3t.pre.pha.pha_mie_wc_shd(wavelength=450.0, Npmom_max=1000, angles=angles, overwrite=True)
     index_cer = np.argmin(np.abs(pha_r_.data['ref']['data']-cer0))
 
-    for Npmom_max in np.arange(5, 751, 5):
+    for Npmom_max in np.arange(Nstart, Nend, 5):
 
         pmom_r = pha_r_.data['pmom']['data'][index_cer, :Npmom_max]
         logic_r = ~np.isnan(pmom_r)
@@ -76,7 +75,7 @@ def anim_phase_mie():
             ax1.xaxis.set_major_locator(FixedLocator(np.arange(0.0, 180.1, 30.0)))
             ax1.set_xlabel('Angle [$^\\circ$]')
             ax1.set_ylabel('Phase Function')
-            ax1.set_title('Using %d Legendre Coefficients ...' % Npmom_max)
+            ax1.set_title('Using %d Legendre Coefficients (CER=%d$\\mu m$) ...' % (Npmom_max, cer0))
             #╰──────────────────────────────────────────────────────────────╯#
 
             # polar plot
@@ -111,7 +110,7 @@ def anim_phase_mie():
             #╭──────────────────────────────────────────────────────────────╮#
             fig.subplots_adjust(hspace=0.35, wspace=0.35)
             _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
-            fname_fig = '%3.3d_%s.png' % (Npmom_max, 'phase',)
+            fname_fig = '%4.4d_%3.3d_%s_cer-%2.2d.png' % (index, Npmom_max, 'phase', cer0)
             plt.savefig(fname_fig, bbox_inches='tight', metadata=_metadata_, transparent=False)
             #╰──────────────────────────────────────────────────────────────╯#
             # plt.show()
@@ -124,6 +123,14 @@ def anim_phase_mie():
 
 if __name__ == '__main__':
 
-    anim_phase_mie()
+    index = 0
+    for cer0 in np.arange(1.0, 25.1, 1.0):
+        anim_phase_mie(index, cer0=cer0, Nstart=1000, Nend=1001)
+        index += 1
+    for cer0 in np.arange(24.0, 0.9, -1.0):
+        anim_phase_mie(index, cer0=cer0, Nstart=1000, Nend=1001)
+        index += 1
+
+    # anim_phase_mie(index, cer0=12.0, Nstart=5, Nend=751)
 
     pass

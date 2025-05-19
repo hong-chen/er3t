@@ -968,8 +968,8 @@ def mca_rad_one(
     for i in range(rad.size):
 
         fdir = '%s/%4.4d/rad_%s_%4.4d' % (fdir_tmp, params['wavelength'], solver.lower(), i)
-        if (not overwrite) and (not os.path.exists(fdir)):
-            overwrite = True
+        # if (not overwrite) and (not os.path.exists(fdir)):
+        #     overwrite = True
 
         mca0 = er3t.rtm.mca.mcarats_ng(
                 date=params['date'],
@@ -1133,14 +1133,19 @@ def test_100_rad(
                  'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 4.0)),
          }
 
+    if params['cloud_optical_thickness'] > 0.0:
+        params['photons'] = 1.0e8
+
     data_lrt = lrt_rad_one(params, surface=surface, overwrite=overwrite)
+    # data_lrt = lrt_rad_one(params, surface=surface, overwrite=True)
     # data_lrt = lrt_rad_one(params, surface=surface, overwrite=False)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
     # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=True)
     # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     # add the other half (180.0 - 360.0)
@@ -1166,7 +1171,7 @@ def test_100_rad(
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(111)
         ax1.plot(params['sensor_azimuth_angle'], data_lrt['rad'], color='blue' , lw=1.0, alpha=1.0, ls='-')
-        ax1.plot(params['sensor_azimuth_angle'], data_shd['rad'], color='k'    , lw=1.0, alpha=1.0, ls='-')
+        ax1.plot(params['sensor_azimuth_angle'], data_shd['rad'], color='k'    , lw=1.0, alpha=1.0, ls='-', zorder=0)
         ax1.fill_between(params['sensor_azimuth_angle'], data_mca['rad']-data_mca['rad_std'], data_mca['rad']+data_mca['rad_std'], color='red', lw=0.2, alpha=1.0, zorder=1)
         # ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='blue'    , lw=1.0, alpha=1.0, ls='-')
         # ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
@@ -1263,12 +1268,12 @@ if __name__ == '__main__':
 
         # test_100_rad(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
-        test_100_flux(550.0, 0.0, 1.0, 100, plot=True, overwrite=True)
+        # test_100_flux(550.0, 0.0, 1.0, 100, plot=True, overwrite=True)
         # test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
         # test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad(550.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=False)
-        # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=True)
+        test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=False)
 
     else:
 
