@@ -715,7 +715,7 @@ def test_100_flux(
                             'date': datetime.datetime(2024, 5, 18),
                  'atmosphere_file': '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
                   'surface_albedo': 0.05,
-              'solar_zenith_angle': 0.0,
+              'solar_zenith_angle': 30.0,
                       'wavelength': wavelength,
          'cloud_optical_thickness': cot,
           'cloud_effective_radius': cer,
@@ -1128,17 +1128,20 @@ def test_100_rad(
                            'f_iso': 0.12472048343113448,
                            'f_vol': 0.05460690884637945,
                            'f_geo': 0.03384929843579787,
-                       'windspeed': 20.0,
+                       'windspeed': 1.0,
                          'pigment': 0.01,
                  'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 4.0)),
          }
 
     data_lrt = lrt_rad_one(params, surface=surface, overwrite=overwrite)
+    # data_lrt = lrt_rad_one(params, surface=surface, overwrite=False)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
     data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     # add the other half (180.0 - 360.0)
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1260,7 +1263,10 @@ if __name__ == '__main__':
 
         # test_100_rad(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
-        test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
+        test_100_flux(550.0, 0.0, 1.0, 100, plot=True, overwrite=True)
+        # test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
+
+        # test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad(550.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=False)
         # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=True)
 
