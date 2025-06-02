@@ -679,7 +679,7 @@ def shd_flux_one(
             target='flux',
             Niter=1000,
             Nmu=36,
-            Nphi=1,
+            Nphi=36,
             solar_zenith_angle=params['solar_zenith_angle'],
             sol_acc=1e-5,
             split_acc=1e-6,
@@ -1286,11 +1286,12 @@ if __name__ == '__main__':
         # for icount in np.arange(1, 15):
         #     test_100_flux(550.0, 1.0, 25.0, icount, plot=True, overwrite=True)
 
-        test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
+        # test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad(550.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=False)
         # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=False)
 
-        # test_100_flux(550.0, 0.5, 9.0, 100, plot=True, overwrite=False)
+        test_100_flux(550.0, 0.5, 9.0, 100, plot=True, overwrite=False)
+        # test_100_flux(550.0, 10.0, 12.0, 100, plot=True, overwrite=False)
 
     else:
 
