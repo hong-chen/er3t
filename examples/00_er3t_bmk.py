@@ -678,8 +678,10 @@ def shd_flux_one(
             fdir=fdir,
             target='flux',
             Niter=1000,
+            Nmu=36,
+            Nphi=1,
             solar_zenith_angle=params['solar_zenith_angle'],
-            sol_acc=1e-6,
+            sol_acc=1e-5,
             split_acc=1e-6,
             surface=params['surface_albedo'],
             solver=solver,
@@ -690,7 +692,12 @@ def shd_flux_one(
             )
 
     fname = shd0.fnames_out[0]
-    out0 = er3t.rtm.shd.get_shd_data_out(fname)[0, 0, :, 0, :]
+    out0_ = er3t.rtm.shd.get_shd_data_out(fname)[:, :, :, 0, :]
+    Nx, Ny, Nz, Nv = out0_.shape
+    out0 = np.zeros((Nz, Nv), dtype=np.float32)
+    for iz in np.arange(Nz):
+        for iv in np.arange(Nv):
+            out0[iz, iv] = np.mean(out0_[:, :, iz, iv])
 
     data = {
       'f_up': out0[:, 0],\
@@ -719,10 +726,11 @@ def test_100_flux(
                       'wavelength': wavelength,
          'cloud_optical_thickness': cot,
           'cloud_effective_radius': cer,
+                           'Niter': icount,
                 'cloud_top_height': 1.5,
        'cloud_geometric_thickness': 1.0,
-                         'photons': 1.0e5,
-                 'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 4.0)),
+                         'photons': 1.0e7,
+                 'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0)),
          }
 
     data_lrt = lrt_flux_one(params, overwrite=overwrite)
@@ -756,7 +764,7 @@ def test_100_flux(
         ax1.set_ylabel('Altitude [km]')
         ax1.set_title('Down Diffuse & Upwelling')
         ax1.set_yscale('log')
-        ax1.set_ylim((0.1, 30.0))
+        ax1.set_ylim((0.1, 40.0))
         ax1.set_xlim((0.0, 0.1*(f_toa//0.1 + 1)))
 
         ax2 = fig.add_subplot(122)
@@ -770,7 +778,7 @@ def test_100_flux(
         ax2.set_xlabel('Flux Density [$\\mathrm{W m^{-2} nm^{-1}}$]')
         ax2.set_title('Down Direct & Net')
         ax2.set_yscale('log')
-        ax2.set_ylim((0.1, 30.0))
+        ax2.set_ylim((0.1, 40.0))
         ax2.set_xlim((0.0, 0.1*(f_toa//0.1 + 1)))
 
         if params['cloud_optical_thickness'] > 0.0:
@@ -797,7 +805,7 @@ def test_100_flux(
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         fig.savefig('%4.4d_%s_%06.1fnm_cot-%05.1f_cer-%05.1f.png' % (icount, _metadata['Function'], params['wavelength'], params['cloud_optical_thickness'], params['cloud_effective_radius']), bbox_inches='tight', metadata=_metadata)
-        # plt.close()
+        plt.close()
         plt.show()
         #╰──────────────────────────────────────────────────────────────╯#
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -826,7 +834,7 @@ def lrt_rad_one(
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
     lrt_cfg['mol_abs_param'] = 'reptran fine'
-    lrt_cfg['number_of_streams'] = 32
+    lrt_cfg['number_of_streams'] = 64
 
     cld_cfg = er3t.rtm.lrt.get_cld_cfg()
     cld_cfg['cloud_file']  = '%s/cloud.txt' % fdir_tmp
@@ -1078,6 +1086,8 @@ def shd_rad_one(
             fdir=fdir,
             target='rad',
             Niter=1000,
+            Nmu=128,
+            Nphi=256,
             solar_zenith_angle=params['solar_zenith_angle'],
             solar_azimuth_angle=0.0,
             sensor_azimuth_angles=params['sensor_azimuth_angle'],
@@ -1114,7 +1124,7 @@ def test_100_rad(
     params = {
                             'date': datetime.datetime(2024, 5, 18),
                  'atmosphere_file': '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
-                  'surface_albedo': 0.05,
+                  'surface_albedo': 0.03,
               'solar_zenith_angle': 30.0,
              'solar_azimuth_angle': 0.0,
              'sensor_zenith_angle': 30.0,
@@ -1134,14 +1144,14 @@ def test_100_rad(
          }
 
     if params['cloud_optical_thickness'] > 0.0:
-        params['photons'] = 1.0e8
+        params['photons'] = 1.0e9
 
     data_lrt = lrt_rad_one(params, surface=surface, overwrite=overwrite)
     # data_lrt = lrt_rad_one(params, surface=surface, overwrite=True)
     # data_lrt = lrt_rad_one(params, surface=surface, overwrite=False)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
+    data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
     # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
@@ -1170,9 +1180,9 @@ def test_100_rad(
         fig.suptitle('COT=%.1f, CER=%.1f $\\mu m$' % (params['cloud_optical_thickness'], params['cloud_effective_radius']))
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(111)
-        ax1.plot(params['sensor_azimuth_angle'], data_lrt['rad'], color='blue' , lw=1.0, alpha=1.0, ls='-')
-        ax1.plot(params['sensor_azimuth_angle'], data_shd['rad'], color='k'    , lw=1.0, alpha=1.0, ls='-', zorder=0)
-        ax1.fill_between(params['sensor_azimuth_angle'], data_mca['rad']-data_mca['rad_std'], data_mca['rad']+data_mca['rad_std'], color='red', lw=0.2, alpha=1.0, zorder=1)
+        ax1.plot(params['sensor_azimuth_angle'], data_lrt['rad'], color='blue' , lw=1.0, alpha=1.0, ls='-', zorder=0)
+        ax1.plot(params['sensor_azimuth_angle'], data_shd['rad'], color='k'    , lw=1.0, alpha=1.0, ls='-', zorder=1)
+        ax1.fill_between(params['sensor_azimuth_angle'], data_mca['rad']-data_mca['rad_std'], data_mca['rad']+data_mca['rad_std'], color='red', lw=0.2, alpha=1.0, zorder=2)
         # ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='blue'    , lw=1.0, alpha=1.0, ls='-')
         # ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
         # ax1.plot(data_shd['f_up']          , params['output_altitude'], color='k'    , lw=0.5, alpha=1.0, ls='-')
@@ -1185,6 +1195,8 @@ def test_100_rad(
         # ax1.set_yscale('log')
         # ax1.set_ylim((0.1, 30.0))
         # ax1.set_xlim((0.0, 0.1*(f_toa//0.1 + 1)))
+        if params['cloud_optical_thickness'] > 0.0:
+            ax1.set_ylim((0.215, 0.315))
 
         # ax2 = fig.add_subplot(122)
         # ax2.plot(data_lrt['f_net']        , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
@@ -1259,7 +1271,7 @@ if __name__ == '__main__':
         # icount = 0
         # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
         #     for cer in np.arange(1.0, 25.1, 2.0):
-        #         test_100_flux(650.0, cot, cer, icount, plot=True, overwrite=True)
+        #         test_100_flux(550.0, cot, cer, icount, plot=True, overwrite=True)
         #         icount += 1
 
         # test_100_flux(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
@@ -1271,9 +1283,14 @@ if __name__ == '__main__':
         # test_100_flux(550.0, 0.0, 1.0, 100, plot=True, overwrite=True)
         # test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
-        # test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
+        # for icount in np.arange(1, 15):
+        #     test_100_flux(550.0, 1.0, 25.0, icount, plot=True, overwrite=True)
+
+        test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad(550.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=False)
-        test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=False)
+        # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=False)
+
+        # test_100_flux(550.0, 0.5, 9.0, 100, plot=True, overwrite=False)
 
     else:
 

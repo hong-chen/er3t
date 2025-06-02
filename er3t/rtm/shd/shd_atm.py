@@ -326,7 +326,8 @@ class shd_atm_3d:
             fname_atm_1d=None,
             ):
 
-        fname_mie = er3t.rtm.shd.gen_mie_file(wavelength, wavelength)
+        fname_mie = er3t.rtm.shd.gen_mie_file_from_nc(wavelength, wavelength)
+        # fname_mie = er3t.rtm.shd.gen_mie_file(wavelength, wavelength)
 
         if fname_atm_1d is not None:
             fname_inp = er3t.rtm.shd.gen_ext_file(fname.replace('prp', 'ext'), cld0, fname_atm_1d=fname_atm_1d)

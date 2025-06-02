@@ -297,7 +297,7 @@ class pha_mie_wc_shd:
 
     reference = '\nMie Scattering (Wiscombe, 1980):\n- Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, https://doi.org/10.1364/AO.19.001505, 1980.'
 
-    ID = 'Mie (Water Clouds)'
+    ID = 'Mie (Water Clouds, for SHDOM)'
 
     def __init__(self,
                  wavelength=555.0,
@@ -315,11 +315,11 @@ class pha_mie_wc_shd:
                  verbose=False):
 
         fdir_shd = '%s/shdom' % er3t.common.fdir_data_tmp
-        fname_coef = '%s/shdom-mie_W_F_%.4f-%.4f.txt' % (fdir_shd, wavelength, wavelength)
+        fname_coef = '%s/shdom-mie-nc_W_F_%.4f-%.4f.txt' % (fdir_shd, wavelength, wavelength)
         if not os.path.exists(fname_coef):
             if not os.path.exists(fdir_shd):
                 os.makedirs(fdir_shd)
-            er3t.rtm.shd.gen_mie_file(wavelength, wavelength, fname=fname_coef)
+            er3t.rtm.shd.gen_mie_file_from_nc(wavelength, wavelength, fname=fname_coef)
 
         self.fname_coef = fname_coef
 
@@ -703,6 +703,6 @@ class pha_mie_wc_pmom:
 
 
 
-
 if __name__ == '__main__':
-   pass
+
+    pass

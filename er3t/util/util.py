@@ -187,7 +187,7 @@ def send_email(
 
 
 
-def nice_array_str(array1d, numPerLine=6):
+def nice_array_str(array1d, numPerLine=6, useSci=False):
 
     """
     Covert 1d array to string
@@ -207,13 +207,23 @@ def nice_array_str(array1d, numPerLine=6):
     for iLine in range(numLine):
         lineS = ''
         for iNum in range(numPerLine):
-            lineS += '  %20.6g' % array1d[iLine*numPerLine + iNum]
+            num0 = array1d[iLine*numPerLine + iNum]
+            if useSci:
+                lineS += '  %18.8e' % num0
+            else:
+                lineS += '  %18.8g' % num0
         lineS += '\n'
         niceString += lineS
+
     if numRest != 0:
+
         lineS = ''
         for iNum in range(numRest):
-            lineS += '  %20.8g' % array1d[numLine*numPerLine + iNum]
+            num0 = array1d[numLine*numPerLine + iNum]
+            if useSci:
+                lineS += '  %18.8e' % num0
+            else:
+                lineS += '  %18.8g' % num0
         lineS += '\n'
         niceString += lineS
 

@@ -17,6 +17,7 @@ __all__ = [
         'gen_mie_file',
         'gen_ext_file',
         'gen_lwc_file',
+        'gen_mie_file_from_nc',
         ]
 
 
@@ -209,9 +210,80 @@ def gen_lwc_file(
     return fname
 
 
+def gen_mie_file_from_nc(
+        wavelength_s,
+        wavelength_e,
+        fname=None,
+        # fname_nc='%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha,
+        fname_nc='/Users/hchen/Work/soft/libradtran/v2.0.5/data/wc/mie/wc.sol.mie.cdf',
+        pol_tag='F', # unpolarized
+        par_tag='W', # water
+        overwrite=True,
+        ):
+
+    from netCDF4 import Dataset
+
+    if fname is None:
+
+        fdir = '%s/shdom' % er3t.common.fdir_data_tmp
+        if not os.path.exists(fdir):
+            os.makedirs(fdir)
+
+        fname = '%s/shdom-mie-nc_%s_%s_%.4f-%.4f.txt' % (fdir, par_tag, pol_tag, wavelength_s, wavelength_e)
+
+    if (not os.path.exists(fname)) or overwrite:
+
+        wavelength_s /= 1000.0 #convert to micron
+        wavelength_e /= 1000.0 #convert to micron
+        wvl = (wavelength_s+wavelength_e)/2.0
+
+        # read data from nc file
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        f0 = Dataset(fname_nc, 'r')
+        param_alpha = f0.getncattr('param_alpha')
+        size_distr = f0.getncattr('size_distr')
+        parameterization = f0.getncattr('parameterization')
+
+        wavelen = f0.variables['wavelen'][:]
+        index_wvl = np.argmin(np.abs(wavelen-wvl))
+
+        reff = f0.variables['reff'][:]
+        refre = f0.variables['refre'][:][index_wvl]
+        refim = f0.variables['refim'][:][index_wvl]
+        rho = f0.variables['rho'][:]
+
+        ext = f0.variables['ext'][:][index_wvl, :]
+        ssa = f0.variables['ssa'][:][index_wvl, :]
+
+        pmom = f0.variables['pmom'][:][index_wvl, :, 0, :]
+
+        f0.close()
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+        with open(fname, 'w') as f:
+            f.write('! %s scattering table vs. effective radius (LWC=1 g/m^3)\n' % parameterization.title())
+            f.write('    %.3f    %.3f  wavelength range (micron)\n' % (wavelength_s, wavelength_e))
+            f.write(' %.3f  W   particle density (g/cm^3) and type (Water, Ice, Aerosol)\n' % rho.mean())
+            f.write('  %.6e %.6e  particle index of refraction\n' % (refre, refim))
+            f.write('%.6f %s shape parameter\n' % (param_alpha, size_distr.replace('.', '')))
+            f.write('  %d    %.3f   %.3f  number, starting, ending effective radius\n' % (reff.size, reff[0], reff[-1]))
+
+            for i, reff0 in enumerate(reff):
+                pmom0 = pmom[i, :]
+                logic = np.logical_not(np.isnan(pmom0)) & np.logical_not(np.isinf(pmom0))
+                Nmom0 = logic.sum()
+
+                pmom0_str = er3t.util.nice_array_str(pmom0[:Nmom0], numPerLine=200, useSci=True)
+
+                f.write('  %7.4f    %.6e  %.12f   %4d  Reff  Ext  Alb  Nrank\n' % (reff0, ext[i], ssa[i], Nmom0-1))
+                f.write('%s' % pmom0_str)
+
+    return fname
+
+
 if __name__ == '__main__':
 
-    fname = gen_prp_file()
+    fname = gen_mie_file_from_nc(550.0, 550.0)
     print(fname)
 
     # date = datetime.datetime(2019, 9, 2)
