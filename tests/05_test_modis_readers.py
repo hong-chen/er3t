@@ -6,17 +6,17 @@ import unittest
 import numpy as np
 from unittest.mock import patch, MagicMock
 
-# Add parent directory to path to import from modis module
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 from er3t.util.modis import (
     modis_03, modis_l1b, modis_l2, modis_35_l2, modis_mvcm_cldmsk_l2,
     modis_04, modis_09, modis_09a1, modis_43a1, modis_43a3, modis_tiff
 )
 
+import er3t.util.modis
+
 class TestModisReaders(unittest.TestCase):
     """Test case for MODIS data reader classes"""
 
-    @patch('er3t.util.modis.SD')
+    @patch.object(er3t.util.modis, 'modis_03')
     def test_modis_03(self, mock_sd):
         """Test modis_03 class for reading geolocation data"""
         print("\nTesting modis_03 reader...")
