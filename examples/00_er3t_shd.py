@@ -617,9 +617,9 @@ def example_03_rad_atm1d_clear_over_snow(
 
     vaa_1d = np.arange(0.0, 360.1, 1.0)
     vza_1d = np.arange(1.0, 89.1, 1.0)
-    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    vaa = vaa.ravel()
-    vza = vza.ravel()
+    vaa_2d, vza_2d = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa_2d.ravel()
+    vza = vza_2d.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -628,9 +628,9 @@ def example_03_rad_atm1d_clear_over_snow(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            sol_acc=1.0e-7,
+            sol_acc=1.0e-6,
             target='radiance',
-            solar_zenith_angle=30.0,
+            solar_zenith_angle=60.0,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
@@ -679,9 +679,14 @@ def example_03_rad_atm1d_clear_over_snow(
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111, projection='polar')
+        ax1.set_theta_zero_location('N')
         ax1.set_theta_direction(-1)
-        ax1.set_theta_offset(np.pi/2.)
-        cs = ax1.scatter(np.deg2rad(vaa), out0.data['rad']['data'][:], c='black', s=3)
+        ax1.set_rgrids(np.arange(20, 81, 20))
+        ax1.set_rlim((0.0, 89.0))
+
+        data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
+        ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+
         ax1.set_title('Radiance at %.1f nm at VZA= %5.1f deg (%s Mode)' % (wavelength, np.mean(vza), solver))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
@@ -1594,7 +1599,7 @@ if __name__ == '__main__':
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # example_01_rad_atm1d_clear_over_land()
     # example_02_rad_atm1d_clear_over_ocean()
-    example_03_rad_atm1d_clear_over_snow()
+    example_03_rad_atm1d_clear_over_snow(overwrite=False)
     # example_04_rad_atm1d_cloud_over_ocean()
 
 
