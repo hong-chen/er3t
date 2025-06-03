@@ -13,7 +13,6 @@ import h5py
 import time
 import numpy as np
 import datetime
-import time
 from scipy.io import readsav
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -628,6 +627,8 @@ def example_03_rad_atm1d_clear_over_snow(
     vza = vza_2d.ravel()
 
     sza = 63.0
+    saa = 0.0
+    raa = er3t.util.util.calculate_raa(saa=saa, vaa=vaa, forward_scattering='positive')
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -641,7 +642,7 @@ def example_03_rad_atm1d_clear_over_snow(
             sol_acc=1.0e-6,
             target='radiance',
             solar_zenith_angle=sza,
-            solar_azimuth_angle=0.0,
+            solar_azimuth_angle=saa,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
             sensor_altitude=705.0,
@@ -695,7 +696,8 @@ def example_03_rad_atm1d_clear_over_snow(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet', vmin=0.45, vmax=0.65)
+        cs = ax1.pcolormesh(np.deg2rad(raa), vza_2d, data, cmap='jet', vmin=0.45, vmax=0.65)
+        ax1.colorbar(y=cs, fraction=0.3, pad=0.15)
 
         ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
         plt.savefig(fname_png, bbox_inches='tight')
@@ -1145,7 +1147,7 @@ def example_05_rad_les_cloud_3d(
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
+        # cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
         ax1.set_xlabel('X Index')
         ax1.set_ylabel('Y Index')
         ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
@@ -1593,7 +1595,7 @@ def example_07_at3d_rad_cloud_merra(
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
+        # cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
         ax1.set_xlabel('X Index')
         ax1.set_ylabel('Y Index')
         ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
