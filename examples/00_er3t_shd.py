@@ -621,6 +621,8 @@ def example_03_rad_atm1d_clear_over_snow(
     vaa = vaa_2d.ravel()
     vza = vza_2d.ravel()
 
+    sza0 = 60.0
+
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
             date=datetime.datetime(2024, 5, 18),
@@ -630,7 +632,7 @@ def example_03_rad_atm1d_clear_over_snow(
             Niter=1000,
             sol_acc=1.0e-6,
             target='radiance',
-            solar_zenith_angle=60.0,
+            solar_zenith_angle=sza0,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
@@ -687,7 +689,7 @@ def example_03_rad_atm1d_clear_over_snow(
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
         ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
 
-        ax1.set_title('Radiance at %.1f nm at VZA= %5.1f deg (%s Mode)' % (wavelength, np.mean(vza), solver))
+        ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza0, solver))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -1599,7 +1601,7 @@ if __name__ == '__main__':
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # example_01_rad_atm1d_clear_over_land()
     # example_02_rad_atm1d_clear_over_ocean()
-    example_03_rad_atm1d_clear_over_snow(overwrite=False)
+    example_03_rad_atm1d_clear_over_snow()
     # example_04_rad_atm1d_cloud_over_ocean()
 
 
