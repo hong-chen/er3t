@@ -987,7 +987,7 @@ def example_05_rad_les_cloud_3d(
     # define mca_sca object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
-    pha0 = er3t.pre.pha.pha_mie_wc_shd(wavelength=wavelength)
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 

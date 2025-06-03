@@ -575,7 +575,7 @@ def mca_flux_one(
             overwrite=overwrite
             )
 
-    pha0 = er3t.pre.pha.pha_mie_wc_shd(wavelength=params['wavelength'])
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=params['wavelength'])
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir_tmp, overwrite=overwrite)
 
     atm1d0  = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
@@ -943,7 +943,7 @@ def mca_rad_one(
             overwrite=overwrite
             )
 
-    pha0 = er3t.pre.pha.pha_mie_wc_shd(wavelength=params['wavelength'], overwrite=overwrite)
+    pha0 = er3t.pre.pha.pha_mie_wc(wavelength=params['wavelength'], overwrite=overwrite)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir_tmp, overwrite=overwrite)
 
     if surface == 'ocean':
@@ -1273,17 +1273,17 @@ if __name__ == '__main__':
         #     test_01_flux_one_clear(wavelength)
         # test_02_rad_cloud(params, overwrite=False)
 
-        icount = 0
-        for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
-            for cer in np.arange(1.0, 25.1, 2.0):
-                test_100_flux(2130.0, cot, cer, icount, plot=True, overwrite=True)
-                icount += 1
+        # icount = 0
+        # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
+        #     for cer in np.arange(1.0, 25.1, 2.0):
+        #         test_100_flux(2130.0, cot, cer, icount, plot=True, overwrite=True)
+        #         icount += 1
 
-        icount = 0
-        for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
-            for cer in np.arange(1.0, 25.1, 2.0):
-                test_100_flux(550.0, cot, cer, icount, plot=True, overwrite=True)
-                icount += 1
+        # icount = 0
+        # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
+        #     for cer in np.arange(1.0, 25.1, 2.0):
+        #         test_100_flux(550.0, cot, cer, icount, plot=True, overwrite=True)
+        #         icount += 1
 
         # test_100_flux(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
@@ -1303,7 +1303,7 @@ if __name__ == '__main__':
 
         # test_100_flux(550.0, 10.0, 12.0, 100, plot=True, overwrite=False)
 
-        # test_100_flux(550.0, 0.5, 9.0, 100, plot=True, overwrite=False)
+        test_100_flux(550.0, 0.5, 9.0, 100, plot=True, overwrite=True)
         # test_100_rad(550.0, 0.5, 9.0, 100, surface='land', plot=True, overwrite=True)
         # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=True)
 

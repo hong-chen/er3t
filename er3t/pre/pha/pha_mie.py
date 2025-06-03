@@ -315,11 +315,11 @@ class pha_mie_wc_shd:
                  verbose=False):
 
         fdir_shd = '%s/shdom' % er3t.common.fdir_data_tmp
-        fname_coef = '%s/shdom-mie-nc_W_F_%.4f-%.4f.txt' % (fdir_shd, wavelength, wavelength)
+        fname_coef = '%s/shdom-mie_W_F_%.4f-%.4f.txt' % (fdir_shd, wavelength, wavelength)
         if not os.path.exists(fname_coef):
             if not os.path.exists(fdir_shd):
                 os.makedirs(fdir_shd)
-            er3t.rtm.shd.gen_mie_file_from_nc(wavelength, wavelength, fname=fname_coef)
+            er3t.rtm.shd.gen_mie_file(wavelength, wavelength, fname=fname_coef)
 
         self.fname_coef = fname_coef
 
