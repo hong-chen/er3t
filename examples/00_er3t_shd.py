@@ -630,6 +630,8 @@ def example_03_rad_atm1d_clear_over_snow(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
+            Nmu=32,
+            Nphi=64,
             sol_acc=1.0e-6,
             target='radiance',
             solar_zenith_angle=sza0,
