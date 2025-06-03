@@ -688,7 +688,7 @@ def example_03_rad_atm1d_clear_over_snow(
     if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
-        fig = plt.figure(figsize=(8, 6))
+        fig = plt.figure(figsize=(12, 12))
         ax1 = fig.add_subplot(111, projection='polar')
         ax1.set_theta_zero_location('N')
         ax1.set_theta_direction(-1)
@@ -696,11 +696,12 @@ def example_03_rad_atm1d_clear_over_snow(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        cs = ax1.pcolormesh(np.deg2rad(raa), vza_2d, data, cmap='jet', vmin=0.45, vmax=0.65)
-        ax1.colorbar(y=cs, fraction=0.3, pad=0.15)
+        cs = ax1.pcolormesh(np.deg2rad(raa).reshape(vaa_2d.shape), vza_2d, data, cmap='RdBu', vmin=0.15, vmax=0.5)
+        cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.1, location='bottom')
+        cbar.ax.set_title('Radiance')
 
         ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
-        plt.savefig(fname_png, bbox_inches='tight')
+        fig.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
