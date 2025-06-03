@@ -16,12 +16,16 @@ import datetime
 import time
 from scipy.io import readsav
 import matplotlib as mpl
-# mpl.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FixedLocator
-from matplotlib import rcParams
-import matplotlib.gridspec as gridspec
+import matplotlib.path as mpl_path
+import matplotlib.image as mpl_img
 import matplotlib.patches as mpatches
+import matplotlib.gridspec as gridspec
+from matplotlib import rcParams, ticker
+from matplotlib.ticker import FixedLocator
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+# import cartopy.crs as ccrs
+# mpl.use('Agg')
 
 
 import er3t
@@ -483,7 +487,7 @@ def example_02_rad_atm1d_clear_over_ocean(
 
 
 def example_03_rad_atm1d_clear_over_snow(
-        wavelength=550.0,
+        wavelength=555.0,
         solver='IPA',
         overwrite=True,
         plot=True
@@ -623,7 +627,7 @@ def example_03_rad_atm1d_clear_over_snow(
     vaa = vaa_2d.ravel()
     vza = vza_2d.ravel()
 
-    sza = 60.0
+    sza = 63.0
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -691,7 +695,7 @@ def example_03_rad_atm1d_clear_over_snow(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet', vmin=0.45, vmax=0.65)
 
         ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
         plt.savefig(fname_png, bbox_inches='tight')
