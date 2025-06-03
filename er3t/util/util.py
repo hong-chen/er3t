@@ -1425,6 +1425,62 @@ def has_common_substring(input_str, substring_list):
     return any(substring in input_str for substring in substring_list)
 
 
+def calculate_raa(vaa, saa, forward_scattering='positive'):
+    """
+    Calculate the relative azimuth angle (RAA) in [0, 360) given:
+      - viewing azimuth angle (VAA) in [-180, 180)
+      - solar azimuth angle (SAA)  in [-180, 180)
+
+    RAA = (VAA - SAA) modulo 360, ensuring a result in [0, 360).
+
+    There's one of two ways to denote RAA:
+    1) RT theory -> forward scattering should be assigned to positive viewing zenith angles
+    2) remote sensing applications -> backscattering should be assigned to positive viewing zenith angles
+
+    Args:
+    ----
+        vaa (float or ndarr): Viewing azimuth angle in degrees, in [-180, 180).
+        saa (float or ndarr): Solar azimuth angle in degrees, in [-180, 180).
+        forward_scattering (str): one of 'positive' or 'negative'.
+                                  if positive (default), raa is calculated simply as vaa - saa
+                                  to denote that positive viewing zenith angles are assigned to forward scattering
+                                  if negative, raa is calculated by subtracting 180 from above
+                                  to denote that positive viewing zenith angles are assigned to backscattering
+
+    Returns:
+    -------
+        raa (float or ndarr): Relative azimuth angle in [0, 360).
+
+    Reference: Korkin et al. (2022), https://doi.org/10.1016/j.cpc.2021.108198
+
+    """
+    # Normalize input angles to [-180, 180)
+    # Not strictly necessary unless the inputs might be out of range
+    # vaa = ((vaa + 180) % 360) - 180
+    # saa = ((saa + 180) % 360) - 180
+
+    # convert them to [0, 360) range for subtraction
+    vaa0 = vaa % 360
+    saa0 = saa % 360
+
+    # compute RAA in [0, 360)
+    raa = (vaa0 - saa0) % 360
+
+    # if hotspot is observed at raa=0, then flip around nadir
+    # for instance if raa was 90, it should become 270
+    # if raa was 180, it should now be 0
+    if forward_scattering.lower() == 'negative':
+        raa = 180 - raa
+        raa = change_range(raa, 0, 360)
+
+    return raa
+
+
+def change_range(angle, min_value, max_value):
+    return (angle - min_value) % (max_value - min_value) + min_value
+
+
+
 
 if __name__ == '__main__':
 
