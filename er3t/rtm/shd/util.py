@@ -214,8 +214,7 @@ def gen_mie_file_from_nc(
         wavelength_s,
         wavelength_e,
         fname=None,
-        # fname_nc='%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha,
-        fname_nc='/Users/hchen/Work/soft/libradtran/v2.0.5/data/wc/mie/wc.sol.mie.cdf',
+        fname_nc='%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha,
         pol_tag='F', # unpolarized
         par_tag='W', # water
         overwrite=True,
