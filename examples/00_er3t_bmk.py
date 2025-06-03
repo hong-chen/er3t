@@ -680,6 +680,8 @@ def shd_flux_one(
             Niter=1000,
             Nmu=12,
             Nphi=24,
+            # Nmu=256,
+            # Nphi=256,
             solar_zenith_angle=params['solar_zenith_angle'],
             sol_acc=1e-5,
             split_acc=1e-6,
@@ -868,7 +870,7 @@ def lrt_rad_one(
             sensor_zenith_angle  = params['sensor_zenith_angle'],
             sensor_azimuth_angle = params['sensor_azimuth_angle'],
             wavelength         = params['wavelength'],
-            output_altitude    = params['output_altitude'][-1],
+            output_altitude    = params['sensor_altitude'],
             lrt_cfg            = lrt_cfg,
             cld_cfg            = cld_cfg,
             mute_list          = mute_list,
@@ -992,6 +994,7 @@ def mca_rad_one(
                 solar_azimuth_angle=0.0,
                 sensor_zenith_angle=params['sensor_zenith_angle'],
                 sensor_azimuth_angle=params['sensor_azimuth_angle'][i],
+                sensor_altitude=params['sensor_altitude'],
                 photons=params['photons'],
                 weights=abs0.coef['weight']['data'],
                 surface=sfc_2d,
@@ -1086,12 +1089,15 @@ def shd_rad_one(
             fdir=fdir,
             target='rad',
             Niter=1000,
-            Nmu=128,
-            Nphi=256,
+            # Nmu=128,
+            # Nphi=256,
+            Nmu=64,
+            Nphi=128,
             solar_zenith_angle=params['solar_zenith_angle'],
             solar_azimuth_angle=0.0,
             sensor_azimuth_angles=params['sensor_azimuth_angle'],
             sensor_zenith_angles=np.repeat(params['sensor_zenith_angle'], params['sensor_azimuth_angle'].size),
+            sensor_altitude=params['sensor_altitude'],
             sol_acc=1e-6,
             split_acc=1e-6,
             surface=sfc_2d,
@@ -1127,7 +1133,10 @@ def test_100_rad(
                   'surface_albedo': 0.03,
               'solar_zenith_angle': 30.0,
              'solar_azimuth_angle': 0.0,
-             'sensor_zenith_angle': 30.0,
+             #     'sensor_altitude': 705.0,
+             # 'sensor_zenith_angle': 30.0,
+                 'sensor_altitude': 0.0,
+             'sensor_zenith_angle': 100.0,
             'sensor_azimuth_angle': np.arange(0.0, 180.1, 10.0),
                       'wavelength': wavelength,
          'cloud_optical_thickness': cot,
@@ -1151,11 +1160,11 @@ def test_100_rad(
     # data_lrt = lrt_rad_one(params, surface=surface, overwrite=False)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
     # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
-    data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
-    # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=True)
+    # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=True)
     # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     # add the other half (180.0 - 360.0)
@@ -1163,14 +1172,14 @@ def test_100_rad(
     params['sensor_azimuth_angle'] = np.append(params['sensor_azimuth_angle'], 180.0+params['sensor_azimuth_angle'][1:])
     data_lrt['rad'] = np.append(data_lrt['rad'], data_lrt['rad'][:-1][::-1])
 
-    data_mca['rad'] = np.append(data_mca['rad'], data_mca['rad'][:-1][::-1])
-    data_mca['rad_std'] = np.append(data_mca['rad_std'], data_mca['rad_std'][:-1][::-1])
+    # data_mca['rad'] = np.append(data_mca['rad'], data_mca['rad'][:-1][::-1])
+    # data_mca['rad_std'] = np.append(data_mca['rad_std'], data_mca['rad_std'][:-1][::-1])
 
     data_shd['rad'] = np.append(data_shd['rad'], data_shd['rad'][:-1][::-1])
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     error_shd_rad = np.nanmean(np.abs(data_lrt['rad']-data_shd['rad'])/data_lrt['rad']*100.0)
-    error_mca_rad = np.nanmean(np.abs(data_lrt['rad']-data_mca['rad'])/data_lrt['rad']*100.0)
+    # error_mca_rad = np.nanmean(np.abs(data_lrt['rad']-data_mca['rad'])/data_lrt['rad']*100.0)
 
     # figure
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1182,7 +1191,7 @@ def test_100_rad(
         ax1 = fig.add_subplot(111)
         ax1.plot(params['sensor_azimuth_angle'], data_lrt['rad'], color='blue' , lw=1.0, alpha=1.0, ls='-', zorder=0)
         ax1.plot(params['sensor_azimuth_angle'], data_shd['rad'], color='k'    , lw=1.0, alpha=1.0, ls='-', zorder=1)
-        ax1.fill_between(params['sensor_azimuth_angle'], data_mca['rad']-data_mca['rad_std'], data_mca['rad']+data_mca['rad_std'], color='red', lw=0.2, alpha=1.0, zorder=2)
+        # ax1.fill_between(params['sensor_azimuth_angle'], data_mca['rad']-data_mca['rad_std'], data_mca['rad']+data_mca['rad_std'], color='red', lw=0.2, alpha=1.0, zorder=2)
         # ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='blue'    , lw=1.0, alpha=1.0, ls='-')
         # ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
         # ax1.plot(data_shd['f_up']          , params['output_altitude'], color='k'    , lw=0.5, alpha=1.0, ls='-')
@@ -1195,8 +1204,10 @@ def test_100_rad(
         # ax1.set_yscale('log')
         # ax1.set_ylim((0.1, 30.0))
         # ax1.set_xlim((0.0, 0.1*(f_toa//0.1 + 1)))
-        if params['cloud_optical_thickness'] > 0.0:
-            ax1.set_ylim((0.215, 0.315))
+        # if params['cloud_optical_thickness'] > 0.0:
+        #     ax1.set_ylim((0.215, 0.315))
+        # if params['cloud_optical_thickness'] > 0.0:
+        #     ax1.set_ylim((0.0, 0.40))
 
         # ax2 = fig.add_subplot(122)
         # ax2.plot(data_lrt['f_net']        , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
@@ -1219,7 +1230,7 @@ def test_100_rad(
 
         patches_legend = [
                           mpatches.Patch(color='black'  , label='SHDOM (%.1f%%)' % error_shd_rad), \
-                          mpatches.Patch(color='red'    , label='MCARaTS (%.1f%%)' % error_mca_rad), \
+                          # mpatches.Patch(color='red'    , label='MCARaTS (%.1f%%)' % error_mca_rad), \
                           mpatches.Patch(color='blue'   , label='libRadtran'), \
                          ]
         ax1.legend(handles=patches_legend, loc='upper right', fontsize=12)
@@ -1286,12 +1297,15 @@ if __name__ == '__main__':
         # for icount in np.arange(1, 15):
         #     test_100_flux(550.0, 1.0, 25.0, icount, plot=True, overwrite=True)
 
-        # test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
+        # test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=False)
         # test_100_rad(550.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=False)
         # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=False)
 
-        test_100_flux(550.0, 0.5, 9.0, 100, plot=True, overwrite=False)
         # test_100_flux(550.0, 10.0, 12.0, 100, plot=True, overwrite=False)
+
+        test_100_flux(550.0, 0.5, 9.0, 100, plot=True, overwrite=False)
+        # test_100_rad(550.0, 0.5, 9.0, 100, surface='land', plot=True, overwrite=True)
+        # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=True)
 
     else:
 

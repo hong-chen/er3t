@@ -120,6 +120,21 @@ class sfc_2d_gen:
             self.data['dy']   = {'data':self.sfc[keys['dy']], 'name':'dy', 'units':'km'}
             self.data['sfc']  = {'data':sfc, 'name':'Surface albedo (Lambertian)', 'units':'N/A'}
 
+        elif ('fiso' in keys_check) and ('fvol' in keys_check) and ('fgeo' in keys_check) and ('fj' in keys_check) and ('alpha' in keys_check):
+
+            Nx, Ny = self.sfc[keys['fiso']].shape
+            sfc = np.zeros((Nx, Ny, 5), dtype=er3t.common.f_dtype)
+            sfc[:, :, 0] = self.sfc[keys['fiso']][:, :]
+            sfc[:, :, 1] = self.sfc[keys['fgeo']][:, :]
+            sfc[:, :, 2] = self.sfc[keys['fvol']][:, :]
+            sfc[:, :, 3] = self.sfc[keys['fj']][:, :]
+            sfc[:, :, 4] = self.sfc[keys['alpha']][:, :]
+
+            self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
+            self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
+            self.data['dx']   = {'data':self.sfc[keys['dx']], 'name':'dx', 'units':'km'}
+            self.data['dy']   = {'data':self.sfc[keys['dy']], 'name':'dy', 'units':'km'}
+            self.data['sfc']  = {'data':sfc, 'name':'Surface BRDF-LSRT-Jiao (Snow BRDF - Jiao)', 'units':'N/A'}
 
         elif ('fiso' in keys_check) and ('fvol' in keys_check) and ('fgeo' in keys_check):
 

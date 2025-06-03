@@ -97,6 +97,11 @@ class shd_sfc_2d:
             self.nml['header'] = dict(data='L', name='Header for SHDOM Surface File', units='N/A')
             self.sfc_data = self.sfc.data['sfc']['data']
 
+        elif ('brdf-lsrt-jiao' in self.sfc.data['sfc']['name'].lower()):
+
+            self.nml['header'] = dict(data='J', name='Header for SHDOM Surface File', units='N/A')
+            self.sfc_data = self.sfc.data['sfc']['data']
+
         elif ('brdf-lsrt' in self.sfc.data['sfc']['name'].lower()):
 
             self.nml['header'] = dict(data='T', name='Header for SHDOM Surface File', units='N/A')
