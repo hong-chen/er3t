@@ -1149,7 +1149,7 @@ def test_100_rad(
                            'f_geo': 0.03384929843579787,
                        'windspeed': 1.0,
                          'pigment': 0.01,
-                 'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 4.0)),
+                 'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0)),
          }
 
     if params['cloud_optical_thickness'] > 0.0:

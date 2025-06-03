@@ -64,7 +64,7 @@ def example_01_rad_atm1d_clear_over_land(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 30.1, 2.0))
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -169,14 +169,16 @@ def example_01_rad_atm1d_clear_over_land(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.1, 2.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.1, 2.0)
+    # vza = np.repeat(30.0, vaa.size)
 
-    # vaa_1d = np.arange(0.0, 360.1, 1.0)
-    # vza_1d = np.arange(1.0, 89.1, 1.0)
-    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    # vaa = vaa.ravel()
-    # vza = vza.ravel()
+    vaa_1d = np.arange(0.0, 360.1, 1.0)
+    vza_1d = np.arange(1.0, 89.1, 1.0)
+    vaa_2d, vza_2d = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa_2d.ravel()
+    vza = vza_2d.ravel()
+
+    sza = 30.0
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -185,9 +187,11 @@ def example_01_rad_atm1d_clear_over_land(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            sol_acc=1.0e-7,
+            Nmu=64,
+            Nphi=128,
+            sol_acc=1.0e-6,
             target='radiance',
-            solar_zenith_angle=30.0,
+            solar_zenith_angle=sza,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
@@ -236,10 +240,15 @@ def example_01_rad_atm1d_clear_over_land(
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111, projection='polar')
+        ax1.set_theta_zero_location('N')
         ax1.set_theta_direction(-1)
-        ax1.set_theta_offset(np.pi/2.)
-        cs = ax1.scatter(np.deg2rad(vaa), out0.data['rad']['data'][:], c='black', s=3)
-        ax1.set_title('Radiance at %.1f nm at VZA= %5.1f deg (%s Mode)' % (wavelength, np.mean(vza), solver))
+        ax1.set_rgrids(np.arange(20, 81, 20))
+        ax1.set_rlim((0.0, 89.0))
+
+        data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
+        ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+
+        ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -279,7 +288,7 @@ def example_02_rad_atm1d_clear_over_ocean(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 30.1, 2.0))
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -333,8 +342,8 @@ def example_02_rad_atm1d_clear_over_ocean(
             fname=fname_cld,
             cot=np.array([0.0]).reshape((1, 1)),
             cer=np.array([1.0]).reshape((1, 1)),
-            cth=np.array([1.0]).reshape((1, 1)),
-            cgt=np.array([0.5]).reshape((1, 1)),
+            cth=np.array([1.5]).reshape((1, 1)),
+            cgt=np.array([1.0]).reshape((1, 1)),
             dz=0.1,
             extent_xy=[0.0, 1.0, 0.0, 1.0],
             atm_obj=atm0,
@@ -388,9 +397,9 @@ def example_02_rad_atm1d_clear_over_ocean(
 
     vaa_1d = np.arange(0.0, 360.1, 1.0)
     vza_1d = np.arange(1.0, 89.1, 1.0)
-    vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    vaa = vaa.ravel()
-    vza = vza.ravel()
+    vaa_2d, vza_2d = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa_2d.ravel()
+    vza = vza_2d.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -399,9 +408,9 @@ def example_02_rad_atm1d_clear_over_ocean(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            Nmu=256,
-            Nphi=256,
-            sol_acc=1.0e-5,
+            Nmu=64,
+            Nphi=128,
+            sol_acc=1.0e-6,
             target='radiance',
             solar_zenith_angle=sza,
             solar_azimuth_angle=0.0,
@@ -450,28 +459,21 @@ def example_02_rad_atm1d_clear_over_ocean(
     if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
-        vmin=0.1; vmax=0.35
-        vaa_1d = np.arange(0.0, 360.1, 1.0)
-        vza_1d = np.arange(1.0, 89.1, 1.0)
-        vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-        xx = np.deg2rad(vaa)
-        yy = vza
-        data = out0.data['rad']['data'][:].reshape(vaa.shape)
-
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111, projection='polar')
-        ax1.set_theta_direction(-1)
-        # ax1.set_theta_offset(np.pi/2.)
         ax1.set_theta_zero_location('N')
+        ax1.set_theta_direction(-1)
         ax1.set_rgrids(np.arange(20, 81, 20))
         ax1.set_rlim((0.0, 89.0))
-        ax1.pcolormesh(xx, yy, data, cmap='jet', vmin=vmin, vmax=vmax)
-        # cs = ax1.scatter(np.deg2rad(vaa), out0.data['rad']['data'][:], c='black', s=3)
-        ax1.set_title('Radiance at %.1f nm at VZA= %5.1f deg (%s Mode)' % (wavelength, np.mean(vza), solver))
+
+        data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
+        ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+
+        ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
         plt.savefig(fname_png, bbox_inches='tight')
-        plt.show()
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -505,7 +507,7 @@ def example_03_rad_atm1d_clear_over_snow(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 30.1, 2.0))
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -559,8 +561,8 @@ def example_03_rad_atm1d_clear_over_snow(
             fname=fname_cld,
             cot=np.array([0.0]).reshape((1, 1)),
             cer=np.array([1.0]).reshape((1, 1)),
-            cth=np.array([1.0]).reshape((1, 1)),
-            cgt=np.array([0.5]).reshape((1, 1)),
+            cth=np.array([1.5]).reshape((1, 1)),
+            cgt=np.array([1.0]).reshape((1, 1)),
             dz=0.1,
             extent_xy=[0.0, 1.0, 0.0, 1.0],
             atm_obj=atm0,
@@ -621,7 +623,7 @@ def example_03_rad_atm1d_clear_over_snow(
     vaa = vaa_2d.ravel()
     vza = vza_2d.ravel()
 
-    sza0 = 60.0
+    sza = 60.0
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -634,7 +636,7 @@ def example_03_rad_atm1d_clear_over_snow(
             Nphi=64,
             sol_acc=1.0e-6,
             target='radiance',
-            solar_zenith_angle=sza0,
+            solar_zenith_angle=sza,
             solar_azimuth_angle=0.0,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
@@ -691,7 +693,7 @@ def example_03_rad_atm1d_clear_over_snow(
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
         ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
 
-        ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza0, solver))
+        ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -734,7 +736,7 @@ def example_04_rad_atm1d_cloud_over_ocean(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 0.2, ..., 4.0, 6.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 30.1, 2.0))
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0))
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -788,8 +790,8 @@ def example_04_rad_atm1d_cloud_over_ocean(
             fname=fname_cld,
             cot=np.array([cot]).reshape((1, 1)),
             cer=np.array([cer]).reshape((1, 1)),
-            cth=np.array([1.0]).reshape((1, 1)),
-            cgt=np.array([0.5]).reshape((1, 1)),
+            cth=np.array([1.5]).reshape((1, 1)),
+            cgt=np.array([1.0]).reshape((1, 1)),
             dz=0.1,
             extent_xy=[0.0, 1.0, 0.0, 1.0],
             atm_obj=atm0,
@@ -837,14 +839,14 @@ def example_04_rad_atm1d_cloud_over_ocean(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.1, 2.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.1, 2.0)
+    # vza = np.repeat(30.0, vaa.size)
 
-    # vaa_1d = np.arange(0.0, 360.1, 1.0)
-    # vza_1d = np.arange(1.0, 89.1, 1.0)
-    # vaa, vza = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
-    # vaa = vaa.ravel()
-    # vza = vza.ravel()
+    vaa_1d = np.arange(0.0, 360.1, 1.0)
+    vza_1d = np.arange(1.0, 89.1, 1.0)
+    vaa_2d, vza_2d = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
+    vaa = vaa_2d.ravel()
+    vza = vza_2d.ravel()
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -853,7 +855,9 @@ def example_04_rad_atm1d_cloud_over_ocean(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Niter=1000,
-            sol_acc=1.0e-7,
+            Nmu=64,
+            Nphi=128,
+            sol_acc=1.0e-6,
             target='radiance',
             solar_zenith_angle=sza,
             solar_azimuth_angle=0.0,
@@ -904,13 +908,19 @@ def example_04_rad_atm1d_cloud_over_ocean(
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111, projection='polar')
+        ax1.set_theta_zero_location('N')
         ax1.set_theta_direction(-1)
-        ax1.set_theta_offset(np.pi/2.)
-        cs = ax1.scatter(np.deg2rad(vaa), out0.data['rad']['data'][:], c='black', s=3)
-        ax1.set_title('Radiance at %.1f nm at VZA= %5.1f deg (%s Mode)' % (wavelength, np.mean(vza), solver))
+        ax1.set_rgrids(np.arange(20, 81, 20))
+        ax1.set_rlim((0.0, 89.0))
+
+        data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
+        ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+
+        ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
         plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
