@@ -182,6 +182,8 @@ def example_01_rad_atm1d_clear_over_land(
     vza = vza_2d.ravel()
 
     sza = 30.0
+    saa = 0.0
+    raa = er3t.util.util.calculate_raa(saa=saa, vaa=vaa, forward_scattering='positive')
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -195,7 +197,7 @@ def example_01_rad_atm1d_clear_over_land(
             sol_acc=1.0e-6,
             target='radiance',
             solar_zenith_angle=sza,
-            solar_azimuth_angle=0.0,
+            solar_azimuth_angle=saa,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
             sensor_altitude=705.0,
@@ -241,7 +243,7 @@ def example_01_rad_atm1d_clear_over_land(
     if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
-        fig = plt.figure(figsize=(8, 6))
+        fig = plt.figure(figsize=(12, 12))
         ax1 = fig.add_subplot(111, projection='polar')
         ax1.set_theta_zero_location('N')
         ax1.set_theta_direction(-1)
@@ -249,7 +251,10 @@ def example_01_rad_atm1d_clear_over_land(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+        cs = ax1.pcolormesh(np.deg2rad(raa).reshape(vaa_2d.shape), vza_2d, data, cmap='seismic')
+        # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='RdBu', vmin=0.3, vmax=0.6)
+        cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.1, location='bottom')
+        cbar.ax.set_title('Radiance')
 
         ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
         plt.savefig(fname_png, bbox_inches='tight')
@@ -404,6 +409,9 @@ def example_02_rad_atm1d_clear_over_ocean(
     vaa = vaa_2d.ravel()
     vza = vza_2d.ravel()
 
+    saa = 0.0
+    raa = er3t.util.util.calculate_raa(saa=saa, vaa=vaa, forward_scattering='positive')
+
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
             date=datetime.datetime(2024, 5, 18),
@@ -416,7 +424,7 @@ def example_02_rad_atm1d_clear_over_ocean(
             sol_acc=1.0e-6,
             target='radiance',
             solar_zenith_angle=sza,
-            solar_azimuth_angle=0.0,
+            solar_azimuth_angle=saa,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
             sensor_altitude=705.0,
@@ -462,7 +470,7 @@ def example_02_rad_atm1d_clear_over_ocean(
     if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
 
-        fig = plt.figure(figsize=(8, 6))
+        fig = plt.figure(figsize=(12, 12))
         ax1 = fig.add_subplot(111, projection='polar')
         ax1.set_theta_zero_location('N')
         ax1.set_theta_direction(-1)
@@ -470,7 +478,10 @@ def example_02_rad_atm1d_clear_over_ocean(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+        cs = ax1.pcolormesh(np.deg2rad(raa).reshape(vaa_2d.shape), vza_2d, data, cmap='seismic')
+        # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='RdBu', vmin=0.3, vmax=0.6)
+        cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.1, location='bottom')
+        cbar.ax.set_title('Radiance')
 
         ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
         plt.savefig(fname_png, bbox_inches='tight')
@@ -696,7 +707,8 @@ def example_03_rad_atm1d_clear_over_snow(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        cs = ax1.pcolormesh(np.deg2rad(raa).reshape(vaa_2d.shape), vza_2d, data, cmap='RdBu', vmin=0.15, vmax=0.5)
+        cs = ax1.pcolormesh(np.deg2rad(raa).reshape(vaa_2d.shape), vza_2d, data, cmap='seismic', vmin=0.35, vmax=0.6)
+        # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='RdBu', vmin=0.3, vmax=0.6)
         cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.1, location='bottom')
         cbar.ax.set_title('Radiance')
 
