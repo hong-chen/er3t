@@ -1296,7 +1296,7 @@ class viirs_09:
         params = [i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands] # list of dataset names
 
         if len(search_terms_with_bands) != len(params):
-            print('Warning [viirs_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
+            raise IndexError('Error [viirs_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
 
         # use the first param to get shape
         data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
@@ -1304,13 +1304,16 @@ class viirs_09:
         wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
 
         # loop through bands, scale and offset each param and store in tau
+        # IMPORTANT NOTE: params could have a different order than self.bands and search_terms_with_bands
+        # so indexing is tricky if using params. instead, we will use search_terms_with_bands which has the desired order
+        # as requested by the user in self.bands
         for idx, band_num in enumerate(self.bands):
             if len(band_num) != 3:
                 band_key = band_num[0] + '0{}'.format(band_num[1]) # pad 0 for dictionary indexing
             else:
                 band_key = band_num
 
-            surface_reflectance[idx] = get_data_h4(hdf_obj.select(params[idx]))
+            surface_reflectance[idx] = get_data_h4(hdf_obj.select(search_terms_with_bands[idx]))
             wvl[idx] = VIIRS_ALL_BANDS[band_key]
 
 

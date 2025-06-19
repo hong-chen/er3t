@@ -1615,7 +1615,7 @@ class modis_09:
         search_terms_with_bands = [search_term + ' ' + 'Band {}'.format(str(band)) for band in self.bands]
         params = [i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands] # list of dataset names
         if len(search_terms_with_bands) != len(params):
-            print('Warning [modis_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
+            raise IndexError('Error [modis_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
 
         # use the first param to get shape
         data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
@@ -1623,8 +1623,11 @@ class modis_09:
         wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
 
         # loop through bands, scale and offset each param and store in tau
+        # IMPORTANT NOTE: params could have a different order than self.bands and search_terms_with_bands
+        # so indexing is tricky if using params. instead, we will use search_terms_with_bands which has the desired order
+        # as requested by the user in self.bands
         for idx, band_num in enumerate(self.bands):
-            surface_reflectance[idx] = get_data_h4(hdf_obj.select(params[idx]))
+            surface_reflectance[idx] = get_data_h4(hdf_obj.select(search_terms_with_bands[idx]))
             wvl[idx] = MODIS_L1B_HKM_1KM_BANDS[band_num]
 
         if self.ancillary_qa:
