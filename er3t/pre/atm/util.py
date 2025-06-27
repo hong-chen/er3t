@@ -1,6 +1,14 @@
 import warnings
 import numpy as np
 from scipy import interpolate
+import h5py
+import sys
+import os
+from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import netCDF4 as nc
+from er3t.util.modis import modis_07
 
 
 import er3t.common
@@ -12,6 +20,9 @@ __all__ = [
         'cal_num_den_from_mix_rat',\
         'interp_pres_from_alt_temp',\
         'interp_ch4',\
+        'create_modis_dropsonde_atm',\
+        'zpt_plot',\
+        'zpt_plot_combine'
         ]
 
 
@@ -252,6 +263,285 @@ def interp_ch4(alt_inp):
     ch4mix = np.interp(alt_inp, ch4h, ch4m)
 
     return ch4mix
+
+
+def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5', 
+                   fname_mod07=None, dropsonde_df=None,
+                   extent=None, 
+                   levels=None,
+                   new_h_edge=None, sfc_h_to_zero=True):
+    """
+    Use MODIS 07 product to create a vertical profile of temperature, dew temperature, pressure, O2 and H2O number density, and H2O volume mixing ratio.
+    """
+    # --------- Constants ------------
+    Rd = 287.052874
+    EPSILON = 0.622
+    kb = 1.380649e-23
+    # ---------------------------------
+    if fname_mod07 == None or dropsonde_df is None:
+        sys.exit("[Error] sat and dropsonde information must be provided!")
+    else:
+        # Get reanalysis from met and CO2 prior sounding data
+        try_time = 0
+        sfc_p = [np.nan]     
+        while try_time < 15 and np.isnan(np.nanmean(sfc_p)):
+            boundary_width = 0.1
+            extent = [extent[0]-boundary_width*try_time, extent[1]+boundary_width*try_time,
+                      extent[2]-boundary_width*try_time, extent[3]+boundary_width*try_time]
+            try_time += 1
+            mod07 = modis_07(fnames=fname_mod07, extent=extent)
+            cld_mask = mod07.data['cld_mask']['data']
+            ### cloud mask: 0=cloudy, 1=uncetain, 2=probably clear, 3=confident clear
+            sfc_p = mod07.data['p_sfc']['data']                             # surface pressure in hPa
+            
+        if np.isnan(np.nanmean(sfc_p)):
+            print("cloud mask: ", cld_mask)
+            return 'error', None
+        
+        pprf_l_single = mod07.data['p_level']['data']                          # pressure in hPa
+        hprf_l = mod07.data['h_level_retrieved']['data']
+        tprf_l = mod07.data['T_level_retrieved']['data']                # temperature in K
+        dewTprf_l = mod07.data['dewT_level_retrieved']['data']
+        mwvmxprf_l = mod07.data['wvmx_level_retrieved']['data']
+        
+        sfc_h = mod07.data['h_sfc']['data']                             # surface height in m
+        # assume surface geopotential height is the same as surface height (in m)
+        skin_temp = mod07.data['t_skin']['data']                       # skin temperature in K                                               # 
+        sza = np.nanmean(mod07.data['sza']['data'])
+        vza = np.nanmean(mod07.data['vza']['data'])
+        
+        # Create full pressure profile by repeating single level
+        pprf_l = np.repeat(pprf_l_single, mwvmxprf_l.shape[1]).reshape(mwvmxprf_l.shape)
+        r = mwvmxprf_l/1000 # mass mixing ratio to kg/kg
+        eprf_l = pprf_l*r/(EPSILON+r)
+        
+        # Compute virtual temperature
+        Tv = tprf_l/(1-(r/(r+EPSILON))*(1-EPSILON))
+                
+        air_layer = pprf_l*100/(kb*tprf_l)/1e6  # air number density in molec/cm3
+        dry_air_layer = (pprf_l-eprf_l)*100/(kb*tprf_l)/1e6  # air number density in molec/cm3
+        o2_layer = dry_air_layer*o2mix          # O2 number density in molec/cm3
+        h2o_layer = eprf_l*100/(kb*tprf_l)/1e6  # H2O number density in molec/cm3
+        # h2o_vmr = h2o_layer/dry_air_layer       # H2O volume mixing ratio
+        h2o_vmr = eprf_l/(pprf_l-eprf_l)       # H2O volume mixing ratio
+        
+        # Compute means in the area
+        sfc_p_mean = np.nanmean(sfc_p)
+        sfc_h_mean = np.nanmean(sfc_h)
+        skin_temp_mean = np.nanmean(skin_temp)
+        pprf_lev_mean   = np.nanmean(pprf_l, axis=1)    # pressure mid grid in hPa
+        tprf_lev_mean   = np.nanmean(tprf_l, axis=1)         # temperature mid grid in K
+        dewTprf_lev_mean= np.nanmean(dewTprf_l, axis=1)      # dew temperature mid grid in K
+        d_o2_lev_mean   = np.nanmean(o2_layer, axis=1)
+        d_h2o_lev_mean  = np.nanmean(h2o_layer, axis=1)
+        hprf_lev_mean   = np.nanmean(hprf_l, axis=1)/1000     # height mid grid in km
+        h2o_vmr_mean    = np.nanmean(h2o_vmr, axis=1)
+        
+        
+        if sfc_h_to_zero:
+            sfc_h_mean = 0
+        
+        # interpolate to surface
+        # can change to a more physically reasonable way later
+        f_temp = interp1d(pprf_lev_mean[:-1], tprf_lev_mean[:-1], fill_value='extrapolate')
+        f_h2o_vmr = interp1d(pprf_lev_mean[:-1], h2o_vmr_mean[:-1], fill_value='extrapolate')
+        pprf_lev_mean[-1] = sfc_p_mean
+        tprf_lev_mean[-1] = f_temp(sfc_p_mean)
+        hprf_lev_mean[-1] = sfc_h_mean
+        h2o_vmr_mean[-1] = f_h2o_vmr(sfc_p_mean)
+        
+        # Process dropsonde profile
+        p_drop = np.array(dropsonde_df['p']) # in hPa
+        alt_drop = np.array(dropsonde_df['alt']/1000) # in km
+        t_dry_drop = np.array(dropsonde_df['t_dry'])
+        t_dew_drop = np.array(dropsonde_df['t_dew'])
+        mr_drop = np.array(dropsonde_df['h2o_mr'])
+        r_drop = mr_drop/1000 # mass mixing ratio to kg/kg
+        eprf_drop = p_drop*r_drop/(EPSILON+r_drop)
+        air_drop = p_drop*100/(kb*t_dry_drop)/1e6  # air number density in molec/cm3
+        o2_drop = air_drop*o2mix          # O2 number density in molec/cm3
+        h2o_drop = eprf_drop*100/(kb*t_dry_drop)/1e6  # H2O number density in molec/cm3
+        h2o_vmr_drop = eprf_drop/(p_drop-eprf_drop)       # H2O volume mixing ratio
+        
+        # calculate 10m wind speed from dropsonde data
+        ws_10m = np.array(dropsonde_df['ws'])
+        ws_10m_nan_mask = np.isnan(ws_10m)
+        ws10m = np.interp(0.01, alt_drop[~ws_10m_nan_mask], ws_10m[~ws_10m_nan_mask])   # calculate 10m wind speed
+        
+
+    if new_h_edge is not None:
+        levels = new_h_edge
+    else:
+        if levels is not None:
+            levels = np.array(levels)
+        else:
+            levels = np.concatenate((np.linspace(sfc_h_mean, 4.0, 11), 
+                                    np.arange(5.0, 10.1, 1.0),
+                                    np.array([12.5, 15, 17.5, 20. , 25. , 30., 40.])))
+    output_path = os.path.join(output_dir, output)
+    if os.path.isfile(output_path): 
+        print(f'[Warning] Output file {output} exists - overwriting!')
+    print('Saving to file '+output)
+    with h5py.File(output_path, 'w') as h5_output:
+        h5_output.create_dataset('sfc_p',       data=sfc_p_mean)
+        h5_output.create_dataset('sfc_h',       data=sfc_h_mean)
+        h5_output.create_dataset('skin_temp',   data=skin_temp_mean)
+        h5_output.create_dataset('level_sim',      data=levels)
+        h5_output.create_dataset('h_lev',       data=hprf_lev_mean)
+        h5_output.create_dataset('p_lev',       data=pprf_lev_mean)
+        h5_output.create_dataset('t_lev',       data=tprf_lev_mean)
+        h5_output.create_dataset('dewT_lev',    data=dewTprf_lev_mean)
+        h5_output.create_dataset('d_o2_lev',    data=d_o2_lev_mean)
+        h5_output.create_dataset('d_h2o_lev',   data=d_h2o_lev_mean)
+        h5_output.create_dataset('h2o_vmr',     data=h2o_vmr_mean)
+        h5_output.create_dataset('p_drop',     data=p_drop)
+        h5_output.create_dataset('t_dry_drop', data=t_dry_drop)
+        h5_output.create_dataset('t_dew_drop', data=t_dew_drop)
+        h5_output.create_dataset('h2o_vmr_drop', data=h2o_vmr_drop)
+        h5_output.create_dataset('alt_drop', data=alt_drop)
+        h5_output.create_dataset('air_drop', data=air_drop)
+        h5_output.create_dataset('o2_drop', data=o2_drop)
+        h5_output.create_dataset('h2o_drop', data=h2o_drop)
+        h5_output.create_dataset('ws10m',       data=ws10m)
+        h5_output.create_dataset('o2_mix',      data=o2mix)
+        h5_output.create_dataset('sza',         data=sza)
+        h5_output.create_dataset('vza',         data=vza)
+        h5_output.create_dataset('lat',         data=np.mean(extent[2:]))
+
+    # zpt_plot(pprf_lev_mean, tprf_lev_mean, dewTprf_lev_mean, h2o_vmr_mean, output=f"{output_dir}/{output.replace('.h5', '.png')}")
+    # zpt_plot(p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop, output=f"{output_dir}/{output.replace('.h5', '_dropsonde.png')}")
+    
+    zpt_plot_combine(pprf_lev_mean, tprf_lev_mean, dewTprf_lev_mean, h2o_vmr_mean,
+                     p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop,
+                     output=os.path.join(output_dir, output.replace('.h5', '_combine.png')))
+    
+    return 'success', ws10m
+
+def h2o_vmr_axis_setting(ax, pmin=100, pmax=1000):
+    from matplotlib import ticker
+    ax.set_ylim(pmax, pmin)
+    ax.set_yscale('log')
+    ax.yaxis.set_major_formatter(ticker.StrMethodFormatter('{x:.0f}'))
+    ax.yaxis.set_minor_formatter(ticker.StrMethodFormatter('{x:.0f}'))
+    ax.set_ylabel('Pressure (hPa)', fontsize=14)
+    ax.set_xlabel('H$_2$O mixing ratio', fontsize=14, color='b')
+    
+def vmr_axis_setting(ax, xlabel, xlabel_color, pmin=100, pmax=1000):
+    from matplotlib import ticker
+    ax.set_ylim(pmax, pmin)
+    ax.set_yscale('log')
+    ax.yaxis.set_major_formatter(ticker.StrMethodFormatter('{x:.0f}'))
+    ax.yaxis.set_minor_formatter(ticker.StrMethodFormatter('{x:.0f}'))
+    ax.set_ylabel('Pressure (hPa)', fontsize=14)
+    ax.set_xlabel(xlabel, fontsize=14, color=xlabel_color)
+
+def zpt_plot(p_lay, t_lay, dewT_lay, h2o_vmr, output, pmin=100, pmax=1000):
+    from metpy.plots import SkewT
+    from metpy.units import units
+    
+    p_prf = p_lay * units.hPa
+    T_prf = (t_lay * units.kelvin).to(units.degC)
+    Td_prf = (dewT_lay * units.kelvin).to(units.degC)
+
+    fig, (ax1, ax2) =plt.subplots(1, 2, figsize=(12, 6.75))
+    ax1.set_visible(False)
+    skew = SkewT(fig=fig, subplot=(1, 2, 1), aspect=120.5)
+    skew.plot(p_prf, T_prf, 'r', label='Temperature', linewidth=3)
+    skew.plot(p_prf, Td_prf, 'g', label='Dew Point', linewidth=3)
+    skew.ax.set_xlabel('Temperature ($\N{DEGREE CELSIUS}$)', fontsize=14)
+    skew.ax.set_ylabel('Pressure (hPa)', fontsize=14)
+    # Add the relevant special lines
+    skew.plot_dry_adiabats()
+    skew.plot_moist_adiabats()
+    skew.plot_mixing_lines()
+    skew.ax.set_ylim(pmax, pmin)
+    skew.ax.legend()
+    skew.ax.text(0.02, 1.07, '(a)', transform=skew.ax.transAxes, fontsize=16, fontweight='bold', va='center', ha='left')
+
+
+    ax2.plot(h2o_vmr, p_prf, 'b:', label='H$_2$O', linewidth=3)
+    h2o_vmr_axis_setting(ax2, pmin=pmin, pmax=pmax)
+    ax2.legend()
+    ax2.text(1.28, 1.07, '(b)', transform=skew.ax.transAxes, fontsize=16, fontweight='bold', va='center', ha='left')
+    ax2.grid(which='minor', axis='y', linestyle='-', linewidth=1, color='lightgrey')
+    fig.tight_layout()
+    fig.savefig(output, dpi=300)
+    
+def zpt_plot_gases(p_lay, h2o_vmr, co2_vmr, o3_vmr,
+                   output, pmin=100, pmax=1000):
+    from metpy.plots import SkewT
+    from metpy.units import units
+    
+    p_prf = p_lay * units.hPa
+
+    fig, (ax2, ax3) =plt.subplots(1, 2, figsize=(12, 6.75))
+
+
+
+    ax2.plot(h2o_vmr, p_prf, 'b:', label='H$_2$O', linewidth=3)
+    h2o_vmr_axis_setting(ax2, pmin=pmin, pmax=pmax)
+    ax2.legend()
+    ax2.text(1.28, 1.07, '(a)', fontsize=16, fontweight='bold', va='center', ha='left')
+    ax2.grid(which='minor', axis='y', linestyle='-', linewidth=1, color='lightgrey')
+    
+    ax4 = ax3.twiny()
+    ax3_line = ax3.plot(co2_vmr*1e6, p_prf, 'orange', label='CO$_2$', linewidth=3)
+    ax4_line = ax4.plot(o3_vmr*1e6, p_prf, 'purple', label='O$_3$', linewidth=3)
+    ax3.set_xlabel('CO$_2$ mixing ratio', fontsize=14, color='orange')
+    ax4.set_xlabel('O$_3$ mixing ratio', fontsize=14, color='purple')
+    vmr_axis_setting(ax3, 'CO$_2$ mixing ratio (ppbv)', 'orange', pmin=pmin, pmax=pmax)
+    vmr_axis_setting(ax4, 'O$_3$ mixing ratio (ppbv)', 'purple', pmin=pmin, pmax=pmax)
+    legends = ax3_line + ax4_line
+    labels = [l.get_label() for l in legends]
+    ax3.legend(legends, labels)
+    ax3.text(1.28, 1.07, '(b)', fontsize=16, fontweight='bold', va='center', ha='left')
+    ax3.grid(which='minor', axis='y', linestyle='-', linewidth=1, color='lightgrey')
+    
+    fig.tight_layout()
+    fig.savefig(output, dpi=300)
+
+
+def zpt_plot_combine(p_lay, t_lay, dewT_lay, h2o_vmr, 
+                    p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop,
+                    output, pmin=100, pmax=1000):
+    from metpy.plots import SkewT
+    from metpy.units import units
+
+    p_prf = p_lay * units.hPa
+    T_prf = (t_lay * units.kelvin).to(units.degC)
+    Td_prf = (dewT_lay * units.kelvin).to(units.degC)
+    
+    p_drop = p_drop * units.hPa
+    t_dry_drop = (t_dry_drop * units.kelvin).to(units.degC)
+    t_dew_drop = (t_dew_drop * units.kelvin).to(units.degC)
+
+    fig, (ax1, ax2) =plt.subplots(1, 2, figsize=(12, 6.75))
+    ax1.set_visible(False)
+    skew = SkewT(fig=fig, subplot=(1, 2, 1), aspect=120.5)
+    skew.plot(p_prf, T_prf, 'coral', label='Temperature (modis07)', linewidth=4, alpha=0.85)
+    skew.plot(p_prf, Td_prf, 'limegreen', label='Dew Point (modis07)', linewidth=4, alpha=0.85)
+    skew.plot(p_drop, t_dry_drop, 'r', label='Temperature (dropsonde)', linewidth=2)
+    skew.plot(p_drop, t_dew_drop, 'g', label='Dew Point (dropsonde)', linewidth=2)
+    
+    skew.ax.set_xlabel('Temperature ($\N{DEGREE CELSIUS}$)', fontsize=14)
+    skew.ax.set_ylabel('Pressure (hPa)', fontsize=14)
+    # Add the relevant special lines
+    skew.plot_dry_adiabats()
+    skew.plot_moist_adiabats()
+    skew.plot_mixing_lines()
+    skew.ax.set_ylim(pmax, pmin)
+    skew.ax.legend()
+    skew.ax.text(0.02, 1.07, '(a)', transform=skew.ax.transAxes, fontsize=16, fontweight='bold', va='center', ha='left')
+
+    ax2.plot(h2o_vmr, p_prf, 'deepskyblue', label='H$_2$O (modis07)', linewidth=3)
+    ax2.plot(h2o_vmr_drop, p_drop, 'b', label='H$_2$O (dropsonde)', linewidth=3)
+    h2o_vmr_axis_setting(ax2, pmin=pmin, pmax=pmax)
+    ax2.legend()
+    ax2.text(1.28, 1.07, '(b)', transform=skew.ax.transAxes, fontsize=16, fontweight='bold', va='center', ha='left')
+    ax2.grid(which='minor', axis='y', linestyle='-', linewidth=1, color='lightgrey')
+
+    fig.tight_layout()
+    fig.savefig(output, dpi=300)
 
 
 

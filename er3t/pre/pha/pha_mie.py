@@ -95,7 +95,7 @@ class pha_mie_wc:
         pha0.data['ref']: effective radius
     """
 
-    fname_coef = '%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha
+    fname_coef = '%s/wc.sol.mie_small.cdf' % er3t.common.fdir_data_pha
 
     reference = '\nMie Scattering (Wiscombe, 1980):\n- Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, https://doi.org/10.1364/AO.19.001505, 1980.'
 

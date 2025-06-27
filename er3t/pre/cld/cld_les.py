@@ -116,7 +116,7 @@ class cld_les:
             pickle.dump(self, f)
 
 
-    def pre_les(self, fname_nc, q_factor=2, index_t=0):
+    def pre_les(self, fname_nc, q_factor=2.0, index_t=0):
 
         try:
             from netCDF4 import Dataset
@@ -194,12 +194,13 @@ class cld_les:
         # grid cells that are cloudy
         logic = (Nc_3d>=1) & (cer_3d>0.0)
         cer_3d[np.logical_not(logic)] = 0.0
+        cer_3d[cer_3d<=0.5] = 0.5
+        cer_3d[cer_3d>=25.0] = 25.0
 
         # extinction coefficients (m^-1)
         const0        = 0.75*q_factor/(1000.0*1e-6)
         ext_3d        = np.zeros_like(t_3d)
         ext_3d[logic] = const0 / cer_3d[logic] * lwc_3d[logic]
-        cer_3d[np.logical_not(logic)] = 0.0
         #╰──────────────────────────────────────────────────────────────╯#
 
         self.Nx = Nx

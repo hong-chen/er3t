@@ -114,8 +114,12 @@ class atm_atmmod:
 
     def run(self, levels):
 
-        self.levels = levels
-        self.layers = 0.5 * (levels[1:]+levels[:-1])
+        if levels.size > 1:
+            self.levels = levels
+            self.layers = 0.5 * (levels[1:]+levels[:-1])
+        else:
+            msg = '\nError [atm_atmmod]: Size of <levels> must be greater than 1.'
+            raise ValueError(msg)
 
         # self.atm0: Python dictionary
         #   self.atm0['altitude']
