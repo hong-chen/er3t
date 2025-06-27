@@ -413,7 +413,7 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
     
     zpt_plot_combine(pprf_lev_mean, tprf_lev_mean, dewTprf_lev_mean, h2o_vmr_mean,
                      p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop,
-                     output=os.path.join(output_dir, output.replace('.h5', '_combine.png')))
+                     output=os.path.join(output_dir, output.replace('.h5', '_modis_dropsonde.png')))
     
     return 'success', ws10m
 
