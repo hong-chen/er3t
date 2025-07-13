@@ -237,6 +237,11 @@ class modis_dropsonde_atmmod:
                 # Here we use co2_lon and co2_lat along with the slice at level 'i'
                 f_co2 = interpolate.interp2d(co2_lon, co2_lat, co2_clim[:, :, i].T, kind='linear')
                 co2_loc[i] = f_co2(lon_mid, lat_mid)
+                
+            mask_co2_nan = co2_loc < 0
+            if not mask_co2_nan.all():
+                print('Warning [atm_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
+                co2_loc[mask_co2_nan] = co2_loc[~mask_co2_nan].max()
             
             self.atm_co2 = {}
             self.atm_co2['co2_clim'] = {'name':'co2', 'units':'N/A', 'data':co2_loc}

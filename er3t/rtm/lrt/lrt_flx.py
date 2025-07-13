@@ -94,7 +94,8 @@ class lrt_init_mono_flx:
             wavelength = 500.0
             if verbose:
                 print('Message [lrt_init_mono]: <wavelength> is missing, assigning wavelength = 500.0.')
-        self.Nx = 1
+        # self.Nx = 1
+        self.Nx = 311
 
         # slit function
         if wavelength < 950.0:
