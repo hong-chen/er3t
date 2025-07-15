@@ -38,6 +38,7 @@ class lrt_init_mono_flx:
             wavelength          = None, # units: nm
             output_altitude     = None, # units: km
             spectral_resolution = 0.1,
+            Nx = None, 
             input_dict_extra    = None,
             mute_list           = [],
             lrt_cfg = None,
@@ -94,8 +95,13 @@ class lrt_init_mono_flx:
             wavelength = 500.0
             if verbose:
                 print('Message [lrt_init_mono]: <wavelength> is missing, assigning wavelength = 500.0.')
-        # self.Nx = 1
-        self.Nx = 311
+        # 
+        if Nx is None:
+            self.Nx = 1
+        else:
+            self.Nx = Nx
+            if verbose:
+                print('Message [lrt_init_mono]: <Nx> is set to %d.' % self.Nx)
 
         # slit function
         if wavelength < 950.0:

@@ -290,6 +290,12 @@ class modis_dropsonde_atmmod:
                 # Here we use o3_lon and o3_lat along with the slice at level 'i'
                 f_o3 = interpolate.LinearNDInterpolator(list(zip(o3_lon_mesh.flatten(), o3_lat_mesh.flatten())), o3_clim_mesh[i, :, :].flatten())
                 o3_loc[i] = f_o3(lon_mid, lat_mid)
+            
+            mask_o3_nan = o3_loc > 1
+            if not mask_o3_nan.all():
+                print('Warning [atm_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
+                o3_loc[mask_o3_nan] = o3_loc[~mask_o3_nan][0]
+            
             self.atm_o3 = {}
             self.atm_o3['o3_clim'] = {'name':'o3', 'units':'kg/kg', 'data':o3_loc}
             self.atm_o3['pressure'] = {'name':'pressure', 'units':'mb', 'data':o3_pressure}
