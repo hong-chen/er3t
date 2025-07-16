@@ -269,7 +269,9 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
                    fname_mod07=None, dropsonde_df=None,
                    extent=None, 
                    levels=None,
-                   new_h_edge=None, sfc_h_to_zero=True):
+                   new_h_edge=None,
+                   sfc_T_set=None, # in K
+                   sfc_h_to_zero=True):
     """
     Use MODIS 07 product to create a vertical profile of temperature, dew temperature, pressure, O2 and H2O number density, and H2O volume mixing ratio.
     """
@@ -349,6 +351,9 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
         tprf_lev_mean[-1] = f_temp(sfc_p_mean)
         hprf_lev_mean[-1] = sfc_h_mean
         h2o_vmr_mean[-1] = f_h2o_vmr(sfc_p_mean)
+        
+        if sfc_T_set is not None:
+            tprf_lev_mean[-1] = sfc_T_set
         
         # Process dropsonde profile
         p_drop = np.array(dropsonde_df['p']) # in hPa
