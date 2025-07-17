@@ -78,6 +78,7 @@ class modis_dropsonde_atmmod:
                  date         = None, \
                  extent       = None, \
                  overwrite    = False, \
+                 plot         = True, \
                  verbose      = False):
         print("zpt_file: ", zpt_file)
         self.verbose      = verbose
@@ -85,6 +86,7 @@ class modis_dropsonde_atmmod:
         self.fname_atmmod = fname_atmmod
         self.fname_co2_clim = fname_co2_clim
         self.fname_o3_clim = fname_o3_clim
+        self.plot         = plot
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -173,7 +175,7 @@ class modis_dropsonde_atmmod:
         #   self.lev['h2o']         | self.lay['h2o']
         #   self.lev['o3']          | self.lay['o3']
         #   self.lev['o2']          | self.lay['o2']
-        self.interp(self.o2mix)
+        self.interp(self.o2mix, plot=self.plot)
 
         # add self.lev['ch4'] and self.lay['ch4']
         self.add_ch4()
@@ -303,7 +305,7 @@ class modis_dropsonde_atmmod:
 
 
 
-    def interp(self, o2mix):
+    def interp(self, o2mix, plot=True):
 
         # check whether the input height is within the atmosphere height range
         if self.levels.min() < self.atm0['altitude']['data'].min():
@@ -401,10 +403,11 @@ class modis_dropsonde_atmmod:
             f_o3 = interp1d(self.atm_o3['pressure']['data'], o3_clim_vmr, fill_value="extrapolate", kind='linear')
             self.lev['o3']['data'] = f_o3(self.lev['pressure']['data'])
             self.lay['o3']['data'] = f_o3(self.lay['pressure']['data'])
-            
-        zpt_plot(self.lev['pressure']['data'], self.lev['temperature']['data'], dewT_lev.magnitude, self.lev['h2o']['data'], output)
-        zpt_plot_gases(self.lev['pressure']['data'], self.lev['h2o']['data'], self.lev['co2']['data'], self.lev['o3']['data'],
-                       output.replace('.png', '_gases_full.png'), pmin=1)
+        
+        if plot:
+            zpt_plot(self.lev['pressure']['data'], self.lev['temperature']['data'], dewT_lev.magnitude, self.lev['h2o']['data'], output)
+            zpt_plot_gases(self.lev['pressure']['data'], self.lev['h2o']['data'], self.lev['co2']['data'], self.lev['o3']['data'],
+                        output.replace('.png', '_gases_full.png'), pmin=1)
 
 
 

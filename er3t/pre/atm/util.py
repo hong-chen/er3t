@@ -271,7 +271,8 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
                    levels=None,
                    new_h_edge=None,
                    sfc_T_set=None, # in K
-                   sfc_h_to_zero=True):
+                   sfc_h_to_zero=True,
+                   plot=True):
     """
     Use MODIS 07 product to create a vertical profile of temperature, dew temperature, pressure, O2 and H2O number density, and H2O volume mixing ratio.
     """
@@ -415,10 +416,10 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
 
     # zpt_plot(pprf_lev_mean, tprf_lev_mean, dewTprf_lev_mean, h2o_vmr_mean, output=f"{output_dir}/{output.replace('.h5', '.png')}")
     # zpt_plot(p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop, output=f"{output_dir}/{output.replace('.h5', '_dropsonde.png')}")
-    
-    zpt_plot_combine(pprf_lev_mean, tprf_lev_mean, dewTprf_lev_mean, h2o_vmr_mean,
-                     p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop,
-                     output=os.path.join(output_dir, output.replace('.h5', '_modis_dropsonde.png')))
+    if plot:
+        zpt_plot_combine(pprf_lev_mean, tprf_lev_mean, dewTprf_lev_mean, h2o_vmr_mean,
+                        p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop,
+                        output=os.path.join(output_dir, output.replace('.h5', '_modis_dropsonde.png')))
     
     return 'success', ws10m
 
