@@ -19,26 +19,88 @@ class modis_dropsonde_atmmod:
     """
     This class is modified from the original version in the er3t/pre/atm/atm_atmmod.py
     It reads the zpt file to get the gas number densities for the given levels and layers.
+    It creates atmospheric profiles by combining MODIS and dropsonde data.
+    This class processes atmospheric data from MODIS and dropsonde observations
+    to create detailed vertical atmospheric profiles. It reads ZPT (altitude-pressure-temperature) files
+    containing gas concentrations and meteorological data, then interpolates and combines this information
+    with climatological data to produce comprehensive atmospheric profiles suitable for radiative transfer
+    calculations.
 
-    Input:
+    The class handles the vertical interpolation of atmospheric variables including temperature, pressure,
+    water vapor, and trace gas concentrations (O2, O3, CO2, NO2, CH4, N2O) from the surface up to the
+    top of atmosphere. It can incorporate external climatological datasets for CO2 and O3 when available,
+    and uses dropsonde measurements for improved accuracy in the lower atmosphere.
 
-        levels=      : keyword argument, numpy array, height in km
-        fname=       : keyword argument, string, default=None, the atmoshpere file user wants to name
-        fname_atmmod=: keyword argument, string, defult='mca-data/atmmod/afglus.dat', the base atmosphere file to interpolate to levels and layers
-        overwrite=   : keyword argument, boolen, default=False, whether or not user wants to overwrite the atmosphere file
-        verbose=     : keyword argument, boolen, default=False, whether or not print detailed messages
+    Key Features:
+    - Combines MODIS satellite data with dropsonde measurements for enhanced accuracy
+    - Interpolates atmospheric profiles to user-specified vertical levels
+    - Supports external CO2 and O3 climatological data integration
+    - Calculates number densities for all atmospheric constituents
+    - Provides both level and layer atmospheric data
+    - Includes data persistence through pickle file save/load functionality
+    - Optional plotting capabilities for quality assessment
 
-    Note:
-    If levels is provided but fname does not exisit:
-        calculate atmospheric gases profile and save data into fname
+    Args:
+    ----
+        - zpt_file : str, optional
+            Path to HDF5 file containing MODIS ZPT data with atmospheric profiles
+        - fname : str, optional
+            Path for saving/loading the processed atmospheric data as pickle file
+        - fname_atmmod : str, optional
+            Path to base atmosphere model file (default: AFGL US standard atmosphere)
+        - fname_co2_clim : str, optional
+            Path to CO2 climatology NetCDF file for enhanced CO2 profiles
+        - fname_o3_clim : str, optional
+            Path to O3 climatology HDF5 file for enhanced ozone profiles
+        - date : datetime, optional
+            Date for climatological data extraction (required if using climatology files)
+        - extent : list, optional
+            Geographic extent [lon_min, lon_max, lat_min, lat_max] for climatological data
+        - overwrite : bool, default False
+            Whether to overwrite existing output files
+        - plot : bool, default True
+            Whether to generate diagnostic plots
+        - verbose : bool, default False
+            Whether to print detailed processing messages
 
-    if levels is not provided but fname is provided (also exists):
-        read out the data from fname
+    Attributes
+    ----------
+        - lev : dict
+            Level data containing atmospheric variables at discrete altitude levels:
+            - 'altitude', 'pressure', 'temperature': Basic meteorological variables
+            - 'h2o', 'o2', 'o3', 'co2', 'no2', 'ch4': Gas concentrations
+            - 'factor': Number density conversion factors
+        - lay : dict
+            Layer data containing atmospheric variables for atmospheric layers:
+            - Same variables as lev plus 'thickness' for layer thickness
+            - Represents average conditions within each atmospheric layer
 
-    if levels and fname are neither provided:
-        exit with error message
+    Notes
+    -----
+        - If levels are provided but fname doesn't exist: calculates profiles and saves to fname
+        - If levels not provided but fname exists: loads existing data from fname
+        - If neither levels nor fname provided: exits with error
+        - All gas concentrations are converted to number densities (cm⁻³)
+        - Uses barometric formula for pressure interpolation with temperature dependence
+        - Dropsonde data takes precedence over satellite data in overlapping altitude ranges
+
+    Examples
+    --------
+    Create atmospheric profile from ZPT file:
+    >>> atm = modis_dropsonde_atmmod(zpt_file='data.h5', fname='atmosphere.pkl')
+    Load existing atmospheric profile:
+    >>> atm = modis_dropsonde_atmmod(fname='atmosphere.pkl')
+    or create profile with climatological data:
+    >>> atm = modis_dropsonde_atmmod(
+    ...     zpt_file='data.h5',
+    ...     fname_co2_clim='co2_clim.nc',
+    ...     fname_o3_clim='o3_clim.h5',
+    ...     date=datetime(2020, 6, 15),
+    ...     extent=[-120, -110, 30, 40]
+    ... )
 
     Output:
+    ------
         self.lev['pressure']
         self.lev['temperature']
         self.lev['altitude']
@@ -63,7 +125,6 @@ class modis_dropsonde_atmmod:
         self.lay['factor']
     """
 
-
     ID     = 'Atmosphere 1D'
 
     gases  = ['o3', 'o2', 'h2o', 'co2', 'no2', 'ch4']
@@ -80,13 +141,12 @@ class modis_dropsonde_atmmod:
                  overwrite    = False, \
                  plot         = True, \
                  verbose      = False):
-        print("zpt_file: ", zpt_file)
+
         self.verbose      = verbose
         self.zpt_file     = zpt_file
         self.fname_atmmod = fname_atmmod
         self.fname_co2_clim = fname_co2_clim
         self.fname_o3_clim = fname_o3_clim
-        self.plot         = plot
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -95,16 +155,16 @@ class modis_dropsonde_atmmod:
         elif ((zpt_file is not None) and (fname is not None) and (os.path.exists(fname)) and (overwrite)) or \
              ((zpt_file is not None) and (fname is not None) and (not os.path.exists(fname))):
 
-            self.run(date, extent)
+            self.run(date, extent, plot)
             self.dump(fname)
 
         elif ((zpt_file is not None) and (fname is None)):
 
-            self.run(date, extent)
+            self.run(date, extent, plot)
 
         else:
 
-            sys.exit('Error   [atm_atmmod]: Please check if \'%s\' exists or provide \'zpt_file \' to proceed.' % fname)
+            sys.exit('Error   [modis_dropsonde_atmmod]: Please check if \'%s\' exists or provide \'zpt_file \' to proceed.' % fname)
 
 
     def load(self, fname):
@@ -113,16 +173,16 @@ class modis_dropsonde_atmmod:
             obj = pickle.load(f)
             if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
                 if self.verbose:
-                    print('Message [atm_atmmod]: Loading %s ...' % fname)
+                    print('Message [modis_dropsonde_atmmod]: Loading %s ...' % fname)
                 self.fname = obj.fname
                 self.lev   = obj.lev
                 self.lay   = obj.lay
             else:
-                sys.exit('Error   [atm_atmmod]: File \'%s\' is not the correct pickle file to load.' % fname)
+                sys.exit('Error   [modis_dropsonde_atmmod]: File \'%s\' is not the correct pickle file to load.' % fname)
 
 
-    def run(self, date, extent):
-        
+    def run(self, date, extent, plot):
+
         with h5py.File(self.zpt_file, 'r') as modis_zpt:
             levels = modis_zpt['level_sim'][...]
             self.levels = levels
@@ -138,7 +198,7 @@ class modis_dropsonde_atmmod:
             self.sfc_p = modis_zpt['sfc_p'][...]
             self.sfc_h = modis_zpt['sfc_h'][...]
             self.skin_t = modis_zpt['skin_temp'][...]
-            
+
             self.p_drop = modis_zpt['p_drop'][...]
             self.t_dry_drop = modis_zpt['t_dry_drop'][...]
             self.t_dew_drop = modis_zpt['t_dew_drop'][...]
@@ -147,7 +207,7 @@ class modis_dropsonde_atmmod:
             self.air_drop = modis_zpt['air_drop'][...]
             self.o2_drop = modis_zpt['o2_drop'][...]
             self.h2o_drop = modis_zpt['h2o_drop'][...]
-            
+
 
 
         # self.atm0: Python dictionary
@@ -164,7 +224,7 @@ class modis_dropsonde_atmmod:
         if self.fname_o3_clim is not None:
             self.o3_clim(date, extent)
         self.atmmod()
-        
+
 
         # self.lev, self.lay: Python dictionary
         #   self.lev['altitude']    | self.lay['altitude']
@@ -175,11 +235,11 @@ class modis_dropsonde_atmmod:
         #   self.lev['h2o']         | self.lay['h2o']
         #   self.lev['o3']          | self.lay['o3']
         #   self.lev['o2']          | self.lay['o2']
-        self.interp(self.o2mix, plot=self.plot)
+        self.interp(self.o2mix, plot=plot)
 
         # add self.lev['ch4'] and self.lay['ch4']
         self.add_ch4()
-        
+
         # add self.lev['n2o'] and self.lay['n2o']
         self.add_n2o()
 
@@ -192,7 +252,7 @@ class modis_dropsonde_atmmod:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [atm_atmmod]: Saving object into %s ...' % fname)
+                print('Message [modis_dropsonde_atmmod]: Saving object into %s ...' % fname)
             pickle.dump(self, f)
 
 
@@ -217,12 +277,12 @@ class modis_dropsonde_atmmod:
             if key in self.gases:
                 self.atm0[key]['data']  = self.atm0[key]['data']/self.atm0['air']['data']
                 self.atm0[key]['units'] = 'N/A'
-                
+
     def co2_clim(self, date, extent):
         if self.fname_co2_clim is None:
-            sys.exit('Error   [atm_atmmod]: CO2 climatology file is required to calculate CO2 climatology.')
+            sys.exit('Error   [modis_dropsonde_atmmod]: CO2 climatology file is required to calculate CO2 climatology.')
         if not os.path.exists(self.fname_co2_clim):
-            sys.exit('Error   [atm_atmmod]: CO2 climatology file %s does not exist.' % self.fname_co2_clim)
+            sys.exit('Error   [modis_dropsonde_atmmod]: CO2 climatology file %s does not exist.' % self.fname_co2_clim)
         # open co2 climatology netcdf file
         with nc.Dataset(self.fname_co2_clim, mode='r') as f:
             # read out the data
@@ -237,26 +297,32 @@ class modis_dropsonde_atmmod:
             for i in range(num_levels):
                 # Note: interp2d expects inputs in the order (x, y, z)
                 # Here we use co2_lon and co2_lat along with the slice at level 'i'
-                f_co2 = interpolate.interp2d(co2_lon, co2_lat, co2_clim[:, :, i].T, kind='linear')
-                co2_loc[i] = f_co2(lon_mid, lat_mid)
-                
+
+                # deprecated since scipy 1.12.0
+                # f_co2 = interpolate.interp2d(co2_lon, co2_lat, co2_clim[:, :, i].T, kind='linear')
+                # co2_loc[i] = f_co2(lon_mid, lat_mid)
+
+                # use RegularGridInterpolator instead; note no transpose is needed
+                f_co2 = interpolate.RegularGridInterpolator((co2_lon, co2_lat), co2_clim[:, :, i], method='linear', fill_value=None, bounds_error=False)
+                co2_loc[i] = f_co2((lon_mid, lat_mid))
+
             mask_co2_nan = co2_loc < 0
             if not mask_co2_nan.all():
-                print('Warning [atm_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
+                print('Warning [modis_dropsonde_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
                 co2_loc[mask_co2_nan] = co2_loc[~mask_co2_nan].max()
-            
+
             self.atm_co2 = {}
             self.atm_co2['co2_clim'] = {'name':'co2', 'units':'N/A', 'data':co2_loc}
             self.atm_co2['pressure'] = {'name':'pressure', 'units':'mb', 'data':co2_pressure}
-            
+
     def o3_clim(self, date, extent):
         if self.fname_o3_clim is None:
-            sys.exit('Error   [atm_atmmod]: O3 climatology file is required to calculate O3 climatology.')
+            sys.exit('Error   [modis_dropsonde_atmmod]: O3 climatology file is required to calculate O3 climatology.')
         if not os.path.exists(self.fname_o3_clim):
-            sys.exit('Error   [atm_atmmod]: O3 climatology file %s does not exist.' % self.fname_o3_clim)
+            sys.exit('Error   [modis_dropsonde_atmmod]: O3 climatology file %s does not exist.' % self.fname_o3_clim)
         sat_yyyymm = date.strftime('%Y%m')
         # open o3 climatology file
-        
+
         with h5py.File(self.fname_o3_clim, 'r') as f:
             # read out the data
             o3_lon = f['lon'][:]
@@ -264,17 +330,17 @@ class modis_dropsonde_atmmod:
             o3_pressure = f['lev'][:]
             o3_yyyymm = f['yyyymm'][:]
             if len(np.where(o3_yyyymm == int(sat_yyyymm))) == 0:
-                sys.exit(f'Error   [atm_atmmod]: O3 climatology file {self.fname_o3_clim} does not contain data for {sat_yyyymm}.')
+                sys.exit(f'Error   [modis_dropsonde_atmmod]: O3 climatology file {self.fname_o3_clim} does not contain data for {sat_yyyymm}.')
             o3_ind = np.where(o3_yyyymm == int(sat_yyyymm))[0]
-            
+
             o3_clim = f['O3'][o3_ind, :, :, :] # mixing ratio in kg/kg for levels, latitudes, and longitudes
-            
+
             num_levels = len(o3_pressure)
             o3_loc = np.zeros(num_levels)
             lon_mid, lat_mid = np.mean(extent[:2]), np.mean(extent[2:])
             # print("o3_lon: ", o3_lon)
             # print("o3_lat: ", o3_lat)
-            
+
             o3_lon_start = bisect.bisect_left(o3_lon, extent[0])
             o3_lat_start = bisect.bisect_left(o3_lat, extent[2])
             o3_lon_end = o3_lon_start + 3
@@ -292,12 +358,12 @@ class modis_dropsonde_atmmod:
                 # Here we use o3_lon and o3_lat along with the slice at level 'i'
                 f_o3 = interpolate.LinearNDInterpolator(list(zip(o3_lon_mesh.flatten(), o3_lat_mesh.flatten())), o3_clim_mesh[i, :, :].flatten())
                 o3_loc[i] = f_o3(lon_mid, lat_mid)
-            
+
             mask_o3_nan = o3_loc > 1
             if not mask_o3_nan.all():
-                print('Warning [atm_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
+                print('Warning [modis_dropsonde_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
                 o3_loc[mask_o3_nan] = o3_loc[~mask_o3_nan][0]
-            
+
             self.atm_o3 = {}
             self.atm_o3['o3_clim'] = {'name':'o3', 'units':'kg/kg', 'data':o3_loc}
             self.atm_o3['pressure'] = {'name':'pressure', 'units':'mb', 'data':o3_pressure}
@@ -309,9 +375,9 @@ class modis_dropsonde_atmmod:
 
         # check whether the input height is within the atmosphere height range
         if self.levels.min() < self.atm0['altitude']['data'].min():
-            sys.exit('Error   [atm_atmmod]: Input levels too low.')
+            sys.exit('Error   [modis_dropsonde_atmmod]: Input levels too low.')
         if self.levels.max() > self.atm0['altitude']['data'].max():
-            sys.exit('Error   [atm_atmmod]: Input levels too high.')
+            sys.exit('Error   [modis_dropsonde_atmmod]: Input levels too high.')
 
         self.lev = {}
         self.lev = copy.deepcopy(self.atm0)
@@ -337,7 +403,7 @@ class modis_dropsonde_atmmod:
             f_key = interp1d(self.lev_h, key_value, fill_value="extrapolate", kind='linear')
             self.lev[key]['data'] = f_key(self.lev['altitude']['data'])
             self.lay[key]['data'] = f_key(self.lay['altitude']['data'])
-        
+
         # calculate h2o vmr for lower layers with dropsonde data:
         for key, key_value in zip(['temperature', 'h2o'], [self.t_dry_drop, self.h2o_vmr_drop]):
             f_key_drop = interp1d(self.alt_drop, key_value, fill_value="extrapolate", kind='linear')
@@ -345,15 +411,15 @@ class modis_dropsonde_atmmod:
             alt_drop_lay_select = np.logical_and(self.lay['altitude']['data'] <= self.alt_drop.max(), self.lay['altitude']['data'] >= self.alt_drop.min())
             self.lev[key]['data'][alt_drop_lev_select] = f_key_drop(self.lev['altitude']['data'][alt_drop_lev_select])
             self.lay[key]['data'][alt_drop_lay_select] = f_key_drop(self.lay['altitude']['data'][alt_drop_lay_select])
-            
+
         # calculate h2o vmr for upper layers:
         f_h2o_atm0 = interp1d(self.atm0['altitude']['data'], self.atm0['h2o']['data'], fill_value="extrapolate", kind='linear')
         nan_h2o_vmr_lev = np.isnan(self.lev['h2o']['data'])
         self.lev['h2o']['data'][nan_h2o_vmr_lev] = f_h2o_atm0(self.lev['altitude']['data'][nan_h2o_vmr_lev])
         nan_h2o_vmr_lay = np.isnan(self.lay['h2o']['data'])
         self.lay['h2o']['data'][nan_h2o_vmr_lay] = f_h2o_atm0(self.lay['altitude']['data'][nan_h2o_vmr_lay])
-        
-                
+
+
         # Use Barometric formula to interpolate pressure with modis07 data
         self.lev['pressure']['data'] = atm_interp_pressure(self.lev_p, self.lev_h, self.lev_t, \
                                                            self.lev['altitude']['data'], self.lev['temperature']['data'])
@@ -369,7 +435,7 @@ class modis_dropsonde_atmmod:
         self.lay['pressure']['data'][alt_drop_lay_select] = atm_interp_pressure(self.p_drop, self.alt_drop, self.t_dry_drop, \
                                                                                 self.lay['altitude']['data'][alt_drop_lay_select], \
                                                                                 self.lay['temperature']['data'][alt_drop_lay_select])
-        
+
         # plot zpt data after interpolation and combination
         output = self.zpt_file.replace('.h5', '_interp.png')
         from metpy.calc import saturation_vapor_pressure, dewpoint_from_relative_humidity
@@ -380,10 +446,10 @@ class modis_dropsonde_atmmod:
         rh_lev[rh_lev > 1] = 1
         dewT_lev = dewpoint_from_relative_humidity(np.array(self.lev['temperature']['data']) * units.kelvin, rh_lev).to('kelvin')
 
-        
-        
+
+
         # calculate the air number density
-        kB = 1.380649e-23
+        kB = 1.380649e-23 # Boltzmann constant in J/K
         self.lev['air']['data'] = self.lev['pressure']['data']*100/(kB*self.lev['temperature']['data'])*1.0e-6
         self.lay['air']['data'] = self.lay['pressure']['data']*100/(kB*self.lay['temperature']['data'])*1.0e-6
         # calculate the O2 number density
@@ -403,7 +469,7 @@ class modis_dropsonde_atmmod:
             f_o3 = interp1d(self.atm_o3['pressure']['data'], o3_clim_vmr, fill_value="extrapolate", kind='linear')
             self.lev['o3']['data'] = f_o3(self.lev['pressure']['data'])
             self.lay['o3']['data'] = f_o3(self.lay['pressure']['data'])
-        
+
         if plot:
             zpt_plot(self.lev['pressure']['data'], self.lev['temperature']['data'], dewT_lev.magnitude, self.lev['h2o']['data'], output)
             zpt_plot_gases(self.lev['pressure']['data'], self.lev['h2o']['data'], self.lev['co2']['data'], self.lev['o3']['data'],
@@ -418,14 +484,14 @@ class modis_dropsonde_atmmod:
 
         # ch4 = {'name':'ch4', 'units':'cm-3', 'data':atm_interp_ch4(self.layers)}
         # self.lay['ch4'] = ch4
-        
+
         ch4_mix = 1.6 * 1e-6 # ppm
         ch4 = {'name':'ch4', 'units':'cm-3', 'data':ch4_mix}
         self.lev['ch4'] = ch4
 
         ch4 = {'name':'ch4', 'units':'cm-3', 'data':ch4_mix}
         self.lay['ch4'] = ch4
-        
+
     def add_n2o(self):
         n2o_mix = 0.28 * 1e-6 # ppm
         n2o = {'name':'n2o', 'units':'cm-3', 'data': n2o_mix}
@@ -473,13 +539,13 @@ def atm_interp_pressure(pressure, altitude, temperature, altitude_to_interp, tem
     """
 
     indices = np.argsort(altitude)
-    h       = np.float_(altitude[indices])
-    p       = np.float_(pressure[indices])
-    t       = np.float_(temperature[indices])
+    h       = np.float64(altitude[indices])
+    p       = np.float64(pressure[indices])
+    t       = np.float64(temperature[indices])
 
     indices = np.argsort(altitude_to_interp)
-    hn      = np.float_(altitude_to_interp[indices])
-    tn      = np.float_(temperature_to_interp[indices])
+    hn      = np.float64(altitude_to_interp[indices])
+    tn      = np.float64(temperature_to_interp[indices])
 
     n = p.size - 1
     a = 0.5*(t[1:]+t[:-1]) / (h[:-1]-h[1:]) * np.log(p[1:]/p[:-1])
@@ -518,7 +584,7 @@ def atm_interp_pressure(pressure, altitude, temperature, altitude_to_interp, tem
 
     for i in range(n-2):
         indices = (zl >= h[i]) & (zl < h[i+1])
-        ind = np.where(indices==True)[0]
+        ind = np.where(indices)[0]
         ni  = indices.sum()
         if ni >= 2:
             dpm = dp[ind].sum()
