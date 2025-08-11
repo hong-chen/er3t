@@ -1528,7 +1528,6 @@ class modis_09:
             for fname_ in self.fnames:
 
                 self.read(fname_)
-        
 
 
     def qa_250m(self, hdf_obj):
@@ -1917,6 +1916,7 @@ class modis_07:
         lat       = lat[logic]
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
+        # define pressure levels in the file (always the same)
         p_level = np.array([5, 10, 20, 30, 50, 70, 100, 150, 200, 250, 300, 400, 500, 620, 700, 780, 850, 920, 950, 1000])
 
         # Get cloud mask and flag fields
