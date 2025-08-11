@@ -13,6 +13,7 @@ from er3t.util.modis import modis_07
 
 import er3t.common
 import er3t.util
+from er3t.util.constants import EPSILON, kb
 
 
 __all__ = [
@@ -150,13 +151,13 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
     """
 
     indices = np.argsort(alt)
-    h = np.float_(alt[indices])
-    p = np.float_(pres[indices])
-    t = np.float_(temp[indices])
+    h = np.float64(alt[indices])
+    p = np.float64(pres[indices])
+    t = np.float64(temp[indices])
 
     indices = np.argsort(alt_inp)
-    hn = np.float_(alt_inp[indices])
-    tn = np.float_(temp_inp[indices])
+    hn = np.float64(alt_inp[indices])
+    tn = np.float64(temp_inp[indices])
 
     n = p.size - 1
     a = 0.5*(t[1:]+t[:-1]) / (h[:-1]-h[1:]) * np.log(p[1:]/p[:-1])
@@ -197,7 +198,7 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
 
     for i in range(n-2):
         indices = (zl >= h[i]) & (zl < h[i+1])
-        ind = np.where(indices==True)[0]
+        ind = np.where(indices)[0]
         ni  = indices.sum()
         if ni >= 2:
             dpm = dp[ind].sum()
@@ -265,28 +266,27 @@ def interp_ch4(alt_inp):
     return ch4mix
 
 
-def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5', 
-                   fname_mod07=None, dropsonde_df=None,
-                   extent=None, 
-                   levels=None,
-                   new_h_edge=None,
-                   sfc_T_set=None, # in K
-                   sfc_h_to_zero=True,
-                   plot=True):
+def create_modis_dropsonde_atm(o2mix=0.20935,
+                               output_dir='.',
+                               output='zpt.h5',
+                               fname_mod07=None,
+                               dropsonde_df=None,
+                               extent=None,
+                               levels=None,
+                               new_h_edge=None,
+                               sfc_T_set=None, # in K
+                               sfc_h_to_zero=True,
+                               plot=True):
     """
     Use MODIS 07 product to create a vertical profile of temperature, dew temperature, pressure, O2 and H2O number density, and H2O volume mixing ratio.
     """
-    # --------- Constants ------------
-    Rd = 287.052874
-    EPSILON = 0.622
-    kb = 1.380649e-23
-    # ---------------------------------
-    if fname_mod07 == None or dropsonde_df is None:
+
+    if fname_mod07 is None or dropsonde_df is None:
         sys.exit("[Error] sat and dropsonde information must be provided!")
     else:
         # Get reanalysis from met and CO2 prior sounding data
         try_time = 0
-        sfc_p = [np.nan]     
+        sfc_p = [np.nan]
         while try_time < 15 and np.isnan(np.nanmean(sfc_p)):
             boundary_width = 0.1
             extent = [extent[0]-boundary_width*try_time, extent[1]+boundary_width*try_time,
@@ -296,38 +296,39 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
             cld_mask = mod07.data['cld_mask']['data']
             ### cloud mask: 0=cloudy, 1=uncetain, 2=probably clear, 3=confident clear
             sfc_p = mod07.data['p_sfc']['data']                             # surface pressure in hPa
-            
+
         if np.isnan(np.nanmean(sfc_p)):
             print("cloud mask: ", cld_mask)
             return 'error', None
-        
-        pprf_l_single = mod07.data['p_level']['data']                          # pressure in hPa
-        hprf_l = mod07.data['h_level_retrieved']['data']
-        tprf_l = mod07.data['T_level_retrieved']['data']                # temperature in K
-        dewTprf_l = mod07.data['dewT_level_retrieved']['data']
-        mwvmxprf_l = mod07.data['wvmx_level_retrieved']['data']
-        
-        sfc_h = mod07.data['h_sfc']['data']                             # surface height in m
+
+        # get profile data
+        pprf_l_single = mod07.data['p_level']['data']            # pressure in hPa
+        hprf_l = mod07.data['h_level_retrieved']['data']         # retrieved height profile in m
+        tprf_l = mod07.data['T_level_retrieved']['data']         # retrieved temperature profile in K
+        dewTprf_l = mod07.data['dewT_level_retrieved']['data']   # retrieved dew point temperature profile in K
+        mwvmxprf_l = mod07.data['wvmx_level_retrieved']['data']  # retrieved water vapor mixing ratio profile in g/kg
+
+        sfc_h = mod07.data['h_sfc']['data'] # surface elevation in m
         # assume surface geopotential height is the same as surface height (in m)
-        skin_temp = mod07.data['t_skin']['data']                       # skin temperature in K                                               # 
+        skin_temp = mod07.data['t_skin']['data'] # skin temp in K
         sza = np.nanmean(mod07.data['sza']['data'])
         vza = np.nanmean(mod07.data['vza']['data'])
-        
-        # Create full pressure profile by repeating single level
+
+        # replicate pressure levels for all geographical locations
         pprf_l = np.repeat(pprf_l_single, mwvmxprf_l.shape[1]).reshape(mwvmxprf_l.shape)
         r = mwvmxprf_l/1000 # mass mixing ratio to kg/kg
-        eprf_l = pprf_l*r/(EPSILON+r)
-        
+        eprf_l = pprf_l*r/(EPSILON+r) # vapor pressure in hPa
+
         # Compute virtual temperature
-        Tv = tprf_l/(1-(r/(r+EPSILON))*(1-EPSILON))
-                
+        Tv = tprf_l/(1 - (r/(r + EPSILON)) * (1 - EPSILON))
+
         air_layer = pprf_l*100/(kb*tprf_l)/1e6  # air number density in molec/cm3
         dry_air_layer = (pprf_l-eprf_l)*100/(kb*tprf_l)/1e6  # air number density in molec/cm3
         o2_layer = dry_air_layer*o2mix          # O2 number density in molec/cm3
         h2o_layer = eprf_l*100/(kb*tprf_l)/1e6  # H2O number density in molec/cm3
         # h2o_vmr = h2o_layer/dry_air_layer       # H2O volume mixing ratio
         h2o_vmr = eprf_l/(pprf_l-eprf_l)       # H2O volume mixing ratio
-        
+
         # Compute means in the area
         sfc_p_mean = np.nanmean(sfc_p)
         sfc_h_mean = np.nanmean(sfc_h)
@@ -339,11 +340,11 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
         d_h2o_lev_mean  = np.nanmean(h2o_layer, axis=1)
         hprf_lev_mean   = np.nanmean(hprf_l, axis=1)/1000     # height mid grid in km
         h2o_vmr_mean    = np.nanmean(h2o_vmr, axis=1)
-        
-        
+
+
         if sfc_h_to_zero:
             sfc_h_mean = 0
-        
+
         # interpolate to surface
         # can change to a more physically reasonable way later
         f_temp = interp1d(pprf_lev_mean[:-1], tprf_lev_mean[:-1], fill_value='extrapolate')
@@ -352,10 +353,10 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
         tprf_lev_mean[-1] = f_temp(sfc_p_mean)
         hprf_lev_mean[-1] = sfc_h_mean
         h2o_vmr_mean[-1] = f_h2o_vmr(sfc_p_mean)
-        
+
         if sfc_T_set is not None:
             tprf_lev_mean[-1] = sfc_T_set
-        
+
         # Process dropsonde profile
         p_drop = np.array(dropsonde_df['p']) # in hPa
         alt_drop = np.array(dropsonde_df['alt']/1000) # in km
@@ -368,12 +369,12 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
         o2_drop = air_drop*o2mix          # O2 number density in molec/cm3
         h2o_drop = eprf_drop*100/(kb*t_dry_drop)/1e6  # H2O number density in molec/cm3
         h2o_vmr_drop = eprf_drop/(p_drop-eprf_drop)       # H2O volume mixing ratio
-        
+
         # calculate 10m wind speed from dropsonde data
         ws_10m = np.array(dropsonde_df['ws'])
         ws_10m_nan_mask = np.isnan(ws_10m)
         ws10m = np.interp(0.01, alt_drop[~ws_10m_nan_mask], ws_10m[~ws_10m_nan_mask])   # calculate 10m wind speed
-        
+
 
     if new_h_edge is not None:
         levels = new_h_edge
@@ -381,38 +382,109 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
         if levels is not None:
             levels = np.array(levels)
         else:
-            levels = np.concatenate((np.linspace(sfc_h_mean, 4.0, 11), 
+            levels = np.concatenate((np.linspace(sfc_h_mean, 4.0, 11),
                                     np.arange(5.0, 10.1, 1.0),
                                     np.array([12.5, 15, 17.5, 20. , 25. , 30., 40.])))
     output_path = os.path.join(output_dir, output)
-    if os.path.isfile(output_path): 
+    if os.path.isfile(output_path):
         print(f'[Warning] Output file {output} exists - overwriting!')
     print('Saving to file '+output)
     with h5py.File(output_path, 'w') as h5_output:
         h5_output.create_dataset('sfc_p',       data=sfc_p_mean)
+        h5_output['sfc_p'].attrs['units'] = 'hPa'
+        h5_output['sfc_p'].attrs['description'] = 'Surface pressure'
+
         h5_output.create_dataset('sfc_h',       data=sfc_h_mean)
+        h5_output['sfc_h'].attrs['units'] = 'km'
+        h5_output['sfc_h'].attrs['description'] = 'Surface height above sea level'
+
         h5_output.create_dataset('skin_temp',   data=skin_temp_mean)
+        h5_output['skin_temp'].attrs['units'] = 'K'
+        h5_output['skin_temp'].attrs['description'] = 'Skin temperature from MODIS'
+
         h5_output.create_dataset('level_sim',      data=levels)
+        h5_output['level_sim'].attrs['units'] = 'km'
+        h5_output['level_sim'].attrs['description'] = 'Simulation levels height above sea level'
+
         h5_output.create_dataset('h_lev',       data=hprf_lev_mean)
+        h5_output['h_lev'].attrs['units'] = 'km'
+        h5_output['h_lev'].attrs['description'] = 'Height profile from MODIS retrievals'
+
         h5_output.create_dataset('p_lev',       data=pprf_lev_mean)
+        h5_output['p_lev'].attrs['units'] = 'hPa'
+        h5_output['p_lev'].attrs['description'] = 'Pressure profile from MODIS retrievals'
+
         h5_output.create_dataset('t_lev',       data=tprf_lev_mean)
+        h5_output['t_lev'].attrs['units'] = 'K'
+        h5_output['t_lev'].attrs['description'] = 'Temperature profile from MODIS retrievals'
+
         h5_output.create_dataset('dewT_lev',    data=dewTprf_lev_mean)
+        h5_output['dewT_lev'].attrs['units'] = 'K'
+        h5_output['dewT_lev'].attrs['description'] = 'Dew point temperature profile from MODIS retrievals'
+
         h5_output.create_dataset('d_o2_lev',    data=d_o2_lev_mean)
+        h5_output['d_o2_lev'].attrs['units'] = 'molec/cm3'
+        h5_output['d_o2_lev'].attrs['description'] = 'O2 number density profile from MODIS retrievals'
+
         h5_output.create_dataset('d_h2o_lev',   data=d_h2o_lev_mean)
+        h5_output['d_h2o_lev'].attrs['units'] = 'molec/cm3'
+        h5_output['d_h2o_lev'].attrs['description'] = 'H2O number density profile from MODIS retrievals'
+
         h5_output.create_dataset('h2o_vmr',     data=h2o_vmr_mean)
+        h5_output['h2o_vmr'].attrs['units'] = 'dimensionless'
+        h5_output['h2o_vmr'].attrs['description'] = 'H2O volume mixing ratio from MODIS retrievals'
+
         h5_output.create_dataset('p_drop',     data=p_drop)
+        h5_output['p_drop'].attrs['units'] = 'hPa'
+        h5_output['p_drop'].attrs['description'] = 'Pressure profile from dropsonde measurements'
+
         h5_output.create_dataset('t_dry_drop', data=t_dry_drop)
+        h5_output['t_dry_drop'].attrs['units'] = 'K'
+        h5_output['t_dry_drop'].attrs['description'] = 'Dry temperature profile from dropsonde measurements'
+
         h5_output.create_dataset('t_dew_drop', data=t_dew_drop)
+        h5_output['t_dew_drop'].attrs['units'] = 'K'
+        h5_output['t_dew_drop'].attrs['description'] = 'Dew point temperature profile from dropsonde measurements'
+
         h5_output.create_dataset('h2o_vmr_drop', data=h2o_vmr_drop)
+        h5_output['h2o_vmr_drop'].attrs['units'] = 'dimensionless'
+        h5_output['h2o_vmr_drop'].attrs['description'] = 'H2O volume mixing ratio from dropsonde measurements'
+
         h5_output.create_dataset('alt_drop', data=alt_drop)
+        h5_output['alt_drop'].attrs['units'] = 'km'
+        h5_output['alt_drop'].attrs['description'] = 'Altitude profile from dropsonde measurements'
+
         h5_output.create_dataset('air_drop', data=air_drop)
+        h5_output['air_drop'].attrs['units'] = 'molec/cm3'
+        h5_output['air_drop'].attrs['description'] = 'Air number density from dropsonde measurements'
+
         h5_output.create_dataset('o2_drop', data=o2_drop)
+        h5_output['o2_drop'].attrs['units'] = 'molec/cm3'
+        h5_output['o2_drop'].attrs['description'] = 'O2 number density from dropsonde measurements'
+
         h5_output.create_dataset('h2o_drop', data=h2o_drop)
+        h5_output['h2o_drop'].attrs['units'] = 'molec/cm3'
+        h5_output['h2o_drop'].attrs['description'] = 'H2O number density from dropsonde measurements'
+
         h5_output.create_dataset('ws10m',       data=ws10m)
+        h5_output['ws10m'].attrs['units'] = 'm/s'
+        h5_output['ws10m'].attrs['description'] = '10-meter wind speed interpolated from dropsonde data'
+
         h5_output.create_dataset('o2_mix',      data=o2mix)
+        h5_output['o2_mix'].attrs['units'] = 'dimensionless'
+        h5_output['o2_mix'].attrs['description'] = 'O2 mixing ratio used in calculations'
+
         h5_output.create_dataset('sza',         data=sza)
+        h5_output['sza'].attrs['units'] = 'degrees'
+        h5_output['sza'].attrs['description'] = 'Solar zenith angle from MODIS'
+
         h5_output.create_dataset('vza',         data=vza)
+        h5_output['vza'].attrs['units'] = 'degrees'
+        h5_output['vza'].attrs['description'] = 'Viewing zenith angle from MODIS'
+
         h5_output.create_dataset('lat',         data=np.mean(extent[2:]))
+        h5_output['lat'].attrs['units'] = 'degrees_north'
+        h5_output['lat'].attrs['description'] = 'Mean latitude of the study area'
 
     # zpt_plot(pprf_lev_mean, tprf_lev_mean, dewTprf_lev_mean, h2o_vmr_mean, output=f"{output_dir}/{output.replace('.h5', '.png')}")
     # zpt_plot(p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop, output=f"{output_dir}/{output.replace('.h5', '_dropsonde.png')}")
@@ -420,20 +492,20 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
         zpt_plot_combine(pprf_lev_mean, tprf_lev_mean, dewTprf_lev_mean, h2o_vmr_mean,
                         p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop,
                         output=os.path.join(output_dir, output.replace('.h5', '_modis_dropsonde.png')))
-    
+
     return 'success', ws10m
 
 def h2o_vmr_axis_setting(ax, pmin=100, pmax=1000):
-    from matplotlib import ticker
+
     ax.set_ylim(pmax, pmin)
     ax.set_yscale('log')
     ax.yaxis.set_major_formatter(ticker.StrMethodFormatter('{x:.0f}'))
     ax.yaxis.set_minor_formatter(ticker.StrMethodFormatter('{x:.0f}'))
     ax.set_ylabel('Pressure (hPa)', fontsize=14)
     ax.set_xlabel('H$_2$O mixing ratio', fontsize=14, color='b')
-    
+
 def vmr_axis_setting(ax, xlabel, xlabel_color, pmin=100, pmax=1000):
-    from matplotlib import ticker
+
     ax.set_ylim(pmax, pmin)
     ax.set_yscale('log')
     ax.yaxis.set_major_formatter(ticker.StrMethodFormatter('{x:.0f}'))
@@ -444,7 +516,7 @@ def vmr_axis_setting(ax, xlabel, xlabel_color, pmin=100, pmax=1000):
 def zpt_plot(p_lay, t_lay, dewT_lay, h2o_vmr, output, pmin=100, pmax=1000):
     from metpy.plots import SkewT
     from metpy.units import units
-    
+
     p_prf = p_lay * units.hPa
     T_prf = (t_lay * units.kelvin).to(units.degC)
     Td_prf = (dewT_lay * units.kelvin).to(units.degC)
@@ -472,12 +544,12 @@ def zpt_plot(p_lay, t_lay, dewT_lay, h2o_vmr, output, pmin=100, pmax=1000):
     ax2.grid(which='minor', axis='y', linestyle='-', linewidth=1, color='lightgrey')
     fig.tight_layout()
     fig.savefig(output, dpi=300)
-    
+
 def zpt_plot_gases(p_lay, h2o_vmr, co2_vmr, o3_vmr,
                    output, pmin=100, pmax=1000):
     from metpy.plots import SkewT
     from metpy.units import units
-    
+
     p_prf = p_lay * units.hPa
 
     fig, (ax2, ax3) =plt.subplots(1, 2, figsize=(12, 6.75))
@@ -489,7 +561,7 @@ def zpt_plot_gases(p_lay, h2o_vmr, co2_vmr, o3_vmr,
     ax2.legend()
     ax2.text(1.28, 1.07, '(a)', fontsize=16, fontweight='bold', va='center', ha='left')
     ax2.grid(which='minor', axis='y', linestyle='-', linewidth=1, color='lightgrey')
-    
+
     ax4 = ax3.twiny()
     ax3_line = ax3.plot(co2_vmr*1e6, p_prf, 'orange', label='CO$_2$', linewidth=3)
     ax4_line = ax4.plot(o3_vmr*1e6, p_prf, 'purple', label='O$_3$', linewidth=3)
@@ -498,16 +570,16 @@ def zpt_plot_gases(p_lay, h2o_vmr, co2_vmr, o3_vmr,
     vmr_axis_setting(ax3, 'CO$_2$ mixing ratio (ppbv)', 'orange', pmin=pmin, pmax=pmax)
     vmr_axis_setting(ax4, 'O$_3$ mixing ratio (ppbv)', 'purple', pmin=pmin, pmax=pmax)
     legends = ax3_line + ax4_line
-    labels = [l.get_label() for l in legends]
+    labels = [i.get_label() for i in legends]
     ax3.legend(legends, labels)
     ax3.text(1.28, 1.07, '(b)', fontsize=16, fontweight='bold', va='center', ha='left')
     ax3.grid(which='minor', axis='y', linestyle='-', linewidth=1, color='lightgrey')
-    
+
     fig.tight_layout()
     fig.savefig(output, dpi=300)
 
 
-def zpt_plot_combine(p_lay, t_lay, dewT_lay, h2o_vmr, 
+def zpt_plot_combine(p_lay, t_lay, dewT_lay, h2o_vmr,
                     p_drop, t_dry_drop, t_dew_drop, h2o_vmr_drop,
                     output, pmin=100, pmax=1000):
     from metpy.plots import SkewT
@@ -516,7 +588,7 @@ def zpt_plot_combine(p_lay, t_lay, dewT_lay, h2o_vmr,
     p_prf = p_lay * units.hPa
     T_prf = (t_lay * units.kelvin).to(units.degC)
     Td_prf = (dewT_lay * units.kelvin).to(units.degC)
-    
+
     p_drop = p_drop * units.hPa
     t_dry_drop = (t_dry_drop * units.kelvin).to(units.degC)
     t_dew_drop = (t_dew_drop * units.kelvin).to(units.degC)
@@ -528,7 +600,7 @@ def zpt_plot_combine(p_lay, t_lay, dewT_lay, h2o_vmr,
     skew.plot(p_prf, Td_prf, 'limegreen', label='Dew Point (modis07)', linewidth=4, alpha=0.85)
     skew.plot(p_drop, t_dry_drop, 'r', label='Temperature (dropsonde)', linewidth=2)
     skew.plot(p_drop, t_dew_drop, 'g', label='Dew Point (dropsonde)', linewidth=2)
-    
+
     skew.ax.set_xlabel('Temperature ($\N{DEGREE CELSIUS}$)', fontsize=14)
     skew.ax.set_ylabel('Pressure (hPa)', fontsize=14)
     # Add the relevant special lines
