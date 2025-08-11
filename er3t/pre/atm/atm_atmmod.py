@@ -6,17 +6,26 @@ import numpy as np
 
 
 import er3t.common
-from .util import *
+import er3t.util
+from er3t.pre.atm.util import interp_pres_from_alt_temp, interp_ch4
+from er3t.util.constants import Na, R
 
 
-
-__all__ = ['atm_atmmod']
+__all__ = ['atm_atmmod', 'ARCSIXAtmModel']
 
 
 
 class atm_atmmod:
-
     """
+    Atmospheric model class for creating 1D atmospheric profiles with gas concentrations.
+    This class interpolates atmospheric data from a base atmosphere file (AFGL atmospheric profile)
+    to user-specified altitude levels and calculates atmospheric properties including pressure,
+    temperature, and gas concentrations for various atmospheric constituents.
+    The class can operate in three modes:
+    1. Create new atmospheric profile from levels and save to file
+    2. Load existing atmospheric profile from file
+    3. Create atmospheric profile without saving
+
     Input:
 
         levels=      : keyword argument, numpy array, height in km
@@ -65,7 +74,7 @@ class atm_atmmod:
 
     gases  = ['o3', 'o2', 'h2o', 'co2', 'no2', 'ch4']
 
-    reference = '\nAFGL Atmospheric Profile (Anderson et al., 1986):\n- Anderson, G. P., Clough, S. A., Kneizys, F. X., Chetwynd, J. H., and Shettle, E. P.: AFGL atmospheric constituent profiles (0–120 km), Tech. Rep. AFGL-TR-86–0110, Air Force Geophys. Lab., Hanscom Air Force Base, Bedford, Massachusetts, USA, 1986.'
+    reference = '\nAFGL Atmospheric Profile (Anderson et al., 1986):\n- Anderson, G. P., Clough, S. A., Kneizys, F. X., Chetwynd, J. H., and Shettle, E. P.: AFGL atmospheric constituent profiles (0-120 km), Tech. Rep. AFGL-TR-86-0110, Air Force Geophys. Lab., Hanscom Air Force Base, Bedford, Massachusetts, USA, 1986.'
 
     def __init__(self,                \
                  levels       = None, \
@@ -183,6 +192,26 @@ class atm_atmmod:
 
 
     def interp(self):
+        """
+        Interpolate atmospheric data to specified levels and layers.
+        This method interpolates atmospheric properties from the original atmosphere
+        model (self.atm0) to user-defined vertical levels and layers. It performs
+        linear interpolation for most atmospheric variables and uses the barometric
+        formula for pressure interpolation to maintain physical consistency.
+        The method creates two new atmospheric profiles:
+        - self.lev: Interpolated data at specified levels
+        - self.lay: Interpolated data at layer midpoints
+        Raises:
+            SystemExit: If input levels are outside the valid atmosphere height range
+                    (below minimum or above maximum altitude in self.atm0)
+        Notes:
+            - All atmospheric variables except 'altitude' and 'pressure' are
+            interpolated linearly
+            - Pressure is interpolated using the barometric formula via
+            interp_pres_from_alt_temp() function
+            - Layer thickness is calculated as the difference between consecutive levels
+            - The method assumes self.levels and self.layers are already defined
+        """
 
         # check whether the input height is within the atmosphere height range
         if self.levels.min() < self.atm0['altitude']['data'].min():
@@ -229,12 +258,12 @@ class atm_atmmod:
         self.lev['factor']  = { \
           'name':'number density factor', \
           'units':'cm-3', \
-          'data':6.02214179e23/8.314472*self.lev['pressure']['data']/self.lev['temperature']['data']*1.0e-4}
+          'data':Na/R*self.lev['pressure']['data']/self.lev['temperature']['data']*1.0e-4}
 
         self.lay['factor']  = { \
           'name':'number density factor', \
           'units':'cm-3', \
-          'data':6.02214179e23/8.314472*self.lay['pressure']['data']/self.lay['temperature']['data']*1.0e-4}
+          'data':Na/R*self.lay['pressure']['data']/self.lay['temperature']['data']*1.0e-4}
 
         for key in self.lev.keys():
             if key in self.gases:
@@ -242,6 +271,31 @@ class atm_atmmod:
                 self.lev[key]['units'] = 'cm-3'
                 self.lay[key]['data']  = self.lay[key]['data'] * self.lay['factor']['data']
                 self.lay[key]['units'] = 'cm-3'
+
+
+class ARCSIXAtmModel:
+    """
+    ARCSIXAtmModel is similar to atm_atmmod but specifically designed for the ARCSIX project.
+    It can be used to create atmospheric models based on the ARCSIX requirements and AFGL profiles.
+
+    It is designed to be modular to allow for specific atmospheric modeling needs using a combination of reanalyses,
+    satellite data, AFGL profiles, and ARCSIX measurements.
+    """
+
+    ID = 'ARCSIX Atmosphere Model'
+
+    def __init__(self,
+                 levels       = None,
+                 fname_out    = None,
+                 fname_atmmod = '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
+                 overwrite    = False,
+                 verbose      = False):
+
+        self.levels       = levels
+        self.fname_out    = fname_out
+        self.fname_atmmod = fname_atmmod
+        self.overwrite    = overwrite
+        self.verbose      = verbose
 
 
 
