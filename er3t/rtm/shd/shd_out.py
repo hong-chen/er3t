@@ -698,9 +698,9 @@ def read_radiance_shd_out(shd_obj, abs_obj, squeeze=True):
     norm    = np.zeros(Nz, dtype=np.float32)
     factors = np.zeros((Nz, shd_obj.Ng), dtype=np.float32)
 
-    if len(abs_obj.coef['weight']['data']) > 1:
-        msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
-        raise OSError(msg)
+    # if len(abs_obj.coef['weight']['data']) > 1:
+    #     msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
+    #     raise OSError(msg)
     for iz in range(Nz):
         norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
         for ig in range(shd_obj.Ng):

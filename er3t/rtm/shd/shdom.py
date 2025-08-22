@@ -108,7 +108,6 @@ class shdom_ng:
             if verbose:
                 print('Message [shdom_ng]: Directory <%s> already exists.' % fdir)
 
-        Ng           = 1
         self.Ng      = Ng
         self.date    = date
         self.fdir    = fdir
