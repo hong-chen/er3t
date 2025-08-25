@@ -80,22 +80,31 @@ def cams_eac4(fname, outdir, date='20240605_1500', extent=[-65, -47.5, 83.3, 84]
     # ozone
     ozone_mean = fnc['go3'].mean(dim=["longitude", "latitude"]).to_masked_array()
     ozone_std = fnc['go3'].std(dim=["longitude", "latitude"]).to_masked_array()
-    print(f"Ozone Coefficient of Variation (%): {np.round(ozone_std*100/ozone_mean, 1)}")
+    ozone_cv = np.round(ozone_std*100/ozone_mean, 1)
+    if (ozone_cv > 5).sum() > 0: # print only if cv is high (> 5%)
+        print(f"Warning [cams_eac4]: Ozone Coefficient of Variation (%) exceeds 5% in some levels: {ozone_cv}")
 
     # nitrogen dioxide
     no2_mean = fnc['no2'].mean(dim=["longitude", "latitude"]).to_masked_array()
     no2_std = fnc['no2'].std(dim=["longitude", "latitude"]).to_masked_array()
-    print(f"NO2 Coefficient of Variation (%): {np.round(no2_std*100/no2_mean, 1)}")
+    no2_cv = np.round(no2_std*100/no2_mean, 1)
+    if (no2_cv > 5).sum() > 0: # print only if cv is high (> 5%)
+        print(f"Warning [cams_eac4]: NO2 Coefficient of Variation (%) exceeds 5% in some levels: {no2_cv}")
 
     # specific humidity
     q_mean = fnc['q'].mean(dim=["longitude", "latitude"]).to_masked_array()
     q_std = fnc['q'].std(dim=["longitude", "latitude"]).to_masked_array()
-    print(f"Specific humidity Coefficient of Variation (%): {np.round(q_std*100/q_mean, 1)}")
+    q_cv = np.round(q_std*100/q_mean, 1)
+    if (q_cv > 5).sum() > 0: # print only if cv is high (> 5%)
+        print(f"Warning [cams_eac4]: Specific Humidity Coefficient of Variation (%) exceeds 5% in some levels: {q_cv}")
+
 
     # temperature
     t_mean = fnc['t'].mean(dim=["longitude", "latitude"]).to_masked_array()
     t_std = fnc['t'].std(dim=["longitude", "latitude"]).to_masked_array()
-    print(f"Temperature Coefficient of Variation (%): {np.round(t_std*100/t_mean, 1)}")
+    t_cv = np.round(t_std*100/t_mean, 1)
+    if (t_cv > 5).sum() > 0: # print only if cv is high (> 5%)
+        print(f"Warning [cams_eac4]: Temperature Coefficient of Variation (%) exceeds 5% in some levels: {t_cv}")
 
     print('Ozone', fnc['go3'].attrs['long_name'], fnc['go3'].attrs['units'])
     print('Nitrogen Dioxide', fnc['no2'].attrs['long_name'], fnc['no2'].attrs['units'])
@@ -188,7 +197,9 @@ def cams_egg4(fname, outdir, date='20240605_1500', extent=[-65, -47.5, 83.3, 84]
     # geopotential height
     geopotential_mean = fnc['z'].mean(dim=["longitude", "latitude"]).to_masked_array()
     geopotential_std = fnc['z'].std(dim=["longitude", "latitude"]).to_masked_array()
-    print(f"Geopotential Coefficient of Variation (%): {np.round(geopotential_std*100/geopotential_mean, 1)}")
+    geopotential_cv = np.round(geopotential_std*100/geopotential_mean, 1)
+    if (geopotential_cv > 5).sum() > 0:  # print only if cv is high (> 5%)
+        print(f"Warning [cams_egg4]: Geopotential Coefficient of Variation (%) exceeds 5% in some levels: {geopotential_cv}")
 
     # get z from gph
     altitude = geopotential_mean / constants.g
@@ -196,22 +207,31 @@ def cams_egg4(fname, outdir, date='20240605_1500', extent=[-65, -47.5, 83.3, 84]
     # methane
     ch4_mean = fnc['ch4'].mean(dim=["longitude", "latitude"]).to_masked_array()
     ch4_std = fnc['ch4'].std(dim=["longitude", "latitude"]).to_masked_array()
-    print(f"Methane Coefficient of Variation (%): {np.round(ch4_std*100/ch4_mean, 3)}")
+    ch4_cv = np.round(ch4_std*100/ch4_mean, 1)
+    if (ch4_cv > 5).sum() > 0:  # print only if cv is high (> 5%)
+        print(f"Warning [cams_egg4]: Methane Coefficient of Variation (%) exceeds 5% in some levels: {ch4_cv}")
 
     # co2
     co2_mean = fnc['co2'].mean(dim=["longitude", "latitude"]).to_masked_array()
     co2_std = fnc['co2'].std(dim=["longitude", "latitude"]).to_masked_array()
-    print(f"CO2 Coefficient of Variation (%): {np.round(co2_std*100/co2_mean, 3)}")
+    co2_cv = np.round(co2_std*100/co2_mean, 1)
+    if (co2_cv > 5).sum() > 0:  # print only if cv is high (> 5%)
+        print(f"Warning [cams_egg4]: CO2 Coefficient of Variation (%) exceeds 5% in some levels: {co2_cv}")
 
     # specific humidity
     q_mean = fnc['q'].mean(dim=["longitude", "latitude"]).to_masked_array()
     q_std = fnc['q'].std(dim=["longitude", "latitude"]).to_masked_array()
-    print(f"Specific humidity Coefficient of Variation (%): {np.round(q_std*100/q_mean, 3)}")
+    q_cv = np.round(q_std*100/q_mean, 1)
+    if (q_cv > 5).sum() > 0:  # print only if cv is high (> 5%)
+        print(f"Warning [cams_egg4]: Specific Humidity Coefficient of Variation (%) exceeds 5% in some levels: {q_cv}")
 
     # temperature
     t_mean = fnc['t'].mean(dim=["longitude", "latitude"]).to_masked_array()
     t_std = fnc['t'].std(dim=["longitude", "latitude"]).to_masked_array()
-    print(f"Temperature Coefficient of Variation (%): {np.round(t_std*100/t_mean, 3)}")
+    t_cv = np.round(t_std*100/t_mean, 1)
+    if (t_cv > 5).sum() > 0:  # print only if cv is high (> 5%)
+        print(f"Warning [cams_egg4]: Temperature Coefficient of Variation (%) exceeds 5% in some levels: {t_cv}")
+
 
     print('Methane', fnc['ch4'].attrs['long_name'], fnc['ch4'].attrs['units'])
     print('CO2', fnc['co2'].attrs['long_name'], fnc['co2'].attrs['units'])
