@@ -258,12 +258,12 @@ class atm_atmmod:
         self.lev['factor']  = { \
           'name':'number density factor', \
           'units':'cm-3', \
-          'data':constants.Na/constants.R*self.lev['pressure']['data']/self.lev['temperature']['data']*1.0e-4}
+          'data':constants.NA/constants.R*self.lev['pressure']['data']/self.lev['temperature']['data']*1.0e-4}
 
         self.lay['factor']  = { \
           'name':'number density factor', \
           'units':'cm-3', \
-          'data':constants.Na/constants.R*self.lay['pressure']['data']/self.lay['temperature']['data']*1.0e-4}
+          'data':constants.NA/constants.R*self.lay['pressure']['data']/self.lay['temperature']['data']*1.0e-4}
 
         for key in self.lev.keys():
             if key in self.gases:
@@ -592,11 +592,11 @@ class ARCSIXAtmModel:
         # 100 is for hPa to Pa
         self.lev['air']['data'] = {
             'units': 'cm^-3',
-            'data': (self.lev['pressure']['data'] * 100 * constants.Na) / (constants.M_dry * constants.R * self.lev['temperature']['data'])
+            'data': (self.lev['pressure']['data'] * 100 * constants.NA) / (constants.M_dry * constants.R * self.lev['temperature']['data'])
         }
         self.lay['air']['data'] = {
             'units': 'cm^-3',
-            'data': (self.lay['pressure']['data'] * 100 * constants.Na) / (constants.M_dry * constants.R * self.lay['temperature']['data'])
+            'data': (self.lay['pressure']['data'] * 100 * constants.NA) / (constants.M_dry * constants.R * self.lay['temperature']['data'])
         }
 
 
@@ -626,11 +626,11 @@ class ARCSIXAtmModel:
                 continue
 
             if key in self.lev:
-                self.lev[key]['data'] = (constants.Na * self.lev['pressure']['data'] * 100 * self.lev[key]['data']) * 10**-6 / (constants.R * self.lev['temperature']['data'])
+                self.lev[key]['data'] = (constants.NA * self.lev['pressure']['data'] * 100 * self.lev[key]['data']) * 10**-6 / (constants.R * self.lev['temperature']['data'])
                 self.lev[key]['units'] = 'cm^-3'
 
             if key in self.lay:
-                self.lay[key]['data'] = (constants.Na * self.lay['pressure']['data'] * 100 * self.lay[key]['data']) * 10**-6 / (constants.R * self.lay['temperature']['data'])
+                self.lay[key]['data'] = (constants.NA * self.lay['pressure']['data'] * 100 * self.lay[key]['data']) * 10**-6 / (constants.R * self.lay['temperature']['data'])
                 self.lay[key]['units'] = 'cm^-3'
 
 

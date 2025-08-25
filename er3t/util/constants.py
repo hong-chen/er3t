@@ -2,7 +2,7 @@
 Define constants used commonly
 """
 
-Na = 6.02214179e23  # Avogadro's number in mol^-1
+NA = 6.02214179e23  # Avogadro's number in mol^-1
 kb = 1.380649e-23  # Boltzmann constant in J/K
 R = 8.314472  # Ideal gas constant in J/(mol*K)
 Rd = 287.052874 # J/(kg*K), specific gas constant for dry air
