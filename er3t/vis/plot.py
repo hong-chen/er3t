@@ -14,6 +14,8 @@ import matplotlib.patches as mpatches
 
 import er3t.common
 
+
+
 class figure_pre_process(object):
 
     """
@@ -24,10 +26,8 @@ class figure_pre_process(object):
 
     def __init__(self):
 
+
         pass
-
-
-
 
 
 def plot_atm(atm_obj):

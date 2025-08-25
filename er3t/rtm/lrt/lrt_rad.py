@@ -151,7 +151,7 @@ class lrt_init_mono_rad:
         if output_format     == 'lambda uu edir edn':
             self.Nvar = 4
         elif output_format     == 'lambda uu edir':
-            self.Nvar = 3    
+            self.Nvar = 3
 
         # sensor azimuth angle
         #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -229,13 +229,13 @@ class lrt_init_mono_rad:
                             ('output_user'       , output_format),
                             ('zout'              , output_altitude),
                             ])
-        
+
         if lrt_cfg['solar_file'] is not None:
             self.input_dict['source solar'] = lrt_cfg['solar_file']
-            self.input_dict['output_process'] = lrt_cfg['output_process']
             self.input_dict['spline'] =  '%.3f %.3f %.3f' % (wavelength, wavelength, spectral_resolution)
             self.input_dict['slit_function_file'] = slit_function_file
-        
+            # self.input_dict['output_process'] = lrt_cfg['output_process']
+
         if lrt_cfg['rte_solver'] == 'mystic':
             self.input_dict['mc_photons'] = lrt_cfg['mc_photons']
             self.input_dict['mc_vroom'] = lrt_cfg['mc_vroom']
@@ -259,14 +259,14 @@ class lrt_init_mono_rad:
 
                 if self.input_dict_extra is not None:
 
-                    self.input_dict_extra['%s_file 1D '       % prefix] = cld_cfg['cloud_file']
+                    self.input_dict_extra['%s_file 1D'        % prefix] = cld_cfg['cloud_file']
                     self.input_dict_extra['%s_properties %s'  % (prefix, cld_cfg['%s_properties' % prefix])] = 'interpolate'
                     self.input_dict_extra['%s_modify tau set' % prefix] = str(cld_cfg['cloud_optical_thickness'])
 
                 else:
 
                     self.input_dict_extra = OD([
-                        ('%s_file 1D '       % prefix                                     , cld_cfg['cloud_file']),
+                        ('%s_file 1D'        % prefix                                     , cld_cfg['cloud_file']),
                         ('%s_properties %s'  % (prefix, cld_cfg['%s_properties' % prefix]), 'interpolate'),
                         ('%s_modify tau set' % prefix                                     , str(cld_cfg['cloud_optical_thickness']))
                         ])
@@ -502,7 +502,7 @@ class lrt_init_spec_rad:
                     prefix = 'ic'
 
                 self.input_dict_extra = OD([
-                    ('%s_file 1D '       % prefix                                     , cld_cfg['cloud_file']),
+                    ('%s_file 1D'        % prefix                                     , cld_cfg['cloud_file']),
                     ('%s_properties %s'  % (prefix, cld_cfg['%s_properties' % prefix]), 'interpolate'),
                     ('%s_modify tau set' % prefix                                     , str(cld_cfg['cloud_optical_thickness']))
                     ])

@@ -182,6 +182,7 @@ class mca_atm_3d:
                  cld_obj   = None, \
                  pha_obj   = None, \
                  fname     = None, \
+                 phase     = True, \
                  overwrite = True, \
                  force     = False,\
                  verbose   = False,\
@@ -191,6 +192,7 @@ class mca_atm_3d:
         self.overwrite = overwrite
         self.verbose   = verbose
         self.quiet     = quiet
+        self.phase     = phase
 
         if atm_obj is None:
             msg = 'Error [mca_atm_3d]: Please provide an \'atm\' object for <atm_obj>.'
@@ -234,8 +236,7 @@ class mca_atm_3d:
         self.nml= {}
 
         lay_index = get_lay_index(self.cld.lay['altitude']['data'], self.atm.lay['altitude']['data'])
-        # print("self.atm.lay['altitude']['data'] len:", len(self.atm.lay['altitude']['data']))
-        # print("self.cld.lay['altitude']['data'] len:", len(self.cld.lay['altitude']['data']))
+
 
         nx   = self.cld.lay['nx']['data']
         ny   = self.cld.lay['ny']['data']
@@ -256,7 +257,6 @@ class mca_atm_3d:
 
             atm_tmp[:, :, i]    = self.cld.lay['temperature']['data'][:, :, i] - self.atm.lay['temperature']['data'][lay_index[i]]
             atm_ext[:, :, i, 0] = self.cld.lay['extinction']['data'][:, :, i]
-
 
         if self.pha is None:
             atm_omg[...] = 1.0
@@ -326,7 +326,8 @@ class mca_atm_3d:
         self.nml['Atm_dy']['units']  = 'm'
 
         self.nml['Atm_nz3']    = {'data':nz3   , 'unit':'N/A', 'name':'number of 3D layer'}
-        self.nml['Atm_iz3l']   = {'data':iz3l+1, 'unit':'N/A', 'name':'layer index of first 3D layer'}
+        # self.nml['Atm_iz3l']   = {'data':iz3l+1, 'unit':'N/A', 'name':'layer index of first 3D layer'}
+        self.nml['Atm_iz3l']   = {'data':iz3l, 'unit':'N/A', 'name':'layer index of first 3D layer'}
 
         self.nml['Atm_tmpa3d'] = {'data':atm_tmp, 'units':'K'  , 'name':'Temperature deviation'}
         self.nml['Atm_abst3d'] = {'data':atm_abs, 'units':'/m' , 'name':'Absorption coefficients deviation'}

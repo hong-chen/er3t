@@ -187,7 +187,7 @@ def send_email(
 
 
 
-def nice_array_str(array1d, numPerLine=6):
+def nice_array_str(array1d, numPerLine=6, useSci=False):
 
     """
     Covert 1d array to string
@@ -207,13 +207,23 @@ def nice_array_str(array1d, numPerLine=6):
     for iLine in range(numLine):
         lineS = ''
         for iNum in range(numPerLine):
-            lineS += '  %12g' % array1d[iLine*numPerLine + iNum]
+            num0 = array1d[iLine*numPerLine + iNum]
+            if useSci:
+                lineS += '  %18.8e' % num0
+            else:
+                lineS += '  %18.8g' % num0
         lineS += '\n'
         niceString += lineS
+
     if numRest != 0:
+
         lineS = ''
         for iNum in range(numRest):
-            lineS += '  %12g' % array1d[numLine*numPerLine + iNum]
+            num0 = array1d[numLine*numPerLine + iNum]
+            if useSci:
+                lineS += '  %18.8e' % num0
+            else:
+                lineS += '  %18.8g' % num0
         lineS += '\n'
         niceString += lineS
 
@@ -1003,27 +1013,32 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
 
 
 def g0_calc(lat):
+
     """
     Calculate the surface gravity acceleration.
 
     according to Eq. 11 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
     """
+
     lat_rad = lat * np.pi / 180
+
     return 9.806160 * (1 - 0.0026373 * np.cos(2*lat_rad) + 0.0000059 * np.cos(2*lat_rad)**2) # in m/s^2
 
 
 
 def g_alt_calc(g0, lat, z):
+
     """
     Calculate the gravity acceleration at z.
 
-    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
-    
+    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
+
     Input:
         g0: gravity acceleration at the surface (m/s^2)
         lat: latitude (degrees)
         z: height (m)
     """
+
     lat_rad = lat * np.pi / 180
     g = g0*100 - (3.085462e-4 + 2.27e-7 * np.cos(2 * lat_rad)) * z \
            + (7.254e-11 + 1.0e-13 * np.cos(2 * lat_rad)) * z**2 \
@@ -1036,61 +1051,66 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
 
     """
     Input:
-        wv0: wavelength (in microns) --- can be an array
-        pz1: numpy array, Pressure of lower layer (hPa)
-        pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
-        atm0: er3t atmosphere object
-        method: string, 'sfc' or 'lay'
+        wv0    : wavelength (in microns) --- can be an array
+        atm0   : er3t atmosphere object
+        method=: string, 'sfc', 'atm', or 'lay'
     Output:
         tauray: extinction
-    Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
+
     in Python program:
-        result=bodhaine(0.5,1000,4)
+        result=cal_mol_ext_atm(0.5, atm0)
     Note: If you input an array of wavelengths, the result will also be an
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
+
+    reference = '\nRayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
+
     # avogadro's number
     A_ = 6.02214179e23
-    try:
+    if hasattr(atm0, 'lat'):
         lat = atm0.lat
-    except AttributeError:
+    else:
         lat = 0.0 # default latitude is 0 degree
-        
-    g0 = g0_calc(lat) # m/s^2
-    g0 = g0_calc(0) # m/s^2
-    z = atm0.lay['altitude']['data']
-    g = g_alt_calc(g0, lat, z*1000) * 100 # convert to cm/s^2
 
-    g0 = g0 * 100 # convert to cm/s^2
+    g0 = g0_calc(lat) # m/s^2
+    z = atm0.lay['altitude']['data']
+    g = g_alt_calc(g0, lat, z*1000.0) * 100.0 # convert to cm/s^2
+
+    g0 = g0 * 100.0 # convert to cm/s^2
     ma = 28.9595 + (15.0556 * atm0.lay['co2']['data']/atm0.lay['air']['data'])
 
-    p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
+    p_lev = atm0.lev['pressure']['data'] * 1000.0 # convert to dyne/cm^2
     dp_lev = (p_lev[:-1]-p_lev[1:]) # convert to dyne/cm^2
     crs = mol_ext_wvl(wv0)
-    
+
     # original calculation
     # tauray = 0.00210966*(crs)*(p_lev[:-1]-p_lev[1:])/1013.25
-        
+
     if method == 'sfc':
-        const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
+        const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1.0e-28
         tauray = const_sfc*(crs)*(p_lev[:-1]-p_lev[1:])/p_lev[0]
     elif method == 'lay':
-        const_lay = dp_lev * A_ / (g * ma) * 1e-28
+        const_lay = dp_lev * A_ / (g * ma) * 1.0e-28
         tauray = const_lay*(crs)
     elif method == 'atm':
-        tauray = (crs) * 1e-28 * atm0.lay['air']['data'] * atm0.lay['thickness']['data'] * 1000 * 100
+        tauray = (crs) * 1.0e-28 * atm0.lay['air']['data'] * atm0.lay['thickness']['data'] * 1000.0 * 100.0
     else:
-        raise ValueError("Error [cal_mol_ext_atm]: method not supported.")
+        msg = 'Error [cal_mol_ext_atm]: method not supported.'
+        raise ValueError(msg)
+
+    add_reference(reference)
 
     return tauray
 
 
+
 def mol_ext_wvl(wv0):
+
     """
     Calculate the rayleigh scattering cross-section for given wavelength.
 
-    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
-    
+    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
+
     Input:
         wv0: wavelength (in microns)
     """
@@ -1098,11 +1118,11 @@ def mol_ext_wvl(wv0):
     num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
     den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
     crs = num/den
-    
+
     return crs   # in 10^-28 cm^2/molecule
 
-  
-  
+
+
 def cal_mol_ext(wv0, pz1, pz2):
 
     """
@@ -1114,13 +1134,17 @@ def cal_mol_ext(wv0, pz1, pz2):
         tauray: extinction
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
     in Python program:
-        result=bodhaine(0.5,1000,4)
+        result = cal_mol_ext(0.5,1000,4)
     Note: If you input an array of wavelengths, the result will also be an
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
 
+    reference = '\nRayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
+
     tauray = 0.00210966 * mol_ext_wvl(wv0) * (pz1-pz2) / 1013.25
-    
+
+    add_reference(reference)
+
     return tauray
 
 
@@ -1399,6 +1423,62 @@ def has_common_substring(input_str, substring_list):
         bool: True if input_str contains any substring from substring_list, False otherwise.
     """
     return any(substring in input_str for substring in substring_list)
+
+
+def calculate_raa(vaa, saa, forward_scattering='positive'):
+    """
+    Calculate the relative azimuth angle (RAA) in [0, 360) given:
+      - viewing azimuth angle (VAA) in [-180, 180)
+      - solar azimuth angle (SAA)  in [-180, 180)
+
+    RAA = (VAA - SAA) modulo 360, ensuring a result in [0, 360).
+
+    There's one of two ways to denote RAA:
+    1) RT theory -> forward scattering should be assigned to positive viewing zenith angles
+    2) remote sensing applications -> backscattering should be assigned to positive viewing zenith angles
+
+    Args:
+    ----
+        vaa (float or ndarr): Viewing azimuth angle in degrees, in [-180, 180).
+        saa (float or ndarr): Solar azimuth angle in degrees, in [-180, 180).
+        forward_scattering (str): one of 'positive' or 'negative'.
+                                  if positive (default), raa is calculated simply as vaa - saa
+                                  to denote that positive viewing zenith angles are assigned to forward scattering
+                                  if negative, raa is calculated by subtracting 180 from above
+                                  to denote that positive viewing zenith angles are assigned to backscattering
+
+    Returns:
+    -------
+        raa (float or ndarr): Relative azimuth angle in [0, 360).
+
+    Reference: Korkin et al. (2022), https://doi.org/10.1016/j.cpc.2021.108198
+
+    """
+    # Normalize input angles to [-180, 180)
+    # Not strictly necessary unless the inputs might be out of range
+    # vaa = ((vaa + 180) % 360) - 180
+    # saa = ((saa + 180) % 360) - 180
+
+    # convert them to [0, 360) range for subtraction
+    vaa0 = vaa % 360
+    saa0 = saa % 360
+
+    # compute RAA in [0, 360)
+    raa = (vaa0 - saa0) % 360
+
+    # if hotspot is observed at raa=0, then flip around nadir
+    # for instance if raa was 90, it should become 270
+    # if raa was 180, it should now be 0
+    if forward_scattering.lower() == 'negative':
+        raa = 180 - raa
+        raa = change_range(raa, 0, 360)
+
+    return raa
+
+
+def change_range(angle, min_value, max_value):
+    return (angle - min_value) % (max_value - min_value) + min_value
+
 
 
 

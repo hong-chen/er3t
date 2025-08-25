@@ -9,11 +9,11 @@ from er3t.util import mmr2vmr, cal_rho_air, downscale
 
 
 
-__all__ = ['cld_les']
+__all__ = ['cld_merra']
 
 
 
-class cld_les:
+class cld_merra:
 
     """
     Input:
@@ -39,7 +39,7 @@ class cld_les:
     """
 
 
-    ID = 'LES Cloud 3D'
+    ID = 'MERRA-2 Cloud 3D (M2I3NPASM/inst3_3d_asm_Np)'
 
 
     def __init__(self, \
@@ -71,7 +71,7 @@ class cld_les:
 
         else:
 
-            msg = '\nError [cld_les]: Please check if <%s> exists or provide <fname_nc> to proceed.' % self.fname
+            msg = '\nError [cld_merra]: Please check if <%s> exists or provide <fname_nc> to proceed.' % self.fname
             raise OSError(msg)
 
 
@@ -86,19 +86,19 @@ class cld_les:
 
             if file_correct:
                 if self.verbose:
-                    print('Message [cld_les]: Loading <%s> ...' % fname)
+                    print('Message [cld_merra]: Loading <%s> ...' % fname)
                 self.fname = obj.fname
                 self.lay   = obj.lay
                 self.lev   = obj.lev
             else:
-                msg = '\nError [cld_les]: <%s> is not the correct pickle file to load.' % fname
+                msg = '\nError [cld_merra]: <%s> is not the correct pickle file to load.' % fname
                 raise OSError(msg)
 
 
     def run(self, fname_nc):
 
         if self.verbose:
-            print('Message [cld_les]: Processing <%s> ...' % fname_nc)
+            print('Message [cld_merra]: Processing <%s> ...' % fname_nc)
 
         # pre process
         self.pre(fname_nc)
@@ -112,27 +112,37 @@ class cld_les:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_les]: Saving object into <%s> ...' % fname)
+                print('Message [cld_merra]: Saving object into <%s> ...' % fname)
             pickle.dump(self, f)
 
 
-    def pre_les(self, fname_nc, q_factor=2.0, index_t=0):
-
+    def pre(self, fname_nc, q_factor=2.0, index_t=0):
 
         try:
             from netCDF4 import Dataset
         except ImportError:
-            msg = '\nError [cld_les]: Please install <netCDF4> to proceed.'
+            msg = '\nError [cld_merra]: Please install <netCDF4> to proceed.'
             raise ImportError(msg)
 
         # read data
         #╭────────────────────────────────────────────────────────────────────────────╮#
         f = Dataset(fname_nc, 'r')
 
-        x      = f.variables['x'][:]/1000.0        # x direction (in km)
-        y      = f.variables['y'][:]/1000.0        # y direction (in km)
-        z0     = f.variables['z'][:]/1000.0        # z direction, altitude (in km)
-        qc_3d  = f.variables['QC'][index_t, ...]   # cloud water mixing ratio
+        lon    = f.variables['lon'][:].data   # x direction (in km)
+        lat    = f.variables['lat'][:].data   # y direction (in km)
+        p0     = f.variables['lev'][:].data   # z direction, altitude (in km)
+
+        qc_3d_ = f.variables['QL'][index_t, ...]*1000.0   # cloud water mixing ratio, convert from kg/kg to g/kg
+
+        x = np.arange(lon.size) * (2.0*np.pi*6378.0/lon.size)
+        y = np.arange(lat.size) * (2.0*np.pi*6378.0/lat.size)
+
+        # referenced from https://www.weather.gov/media/epz/wxcalc/pressureAltitude.pdf
+        z0 = (1.0 - (p0/1013.25)**0.190284) * 145366.45 * 0.3048 / 1000.0
+
+        qc_3d = qc_3d_.data
+        qc_3d[qc_3d_.mask] = 0.0
+
 
         # in vertical dimension, only select data where clouds exist to shrink data size
         # and accelerate calculation
@@ -141,22 +151,26 @@ class cld_les:
 
         qc_z = np.sum(qc_3d, axis=(1, 2))
         index_e = -1
-        while (qc_z[index_e-2] < 1e-10) and (Nz0+index_e>1):
+        while (qc_z[index_e-2] < 1e-4) and (Nz0+index_e>1):
             index_e -= 1
 
         if self.coarsen[2] > 1:
             index_e = min(self.coarsen[2]*((Nz0+index_e)//self.coarsen[2]+1), Nz0)
 
-        z      = z0[:index_e]   # z direction, altitude
+        z      = z0[:index_e]           # z direction, altitude
         qc_3d  = qc_3d[:index_e, :, :]
 
-        p      = f.variables['p'][:index_e]                   # pressure
-        qr_3d  = f.variables['QR'][index_t, :index_e, :, :]   # rain water mixing ratio
-        qv_3d  = f.variables['QV'][index_t, :index_e, :, :]   # water vapor
-        cer_3d = f.variables['REL'][index_t, :index_e, :, :]  # cloud effective radius
-        Nc_3d  = f.variables['NC'][index_t, :index_e, :, :]   # cloud droplet number concentration
-        t_3d   = f.variables['TABS'][index_t, :index_e, :, :] # absolute temperature
-        #╰──────────────────────────────────────────────────────────────╯#
+        p      = p0[:index_e]           # pressure
+        cer_3d = np.zeros_like(qc_3d)   # cloud effective radius
+        cer_3d[qc_3d>0.0] = 10.0
+        qv_3d_  = f.variables['QV'][index_t, :index_e, :, :]*1000.0 # specific humidity, convert from kg/kg to g/kg
+        t_3d_   = f.variables['T'][index_t, :index_e, :, :]         # absolute temperature
+
+        qv_3d = qv_3d_.data
+        qv_3d[qv_3d_.mask] = 0.0
+
+        t_3d = t_3d_.data
+        t_3d[t_3d_.mask]  = 283.15
 
         f.close()
         #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -166,7 +180,7 @@ class cld_les:
         dz  = z[1:]-z[:-1]
         diff = np.abs(dz-dz[0])
         if any([i>1e-3 for i in diff]):
-            msg = '\nWarning [cld_les]: Altitude is non-equidistant.'
+            msg = '\nWarning [cld_merra]: Altitude is non-equidistant.'
             warnings.warn(msg)
             self.logic_equidist = False
         else:
@@ -193,13 +207,13 @@ class cld_les:
         lwc_3d = qc_3d * 0.001 * rho_3d
 
         # grid cells that are cloudy
-        logic = (Nc_3d>=1) & (cer_3d>0.0)
+        logic = (cer_3d>0.0)
         cer_3d[np.logical_not(logic)] = 0.0
-        cer_3d[cer_3d<=0.5] = 0.5
+        cer_3d[cer_3d<=1.0] = 1.0
         cer_3d[cer_3d>=25.0] = 25.0
 
         # extinction coefficients (m^-1)
-        const0        = 0.75*q_factor/(1000.0*1e-6)
+        const0        = 0.75*q_factor/(1000.0*1.0e-6)
         ext_3d        = np.zeros_like(t_3d)
         ext_3d[logic] = const0 / cer_3d[logic] * lwc_3d[logic]
         #╰──────────────────────────────────────────────────────────────╯#
@@ -255,7 +269,7 @@ class cld_les:
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # level property
-        #╭──────────────────────────────────────────────────────────────╮#
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         self.lev = {}
 
         # in km
@@ -268,7 +282,7 @@ class cld_les:
         dz_ = np.append(dz_, dz_[-1])
         self.lev['altitude']  = {'data':z_ , 'name':'Altitude'       , 'units':'km'}
         self.lev['thickness'] = {'data':dz_, 'name':'Layer thickness', 'units':'km'}
-        #╰──────────────────────────────────────────────────────────────╯#
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # cloud optical thickness
         #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -281,10 +295,6 @@ class cld_les:
         self.lev['cot_2d'] = {'data': np.sum(cot_3d, axis=-1), 'name': 'Cloud optical thickness (2D)'}
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
-        # placeholder for <altitude> implementation
-        #╭────────────────────────────────────────────────────────────────────────────╮#
-        #╰────────────────────────────────────────────────────────────────────────────╯#
-
 
     def downscale(self, coarsen):
 
@@ -294,24 +304,24 @@ class cld_les:
             dnx, dny, dnz = coarsen
         elif len(coarsen) == 4:
             dnx, dny, dnz, dnt = coarsen
-            msg = '\nWarning [cld_les]: <coarsen=[dnx, dny, dnz, dnt]> will be deprecated in future release (will only support <coarsen=[dnx, dny, dnz]>)'
+            msg = '\nWarning [cld_merra]: <coarsen=[dnx, dny, dnz, dnt]> will be deprecated in future release (will only support <coarsen=[dnx, dny, dnz]>)'
             warnings.warn(msg)
         else:
-            msg = '\nError [cld_les]: Cannot interpret <coarsen> factors.'
+            msg = '\nError [cld_merra]: Cannot interpret <coarsen> factors.'
             raise OSError(msg)
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # downscale in process
         #╭────────────────────────────────────────────────────────────────────────────╮#
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or (self.Nz%dnz != 0):
-            msg = '\nError [cld_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['temperature']['data'].shape), str(coarsen))
+            msg = '\nError [cld_merra]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt).' % (str(self.lay['temperature']['data'].shape), str(coarsen))
             raise ValueError(msg)
 
         else:
             new_shape = (self.Nx//dnx, self.Ny//dny, self.Nz//dnz)
 
             if self.verbose:
-                print('Message [cld_les]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
+                print('Message [cld_merra]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
 
             self.lay['x']['data']         = downscale(self.lay['x']['data']        , (self.Nx//dnx,), operation='mean')
             self.lay['y']['data']         = downscale(self.lay['y']['data']        , (self.Ny//dny,), operation='mean')

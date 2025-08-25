@@ -63,21 +63,21 @@ Features
 --------
 :Radiative Transfer:
 
-  * **solver**: `MCARaTS <https://sites.google.com/site/mcarats/>`_ | `libRadtran <http://www.libradtran.org/>`_
+  * **solver**: `MCARaTS <https://sites.google.com/site/mcarats/>`_ | `SHDOM <https://github.com/hong-chen/shdom>`_ | `libRadtran <http://www.libradtran.org/>`_
 
   * **absorption**: `Correlated-k <https://doi.org/10.1029/90JD01945>`_ | `REPTRAN <https://doi.org/10.1016/j.jqsrt.2014.06.024>`_
 
   * **clouds**: `Mie (water) <https://doi.org/10.1364/AO.19.001505>`_
 
-  * **surface**: `Cox-Munk (ocean) <https://doi.org/10.1364/JOSA.44.000838>`_ | `LSRT Model (land) <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
+  * **surface**: `Ocean BRDF (Cox-Munk) <https://doi.org/10.1364/JOSA.44.000838>`_ | `Land BRDF (LSRT) <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
 
 :Remote Sensing:
 
   * **downloader**: `Worldview <https://worldview.earthdata.nasa.gov>`_ | `LAADS DAAC <https://ladsweb.modaps.eosdis.nasa.gov/archive/>`_ | `GES DISC <https://oco2.gesdisc.eosdis.nasa.gov/data/>`_ | `LANCE <https://nrt3.modaps.eosdis.nasa.gov/archive>`_
 
-  * **reader**: `MODIS <https://modis.gsfc.nasa.gov>`_ | `VIIRS <https://ncc.nesdis.noaa.gov/VIIRS/>`_ | `OCO-2 <https://ocov2.jpl.nasa.gov>`_ | `AHI <https://www.data.jma.go.jp/mscweb/en/index.html>`_
+  * **reader**: `MODIS <https://modis.gsfc.nasa.gov>`_ | `VIIRS <https://ncc.nesdis.noaa.gov/VIIRS/>`_ | `OCO-2 <https://ocov2.jpl.nasa.gov>`_ | `AHI <https://www.data.jma.go.jp/mscweb/en/index.html>`_ | `ABI <https://www.goes-r.gov/spacesegment/abi.html>`_
 
-  * **simulator**: `ARISE <https://zenodo.org/record/4029241>`_ | `CAMP²Ex <https://zenodo.org/record/7358509>`_
+  * **simulator**: `ARISE <https://zenodo.org/record/4029241>`_ | `CAMP²Ex <https://zenodo.org/record/7358509>`_ | `ARCSIX <https://espo.nasa.gov/arcsix>`_
 
 
 Resources
@@ -115,6 +115,8 @@ Resources
   * `Satellite-related <https://discord.com/channels/681619528945500252/1123343438121799690>`_
 
   * `MCARaTS-related <https://discord.com/channels/681619528945500252/1123343304126365837>`_
+
+  * `SHDOM-related <https://discord.com/channels/681619528945500252/1348788282162548937>`_
 
   * `libRadtran-related <https://discord.com/channels/681619528945500252/1123343342730760222>`_
 

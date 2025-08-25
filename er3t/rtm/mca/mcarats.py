@@ -23,24 +23,23 @@ class mcarats_ng:
     """
     Input:
 
+        date=   : keyword argument, datetime.datetime object, the date to calculate sun-earth distance
         atm_1ds=: Python list, contains object of atm_1d
         atm_3ds=: Python list, contains object of atm_3d
+        surface=: keyword argument, float, surface, default=0.03 (Lambertian surface albedo if it's a value)
+
+        solver=: keyword argument, integer, 0:3d mode, 1:partial-3d mode, 2:ipa mode, default=0
+        target=: keyword argument, string type, can be one of 'flux', 'radiance', and 'heating rate'
 
         Ng=    : integer, number of gs, e.g., for abs_16g, Ng=16
-        target=: string type, can be one of 'flux', 'radiance', and 'heating rate'
-        fdir=  : string type, this will be a directory to store input/output files
 
-        date=  : keyword argument, datetime.datetime object, the date to calculate sun-earth distance
-        target=: keyword argument, string, can be 'flux', 'radiance', default='flux'
-        surface_albedo=     : keyword argument, float, surface albedo, default=0.03
         solar_zenith_angle= : keyword argument, float, solar zenith angle, default=30.0
         solar_azimuth_angle=: keyword argument, float, solar azimuth angle, default=0.0
 
-        Nrun=     : keyword argument, integer, number of runs to calculate mean/std statistics, default=1
-
-        solver=   : keyword argument, integer, 0:3d mode, 1:partial-3d mode, 2:ipa mode, default=0
         photons=  : keyword argument, integer, number of photons, default=1e6
+        Nrun=     : keyword argument, integer, number of runs to calculate mean/std statistics, default=1
         Ncpu=     : keyword argument, integer, number of CPUs to use, default=1
+
         tune=     : keyword argument, boolen, whether to tune the MCARaTS calculation, default=False
         overwrite=: keyword argument, boolen, whether to overwrite existing MCARaTS output files (rerun MCARaTS), default=True
         np_mode=: keyword argument, string, photon distribution, can be 'even', 'weight', default='even'
@@ -61,13 +60,29 @@ class mcarats_ng:
 
     def __init__(self,                                          \
 
+                 date                = datetime.datetime.now(), \
+
                  atm_1ds             = [],                      \
                  atm_3ds             = [],                      \
+                 surface             = 0.03,                    \
 
-                 sca                 = None,                    \
+                 target              = 'flux',                  \
+                 solver              = '3d',                    \
 
                  Ng                  = 16,                      \
                  weights             = None,                    \
+
+                 sca                 = None,                    \
+
+                 solar_zenith_angle  = 30.0,                    \
+                 solar_azimuth_angle = 0.0,                     \
+
+                 sensor_zenith_angle = 0.0,                     \
+                 sensor_azimuth_angle= 0.0,                     \
+                 sensor_altitude     = 705.0,                   \
+                 sensor_type         = 'satellite',             \
+                 sensor_xpos         = 0.5,                     \
+                 sensor_ypos         = 0.5,                     \
 
                  fdir                = 'tmp-data/sim',          \
                  Nrun                = 3,                       \
@@ -75,22 +90,9 @@ class mcarats_ng:
                  mp_mode             = 'py',                    \
                  overwrite           = True,                    \
 
-                 date                = datetime.datetime.now(), \
                  comment             = False,                   \
                  tune                = False,                   \
-                 target              = 'flux',                  \
-                 surface_albedo      = 0.03,                    \
-                 solar_zenith_angle  = 30.0,                    \
-                 solar_azimuth_angle = 0.0,                     \
 
-                 sensor_zenith_angle = 0.0,                     \
-                 sensor_azimuth_angle= 0.0,                     \
-                 sensor_altitude     = 705000.0,                \
-                 sensor_type         = 'satellite',             \
-                 sensor_xpos         = 0.5,                     \
-                 sensor_ypos         = 0.5,                     \
-
-                 solver              = '3d',                    \
                  photons             = 1e7,                     \
                  base_ratio          = 0.05,                    \
 
@@ -118,9 +120,9 @@ class mcarats_ng:
         self.overwrite = overwrite
         self.mp_mode   = mp_mode.lower()
 
-        self.sca                 = sca
+        self.sca = sca
 
-        self.surface_albedo      = surface_albedo
+        self.surface = surface
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
 
@@ -215,7 +217,7 @@ class mcarats_ng:
             self.init_atm(atm_1ds=atm_1ds, atm_3ds=atm_3ds)
 
             # MCARaTS surface initialization
-            self.init_sfc(surface_albedo=surface_albedo)
+            self.init_sfc(surface=surface)
 
             # MCARaTS source (e.g., solar) initialization
             self.init_src(solar_zenith_angle=solar_zenith_angle, solar_azimuth_angle=solar_azimuth_angle)
@@ -233,7 +235,7 @@ class mcarats_ng:
 
     def init_wld(self, tune=False, verbose=False, \
         sensor_zenith_angle=0.0, sensor_azimuth_angle=0.0, \
-        sensor_type='satellite', sensor_altitude=705000.0, sensor_xpos=0.5, sensor_ypos=0.5):
+        sensor_type='satellite', sensor_altitude=705.0, sensor_xpos=0.5, sensor_ypos=0.5):
 
         if self.target.lower() in ['f', 'flux', 'irradiance']:
             self.target = 'flux'
@@ -304,7 +306,7 @@ class mcarats_ng:
                 self.nml[ig]['Rad_difr1']   = 0.0025
                 self.nml[ig]['Rad_the']     = 180.0 - sensor_zenith_angle
                 self.nml[ig]['Rad_phi']     = cal_mca_azimuth(sensor_azimuth_angle)
-                self.nml[ig]['Rad_zloc']    = sensor_altitude
+                self.nml[ig]['Rad_zloc']    = sensor_altitude*1000.0
 
             else:
                 msg = 'Error [mcarats_ng]: Cannot understand <target=%s>.' % self.target
@@ -383,34 +385,34 @@ class mcarats_ng:
             self.nml[ig]['Src_phi']   = cal_mca_azimuth(solar_azimuth_angle)
 
 
-    def init_sfc(self, surface_albedo=0.03):
+    def init_sfc(self, surface=0.03):
 
         for ig in range(self.Ng):
 
             if self.verbose:
                 print('Message [mcarats_ng]: Assume Lambertian surface ...')
 
-            if isinstance(surface_albedo, float) or isinstance(surface_albedo, np.float32) or isinstance(surface_albedo, np.float64):
+            if isinstance(surface, float) or isinstance(surface, np.float32) or isinstance(surface, np.float64):
 
                 self.nml[ig]['Sfc_mbrdf'] = np.array([1, 0, 0, 0])
                 self.nml[ig]['Sfc_mtype'] = 1
-                self.nml[ig]['Sfc_param(1)'] = surface_albedo
+                self.nml[ig]['Sfc_param(1)'] = surface
 
                 self.sfc_2d = False
 
-            elif isinstance(surface_albedo, er3t.rtm.mca.mca_sfc_2d):
+            elif isinstance(surface, er3t.rtm.mca.mca_sfc_2d):
 
-                for key in surface_albedo.nml.keys():
+                for key in surface.nml.keys():
                     if '2d' not in key:
-                        if os.path.exists(surface_albedo.nml['Sfc_inpfile']['data']):
-                            surface_albedo.nml['Sfc_inpfile']['data'] = os.path.relpath(surface_albedo.nml['Sfc_inpfile']['data'], start=self.fdir)
-                        self.nml[ig][key] = surface_albedo.nml[key]['data']
+                        if os.path.exists(surface.nml['Sfc_inpfile']['data']):
+                            surface.nml['Sfc_inpfile']['data'] = os.path.relpath(surface.nml['Sfc_inpfile']['data'], start=self.fdir)
+                        self.nml[ig][key] = surface.nml[key]['data']
 
                 self.sfc_2d = True
 
             else:
 
-                msg = '\nError [mcarats_ng]: Cannot ingest <surface_albedo>.'
+                msg = '\nError [mcarats_ng]: Cannot ingest <surface>.'
                 raise ValueError(msg)
 
 
@@ -486,7 +488,7 @@ class mcarats_ng:
     def print_info(self):
 
         print('╭────────────────────────────────────────────────────────╮')
-        print('                 General Information                      ')
+        print('                 General Information')
         print('               Simulation : %s %s' % (self.solver, self.target.title()))
         print('               Wavelength : %s' % (self.wvl_info))
 
@@ -501,12 +503,12 @@ class mcarats_ng:
             else:
                 print('      Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % self.sensor_zenith_angle)
             print('     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.sensor_azimuth_angle)
-            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude/1000.0))
+            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude))
 
         if not self.sfc_2d:
-            print('           Surface Albedo : %.2f' % self.surface_albedo)
+            print('           Surface Albedo : %.2f' % self.surface)
         else:
-            print('           Surface Albedo : 2D domain')
+            print('             Surface BRDF : 2D domain')
 
         if self.sca is None:
             print('           Phase Function : Henyey-Greenstein')

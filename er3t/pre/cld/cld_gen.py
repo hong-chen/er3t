@@ -192,7 +192,9 @@ class cld_gen_hem:
         self.y = np.arange(self.Ny) * self.dy
 
         self.dz = dz[0]
-        altitude_new  = np.arange(self.altitude[0], min([self.altitude[-1], max(self.radii)/self.w2h_ratio+self.altitude[0]])+self.dz, self.dz)
+        zlay_start = self.altitude[0]+self.dz/2.0
+        zlay_end   = min([self.altitude[-1], max(self.radii)/self.w2h_ratio+self.altitude[0]])+self.dz/2.0*1.01
+        altitude_new  = np.arange(zlay_start, zlay_end, self.dz)
         self.altitude = altitude_new
         self.z  = self.altitude-self.altitude[0]
         self.Nz = self.z.size
@@ -340,6 +342,8 @@ class cld_gen_hem:
         # cloud effective radius (3D)
         data = self.space_3d.copy()
         data[data>0] = cer0
+        data[data<=1.0] = 1.0
+        data[data>=25.0] = 25.0
         self.lay['cer'] = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
 
         # extinction coefficients (3D)
@@ -942,6 +946,10 @@ class cld_gen_cop:
         cer_3d[...] = cloud_effective_radius[:, :, None]
 
         cer_3d[ext_3d<=0.0] = 0.0
+
+        cer_3d[cer_3d<=1.0] = 1.0
+        cer_3d[cer_3d>=25.0] = 25.0
+
         self.lay['cer'] = {'data':cer_3d, 'name':'Cloud Effective radius', 'units':'micron'}
         #╰──────────────────────────────────────────────────────────────╯#
 
