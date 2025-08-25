@@ -8,3 +8,5 @@ R = 8.314472  # Ideal gas constant in J/(mol*K)
 Rd = 287.052874 # J/(kg*K), specific gas constant for dry air
 Rv = 461.525 # J/(kg*K), specific gas constant for water vapor
 EPSILON = Rd/Rv # ratio of the gas constant for dry air to that for water vapor (Rd/Rv) = 0.622 approx.
+g = 9.80665 # m/s^2, acceleration due to gravity
+M_dry = 0.02897  # kg/mol, molar mass of dry air
