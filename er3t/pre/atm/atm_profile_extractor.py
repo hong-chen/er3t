@@ -116,7 +116,7 @@ def cams_eac4(fname, outdir, date='20240605_1500', extent=[-65, -47.5, 83.3, 84]
         for i in range(pressure.size):
             f.write(f"{pressure[i]},{altitude[i]},{ozone_mean[i]},{no2_mean[i]},{q_mean[i]},{t_mean[i]}\n")
 
-        print(f"Processed data from {cams_eac4_file} saved to {output_csv_fname}")
+        print(f"Processed data from {os.path.basename(fname)} saved to {output_csv_fname}")
 
     with open(output_dat_fname, 'w') as f:
         f.write("pressure,z,o3,no2,q,temperature\n")
@@ -124,7 +124,7 @@ def cams_eac4(fname, outdir, date='20240605_1500', extent=[-65, -47.5, 83.3, 84]
         for i in range(pressure.size):
             f.write(f"{pressure[i]},{altitude[i]},{ozone_mean[i]},{no2_mean[i]},{q_mean[i]},{t_mean[i]}\n")
 
-        print(f"Processed data from {cams_eac4_file} saved to {output_dat_fname}")
+        print(f"Processed data from {os.path.basename(fname)} saved to {output_dat_fname}")
 
     plot_preprocessed_data(output_csv_fname, outdir=outdir)
 
@@ -232,7 +232,7 @@ def cams_egg4(fname, outdir, date='20240605_1500', extent=[-65, -47.5, 83.3, 84]
         for i in range(pressure.size):
             f.write(f"{pressure[i]},{altitude[i]},{ch4_mean[i]},{co2_mean[i]},{q_mean[i]},{t_mean[i]}\n")
 
-        print(f"Processed data from {cams_eac4_file} saved to {output_csv_fname}")
+        print(f"Processed data from {os.path.basename(fname)} saved to {output_csv_fname}")
 
     with open(output_dat_fname, 'w') as f:
         f.write("pressure,z,ch4,co2,q,temperature\n")
@@ -240,7 +240,7 @@ def cams_egg4(fname, outdir, date='20240605_1500', extent=[-65, -47.5, 83.3, 84]
         for i in range(pressure.size):
             f.write(f"{pressure[i]},{altitude[i]},{ch4_mean[i]},{co2_mean[i]},{q_mean[i]},{t_mean[i]}\n")
 
-        print(f"Processed data from {cams_eac4_file} saved to {output_dat_fname}")
+        print(f"Processed data from {os.path.basename(fname)} saved to {output_dat_fname}")
 
     plot_preprocessed_data(output_csv_fname, outdir=outdir)
 
