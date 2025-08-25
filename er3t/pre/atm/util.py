@@ -13,7 +13,7 @@ from er3t.util.modis import modis_07
 
 import er3t.common
 import er3t.util
-from er3t.util.constants import EPSILON, kb
+import er3t.util.constants as constants
 
 
 __all__ = [
@@ -75,6 +75,28 @@ def cal_num_den_from_mix_rat(mix_rat, pres, temp):
 
     return num_den
 
+
+def mmr_to_vmr(mmr, gas='co2', units='ppmv'):
+    """
+    Convert mass mixing ratio (MMR) to volume mixing ratio (VMR).
+
+    For O3, the formula is: VMR = 28.9644 / 47.9982 * 1e9 * MMR
+    For CO the formula is: VMR = 28.9644 / 28.0101 * 1e9 * MMR
+    For NO2 the formula is: VMR = 28.9644 / 46.0055 * 1e9 * MMR
+    For SO2 the formula is: VMR = 28.9644 / 64.0638 * 1e9 * MMR
+    For CO2 the formula is: VMR = 28.9644 / 44.0095 * 1e9 * MMR
+    For CH4 the formula is: VMR = 28.9644 / 16.0425 * 1e9 * MMR
+    Source: https://forum.ecmwf.int/t/convert-mass-mixing-ratio-mmr-to-mass-concentration-or-to-volume-mixing-ratio-vmr/1253
+    """
+    gas_species = gas.lower()
+    if gas_species not in constants.molar_masses.keys():
+        raise ValueError("Only {} are supported. Received unknown gas species: {}".format(constants.molar_masses.keys(), gas_species))
+    if units == 'ppmv':
+        return (28.9644 / constants.molar_masses[gas_species]) * 1e6 * mmr
+    elif units == 'ppbv':
+        return (28.9644 / constants.molar_masses[gas_species]) * 1e9 * mmr
+    else:
+        raise ValueError("Only `ppmv` and `ppbv` are supported as units, received: {}".format(units))
 
 
 # def modify_h2o(date, tmhr_range, levels, fname_atmmod='/Users/hoch4240/Chen/soft/libradtran/v2.0.1/data/atmmod/afglss.dat'):
@@ -428,15 +450,15 @@ def create_modis_dropsonde_atm(o2mix=0.20935,
         # replicate pressure levels for all geographical locations
         pprf_l = np.repeat(pprf_l_single, mwvmxprf_l.shape[1]).reshape(mwvmxprf_l.shape)
         r = mwvmxprf_l/1000 # mass mixing ratio to kg/kg
-        eprf_l = pprf_l*r/(EPSILON+r) # vapor pressure in hPa
+        eprf_l = pprf_l*r/(constants.EPSILON+r) # vapor pressure in hPa
 
         # Compute virtual temperature
-        Tv = tprf_l/(1 - (r/(r + EPSILON)) * (1 - EPSILON))
+        Tv = tprf_l/(1 - (r/(r + constants.EPSILON)) * (1 - constants.EPSILON))
 
-        air_layer = pprf_l*100/(kb*tprf_l)/1e6  # air number density in molec/cm3
-        dry_air_layer = (pprf_l-eprf_l)*100/(kb*tprf_l)/1e6  # air number density in molec/cm3
+        air_layer = pprf_l*100/(constants.kb*tprf_l)/1e6  # air number density in molec/cm3
+        dry_air_layer = (pprf_l-eprf_l)*100/(constants.kb*tprf_l)/1e6  # air number density in molec/cm3
         o2_layer = dry_air_layer*o2mix          # O2 number density in molec/cm3
-        h2o_layer = eprf_l*100/(kb*tprf_l)/1e6  # H2O number density in molec/cm3
+        h2o_layer = eprf_l*100/(constants.kb*tprf_l)/1e6  # H2O number density in molec/cm3
         # h2o_vmr = h2o_layer/dry_air_layer       # H2O volume mixing ratio
         h2o_vmr = eprf_l/(pprf_l-eprf_l)       # H2O volume mixing ratio
 
@@ -475,10 +497,10 @@ def create_modis_dropsonde_atm(o2mix=0.20935,
         t_dew_drop = np.array(dropsonde_df['t_dew'])
         mr_drop = np.array(dropsonde_df['h2o_mr'])
         r_drop = mr_drop/1000 # mass mixing ratio to kg/kg
-        eprf_drop = p_drop*r_drop/(EPSILON+r_drop)
-        air_drop = p_drop*100/(kb*t_dry_drop)/1e6  # air number density in molec/cm3
+        eprf_drop = p_drop*r_drop/(constants.EPSILON+r_drop)
+        air_drop = p_drop*100/(constants.kb*t_dry_drop)/1e6  # air number density in molec/cm3
         o2_drop = air_drop*o2mix          # O2 number density in molec/cm3
-        h2o_drop = eprf_drop*100/(kb*t_dry_drop)/1e6  # H2O number density in molec/cm3
+        h2o_drop = eprf_drop*100/(constants.kb*t_dry_drop)/1e6  # H2O number density in molec/cm3
         h2o_vmr_drop = eprf_drop/(p_drop-eprf_drop)       # H2O volume mixing ratio
 
         # calculate 10m wind speed from dropsonde data
