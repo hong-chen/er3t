@@ -140,7 +140,18 @@ class modis_dropsonde_atmmod:
                  extent       = None, \
                  overwrite    = False, \
                  plot         = True, \
-                 verbose      = False):
+    def __init__(
+            self,
+            zpt_file     = None,
+            fname        = None,
+            fname_atmmod = '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
+            fname_co2_clim = None,
+            fname_o3_clim = None,
+            date         = None,
+            extent       = None,
+            overwrite    = False,
+            plot         = True,
+            verbose      = False):
 
         self.verbose      = verbose
         self.zpt_file     = zpt_file
