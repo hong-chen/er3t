@@ -83,7 +83,7 @@ class cld_sat:
 
         else:
 
-            sys.exit('Error   [cld_sat]: Please check if \'%s\' exists or provide \'sat_obj\' to proceed.' % self.fname)
+            sys.exit('Error [cld_sat]: Please check if \'%s\' exists or provide \'sat_obj\' to proceed.' % self.fname)
 
 
     def load(self, fname):
@@ -98,7 +98,7 @@ class cld_sat:
                 self.lay    = obj.lay
                 self.lev    = obj.lev
             else:
-                sys.exit('Error   [cld_sat]: %s is not the correct \'pickle\' file to load.' % fname)
+                sys.exit('Error [cld_sat]: %s is not the correct \'pickle\' file to load.' % fname)
 
 
     def run(self, cth, cgt, dz):
@@ -134,18 +134,26 @@ class cld_sat:
 
     def process(self, sat_obj, cloud_geometrical_thickness=1.0, cloud_top_height=3.0, layer_thickness=1.0):
 
+        if isinstance(cloud_top_height, np.ndarray):
+            if np.nanmax(cloud_top_height) < (2.0*layer_thickness):
+                indices = np.where(cloud_top_height==np.nanmax(cloud_top_height))
+                cloud_top_height[indices[0][0], indices[1][0]] = 2.0*layer_thickness
+        else:
+            if cloud_top_height < (2.0*layer_thickness):
+                cloud_top_height = 2.0*layer_thickness
+
         self.lay = {}
         self.lev = {}
 
         keys = self.sat.data.keys()
         if ('lon_2d' not in keys) or ('lat_2d' not in keys) or ('cot_2d' not in keys) or ('cer_2d' not in keys):
-            sys.exit('Error   [cld_sat]: Please make sure \'sat_obj.data\' contains \'lon_2d\', \'lat_2d\', \'cot_2d\' and \'cer_2d\'.')
+            sys.exit('Error [cld_sat]: Please make sure \'sat_obj.data\' contains \'lon_2d\', \'lat_2d\', \'cot_2d\' and \'cer_2d\'.')
 
         cloud_bottom_height = cloud_top_height-cloud_geometrical_thickness
 
         if isinstance(cloud_top_height, np.ndarray):
             if cloud_top_height.shape != self.sat.data['cot_2d']['data'].shape:
-                sys.exit('Error   [cld_sat]: The dimension of \'cloud_top_height\' does not match \'lon_2d\', \'lat_2d\', \'cot_2d\' and \'cer_2d\'.')
+                sys.exit('Error [cld_sat]: The dimension of \'cloud_top_height\' does not match \'lon_2d\', \'lat_2d\', \'cot_2d\' and \'cer_2d\'.')
 
             cloud_bottom_height[cloud_bottom_height<layer_thickness] = layer_thickness
             h_bottom = max([np.nanmin(cloud_bottom_height), layer_thickness])
@@ -159,7 +167,7 @@ class cld_sat:
             h_top    = min([cloud_top_height, 30.0])
 
         if h_bottom >= h_top:
-            sys.exit('Error   [cld_sat]: Cloud bottom height is greater than cloud top height, check whether the input cloud top height \'cth\' is in the units of \'km\'.')
+            sys.exit('Error [cld_sat]: Cloud bottom height is greater than cloud top height, check whether the input cloud top height \'cth\' is in the units of \'km\'.')
 
         levels   = np.arange(h_bottom, h_top+0.1*layer_thickness, layer_thickness)
         self.atm = atm_atmmod(levels=levels)
@@ -200,6 +208,8 @@ class cld_sat:
         self.lay['lon']      = copy.deepcopy(self.sat.data['lon_2d'])
         self.lay['lat']      = copy.deepcopy(self.sat.data['lat_2d'])
         self.lay['cot']      = copy.deepcopy(self.sat.data['cot_2d'])
+        if 'cth_2d' in self.sat.data.keys():
+            self.lay['cth'] = copy.deepcopy(self.sat.data['cth_2d'])
 
         self.lev['altitude'] = copy.deepcopy(self.atm.lev['altitude'])
 
@@ -235,7 +245,6 @@ class cld_sat:
                 if indices.size == 0:
                     indices = np.array([-1])
 
-
                 dz    = self.atm.lay['thickness']['data'][indices].sum() * 1000.0
                 ext_3d[i, j, indices] = cot0/dz
 
@@ -255,12 +264,12 @@ class cld_sat:
 
         if (self.Nx%dnx != 0) or (self.Ny%dny != 0) or \
            (self.Nz%dnz != 0):
-            sys.exit('Error   [cld_mod]: the original dimension %s is not divisible with %s, please check input (dnx, dny, dnz).' % (str(self.lay['temperature']['data'].shape), str(coarsen)))
+            sys.exit('Error [cld_sat]: the original dimension %s is not divisible with %s, please check input (dnx, dny, dnz).' % (str(self.lay['temperature']['data'].shape), str(coarsen)))
         else:
             new_shape = (self.Nx//dnx, self.Ny//dny, self.Nz//dnz)
 
             if self.verbose:
-                print('Message [cld_mod]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
+                print('Message [cld_sat]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
 
             self.lay['x']['data']         = downscale(self.lay['x']['data']       , (self.Nx//dnx,), operation='mean')
             self.lay['y']['data']         = downscale(self.lay['y']['data']       , (self.Ny//dny,), operation='mean')

@@ -354,7 +354,7 @@ class modis_l1b:
 
         rad_off = hdf_dset_250.attributes()['radiance_offsets']    + hdf_dset_500.attributes()['radiance_offsets']    + hdf_dset_1km_solar.attributes()['radiance_offsets'] + hdf_dset_1km_emissive.attributes()['radiance_offsets']
         rad_sca = hdf_dset_250.attributes()['radiance_scales']     + hdf_dset_500.attributes()['radiance_scales']     + hdf_dset_1km_solar.attributes()['radiance_scales'] + hdf_dset_1km_emissive.attributes()['radiance_scales']
-        ref_off = hdf_dset_250.attributes()['reflectance_offsets'] + hdf_dset_500.attributes()['reflectance_offsets'] + hdf_dset_1km_solar.attributes()['reflectance_offsets'] + list(np.full(-99, num_emissive_bands))
+        ref_off = hdf_dset_250.attributes()['reflectance_offsets'] + hdf_dset_500.attributes()['reflectance_offsets'] + hdf_dset_1km_solar.attributes()['reflectance_offsets'] + list(np.full(num_emissive_bands, -99))
         ref_sca = hdf_dset_250.attributes()['reflectance_scales']  + hdf_dset_500.attributes()['reflectance_scales']  + hdf_dset_1km_solar.attributes()['reflectance_scales'] + list(np.ones(num_emissive_bands))
         cnt_off = hdf_dset_250.attributes()['corrected_counts_offsets'] + hdf_dset_500.attributes()['corrected_counts_offsets'] + hdf_dset_1km_solar.attributes()['corrected_counts_offsets'] + list(np.full(num_emissive_bands, -99))
         cnt_sca = hdf_dset_250.attributes()['corrected_counts_scales'] + hdf_dset_500.attributes()['corrected_counts_scales'] + hdf_dset_1km_solar.attributes()['corrected_counts_scales'] + list(np.ones(num_emissive_bands))
@@ -1501,20 +1501,33 @@ class modis_09:
 
 
     def __init__(self, \
-                 fname,  \
+                 fname=None,  \
+                 fnames=None,
+                 extent=None, \
                  resolution = '1km', \
                  param = 'surface_reflectance', \
                  ancillary_qa = False, \
                  bands = [1, 4, 3]):
 
-
-        self.fname        = fname              # file name
+        if fnames is None:
+            self.fname        = fname              # file name
+        elif fname is not None:
+            self.fnames       = fnames             # file name of the pickle file
+        else:
+            raise ValueError('Either fname or fnames must be provided.')
         self.resolution   = resolution.lower() # resolution
         self.param        = param.lower()      # parameter to extract
         self.ancillary_qa = ancillary_qa       # flag to get ancillary and qa data
         self.bands        = bands              # list of band names
+        self.extent      = extent            # specified region [westmost, eastmost, southmost, northmost]
 
-        self.read(fname)
+        # self.read(fname)
+        if fnames is None:
+            self.read(fname)
+        else:
+            for fname_ in self.fnames:
+
+                self.read(fname_)
 
 
     def qa_250m(self, hdf_obj):
@@ -1581,8 +1594,8 @@ class modis_09:
     def extract_surface_reflectance(self, hdf_obj):
         """ Extract surface reflectance data """
         # get lon/lat
-        lon, lat  = hdf_obj.select('Longitude'), hdf_obj.select('Latitude')
-        lon, lat = lon[:], lat[:]
+        lon0, lat0  = hdf_obj.select('Longitude'), hdf_obj.select('Latitude')
+        lon, lat = lon0[:], lat0[:]
 
         # check that if bands are provided that they are valid
         if (self.bands is not None) and (not set(self.bands).issubset(list(MODIS_L1B_HKM_1KM_BANDS.keys()))):
@@ -1631,19 +1644,45 @@ class modis_09:
                 modland_qa, all_bands_qa, atm_correction, adjacent_correction = self.qa_500m_1km(hdf_obj)
 
 
+        # 1. If region (extent=) is specified, filter data within the specified region
+        # 2. If region (extent=) is not specified, filter invalid data
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        if self.extent is None:
+
+            if 'actual_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['actual_range']
+                lat_range = lat0.attributes()['actual_range']
+            elif 'valid_range' in lon0.attributes().keys():
+                lon_range = lon0.attributes()['valid_range']
+                lat_range = lat0.attributes()['valid_range']
+            else:
+                lon_range = [-180.0, 180.0]
+                lat_range = [-90.0 , 90.0]
+
+        else:
+
+            lon_range = [self.extent[0]-0.01, self.extent[1]+0.01]
+            lat_range = [self.extent[2]-0.01, self.extent[3]+0.01]
+
+        logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
+        lon       = lon[logic]
+        lat       = lat[logic]
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
         # save the data
         if hasattr(self, 'data'):
 
             self.data['lon'] = dict(name='Longitude'           , data=np.hstack((self.data['lon']['data'], lon)),     units='degrees')
             self.data['lat'] = dict(name='Latitude'            , data=np.hstack((self.data['lat']['data'], lat)),     units='degrees')
             self.data['wvl'] = dict(name='Wavelength'          , data=np.hstack((self.data['wvl']['data'], wvl)),     units='nm')
-            self.data['surface_reflectance'] = dict(name='Surface Reflectance', data=np.hstack((self.data['surface_reflectance']['data'], surface_reflectance)),     units='N/A')
+            self.data['surface_reflectance'] = dict(name='Surface Reflectance', data=np.hstack((self.data['surface_reflectance']['data'], surface_reflectance[:, logic])),     units='N/A')
 
             if self.ancillary_qa:
-                self.data['modland_qa'] = dict(name='MODLAND QA'  , data=np.hstack((self.data['modland_qa']['data'], modland_qa)),     units='N/A')
-                self.data['all_bands_qa'] = dict(name='Band QA for all avaialble bands in increasing order (band 1, band 2, etc.)'  , data=np.hstack((self.data['all_bands_qa']['data'], all_bands_qa)),     units='N/A')
-                self.data['atm_correction_qa'] = dict(name='Atmospheric correction QA'  , data=np.hstack((self.data['atm_correction_qa']['data'], atm_correction)),     units='N/A')
-                self.data['adjacent_correction_qa'] = dict(name='Adjacency correction QA'  , data=np.hstack((self.data['adjacent_correction_qa']['data'], adjacent_correction)),     units='N/A')
+                self.data['modland_qa'] = dict(name='MODLAND QA'  , data=np.hstack((self.data['modland_qa']['data'], modland_qa[logic])),     units='N/A')
+                self.data['all_bands_qa'] = dict(name='Band QA for all avaialble bands in increasing order (band 1, band 2, etc.)'  , data=np.hstack((self.data['all_bands_qa']['data'], all_bands_qa[:, logic])),     units='N/A')
+                self.data['atm_correction_qa'] = dict(name='Atmospheric correction QA'  , data=np.hstack((self.data['atm_correction_qa']['data'], atm_correction[logic])),     units='N/A')
+                self.data['adjacent_correction_qa'] = dict(name='Adjacency correction QA'  , data=np.hstack((self.data['adjacent_correction_qa']['data'], adjacent_correction[logic])),     units='N/A')
 
         else:
 
@@ -1651,14 +1690,14 @@ class modis_09:
             self.data['lon'] = dict(name='Longitude'               , data=lon,     units='degrees')
             self.data['lat'] = dict(name='Latitude'                , data=lat,     units='degrees')
             self.data['wvl'] = dict(name='Wavelength'              , data=wvl,     units='nm')
-            self.data['surface_reflectance'] = dict(name='Surface Reflectance', data=surface_reflectance,     units='N/A')
+            self.data['surface_reflectance'] = dict(name='Surface Reflectance', data=surface_reflectance[:, logic],     units='N/A')
 
             if self.ancillary_qa:
                 self.qa = {}
-                self.qa['modland_qa'] = dict(name='MODLAND QA'  , data=modland_qa,     units='N/A')
-                self.qa['all_bands_qa'] = dict(name='Band QA for all available bands in increasing order (band 1, band 2, etc.)'  , data=all_bands_qa,     units='N/A')
-                self.qa['atm_correction_qa'] = dict(name='Atmospheric correction QA'  , data=atm_correction,     units='N/A')
-                self.qa['adjacent_correction_qa'] = dict(name='Adjacency correction QA'  , data=adjacent_correction,     units='N/A')
+                self.qa['modland_qa'] = dict(name='MODLAND QA'  , data=modland_qa[logic],     units='N/A')
+                self.qa['all_bands_qa'] = dict(name='Band QA for all available bands in increasing order (band 1, band 2, etc.)'  , data=all_bands_qa[:, logic],     units='N/A')
+                self.qa['atm_correction_qa'] = dict(name='Atmospheric correction QA'  , data=atm_correction[logic],     units='N/A')
+                self.qa['adjacent_correction_qa'] = dict(name='Adjacency correction QA'  , data=adjacent_correction[logic],     units='N/A')
 
 
     def extract_atmospheric_optical_depth(self, hdf_obj):
@@ -1877,6 +1916,7 @@ class modis_07:
         lat       = lat[logic]
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
+        # define pressure levels in the file (always the same)
         p_level = np.array([5, 10, 20, 30, 50, 70, 100, 150, 200, 250, 300, 400, 500, 620, 700, 780, 850, 920, 950, 1000])
 
         # Get cloud mask and flag fields

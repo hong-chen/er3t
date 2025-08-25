@@ -447,9 +447,15 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode='mean', squeeze=True):
     factors = np.zeros((Nz, mca_obj.Ng), dtype=np.float32)
 
     for iz in range(Nz):
-        norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
+        # Calculate with slit function
+        # norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
+        # for ig in range(mca_obj.Ng):
+        #     factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
+        
+        # Calculate without slit function
+        norm[iz] = sol_fac/(abs_obj.coef['weight']['data']).sum()
         for ig in range(mca_obj.Ng):
-            factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
+            factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]
     # -
 
 

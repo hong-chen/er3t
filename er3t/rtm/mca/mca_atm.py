@@ -237,6 +237,7 @@ class mca_atm_3d:
 
         lay_index = get_lay_index(self.cld.lay['altitude']['data'], self.atm.lay['altitude']['data'])
 
+
         nx   = self.cld.lay['nx']['data']
         ny   = self.cld.lay['ny']['data']
         nz3  = int(lay_index.size)
@@ -289,32 +290,29 @@ class mca_atm_3d:
                 ind = np.arange(float(ref.size)) + 1.0
 
                 f_interp_ssa = interpolate.interp1d(ref, ssa, bounds_error=False, fill_value='extrapolate')
+                f_interp_ind = interpolate.interp1d(ref, ind, bounds_error=False, fill_value='extrapolate')
+                f_interp_asy = interpolate.interp1d(ref, asy, bounds_error=False, fill_value='extrapolate')
+
                 atm_omg[logic_cld, 0] = f_interp_ssa(cer[logic_cld])
+                atm_apf[logic_cld, 0] = f_interp_asy(cer[logic_cld])
 
-                if self.phase:
-                    # using actual phase function can reveal angular dependence but increase uncertainty
-                    f_interp_ind = interpolate.interp1d(ref, ind, bounds_error=False, fill_value='extrapolate')
-                    atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
+                # if preffered to use the previous version's index interpolation setting
+                # for the phase function, uncomment the following lines
 
-                    # set left-outbound to left-most value
-                    #╭────────────────────────────────────────────────────────────────────────────╮#
-                    logic0 = (atm_apf>0.0) & (atm_apf<ind[0])
-                    atm_omg[logic0] = ssa[0]
-                    atm_apf[logic0] = ind[0]
-                    #╰────────────────────────────────────────────────────────────────────────────╯#
+                # atm_apf[logic_cld, 0] = f_interp_ind(cer[logic_cld])
+                # set left-outbound to left-most value
+                #╭────────────────────────────────────────────────────────────────────────────╮#
+                # logic0 = (atm_apf>0.0) & (atm_apf<ind[0])
+                # atm_omg[logic0] = ssa[0]
+                # atm_apf[logic0] = ind[0]
+                #╰────────────────────────────────────────────────────────────────────────────╯#
 
-                    # set right-outbound to right-most value
-                    #╭────────────────────────────────────────────────────────────────────────────╮#
-                    logic1 = (atm_apf>ind[-1])
-                    atm_omg[logic1] = ssa[-1]
-                    atm_apf[logic1] = ind[-1]
-                    #╰────────────────────────────────────────────────────────────────────────────╯#
-                else:
-                    # by Yu-Wen Chen
-                    # using asymmetry parameters can improve the uncertainty but lose angular dependence
-                    f_interp_asy = interpolate.interp1d(ref, asy, bounds_error=False, fill_value='extrapolate')
-                    atm_apf[logic_cld, 0] = f_interp_asy(cer[logic_cld])
-
+                # set right-outbound to right-most value
+                #╭────────────────────────────────────────────────────────────────────────────╮#
+                # logic1 = (atm_apf>ind[-1])
+                # atm_omg[logic1] = ssa[-1]
+                # atm_apf[logic1] = ind[-1]
+                #╰────────────────────────────────────────────────────────────────────────────╯#
 
         self.nml['Atm_nx']     = copy.deepcopy(self.cld.lay['nx'])
         self.nml['Atm_ny']     = copy.deepcopy(self.cld.lay['ny'])
