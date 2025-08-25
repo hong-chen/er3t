@@ -370,6 +370,8 @@ class ARCSIXAtmModel:
             if self.verbose:
                 print('Message [ARCSIXAtmModel]: Using user-provided altitude levels')
 
+            self.levels_source = 'user'
+
         elif 'altitude' in self.external_data_sources:
             # Use external altitude data
             alt_data = self.load_external_data('altitude')
@@ -379,12 +381,15 @@ class ARCSIXAtmModel:
             if alt_data['units'].lower() == 'm':
                 self.levels /= 1000.  # Convert meters to kilometers
 
+            self.levels_source = 'external'
+
             if self.verbose:
                 print(f'Message [ARCSIXAtmModel]: Using altitude levels from {self.external_data_sources["altitude"]["file"]}')
 
         else:
             # Use AFGL altitude levels as default
             self.levels = self.afgl_levels
+            self.levels_source = 'afgl'
 
             if self.verbose:
                 print('Message [ARCSIXAtmModel]: Using AFGL altitude levels as default')
@@ -441,7 +446,7 @@ class ARCSIXAtmModel:
         # sort variables by ascending altitude before interpolating
         indices = np.argsort(self.atm0['altitude']['data'])
         for key in self.atm0.keys():
-            if key not in self.afgl_vars_persist: # otherwise unchanged afgl vars will get sorted wrongly
+            if ((key in self.afgl_vars_persist) and (self.levels_source == 'afgl')) or ((key not in self.afgl_vars_persist) and (self.levels_source == 'external')):
                 self.atm0[key]['data'] = self.atm0[key]['data'][indices]
 
         # step 4: interpolate to desired levels
