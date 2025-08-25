@@ -528,6 +528,7 @@ def example_03_rad_atm1d_clear_over_snow(
 
     # atmosphere object
     atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+#     atm0      = er3t.pre.atm.ARCSIXAtmModel(levels=levels, config_file=os.path.join(er3t.common.fdir_er3t, 'er3t/pre/atm/', 'arcsix_atm_profile_config.yaml'), verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5')
 
     # data can be accessed at
     #     atm0.lev['altitude']['data']
@@ -631,7 +632,7 @@ def example_03_rad_atm1d_clear_over_snow(
     # vaa = np.arange(0.0, 360.1, 2.0)
     # vza = np.repeat(30.0, vaa.size)
 
-    vaa_1d = np.arange(0.0, 360.1, 1.0)
+    vaa_1d = np.arange(0.0, 359.1, 1.0)
     vza_1d = np.arange(1.0, 89.1, 1.0)
     vaa_2d, vza_2d = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
     vaa = vaa_2d.ravel()
@@ -643,7 +644,7 @@ def example_03_rad_atm1d_clear_over_snow(
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2024, 5, 18),
+            date=datetime.datetime(2024, 6, 5),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             surface=sfc_2d,
