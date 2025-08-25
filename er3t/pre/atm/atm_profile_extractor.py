@@ -294,11 +294,12 @@ def plot_preprocessed_data(csv_fname, outdir):
 
 if __name__ == "__main__":
 
+    from er3t.common import fdir_er3t
     # Define the input and output file paths
-    cams_eac4_file = 'data/test_data/cams_eac4_o3_no2_q/data_plev.nc'
+    cams_eac4_file = os.path.join(fdir_er3t, 'data/test_data/cams_eac4_o3_no2_q/data_plev.nc')
 
     # create outdir
-    outdir = 'data/preprocessed_data_atm_corr/'
+    outdir = os.path.join(fdir_er3t, 'data/preprocessed_data_atm_corr/')
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
@@ -308,7 +309,7 @@ if __name__ == "__main__":
     pressure, z, ozone_mean, no2_mean, q_mean, t_mean = cams_eac4(cams_eac4_file, outdir=outdir, date=date_str, extent=extent)
 
     # Define the input and output file paths
-    cams_egg4_file = 'data/test_data/cams_egg4_ch4_co2/data_plev.nc'
+    cams_egg4_file = os.path.join(fdir_er3t, 'data/test_data/cams_egg4_ch4_co2/data_plev.nc')
 
     # date_str = '20240605_1500' # june 5 at 1500Z
     date_str = '20190605_1500' # 2019 data since 2024 data is not available
