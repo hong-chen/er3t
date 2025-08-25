@@ -9,7 +9,7 @@ import numpy as np
 
 import er3t.common
 import er3t.util
-from er3t.pre.atm.util import interp_pres_from_alt_temp, interp_ch4, parse_afgl_data_to_dataframe
+from er3t.pre.atm.util import interp_pres_from_alt_temp, interp_ch4
 from er3t.util import constants
 
 
