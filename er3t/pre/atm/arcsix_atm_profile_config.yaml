@@ -1,0 +1,59 @@
+# ARCSIX Atmospheric Model Configuration
+
+_description: "ARCSIX Atmospheric Model Configuration"
+_version: "1.0"
+
+# Path to base atmospheric model file (e.g., AFGL dat file)
+fname_base_atmmod: "er3t/data/atmmod/afglss.dat"
+
+# List of atmospheric gas species to process
+gases:
+  - o3
+  - h2o
+  - co2
+  - no2
+  - ch4
+
+# Custom data sources for atmospheric variables
+# provide absolute paths wherever possible to prevent issues down the line
+# and use lower case for variable names if possible
+external_data_sources:
+  temperature:
+    file: "data/preprocessed_data_atm_corr/data_plev_20240605_1500.dat"
+    data_column: "temperature"
+    units: "K"
+
+  h2o:
+    file: "data/preprocessed_data_atm_corr/data_plev_20240605_1500.dat"
+    data_column: "q"
+    units: "kg/kg"
+
+  o3:
+    file: "data/preprocessed_data_atm_corr/data_plev_20240605_1500.dat"
+    data_column: "o3"
+    units: "kg/kg"
+
+  pressure:
+    file: "data/preprocessed_data_atm_corr/data_plev_20240605_1500.dat"
+    data_column: "pressure"
+    units: "hPa"
+
+  altitude:
+    file: "data/preprocessed_data_atm_corr/data_plev_20240605_1500.dat"
+    data_column: "z"
+    units: "m"
+
+  no2:
+    file: "data/preprocessed_data_atm_corr/data_plev_20240605_1500.dat"
+    data_column: "no2"
+    units: "kg/kg"
+
+  ch4:
+    file: "data/preprocessed_data_atm_corr/data_plev_20190605_1500.dat"
+    data_column: "ch4"
+    units: "kg/kg"
+
+  co2:
+    file: "data/preprocessed_data_atm_corr/data_plev_20190605_1500.dat"
+    data_column: "co2"
+    units: "kg/kg"
