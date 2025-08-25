@@ -132,6 +132,76 @@ def cal_num_den_from_mix_rat(mix_rat, pres, temp):
 #     np.savetxt('ARISE_ATM_%s.txt' % date.strftime('%Y%m%d'), new_data)
 
 
+def parse_afgl_data_to_dataframe(afgl_fname):
+    """
+    Convert AFGL atmospheric data lines to a pandas DataFrame.
+
+    Parameters
+    ----------
+    afgl_fname : str
+        Path to the AFGL atmospheric data file.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with columns: altitude, pressure, temperature, air, o3, o2, h2o, co2, no2
+        Units: km, mb, K, cm^-3, cm^-3, cm^-3, cm^-3, cm^-3, cm^-3
+    """
+    import pandas as pd
+
+    with open(afgl_fname) as f0:
+        afgl_data_lines = f0.readlines()
+
+    # Extract header information and data lines
+    header_lines = []
+    data_lines = []
+
+    for line in afgl_data_lines:
+        line_stripped = line.strip()
+        if line_stripped.startswith('#'):
+            header_lines.append(line_stripped)
+        elif line_stripped and not line_stripped.startswith('#'):
+            # This is a data line
+            data_lines.append(line_stripped)
+
+    # Parse column names from header
+    # Expected format: '#     z(km)      p(mb)        T(K)    air(cm-3)    o3(cm-3)     o2(cm-3)    h2o(cm-3)    co2(cm-3)     no2(cm-3)'
+    column_names = ['altitude', 'pressure', 'temperature', 'air', 'o3', 'o2', 'h2o', 'co2', 'no2']
+    column_units = ['km', 'mb', 'K', 'cm^-3', 'cm^-3', 'cm^-3', 'cm^-3', 'cm^-3', 'cm^-3']
+
+    # Parse data lines
+    data_rows = []
+    for line in data_lines:
+        # Split by whitespace and convert to float
+        values = line.split()
+        if len(values) >= 9:  # Ensure we have all required columns
+            try:
+                # Convert scientific notation strings to float
+                row_data = []
+                for val in values[:9]:  # Take first 9 values
+                    # Handle scientific notation like '4.307612E+11'
+                    row_data.append(float(val))
+                data_rows.append(row_data)
+            except ValueError as e:
+                print(f"Warning: Could not parse line '{line}': {e}")
+                continue
+
+    # Create DataFrame
+    if data_rows:
+        df = pd.DataFrame(data_rows, columns=column_names)
+
+        # Add metadata as attributes
+        df.attrs['units'] = dict(zip(column_names, column_units))
+        df.attrs['description'] = 'AFGL Atmospheric Profile'
+        df.attrs['header_info'] = header_lines
+
+        # Sort by altitude (ascending)
+        df = df.sort_values('altitude').reset_index(drop=True)
+
+        return df
+    else:
+        raise ValueError("No valid data rows found in AFGL data")
+
 
 def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
 
@@ -150,22 +220,27 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
         pn: interpolated pressure based on the input
     """
 
+    # Sort original data by altitude
     indices = np.argsort(alt)
     h = np.float64(alt[indices])
     p = np.float64(pres[indices])
     t = np.float64(temp[indices])
 
+    # Sort interpolation data by altitude
     indices = np.argsort(alt_inp)
     hn = np.float64(alt_inp[indices])
     tn = np.float64(temp_inp[indices])
 
+    # Calculate scale factor 'a' for barometric formula at layer midpoints
     n = p.size - 1
     a = 0.5*(t[1:]+t[:-1]) / (h[:-1]-h[1:]) * np.log(p[1:]/p[:-1])
-    z = 0.5*(h[1:]+h[:-1])
+    z = 0.5*(h[1:]+h[:-1])  # midpoint altitudes
 
+    # Determine altitude bounds
     z0  = np.min(z) ; z1  = np.max(z)
     hn0 = np.min(hn); hn1 = np.max(hn)
 
+    # Extend scale factor array if interpolation goes below original data
     if hn0 < z0:
         a = np.hstack((a[0], a))
         z = np.hstack((hn0, z))
@@ -173,6 +248,7 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
             msg = '\nWarning [interp_pres_from_alt_temp]: Standard atmosphere not sufficient (lower boundary).'
             warnings.warn(msg)
 
+    # Extend scale factor array if interpolation goes above original data
     if hn1 > z1:
         a = np.hstack((a, z[n-1]))
         z = np.hstack((z, hn1))
@@ -180,47 +256,62 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
             msg = '\nWarning [interp_pres_from_alt_temp]: Standard atmosphere not sufficient (upper boundary).'
             warnings.warn(msg)
 
+    # Interpolate scale factors to target altitudes
     an = np.interp(hn, z, a)
     pn = np.zeros_like(hn)
 
+    # Handle single point case
     if hn.size == 1:
         hi = np.argmin(np.abs(hn-h))
         pn = p[hi]*np.exp(-an*(hn-h[hi])/tn)
         return pn
 
+    # Apply barometric formula to each target altitude
     for i in range(pn.size):
-        hi = np.argmin(np.abs(hn[i]-h))
-        pn[i] = p[hi]*np.exp(-an[i]*(hn[i]-h[hi])/tn[i])
+        hi = np.argmin(np.abs(hn[i]-h))  # find closest original altitude
+        pn[i] = p[hi]*np.exp(-an[i]*(hn[i]-h[hi])/tn[i]) # barometric formula
 
-    dp = pn[:-1] - pn[1:]
-    pl = 0.5 * (pn[1:]+pn[:-1])
-    zl = 0.5 * (hn[1:]+hn[:-1])
+    # Calculate pressure differences and layer midpoints for smoothing
+    dp = pn[:-1] - pn[1:]  # pressure differences between adjacent levels
+    pl = 0.5 * (pn[1:]+pn[:-1])  # pressure at layer midpoints
+    zl = 0.5 * (hn[1:]+hn[:-1])  # altitude at layer midpoints
 
+    # Smooth pressure profile by rescaling pressure differences within original layers
     for i in range(n-2):
+        # Find which interpolated layers fall within this original layer
         indices = (zl >= h[i]) & (zl < h[i+1])
         ind = np.where(indices)[0]
         ni  = indices.sum()
+
         if ni >= 2:
+            # Calculate total pressure difference in this layer
             dpm = dp[ind].sum()
 
+            # Get boundary indices for linear interpolation
             i0 = np.min(ind)
             i1 = np.max(ind)
 
+            # Set up linear interpolation for pressure differences
             x1 = pl[i0]
             x2 = pl[i1]
             y1 = dp[i0]
             y2 = dp[i1]
 
+            # Calculate linear interpolation coefficients
             bb = (y2-y1) / (x2-x1)
             aa = y1 - bb*x1
+
+            # Calculate rescaling factor to conserve total pressure difference
             rescale = dpm / (aa+bb*pl[indices]).sum()
 
+            # Apply rescaling with warning if large correction needed
             if np.abs(rescale-1.0) > 0.1:
                 msg = '\nWarning [interp_pres_from_alt_temp]: Pressure smoothing failed at %.1f to %.1f km, rescaled with %f ...' % (h[i], h[i+1], rescale)
                 warnings.warn(msg)
             else:
                 dp[indices] = rescale*(aa+bb*pl[indices])
 
+    # Reconstruct final pressure profile from smoothed pressure differences
     for i in range(dp.size):
         pn[i+1] = pn[i] - dp[i]
 
@@ -231,10 +322,30 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
 def interp_ch4(alt_inp):
 
     """
-    input:
-        levels: numpy array, height in km
-    output:
-        ch4mix: mixing ratio of CH4
+    Interpolate methane (CH4) mixing ratio as a function of altitude.
+
+    This function provides CH4 volume mixing ratios based on a standard atmospheric
+    profile that decreases with altitude from 1.7 ppmv at surface to near-zero
+    at 40 km altitude.
+
+    Parameters
+    ----------
+    alt_inp : array_like
+        Altitude levels in kilometers above sea level where CH4 mixing ratios
+        are desired. Can be a scalar or array.
+
+    Returns
+    -------
+    ch4mix : ndarray
+        CH4 volume mixing ratio (dimensionless) at the requested altitude levels.
+        Values range from 1.7 ppmv at surface to 0 at 40+ km altitude.
+
+    Notes
+    -----
+    The reference profile is based on standard atmospheric CH4 concentrations
+    with linear interpolation between discrete altitude levels. The profile
+    assumes constant mixing ratio in the troposphere (~1.7 ppmv) with gradual
+    decrease in the stratosphere to zero at the stratopause.
     """
 
     # height
