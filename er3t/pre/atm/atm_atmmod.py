@@ -379,15 +379,12 @@ class ARCSIXAtmModel:
             if alt_data['units'].lower() == 'm':
                 self.levels /= 1000.  # Convert meters to kilometers
 
-            self.altitude_units = 'km'
-
             if self.verbose:
                 print(f'Message [ARCSIXAtmModel]: Using altitude levels from {self.external_data_sources["altitude"]["file"]}')
 
         else:
             # Use AFGL altitude levels as default
             self.levels = self.afgl_levels
-            self.altitude_units = 'km'
 
             if self.verbose:
                 print('Message [ARCSIXAtmModel]: Using AFGL altitude levels as default')
@@ -398,6 +395,9 @@ class ARCSIXAtmModel:
 
         # Calculate layer midpoints
         self.layers = 0.5 * (self.levels[1:] + self.levels[:-1])
+
+        # altitude must be in km
+        self.altitude_units = 'km'
 
 
     def load_initial_config(self, config_file):
@@ -467,13 +467,13 @@ class ARCSIXAtmModel:
             self.afgl_vars_overriden = list(set(self.afgl_vnames) & set(external_vars))
             self.new_vars_added = list(set(external_vars) - set(self.afgl_vnames))
 
-            if len(self.afgl_vars_persist) > 0:
+            if (len(self.afgl_vars_persist) > 0) and self.verbose:
                 print(f'Message [ARCSIXAtmModel]: Preserving the following AFGL variables, will need additional interpolation: {self.afgl_vars_persist}')
 
-            if len(self.afgl_vars_overriden) > 0:
+            if (len(self.afgl_vars_overriden) > 0) and self.verbose:
                 print(f'Message [ARCSIXAtmModel]: Overriding the following AFGL variables with external data: {self.afgl_vars_overriden}')
 
-            if len(self.new_vars_added) > 0:
+            if (len(self.new_vars_added) > 0) and self.verbose:
                 print(f'Message [ARCSIXAtmModel]: Adding the following new variables from external data: {self.new_vars_added}')
 
             for var in external_vars:
@@ -495,8 +495,6 @@ class ARCSIXAtmModel:
                         self.atm0[var]['data'] = self.levels
                         self.atm0[var]['units'] = self.altitude_units
                         self.atm0[var]['source'] = os.path.basename(self.external_data_sources[var]['file'])
-
-                        print(self.altitude_units)
 
                     else:
                         self.atm0[var] = external_data_var
@@ -718,11 +716,12 @@ class ARCSIXAtmModel:
             plt.close('all')
             print(f'Saved figure to {os.path.dirname(self.fname_out)}')
 
+
 if __name__ == '__main__':
 
     # define levels in km
-    # levels = np.concatenate((np.arange(0, 2.1, 0.2),
-    #                         np.arange(2.5, 4.1, 0.5),
-    #                         np.arange(5.0, 10.1, 2.5),
-    #                         np.array([15, 20, 30., 40., 50.])))
-    arcsix_atm_mod = ARCSIXAtmModel(levels=None, config_file='/Users/vikas/workspace/arctic/er3t-git/arcsix_atm_profile_config.yaml', verbose=1, fname_out='/Users/vikas/workspace/arctic/er3t-git/data/test_data/arcsix_atm_profile_output.h5')
+    levels = np.concatenate((np.arange(0, 2.1, 0.2),
+                            np.arange(2.5, 4.1, 0.5),
+                            np.arange(5.0, 10.1, 2.5),
+                            np.array([15, 20, 30., 40., 50.])))
+    arcsix_atm_mod = ARCSIXAtmModel(levels=levels, config_file='arcsix_atm_profile_config.yaml', verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5')
