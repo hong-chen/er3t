@@ -276,24 +276,45 @@ class atm_atmmod:
 class ARCSIXAtmModel:
     """
     ARCSIXAtmModel is similar to atm_atmmod but specifically designed for the ARCSIX project.
-    It can be used to create atmospheric models based on the ARCSIX requirements and AFGL profiles.
+    It can be used to create atmospheric models using ARCSIX data, reanalyses, and AFGL profiles.
 
     It is designed to be modular to allow for specific atmospheric modeling needs using a combination of reanalyses,
-    satellite data, AFGL profiles, and ARCSIX measurements.
+    satellite data, AFGL profiles, and ARCSIX measurements. This is achieved via a flexible data handling system
+    that can incorporate various data sources and seamlessly integrate different altitude grids to the desired one.
     """
 
     ID = 'ARCSIX Atmosphere Model'
 
     def __init__(self,
-                 levels       = None,
-                 fname_out    = None,
-                 config_file  = None,
-                 verbose      = False):
+                 levels        = None,
+                 levels_source = 'external',
+                 fname_out     = None,
+                 config_file   = None,
+                 verbose       = False):
 
         self.levels       = levels
         self.fname_out    = fname_out
         self.verbose      = verbose
         self.config_file  = config_file
+
+        # set levels_source based on input
+        if (levels is None) and (levels_source == 'afgl'):
+            self.levels_source = 'afgl'
+            print('Message [ARCSIXAtmModel]: Using AFGL default altitude levels')
+
+        elif (levels is None) and (levels_source == 'external'):
+            self.levels_source = 'external'
+            print('Message [ARCSIXAtmModel]: Using external altitude levels')
+
+        elif (levels is not None):
+            self.levels_source = 'user'
+            print('Message [ARCSIXAtmModel]: Using user-defined altitude levels.\nPlease ensure that that they are in units of km')
+
+        else:
+            raise ValueError('Error [ARCSIXAtmModel]: Please provide valid levels or levels_source.')
+
+        # Initialize grid tracking for modular data source handling
+        self.variable_grid_mapping = {}  # Track which altitude grid each variable uses
 
         # Load configuration if provided
         if config_file is not None:
@@ -313,8 +334,11 @@ class ARCSIXAtmModel:
             if 'external_data_sources' in config:
                 self.external_data_sources = config['external_data_sources']
                 external_data_vars = self.external_data_sources.keys()
-                if ('altitude' not in external_data_vars) or ('pressure' not in external_data_vars):
-                    raise ValueError('Error [ARCSIXAtmModel]: Configuration file must specify "altitude" and "pressure" in "external_data_sources".')
+
+                # Only require altitude and pressure for external levels mode
+                if self.levels_source == 'external':
+                    if ('altitude' not in external_data_vars) or ('pressure' not in external_data_vars):
+                        raise ValueError('Error [ARCSIXAtmModel]: Configuration file must specify "altitude" and "pressure" in "external_data_sources" when using external levels.')
 
             else:
                 self.external_data_sources = None
@@ -348,7 +372,11 @@ class ARCSIXAtmModel:
         for key in self.atm0.keys():
             self.atm0[key]['data'] = self.atm0[key]['data'][indices]
 
-        self.afgl_levels = np.array(self.atm0['altitude']['data']) # create a copy for later use if needed
+        self.afgl_levels = np.sort(np.array(self.atm0['altitude']['data'])) # create a copy for later use if needed
+
+        # Track that all AFGL variables start on the AFGL grid
+        for vname in vnames:
+            self.variable_grid_mapping[vname] = 'afgl'
 
         # Convert gas densities to mixing ratios for gases
         for key in self.atm0.keys():
@@ -363,33 +391,47 @@ class ARCSIXAtmModel:
     def setup_vertical_levels_layers(self):
         """Determine vertical levels and layers from external data, user input, or AFGL default"""
 
-        if self.levels is not None:
+        if self.levels_source == 'user':
             # Use user-provided levels
             if self.levels.size <= 1:
                 raise ValueError('Error [ARCSIXAtmModel]: Size of levels must be greater than 1.')
             if self.verbose:
                 print('Message [ARCSIXAtmModel]: Using user-provided altitude levels')
 
-            self.levels_source = 'user'
+            # and also copy to another variable for sorting and interpolation later and set others to None
+            self.user_levels = np.sort(self.levels.copy())
+            self.atm0['altitude']['data'] = self.user_levels
+            self.external_levels = None
 
-        elif 'altitude' in self.external_data_sources:
+            # Update grid mapping for altitude since it's now on the target grid
+            self.variable_grid_mapping['altitude'] = 'target'
+
+        elif self.levels_source == 'external':
             # Use external altitude data
-            alt_data = self.load_external_data('altitude')
-            self.levels = alt_data['data']
+            alt_data_dict = self.load_external_data('altitude')
 
             # we want altitude in km
-            if alt_data['units'].lower() == 'm':
-                self.levels /= 1000.  # Convert meters to kilometers
+            if alt_data_dict['units'].lower() == 'm':
+                alt_data_dict['data'] /= 1000.  # Convert meters to kilometers
 
-            self.levels_source = 'external'
+            self.levels = alt_data_dict['data']
 
             if self.verbose:
                 print(f'Message [ARCSIXAtmModel]: Using altitude levels from {self.external_data_sources["altitude"]["file"]}')
 
+            # but also copy to another variable for sorting and interpolation, set others to None
+            self.external_levels = alt_data_dict['data'].copy()
+            self.user_levels = None
+            self.atm0['altitude']['data'] = self.external_levels
+
+            # Update grid mapping for altitude since it's now on the external grid
+            self.variable_grid_mapping['altitude'] = 'external'
+
         else:
-            # Use AFGL altitude levels as default
-            self.levels = self.afgl_levels
-            self.levels_source = 'afgl'
+            # Use AFGL altitude levels as default, set others to None
+            self.levels = self.afgl_levels.copy()
+            self.external_levels = None
+            self.user_levels = None
 
             if self.verbose:
                 print('Message [ARCSIXAtmModel]: Using AFGL altitude levels as default')
@@ -437,27 +479,57 @@ class ARCSIXAtmModel:
         self.create_base_atmosphere()
 
         # step 2: set up vertical levels and layers
-        # creates self.levels and self.layers
+        # creates self.levels and self.layers, might update self.atm0 altitude data
         self.setup_vertical_levels_layers()
 
         # step 3: now bring in other data sources
         self.add_external_data_sources()
 
-        # sort variables by ascending altitude before interpolating
-        indices = np.argsort(self.atm0['altitude']['data'])
-        for key in self.atm0.keys():
-            if ((key in self.afgl_vars_persist) and (self.levels_source == 'afgl')) or ((key not in self.afgl_vars_persist) and (self.levels_source == 'external')):
-                self.atm0[key]['data'] = self.atm0[key]['data'][indices]
+        # step 4: validate grid consistency before processing
+        # this step is important to ensure that sorting and interpolation are done correctly
+        self.validate_grid_consistency()
 
-        # step 4: interpolate to desired levels
+        # step 5: sort variables by their respective altitude grids before interpolating
+        self.sort_atmospheric_data()
+
+        # step 6: interpolate to desired levels
         self.interpolate_to_levels()
 
-        # step 5: convert mixing ratio [unitless or kg/kg] to number density [cm^-3]
+        # step 7: convert mixing ratio [unitless or kg/kg] to number density [cm^-3]
         self.calculate_number_density_from_mass_mixing_ratio()
 
-        # step 6: (optional) save to file
+        # step 8: (optional) save to file
         if self.fname_out is not None:
             self.save_to_file()
+
+
+    def sort_atmospheric_data(self):
+        """
+        Sort atmospheric data by ascending altitude, handling mixed data sources correctly.
+
+        This method handles the complex case where some variables come from external sources
+        (with potentially different altitude grids) and others remain from AFGL data.
+        """
+
+        afgl_sort_indices = np.argsort(self.afgl_levels)
+        self.afgl_levels = self.afgl_levels[afgl_sort_indices] # sort AFGL levels
+        if self.external_levels is not None:
+            external_sort_indices = np.argsort(self.external_levels)
+            self.external_levels = self.external_levels[external_sort_indices] # sort external levels
+
+        # Apply appropriate sorting to each variable based on its grid assignment
+        for key in self.atm0.keys():
+            if key != 'altitude': # only sort non-altitude vars
+                grid_type = self.variable_grid_mapping.get(key, 'afgl')
+
+                if grid_type == 'afgl':
+                    self.atm0[key]['data'] = self.atm0[key]['data'][afgl_sort_indices]
+                elif grid_type == 'external' and self.external_levels is not None:
+                    self.atm0[key]['data'] = self.atm0[key]['data'][external_sort_indices]
+                # Don't sort target grid variables - they're already on final grid
+
+        if self.verbose:
+            print('Message [ARCSIXAtmModel]: Completed atmospheric data sorting')
 
 
     def add_external_data_sources(self):
@@ -481,36 +553,88 @@ class ARCSIXAtmModel:
             if (len(self.new_vars_added) > 0) and self.verbose:
                 print(f'Message [ARCSIXAtmModel]: Adding the following new variables from external data: {self.new_vars_added}')
 
+            # Initialize external levels tracking
+        self.external_data_grids = {}  # Track altitude grids for each external variable
+
+        if self.external_data_sources is not None:
+            external_vars = list(self.external_data_sources.keys())
+
+            # identify which variables are overridden vs preserved vs new
+            # as these will need additional interpolation step to the new altitudes
+            self.afgl_vars_persist = list(set(self.afgl_vnames) - set(external_vars))
+            self.afgl_vars_overriden = list(set(self.afgl_vnames) & set(external_vars))
+            self.new_vars_added = list(set(external_vars) - set(self.afgl_vnames))
+
+            if (len(self.afgl_vars_persist) > 0) and self.verbose:
+                print(f'Message [ARCSIXAtmModel]: Preserving the following AFGL variables, will need additional interpolation: {self.afgl_vars_persist}')
+
+            if (len(self.afgl_vars_overriden) > 0) and self.verbose:
+                print(f'Message [ARCSIXAtmModel]: Overriding the following AFGL variables with external data: {self.afgl_vars_overriden}')
+
+            if (len(self.new_vars_added) > 0) and self.verbose:
+                print(f'Message [ARCSIXAtmModel]: Adding the following new variables from external data: {self.new_vars_added}')
+
             for var in external_vars:
 
                 if self.verbose:
                     print(f'Message [ARCSIXAtmModel]: Adding external data for {var} from {self.external_data_sources[var]["file"]}')
 
-
                 # external_data_var is a dict containing the keys 'name', 'units', 'source', and 'data'
                 external_data_var = self.load_external_data(var=var)
 
+                # Load and store the corresponding altitude grid for this variable
+                if var != 'altitude':
+                    try:
+                        # Try to get altitude data from the same file
+                        var_df = self.read_dat_file(fname=self.external_data_sources[var]['file'])
+                        if 'altitude_km' in var_df.columns:
+                            altitude_data = var_df['altitude_km'].values
+                            if self.external_data_sources[var]['units'].lower() == 'm':
+                                altitude_data /= 1000.
+                            self.external_data_grids[var] = altitude_data
+                        elif 'altitude' in var_df.columns:
+                            altitude_data = var_df['altitude'].values
+                            self.external_data_grids[var] = altitude_data
+                    except Exception:
+                        # If can't get altitude, will use AFGL grid
+                        pass
+
                 # Override AFGL data with external data
                 if var in self.atm0:
-                    self.atm0[var] = external_data_var
 
-                    # Update units for altitude separately
-                    if var == 'altitude':
-                        self.atm0[var]['name'] = 'altitude'
-                        self.atm0[var]['data'] = self.levels
-                        self.atm0[var]['units'] = self.altitude_units
-                        self.atm0[var]['source'] = os.path.basename(self.external_data_sources[var]['file'])
+                    # for altitude, we don't want to replace anything already done unless external mode was selected
+                    if (var == 'altitude'):
+                        external_levels = external_data_var['data'].copy() # make copy for sorting
+                        if external_data_var['units'].lower() == 'm': # ensure units are consistent (in km)
+                            external_levels /= 1000.
 
-                    else:
+                        self.external_levels = np.sort(external_levels) # also save as separate variable for sorting
+
+                        if self.levels_source == 'external': # only update the altitude dictionary if levels source was external
+                            self.atm0[var]['name'] = 'altitude'
+                            self.atm0[var]['data'] = self.levels
+                            self.atm0[var]['units'] = self.altitude_units
+                            self.atm0[var]['source'] = os.path.basename(self.external_data_sources[var]['file'])
+                            self.variable_grid_mapping[var] = 'target'  # Final target grid
+
+                        elif self.levels_source == 'user': # if user provided levels, do not change anything except source
+                            self.atm0[var]['source'] = 'user-defined'
+                            self.variable_grid_mapping[var] = 'target'  # Final target grid
+
+                    elif (var != 'altitude'):
+                        # update or add the variable as is
                         self.atm0[var] = external_data_var
+                        self.variable_grid_mapping[var] = 'external'  # External source grid
 
                     if self.verbose:
                         print(f'Message [ARCSIXAtmModel]: Replaced {var} with external data from {self.external_data_sources[var]["file"]}')
 
-                # Add new variable not in AFGL
+                # if new variable not in AFGL, update source and print
                 else:
+                    # update or add the variable as is
                     self.atm0[var] = external_data_var
                     self.atm0[var]['source'] = os.path.basename(self.external_data_sources[var]['file'])
+                    self.variable_grid_mapping[var] = 'external'  # External source grid
                     if self.verbose:
                         print(f'Message [ARCSIXAtmModel]: Added new variable {var} from external data')
 
@@ -527,6 +651,61 @@ class ARCSIXAtmModel:
 
         external_data = {'name': var, 'units': self.external_data_sources[var]['units'], 'source':os.path.basename(self.external_data_sources[var]['file']), 'data': data}
         return external_data
+
+
+    def get_source_grid_for_variable(self, var):
+        """Get the source grid type for a given variable"""
+        return self.variable_grid_mapping.get(var, 'afgl')
+
+
+    def get_altitudes_for_grid(self, grid_type):
+        """Get the altitude array for a specific grid type"""
+        if grid_type == 'afgl':
+            return self.afgl_levels
+        elif grid_type == 'external':
+            return self.external_levels  # May be None
+        elif grid_type == 'target':
+            # Return appropriate target grid based on levels source
+            if self.levels_source == 'user':
+                return self.user_levels
+            elif self.levels_source == 'external':
+                return self.external_levels
+            else:
+                return self.levels
+        else:
+            raise ValueError(f"Unknown grid type: {grid_type}")
+
+
+    def get_altitudes_for_variable(self, var):
+        """Get the altitude array for a specific variable, handling variable-specific grids"""
+        grid_type = self.get_source_grid_for_variable(var)
+
+        if grid_type == 'external' and var in self.external_data_grids:
+            # Use variable-specific grid if available
+            return self.external_data_grids[var]
+        else:
+            # Use standard grid type
+            return self.get_altitudes_for_grid(grid_type)
+
+
+    def validate_grid_consistency(self):
+        """Validate that all variables have consistent grid assignments"""
+        for var, grid_type in self.variable_grid_mapping.items():
+            if var in self.atm0:
+                grid_altitudes = self.get_altitudes_for_grid(grid_type)
+                if grid_altitudes is None:
+                    # Skip validation for variables on grids that don't exist
+                    continue
+
+                expected_size = grid_altitudes.shape[0]
+                actual_size = self.atm0[var]['data'].shape[0]
+
+                if actual_size != expected_size:
+                    raise ValueError(f"Variable '{var}' has {actual_size} points but "
+                                   f"its assigned grid '{grid_type}' has {expected_size} points")
+
+        if self.verbose:
+            print('Message [ARCSIXAtmModel]: Grid consistency validation passed')
 
 
     def interpolate_to_levels(self):
@@ -552,33 +731,83 @@ class ARCSIXAtmModel:
             'source': 'calculated from levels'
         }
 
-        # Interpolate all variables except altitude and pressure to the user input/final altitudes in self.lev and self.lay
+        # Interpolate all variables except altitude and pressure using grid-aware approach
         for key in self.atm0.keys():
             if key not in ['altitude', 'pressure']:
+                source_altitudes = self.get_altitudes_for_variable(key)
 
-                # if afgl variables was preserved, it will need to be updated
-                # to the new altitudes first before interpolation
-                if key in self.afgl_vars_persist:
+                # Skip interpolation if source grid doesn't exist
+                if source_altitudes is None:
                     if self.verbose:
-                        print(f'Message [ARCSIXAtmModel]: Interpolating AFGL variable {key}')
+                        print(f'Warning [ARCSIXAtmModel]: Skipping {key} - source grid not available')
+                    continue
 
-                    # Store original AFGL data for interpolation
-                    original_afgl_data = self.atm0[key]['data'].copy()
-                    original_afgl_altitudes = self.afgl_levels.copy()
+                if self.verbose:
+                    grid_type = self.get_source_grid_for_variable(key)
+                    print(f'Message [ARCSIXAtmModel]: Interpolating {key} from {grid_type} grid')
 
-                    self.lev[key]['data'] = np.interp(self.lev['altitude']['data'], original_afgl_altitudes, original_afgl_data)
-                    self.lay[key]['data'] = np.interp(self.lay['altitude']['data'], original_afgl_altitudes, original_afgl_data)
+                # Ensure source data and altitudes have compatible shapes
+                if self.atm0[key]['data'].shape[0] != source_altitudes.shape[0]:
+                    raise ValueError(f"Shape mismatch for {key}: data shape {self.atm0[key]['data'].shape} "
+                                   f"doesn't match altitude grid shape {source_altitudes.shape}")
 
-                else:
-                    self.lev[key]['data'] = np.interp(self.lev['altitude']['data'], self.atm0['altitude']['data'], self.atm0[key]['data'])
-                    self.lay[key]['data'] = np.interp(self.lay['altitude']['data'], self.atm0['altitude']['data'], self.atm0[key]['data'])
+                self.lev[key]['data'] = np.interp(
+                    self.lev['altitude']['data'],
+                    source_altitudes,
+                    self.atm0[key]['data']
+                )
 
-                    # print(key, '\n non afgl', self.lev[key]['data'])
 
-        # else: # Use barometric formula for pressure interpolation
-        self.lev['pressure']['data'] = interp_pres_from_alt_temp(self.atm0['pressure']['data'], self.atm0['altitude']['data'], self.atm0['temperature']['data'], self.lev['altitude']['data'], self.lev['temperature']['data'])
+                self.lay[key]['data'] = np.interp(
+                    self.lay['altitude']['data'],
+                    source_altitudes,
+                    self.atm0[key]['data']
+                )        # Handle pressure interpolation with consistent reference grid
+        # Find the grid that has both pressure and temperature data
+        pressure_grid = self.get_source_grid_for_variable('pressure')
+        temperature_grid = self.get_source_grid_for_variable('temperature')
 
-        self.lay['pressure']['data'] = interp_pres_from_alt_temp(self.atm0['pressure']['data'], self.atm0['altitude']['data'], self.atm0['temperature']['data'], self.lay['altitude']['data'], self.lay['temperature']['data'])
+        if pressure_grid == temperature_grid:
+            # Same grid - use directly
+            ref_pressure_grid = pressure_grid
+        else:
+            # Different grids - use AFGL as reference and interpolate if needed
+            ref_pressure_grid = 'afgl'
+            if pressure_grid != 'afgl':
+                # Interpolate pressure to AFGL grid
+                pressure_source_altitudes = self.get_altitudes_for_grid(pressure_grid)
+                self.atm0['pressure']['data'] = np.interp(
+                    self.afgl_levels,
+                    pressure_source_altitudes,
+                    self.atm0['pressure']['data']
+                )
+            if temperature_grid != 'afgl':
+                # Interpolate temperature to AFGL grid
+                temp_source_altitudes = self.get_altitudes_for_grid(temperature_grid)
+                self.atm0['temperature']['data'] = np.interp(
+                    self.afgl_levels,
+                    temp_source_altitudes,
+                    self.atm0['temperature']['data']
+                )
+
+        ref_altitudes = self.get_altitudes_for_grid(ref_pressure_grid)
+
+        if self.verbose:
+            print(f'Message [ARCSIXAtmModel]: Using {ref_pressure_grid} grid for pressure interpolation')
+            print('shapes', self.atm0['pressure']['data'].shape, ref_altitudes.shape,
+                  self.atm0['temperature']['data'].shape, self.lev['altitude']['data'].shape,
+                  self.lev['temperature']['data'].shape)
+
+        # Use barometric formula for pressure interpolation
+        self.lev['pressure']['data'] = interp_pres_from_alt_temp(
+            self.atm0['pressure']['data'], ref_altitudes, self.atm0['temperature']['data'],
+            self.lev['altitude']['data'], self.lev['temperature']['data']
+        )
+
+        self.lay['pressure']['data'] = interp_pres_from_alt_temp(
+            self.atm0['pressure']['data'], ref_altitudes, self.atm0['temperature']['data'],
+            self.lay['altitude']['data'], self.lay['temperature']['data']
+        )
 
 
     def calculate_air_number_density(self):
@@ -725,8 +954,5 @@ class ARCSIXAtmModel:
 if __name__ == '__main__':
 
     # define levels in km
-    levels = np.concatenate((np.arange(0, 2.1, 0.2),
-                            np.arange(2.5, 4.1, 0.5),
-                            np.arange(5.0, 10.1, 2.5),
-                            np.array([15, 20, 30., 40., 50.])))
-    arcsix_atm_mod = ARCSIXAtmModel(levels=levels, config_file='arcsix_atm_profile_config.yaml', verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5')
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0))
+    arcsix_atm_mod = ARCSIXAtmModel(levels=levels, levels_source='user', config_file='er3t/pre/atm/arcsix_atm_profile_config.yaml', verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5')
