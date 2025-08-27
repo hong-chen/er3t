@@ -2,6 +2,7 @@ import os
 import sys
 import copy
 import pickle
+import datetime
 import pandas as pd
 import yaml
 import numpy as np
@@ -290,12 +291,14 @@ class ARCSIXAtmModel:
                  levels_source = 'external',
                  fname_out     = None,
                  config_file   = None,
+                 plot          = False,
                  verbose       = False):
 
         self.levels       = levels
         self.fname_out    = fname_out
         self.verbose      = verbose
         self.config_file  = config_file
+        self.plot         = plot
 
         # set levels_source based on input
         if (levels is None) and (levels_source == 'afgl'):
@@ -915,7 +918,7 @@ class ARCSIXAtmModel:
                     raise ValueError(f'Error [ARCSIXAtmModel]: Unrecognized units for {gas} in levels: {self.lay[gas]["units"]}.\nIf the gas is in mass mixing ratio units, ensure it is in {mmr_units}, or if it is in volume mixing ratio units, ensure it is in {vmr_units}.')
 
 
-    def save_to_file(self, plot=True):
+    def save_to_file(self):
         """Save atmospheric model to hdf5"""
         outdir = os.path.dirname(self.fname_out)
         if len(outdir) > 0 and (not os.path.exists(outdir)):
@@ -952,11 +955,18 @@ class ARCSIXAtmModel:
                 lay_group[var].attrs['units'] = self.lay[var]['units']
                 lay_group[var].attrs['source'] = self.lay[var]['source']
 
+            # add metadata
+            f.attrs['title'] = 'ARCSIX Atmospheric Model Profiles'
+            f.attrs['description'] = 'ARCSIX Atmospheric Model Profiles'
+            f.attrs['computer'] = os.uname()[1]
+            f.attrs['software'] = f'EaR3T file {os.path.abspath(__file__)}, class {self.__class__.__name__}'
+            f.attrs['created_on'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%SZ')# utc time
+
         if self.verbose:
             print(f'Message [ARCSIXAtmModel]: Saved to {self.fname_out}')
 
 
-        if plot:
+        if self.plot:
             from er3t.util.plot_util import set_plot_fonts, MPL_STYLE_PATH
             import matplotlib.pyplot as plt
 
@@ -1004,4 +1014,4 @@ if __name__ == '__main__':
 
     # define levels in km
     levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0))
-    arcsix_atm_mod = ARCSIXAtmModel(levels=levels, levels_source='user', config_file='er3t/pre/atm/arcsix_atm_profile_config.yaml', verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5')
+    arcsix_atm_mod = ARCSIXAtmModel(levels=levels, levels_source='user', config_file='er3t/pre/atm/arcsix_atm_profile_config.yaml', verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5', plot=False)
