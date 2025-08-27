@@ -186,11 +186,11 @@ class atm_atmmod:
         for key in self.atm0.keys():
             self.atm0[key]['data'] = self.atm0[key]['data'][indices]
 
-        # 2. calculate the mixing ratio from volume number density for each gas
+        # 2. calculate the volume mixing ratio from volume number density for each gas
         for key in self.atm0.keys():
             if key in self.gases:
                 self.atm0[key]['data']  = self.atm0[key]['data']/self.atm0['air']['data']
-                self.atm0[key]['units'] = 'N/A'
+                self.atm0[key]['units'] = 'dimensionless' # kg/kg
 
 
     def interp(self):
@@ -496,7 +496,7 @@ class ARCSIXAtmModel:
         self.interpolate_to_levels()
 
         # step 7: convert mixing ratio [unitless or kg/kg] to number density [cm^-3]
-        self.calculate_number_density_from_mass_mixing_ratio()
+        self.calculate_number_density_from_mixing_ratio()
 
         # step 8: (optional) save to file
         if self.fname_out is not None:
@@ -794,9 +794,6 @@ class ARCSIXAtmModel:
 
         if self.verbose:
             print(f'Message [ARCSIXAtmModel]: Using {ref_pressure_grid} grid for pressure interpolation')
-            print('shapes', self.atm0['pressure']['data'].shape, ref_altitudes.shape,
-                  self.atm0['temperature']['data'].shape, self.lev['altitude']['data'].shape,
-                  self.lev['temperature']['data'].shape)
 
         # Use barometric formula for pressure interpolation
         self.lev['pressure']['data'] = interp_pres_from_alt_temp(
@@ -832,14 +829,15 @@ class ARCSIXAtmModel:
         }
 
 
-    def calculate_number_density_from_mass_mixing_ratio(self):
+    def calculate_number_density_from_mixing_ratio(self):
         """
-        Calculate number density from mass mixing ratio for all gases and update lev and lay in-place
+        Calculate number density from mass or volume mixing ratios for all gases and update lev and lay in-place
 
-        Units of mass mixing ratio must be kg/kg, output number density will be in #/cm^3 (or simply, cm^-3)
-        Calculation is done via ideal gas law:
-        number density of gas x:
-        n_x = (Na * P * C_x) / (R * T)
+        For mass mixing ratios (kg/kg):
+        number density of gas x: n_x = (Na * P * C_x) / (R * T)
+
+        For volume mixing ratios (#/cm3):
+        First convert to dimensionless volume mixing ratio, then apply factor
 
         where
         Na: Avogadro's number (/mol)
@@ -850,20 +848,69 @@ class ARCSIXAtmModel:
         Reference: Eq. (7): https://projects.iq.harvard.edu/files/acmg/files/intro_atmo_chem_bookchap1.pdf
         """
 
-        # 100 is the conversion from hPa to Pa; all others being SI results in /m^3 so an additional factor of 1e-6 is needed to convert to /cm^3
-        for key in self.gases:
+        # 100 is the conversion from hPa to Pa; all others being SI results in /m^3 so an additional factor of 1e-6 is needed to convert to /cm^3 and therefore the 1e-4 is used as the final unit conversion factor
+        self.lev['factor'] = {
+            'name': 'number density factor',
+            'units': 'cm^-3',
+            'data': (constants.NA / constants.R) * (self.lev['pressure']['data'] / self.lev['temperature']['data']) * 1.0e-4,
+            'source': 'calculated'
+        }
 
-            if (key == 'air') and ('air' in self.afgl_vars_persist): # needs to be dealt with separately
+        self.lay['factor']  = {
+          'name': 'number density factor',
+          'units': 'cm^-3',
+          'data': (constants.NA / constants.R) * (self.lay['pressure']['data'] / self.lay['temperature']['data']) * 1.0e-4,
+          'source': 'calculated'
+        }
+
+        mmr_units = ['kg/kg', 'n/a', 'unitless', 'dimensionless', 'g/g']
+        vmr_units = ['#/cm3', 'cm^-3', '/cm3']
+
+        for gas in self.gases:
+
+            if (gas == 'air') and ('air' in self.afgl_vars_persist): # needs to be dealt with separately
                 self.calculate_air_number_density() # updates lev and key in place
                 continue
 
-            if key in self.lev:
-                self.lev[key]['data'] = (constants.NA * self.lev['pressure']['data'] * 100 * self.lev[key]['data']) * 10**-6 / (constants.R * self.lev['temperature']['data'])
-                self.lev[key]['units'] = 'cm^-3'
+            # Handle levels
+            if gas in self.lev:
+                if self.lev[gas]['units'] in mmr_units:
+                    if self.verbose:
+                        print(f'Message [ARCSIXAtmModel]: Converting {gas} from mass mixing ratio to number density')
 
-            if key in self.lay:
-                self.lay[key]['data'] = (constants.NA * self.lay['pressure']['data'] * 100 * self.lay[key]['data']) * 10**-6 / (constants.R * self.lay['temperature']['data'])
-                self.lay[key]['units'] = 'cm^-3'
+                    self.lev[gas]['data'] = self.lev[gas]['data'] * self.lev['factor']['data'] # apply factor
+                    self.lev[gas]['units'] = 'cm^-3'
+
+                elif self.lev[gas]['units'] in vmr_units:
+                    if self.verbose:
+                        print(f'Message [ARCSIXAtmModel]: Converting {gas} from volume mixing ratio to number density')
+
+                    vmr_lev_data = self.lev[gas]['data'] / self.lev['air']['data'] # dimensionless vol. mixing ratio
+                    self.lev[gas]['data'] = vmr_lev_data * self.lev['factor']['data'] # apply factor to go back to volume units
+                    self.lev[gas]['units'] = 'cm^-3'
+
+                else:
+                    raise ValueError(f'Error [ARCSIXAtmModel]: Unrecognized units for {gas} in levels: {self.lev[gas]["units"]}.\nIf the gas is in mass mixing ratio units, ensure it is in {mmr_units}, or if it is in volume mixing ratio units, ensure it is in {vmr_units}.')
+
+            # Handle layers
+            if gas in self.lay:
+                if self.lay[gas]['units'] in mmr_units:
+                    if self.verbose:
+                        print(f'Message [ARCSIXAtmModel]: Converting {gas} from mass mixing ratio to number density')
+
+                    self.lay[gas]['data'] = self.lay[gas]['data'] * self.lay['factor']['data'] # apply factor
+                    self.lay[gas]['units'] = 'cm^-3'
+
+                elif self.lay[gas]['units'] in vmr_units:
+                    if self.verbose:
+                        print(f'Message [ARCSIXAtmModel]: Converting {gas} from volume mixing ratio to number density')
+
+                    vmr_lay_data = self.lay[gas]['data'] / self.lay['air']['data'] # dimensionless vol. mixing ratio
+                    self.lay[gas]['data'] = vmr_lay_data * self.lay['factor']['data'] # apply factor to go back to volume units
+                    self.lay[gas]['units'] = 'cm^-3'
+
+                else:
+                    raise ValueError(f'Error [ARCSIXAtmModel]: Unrecognized units for {gas} in levels: {self.lay[gas]["units"]}.\nIf the gas is in mass mixing ratio units, ensure it is in {mmr_units}, or if it is in volume mixing ratio units, ensure it is in {vmr_units}.')
 
 
     def save_to_file(self, plot=True):
