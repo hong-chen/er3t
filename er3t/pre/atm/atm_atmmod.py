@@ -322,6 +322,8 @@ class ARCSIXAtmModel:
 
             if 'fname_base_atmmod' in config:
                 self.fname_base_atmmod = config['fname_base_atmmod']
+                # add legacy variable
+                self.fname_atmmod = config['fname_base_atmmod']
             else:
                 sys.exit('Error [ARCSIXAtmModel]: Configuration file must specify "fname_base_atmmod".')
 
