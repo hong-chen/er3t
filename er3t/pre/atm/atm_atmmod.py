@@ -79,38 +79,48 @@ class atm_atmmod:
 
     reference = '\nAFGL Atmospheric Profile (Anderson et al., 1986):\n- Anderson, G. P., Clough, S. A., Kneizys, F. X., Chetwynd, J. H., and Shettle, E. P.: AFGL atmospheric constituent profiles (0-120 km), Tech. Rep. AFGL-TR-86-0110, Air Force Geophys. Lab., Hanscom Air Force Base, Bedford, Massachusetts, USA, 1986.'
 
-    def __init__(self,                \
-                 levels       = None, \
-                 fname        = None, \
-                 fname_atmmod = '%s/afglus.dat' % er3t.common.fdir_data_atmmod, \
-                 overwrite    = False, \
+    def __init__(self,
+                 levels       = None,
+                 fname        = None,
+                 fname_atmmod = '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
+                 overwrite    = False,
+                 plot         = False,
                  verbose      = False):
 
         er3t.util.add_reference(self.reference)
 
         self.verbose      = verbose
         self.fname_atmmod = fname_atmmod
+        self.plot         = plot
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
+            # Decide how to load based on extension
+            ext = os.path.splitext(fname)[1].lower()
+            if ext in ['.pkl', '.pickle', '.pk']:
+                self.load_pickle(fname)
+            elif ext in ['.h5', '.hdf5']:
+                raise NotImplementedError("HDF5 load not yet implemented for atm_atmmod. Provide 'levels' to regenerate or use a pickle file.")
+            else:
+                self.load_pickle(fname)  # fallback
 
-            self.load(fname)
-
-        elif ((levels is not None) and (fname is not None) and (os.path.exists(fname)) and (overwrite)) or \
-             ((levels is not None) and (fname is not None) and (not os.path.exists(fname))):
-
+        elif ((levels is not None) and (fname is not None)):
+            # Create and auto-save (supports .h5 or pickle based on extension)
             self.run(levels)
-            self.dump(fname)
+            self._auto_save(fname)
 
         elif ((levels is not None) and (fname is None)):
-
+            # Just create in memory
             self.run(levels)
 
         else:
+            sys.exit("Error   [atm_atmmod]: Please provide 'levels' or an existing file to load.")
 
-            sys.exit('Error   [atm_atmmod]: Please check if \'%s\' exists or provide \'levels\' to proceed.' % fname)
 
 
     def load(self, fname):
+        return self.load_pickle(fname)
+
+    def load_pickle(self, fname):
 
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
@@ -161,14 +171,126 @@ class atm_atmmod:
         # covert mixing ratio [unitless] to number density [cm-3]
         self.cal_num_den()
 
+        # self.save_to_hdf5(fname='afgl_atm_atmmod_output.h5')
+
 
     def dump(self, fname):
+        """Backward-compatible pickle dump (deprecated if extension is .h5)."""
+        ext = os.path.splitext(fname)[1].lower()
+        if ext in ['.h5', '.hdf5']:
+            if self.verbose:
+                print(f"Warning [atm_atmmod]: Attempted to pickle with HDF5 extension '{ext}'. Saving as true HDF5 instead.")
+            self.save_to_hdf5(fname)
+            return
+        self.dump_pickle(fname)
 
+
+    def dump_pickle(self, fname):
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [atm_atmmod]: Saving object into %s ...' % fname)
-            pickle.dump(self, f)
+                print('Message [atm_atmmod]: Saving pickle object into %s ...' % fname)
+            pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+    def save_to_hdf5(self, fname):
+        """Save atmospheric profile (levels & layers) to an HDF5 file.
+
+        Fixes prior issue where users passed a .h5 filename to __init__, which
+        resulted in a pickle file with an HDF5 extension (causing 'file signature not found').
+
+        Parameters
+        ----------
+        fname : str
+            Target filename. Will enforce .h5 extension.
+        """
+        if self.lev is None or self.lay is None:
+            raise RuntimeError("save_to_hdf5 called before atmosphere was generated. Run run(levels) first.")
+
+        # Directory handling
+        outdir = os.path.dirname(fname)
+        if outdir and (not os.path.exists(outdir)):
+            os.makedirs(outdir, exist_ok=True)
+
+        # Normalize extension
+        root, ext = os.path.splitext(fname)
+        if ext.lower() not in ['.h5', '.hdf5']:
+            fname = root + '.h5'
+
+        import h5py
+        with h5py.File(fname, 'w') as f:
+            lev_group = f.create_group('levels')
+            lay_group = f.create_group('layers')
+
+            # Helper to write dict entries
+            def _write_group(src_dict, grp):
+                for var, dd in src_dict.items():
+                    if not isinstance(dd, dict) or 'data' not in dd:
+                        continue  # skip malformed entries
+                    data = np.asarray(dd['data'])
+                    dset = grp.create_dataset(var, data=data)
+                    # Attributes (only add if present)
+                    if 'units' in dd:
+                        dset.attrs['units'] = dd['units']
+                    if 'name' in dd:
+                        dset.attrs['name'] = dd['name']
+
+            _write_group(self.lev, lev_group)
+            _write_group(self.lay, lay_group)
+
+            # Metadata
+            f.attrs['title'] = 'Atmospheric Model Profiles from AFGL'
+            f.attrs['description'] = 'AFGL Atmospheric Model Profiles'
+            f.attrs['computer'] = os.uname()[1]
+            f.attrs['software'] = f'EaR3T file {os.path.abspath(__file__)}, class {self.__class__.__name__}'
+            f.attrs['created_on'] = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')
+
+        if self.verbose:
+            print(f"Message [atm_atmmod]: Saved HDF5 to {fname}")
+
+        if self.plot:
+            from er3t.util.plot_util import set_plot_fonts, MPL_STYLE_PATH
+            import matplotlib.pyplot as plt
+
+            # Plot level data
+            n_panels = len(self.lev.keys()) - 1
+            var_names = list(self.lev.keys())
+            var_names.remove('pressure')  # Remove pressure for plotting
+            fig, axes = plt.subplots(1, n_panels, figsize=(30, 10))
+            plt.style.use(MPL_STYLE_PATH)
+
+            for i, var_name in enumerate(var_names):
+                axes[i].plot(self.lev[var_name]['data'], self.lev['pressure']['data'], label=var_name)
+                axes[i].set_xlabel(f'{var_name} {self.lev[var_name]["units"]}')
+                axes[i].set_title(f'{var_name} Profile')
+                axes[i].invert_yaxis()
+                axes[i].grid(True, alpha=0.3)
+
+            axes[0].set_ylabel('Pressure (hPa)')
+
+            fig.savefig(fname.replace('.h5', '_levels.png'), bbox_inches='tight')
+            plt.close('all')
+
+            # Plot layer data
+            n_panels = len(self.lev.keys()) - 1
+            var_names = list(self.lev.keys())
+            var_names.remove('pressure')  # Remove pressure for plotting
+            fig, axes = plt.subplots(1, n_panels, figsize=(30, 10))
+            plt.style.use(MPL_STYLE_PATH)
+
+            for i, var_name in enumerate(var_names):
+                axes[i].plot(self.lay[var_name]['data'], self.lay['pressure']['data'], label=var_name)
+                axes[i].set_xlabel(f'{var_name} {self.lay[var_name]["units"]}')
+                axes[i].set_title(f'{var_name} Profile')
+                axes[i].invert_yaxis()
+                axes[i].grid(True, alpha=0.3)
+
+            axes[0].set_ylabel('Pressure (hPa)')
+
+            fig.savefig(fname.replace('.h5', '_layers.png'), bbox_inches='tight')
+            plt.close('all')
+            print(f'Saved figure to {os.path.dirname(fname)}')
+
 
 
     def atmmod(self):
@@ -470,7 +592,7 @@ class ARCSIXAtmModel:
         Expects column names to be variables, row 0 to be units.
         """
         df = pd.read_table(fname, sep=',')
-        print(dict(zip(list(df.columns), list(df.iloc[0].values)))) # expecting first row to be units
+        # print(dict(zip(list(df.columns), list(df.iloc[0].values)))) # expecting first row to be units
         df = df[1:].reset_index(drop=True) # drop the units row
         df = df.astype('float64') # convert all columns to float
 
@@ -505,7 +627,7 @@ class ARCSIXAtmModel:
 
         # step 8: (optional) save to file
         if self.fname_out is not None:
-            self.save_to_file()
+            self.save_to_hdf5()
 
 
     def sort_atmospheric_data(self):
@@ -823,14 +945,14 @@ class ARCSIXAtmModel:
         Full equation n = (P * Na)/(M_dry * R * T)
         """
 
-        # 100 is for hPa to Pa
+        # 100 is for hPa to Pa, 1e-6 is for m3 to cm3, so final factor is 1e-4
         self.lev['air']['data'] = {
             'units': 'cm^-3',
-            'data': (self.lev['pressure']['data'] * 100 * constants.NA) / (constants.M_dry * constants.R * self.lev['temperature']['data'])
+            'data': (self.lev['pressure']['data'] * constants.NA) * 1e-4 / (constants.M_dry * constants.R * self.lev['temperature']['data'])
         }
         self.lay['air']['data'] = {
             'units': 'cm^-3',
-            'data': (self.lay['pressure']['data'] * 100 * constants.NA) / (constants.M_dry * constants.R * self.lay['temperature']['data'])
+            'data': (self.lay['pressure']['data'] * constants.NA) * 1e-4 / (constants.M_dry * constants.R * self.lay['temperature']['data'])
         }
 
 
@@ -918,7 +1040,7 @@ class ARCSIXAtmModel:
                     raise ValueError(f'Error [ARCSIXAtmModel]: Unrecognized units for {gas} in levels: {self.lay[gas]["units"]}.\nIf the gas is in mass mixing ratio units, ensure it is in {mmr_units}, or if it is in volume mixing ratio units, ensure it is in {vmr_units}.')
 
 
-    def save_to_file(self):
+    def save_to_hdf5(self):
         """Save atmospheric model to hdf5"""
         outdir = os.path.dirname(self.fname_out)
         if len(outdir) > 0 and (not os.path.exists(outdir)):
@@ -960,7 +1082,7 @@ class ARCSIXAtmModel:
             f.attrs['description'] = 'ARCSIX Atmospheric Model Profiles'
             f.attrs['computer'] = os.uname()[1]
             f.attrs['software'] = f'EaR3T file {os.path.abspath(__file__)}, class {self.__class__.__name__}'
-            f.attrs['created_on'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%SZ')# utc time
+            f.attrs['created_on'] = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')# utc time
 
         if self.verbose:
             print(f'Message [ARCSIXAtmModel]: Saved to {self.fname_out}')
@@ -1014,4 +1136,5 @@ if __name__ == '__main__':
 
     # define levels in km
     levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0))
-    arcsix_atm_mod = ARCSIXAtmModel(levels=levels, levels_source='user', config_file='er3t/pre/atm/arcsix_atm_profile_config.yaml', verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5', plot=False)
+    # arcsix_atm_mod = ARCSIXAtmModel(levels=levels, levels_source='user', config_file='er3t/pre/atm/arcsix_atm_profile_config.yaml', verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5', plot=False)
+    afgl_atm_mod = atm_atmmod(levels=levels, fname_atmmod="er3t/data/atmmod/afglss.dat", verbose=1, plot=True)
