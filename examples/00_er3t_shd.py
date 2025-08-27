@@ -697,7 +697,7 @@ def example_03_rad_atm1d_clear_over_snow(
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/shd-out-rad-%s_%s_wvl%s.h5' % (fdir, solver.lower(), _metadata['Function'], int(wavelength))
+    fname_h5 = '%s/shd-out-rad-%s_%s_wvl%s_mode%s.h5' % (fdir, solver.lower(), _metadata['Function'], int(wavelength), mode)
     out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
@@ -708,7 +708,7 @@ def example_03_rad_atm1d_clear_over_snow(
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
-        fname_png = '%s-%s_%s_wvl%s.png' % (name_tag, _metadata['Function'], solver.lower(), int(wavelength))
+        fname_png = '%s-%s_%s_wvl%s_mode%s.png' % (name_tag, _metadata['Function'], solver.lower(), int(wavelength), mode)
 
         fig = plt.figure(figsize=(12, 12))
         ax1 = fig.add_subplot(111, projection='polar')
