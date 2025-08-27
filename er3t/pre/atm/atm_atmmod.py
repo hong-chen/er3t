@@ -1005,7 +1005,18 @@ class ARCSIXAtmModel:
                     if self.verbose:
                         print(f'Message [ARCSIXAtmModel]: Converting {gas} from mass mixing ratio to number density')
 
-                    self.lev[gas]['data'] = self.lev[gas]['data'] * self.lev['factor']['data'] # apply factor
+                    # Correct formula: n_gas = MMR * (M_air / M_gas) * n_air
+                    # Get molar masses
+                    if gas in constants.molar_masses:
+                        M_gas = constants.molar_masses[gas]  # g/mol
+                    else:
+                        raise ValueError(f'Molar mass not defined for gas {gas}')
+
+                    M_air = constants.molar_masses['dry_air']  # g/mol
+                    n_air = self.lev['air']['data'] # #/cm^3
+
+                    # Convert mass mixing ratio to number density
+                    self.lev[gas]['data'] = self.lev[gas]['data'] * (M_air / M_gas) * n_air
                     self.lev[gas]['units'] = 'cm^-3'
 
                 elif self.lev[gas]['units'] in vmr_units:
@@ -1025,7 +1036,23 @@ class ARCSIXAtmModel:
                     if self.verbose:
                         print(f'Message [ARCSIXAtmModel]: Converting {gas} from mass mixing ratio to number density')
 
-                    self.lay[gas]['data'] = self.lay[gas]['data'] * self.lay['factor']['data'] # apply factor
+                    # Correct formula: n_gas = MMR * (M_air / M_gas) * n_air
+                    # Get molar masses
+                    if gas in constants.molar_masses:
+                        M_gas = constants.molar_masses[gas]  # g/mol
+                    else:
+                        raise ValueError(f'Molar mass not defined for gas {gas} in constants.py')
+
+                    M_air = constants.molar_masses['dry_air']  # g/mol
+
+                    # Get air number density (handle nested dict structure)
+                    if isinstance(self.lay['air']['data'], dict):
+                        n_air = self.lay['air']['data']['data']
+                    else:
+                        n_air = self.lay['air']['data']
+
+                    # Convert mass mixing ratio to number density
+                    self.lay[gas]['data'] = self.lay[gas]['data'] * (M_air / M_gas) * n_air
                     self.lay[gas]['units'] = 'cm^-3'
 
                 elif self.lay[gas]['units'] in vmr_units:
