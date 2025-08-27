@@ -118,15 +118,15 @@ def example_01_rad_atm1d_clear_over_land(
     fname_cld = '%s/cld.pk' % fdir
 
     cld0 = er3t.pre.cld.cld_gen_cop(
-            fname=fname_cld,
-            cot=np.array([0.0]).reshape((1, 1)),
-            cer=np.array([1.0]).reshape((1, 1)),
-            cth=np.array([1.0]).reshape((1, 1)),
-            cgt=np.array([0.5]).reshape((1, 1)),
-            dz=0.1,
-            extent_xy=[0.0, 1.0, 0.0, 1.0],
-            atm_obj=atm0,
-            overwrite=overwrite
+        fname=fname_cld,
+        cot=np.array([0.0]).reshape((1, 1)),
+        cer=np.array([1.0]).reshape((1, 1)),
+        cth=np.array([1.0]).reshape((1, 1)),
+        cgt=np.array([0.5]).reshape((1, 1)),
+        dz=0.1,
+        extent_xy=[0.0, 1.0, 0.0, 1.0],
+        atm_obj=atm0,
+        overwrite=overwrite
             )
 
     # data can be accessed at
@@ -187,28 +187,28 @@ def example_01_rad_atm1d_clear_over_land(
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2024, 5, 18),
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            surface=sfc_2d,
-            Niter=1000,
-            Nmu=64,
-            Nphi=128,
-            sol_acc=1.0e-6,
-            target='radiance',
-            solar_zenith_angle=sza,
-            solar_azimuth_angle=saa,
-            sensor_zenith_angles=vza,
-            sensor_azimuth_angles=vaa,
-            sensor_altitude=705.0,
-            sensor_dx=cld0.lay['dx']['data'],
-            sensor_dy=cld0.lay['dy']['data'],
-            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
-            solver=solver,
-            Ncpu=1,
-            mp_mode='mpi',
-            overwrite=overwrite,
-            force=True,
+        date=datetime.datetime(2024, 5, 18),
+        atm_1ds=atm_1ds,
+        atm_3ds=atm_3ds,
+        surface=sfc_2d,
+        Niter=1000,
+        Nmu=64,
+        Nphi=128,
+        sol_acc=1.0e-6,
+        target='radiance',
+        solar_zenith_angle=sza,
+        solar_azimuth_angle=saa,
+        sensor_zenith_angles=vza,
+        sensor_azimuth_angles=vaa,
+        sensor_altitude=705.0,
+        sensor_dx=cld0.lay['dx']['data'],
+        sensor_dy=cld0.lay['dy']['data'],
+        fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
+        solver=solver,
+        Ncpu=1,
+        mp_mode='mpi',
+        overwrite=overwrite,
+        force=True,
             )
 
     # data can be accessed at
@@ -347,15 +347,15 @@ def example_02_rad_atm1d_clear_over_ocean(
     fname_cld = '%s/cld.pk' % fdir
 
     cld0 = er3t.pre.cld.cld_gen_cop(
-            fname=fname_cld,
-            cot=np.array([0.0]).reshape((1, 1)),
-            cer=np.array([1.0]).reshape((1, 1)),
-            cth=np.array([1.5]).reshape((1, 1)),
-            cgt=np.array([1.0]).reshape((1, 1)),
-            dz=0.1,
-            extent_xy=[0.0, 1.0, 0.0, 1.0],
-            atm_obj=atm0,
-            overwrite=overwrite
+        fname=fname_cld,
+        cot=np.array([0.0]).reshape((1, 1)),
+        cer=np.array([1.0]).reshape((1, 1)),
+        cth=np.array([1.5]).reshape((1, 1)),
+        cgt=np.array([1.0]).reshape((1, 1)),
+        dz=0.1,
+        extent_xy=[0.0, 1.0, 0.0, 1.0],
+        atm_obj=atm0,
+        overwrite=overwrite
             )
 
     # data can be accessed at
@@ -414,28 +414,28 @@ def example_02_rad_atm1d_clear_over_ocean(
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2024, 5, 18),
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            surface=sfc_2d,
-            Niter=1000,
-            Nmu=64,
-            Nphi=128,
-            sol_acc=1.0e-6,
-            target='radiance',
-            solar_zenith_angle=sza,
-            solar_azimuth_angle=saa,
-            sensor_zenith_angles=vza,
-            sensor_azimuth_angles=vaa,
-            sensor_altitude=705.0,
-            sensor_dx=cld0.lay['dx']['data'],
-            sensor_dy=cld0.lay['dy']['data'],
-            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
-            solver=solver,
-            Ncpu=1,
-            mp_mode='mpi',
-            overwrite=overwrite,
-            force=True,
+        date=datetime.datetime(2024, 5, 18),
+        atm_1ds=atm_1ds,
+        atm_3ds=atm_3ds,
+        surface=sfc_2d,
+        Niter=1000,
+        Nmu=64,
+        Nphi=128,
+        sol_acc=1.0e-6,
+        target='radiance',
+        solar_zenith_angle=sza,
+        solar_azimuth_angle=saa,
+        sensor_zenith_angles=vza,
+        sensor_azimuth_angles=vaa,
+        sensor_altitude=705.0,
+        sensor_dx=cld0.lay['dx']['data'],
+        sensor_dy=cld0.lay['dy']['data'],
+        fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
+        solver=solver,
+        Ncpu=1,
+        mp_mode='mpi',
+        overwrite=overwrite,
+        force=True,
             )
 
     # data can be accessed at
@@ -500,7 +500,8 @@ def example_03_rad_atm1d_clear_over_snow(
         wavelength=555.0,
         solver='IPA',
         overwrite=True,
-        plot=True
+        plot=True,
+        mode='afgl'
         ):
 
     """
@@ -527,7 +528,16 @@ def example_03_rad_atm1d_clear_over_snow(
     fname_atm = '%s/atm.pk' % fdir
 
     # atmosphere object
-    atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+    if mode == 'afgl':
+        atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+
+    elif mode == 'arcsix':
+        atm0      = er3t.pre.atm.ARCSIXAtmModel(levels=levels, config_file=os.path.join(er3t.common.fdir_er3t, 'er3t/pre/atm/', 'arcsix_atm_profile_config.yaml'), verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5')
+
+    else:
+        raise ValueError('Error [example_03_rad_atm1d_clear_over_snow] `mode` should be afgl or arcsix')
+
+
 #     atm0      = er3t.pre.atm.ARCSIXAtmModel(levels=levels, config_file=os.path.join(er3t.common.fdir_er3t, 'er3t/pre/atm/', 'arcsix_atm_profile_config.yaml'), verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5')
 
     # data can be accessed at
@@ -573,15 +583,15 @@ def example_03_rad_atm1d_clear_over_snow(
     fname_cld = '%s/cld.pk' % fdir
 
     cld0 = er3t.pre.cld.cld_gen_cop(
-            fname=fname_cld,
-            cot=np.array([0.0]).reshape((1, 1)),
-            cer=np.array([1.0]).reshape((1, 1)),
-            cth=np.array([1.5]).reshape((1, 1)),
-            cgt=np.array([1.0]).reshape((1, 1)),
-            dz=0.1,
-            extent_xy=[0.0, 1.0, 0.0, 1.0],
-            atm_obj=atm0,
-            overwrite=overwrite
+        fname=fname_cld,
+        cot=np.array([0.0]).reshape((1, 1)),
+        cer=np.array([1.0]).reshape((1, 1)),
+        cth=np.array([1.5]).reshape((1, 1)),
+        cgt=np.array([1.0]).reshape((1, 1)),
+        dz=0.1,
+        extent_xy=[0.0, 1.0, 0.0, 1.0],
+        atm_obj=atm0,
+        overwrite=overwrite
             )
 
     # data can be accessed at
@@ -633,7 +643,7 @@ def example_03_rad_atm1d_clear_over_snow(
     # vza = np.repeat(30.0, vaa.size)
 
     vaa_1d = np.arange(0.0, 359.1, 1.0)
-    vza_1d = np.arange(1.0, 89.1, 1.0)
+    vza_1d = np.arange(0.0, 89.1, 1.0)
     vaa_2d, vza_2d = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
     vaa = vaa_2d.ravel()
     vza = vza_2d.ravel()
@@ -644,28 +654,28 @@ def example_03_rad_atm1d_clear_over_snow(
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2024, 6, 5),
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            surface=sfc_2d,
-            Niter=1000,
-            Nmu=32,
-            Nphi=64,
-            sol_acc=1.0e-6,
-            target='radiance',
-            solar_zenith_angle=sza,
-            solar_azimuth_angle=saa,
-            sensor_zenith_angles=vza,
-            sensor_azimuth_angles=vaa,
-            sensor_altitude=705.0,
-            sensor_dx=cld0.lay['dx']['data'],
-            sensor_dy=cld0.lay['dy']['data'],
-            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
-            solver=solver,
-            Ncpu=1,
-            mp_mode='mpi',
-            overwrite=overwrite,
-            force=True,
+        date=datetime.datetime(2024, 6, 5),
+        atm_1ds=atm_1ds,
+        atm_3ds=atm_3ds,
+        surface=sfc_2d,
+        Niter=1000,
+        Nmu=32,
+        Nphi=64,
+        sol_acc=1.0e-6,
+        target='radiance',
+        solar_zenith_angle=sza,
+        solar_azimuth_angle=saa,
+        sensor_zenith_angles=vza,
+        sensor_azimuth_angles=vaa,
+        sensor_altitude=705.0,
+        sensor_dx=cld0.lay['dx']['data'],
+        sensor_dy=cld0.lay['dy']['data'],
+        fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
+        solver=solver,
+        Ncpu=1,
+        mp_mode='mpi',
+        overwrite=overwrite,
+        force=True,
             )
 
     # data can be accessed at
@@ -687,7 +697,7 @@ def example_03_rad_atm1d_clear_over_snow(
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
     # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = '%s/shd-out-rad-%s_%s.h5' % (fdir, solver.lower(), _metadata['Function'])
+    fname_h5 = '%s/shd-out-rad-%s_%s_wvl%s.h5' % (fdir, solver.lower(), _metadata['Function'], int(wavelength))
     out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
@@ -698,7 +708,7 @@ def example_03_rad_atm1d_clear_over_snow(
     # plot
     #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
-        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
+        fname_png = '%s-%s_%s_wvl%s.png' % (name_tag, _metadata['Function'], solver.lower(), int(wavelength))
 
         fig = plt.figure(figsize=(12, 12))
         ax1 = fig.add_subplot(111, projection='polar')
@@ -807,15 +817,15 @@ def example_04_rad_atm1d_cloud_over_ocean(
     fname_cld = '%s/cld.pk' % fdir
 
     cld0 = er3t.pre.cld.cld_gen_cop(
-            fname=fname_cld,
-            cot=np.array([cot]).reshape((1, 1)),
-            cer=np.array([cer]).reshape((1, 1)),
-            cth=np.array([1.5]).reshape((1, 1)),
-            cgt=np.array([1.0]).reshape((1, 1)),
-            dz=0.1,
-            extent_xy=[0.0, 1.0, 0.0, 1.0],
-            atm_obj=atm0,
-            overwrite=overwrite
+        fname=fname_cld,
+        cot=np.array([cot]).reshape((1, 1)),
+        cer=np.array([cer]).reshape((1, 1)),
+        cth=np.array([1.5]).reshape((1, 1)),
+        cgt=np.array([1.0]).reshape((1, 1)),
+        dz=0.1,
+        extent_xy=[0.0, 1.0, 0.0, 1.0],
+        atm_obj=atm0,
+        overwrite=overwrite
             )
 
     # data can be accessed at
@@ -870,28 +880,28 @@ def example_04_rad_atm1d_cloud_over_ocean(
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2024, 5, 18),
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            surface=sfc_2d,
-            Niter=1000,
-            Nmu=64,
-            Nphi=128,
-            sol_acc=1.0e-6,
-            target='radiance',
-            solar_zenith_angle=sza,
-            solar_azimuth_angle=0.0,
-            sensor_zenith_angles=vza,
-            sensor_azimuth_angles=vaa,
-            sensor_altitude=705.0,
-            sensor_dx=cld0.lay['dx']['data'],
-            sensor_dy=cld0.lay['dy']['data'],
-            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
-            solver=solver,
-            Ncpu=1,
-            mp_mode='mpi',
-            overwrite=overwrite,
-            force=True,
+        date=datetime.datetime(2024, 5, 18),
+        atm_1ds=atm_1ds,
+        atm_3ds=atm_3ds,
+        surface=sfc_2d,
+        Niter=1000,
+        Nmu=64,
+        Nphi=128,
+        sol_acc=1.0e-6,
+        target='radiance',
+        solar_zenith_angle=sza,
+        solar_azimuth_angle=0.0,
+        sensor_zenith_angles=vza,
+        sensor_azimuth_angles=vaa,
+        sensor_altitude=705.0,
+        sensor_dx=cld0.lay['dx']['data'],
+        sensor_dy=cld0.lay['dy']['data'],
+        fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
+        solver=solver,
+        Ncpu=1,
+        mp_mode='mpi',
+        overwrite=overwrite,
+        force=True,
             )
 
     # data can be accessed at
@@ -1104,27 +1114,27 @@ def example_05_rad_les_cloud_3d(
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2024, 5, 18),
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            surface=sfc_2d,
-            Ng=abs0.Ng,
-            Niter=200,
-            split_acc=0.001,
-            target='radiance',
-            solar_zenith_angle=30.0,
-            solar_azimuth_angle=0.0,
-            sensor_zenith_angles=vza,
-            sensor_azimuth_angles=vaa,
-            sensor_altitude=705.0,
-            sensor_dx=cld0.lay['dx']['data'],
-            sensor_dy=cld0.lay['dy']['data'],
-            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
-            solver=solver,
-            Ncpu=Ncpu,
-            mp_mode='mpi',
-            overwrite=overwrite,
-            force=True,
+        date=datetime.datetime(2024, 5, 18),
+        atm_1ds=atm_1ds,
+        atm_3ds=atm_3ds,
+        surface=sfc_2d,
+        Ng=abs0.Ng,
+        Niter=200,
+        split_acc=0.001,
+        target='radiance',
+        solar_zenith_angle=30.0,
+        solar_azimuth_angle=0.0,
+        sensor_zenith_angles=vza,
+        sensor_azimuth_angles=vaa,
+        sensor_altitude=705.0,
+        sensor_dx=cld0.lay['dx']['data'],
+        sensor_dy=cld0.lay['dy']['data'],
+        fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
+        solver=solver,
+        Ncpu=Ncpu,
+        mp_mode='mpi',
+        overwrite=overwrite,
+        force=True,
             )
 
     # data can be accessed at
@@ -1259,19 +1269,19 @@ def example_06_rad_cld_gen_hem(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     fname_cld = '%s/cld.pk' % fdir
     cld0 = er3t.pre.cld.cld_gen_hem(
-            fname=fname_cld,
-            Nx=200,
-            Ny=200,
-            dx=0.4,
-            dy=0.4,
-            radii=[1.0, 2.0, 4.0],
-            weights=[0.6, 0.3, 0.1],
-            altitude=np.arange(2.0, 6.01, 0.4),
-            cloud_frac_tgt=0.2,
-            w2h_ratio=2.0,
-            min_dist=0.2,
-            overlap=False,
-            overwrite=overwrite
+        fname=fname_cld,
+        Nx=200,
+        Ny=200,
+        dx=0.4,
+        dy=0.4,
+        radii=[1.0, 2.0, 4.0],
+        weights=[0.6, 0.3, 0.1],
+        altitude=np.arange(2.0, 6.01, 0.4),
+        cloud_frac_tgt=0.2,
+        w2h_ratio=2.0,
+        min_dist=0.2,
+        overlap=False,
+        overwrite=overwrite
             )
 
     # after run, the cld0 will contain
@@ -1342,24 +1352,24 @@ def example_06_rad_cld_gen_hem(
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2017, 8, 13),
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            surface=sfc_2d,
-            target='radiance',
-            solar_zenith_angle=30.0,
-            solar_azimuth_angle=0.0,
-            sensor_zenith_angles=vza,
-            sensor_azimuth_angles=vaa,
-            sensor_altitude=705.0,
-            sensor_dx=cld0.lay['dx']['data'],
-            sensor_dy=cld0.lay['dy']['data'],
-            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
-            solver=solver,
-            Ncpu=Ncpu,
-            mp_mode='mpi',
-            overwrite=overwrite,
-            force=True,
+        date=datetime.datetime(2017, 8, 13),
+        atm_1ds=atm_1ds,
+        atm_3ds=atm_3ds,
+        surface=sfc_2d,
+        target='radiance',
+        solar_zenith_angle=30.0,
+        solar_azimuth_angle=0.0,
+        sensor_zenith_angles=vza,
+        sensor_azimuth_angles=vaa,
+        sensor_altitude=705.0,
+        sensor_dx=cld0.lay['dx']['data'],
+        sensor_dy=cld0.lay['dy']['data'],
+        fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
+        solver=solver,
+        Ncpu=Ncpu,
+        mp_mode='mpi',
+        overwrite=overwrite,
+        force=True,
             )
 
     # data can be accessed at
@@ -1552,27 +1562,27 @@ def example_07_at3d_rad_cloud_merra(
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
-            date=datetime.datetime(2024, 5, 8),
-            atm_1ds=atm_1ds,
-            atm_3ds=atm_3ds,
-            surface=sfc_2d,
-            Ng=abs0.Ng,
-            Niter=10,
-            split_acc=0.0,
-            target='radiance',
-            solar_zenith_angle=30.0,
-            solar_azimuth_angle=0.0,
-            sensor_zenith_angles=vza,
-            sensor_azimuth_angles=vaa,
-            sensor_altitude=705.0,
-            sensor_dx=cld0.lay['dx']['data'],
-            sensor_dy=cld0.lay['dy']['data'],
-            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
-            solver=solver,
-            Ncpu=Ncpu,
-            mp_mode='mpi',
-            overwrite=overwrite,
-            force=False,
+        date=datetime.datetime(2024, 5, 8),
+        atm_1ds=atm_1ds,
+        atm_3ds=atm_3ds,
+        surface=sfc_2d,
+        Ng=abs0.Ng,
+        Niter=10,
+        split_acc=0.0,
+        target='radiance',
+        solar_zenith_angle=30.0,
+        solar_azimuth_angle=0.0,
+        sensor_zenith_angles=vza,
+        sensor_azimuth_angles=vaa,
+        sensor_altitude=705.0,
+        sensor_dx=cld0.lay['dx']['data'],
+        sensor_dy=cld0.lay['dy']['data'],
+        fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
+        solver=solver,
+        Ncpu=Ncpu,
+        mp_mode='mpi',
+        overwrite=overwrite,
+        force=False,
             )
 
     # data can be accessed at
@@ -1633,7 +1643,7 @@ if __name__ == '__main__':
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # example_01_rad_atm1d_clear_over_land()
     # example_02_rad_atm1d_clear_over_ocean()
-    example_03_rad_atm1d_clear_over_snow()
+    example_03_rad_atm1d_clear_over_snow(wavelength=555.0, mode='arcsix')
     # example_04_rad_atm1d_cloud_over_ocean()
 
 
