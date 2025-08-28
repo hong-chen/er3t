@@ -529,7 +529,7 @@ def example_03_rad_atm1d_clear_over_snow(
 
     # atmosphere object
     if mode == 'afgl':
-        atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
+        atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=None, fname_atmmod="er3t/data/atmmod/afglss.dat", overwrite=overwrite)
 
     elif mode == 'arcsix':
         atm0      = er3t.pre.atm.ARCSIXAtmModel(levels=levels, config_file=os.path.join(er3t.common.fdir_er3t, 'er3t/pre/atm/', 'arcsix_atm_profile_config.yaml'), verbose=1, fname_out='data/test_data/arcsix_atm_profile_output.h5')
