@@ -447,6 +447,7 @@ class lrt_read_uvspec_flx:
         Nz = len(inits)
 
         self.dims      = {'X':'Wavelength', 'Y':'Altitude', 'Z':'Files'}
+        f_wvl = np.zeros((Nx, Ny, Nz), dtype=np.float32)
         f_down_direct  = np.zeros((Nx, Ny, Nz), dtype=np.float32)
         f_down_diffuse = np.zeros((Nx, Ny, Nz), dtype=np.float32)
         f_down         = np.zeros((Nx, Ny, Nz), dtype=np.float32)

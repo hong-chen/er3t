@@ -474,7 +474,9 @@ def zpt_plot(p_lay, t_lay, dewT_lay, h2o_vmr, output, pmin=100, pmax=1000):
     fig.savefig(output, dpi=300)
     
 def zpt_plot_gases(p_lay, h2o_vmr, co2_vmr, o3_vmr,
-                   output, pmin=100, pmax=1000):
+                   output, 
+                   ch4_vmr=None,
+                   pmin=100, pmax=1000):
     from metpy.plots import SkewT
     from metpy.units import units
     
@@ -484,9 +486,19 @@ def zpt_plot_gases(p_lay, h2o_vmr, co2_vmr, o3_vmr,
 
 
 
-    ax2.plot(h2o_vmr, p_prf, 'b:', label='H$_2$O', linewidth=3)
+    ax2_line = ax2.plot(h2o_vmr, p_prf, 'b', label='H$_2$O', linewidth=3)
     h2o_vmr_axis_setting(ax2, pmin=pmin, pmax=pmax)
-    ax2.legend()
+    ax2_2 = ax2.twiny()
+    if ch4_vmr is not None:
+        ax2_2_line = ax2_2.plot(ch4_vmr*1e6, p_prf, 'green', label='CH$_4$', linewidth=3)
+        ax2_2.set_xlabel('CH$_4$ mixing ratio', fontsize=14, color='green')
+        vmr_axis_setting(ax2_2, 'CH$_4$ mixing ratio (ppbv)', 'green', pmin=pmin, pmax=pmax)
+        legends = ax2_line + ax2_2_line
+        labels = [l.get_label() for l in legends]
+        ax2.legend(legends, labels)
+    else:
+        legends = ax2_line
+        labels = [l.get_label() for l in legends]
     ax2.text(1.28, 1.07, '(a)', fontsize=16, fontweight='bold', va='center', ha='left')
     ax2.grid(which='minor', axis='y', linestyle='-', linewidth=1, color='lightgrey')
     
@@ -495,7 +507,7 @@ def zpt_plot_gases(p_lay, h2o_vmr, co2_vmr, o3_vmr,
     ax4_line = ax4.plot(o3_vmr*1e6, p_prf, 'purple', label='O$_3$', linewidth=3)
     ax3.set_xlabel('CO$_2$ mixing ratio', fontsize=14, color='orange')
     ax4.set_xlabel('O$_3$ mixing ratio', fontsize=14, color='purple')
-    vmr_axis_setting(ax3, 'CO$_2$ mixing ratio (ppbv)', 'orange', pmin=pmin, pmax=pmax)
+    vmr_axis_setting(ax3, 'CO$_2$ mixing ratio (ppmv)', 'orange', pmin=pmin, pmax=pmax)
     vmr_axis_setting(ax4, 'O$_3$ mixing ratio (ppbv)', 'purple', pmin=pmin, pmax=pmax)
     legends = ax3_line + ax4_line
     labels = [l.get_label() for l in legends]

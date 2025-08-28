@@ -234,8 +234,7 @@ class mca_atm_3d:
         self.nml= {}
 
         lay_index = get_lay_index(self.cld.lay['altitude']['data'], self.atm.lay['altitude']['data'])
-        # print("self.atm.lay['altitude']['data'] len:", len(self.atm.lay['altitude']['data']))
-        # print("self.cld.lay['altitude']['data'] len:", len(self.cld.lay['altitude']['data']))
+
 
         nx   = self.cld.lay['nx']['data']
         ny   = self.cld.lay['ny']['data']
