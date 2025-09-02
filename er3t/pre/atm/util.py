@@ -99,6 +99,51 @@ def mmr_to_vmr(mmr, gas='co2', units='ppmv'):
         raise ValueError("Only `ppmv` and `ppbv` are supported as units, received: {}".format(units))
 
 
+def number_density_to_volume_mixing_ratio(gas_number_density, pressure=None, temperature=None, air_number_density=None, units='ppmv'):
+    """
+    Convert number density to volume mixing ratio (VMR).
+    Formula: VMR = ( R * T * n)  / (P * Na)
+    VMR will be in units of ppmv or ppbv or dimensionless based on `units`.
+
+    Parameters
+    ----------
+    gas_number_density : float
+        Number density of the gas (molecules/cm^3).
+    pressure : float, optional
+        Total pressure (hPa).
+    temperature : float, optional
+        Temperature (K).
+    air_number_density : float, optional
+        Number density of air (molecules/cm^3). If not provided, it will be calculated using ideal gas law.
+    units : str
+        Desired output units ('ppmv' or 'ppbv'). Anything else will return dimensionless volume mixing ratio.
+
+    Returns
+    -------
+    float
+        Volume mixing ratio (VMR) in ppmv.
+    """
+
+    if air_number_density is None:
+        if temperature is None or pressure is None:
+            raise ValueError("Either air_number_density or both temperature and pressure must be provided.")
+        # 1e4 is the unit conversion factor accounting for pressure being in hPa and number density in #/cm3
+        # Calculate air number density using ideal gas law: n = P/(kB*T)
+        # Convert pressure from hPa to Pa (×100) and get molecules/cm³ (÷1e6)
+        air_number_density = (constants.R/constants.NA) * (temperature/pressure) * 1e4
+
+    vmr = gas_number_density/air_number_density
+
+    # update units if needed
+    if units == 'ppbv':
+        vmr = vmr * 1e9
+
+    elif units == 'ppmv':
+        vmr = vmr * 1e6
+
+    return vmr
+
+
 # def modify_h2o(date, tmhr_range, levels, fname_atmmod='/Users/hoch4240/Chen/soft/libradtran/v2.0.1/data/atmmod/afglss.dat'):
 
 #     """
