@@ -2176,8 +2176,8 @@ def plot_spectral_radiance(results, output_filename=None, figsize=(20, 8), dpi=3
 
     # Plot spectral radiance with error bars
     ax.errorbar(wavelengths, mean_radiance, yerr=std_radiance,
-                marker='o', linestyle='-', linewidth=2, markersize=4,
-                capsize=5, capthick=2, color='darkblue',
+                linestyle='-', linewidth=2, markersize=0,
+                capsize=0, capthick=0, color='darkblue',
                 ecolor='lightblue', label='Mean ± Std')
 
     # Set labels and title
@@ -2192,17 +2192,21 @@ def plot_spectral_radiance(results, output_filename=None, figsize=(20, 8), dpi=3
     ax.grid(True, alpha=0.3, linestyle='--')
 
     # Define major atmospheric absorption bands
+    # absorb_bands = [[649.0, 662.0], [676.0, 697.0], [707.0, 729.0], [743.0, 779.0],
+    # [796.0, 830.0], [911.0, 976.0], [1108.0, 1193.0], [1262.0, 1298.0], [1324.0, 1470.0],
+    # [1800.0, 1960.0]]
+
     absorption_bands = {
-        'O2-A Band': {'range': (759, 769), 'color': 'red', 'alpha': 0.2},
-        'H2O (720nm)': {'range': (715, 730), 'color': 'blue', 'alpha': 0.2},
-        'O2-B Band': {'range': (686, 690), 'color': 'red', 'alpha': 0.2},
+        'O2-A Band': {'range': (755, 770), 'color': 'red', 'alpha': 0.2},
+        'H2O (720nm)': {'range': (707, 729), 'color': 'turquoise', 'alpha': 0.2},
+        'O2-B Band': {'range': (676, 697), 'color': 'red', 'alpha': 0.2},
         'Chappuis (O3)': {'range': (400, 650), 'color': 'orange', 'alpha': 0.1},
-        'H2O (820nm)': {'range': (810, 830), 'color': 'blue', 'alpha': 0.2},
-        'H2O (940nm)': {'range': (930, 970), 'color': 'blue', 'alpha': 0.2},
-        'H2O (1130nm)': {'range': (1110, 1150), 'color': 'blue', 'alpha': 0.2},
-        'O2 (1270nm)': {'range': (1260, 1280), 'color': 'red', 'alpha': 0.2},
-        'H2O (1380nm)': {'range': (1360, 1400), 'color': 'blue', 'alpha': 0.2},
-        'H2O (1870nm)': {'range': (1840, 1900), 'color': 'blue', 'alpha': 0.2},
+        'H2O (820nm)': {'range': (796, 830), 'color': 'turquoise', 'alpha': 0.2},
+        'H2O (940nm)': {'range': (911, 976), 'color': 'turquoise', 'alpha': 0.2},
+        'H2O (1130nm)': {'range': (1108, 1193), 'color': 'turquoise', 'alpha': 0.2},
+        'O2 (1270nm)': {'range': (1262, 1298), 'color': 'red', 'alpha': 0.2},
+        'H2O (1380nm)': {'range': (1324, 1470), 'color': 'turquoise', 'alpha': 0.2},
+        'H2O (1870nm)': {'range': (1800, 1960), 'color': 'turquoise', 'alpha': 0.2},
         'CO2 (2060nm)': {'range': (2040, 2080), 'color': 'green', 'alpha': 0.2},
     }
 
@@ -2246,40 +2250,40 @@ def plot_spectral_radiance(results, output_filename=None, figsize=(20, 8), dpi=3
                 continue
 
             # Add to legend if not already added
-            if species not in plotted_species:
-                legend_handles.append(plt.Rectangle((0, 0), 1, 1,
-                                                  facecolor=color,
-                                                  alpha=0.3,
-                                                  label=species))
-                plotted_species.add(species)
+            # if species not in plotted_species:
+            #     legend_handles.append(plt.Rectangle((0, 0), 1, 1,
+            #                                       facecolor=color,
+            #                                       alpha=0.3,
+            #                                       label=species))
+            #     plotted_species.add(species)
 
     # Add absorption band annotations for major bands in range
-    annotation_offset = 0
-    for band_name, band_info in absorption_bands.items():
-        band_min, band_max = band_info['range']
-        band_center = (band_min + band_max) / 2
+    # annotation_offset = 0
+    # for band_name, band_info in absorption_bands.items():
+    #     band_min, band_max = band_info['range']
+    #     band_center = (band_min + band_max) / 2
 
-        # Only annotate if band center is in our range and it's a major band
-        major_bands = ['O2-A', 'O2-B', 'H2O (940nm)', 'Chappuis']
-        in_range = wvl_min <= band_center <= wvl_max
-        is_major = any(keyword in band_name for keyword in major_bands)
-        if in_range and is_major:
+    #     # Only annotate if band center is in our range and it's a major band
+    #     major_bands = ['O2-A', 'O2-B', 'H2O (940nm)', 'Chappuis']
+    #     in_range = wvl_min <= band_center <= wvl_max
+    #     is_major = any(keyword in band_name for keyword in major_bands)
+    #     if in_range and is_major:
 
-            # Position annotation
-            y_pos = y_max - 0.05 * (y_max - y_min) - annotation_offset * 0.04 * (y_max - y_min)
+    #         # Position annotation
+    #         y_pos = y_max - 0.05 * (y_max - y_min) - annotation_offset * 0.04 * (y_max - y_min)
 
-            ax.annotate(band_name,
-                       xy=(band_center, y_pos),
-                       xytext=(0, -10),
-                       textcoords='offset points',
-                       ha='center', va='top',
-                       fontsize=8,
-                       bbox=dict(boxstyle='round,pad=0.2',
-                               facecolor=band_info['color'],
-                               alpha=0.6),
-                       arrowprops=dict(arrowstyle='->',
-                                     connectionstyle='arc3,rad=0'))
-            annotation_offset += 1
+    #         ax.annotate(band_name,
+    #                    xy=(band_center, y_pos),
+    #                    xytext=(0, -10),
+    #                    textcoords='offset points',
+    #                    ha='center', va='top',
+    #                    fontsize=8,
+    #                    bbox=dict(boxstyle='round,pad=0.2',
+    #                            facecolor=band_info['color'],
+    #                            alpha=0.6),
+    #                    arrowprops=dict(arrowstyle='->',
+    #                                  connectionstyle='arc3,rad=0'))
+    #         annotation_offset += 1
 
     # Format geometry information
     def format_angle_range(angles):
@@ -2347,7 +2351,7 @@ if __name__ == '__main__':
     # example_01_rad_atm1d_clear_over_land()
     # example_02_rad_atm1d_clear_over_ocean()
     # example_03_rad_atm1d_clear_over_snow(wavelength=555.0, mode='afgl')
-    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 2),
+    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 1),
     solar_zenith_angles=np.array([63]),
     viewing_zenith_angles=np.array([0]),
     viewing_azimuth_angles=np.array([0]),
@@ -2360,7 +2364,7 @@ if __name__ == '__main__':
     # Create and save spectral plot
     fig = plot_spectral_radiance(results)
 
-    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 2),
+    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 1),
     solar_zenith_angles=np.array([63]),
     viewing_zenith_angles=np.array([0]),
     viewing_azimuth_angles=np.array([0]),
@@ -2373,7 +2377,7 @@ if __name__ == '__main__':
     # Create and save spectral plot
     fig = plot_spectral_radiance(results)
 
-    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 2),
+    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 1),
     solar_zenith_angles=np.array([63]),
     viewing_zenith_angles=np.array([0]),
     viewing_azimuth_angles=np.array([0]),
@@ -2386,7 +2390,7 @@ if __name__ == '__main__':
     # Create and save spectral plot
     fig = plot_spectral_radiance(results)
 
-    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 2),
+    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 1),
     solar_zenith_angles=np.array([63]),
     viewing_zenith_angles=np.array([0]),
     viewing_azimuth_angles=np.array([0]),
