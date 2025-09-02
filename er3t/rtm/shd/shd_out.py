@@ -339,7 +339,7 @@ class shd_out_ng:
         g = f.create_group(mode)
         for key in self.data.keys():
 
-            if isinstance(self.data[key]['data'], np.ndarray):
+            if isinstance(self.data[key]['data'], np.ndarray) and self.data[key]['data'].size > 1:
                 g.create_dataset(key, data=self.data[key]['data'], compression='gzip', compression_opts=9, chunks=True)
             else:
                 g[key] = self.data[key]['data']
