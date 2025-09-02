@@ -7,7 +7,7 @@ import numpy as np
 
 import er3t.common
 import er3t.util
-from .util import *
+# from .util import *
 
 
 
@@ -16,21 +16,56 @@ __all__ = ['sfc_2d_gen']
 
 
 class sfc_2d_gen:
-
     """
-    Input:
-        sfc_2d=   : keyword argument, default=None, 2D array of surface albedo
-        fname=    : keyword argument, default=None, the file path of the Python pickle file
-        overwrite=: keyword argument, default=False, whether to overwrite or not
-        verbose=  : keyword argument, default=False, verbose tag
+    A class for generating 2D surface properties for radiative transfer calculations.
 
-    Output:
-        self.data
-                ['nx']
-                ['ny']
-                ['dx']
-                ['dy']
-                ['sfc']
+    This class handles various surface types including Lambertian albedo, BRDF models
+    (LSRT, LSRT-Jiao, DSM), and ocean surfaces. It can load existing surface data
+    from pickle files or generate new surface data from input dictionaries.
+
+    Attributes:
+        ID (str): Class identifier 'Surface 2D'
+        sfc (dict): Dictionary containing surface property data
+        fname (str): File name for pickle file storage
+        verbose (bool): Flag for verbose output
+        data (dict): Processed surface data with metadata
+        Nx (int): Number of grid points in x-direction
+        Ny (int): Number of grid points in y-direction
+        dx (float): Grid spacing in x-direction (km)
+        dy (float): Grid spacing in y-direction (km)
+
+    Parameters:
+        sfc_dict (dict, optional): Dictionary containing surface properties.
+            For Lambertian: {'alb': albedo_array, 'dx': spacing, 'dy': spacing}
+            For BRDF-LSRT: {'fiso': iso_array, 'fgeo': geo_array, 'fvol': vol_array, 'dx': spacing, 'dy': spacing}
+            For BRDF-LSRT-Jiao: {'fiso': iso_array, 'fgeo': geo_array, 'fvol': vol_array, 'fj': jiao_array, 'alpha': alpha_array, 'dx': spacing, 'dy': spacing}
+            For BRDF-DSM: {'diffusealb': diffuse_albedo, 'diffusefrac': diffuse_fraction, 'refracr': real_refrac, 'refraci': imag_refrac, 'slope': slope_array, 'dx': spacing, 'dy': spacing}
+            For Ocean: {'windspeed': wind_array, 'pigment': pigment_array, 'dx': spacing, 'dy': spacing}
+        fname (str, optional): Path to pickle file for loading/saving surface data
+        overwrite (bool, optional): Whether to overwrite existing pickle file. Default is False
+        verbose (bool, optional): Enable verbose output. Default is False
+
+    Raises:
+        OSError: If file doesn't exist and no surface dictionary is provided,
+                or if unsupported surface type is specified
+
+    Methods:
+        load(fname): Load surface data from pickle file
+        run(): Process surface data
+        dump(fname): Save surface data to pickle file
+        pre_sfc(): Process raw surface data into standardized format
+
+    Examples:
+        # Create Lambertian surface
+        sfc_dict = {'alb': albedo_2d, 'dx': 1.0, 'dy': 1.0}
+        sfc = sfc_2d_gen(sfc_dict=sfc_dict, fname='surface.pkl')
+
+        # Load existing surface data
+        sfc = sfc_2d_gen(fname='surface.pkl')
+
+        # Create BRDF surface
+        sfc_dict = {'fiso': fiso_2d, 'fgeo': fgeo_2d, 'fvol': fvol_2d, 'dx': 1.0, 'dy': 1.0}
+        sfc = sfc_2d_gen(sfc_dict=sfc_dict, fname='brdf_surface.pkl', verbose=True)
     """
 
 
@@ -151,8 +186,8 @@ class sfc_2d_gen:
             self.data['sfc']  = {'data':sfc, 'name':'Surface BRDF-LSRT (Isotropic, LiSparseR, RossThick)', 'units':'N/A'}
 
         elif ('diffusealb' in keys_check) and ('diffusefrac' in keys_check) and \
-           ('refracr'    in keys_check) and ('refraci'     in keys_check) and \
-           ('slope'      in keys_check):
+           ('refracr' in keys_check) and ('refraci' in keys_check) and \
+           ('slope' in keys_check):
 
             Nx, Ny = self.sfc[keys['slope']].shape
             sfc = np.zeros((Nx, Ny, 5), dtype=er3t.common.f_dtype)
