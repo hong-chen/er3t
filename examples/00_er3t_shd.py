@@ -13,6 +13,7 @@ import h5py
 import time
 import numpy as np
 import datetime
+import multiprocessing as mp
 from scipy.io import readsav
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -610,14 +611,20 @@ def example_03_rad_atm1d_clear_over_snow(
 
     # sfc object
     #╭────────────────────────────────────────────────────────────────────────────╮#
+    # sfc_dict = {
+    #         'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
+    #         'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
+    #         'fiso': np.array([0.986]).reshape((1, 1)),
+    #         'fgeo': np.array([0.033]).reshape((1, 1)),
+    #         'fvol': np.array([0.000]).reshape((1, 1)),
+    #         'fj'  : np.array([0.447]).reshape((1, 1)),
+    #         'alpha': np.array([0.3]).reshape((1, 1)),
+    #         }
+
     sfc_dict = {
             'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
             'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
-            'fiso': np.array([0.986]).reshape((1, 1)),
-            'fgeo': np.array([0.033]).reshape((1, 1)),
-            'fvol': np.array([0.000]).reshape((1, 1)),
-            'fj'  : np.array([0.447]).reshape((1, 1)),
-            'alpha': np.array([0.3]).reshape((1, 1)),
+            'alb': np.array([0.9]).reshape((1, 1)),
             }
 
     fname_sfc = '%s/sfc.pk' % fdir
@@ -726,6 +733,7 @@ def example_03_rad_atm1d_clear_over_snow(
         ax1.set_title('Radiance at %.1f nm (SZA=%5.1f$^\\circ$, %s Mode)' % (wavelength, sza, solver))
         fig.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
+        print('Saved figure in: ', fname_png)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # References
@@ -1633,7 +1641,702 @@ def example_07_at3d_rad_cloud_merra(
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
+def _process_single_wavelength(args):
+    """
+    Helper function to process a single wavelength for multiprocessing.
 
+    Parameters:
+    -----------
+    args : tuple
+        Tuple containing (i_wvl, wavelength, and all other parameters)
+
+    Returns:
+    --------
+    tuple : (i_wvl, radiance_data)
+        Index and radiance results for this wavelength
+    """
+    (i_wvl, wavelength, solar_zenith_angles, solar_azimuth_angles,
+     viewing_zenith_angles, viewing_azimuth_angles, atm_mode, solver,
+     surface_type, output_dir, overwrite, verbose) = args
+
+    # Import er3t inside the worker process to avoid pickling issues
+    import er3t
+    import numpy as np
+    import datetime
+    import os
+
+    n_sza = len(solar_zenith_angles)
+    n_saa = len(solar_azimuth_angles)
+    n_vza = len(viewing_zenith_angles)
+    n_vaa = len(viewing_azimuth_angles)
+
+    # Initialize results for this wavelength
+    wavelength_results = np.zeros((n_sza, n_saa, n_vza, n_vaa))
+
+    if verbose:
+        print(f"Worker {i_wvl}: Processing wavelength {wavelength:.1f} nm")
+
+    # Create subdirectory for this wavelength
+    wvl_dir = f'{output_dir}/wvl_{wavelength:.1f}'
+    if not os.path.exists(wvl_dir):
+        os.makedirs(wvl_dir)
+
+    # Set up atmosphere and surface objects
+    levels = np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0))
+
+    # Create atmosphere object
+    if atm_mode == 'afgl':
+        atm0 = er3t.pre.atm.atm_atmmod(levels=levels, fname=None,
+                                       fname_atmmod="er3t/data/atmmod/afglss.dat",
+                                       overwrite=overwrite)
+    elif atm_mode == 'arcsix':
+        atm0 = er3t.pre.atm.ARCSIXAtmModel(
+            levels=levels,
+            config_file=os.path.join(er3t.common.fdir_er3t, 'er3t/pre/atm/', 'arcsix_atm_profile_config.yaml'),
+            verbose=0,  # Reduce verbosity for multiple calculations
+            fname_out=f'{wvl_dir}/arcsix_atm_profile.h5'
+        )
+    else:
+        raise ValueError(f"atm_mode should be 'afgl' or 'arcsix', got '{atm_mode}'")
+
+    # Create absorption object
+    fname_abs = f'{wvl_dir}/abs_{wavelength:.1f}.pk'
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs,
+                                target='fine', atm_obj=atm0, overwrite=overwrite)
+
+    # Create cloud object (clear sky - zero optical thickness)
+    fname_cld = f'{wvl_dir}/cld.pk'
+    cld0 = er3t.pre.cld.cld_gen_cop(
+        fname=fname_cld,
+        cot=np.array([0.0]).reshape((1, 1)),
+        cer=np.array([1.0]).reshape((1, 1)),
+        cth=np.array([1.5]).reshape((1, 1)),
+        cgt=np.array([1.0]).reshape((1, 1)),
+        dz=0.1,
+        extent_xy=[0.0, 1.0, 0.0, 1.0],
+        atm_obj=atm0,
+        overwrite=overwrite
+    )
+
+    # Create surface object based on surface type
+    if surface_type == 'snow':
+        sfc_dict = {
+            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
+            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
+            'fiso': np.array([0.986]).reshape((1, 1)),
+            'fgeo': np.array([0.033]).reshape((1, 1)),
+            'fvol': np.array([0.000]).reshape((1, 1)),
+            'fj'  : np.array([0.447]).reshape((1, 1)),
+            'alpha': np.array([0.3]).reshape((1, 1)),
+        }
+    elif surface_type == 'land':
+        sfc_dict = {
+            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
+            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
+            'fiso': np.array([0.129]).reshape((1, 1)),
+            'fgeo': np.array([0.074]).reshape((1, 1)),
+            'fvol': np.array([0.055]).reshape((1, 1)),
+            'fj'  : np.array([0.417]).reshape((1, 1)),
+            'alpha': np.array([1.5]).reshape((1, 1)),
+        }
+    elif surface_type == 'ocean':
+        sfc_dict = {
+            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
+            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
+            'fiso': np.array([0.02]).reshape((1, 1)),
+            'fgeo': np.array([0.0]).reshape((1, 1)),
+            'fvol': np.array([0.0]).reshape((1, 1)),
+            'fj'  : np.array([0.0]).reshape((1, 1)),
+            'alpha': np.array([0.0]).reshape((1, 1)),
+        }
+
+    elif surface_type == 'lambertian':
+        sfc_dict = {
+            'dx': cld0.lay['dx']['data']*cld0.lay['nx']['data'],
+            'dy': cld0.lay['dy']['data']*cld0.lay['ny']['data'],
+            'alb': np.array([0.9]).reshape((1, 1)),
+            }
+
+    else:
+        raise ValueError(f"surface_type should be 'snow', 'land', or 'ocean', got '{surface_type}'")
+
+    fname_sfc = f'{wvl_dir}/sfc.pk'
+    sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
+
+    # Generate SHDOM input files
+    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0,
+                                      fname=f'{wvl_dir}/shdom-sfc.txt', overwrite=overwrite)
+    atm1d0 = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0,
+                                      fname=f'{wvl_dir}/shdom-ckd.txt', overwrite=overwrite)
+    atm3d0 = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0,
+                                      fname=f'{wvl_dir}/shdom-prp.txt',
+                                      fname_atm_1d=atm1d0.fname, overwrite=overwrite)
+
+    atm_1ds = [atm1d0]
+    atm_3ds = [atm3d0]
+
+    # Loop over solar geometries
+    for i_sza, sza in enumerate(solar_zenith_angles):
+        for i_saa, saa in enumerate(solar_azimuth_angles):
+
+            # Create viewing geometry arrays
+            vaa_2d, vza_2d = np.meshgrid(viewing_azimuth_angles, viewing_zenith_angles, indexing='ij')
+            vaa = vaa_2d.ravel()
+            vza = vza_2d.ravel()
+
+            # Calculate relative azimuth angles
+            raa = er3t.util.util.calculate_raa(saa=saa, vaa=vaa, forward_scattering='positive')
+
+            # Run SHDOM
+            shd_dir = f'{wvl_dir}/shdom_sza{sza:.1f}_saa{saa:.1f}'
+            shd0 = er3t.rtm.shd.shdom_ng(
+                date=datetime.datetime(2024, 6, 5),
+                atm_1ds=atm_1ds,
+                atm_3ds=atm_3ds,
+                surface=sfc_2d,
+                Niter=1000,
+                Nmu=32,
+                Nphi=64,
+                sol_acc=1.0e-6,
+                target='radiance',
+                solar_zenith_angle=sza,
+                solar_azimuth_angle=saa,
+                sensor_zenith_angles=vza,
+                sensor_azimuth_angles=vaa,
+                sensor_altitude=705.0,
+                sensor_dx=cld0.lay['dx']['data'],
+                sensor_dy=cld0.lay['dy']['data'],
+                fdir=shd_dir,
+                solver=solver,
+                Ncpu=1,  # Use single CPU per wavelength worker
+                mp_mode='mpi',
+                overwrite=overwrite,
+                force=True,
+            )
+
+            # Read SHDOM output
+            fname_h5 = f'{shd_dir}/shd_output.h5'
+            out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0,
+                                           mode='mean', squeeze=True, verbose=False, overwrite=overwrite)
+
+            # Store results
+            output_dat = out0.data['rad']['data']
+            radiance_data = output_dat.reshape(vaa_2d.shape)
+            wavelength_results[i_sza, i_saa, :, :] = radiance_data
+
+    if verbose:
+        print(f"Worker {i_wvl}: Completed wavelength {wavelength:.1f} nm")
+
+    return (i_wvl, wavelength_results)
+
+
+def calculate_spectral_radiance(
+        wavelengths=[550.0, 650.0, 940.0],
+        solar_zenith_angles=np.arange(0, 91, 30),
+        viewing_zenith_angles=np.arange(0, 91, 30),
+        solar_azimuth_angles=np.arange(0, 360, 60),
+        viewing_azimuth_angles=np.arange(0, 360, 60),
+        atm_mode='afgl',
+        solver='IPA',
+        surface_type='snow',
+        output_dir=None,
+        overwrite=True,
+        verbose=True,
+        n_cpus=None
+        ):
+    """
+    Calculate spectral radiance for given viewing geometries and wavelengths
+    based on example_03_rad_atm1d_clear_over_snow.
+    Uses multiprocessing to parallelize calculations across wavelengths.
+
+    Parameters:
+    -----------
+    wavelengths : list or array-like, default [550.0, 650.0, 750.0]
+        Array of wavelengths in nm
+    solar_zenith_angles : array-like, default np.arange(0, 91, 10)
+        Array of solar zenith angles in degrees (0-90)
+    viewing_zenith_angles : array-like, default np.arange(0, 91, 10)
+        Array of viewing zenith angles in degrees (0-90)
+    solar_azimuth_angles : array-like, default np.arange(0, 360, 30)
+        Array of solar azimuth angles in degrees (0-359)
+    viewing_azimuth_angles : array-like, default np.arange(0, 360, 30)
+        Array of viewing azimuth angles in degrees (0-359)
+    atm_mode : str, default 'afgl'
+        Atmospheric model mode ('afgl' or 'arcsix')
+    solver : str, default 'IPA'
+        Radiative transfer solver ('IPA' or 'MCA')
+    surface_type : str, default 'snow'
+        Surface type ('snow', 'land', 'ocean')
+    output_dir : str, optional
+        Output directory. If None, uses default tmp-data structure
+    overwrite : bool, default True
+        Whether to overwrite existing files
+    verbose : bool, default True
+        Whether to print progress information
+    n_cpus : int, optional
+        Number of CPUs to use for parallel processing. If None, uses min(cpu_count(), n_wavelengths)
+
+    Returns:
+    --------
+    results : dict
+        Dictionary containing:
+        - 'radiance': 5D array (wavelengths, sza, saa, vza, vaa)
+        - 'wavelengths': wavelength array
+        - 'solar_zenith_angles': solar zenith angle array
+        - 'solar_azimuth_angles': solar azimuth angle array
+        - 'viewing_zenith_angles': viewing zenith angle array
+        - 'viewing_azimuth_angles': viewing azimuth angle array
+        - 'metadata': calculation metadata
+    """
+
+    # Convert inputs to numpy arrays
+    wavelengths = np.array(wavelengths)
+    solar_zenith_angles = np.array(solar_zenith_angles)
+    viewing_zenith_angles = np.array(viewing_zenith_angles)
+    solar_azimuth_angles = np.array(solar_azimuth_angles)
+    viewing_azimuth_angles = np.array(viewing_azimuth_angles)
+
+    # Create output directory
+    if output_dir is None:
+        output_dir = f'{fdir0}/tmp-data/{name_tag}/spectral_radiance_calculation'
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Initialize results array
+    n_wvl = len(wavelengths)
+    n_sza = len(solar_zenith_angles)
+    n_saa = len(solar_azimuth_angles)
+    n_vza = len(viewing_zenith_angles)
+    n_vaa = len(viewing_azimuth_angles)
+
+    radiance_results = np.zeros((n_wvl, n_sza, n_saa, n_vza, n_vaa))
+
+    if verbose:
+        total_calculations = n_wvl * n_sza * n_saa
+        print("Starting spectral radiance calculations...")
+        print(f"Wavelengths: {n_wvl}")
+        print(f"Solar geometries: {n_sza} x {n_saa} = {n_sza * n_saa}")
+        print(f"Viewing geometries: {n_vza} x {n_vaa} = {n_vza * n_vaa}")
+        print(f"Total calculations: {total_calculations}")
+
+    # Determine number of CPUs to use
+    if n_cpus is None:
+        n_cpus = min(mp.cpu_count(), n_wvl)
+    else:
+        n_cpus = min(n_cpus, mp.cpu_count(), n_wvl)
+
+    if verbose:
+        print(f"Using {n_cpus} CPUs for {n_wvl} wavelengths")
+        print(f"Available CPUs: {mp.cpu_count()}")
+
+    # Prepare arguments for multiprocessing
+    args_list = []
+    for i_wvl, wavelength in enumerate(wavelengths):
+        args_list.append((
+            i_wvl, wavelength, solar_zenith_angles, solar_azimuth_angles,
+            viewing_zenith_angles, viewing_azimuth_angles, atm_mode, solver,
+            surface_type, output_dir, overwrite, verbose
+        ))
+
+    # Process wavelengths in parallel
+    if verbose:
+        print("\nStarting parallel wavelength processing...")
+
+    # Use multiprocessing Pool to process wavelengths in parallel
+    # Note: This should work properly when called from __main__ or in notebooks
+    try:
+        with mp.Pool(processes=n_cpus) as pool:
+            results_list = pool.map(_process_single_wavelength, args_list)
+    except Exception as e:
+        if verbose:
+            print(f"Multiprocessing failed: {e}")
+            print("Falling back to sequential processing...")
+        # Fallback to sequential processing
+        results_list = []
+        for args in args_list:
+            results_list.append(_process_single_wavelength(args))
+
+    # Collect results
+    if verbose:
+        print("Collecting results from parallel processes...")
+
+    for i_wvl, wavelength_results in results_list:
+        radiance_results[i_wvl, :, :, :, :] = wavelength_results
+
+    # Prepare results dictionary
+    results = {
+        'radiance': radiance_results,
+        'wavelengths': wavelengths,
+        'solar_zenith_angles': solar_zenith_angles,
+        'solar_azimuth_angles': solar_azimuth_angles,
+        'viewing_zenith_angles': viewing_zenith_angles,
+        'viewing_azimuth_angles': viewing_azimuth_angles,
+        'metadata': {
+            'atm_mode': atm_mode,
+            'solver': solver,
+            'surface_type': surface_type,
+            'output_dir': output_dir,
+            'calculation_date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'total_calculations': total_calculations
+        }
+    }
+
+    if verbose:
+        print("\nSpectral radiance calculation completed!")
+        print(f"Results shape: {radiance_results.shape}")
+        print(f"Output saved to: {output_dir}")
+
+    return results
+
+
+# def plot_spectral_radiance(results, output_filename=None, figsize=(12, 8), dpi=300):
+#     """
+#     Create a spectral plot of radiance results and save to file.
+
+#     Parameters:
+#     -----------
+#     results : dict
+#         Results dictionary from calculate_spectral_radiance function
+#     output_filename : str, optional
+#         Output filename for the plot. If None, generates automatic filename
+#     figsize : tuple, default (12, 8)
+#         Figure size in inches (width, height)
+#     dpi : int, default 300
+#         Resolution for saved figure
+
+#     Returns:
+#     --------
+#     fig : matplotlib.figure.Figure
+#         The created figure object
+#     """
+
+#     # Extract data from results
+#     radiance = results['radiance']
+#     wavelengths = results['wavelengths']
+#     solar_zenith_angles = results['solar_zenith_angles']
+#     solar_azimuth_angles = results['solar_azimuth_angles']
+#     viewing_zenith_angles = results['viewing_zenith_angles']
+#     viewing_azimuth_angles = results['viewing_azimuth_angles']
+#     metadata = results['metadata']
+
+#     # Create figure with subplots
+#     fig, axes = plt.subplots(2, 2, figsize=figsize)
+#     fig.suptitle(f'Spectral Radiance Analysis\n'
+#                 f'Surface: {metadata["surface_type"].title()}, '
+#                 f'Atmosphere: {metadata["atm_mode"].upper()}, '
+#                 f'Solver: {metadata["solver"]}', fontsize=14, fontweight='bold')
+
+#     # Plot 1: Spectral radiance vs wavelength (averaged over all geometries)
+#     ax1 = axes[0, 0]
+#     mean_radiance = np.mean(radiance, axis=(1, 2, 3, 4))
+#     std_radiance = np.std(radiance, axis=(1, 2, 3, 4))
+
+#     ax1.errorbar(wavelengths, mean_radiance, yerr=std_radiance,
+#                 marker='o', linestyle='-', linewidth=2, markersize=6,
+#                 capsize=5, capthick=2, label='Mean ± Std')
+#     ax1.set_xlabel('Wavelength (nm)')
+#     ax1.set_ylabel('Radiance')
+#     ax1.set_title('Spectral Radiance\n(averaged over all geometries)')
+#     ax1.grid(True, alpha=0.3)
+#     ax1.legend()
+
+#     # Plot 2: Radiance vs solar zenith angle (for first wavelength)
+#     ax2 = axes[0, 1]
+#     if len(wavelengths) > 0 and len(solar_zenith_angles) > 1:
+#         wvl_idx = 0  # First wavelength
+#         # Average over azimuth angles and viewing angles
+#         radiance_vs_sza = np.mean(radiance[wvl_idx, :, :, :, :], axis=(1, 2, 3))
+
+#         ax2.plot(solar_zenith_angles, radiance_vs_sza, 'o-', linewidth=2, markersize=6)
+#         ax2.set_xlabel('Solar Zenith Angle (°)')
+#         ax2.set_ylabel('Radiance')
+#         ax2.set_title(f'Radiance vs Solar Zenith Angle\n(λ = {wavelengths[wvl_idx]:.1f} nm)')
+#         ax2.grid(True, alpha=0.3)
+#     else:
+#         ax2.text(0.5, 0.5, 'Insufficient SZA data\nfor plotting',
+#                 ha='center', va='center', transform=ax2.transAxes)
+#         ax2.set_title('Solar Zenith Angle Dependence')
+
+#     # Plot 3: Radiance vs viewing zenith angle (for first wavelength)
+#     ax3 = axes[1, 0]
+#     if len(wavelengths) > 0 and len(viewing_zenith_angles) > 1:
+#         wvl_idx = 0  # First wavelength
+#         # Average over solar angles and azimuth angles
+#         radiance_vs_vza = np.mean(radiance[wvl_idx, :, :, :, :], axis=(0, 1, 3))
+
+#         ax3.plot(viewing_zenith_angles, radiance_vs_vza, 's-', linewidth=2, markersize=6, color='orange')
+#         ax3.set_xlabel('Viewing Zenith Angle (°)')
+#         ax3.set_ylabel('Radiance')
+#         ax3.set_title(f'Radiance vs Viewing Zenith Angle\n(λ = {wavelengths[wvl_idx]:.1f} nm)')
+#         ax3.grid(True, alpha=0.3)
+#     else:
+#         ax3.text(0.5, 0.5, 'Insufficient VZA data\nfor plotting',
+#                 ha='center', va='center', transform=ax3.transAxes)
+#         ax3.set_title('Viewing Zenith Angle Dependence')
+
+#     # Plot 4: Summary statistics table
+#     ax4 = axes[1, 1]
+#     ax4.axis('off')
+
+#     # Create summary statistics
+#     summary_data = []
+#     for i, wvl in enumerate(wavelengths):
+#         wvl_radiance = radiance[i, :, :, :, :]
+#         summary_data.append([
+#             f'{wvl:.1f}',
+#             f'{np.mean(wvl_radiance):.3f}',
+#             f'{np.std(wvl_radiance):.3f}',
+#             f'{np.min(wvl_radiance):.3f}',
+#             f'{np.max(wvl_radiance):.3f}'
+#         ])
+
+#     # Create table
+#     table_headers = ['Wavelength\n(nm)', 'Mean\nRadiance', 'Std\nRadiance', 'Min\nRadiance', 'Max\nRadiance']
+#     table = ax4.table(cellText=summary_data, colLabels=table_headers,
+#                      cellLoc='center', loc='center', bbox=[0, 0.3, 1, 0.6])
+#     table.auto_set_font_size(False)
+#     table.set_fontsize(9)
+#     table.scale(1, 1.5)
+
+#     # Style the table
+#     for i in range(len(table_headers)):
+#         table[(0, i)].set_facecolor('#40466e')
+#         table[(0, i)].set_text_props(weight='bold', color='white')
+
+#     ax4.set_title('Radiance Statistics\n(W m⁻² sr⁻¹ nm⁻¹)', pad=20)
+
+#     # Add metadata text
+#     metadata_text = (f"Calculation Date: {metadata['calculation_date']}\n"
+#                     f"Total Calculations: {metadata['total_calculations']}\n"
+#                     f"Geometries: {len(solar_zenith_angles)} SZA × {len(solar_azimuth_angles)} SAA × "
+#                     f"{len(viewing_zenith_angles)} VZA × {len(viewing_azimuth_angles)} VAA")
+#     ax4.text(0.5, 0.1, metadata_text, ha='center', va='center',
+#             transform=ax4.transAxes, fontsize=8,
+#             bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray", alpha=0.7))
+
+#     # Adjust layout
+#     plt.tight_layout()
+
+#     # Generate filename if not provided
+#     if output_filename is None:
+#         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+#         wvl_range = f"{wavelengths[0]:.0f}-{wavelengths[-1]:.0f}nm" if len(wavelengths) > 1 else f"{wavelengths[0]:.0f}nm"
+#         output_filename = f'spectral_radiance_{metadata["surface_type"]}_{metadata["atm_mode"]}_{wvl_range}_{timestamp}.png'
+
+#     # Ensure output directory exists
+#     output_dir = os.path.dirname(output_filename) if os.path.dirname(output_filename) else metadata.get('output_dir', '.')
+#     if output_dir and not os.path.exists(output_dir):
+#         os.makedirs(output_dir)
+
+#     # Save figure
+#     full_path = os.path.join(output_dir, os.path.basename(output_filename))
+#     fig.savefig(full_path, dpi=dpi, bbox_inches='tight', facecolor='white')
+
+#     print(f"\nSpectral radiance plot saved to: {full_path}")
+
+#     return fig
+
+def plot_spectral_radiance(results, output_filename=None, figsize=(20, 8), dpi=300):
+    """
+    Create a single spectral plot of radiance vs wavelength and save to file.
+
+    Parameters:
+    -----------
+    results : dict
+        Results dictionary from calculate_spectral_radiance function
+    output_filename : str, optional
+        Output filename for the plot. If None, generates automatic filename
+    figsize : tuple, default (10, 8)
+        Figure size in inches (width, height)
+    dpi : int, default 300
+        Resolution for saved figure
+
+    Returns:
+    --------
+    fig : matplotlib.figure.Figure
+        The created figure object
+    """
+
+    # Extract data from results
+    radiance = results['radiance']
+    wavelengths = results['wavelengths']
+    solar_zenith_angles = results['solar_zenith_angles']
+    solar_azimuth_angles = results['solar_azimuth_angles']
+    viewing_zenith_angles = results['viewing_zenith_angles']
+    viewing_azimuth_angles = results['viewing_azimuth_angles']
+    metadata = results['metadata']
+
+    # Create figure
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+
+    # Calculate mean radiance across all geometries for each wavelength
+    mean_radiance = np.mean(radiance, axis=(1, 2, 3, 4))
+    std_radiance = np.std(radiance, axis=(1, 2, 3, 4))
+
+    # Plot spectral radiance with error bars
+    ax.errorbar(wavelengths, mean_radiance, yerr=std_radiance,
+                marker='o', linestyle='-', linewidth=2, markersize=4,
+                capsize=5, capthick=2, color='darkblue',
+                ecolor='lightblue', label='Mean ± Std')
+
+    # Set labels and title
+    ax.set_xlabel('Wavelength (nm)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Radiance', fontsize=12, fontweight='bold')
+    ax.set_title('Spectral Radiance', fontsize=14, fontweight='bold', pad=20)
+
+    # set ylim for easy comparison between multiple runs
+    ax.set_ylim([-0.02, 0.8])
+
+    # Add grid
+    ax.grid(True, alpha=0.3, linestyle='--')
+
+    # Define major atmospheric absorption bands
+    absorption_bands = {
+        'O2-A Band': {'range': (759, 769), 'color': 'red', 'alpha': 0.2},
+        'H2O (720nm)': {'range': (715, 730), 'color': 'blue', 'alpha': 0.2},
+        'O2-B Band': {'range': (686, 690), 'color': 'red', 'alpha': 0.2},
+        'Chappuis (O3)': {'range': (400, 650), 'color': 'orange', 'alpha': 0.1},
+        'H2O (820nm)': {'range': (810, 830), 'color': 'blue', 'alpha': 0.2},
+        'H2O (940nm)': {'range': (930, 970), 'color': 'blue', 'alpha': 0.2},
+        'H2O (1130nm)': {'range': (1110, 1150), 'color': 'blue', 'alpha': 0.2},
+        'O2 (1270nm)': {'range': (1260, 1280), 'color': 'red', 'alpha': 0.2},
+        'H2O (1380nm)': {'range': (1360, 1400), 'color': 'blue', 'alpha': 0.2},
+        'H2O (1870nm)': {'range': (1840, 1900), 'color': 'blue', 'alpha': 0.2},
+        'CO2 (2060nm)': {'range': (2040, 2080), 'color': 'green', 'alpha': 0.2},
+    }
+
+    # Get y-axis limits for shading
+    y_min, y_max = ax.get_ylim()
+
+    # Plot absorption bands that overlap with our wavelength range
+    wvl_min, wvl_max = wavelengths.min(), wavelengths.max()
+    legend_handles = []
+    plotted_species = set()
+
+    for band_name, band_info in absorption_bands.items():
+        band_min, band_max = band_info['range']
+
+        # Check if band overlaps with our wavelength range
+        if band_max >= wvl_min and band_min <= wvl_max:
+            # Clip band to our wavelength range
+            plot_min = max(band_min, wvl_min)
+            plot_max = min(band_max, wvl_max)
+
+            # Add shaded region
+            ax.axvspan(plot_min, plot_max,
+                      color=band_info['color'],
+                      alpha=band_info['alpha'],
+                      zorder=0)
+
+            # Determine species for legend (extract from band name)
+            if 'O2' in band_name or 'O₂' in band_name:
+                species = 'O₂ Absorption'
+                color = 'red'
+            elif 'H2O' in band_name or 'H₂O' in band_name:
+                species = 'H₂O Absorption'
+                color = 'blue'
+            elif 'Chappuis' in band_name or 'O3' in band_name:
+                species = 'O₃ Chappuis Band'
+                color = 'orange'
+            elif 'CO2' in band_name:
+                species = 'CO₂ Absorption'
+                color = 'green'
+            else:
+                continue
+
+            # Add to legend if not already added
+            if species not in plotted_species:
+                legend_handles.append(plt.Rectangle((0, 0), 1, 1,
+                                                  facecolor=color,
+                                                  alpha=0.3,
+                                                  label=species))
+                plotted_species.add(species)
+
+    # Add absorption band annotations for major bands in range
+    annotation_offset = 0
+    for band_name, band_info in absorption_bands.items():
+        band_min, band_max = band_info['range']
+        band_center = (band_min + band_max) / 2
+
+        # Only annotate if band center is in our range and it's a major band
+        major_bands = ['O2-A', 'O2-B', 'H2O (940nm)', 'Chappuis']
+        in_range = wvl_min <= band_center <= wvl_max
+        is_major = any(keyword in band_name for keyword in major_bands)
+        if in_range and is_major:
+
+            # Position annotation
+            y_pos = y_max - 0.05 * (y_max - y_min) - annotation_offset * 0.04 * (y_max - y_min)
+
+            ax.annotate(band_name,
+                       xy=(band_center, y_pos),
+                       xytext=(0, -10),
+                       textcoords='offset points',
+                       ha='center', va='top',
+                       fontsize=8,
+                       bbox=dict(boxstyle='round,pad=0.2',
+                               facecolor=band_info['color'],
+                               alpha=0.6),
+                       arrowprops=dict(arrowstyle='->',
+                                     connectionstyle='arc3,rad=0'))
+            annotation_offset += 1
+
+    # Format geometry information
+    def format_angle_range(angles):
+        """Format angle array for display"""
+        if len(angles) == 1:
+            return f"{angles[0]:.1f}°"
+        else:
+            return f"{angles.min():.1f}° - {angles.max():.1f}°"
+
+    # Create information text box
+    info_text = (
+        f"Surface: {metadata['surface_type'].title()}\n"
+        f"Atmosphere: {metadata['atm_mode'].upper()}\n"
+        f"Solver: {metadata['solver']}\n"
+        f"SZA: {format_angle_range(solar_zenith_angles)}\n"
+        f"SAA: {format_angle_range(solar_azimuth_angles)}\n"
+        f"VZA: {format_angle_range(viewing_zenith_angles)}\n"
+        f"VAA: {format_angle_range(viewing_azimuth_angles)}\n"
+    )
+
+    # Add text box to plot
+    ax.text(0.98, 0.98, info_text, transform=ax.transAxes,
+            verticalalignment='center', horizontalalignment='right',
+            bbox=dict(boxstyle="round,pad=0.5", facecolor="none"),
+            fontsize=10)
+
+    # Add legend for absorption bands if any were plotted
+    if legend_handles:
+        # Add the main radiance line to legend
+        legend_handles.insert(0, plt.Line2D([0], [0], color='darkblue', linewidth=2,
+                                          marker='o', markersize=4, label='Spectral Radiance'))
+
+        # Create legend
+        ax.legend(handles=legend_handles, loc='upper left', fontsize=9,
+                 framealpha=0.9, fancybox=True)
+
+    # Adjust layout
+    plt.tight_layout()
+
+    # Generate filename if not provided
+    if output_filename is None:
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        wvl_range = f"{wavelengths[0]:.0f}-{wavelengths[-1]:.0f}nm" if len(wavelengths) > 1 else f"{wavelengths[0]:.0f}nm"
+        output_filename = f'spectral_radiance_{metadata["surface_type"]}_{metadata["atm_mode"]}_{wvl_range}_{timestamp}.png'
+
+    # Ensure output directory exists
+    output_dir = os.path.dirname(output_filename) if os.path.dirname(output_filename) else metadata.get('output_dir', '.')
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Save figure
+    full_path = os.path.join(output_dir, os.path.basename(output_filename))
+    fig.savefig(full_path, dpi=dpi, bbox_inches='tight', facecolor='white')
+
+    print(f"\nSpectral radiance plot saved to: {full_path}")
+
+    return fig
 
 if __name__ == '__main__':
 
@@ -1643,7 +2346,59 @@ if __name__ == '__main__':
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # example_01_rad_atm1d_clear_over_land()
     # example_02_rad_atm1d_clear_over_ocean()
-    example_03_rad_atm1d_clear_over_snow(wavelength=555.0, mode='arcsix')
+    # example_03_rad_atm1d_clear_over_snow(wavelength=555.0, mode='afgl')
+    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 2),
+    solar_zenith_angles=np.array([63]),
+    viewing_zenith_angles=np.array([0]),
+    viewing_azimuth_angles=np.array([0]),
+    solar_azimuth_angles=np.array([0]),
+    atm_mode='afgl',
+    n_cpus=64,
+    surface_type='lambertian'
+    )
+
+    # Create and save spectral plot
+    fig = plot_spectral_radiance(results)
+
+    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 2),
+    solar_zenith_angles=np.array([63]),
+    viewing_zenith_angles=np.array([0]),
+    viewing_azimuth_angles=np.array([0]),
+    solar_azimuth_angles=np.array([0]),
+    atm_mode='arcsix',
+    n_cpus=64,
+    surface_type='lambertian'
+    )
+
+    # Create and save spectral plot
+    fig = plot_spectral_radiance(results)
+
+    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 2),
+    solar_zenith_angles=np.array([63]),
+    viewing_zenith_angles=np.array([0]),
+    viewing_azimuth_angles=np.array([0]),
+    solar_azimuth_angles=np.array([0]),
+    atm_mode='afgl',
+    n_cpus=64,
+    surface_type='snow'
+    )
+
+    # Create and save spectral plot
+    fig = plot_spectral_radiance(results)
+
+    results = calculate_spectral_radiance(wavelengths=np.arange(400, 2001, 2),
+    solar_zenith_angles=np.array([63]),
+    viewing_zenith_angles=np.array([0]),
+    viewing_azimuth_angles=np.array([0]),
+    solar_azimuth_angles=np.array([0]),
+    atm_mode='arcsix',
+    n_cpus=64,
+    surface_type='snow'
+    )
+
+    # Create and save spectral plot
+    fig = plot_spectral_radiance(results)
+
     # example_04_rad_atm1d_cloud_over_ocean()
 
 
