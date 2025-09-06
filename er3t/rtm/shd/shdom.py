@@ -109,6 +109,7 @@ class shdom_ng:
                 print('Message [shdom_ng]: Directory <%s> already exists.' % fdir)
 
         self.Ng      = Ng
+        self.Ng_     = 1 # currently SHDOM integrates gs within its calculation
         self.date    = date
         self.fdir    = fdir
         self.verbose = verbose
@@ -212,7 +213,7 @@ class shdom_ng:
         self.fnames_inp = []
         self.fnames_out = []
         self.fnames_sav = []
-        for ig in range(self.Ng):
+        for ig in range(self.Ng_):
             self.fnames_inp.append('%s/shdom-inp_g-%3.3d.txt' % (self.fdir, ig))
             self.fnames_out.append('%s/shdom-out_g-%3.3d.txt' % (self.fdir, ig))
             self.fnames_sav.append('%s/shdom-sav_g-%3.3d.sHdOm-sav' % (self.fdir, ig))
@@ -223,7 +224,7 @@ class shdom_ng:
         if overwrite:
 
             # initialize namelist (list contains Ng Python dictionaries)
-            self.nml = [{} for ig in range(self.Ng)]
+            self.nml = [{} for ig in range(self.Ng_)]
 
             # SHDOM namelist init
             self.nml_init()
@@ -257,7 +258,7 @@ class shdom_ng:
             self, \
         ):
 
-        for ig in range(self.Ng):
+        for ig in range(self.Ng_):
 
             self.nml[ig]['_header'] = '$SHDOMINPUT'
             self.nml[ig]['RUNNAME'] = 'shdom-run_g-%3.3d' % ig
@@ -336,7 +337,7 @@ class shdom_ng:
             saa0, \
         ):
 
-        for ig in range(self.Ng):
+        for ig in range(self.Ng_):
 
             if self.wvl < 5025.0:
                 self.nml[ig]['UNITS'] = 'R'
@@ -369,7 +370,7 @@ class shdom_ng:
         ):
 
 
-        for ig in range(self.Ng):
+        for ig in range(self.Ng_):
 
             self.nml[ig]['NUMOUT'] = 1
 
@@ -419,7 +420,7 @@ class shdom_ng:
             sh_acc=None,    \
         ):
 
-        for ig in range(self.Ng):
+        for ig in range(self.Ng_):
 
             self.nml[ig]['ACCELFLAG'] = '.TRUE.'
             self.nml[ig]['SOLACC'] = sol_acc
@@ -473,7 +474,7 @@ class shdom_ng:
         """
 
         # create input files for SHDOM
-        for ig in range(self.Ng):
+        for ig in range(self.Ng_):
             shd_inp_file(self.fnames_inp[ig], self.nml[ig], comment=comment)
 
         if not self.quiet:
