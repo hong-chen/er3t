@@ -85,8 +85,7 @@ class mca_sfc_2d:
         self.nml['Sfc_nxb'] = copy.deepcopy(self.sfc.data['nx'])
         self.nml['Sfc_nyb'] = copy.deepcopy(self.sfc.data['ny'])
 
-
-        if ('lambertian' in self.sfc.data['sfc']['name'].lower()) and (np.squeeze(self.sfc.data['sfc']['data']).ndim == 2):
+        if ('lambertian' in self.sfc.data['sfc']['name'].lower()):
 
             sfc_tmps = np.zeros((self.sfc.Nx, self.sfc.Ny), dtype=er3t.common.f_dtype)
             self.nml['Sfc_tmps2d'] = dict(data=sfc_tmps, name='Temperature anomalies', units='K')    # temperature anomaly
@@ -95,10 +94,10 @@ class mca_sfc_2d:
             self.nml['Sfc_jsfc2d'] = dict(data=sfc_jsfc, name='Surface distribution type', units='N/A')
 
             sfc_psfc = np.zeros((self.sfc.Nx, self.sfc.Ny, 5), dtype=er3t.common.f_dtype)
-            sfc_alb  = np.squeeze(self.sfc.data['sfc']['data'])
+            sfc_alb  = self.sfc.data['sfc']['data']
             sfc_alb[sfc_alb<0.0] = 0.0
             sfc_alb[sfc_alb>1.0] = 1.0
-            sfc_psfc[:, :, 0] = sfc_alb[:, :]
+            sfc_psfc[..., 0] = sfc_alb
             self.nml['Sfc_psfc2d'] = dict(data=sfc_psfc, name='Surface distribution parameters', units='N/A')
 
         elif ('brdf-lsrt' in self.sfc.data['sfc']['name'].lower()) or (self.sfc.data['sfc']['data'].shape[-1] == 3):
