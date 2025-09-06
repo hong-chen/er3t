@@ -221,7 +221,7 @@ class abs_rep:
         f0.close()
 
 
-    def cal_coef(self, logp=False):
+    def cal_coef(self, logp=True):
 
         Nz = self.atm_obj.lay['altitude']['data'].size
         Ng = self.Ng
@@ -252,27 +252,6 @@ class abs_rep:
                 'data': self.sol.data
                 }
 
-        # sol0 = self.sol.data.copy()
-        # print('+'*20)
-        # print(self.wvl)
-        # print(sol0)
-        # if (self.source == 'solar') and (self.target in ['fine', 'medium', 'coarse']):
-        #     self.coef['solar']['data'][...] = cal_solar_kurudz(self.wvl, slit_func=self.slit_func)
-        # else:
-        #     self.coef['solar']['data'][...] = np.sum(self.sol.data*self.wgt.data)
-        # sol1 = self.coef['solar']['data']
-        # print(sol1)
-        # print()
-        # print(self.wgt.data)
-        # sol0_ = np.sum(sol0*self.wgt.data)
-        # sol1_ = np.sum(sol1*self.wgt.data)
-        # print(sol0_)
-        # print(sol1_)
-        # print((sol1_-sol0_)/sol0_ * 100.0)
-        # print()
-        # print('-'*20)
-        # print()
-
         self.coef['slit_func'] = {
                 'name': 'Slit Function (Nz, Ng)',
                 'data': np.ones((Nz, Ng), dtype=np.float64)
@@ -293,7 +272,8 @@ class abs_rep:
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
 
-                gases.append('O3')
+                if 'O3' not in gases:
+                    gases.append('O3')
 
             if (wvl0 >= 301.4) & (wvl0 <= 1338.2):
                 xsec = cal_xsec_o4_greenblatt(wvl0)
@@ -301,7 +281,8 @@ class abs_rep:
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
 
-                gases.append('O4')
+                if 'O4' not in gases:
+                    gases.append('O4')
 
             if (wvl0 >= 230.91383) & (wvl0 <= 794.04565):
                 xsec = cal_xsec_no2_burrows(wvl0)
@@ -309,7 +290,8 @@ class abs_rep:
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
 
-                gases.append('NO2')
+                if 'NO2' not in gases:
+                    gases.append('NO2')
 
             if self.run_reptran:
 
@@ -338,13 +320,9 @@ class abs_rep:
                         #╭──────────────────────────────────────────────────────────────╮#
                         if xsec.ndim == 4:
                             points = (dt_ref, vmr_ref, p_ref[i_sort_p])
-                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_p])
+                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_p], bounds_error=False, fill_value=None)
 
-                            # vmr_ = np.log(self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data'])
                             vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
-
-                            if vmr_.max() > vmr_ref.max():
-                                vmr_[vmr_>vmr_ref.max()] = vmr_ref.max()
 
                             f_points = np.transpose(np.vstack((dt_, vmr_, p_)))
                         #╰──────────────────────────────────────────────────────────────╯#
@@ -353,7 +331,7 @@ class abs_rep:
                         #╭──────────────────────────────────────────────────────────────╮#
                         else:
                             points = (dt_ref, p_ref[i_sort_p])
-                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, iwvl, i_sort_p])
+                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, iwvl, i_sort_p], bounds_error=False, fill_value=None)
 
                             f_points = np.transpose(np.vstack((dt_, p_)))
                         #╰──────────────────────────────────────────────────────────────╯#
@@ -366,6 +344,11 @@ class abs_rep:
                         abso_coef0[abso_coef0<0.0] = 0.0
 
                         self.coef['abso_coef']['data'][:, i] += abso_coef0
+
+                    else:
+
+                        msg = f'Warning [abs_rep]: <{gas_type}> is required by REPTRAN but is not available in <atm_obj>.'
+                        print(msg)
 
         self.gases = gases
         self.wvl_info = '%.2f nm (REPTRAN [Nwvl=%d|%s])' % (self.wvl, self.wvl_.size, ','.join(self.gases))

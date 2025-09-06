@@ -1153,7 +1153,8 @@ def test_100_rad_one(
                  'sensor_altitude': 120.0,
              'sensor_zenith_angle': 0.0,
                  'sensor_altitude': 120.0,
-            'sensor_azimuth_angle': np.arange(0.0, 180.1, 10.0),
+            # 'sensor_azimuth_angle': np.arange(0.0, 180.1, 10.0),
+            'sensor_azimuth_angle': np.array([0.0]),
                       'wavelength': wavelength,
          'cloud_optical_thickness': cot,
           'cloud_effective_radius': cer,
@@ -1182,6 +1183,9 @@ def test_100_rad_one(
     # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
     data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=True)
     # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
+    print('libRadtran:', data_lrt['rad'])
+    print('SHDOM:     ', data_shd['rad'])
+    sys.exit()
 
     # add the other half (180.0 - 360.0)
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1567,7 +1571,7 @@ def test_100_rad_spec(
 
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
+    data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=True)
     # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=True)
@@ -1600,9 +1604,9 @@ def test_100_rad_spec(
         # fig.suptitle('COT=%.1f, CER=%.1f $\\mu m$' % (params['cloud_optical_thickness'], params['cloud_effective_radius']))
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(111)
-        ax1.plot(params['wavelengths'], data_lrt['rad']     , color='black', lw=1.5, alpha=1.0, ls='-', zorder=0)
-        ax1.plot(params['wavelengths'], data_shd['rad']     , color='red'  , lw=1.0, alpha=1.0, ls='-', zorder=0)
-        ax1.plot(params['wavelengths'], data_mca['rad']     , color='blue' , lw=1.0, alpha=1.0, ls='-', zorder=0)
+        ax1.plot(params['wavelengths'], data_lrt['rad']     , color='black', lw=3.0, alpha=0.9, ls='-', zorder=0)
+        ax1.plot(params['wavelengths'], data_mca['rad']     , color='blue' , lw=2.5, alpha=1.0, ls='-', zorder=0)
+        ax1.plot(params['wavelengths'], data_shd['rad']     , color='red'  , lw=1.5, alpha=1.0, ls='-', zorder=0)
         # ax1.plot(params['wavelengths'], data_lrt_slit['rad'], color='black', lw=1.5, alpha=1.0, ls='-', zorder=0)
         ax1.set_xlabel('Wavelength [nm]')
         ax1.set_ylabel('Radiance [$\\mathrm{W m^{-2} nm^{-1} sr^{-1}}$]')
@@ -1691,9 +1695,7 @@ if __name__ == '__main__':
 
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
-
         wavelengths = np.arange(350.0, 2001.0, 5.0)
-        # wavelengths = np.arange(1000.0, 1501.0, 5.0)
         test_100_rad_spec(wavelengths, 0.0, 1.0, 100)
         pass
 
@@ -1740,7 +1742,7 @@ if __name__ == '__main__':
 
         # test_100_flux_one(550.0, 0.5, 9.0, 100, plot=True, overwrite=True)
         # test_100_rad_one(550.0, 0.5, 9.0, 100, surface='land', plot=True, overwrite=True)
-        # test_100_rad_one(1200.0, 0.0, 1.0, 100, surface='lambertian', plot=True, overwrite=True)
+        # test_100_rad_one(1065.0, 0.0, 1.0, 100, surface='lambertian', plot=True, overwrite=True)
 
     else:
 
