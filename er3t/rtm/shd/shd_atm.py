@@ -119,8 +119,9 @@ class shd_atm_1d:
             sol = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
 
             Ng = abs0.coef['weight']['data'].size
+            indices_sort = np.argsort(abs0.coef['weight']['data'])
 
-            g = ' '.join(['%.12f' % value for value in abs0.coef['weight']['data']])
+            g = ' '.join(['%.12f' % value for value in abs0.coef['weight']['data'][indices_sort]])
 
             for iband in range(Nband):
                 f.write('%d %.2f %.2f %.12f %d %s\n' % (iband+1, wvln_min, wvln_max, sol, Ng, g))
@@ -143,7 +144,6 @@ class shd_atm_1d:
 
             # gas absorption
             #╭──────────────────────────────────────────────────────────────╮#
-            indices_sort = np.argsort(abs0.coef['weight']['data'])
             atm_abs = abs0.coef['abso_coef']['data'][::-1, indices_sort]
             for i in range(atm_abs.shape[0]):
                 atm_abs[i, :] = atm_abs[i, :]/thickness[i]
