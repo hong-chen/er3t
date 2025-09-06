@@ -709,7 +709,7 @@ def shd_flux_one(
 
     return data
 
-def test_100_flux(
+def test_100_flux_one(
         wavelength,
         cot,
         cer,
@@ -816,6 +816,8 @@ def test_100_flux(
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
+
+
 def lrt_rad_one(
         params,
         surface='ocean',
@@ -833,8 +835,8 @@ def lrt_rad_one(
 
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
-    lrt_cfg['mol_abs_param'] = 'reptran fine'
-    lrt_cfg['number_of_streams'] = 64
+    lrt_cfg['mol_abs_param'] = 'reptran coarse'
+    lrt_cfg['number_of_streams'] = 32
 
     cld_cfg = er3t.rtm.lrt.get_cld_cfg()
     cld_cfg['cloud_file']  = '%s/cloud.txt' % fdir_tmp
@@ -857,12 +859,15 @@ def lrt_rad_one(
         input_dict_extra['brdf_ambrals geo'] = params['f_geo']
     elif surface == 'ocean':
         input_dict_extra['brdf_cam'] = 'u10 %.2f' % params['windspeed']
+    else:
+        mute_list.pop()
 
     inits = []
     init_rad = er3t.rtm.lrt.lrt_init_mono_rad(
             input_file  = '%s/input_rad.txt' % fdir_tmp,
             output_file = fname_out,
             date        = params['date'],
+            surface_albedo = params['surface_albedo'],
             solar_zenith_angle   = params['solar_zenith_angle'],
             solar_azimuth_angle  = 0.0,
             sensor_zenith_angle  = params['sensor_zenith_angle'],
@@ -880,6 +885,7 @@ def lrt_rad_one(
             input_file  = '%s/input_flx.txt' % fdir_tmp,
             output_file = '%s/output_flx.txt' % fdir_tmp,
             date        = params['date'],
+            surface_albedo = params['surface_albedo'],
             solar_zenith_angle = params['solar_zenith_angle'],
             wavelength         = params['wavelength'],
             output_altitude    = params['output_altitude'][-1],
@@ -916,7 +922,7 @@ def mca_rad_one(
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = '%s/tmp-data/%s/%s/cot-%04.1f_cer-%04.1f' % (er3t.common.fdir_examples, name_tag, _metadata['Function'], params['cloud_optical_thickness'], params['cloud_effective_radius'])
+    fdir_tmp = '%s/tmp-data/%s/%s/cot-%04.1f_cer-%04.1f/%4.4d' % (er3t.common.fdir_examples, name_tag, _metadata['Function'], params['cloud_optical_thickness'], params['cloud_effective_radius'], params['wavelength'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -924,7 +930,7 @@ def mca_rad_one(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = '%s/abs_%06.1fnm.pk' % (fdir_tmp, params['wavelength'])
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='coarse', atm_obj=atm0, overwrite=overwrite)
     if f_toa is not None:
         abs0.coef['solar']['data'][...] = f_toa
 
@@ -956,6 +962,9 @@ def mca_rad_one(
         sfc_dict['fiso'] = np.array([params['f_iso']]).reshape((1, 1))
         sfc_dict['fvol'] = np.array([params['f_vol']]).reshape((1, 1))
         sfc_dict['fgeo'] = np.array([params['f_geo']]).reshape((1, 1))
+    elif surface == 'lambertian':
+        sfc_dict = {}
+        sfc_dict['alb'] = np.array([params['surface_albedo']]).reshape((1, 1))
 
     sfc_dict['dx'] = cld0.lay['dx']['data']*cld0.lay['nx']['data']
     sfc_dict['dy'] = cld0.lay['dy']['data']*cld0.lay['ny']['data']
@@ -1010,6 +1019,7 @@ def mca_rad_one(
     data = {
       'rad': rad,\
       'rad_std': rad_std,\
+      'Ng': abs0.Ng,\
             }
 
     return data
@@ -1027,7 +1037,7 @@ def shd_rad_one(
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = '%s/tmp-data/%s/%s/cot-%04.1f_cer-%04.1f' % (er3t.common.fdir_examples, name_tag, _metadata['Function'], params['cloud_optical_thickness'], params['cloud_effective_radius'])
+    fdir_tmp = '%s/tmp-data/%s/%s/cot-%04.1f_cer-%04.1f/%4.4d' % (er3t.common.fdir_examples, name_tag, _metadata['Function'], params['cloud_optical_thickness'], params['cloud_effective_radius'], params['wavelength'])
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -1035,7 +1045,7 @@ def shd_rad_one(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = '%s/abs_%06.1fnm.pk' % (fdir_tmp, params['wavelength'])
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='coarse', atm_obj=atm0, overwrite=overwrite)
     if f_toa is not None:
         abs0.coef['solar']['data'][...] = f_toa
 
@@ -1061,6 +1071,9 @@ def shd_rad_one(
         sfc_dict['fiso'] = np.array([params['f_iso']]).reshape((1, 1))
         sfc_dict['fvol'] = np.array([params['f_vol']]).reshape((1, 1))
         sfc_dict['fgeo'] = np.array([params['f_geo']]).reshape((1, 1))
+    elif surface == 'lambertian':
+        sfc_dict = {}
+        sfc_dict['alb'] = np.array([params['surface_albedo']]).reshape((1, 1))
 
     sfc_dict['dx'] = cld0.lay['dx']['data']*cld0.lay['nx']['data']
     sfc_dict['dy'] = cld0.lay['dy']['data']*cld0.lay['ny']['data']
@@ -1084,18 +1097,19 @@ def shd_rad_one(
             date=params['date'],
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
+            Ng=abs0.Ng,
             fdir=fdir,
             target='rad',
             Niter=1000,
-            # Nmu=128,
-            # Nphi=256,
-            Nmu=64,
-            Nphi=128,
+            Nmu=16,
+            Nphi=32,
             solar_zenith_angle=params['solar_zenith_angle'],
             solar_azimuth_angle=0.0,
             sensor_azimuth_angles=params['sensor_azimuth_angle'],
             sensor_zenith_angles=np.repeat(params['sensor_zenith_angle'], params['sensor_azimuth_angle'].size),
             sensor_altitude=params['sensor_altitude'],
+            sensor_dx=cld0.lay['dx']['data'],
+            sensor_dy=cld0.lay['dy']['data'],
             sol_acc=1e-6,
             split_acc=1e-6,
             surface=sfc_2d,
@@ -1106,16 +1120,19 @@ def shd_rad_one(
             force=True,
             )
 
-    fname = shd0.fnames_out[0]
-    out0 = er3t.rtm.shd.get_shd_data_out(fname)[0, 0, 0, :, 0]
+    # fname = shd0.fnames_out[0]
+    # out0 = er3t.rtm.shd.get_shd_data_out(fname)[0, 0, 0, :, 0]
+    fname_h5 = None
+    out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     data = {
-      'rad': out0,\
+            'rad': out0.data['rad']['data'],\
+            'Ng': abs0.Ng,
             }
 
     return data
 
-def test_100_rad(
+def test_100_rad_one(
         wavelength,
         cot,
         cer,
@@ -1127,14 +1144,13 @@ def test_100_rad(
 
     params = {
                             'date': datetime.datetime(2024, 5, 18),
-                 'atmosphere_file': '%s/afglus.dat' % er3t.common.fdir_data_atmmod,
-                  'surface_albedo': 0.03,
-              'solar_zenith_angle': 30.0,
+                 'atmosphere_file': '%s/afglss.dat' % er3t.common.fdir_data_atmmod,
+                  'surface_albedo': 0.8,
+              'solar_zenith_angle': 63.0,
              'solar_azimuth_angle': 0.0,
-             #     'sensor_altitude': 705.0,
-             # 'sensor_zenith_angle': 30.0,
-                 'sensor_altitude': 0.0,
-             'sensor_zenith_angle': 100.0,
+                 'sensor_altitude': 120.0,
+             'sensor_zenith_angle': 0.0,
+                 'sensor_altitude': 120.0,
             'sensor_azimuth_angle': np.arange(0.0, 180.1, 10.0),
                       'wavelength': wavelength,
          'cloud_optical_thickness': cot,
@@ -1158,7 +1174,7 @@ def test_100_rad(
     # data_lrt = lrt_rad_one(params, surface=surface, overwrite=False)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
     # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
@@ -1170,14 +1186,14 @@ def test_100_rad(
     params['sensor_azimuth_angle'] = np.append(params['sensor_azimuth_angle'], 180.0+params['sensor_azimuth_angle'][1:])
     data_lrt['rad'] = np.append(data_lrt['rad'], data_lrt['rad'][:-1][::-1])
 
-    # data_mca['rad'] = np.append(data_mca['rad'], data_mca['rad'][:-1][::-1])
-    # data_mca['rad_std'] = np.append(data_mca['rad_std'], data_mca['rad_std'][:-1][::-1])
+    data_mca['rad'] = np.append(data_mca['rad'], data_mca['rad'][:-1][::-1])
+    data_mca['rad_std'] = np.append(data_mca['rad_std'], data_mca['rad_std'][:-1][::-1])
 
     data_shd['rad'] = np.append(data_shd['rad'], data_shd['rad'][:-1][::-1])
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     error_shd_rad = np.nanmean(np.abs(data_lrt['rad']-data_shd['rad'])/data_lrt['rad']*100.0)
-    # error_mca_rad = np.nanmean(np.abs(data_lrt['rad']-data_mca['rad'])/data_lrt['rad']*100.0)
+    error_mca_rad = np.nanmean(np.abs(data_lrt['rad']-data_mca['rad'])/data_lrt['rad']*100.0)
 
     # figure
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1189,7 +1205,7 @@ def test_100_rad(
         ax1 = fig.add_subplot(111)
         ax1.plot(params['sensor_azimuth_angle'], data_lrt['rad'], color='blue' , lw=1.0, alpha=1.0, ls='-', zorder=0)
         ax1.plot(params['sensor_azimuth_angle'], data_shd['rad'], color='k'    , lw=1.0, alpha=1.0, ls='-', zorder=1)
-        # ax1.fill_between(params['sensor_azimuth_angle'], data_mca['rad']-data_mca['rad_std'], data_mca['rad']+data_mca['rad_std'], color='red', lw=0.2, alpha=1.0, zorder=2)
+        ax1.fill_between(params['sensor_azimuth_angle'], data_mca['rad']-data_mca['rad_std'], data_mca['rad']+data_mca['rad_std'], color='red', lw=0.2, alpha=1.0, zorder=2)
         # ax1.plot(data_lrt['f_up']          , params['output_altitude'], color='blue'    , lw=1.0, alpha=1.0, ls='-')
         # ax1.plot(data_lrt['f_down_diffuse'], params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
         # ax1.plot(data_shd['f_up']          , params['output_altitude'], color='k'    , lw=0.5, alpha=1.0, ls='-')
@@ -1228,7 +1244,7 @@ def test_100_rad(
 
         patches_legend = [
                           mpatches.Patch(color='black'  , label='SHDOM (%.1f%%)' % error_shd_rad), \
-                          # mpatches.Patch(color='red'    , label='MCARaTS (%.1f%%)' % error_mca_rad), \
+                          mpatches.Patch(color='red'    , label='MCARaTS (%.1f%%)' % error_mca_rad), \
                           mpatches.Patch(color='blue'   , label='libRadtran'), \
                          ]
         ax1.legend(handles=patches_legend, loc='upper right', fontsize=12)
@@ -1256,11 +1272,428 @@ def test_100_rad(
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
+
+
+def lrt_rad_spec_slit(
+        params,
+        surface='lambertian',
+        overwrite=False,
+        ):
+
+    """
+    libRadtran radiance calculation
+    """
+
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = '%s/tmp-data/%s/%s/cot-%04.1f_cer-%04.1f' % (er3t.common.fdir_examples, name_tag, _metadata['Function'], params['cloud_optical_thickness'], params['cloud_effective_radius'])
+    if not os.path.exists(fdir_tmp):
+        os.makedirs(fdir_tmp)
+
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
+    lrt_cfg['atmosphere_file'] = params['atmosphere_file']
+    # lrt_cfg['mol_abs_param'] = 'reptran fine'
+    lrt_cfg['mol_abs_param'] = 'reptran coarse'
+    lrt_cfg['number_of_streams'] = 32
+
+    cld_cfg = er3t.rtm.lrt.get_cld_cfg()
+    cld_cfg['cloud_file']  = '%s/cloud.txt' % fdir_tmp
+    cld_cfg['cloud_optical_thickness'] = params['cloud_optical_thickness']
+    cld_cfg['cloud_effective_radius']  = params['cloud_effective_radius']
+    cld_cfg['cloud_altitude'] = np.arange(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height']+0.01, 0.1)
+
+    inits_rad = []
+    inits_flx = []
+
+    for wvl0 in params['wavelengths']:
+
+        fname_out = '%s/output_rad_%4.4d.txt' % (fdir_tmp, wvl0)
+        if (not overwrite) and (not os.path.exists(fname_out)):
+            overwrite = True
+
+        # mute_list = ['source solar', 'slit_function_file', 'wavelength', 'spline', 'albedo']
+        mute_list = ['source solar', 'albedo']
+
+        input_dict_extra = {
+                # 'wavelength_add': '%.1f %.1f' % (wvl0, wvl0),
+                }
+
+        if surface == 'land':
+            input_dict_extra['brdf_ambrals iso'] = params['f_iso']
+            input_dict_extra['brdf_ambrals vol'] = params['f_vol']
+            input_dict_extra['brdf_ambrals geo'] = params['f_geo']
+        elif surface == 'ocean':
+            input_dict_extra['brdf_cam'] = 'u10 %.2f' % params['windspeed']
+        else:
+            mute_list.pop()
+
+        init_rad = er3t.rtm.lrt.lrt_init_mono_rad(
+                input_file  = '%s/input_rad_%4.4d.txt' % (fdir_tmp, wvl0),
+                output_file = fname_out,
+                date        = params['date'],
+                surface_albedo = params['surface_albedo'],
+                solar_zenith_angle   = params['solar_zenith_angle'],
+                solar_azimuth_angle  = 0.0,
+                sensor_zenith_angle  = params['sensor_zenith_angle'],
+                sensor_azimuth_angle = params['sensor_azimuth_angle'],
+                wavelength         = wvl0,
+                output_altitude    = params['sensor_altitude'],
+                lrt_cfg            = lrt_cfg,
+                cld_cfg            = cld_cfg,
+                mute_list          = mute_list,
+                input_dict_extra   = input_dict_extra,
+                )
+        inits_rad.append(init_rad)
+
+        init_flx = er3t.rtm.lrt.lrt_init_mono_flx(
+                input_file  = '%s/input_flx_%4.4d.txt' % (fdir_tmp, wvl0),
+                output_file = '%s/output_flx_%4.4d.txt' % (fdir_tmp, wvl0),
+                date        = params['date'],
+                surface_albedo = params['surface_albedo'],
+                solar_zenith_angle = params['solar_zenith_angle'],
+                wavelength         = wvl0,
+                output_altitude    = params['output_altitude'][-1],
+                lrt_cfg            = lrt_cfg,
+                cld_cfg            = None,
+                mute_list          = mute_list,
+                input_dict_extra   = input_dict_extra,
+                )
+        inits_flx.append(init_flx)
+
+    if overwrite:
+        er3t.rtm.lrt.lrt_run_mp(inits_rad+inits_flx)
+
+    data0 = er3t.rtm.lrt.lrt_read_uvspec_flx(inits_flx)
+    data1 = er3t.rtm.lrt.lrt_read_uvspec_rad(inits_rad)
+
+    data = {
+              'f_down': np.squeeze(data0.f_down),
+              'rad': np.squeeze(data1.rad),
+            }
+
+    return data
+
+def lrt_rad_spec(
+        params,
+        surface='lambertian',
+        overwrite=False,
+        ):
+
+    """
+    libRadtran radiance calculation
+    """
+
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = '%s/tmp-data/%s/%s/cot-%04.1f_cer-%04.1f' % (er3t.common.fdir_examples, name_tag, _metadata['Function'], params['cloud_optical_thickness'], params['cloud_effective_radius'])
+    if not os.path.exists(fdir_tmp):
+        os.makedirs(fdir_tmp)
+
+    lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
+    lrt_cfg['atmosphere_file'] = params['atmosphere_file']
+    # lrt_cfg['mol_abs_param'] = 'reptran fine'
+    lrt_cfg['mol_abs_param'] = 'reptran coarse'
+    lrt_cfg['number_of_streams'] = 32
+
+    cld_cfg = er3t.rtm.lrt.get_cld_cfg()
+    cld_cfg['cloud_file']  = '%s/cloud.txt' % fdir_tmp
+    cld_cfg['cloud_optical_thickness'] = params['cloud_optical_thickness']
+    cld_cfg['cloud_effective_radius']  = params['cloud_effective_radius']
+    cld_cfg['cloud_altitude'] = np.arange(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height']+0.01, 0.1)
+
+    inits_rad = []
+    inits_flx = []
+
+    for wvl0 in params['wavelengths']:
+
+        fname_out = '%s/output_rad_%4.4d.txt' % (fdir_tmp, wvl0)
+        if (not overwrite) and (not os.path.exists(fname_out)):
+            overwrite = True
+
+        mute_list = ['source solar', 'slit_function_file', 'wavelength', 'spline', 'albedo']
+
+        input_dict_extra = {
+                'wavelength_add': '%.1f %.1f' % (wvl0, wvl0),
+                }
+
+        if surface == 'land':
+            input_dict_extra['brdf_ambrals iso'] = params['f_iso']
+            input_dict_extra['brdf_ambrals vol'] = params['f_vol']
+            input_dict_extra['brdf_ambrals geo'] = params['f_geo']
+        elif surface == 'ocean':
+            input_dict_extra['brdf_cam'] = 'u10 %.2f' % params['windspeed']
+        else:
+            mute_list.pop()
+
+        init_rad = er3t.rtm.lrt.lrt_init_mono_rad(
+                input_file  = '%s/input_rad_%4.4d.txt' % (fdir_tmp, wvl0),
+                output_file = fname_out,
+                date        = params['date'],
+                surface_albedo = params['surface_albedo'],
+                solar_zenith_angle   = params['solar_zenith_angle'],
+                solar_azimuth_angle  = 0.0,
+                sensor_zenith_angle  = params['sensor_zenith_angle'],
+                sensor_azimuth_angle = params['sensor_azimuth_angle'],
+                wavelength         = wvl0,
+                output_altitude    = params['sensor_altitude'],
+                lrt_cfg            = lrt_cfg,
+                cld_cfg            = cld_cfg,
+                mute_list          = mute_list,
+                input_dict_extra   = input_dict_extra,
+                )
+        inits_rad.append(init_rad)
+
+        init_flx = er3t.rtm.lrt.lrt_init_mono_flx(
+                input_file  = '%s/input_flx_%4.4d.txt' % (fdir_tmp, wvl0),
+                output_file = '%s/output_flx_%4.4d.txt' % (fdir_tmp, wvl0),
+                date        = params['date'],
+                surface_albedo = params['surface_albedo'],
+                solar_zenith_angle = params['solar_zenith_angle'],
+                wavelength         = wvl0,
+                output_altitude    = params['output_altitude'][-1],
+                lrt_cfg            = lrt_cfg,
+                cld_cfg            = None,
+                mute_list          = mute_list,
+                input_dict_extra   = input_dict_extra,
+                )
+        inits_flx.append(init_flx)
+
+    if overwrite:
+        er3t.rtm.lrt.lrt_run_mp(inits_rad+inits_flx)
+
+    data0 = er3t.rtm.lrt.lrt_read_uvspec_flx(inits_flx)
+    data1 = er3t.rtm.lrt.lrt_read_uvspec_rad(inits_rad)
+
+    data = {
+              'f_down': np.squeeze(data0.f_down),
+              'rad': np.squeeze(data1.rad),
+            }
+
+    return data
+
+def shd_rad_spec(
+        params,
+        solver='IPA',
+        f_toa=None,
+        surface='ocean',
+        overwrite=False,
+        ):
+
+    """
+    A test run for clear sky case
+    """
+
+    out0 = np.zeros(params['wavelengths'].size, dtype=np.float32)
+    out1 = np.zeros(params['wavelengths'].size, dtype=np.float32)
+
+    for i, wavelength in enumerate(params['wavelengths']):
+        params['wavelength'] = wavelength
+        data_shd = shd_rad_one(params, f_toa=f_toa[i], surface=surface, overwrite=overwrite)
+        out0[i] = data_shd['rad']
+        out1[i] = data_shd['Ng']
+
+    data = {
+      'rad': out0,\
+      'Ng': out1,\
+            }
+
+    return data
+
+def mca_rad_spec(
+        params,
+        solver='3D',
+        f_toa=None,
+        surface='ocean',
+        overwrite=False,
+        ):
+
+    """
+    A test run for clear sky case
+    """
+
+    out0 = np.zeros(params['wavelengths'].size, dtype=np.float32)
+    out1 = np.zeros(params['wavelengths'].size, dtype=np.float32)
+
+    for i, wavelength in enumerate(params['wavelengths']):
+        params['wavelength'] = wavelength
+        data_mca = mca_rad_one(params, f_toa=f_toa[i], surface=surface, overwrite=overwrite)
+        out0[i] = data_mca['rad']
+        out1[i] = data_mca['Ng']
+
+    data = {
+      'rad': out0,\
+      'Ng': out1,\
+            }
+
+    return data
+
+def test_100_rad_spec(
+        wavelengths,
+        cot,
+        cer,
+        icount,
+        surface='lambertian',
+        plot=True,
+        overwrite=True,
+        ):
+
+    params = {
+                            'date': datetime.datetime(2024, 5, 18),
+                 'atmosphere_file': '%s/afglss.dat' % er3t.common.fdir_data_atmmod,
+                  'surface_albedo': 0.8,
+              'solar_zenith_angle': 63.0,
+             'solar_azimuth_angle': 0.0,
+                 'sensor_altitude': 120.0,
+             'sensor_zenith_angle': 0.0,
+            'sensor_azimuth_angle': np.array([0.0]),
+                     'wavelengths': wavelengths,
+         'cloud_optical_thickness': cot,
+          'cloud_effective_radius': cer,
+                'cloud_top_height': 1.5,
+       'cloud_geometric_thickness': 1.0,
+                         'photons': 1.0e6,
+                           'f_iso': 0.12472048343113448,
+                           'f_vol': 0.05460690884637945,
+                           'f_geo': 0.03384929843579787,
+                       'windspeed': 1.0,
+                         'pigment': 0.01,
+                 'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0)),
+         }
+
+    if params['cloud_optical_thickness'] > 0.0:
+        params['photons'] = 1.0e9
+
+    # data_lrt_slit = lrt_rad_spec_slit(params, surface=surface, overwrite=False)
+    data_lrt = lrt_rad_spec(params, surface=surface, overwrite=False)
+
+    f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
+
+    data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
+    # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
+
+    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
+    # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=True)
+    # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
+
+    # add the other half (180.0 - 360.0)
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # params['sensor_azimuth_angle'] = np.append(params['sensor_azimuth_angle'], 180.0+params['sensor_azimuth_angle'][1:])
+    # data_lrt['rad'] = np.append(data_lrt['rad'], data_lrt['rad'][:-1][::-1])
+
+    # data_mca['rad'] = np.append(data_mca['rad'], data_mca['rad'][:-1][::-1])
+    # data_mca['rad_std'] = np.append(data_mca['rad_std'], data_mca['rad_std'][:-1][::-1])
+
+    # data_shd['rad'] = np.append(data_shd['rad'], data_shd['rad'][:-1][::-1])
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    # error_shd_rad = np.nanmean(np.abs(data_lrt['rad']-data_shd['rad'])/data_lrt['rad']*100.0)
+    # error_mca_rad = np.nanmean(np.abs(data_lrt['rad']-data_mca['rad'])/data_lrt['rad']*100.0)
+
+    # a0 = np.trapz(data_lrt['rad'], x=params['wavelengths'])
+    # a1 = np.trapz(data_lrt_slit['rad'], x=params['wavelengths'])
+    # print(a0, a1)
+
+    # figure
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    if plot:
+        plt.close('all')
+        fig = plt.figure(figsize=(12, 5))
+        # fig.suptitle('COT=%.1f, CER=%.1f $\\mu m$' % (params['cloud_optical_thickness'], params['cloud_effective_radius']))
+        #╭──────────────────────────────────────────────────────────────╮#
+        ax1 = fig.add_subplot(111)
+        ax1.plot(params['wavelengths'], data_lrt['rad']     , color='black', lw=3.0, alpha=0.6, ls='-', zorder=0)
+        ax1.plot(params['wavelengths'], data_shd['rad']     , color='red'  , lw=1.5, alpha=0.8, ls='-', zorder=0)
+        ax1.plot(params['wavelengths'], data_mca['rad']     , color='blue' , lw=1.5, alpha=0.8, ls='-', zorder=0)
+        # ax1.plot(params['wavelengths'], data_lrt_slit['rad'], color='black', lw=1.5, alpha=1.0, ls='-', zorder=0)
+        ax1.set_xlabel('Wavelength [nm]')
+        ax1.set_ylabel('Radiance [$\\mathrm{W m^{-2} nm^{-1} sr^{-1}}$]')
+        ax1.set_ylim((0.0, 0.3))
+
+        ax2 = ax1.twinx()
+
+        diff = (data_shd['rad']-data_lrt['rad'])/data_lrt['rad'] * 100.0
+        ax2.plot(params['wavelengths'], diff, color='magenta', lw=1.0, alpha=1.0, ls='-', zorder=1)
+
+        diff = (data_mca['rad']-data_lrt['rad'])/data_lrt['rad'] * 100.0
+        ax2.plot(params['wavelengths'], diff, color='cyan', lw=1.0, alpha=1.0, ls='-', zorder=2)
+
+        ax2.set_ylim((-100.0, 100.0))
+
+        ax2.axhline(0.0, color='gray', ls='--', zorder=0)
+
+        ax2.set_ylabel('Difference [%]', rotation=270.0, labelpad=24)
+
+        ax3 = ax1.twinx()
+        ax3.plot(params['wavelengths'], data_shd['Ng'], color='orange', lw=1.0, alpha=1.0, ls='-', zorder=0)
+        ax3.set_ylim((-12, 12))
+        ax3.axis('off')
+
+        # ax1.set_ylim((0.1, 30.0))
+        # if params['cloud_optical_thickness'] > 0.0:
+        #     ax1.set_ylim((0.215, 0.315))
+        # if params['cloud_optical_thickness'] > 0.0:
+        #     ax1.set_ylim((0.0, 0.40))
+
+        # ax2 = fig.add_subplot(122)
+        # ax2.plot(data_lrt['f_net']        , params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
+        # ax2.plot(data_lrt['f_down_direct'], params['output_altitude'], color='blue', lw=1.0, alpha=1.0, ls='-')
+        # ax2.plot(data_shd['f_net']        , params['output_altitude'], color='k', lw=0.5, alpha=1.0, ls='-')
+        # ax2.plot(data_shd['f_down_direct'], params['output_altitude'], color='k', lw=0.5, alpha=1.0, ls='-')
+        # ax2.fill_betweenx(params['output_altitude'], data_mca['f_net']-data_mca['f_net_std'], data_mca['f_net']+data_mca['f_net_std'], color='red', lw=0.2, alpha=1.0, zorder=1)
+        # ax2.fill_betweenx(params['output_altitude'], data_mca['f_down_direct']-data_mca['f_down_direct_std'], data_mca['f_down_direct']+data_mca['f_down_direct_std'], color='red', lw=0.2, alpha=1.0, zorder=1)
+        # ax2.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
+        # ax2.set_xlabel('Flux Density [$\\mathrm{W m^{-2} nm^{-1}}$]')
+        # ax2.set_title('Down Direct & Net')
+        # ax2.set_yscale('log')
+        # ax2.set_ylim((0.1, 30.0))
+        # ax2.set_xlim((0.0, 0.1*(f_toa//0.1 + 1)))
+
+        # if params['cloud_optical_thickness'] > 0.0:
+        #     ax1.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.2, zorder=0)
+        #     ax2.axhspan(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height'], color='gray', lw=0.0, alpha=0.2, zorder=0)
+        #╰──────────────────────────────────────────────────────────────╯#
+
+        patches_legend = [
+                          mpatches.Patch(color='black', label='libRadtran'), \
+                          mpatches.Patch(color='red'  , label='SHDOM'), \
+                          mpatches.Patch(color='blue' , label='MCARaTS'), \
+                          mpatches.Patch(color='magenta'  , label='SHDOM Diff.'), \
+                          mpatches.Patch(color='cyan'     , label='MCARaTS Diff.'), \
+                         ]
+        ax1.legend(handles=patches_legend, loc='lower left', fontsize=12)
+
+        # patches_legend = [
+        #                   mpatches.Patch(color='black'  , label='SHDOM (%.1f%%)' % error_shd_net), \
+        #                   mpatches.Patch(color='red'    , label='MCARaTS (%.1f%%)' % error_mca_net), \
+        #                   mpatches.Patch(color='blue'   , label='libRadtran'), \
+        #                  ]
+        # ax2.legend(handles=patches_legend, loc='upper center', fontsize=12)
+
+        # save figure
+        #╭──────────────────────────────────────────────────────────────╮#
+        fig.subplots_adjust(hspace=0.3, wspace=0.3)
+        _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        fig.savefig('%4.4d_%s_cot-%05.1f_cer-%05.1f.png' % (icount, _metadata['Function'], params['cloud_optical_thickness'], params['cloud_effective_radius']), bbox_inches='tight', metadata=_metadata)
+        # plt.close()
+        plt.show()
+        #╰──────────────────────────────────────────────────────────────╯#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    # References
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # er3t.util.print_reference()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+
 if __name__ == '__main__':
 
     warnings.warn('\nUnder active development ...')
 
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
+
+
+        wavelengths = np.arange(350.0, 2001.0, 10.0)
+        test_100_rad_spec(wavelengths, 0.0, 1.0, 100)
+        pass
 
         # test_00_solar_old()
         # test_00_solar()
@@ -1271,41 +1704,41 @@ if __name__ == '__main__':
         #     test_01_flux_one_clear(wavelength)
         # test_02_rad_cloud(params, overwrite=False)
 
-        icount = 0
+        # icount = 0
         # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
-        for cot in np.arange(25.0, 50.1, 5.0):
-            for cer in np.arange(1.0, 25.1, 2.0):
-                test_100_flux(2130.0, cot, cer, icount, plot=True, overwrite=False)
-                icount += 1
-                sys.exit()
+        # for cot in np.arange(25.0, 50.1, 5.0):
+        #     for cer in np.arange(1.0, 25.1, 2.0):
+        #         test_100_flux_one(2130.0, cot, cer, icount, plot=True, overwrite=False)
+        #         icount += 1
+        #         sys.exit()
 
         # icount = 0
         # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
         #     for cer in np.arange(1.0, 25.1, 2.0):
-        #         test_100_flux(550.0, cot, cer, icount, plot=True, overwrite=True)
+        #         test_100_flux_one(550.0, cot, cer, icount, plot=True, overwrite=True)
         #         icount += 1
 
-        # test_100_flux(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
+        # test_100_flux_one(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
-        # test_100_flux(550.0, 0.5, 20.0, 200, plot=True, overwrite=True)
+        # test_100_flux_one(550.0, 0.5, 20.0, 200, plot=True, overwrite=True)
 
-        # test_100_rad(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
+        # test_100_rad_one(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
-        # test_100_flux(550.0, 0.0, 1.0, 100, plot=True, overwrite=True)
-        # test_100_flux(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
+        # test_100_flux_one(550.0, 0.0, 1.0, 100, plot=True, overwrite=True)
+        # test_100_flux_one(550.0, 10.0, 12.0, 200, plot=True, overwrite=True)
 
         # for icount in np.arange(1, 15):
-        #     test_100_flux(550.0, 1.0, 25.0, icount, plot=True, overwrite=True)
+        #     test_100_flux_one(550.0, 1.0, 25.0, icount, plot=True, overwrite=True)
 
-        # test_100_rad(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=False)
-        # test_100_rad(550.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=False)
-        # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=False)
+        # test_100_rad_one(550.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=False)
+        # test_100_rad_one(550.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=False)
+        # test_100_rad_one(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=False)
 
-        # test_100_flux(550.0, 10.0, 12.0, 100, plot=True, overwrite=False)
+        # test_100_flux_one(550.0, 10.0, 12.0, 100, plot=True, overwrite=False)
 
-        # test_100_flux(550.0, 0.5, 9.0, 100, plot=True, overwrite=True)
-        # test_100_rad(550.0, 0.5, 9.0, 100, surface='land', plot=True, overwrite=True)
-        # test_100_rad(550.0, 10.0, 12.0, 100, surface='land', plot=True, overwrite=True)
+        # test_100_flux_one(550.0, 0.5, 9.0, 100, plot=True, overwrite=True)
+        # test_100_rad_one(550.0, 0.5, 9.0, 100, surface='land', plot=True, overwrite=True)
+        # test_100_rad_one(1200.0, 0.0, 1.0, 100, surface='lambertian', plot=True, overwrite=True)
 
     else:
 
