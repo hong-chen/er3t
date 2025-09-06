@@ -110,21 +110,20 @@ class shd_atm_1d:
 
             f.write('! correlated k-distribution file for SHDOM\n')
             f.write('%d ! number of bands\n' % 1)
-            f.write('! Band# | Wave#1 [%.2f nm] | Wave#2 [%.2f nm] | SolFlx | Ng | g1 | g2 | ...\n' % (abs0.wvl_max_, abs0.wvl_min_))
+            f.write('! Band# | Wave#1 [%.2f nm] | Wave#2 [%.2f nm] | Ng | SolFlx1| SolFlx2 | ... | g1 | g2 | ...\n' % (abs0.wvl_max_, abs0.wvl_min_))
 
             # wave number cm^-1
             wvln_min = 1.0/abs0.wvl_max_*1e7
             wvln_max = 1.0/abs0.wvl_min_*1e7
 
-            sol = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
-
             Ng = abs0.coef['weight']['data'].size
             indices_sort = np.argsort(abs0.coef['weight']['data'])
 
-            g = ' '.join(['%.12f' % value for value in abs0.coef['weight']['data'][indices_sort]])
+            sol = ' '.join(['%.12f' % value for value in abs0.coef['solar']['data'][indices_sort]])
+            wgt = ' '.join(['%.12f' % value for value in abs0.coef['weight']['data'][indices_sort]])
 
             for iband in range(Nband):
-                f.write('%d %.2f %.2f %.12f %d %s\n' % (iband+1, wvln_min, wvln_max, sol, Ng, g))
+                f.write('%d %.2f %.2f %d %s %s\n' % (iband+1, wvln_min, wvln_max, Ng, sol, wgt))
 
             # calculating gas scatter (rayleigh) and gas absorption
             #╭────────────────────────────────────────────────────────────────────────────╮#
