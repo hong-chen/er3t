@@ -930,9 +930,10 @@ def mca_rad_one(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = '%s/abs_%06.1fnm.pk' % (fdir_tmp, params['wavelength'])
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='coarse', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
     if f_toa is not None:
-        abs0.coef['solar']['data'][...] = f_toa
+        f_toa_ = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
+        abs0.coef['solar']['data'] = f_toa/f_toa_ * abs0.coef['solar']['data']
 
     fname_cld = '%s/cld.pk' % fdir_tmp
     cld0 = er3t.pre.cld.cld_gen_cop(
@@ -1045,9 +1046,10 @@ def shd_rad_one(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = '%s/abs_%06.1fnm.pk' % (fdir_tmp, params['wavelength'])
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='coarse', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
     if f_toa is not None:
-        abs0.coef['solar']['data'][...] = f_toa
+        f_toa_ = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
+        abs0.coef['solar']['data'] = f_toa/f_toa_ * abs0.coef['solar']['data']
 
     fname_cld = '%s/cld.pk' % fdir_tmp
     cld0 = er3t.pre.cld.cld_gen_cop(
@@ -1389,8 +1391,7 @@ def lrt_rad_spec(
 
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
-    # lrt_cfg['mol_abs_param'] = 'reptran fine'
-    lrt_cfg['mol_abs_param'] = 'reptran coarse'
+    lrt_cfg['mol_abs_param'] = 'reptran fine'
     lrt_cfg['number_of_streams'] = 32
 
     cld_cfg = er3t.rtm.lrt.get_cld_cfg()
@@ -1569,7 +1570,7 @@ def test_100_rad_spec(
     data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
     # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
-    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
+    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=True)
     # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=True)
     # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
@@ -1599,9 +1600,9 @@ def test_100_rad_spec(
         # fig.suptitle('COT=%.1f, CER=%.1f $\\mu m$' % (params['cloud_optical_thickness'], params['cloud_effective_radius']))
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(111)
-        ax1.plot(params['wavelengths'], data_lrt['rad']     , color='black', lw=3.0, alpha=0.6, ls='-', zorder=0)
-        ax1.plot(params['wavelengths'], data_shd['rad']     , color='red'  , lw=1.5, alpha=0.8, ls='-', zorder=0)
-        ax1.plot(params['wavelengths'], data_mca['rad']     , color='blue' , lw=1.5, alpha=0.8, ls='-', zorder=0)
+        ax1.plot(params['wavelengths'], data_lrt['rad']     , color='black', lw=1.5, alpha=1.0, ls='-', zorder=0)
+        ax1.plot(params['wavelengths'], data_shd['rad']     , color='red'  , lw=1.0, alpha=1.0, ls='-', zorder=0)
+        ax1.plot(params['wavelengths'], data_mca['rad']     , color='blue' , lw=1.0, alpha=1.0, ls='-', zorder=0)
         # ax1.plot(params['wavelengths'], data_lrt_slit['rad'], color='black', lw=1.5, alpha=1.0, ls='-', zorder=0)
         ax1.set_xlabel('Wavelength [nm]')
         ax1.set_ylabel('Radiance [$\\mathrm{W m^{-2} nm^{-1} sr^{-1}}$]')
@@ -1691,7 +1692,8 @@ if __name__ == '__main__':
     if er3t.common.has_mcarats & er3t.common.has_libradtran:
 
 
-        wavelengths = np.arange(350.0, 2001.0, 10.0)
+        wavelengths = np.arange(350.0, 2001.0, 5.0)
+        # wavelengths = np.arange(1000.0, 1501.0, 5.0)
         test_100_rad_spec(wavelengths, 0.0, 1.0, 100)
         pass
 
