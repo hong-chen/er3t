@@ -695,18 +695,17 @@ def read_radiance_shd_out(shd_obj, abs_obj, squeeze=True):
 
     sol_fac = cal_sol_fac(shd_obj.date)
 
-    norm    = np.zeros(Nz, dtype=np.float32)
-    factors = np.zeros((Nz, shd_obj.Ng), dtype=np.float32)
+    # norm    = np.zeros(Nz, dtype=np.float32)
+    # factors = np.zeros((Nz, shd_obj.Ng), dtype=np.float32)
 
     # if len(abs_obj.coef['weight']['data']) > 1:
     #     msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
     #     raise OSError(msg)
-    for iz in range(Nz):
-        norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
-        for ig in range(shd_obj.Ng):
-            factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
+    # for iz in range(Nz):
+    #     norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
+    #     for ig in range(shd_obj.Ng):
+    #         factors[iz, ig] = norm[iz]*abs_obj.coef['solar']['data'][ig]*abs_obj.coef['weight']['data'][ig]*abs_obj.coef['slit_func']['data'][zz[iz], ig]
     # -
-
 
     # +
     # calculate radiances
@@ -718,20 +717,21 @@ def read_radiance_shd_out(shd_obj, abs_obj, squeeze=True):
 
     rad = np.zeros(dims, dtype=np.float32)
 
-    for ig in range(shd_obj.Ng):
+    # for ig in range(shd_obj.Ng):
 
-        fname0 = shd_obj.fnames_out[ig]
+    #     fname0 = shd_obj.fnames_out[ig]
 
-        out0   = shd_out_raw(fname0, verbose=False)
-        rad0   = out0.data[0]['data']
+    #     out0   = shd_out_raw(fname0, verbose=False)
+    #     rad0   = out0.data[0]['data']
 
-        for iz in range(Nz):
-            rad0[:, :, iz, :] *= factors[iz, ig]
+    #     for iz in range(Nz):
+    #         rad0[:, :, iz, :] *= factors[iz, ig]
 
-        if squeeze:
-            rad[...] += np.squeeze(rad0)
-        else:
-            rad[...] += rad0
+    #     if squeeze:
+    #         rad[...] += np.squeeze(rad0)
+    #     else:
+    #         rad[...] += rad0
+    rad = np.squeeze(out0.data[0]['data'])
     # -
 
 
@@ -742,7 +742,7 @@ def read_radiance_shd_out(shd_obj, abs_obj, squeeze=True):
     toa = np.sum(sol_fac * abs_obj.coef['solar']['data'] * abs_obj.coef['weight']['data'])
     data_dict['toa'] = {'data':toa, 'name':'TOA without SZA' , 'units':'W/m^2/nm'}
 
-    data_dict['rad']      = {'data':rad, 'name':'Radiance' , 'units':'W/m^2/nm/sr', 'dims_info':dims_info}
+    data_dict['rad'] = {'data':rad, 'name':'Radiance' , 'units':'W/m^2/nm/sr', 'dims_info':dims_info}
 
     return data_dict
     # -
