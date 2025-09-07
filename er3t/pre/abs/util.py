@@ -60,7 +60,7 @@ def cal_xsec_o3_molina(wvl0, t, t_ref=273.13, slit_func=None, method='auto', fna
     c1 = f1(wvl0)
     c2 = f2(wvl0)
 
-    sigma = 1e-20 * (c0 + c1*(t-t_ref) + c2*(t-t_ref)**2)
+    sigma = 1.0e-20 * (c0 + c1*(t-t_ref) + c2*(t-t_ref)**2)
 
     return sigma
 
@@ -76,7 +76,7 @@ def cal_xsec_o4_greenblatt(wvl0, slit_func=None, method='auto', fname='%s/crs/cr
     f0 = interp1d(wvl0, data_[:, 0], data_[:, 1], slit_func=slit_func, method=method)
     c0 = f0(wvl0)
 
-    sigma = 1e-20 * c0
+    sigma = 1.0e-46 * c0
 
     return sigma
 
