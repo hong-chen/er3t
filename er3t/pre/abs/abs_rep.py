@@ -267,30 +267,35 @@ class abs_rep:
         for i, wvl0 in enumerate(self.wvl_):
 
             if (wvl0 >= 116.0) & (wvl0 <= 850.0):
+
                 xsec = cal_xsec_o3_molina(wvl0, self.atm_obj.lay['temperature']['data'])
                 abso_coef0 = xsec * self.atm_obj.lay['o3']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
 
-                if 'O3' not in gases:
+                if ('O3' not in gases) and ('o3' not in gases):
                     gases.append('O3')
 
             if (wvl0 >= 301.4) & (wvl0 <= 1338.2):
-                xsec = cal_xsec_o4_greenblatt(wvl0)
-                abso_coef0 = xsec * self.atm_obj.lay['o2']['data']**2 * 1e5 * self.atm_obj.lay['thickness']['data']
+
+                xsec2 = cal_xsec2_o4_greenblatt(wvl0)
+                # O4 is O2 to O2 collision, thus the units of xsec2 <cm^5 x molecule^-2> is different from xsec <cm^2 x molecule^-1>
+                #    also because it's collision, we need to multipy xsec2 by the square of O2 concentration
+                abso_coef0 = xsec2 * self.atm_obj.lay['o2']['data']**2 * 1e5 * self.atm_obj.lay['thickness']['data']
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
 
-                if 'O4' not in gases:
+                if ('O4' not in gases) and ('o4' not in gases):
                     gases.append('O4')
 
             if (wvl0 >= 230.91383) & (wvl0 <= 794.04565):
+
                 xsec = cal_xsec_no2_burrows(wvl0)
                 abso_coef0 = xsec * self.atm_obj.lay['no2']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
 
-                if 'NO2' not in gases:
+                if ('NO2' not in gases) and ('no2' not in gases):
                     gases.append('NO2')
 
             if self.run_reptran:
@@ -336,10 +341,13 @@ class abs_rep:
                             f_points = np.transpose(np.vstack((dt_, p_)))
                         #╰──────────────────────────────────────────────────────────────╯#
 
-                        # from <libRadtran>/src/molecular.c: <The lookup table file contains the cross sections in units of 10^(-20)m^2; here we need cm^2, thus we multiply with 10^(-16)>
-                        # first factor: 10^(-16) for converting units from m^-2 to cm^-2
-                        # second factor: 10^(5) for converting km to cm by timing layer thickness <final output is absorption optical depth>
-                        # thus 10^(-11) as scale factor
+                        # in REPTRAN netcdf files, the default units of the cross section (xsec) are
+                        #     <m^2 x molecule^-1> with a scale factor of <1e-20>,
+                        #     but we need <cm^2 x molecule^-1> because
+                        #     <atm_obj> has gas concentration in the units of <molecule x cm^-3>
+                        #     thus the scale factor becomes <1e-16> (1e-20 x 1e2 x 1e2)
+                        # additionally we need a scale factor of <1e5> for converting km to cm for layer thickness
+                        # thus <1e-11> becomes the final scale factor
                         abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-11 * self.atm_obj.lay['thickness']['data']
                         abso_coef0[abso_coef0<0.0] = 0.0
 

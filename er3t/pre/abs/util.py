@@ -10,7 +10,7 @@ import er3t.util
 
 __all__ = [
         'cal_xsec_o3_molina',
-        'cal_xsec_o4_greenblatt',
+        'cal_xsec2_o4_greenblatt',
         'cal_xsec_no2_burrows',
         'cal_solar_kurudz',
         ]
@@ -60,15 +60,16 @@ def cal_xsec_o3_molina(wvl0, t, t_ref=273.13, slit_func=None, method='auto', fna
     c1 = f1(wvl0)
     c2 = f2(wvl0)
 
+    # units: cm^2 x molecule^-1 (1.0e-20 is a scale factor)
     sigma = 1.0e-20 * (c0 + c1*(t-t_ref) + c2*(t-t_ref)**2)
 
     return sigma
 
 
 
-def cal_xsec_o4_greenblatt(wvl0, slit_func=None, method='auto', fname='%s/crs/crs_o4_greenblatt.dat' % er3t.common.fdir_data_abs):
+def cal_xsec2_o4_greenblatt(wvl0, slit_func=None, method='auto', fname='%s/crs/crs_o4_greenblatt.dat' % er3t.common.fdir_data_abs):
 
-    reference = '\nO₂ Absorption Cross Section (Greenblatt et al., 1990):\n- Greenblatt, G. D., Orlando, J., Burkholder, J. B., and Ravishankara, A. R.: Absorption measurements of oxygen between 330 and 1140 nm, J. Geophys. Res., 95, 18577–18582, https://doi.org/10.1029/JD095iD11p18577, 1990.'
+    reference = '\nO₂-O₂ Absorption Cross Section (Greenblatt et al., 1990):\n- Greenblatt, G. D., Orlando, J., Burkholder, J. B., and Ravishankara, A. R.: Absorption measurements of oxygen between 330 and 1140 nm, J. Geophys. Res., 95, 18577–18582, https://doi.org/10.1029/JD095iD11p18577, 1990.'
     er3t.util.add_reference(reference)
 
     data_ = np.loadtxt(fname)
@@ -76,9 +77,10 @@ def cal_xsec_o4_greenblatt(wvl0, slit_func=None, method='auto', fname='%s/crs/cr
     f0 = interp1d(wvl0, data_[:, 0], data_[:, 1], slit_func=slit_func, method=method)
     c0 = f0(wvl0)
 
-    sigma = 1.0e-46 * c0
+    # units: cm^5 x molecule^-2 (1.0e-46 is a scale factor)
+    sigma2 = 1.0e-46 * c0
 
-    return sigma
+    return sigma2
 
 
 
@@ -92,6 +94,7 @@ def cal_xsec_no2_burrows(wvl0, slit_func=None, method='auto', fname='%s/crs/crs_
     f0 = interp1d(wvl0, data_[:, 0], data_[:, 1], slit_func=slit_func, method=method)
     c0 = f0(wvl0)
 
+    # units: cm^2 x molecule^-1 (no scale factor needed)
     sigma = c0 * 1.0
 
     return sigma
