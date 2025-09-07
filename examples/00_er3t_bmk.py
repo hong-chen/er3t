@@ -1417,8 +1417,6 @@ def lrt_rad_spec(
 
         input_dict_extra = {
                 'wavelength_add': '%.1f %.1f' % (wvl0, wvl0),
-                'mol_modify': 'CO 0.0 DU',
-                'mol_modify': 'N2O 0.0 DU',
                 }
 
         if surface == 'land':
@@ -1573,10 +1571,10 @@ def test_100_rad_spec(
 
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=True)
+    data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
     # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
-    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=True)
+    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
     # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=True)
     # data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
