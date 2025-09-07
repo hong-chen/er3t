@@ -1417,6 +1417,8 @@ def lrt_rad_spec(
 
         input_dict_extra = {
                 'wavelength_add': '%.1f %.1f' % (wvl0, wvl0),
+                'mol_modify': 'CO 0.0 DU',
+                'mol_modify': 'N2O 0.0 DU',
                 }
 
         if surface == 'land':
@@ -1567,7 +1569,7 @@ def test_100_rad_spec(
         params['photons'] = 1.0e9
 
     # data_lrt_slit = lrt_rad_spec_slit(params, surface=surface, overwrite=False)
-    data_lrt = lrt_rad_spec(params, surface=surface, overwrite=False)
+    data_lrt = lrt_rad_spec(params, surface=surface, overwrite=True)
 
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
