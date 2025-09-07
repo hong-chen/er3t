@@ -12,6 +12,7 @@ __all__ = [
         'cal_num_den_from_mix_rat',\
         'interp_pres_from_alt_temp',\
         'interp_ch4',\
+        'interp_gas',\
         ]
 
 
@@ -252,6 +253,38 @@ def interp_ch4(alt_inp):
     ch4mix = np.interp(alt_inp, ch4h, ch4m)
 
     return ch4mix
+
+
+
+def interp_gas(
+        alt_inp,
+        gas='ch4',
+        fname=None,
+        ):
+
+    """
+    input:
+        levels: numpy array, height in km
+    output:
+        gas mixing ratio
+    """
+
+    if fname is None:
+        fname = f'{er3t.common.fdir_data}/atmmod/afglus_{gas.lower()}_vmr.dat'
+
+    data = np.loadtxt(fname)
+
+    alt = data[:, 0]
+    vmr = data[:, 1]
+
+    indices_sort = np.argsort(alt)
+
+    alt = alt[indices_sort]
+    vmr = vmr[indices_sort]
+
+    vmr_inp = np.interp(alt_inp, alt, vmr)
+
+    return vmr_inp
 
 
 
