@@ -1044,6 +1044,7 @@ def example_05_rad_les_cloud_3d(
     # generate surface, property files for SHDOM
     #╭────────────────────────────────────────────────────────────────────────────╮#
     sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc.txt' % fdir, overwrite=overwrite)
+    sys.exit()
 
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_%4.4d.txt' % (fdir, wavelength), overwrite=overwrite)
     atm_1ds = [atm1d0]
@@ -1387,7 +1388,7 @@ def example_07_at3d_rad_cloud_merra(
     """
 
     _metadata   = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir='%s/tmp-data/%s/%s' % (fdir0, name_tag, _metadata['Function'])
+    fdir='%s/tmp-data/%s/%s/%4.4d' % (fdir0, name_tag, _metadata['Function'], wavelength)
 
     if not os.path.exists(fdir):
         os.makedirs(fdir)
@@ -1395,7 +1396,7 @@ def example_07_at3d_rad_cloud_merra(
     # define an cloud object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the netcdf file
-    fname_nc  = '/Users/hchen/Downloads/MERRA2_400.inst3_3d_asm_Np.20240518.nc4'
+    fname_nc  = '/Users/hchen/Downloads/MERRA2_400.inst3_3d_asm_Np.20210518.nc4'
 
     # file name of the pickle file for cloud
     fname_cld = '%s/cld.pk' % fdir
@@ -1461,7 +1462,7 @@ def example_07_at3d_rad_cloud_merra(
     # define an absorption object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # file name of the pickle file for absorption
-    fname_abs = '%s/abs_%4.4d.pk' % (fdir, wavelength)
+    fname_abs = '%s/abs.pk' % (fdir)
 
     # absorption object
     abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
@@ -1491,9 +1492,14 @@ def example_07_at3d_rad_cloud_merra(
 
     # generate surface, property files for SHDOM
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/shdom-sfc.txt' % fdir, overwrite=overwrite)
+    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='/Users/hchen/Work/mygit/cam/products/data/shdom-sfc_globe-mix.txt', overwrite=False, force=False)
+    sfc_2d.nml['header']['data'] = 'X'
+    sfc_2d.nml['NX']['data'] = 360
+    sfc_2d.nml['NY']['data'] = 180
+    sfc_2d.nml['dx']['data'] = cld0.lay['dx']['data']*cld0.lay['nx']['data']/sfc_2d.nml['NX']['data']
+    sfc_2d.nml['dy']['data'] = cld0.lay['dy']['data']*cld0.lay['ny']['data']/sfc_2d.nml['NY']['data']
 
-    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd_%4.4d.txt' % (fdir, wavelength), overwrite=overwrite)
+    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname='%s/shdom-ckd.txt' % (fdir), overwrite=overwrite)
     atm_1ds = [atm1d0]
 
     atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
@@ -1503,10 +1509,10 @@ def example_07_at3d_rad_cloud_merra(
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # vaa = np.arange(0.0, 360.0, 5.0)
-    # vza = np.repeat(30.0, vaa.size)
-    vaa = np.arange(45.0, 46.0, 1.0)
-    vza = np.repeat(0.0, vaa.size)
+    vaa = np.arange(0.0, 360.0, 5.0)
+    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(45.0, 46.0, 1.0)
+    # vza = np.repeat(0.0, vaa.size)
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -1516,7 +1522,7 @@ def example_07_at3d_rad_cloud_merra(
             surface=sfc_2d,
             Ng=abs0.Ng,
             Niter=10,
-            split_acc=0.0,
+            split_acc=1.0e-4,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
@@ -1525,7 +1531,7 @@ def example_07_at3d_rad_cloud_merra(
             sensor_altitude=705.0,
             sensor_dx=cld0.lay['dx']['data'],
             sensor_dy=cld0.lay['dy']['data'],
-            fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
+            fdir='%s/rad_%s' % (fdir, solver.lower()),
             solver=solver,
             Ncpu=Ncpu,
             mp_mode='mpi',
