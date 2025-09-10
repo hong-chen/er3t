@@ -297,7 +297,7 @@ class pha_mie_wc_shd:
 
     reference = '\nMie Scattering (Wiscombe, 1980):\n- Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, https://doi.org/10.1364/AO.19.001505, 1980.'
 
-    ID = 'Mie (Water Clouds, for SHDOM)'
+    ID = 'Mie (Water Clouds, from SHDOM)'
 
     def __init__(self,
                  wavelength=555.0,
