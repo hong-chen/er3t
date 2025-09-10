@@ -18,6 +18,7 @@ __all__ = [
         'gen_ext_file',
         'gen_lwc_file',
         'gen_mie_file_from_nc',
+        'gen_sen_file',
         ]
 
 
@@ -276,6 +277,52 @@ def gen_mie_file_from_nc(
 
                 f.write('  %7.4f    %.6e  %.12f   %4d  Reff  Ext  Alb  Nrank\n' % (reff0, ext[i], ssa[i], Nmom0-1))
                 f.write('%s' % pmom0_str)
+
+    return fname
+
+
+def gen_sen_file(
+        fname,
+        data,
+        postfix='.sHdOm-sen',
+        ):
+
+    if ((isinstance(data['x'], float)) or (isinstance(data['x'], int))):
+        data['x'] = np.repeat(data['x'], data['vza'].size)
+
+    if ((isinstance(data['y'], float)) or (isinstance(data['y'], int))):
+        data['y'] = np.repeat(data['y'], data['vza'].size)
+
+    if ((isinstance(data['z'], float)) or (isinstance(data['z'], int))):
+        data['z'] = np.repeat(data['z'], data['vza'].size)
+
+    N = 0
+    for key in data.keys():
+        N += data[key].size
+
+    if (N%len(data.keys()) != 0):
+        msg = f"Error [gen_sen_file]: the size of sensor parameters does NOT match."
+        raise OSError(msg)
+
+    Ndata = data['vza'].size
+
+    # generate extinction file
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    with open(fname, 'w') as f:
+        f.write( "5-parameter (x|y|z|vza|vaa) sensor file for SHDOM\n")
+        f.write(f"{Ndata}\n")
+
+        f.write( "! The following provides information for interpreting binary data:\n")
+        f.write(f"! {postfix}\n")
+        f.write(f"! {Ndata},5\n")
+
+        # save gridded data into binary file
+        #╭──────────────────────────────────────────────────────────────╮#
+        with open('%s%s' % (fname, postfix), 'wb') as fb:
+            for key in ['x', 'y', 'z', 'vza', 'vaa']:
+                fb.write(struct.pack('<%df' % Ndata, *data[key].flatten(order='F')))
+        #╰──────────────────────────────────────────────────────────────╯#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     return fname
 

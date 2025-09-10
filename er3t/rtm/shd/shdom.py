@@ -53,7 +53,7 @@ class shdom_ng:
         SHDOM output files created under path specified by 'fdir'
     """
 
-    reference = '\nSHDOM (Evans, 1998):\n- Evans, K. F.: The Spherical Harmonics Discrete Ordinate Method for Three-Dimensional Atmospheric Radiative Transfer, J. Atmos. Sci., 55, 429–446, https://doi.org/10.1175/1520-0469(1998)055<0429:TSHDOM>2.0.CO;2, 1998.'
+    reference = f"\nSHDOM (Evans, 1998):\n- Evans, K. F.: The Spherical Harmonics Discrete Ordinate Method for Three-Dimensional Atmospheric Radiative Transfer, J. Atmos. Sci., 55, 429–446, https://doi.org/10.1175/1520-0469(1998)055<0429:TSHDOM>2.0.CO;2, 1998."
 
 
     def __init__(self,                                          \
@@ -73,21 +73,24 @@ class shdom_ng:
                  split_acc           = None,                    \
                  sh_acc              = None,                    \
 
-                 fdir                = 'tmp-data/sim-shd',      \
-                 Ncpu                = 'auto',                  \
-                 mp_mode             = 'py',                    \
+                 fdir                = "tmp-data/sim-shd",      \
+                 Ncpu                = "auto",                  \
+                 mp_mode             = "py",                    \
 
                  solar_zenith_angle  = 30.0,                    \
                  solar_azimuth_angle = 0.0,                     \
 
+                 sensor_type           = "radiometer",          \
                  sensor_zenith_angles  = np.array([0.0]),       \
                  sensor_azimuth_angles = np.array([0.0]),       \
                  sensor_altitude       = 705.0,                 \
                  sensor_dx             = 0.1,                   \
                  sensor_dy             = 0.1,                   \
+                 sensor_xpos           = 0.5,                   \
+                 sensor_ypos           = 0.5,                   \
 
-                 target              = 'flux',                  \
-                 solver              = '3d',                    \
+                 target              = "flux",                  \
+                 solver              = "3d",                    \
 
                  comment             = False,                   \
                  overwrite           = True,                    \
@@ -103,10 +106,10 @@ class shdom_ng:
         if not os.path.exists(fdir):
             os.makedirs(fdir)
             if not quiet:
-                print('Message [shdom_ng]: Directory <%s> is created.' % fdir)
+                print(f"Message [shdom_ng]: Directory <{fdir}> is created.")
         else:
             if verbose:
-                print('Message [shdom_ng]: Directory <%s> already exists.' % fdir)
+                print(f"Message [shdom_ng]: Directory <{fdir}> already exists.")
 
         self.Ng      = Ng
         self.Ng_     = 1 # currently SHDOM integrates gs within its calculation
@@ -127,9 +130,12 @@ class shdom_ng:
         self.solar_zenith_angle  = solar_zenith_angle
         self.solar_azimuth_angle = solar_azimuth_angle
 
-        self.sensor_zenith_angle = sensor_zenith_angles
-        self.sensor_azimuth_angle= sensor_azimuth_angles
-        self.sensor_altitude     = sensor_altitude
+        self.sensor_type          = sensor_type.lower()
+        self.sensor_zenith_angle  = sensor_zenith_angles
+        self.sensor_azimuth_angle = sensor_azimuth_angles
+        self.sensor_altitude      = sensor_altitude
+        self.sensor_xpos          = sensor_xpos
+        self.sensor_ypos          = sensor_ypos
 
         solver = solver.lower()
         if solver in ['3d', '3 d', 'three d']:
@@ -137,7 +143,7 @@ class shdom_ng:
         elif solver in ['ipa', 'independent pixel approximation']:
             self.solver = 'IPA'
         else:
-            msg = 'Error [shdom_ng]: Cannot understand <solver=%s>.' % self.solver
+            msg = f"Error [shdom_ng]: Cannot understand <solver={self.solver}>."
             raise OSError(msg)
 
         target  = target.lower()
@@ -150,7 +156,7 @@ class shdom_ng:
         elif target in ['radiance', 'rad']:
             self.target = 'radiance'
         else:
-            msg = 'Error [shdom_ng]: Cannot understand <target=%s>.' % self.target
+            msg = f"Error [shdom_ng]: Cannot understand <target={self.target}>."
             raise OSError(msg)
 
         # params
@@ -200,7 +206,7 @@ class shdom_ng:
             else:
                 self.Ncpu = Ncpu
         else:
-            msg = 'Error [shdom_ng]: Cannot understand <Ncpu=%s>.' % Ncpu
+            msg = f"Error [shdom_ng]: Cannot understand <Ncpu={Ncpu}>."
             raise OSError(msg)
 
         if (self.Nx == 1) and (self.Ny == 1):
@@ -214,12 +220,12 @@ class shdom_ng:
         self.fnames_out = []
         self.fnames_sav = []
         for ig in range(self.Ng_):
-            self.fnames_inp.append('%s/shdom-inp_g-%3.3d.txt' % (self.fdir, ig))
-            self.fnames_out.append('%s/shdom-out_g-%3.3d.txt' % (self.fdir, ig))
-            self.fnames_sav.append('%s/shdom-sav_g-%3.3d.sHdOm-sav' % (self.fdir, ig))
+            self.fnames_inp.append(f"{self.fdir}/shdom-inp_g-{ig:03d}.txt")
+            self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.txt")
+            self.fnames_sav.append(f"{self.fdir}/shdom-sav_g-{ig:03d}.sHdOm-sav")
 
         if not self.quiet and not self.overwrite:
-            print('Message [shdom_ng]: Reading mode ...')
+            print("Message [shdom_ng]: Reading mode ...")
 
         if overwrite:
 
@@ -260,14 +266,14 @@ class shdom_ng:
 
         for ig in range(self.Ng_):
 
-            self.nml[ig]['_header'] = '$SHDOMINPUT'
-            self.nml[ig]['RUNNAME'] = 'shdom-run_g-%3.3d' % ig
+            self.nml[ig]['_header'] = "$SHDOMINPUT"
+            self.nml[ig]['RUNNAME'] = f"shdom-run_g-{ig:03d}"
             self.nml[ig]['PROPFILE'] = self.fname_prp
             self.nml[ig]['SFCFILE']  = self.fname_sfc
             self.nml[ig]['CKDFILE']  = self.fname_ckd
 
             if self.overwrite and self.force:
-                self.nml[ig]['INSAVEFILE']  = 'NONE'
+                self.nml[ig]['INSAVEFILE']  = "NONE"
                 self.nml[ig]['OUTSAVEFILE'] = self.fnames_sav[ig]
             else:
                 self.nml[ig]['INSAVEFILE']  = self.fnames_sav[ig]
@@ -279,7 +285,7 @@ class shdom_ng:
             self.nml[ig]['NZ'] = self.Nz
 
             if self.Nmu is None:
-                if self.target == 'radiance':
+                if self.target == "radiance":
                     if (self.Nx == 1) and (self.Ny == 1):
                         # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
                         self.nml[ig]['NMU']  = 128
@@ -289,7 +295,7 @@ class shdom_ng:
                         self.nml[ig]['NMU']  = 18
                 else:
                     if (self.Nx == 1) and (self.Ny == 1):
-                        self.nml[ig]['NMU']  = 360
+                        self.nml[ig]['NMU']  = 64
                     elif (self.Nx > 64) and (self.Ny > 64):
                         self.nml[ig]['NMU']  = 8
                     else:
@@ -298,7 +304,7 @@ class shdom_ng:
                 self.nml[ig]['NMU']  = self.Nmu
 
             if self.Nphi is None:
-                if self.target == 'radiance':
+                if self.target == "radiance":
                     if (self.Nx == 1) and (self.Ny == 1):
                         # follows Emde et al., 2019 (IPRT polarized radiative transfer model intercomparison project – phase A)
                         self.nml[ig]['NPHI'] = 256
@@ -318,17 +324,17 @@ class shdom_ng:
 
             self.nml[ig]['BCFLAG'] = 0
 
-            if (self.solver == '3D'):
+            if (self.solver == "3D"):
                 self.nml[ig]['IPFLAG'] = 0
-            elif (self.solver == 'IPA'):
+            elif (self.solver == "IPA"):
                 self.nml[ig]['IPFLAG'] = 3
 
             if self.wvl < 5025.0:
-                self.nml[ig]['DELTAM'] = '.TRUE.'
+                self.nml[ig]['DELTAM'] = ".TRUE."
             else:
-                self.nml[ig]['DELTAM'] = '.FALSE.'
+                self.nml[ig]['DELTAM'] = ".FALSE."
 
-            self.nml[ig]['GRIDTYPE'] = 'P'
+            self.nml[ig]['GRIDTYPE'] = "P"
 
 
     def nml_rad(
@@ -340,11 +346,11 @@ class shdom_ng:
         for ig in range(self.Ng_):
 
             if self.wvl < 5025.0:
-                self.nml[ig]['UNITS'] = 'R'
-                self.nml[ig]['SRCTYPE'] = 'S'
+                self.nml[ig]['UNITS'] = "R"
+                self.nml[ig]['SRCTYPE'] = "S"
             else:
-                self.nml[ig]['UNITS'] = 'T'
-                self.nml[ig]['SRCTYPE'] = 'T'
+                self.nml[ig]['UNITS'] = "T"
+                self.nml[ig]['SRCTYPE'] = "T"
 
             self.nml[ig]['SOLARFLUX'] = er3t.util.cal_sol_fac(self.date)
             self.nml[ig]['SOLARMU'] = np.cos(np.deg2rad(sza0))
@@ -374,42 +380,56 @@ class shdom_ng:
 
             self.nml[ig]['NUMOUT'] = 1
 
-            if self.target == 'radiance':
+            if self.target == "radiance":
 
                 vza_new = np.cos(np.deg2rad(np.array(vza)))
-                vaa_new = np.zeros_like(vza)
+                vaa_new = np.array([er3t.rtm.shd.cal_shd_vaa(vaa0) for vaa0 in vaa])
 
-                for i, vaa0 in enumerate(vaa):
-                    vaa_new[i] = er3t.rtm.shd.cal_shd_vaa(vaa0)
+                if self.sensor_type == "radiometer":
 
-                self.nml[ig]['OUTTYPES(1)'] = 'R'
-                self.nml[ig]['OUTPARMS(1,1)'] = '%.4f, %.8f, %.8f, 0.0, 0.0, %d,\n%s'\
-                        % (alt0, dx, dy, vza_new.size, '\n'.join([' %.16f, %.4f,' % tuple(item) for item in zip(vza_new, vaa_new)]))
+                    self.nml[ig]['OUTTYPES(1)'] = "R"
+                    string_view = "\n".join([" %.16f, %.4f," % tuple(item) for item in zip(vza_new, vaa_new)])
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {vza_new.size},\n{string_view}"
+                    self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
 
-                self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
+                else:
+
+                    self.nml[ig]['OUTTYPES(1)'] = "X"
+
+                    data_sensor = {}
+                    data_sensor['x'] = self.sensor_xpos
+                    data_sensor['y'] = self.sensor_ypos
+                    data_sensor['z'] = self.sensor_altitude
+                    data_sensor['vza'] = vza_new
+                    data_sensor['vaa'] = vaa_new
+                    fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
+                    self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
+
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"{data_sensor['vza'].size}"
+                    self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
 
             elif self.target == 'flux':
 
-                self.nml[ig]['OUTTYPES(1)'] = 'F'
+                self.nml[ig]['OUTTYPES(1)'] = "F"
                 self.nml[ig]['OUTPARMS(1,1)'] = 4
 
             elif self.target == 'flux0':
 
-                self.nml[ig]['OUTTYPES(1)'] = 'F'
+                self.nml[ig]['OUTTYPES(1)'] = "F"
                 self.nml[ig]['OUTPARMS(1,1)'] = 1
 
             elif self.target == 'heating rate':
 
-                self.nml[ig]['OUTTYPES(1)'] = 'H'
+                self.nml[ig]['OUTTYPES(1)'] = "H"
                 self.nml[ig]['OUTPARMS(1,1)'] = 2
 
             else:
 
-                msg = 'Error [shdom_ng]: Does NOT support <target=%s>.' % (self.target)
+                msg = f"Error [shdom_ng]: Does NOT support <target={self.target}>."
                 raise OSError(msg)
 
             self.nml[ig]['OUTFILES(1)'] = self.fnames_out[ig]
-            self.nml[ig]['OutFileNC'] = 'NONE'
+            self.nml[ig]['OutFileNC'] = "NONE"
 
 
     def nml_param(
@@ -422,7 +442,7 @@ class shdom_ng:
 
         for ig in range(self.Ng_):
 
-            self.nml[ig]['ACCELFLAG'] = '.TRUE.'
+            self.nml[ig]['ACCELFLAG'] = ".TRUE."
             self.nml[ig]['SOLACC'] = sol_acc
             self.nml[ig]['MAXITER'] = Niter
 
@@ -456,7 +476,7 @@ class shdom_ng:
                 self.nml[ig]['ADAPT_GRID_FACTOR'] = 3.2
                 self.nml[ig]['CELL_TO_POINT_RATIO'] = 1.6
             self.nml[ig]['NUM_SH_TERM_FACTOR'] = 0.6
-            self.nml[ig]['_footer'] = '$END'
+            self.nml[ig]['_footer'] = "$END"
 
 
     def gen_shd_inp(self, comment=False):
@@ -478,7 +498,7 @@ class shdom_ng:
             shd_inp_file(self.fnames_inp[ig], self.nml[ig], comment=comment)
 
         if not self.quiet:
-            print('Message [shdom_ng]: Created SHDOM input files under <%s>.' % self.fdir)
+            print(f"Message [shdom_ng]: Created SHDOM input files under <{self.fdir}>.")
 
 
     def gen_shd_out(self):
@@ -491,7 +511,7 @@ class shdom_ng:
         fnames_out = self.fnames_out
 
         if not self.quiet:
-            print('Message [shdom_ng]: Running SHDOM to get output files under <%s> ...' % self.fdir)
+            print(f"Message [shdom_ng]: Running SHDOM to get output files under <{self.fdir}> ...")
 
         if not self.quiet:
             self.print_info()
@@ -501,54 +521,57 @@ class shdom_ng:
 
     def print_info(self):
 
-        print('╭────────────────────────────────────────────────────────╮')
-        print('                 General Information')
-        print('               Simulation : %s %s' % (self.solver, self.target.title()))
-        print('               Wavelength : %s' % (self.wvl_info))
+        print( "╭──────────────────────────────────────────────────────────────╮")
+        print( "                     General Information")
+        print(f"                   Simulation : {self.solver} {self.target.title()}")
+        print(f"                   Wavelength : {self.wvl_info}")
 
-        print('               Date (DOY) : %s (%d)' % (self.date.strftime('%Y-%m-%d'), self.date.timetuple().tm_yday))
+        print(f"                   Date (DOY) : {self.date.strftime('%Y-%m-%d')} ({self.date.timetuple().tm_yday})")
 
-        print('       Solar Zenith Angle : %.4f° (0 at local zenith)' % self.solar_zenith_angle)
-        print('      Solar Azimuth Angle : %.4f° (0 at north; 90° at east)' % self.solar_azimuth_angle)
+        print(f"           Solar Zenith Angle : {self.solar_zenith_angle:.4f}° (0 at local zenith)")
+        print(f"          Solar Azimuth Angle : {self.solar_azimuth_angle:.4f}° (0 at north; 90° at east)")
 
-        if self.target == 'radiance':
+        if (self.target == "radiance") and (self.sensor_type == "radiometer"):
             for i, vza0 in enumerate(self.sensor_zenith_angle[:min([2, self.sensor_zenith_angle.size])]):
                 vaa0 = self.sensor_azimuth_angle[i]
 
                 if vza0 < 90.0:
-                    print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % (i, vza0))
+                    print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)")
                 else:
-                    print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % (i, vza0))
-                print('[%2.2d] Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % (i, vaa0))
+                    print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)")
+                print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
 
             if self.sensor_zenith_angle.size >= 3:
                 if self.sensor_zenith_angle.size > 3:
-                    print('                         ...')
+                    print( "                         ...")
                 i = self.sensor_zenith_angle.size
                 vza0 = self.sensor_zenith_angle[-1]
                 vaa0 = self.sensor_azimuth_angle[-1]
                 if vza0 < 90.0:
-                    print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking down, 0 straight down)' % (i, vza0))
+                    print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)")
                 else:
-                    print('[%2.2d]  Sensor Zenith Angle : %.4f° (looking up, 180° straight up)' % (i, vza0))
-                print('[%2.2d] Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)' % (i, vaa0))
+                    print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)")
+                print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
 
-            print('          Sensor Altitude : %.1f km' % (self.sensor_altitude))
+            print(f"              Sensor Altitude : {self.sensor_altitude:.1f} km")
+
+        else:
+            print(f"        User-Specified Sensor : {os.path.basename(self.fname_sensor)}")
 
 
         if self.sfc_2d:
-            print('             Surface BRDF : 2D domain')
+            print( "                 Surface BRDF : 2D domain")
         else:
-            print('           Surface Albedo : %.4f' % self.surface)
+            print(f"               Surface Albedo : {self.surface:.4f}")
 
-        print('           Phase Function : %s' % 'Mie (Water Clouds)')
+        print( "               Phase Function : Mie (Water Clouds, from SHDOM)")
 
         if (self.Nx > 1) | (self.Ny > 1):
-            print('     Domain Size (Nx, Ny) : (%d, %d)' % (self.Nx, self.Ny))
-            print('      Pixel Res. (dx, dy) : (%.2f km, %.2f km)' % (self.dx, self.dy))
+            print(f"         Domain Size (Nx, Ny) : ({self.Nx}, {self.Ny})")
+            print(f"          Pixel Res. (dx, dy) : ({self.dx:.2f} km, {self.dy:.2f} km)")
 
-        print('           Number of CPUs : %d (used) of %d (total)' % (self.Ncpu, self.Ncpu_total))
-        print('╰────────────────────────────────────────────────────────╯')
+        print(f"               Number of CPUs : {self.Ncpu} (used) of {self.Ncpu_total} (total)")
+        print( "╰──────────────────────────────────────────────────────────────╯")
 
 
 
