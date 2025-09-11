@@ -310,17 +310,16 @@ def gen_sen_file(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     with open(fname, 'w') as f:
         f.write( "5-parameter (x|y|z|vza|vaa) sensor file for SHDOM\n")
-        f.write(f"{Ndata}\n")
 
         f.write( "! The following provides information for interpreting binary data:\n")
         f.write(f"! {postfix}\n")
-        f.write(f"! {Ndata},5\n")
+        f.write(f"! {Ndata:6d},{5:6d}\n")
 
         # save gridded data into binary file
         #╭──────────────────────────────────────────────────────────────╮#
         with open('%s%s' % (fname, postfix), 'wb') as fb:
             for key in ['x', 'y', 'z', 'vza', 'vaa']:
-                fb.write(struct.pack('<%df' % Ndata, *data[key].flatten(order='F')))
+                fb.write(struct.pack(f"<{Ndata}f", *data[key].flatten(order='F')))
         #╰──────────────────────────────────────────────────────────────╯#
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
