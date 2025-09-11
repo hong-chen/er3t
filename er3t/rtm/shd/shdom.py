@@ -394,7 +394,7 @@ class shdom_ng:
 
                 else:
 
-                    self.nml[ig]['OUTTYPES(1)'] = "X"
+                    self.nml[ig]['OUTTYPES(1)'] = "V"
 
                     data_sensor = {}
                     data_sensor['x'] = self.sensor_xpos
@@ -405,7 +405,7 @@ class shdom_ng:
                     fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
                     self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
 
-                    self.nml[ig]['OUTPARMS(1,1)'] = f"{data_sensor['vza'].size}"
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"3 {data_sensor['vza'].size}"
                     self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
 
             elif self.target == 'flux':
