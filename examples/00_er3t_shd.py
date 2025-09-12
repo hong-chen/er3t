@@ -1370,6 +1370,46 @@ def example_06_rad_cld_gen_hem(
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
+def read_cam_viirs(
+        data={},
+        ):
+
+    fname_geo = '/Users/hchen/Work/mygit/cam/products/data/rad-viirs_raw/ICDBG/2021/138/ICDBG_j01_d20210518_t0527521_e0529166_b18115_c20241029025037855295_oebc_ops.h5'
+    fname_rad = '/Users/hchen/Work/mygit/cam/products/data/rad-viirs_raw/IVCDB/2021/138/IVCDB_j01_d20210518_t0527521_e0529166_b18115_c20241029025037855295_oebc_ops.h5'
+
+    with h5py.File(fname_rad, 'r') as f_rad:
+
+        rad = f_rad['All_Data/VIIRS-DualGain-Cal-IP_All/radiance_3'][...]/1000.0
+
+    with h5py.File(fname_geo, 'r') as f_geo:
+
+        utc = f_geo['All_Data/VIIRS-MOD-UNAGG-GEO_All/MidTime'][...]
+        lon = f_geo['All_Data/VIIRS-MOD-UNAGG-GEO_All/Longitude'][...]
+        lat = f_geo['All_Data/VIIRS-MOD-UNAGG-GEO_All/Latitude'][...]
+        sza = f_geo['All_Data/VIIRS-MOD-UNAGG-GEO_All/SolarZenithAngle'][...]
+        saa = f_geo['All_Data/VIIRS-MOD-UNAGG-GEO_All/SolarAzimuthAngle'][...]
+        sza = f_geo['All_Data/VIIRS-MOD-UNAGG-GEO_All/SolarZenithAngle'][...]
+        saa = f_geo['All_Data/VIIRS-MOD-UNAGG-GEO_All/SolarAzimuthAngle'][...]
+        vza = f_geo['All_Data/VIIRS-MOD-UNAGG-GEO_All/SatelliteZenithAngle'][...]
+        vaa = f_geo['All_Data/VIIRS-MOD-UNAGG-GEO_All/SatelliteAzimuthAngle'][...]
+
+    logic_nan = (lon>180.0) | (lon<-180.0) | (lat>90.0) | (lat<-90.0) | (rad<0.0)
+    rad[logic_nan] = np.nan
+
+    jday0 = er3t.util.dtime_to_jday(datetime.datetime(1958, 1, 1))
+    jday = jday0 + utc.mean()/86400.0/1.0e6
+    data['utc_cam'] = (jday-int(jday)) * 24.0 * 60.0 # UTC minute
+    data['lon_cam'] = lon
+    data['lat_cam'] = lat
+    data['sza_cam'] = sza
+    data['saa_cam'] = saa
+    data['vza_cam'] = vza
+    data['vaa_cam'] = vaa
+    data['rad_cam'] = rad
+    data['extent'] = [110.3821792602539, 127.21611785888672, -1.8479857444763184, 5.583887100219727]
+
+    return data
+
 
 def example_07_at3d_rad_cloud_merra(
         wavelength=650.0,
@@ -1403,6 +1443,7 @@ def example_07_at3d_rad_cloud_merra(
 
     # cloud object
     cld0      = er3t.pre.cld.cld_merra(fname_nc=fname_nc, fname=fname_cld, coarsen=[1, 1, 1], overwrite=overwrite)
+    cld0.lay['extinction']['data'][...] = 0.0
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -1503,16 +1544,40 @@ def example_07_at3d_rad_cloud_merra(
     atm_1ds = [atm1d0]
 
     atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname='%s/shdom-prp.txt' % fdir, fname_atm_1d=atm1d0.fname, overwrite=False)
+    atm3d0.nml['PROPFILE']['data'] = '/Users/hchen/Work/mygit/shdom/data/shdom-prp_atm-clear.txt'
+    atm3d0.nml['NZ']['data'] = 10
     atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
     # define shdom object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    vaa = np.arange(0.0, 360.0, 5.0)
-    vza = np.repeat(30.0, vaa.size)
+    # vaa = np.arange(0.0, 360.0, 5.0)
+    # vza = np.repeat(30.0, vaa.size)
     # vaa = np.arange(45.0, 46.0, 1.0)
     # vza = np.repeat(0.0, vaa.size)
+
+    data = read_cam_viirs()
+    lon = data['lon_cam'][::5, ::5]
+    lat = data['lat_cam'][::5, ::5]
+    vaa = data['vaa_cam'][::5, ::5]
+    vza = data['vza_cam'][::5, ::5]
+    # print(vza.min())
+    # print(vza.max())
+    # print(vaa.min())
+    # print(vaa.max())
+    lon_mean = lon.mean()
+    lat_mean = lat.mean()
+    # sensor_xpos = (lon_mean+180.0)*cld0.lay['dx']['data']
+    # sensor_ypos = (lat_mean+ 90.0)*cld0.lay['dy']['data']
+    sensor_xpos = 25000.0
+    sensor_ypos = 25000.0
+    # print(sensor_xpos)
+    # print(sensor_ypos)
+
+    # read in camera
+    #╭────────────────────────────────────────────────╮#
+    #╰────────────────────────────────────────────────╯#
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -1521,21 +1586,27 @@ def example_07_at3d_rad_cloud_merra(
             atm_3ds=atm_3ds,
             surface=sfc_2d,
             Ng=abs0.Ng,
-            Niter=10,
+            # Niter=10,
+            Niter=0,
             split_acc=1.0e-4,
             target='radiance',
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
+            # sensor_type='radiometer',
+            # sensor_type='sensor',
+            sensor_type='camera2',
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
             sensor_altitude=705.0,
+            sensor_xpos=sensor_xpos,
+            sensor_ypos=sensor_ypos,
             sensor_dx=cld0.lay['dx']['data'],
             sensor_dy=cld0.lay['dy']['data'],
             fdir='%s/rad_%s' % (fdir, solver.lower()),
             solver=solver,
             Ncpu=Ncpu,
             mp_mode='mpi',
-            overwrite=overwrite,
+            overwrite=True,
             force=False,
             )
 
@@ -1547,6 +1618,51 @@ def example_07_at3d_rad_cloud_merra(
     #     shd0.fnames_sav  (Ng), e.g., shd0.fnames_sav[0], state-sav file name for the first g of the first run
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
+    os.system("open tmp-data/00_er3t_shd/example_07_at3d_rad_cloud_merra/0550/rad_3d/shdom-out_g-000.pgm")
+    sys.exit()
+
+    # processing
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # figure
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    plot = True
+    # plot = False
+    if plot:
+        data_cam = np.fromfile('tmp-data/00_er3t_shd/example_07_at3d_rad_cloud_merra/0550/rad_3d/shdom-out_g-000.txt.sHdOm-out', dtype='<f4').reshape(lon.shape)
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot1
+        #╭──────────────────────────────────────────────────────────────╮#
+        ax1 = fig.add_subplot(111)
+        cs = ax1.scatter(lon, lat, c=data_cam, s=2, lw=0.0, cmap='jet')
+        divider = make_axes_locatable(ax1)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        cbar = fig.colorbar(cs, cax=cax)
+        # cbar.set_label('', rotation=270, labelpad=4.0)
+        # cbar.set_ticks([])
+        # cax.axis('off')
+        # ax1.set_xlim((0, 1))
+        # ax1.set_ylim((0, 1))
+        # ax1.set_xlabel('X')
+        # ax1.set_ylabel('Y')
+        # ax1.set_title('Plot1')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #╰──────────────────────────────────────────────────────────────╯#
+        # save figure
+        #╭──────────────────────────────────────────────────────────────╮#
+        fig.subplots_adjust(hspace=0.35, wspace=0.35)
+        _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+        fname_fig = f'{_metadata_['Function']}.png'
+        plt.savefig(fname_fig, bbox_inches='tight', metadata=_metadata_, transparent=False)
+        #╰──────────────────────────────────────────────────────────────╯#
+        plt.show()
+        sys.exit()
+        plt.close(fig)
+        plt.clf()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+    #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # define shdom output object
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1595,10 +1711,10 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_01_rad_atm1d_clear_over_land()
-    example_02_rad_atm1d_clear_over_ocean()
-    example_03_rad_atm1d_clear_over_snow()
-    example_04_rad_atm1d_cloud_over_ocean()
+    # example_01_rad_atm1d_clear_over_land()
+    # example_02_rad_atm1d_clear_over_ocean()
+    # example_03_rad_atm1d_clear_over_snow()
+    # example_04_rad_atm1d_cloud_over_ocean()
 
 
     # example_05_rad_les_cloud_3d(solver='IPA')
@@ -1618,7 +1734,7 @@ if __name__ == '__main__':
     #     example_03_rad_atm1d_cloud_over_ocean(sza=sza)
 
     # example_07_at3d_rad_cloud_merra(wavelength=650.0)
-    # example_07_at3d_rad_cloud_merra(wavelength=550.0)
+    example_07_at3d_rad_cloud_merra(wavelength=550.0, overwrite=False)
     # example_07_at3d_rad_cloud_merra(wavelength=450.0)
 
     pass

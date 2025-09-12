@@ -305,6 +305,8 @@ def gen_sen_file(
         raise OSError(msg)
 
     Ndata = data['vza'].size
+    data['vza'] = np.cos(np.deg2rad(180.0-data['vza']))
+    data['vaa'] = np.deg2rad(data['vaa'])
 
     # generate extinction file
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -313,7 +315,7 @@ def gen_sen_file(
 
         f.write( "! The following provides information for interpreting binary data:\n")
         f.write(f"! {postfix}\n")
-        f.write(f"! {Ndata:6d},{5:6d}\n")
+        f.write(f"! {Ndata:10d},{5:10d}\n")
 
         # save gridded data into binary file
         #╭──────────────────────────────────────────────────────────────╮#

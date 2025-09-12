@@ -131,8 +131,8 @@ class shdom_ng:
         self.solar_azimuth_angle = solar_azimuth_angle
 
         self.sensor_type          = sensor_type.lower()
-        self.sensor_zenith_angle  = sensor_zenith_angles
-        self.sensor_azimuth_angle = sensor_azimuth_angles
+        self.sensor_zenith_angle  = np.array(sensor_zenith_angles).ravel()
+        self.sensor_azimuth_angle = np.array(sensor_azimuth_angles).ravel()
         self.sensor_altitude      = sensor_altitude
         self.sensor_xpos          = sensor_xpos
         self.sensor_ypos          = sensor_ypos
@@ -221,7 +221,10 @@ class shdom_ng:
         self.fnames_sav = []
         for ig in range(self.Ng_):
             self.fnames_inp.append(f"{self.fdir}/shdom-inp_g-{ig:03d}.txt")
-            self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.txt")
+            if 'camera' in self.sensor_type:
+                self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.pgm")
+            else:
+                self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.txt")
             self.fnames_sav.append(f"{self.fdir}/shdom-sav_g-{ig:03d}.sHdOm-sav")
 
         if not self.quiet and not self.overwrite:
@@ -382,17 +385,44 @@ class shdom_ng:
 
             if self.target == "radiance":
 
-                vza_new = np.cos(np.deg2rad(np.array(vza)))
-                vaa_new = np.array([er3t.rtm.shd.cal_shd_vaa(vaa0) for vaa0 in vaa])
+                vza_new = np.array(vza).ravel()
+                mu_new  = np.cos(np.deg2rad(vza_new))
+                vaa_new = np.array([er3t.rtm.shd.cal_shd_vaa(vaa0) for vaa0 in vaa.ravel()])
 
                 if self.sensor_type == "radiometer":
 
                     self.nml[ig]['OUTTYPES(1)'] = "R"
-                    string_view = "\n".join([" %.16f, %.4f," % tuple(item) for item in zip(vza_new, vaa_new)])
-                    self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {vza_new.size},\n{string_view}"
+                    string_view = "\n".join([" %.16f, %.4f," % tuple(item) for item in zip(mu_new, vaa_new)])
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {mu_new.size},\n{string_view}"
                     self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
 
-                else:
+                elif self.sensor_type == "camera1":
+
+                    self.nml[ig]['OUTTYPES(1)'] = "V"
+                    nbyte = 1
+                    downscale = 1000
+                    theta = 180.0
+                    phi = 0.0
+                    rotang = 0.0
+                    nlines = 600
+                    nsamps = 600
+                    delline = 0.25
+                    delsamp = 0.25
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"1 {nbyte} {downscale} {self.sensor_xpos:.4f} {self.sensor_ypos:.4f} {self.sensor_altitude:.4f} {theta:.1f} {phi:.1f} {rotang:.1f} {nlines} {nsamps} {delline:.4f} {delsamp:.4f}"
+
+                elif self.sensor_type == "camera2":
+
+                    self.nml[ig]['OUTTYPES(1)'] = "V"
+                    nbyte = 1
+                    downscale = 1000
+                    spacing = 50.0
+                    scan1 = -80.0
+                    scan2 = 80.0
+                    delscan = 0.5
+
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"2 {nbyte} {downscale} {self.sensor_xpos:.4f} {self.sensor_ypos-10000.0:.4f} {self.sensor_altitude:.4f} {self.sensor_xpos:.4f} {self.sensor_ypos+10000.0:.4f} {self.sensor_altitude:.4f} {spacing:.1f} {scan1:.1f} {scan2:.1f} {delscan:.4f}"
+
+                elif self.sensor_type == "sensor":
 
                     self.nml[ig]['OUTTYPES(1)'] = "V"
 
@@ -405,8 +435,9 @@ class shdom_ng:
                     fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
                     self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
 
-                    self.nml[ig]['OUTPARMS(1,1)'] = f"3 {data_sensor['vza'].size}"
                     self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"3 {data_sensor['vza'].size} {len(data_sensor.keys())}"
+
 
             elif self.target == 'flux':
 
@@ -556,7 +587,10 @@ class shdom_ng:
             print(f"              Sensor Altitude : {self.sensor_altitude:.1f} km")
 
         else:
-            print(f"        User-Specified Sensor : {os.path.basename(self.fname_sensor)}")
+            if (self.sensor_type == "radiometer"):
+                print(f"        User-Specified Sensor : {os.path.basename(self.fname_sensor)}")
+            else:
+                print(f"        User-Specified Sensor : Camera")
 
 
         if self.sfc_2d:
