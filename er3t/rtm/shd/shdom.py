@@ -221,10 +221,10 @@ class shdom_ng:
         self.fnames_sav = []
         for ig in range(self.Ng_):
             self.fnames_inp.append(f"{self.fdir}/shdom-inp_g-{ig:03d}.txt")
-            if 'camera' in self.sensor_type:
-                self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.pgm")
-            else:
-                self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.txt")
+            # if 'camera' in self.sensor_type:
+            #     self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.pgm")
+            # else:
+            self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.txt")
             self.fnames_sav.append(f"{self.fdir}/shdom-sav_g-{ig:03d}.sHdOm-sav")
 
         if not self.quiet and not self.overwrite:
@@ -408,8 +408,8 @@ class shdom_ng:
                     rotang = 0.0
                     nlines = 500
                     nsamps = 500
-                    delline = 0.3
-                    delsamp = 0.3
+                    delline = 0.34
+                    delsamp = 0.34
                     self.nml[ig]['OUTPARMS(1,1)'] = f"1 {nbyte} {downscale} {self.sensor_xpos:.4f} {self.sensor_ypos:.4f} {self.sensor_altitude:.4f} {theta:.1f} {phi:.1f} {rotang:.1f} {nlines} {nsamps} {delline:.4f} {delsamp:.4f}"
 
                 elif self.sensor_type == "camera2":
@@ -422,7 +422,7 @@ class shdom_ng:
                     scan2 = 80.0
                     delscan = 0.5
 
-                    self.nml[ig]['OUTPARMS(1,1)'] = f"2 {nbyte} {downscale} {self.sensor_xpos:.4f} {self.sensor_ypos-10000.0:.4f} {self.sensor_altitude:.4f} {self.sensor_xpos:.4f} {self.sensor_ypos+10000.0:.4f} {self.sensor_altitude:.4f} {spacing:.1f} {scan1:.1f} {scan2:.1f} {delscan:.4f}"
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"2 {nbyte} {downscale} {self.sensor_xpos:.4f} {self.sensor_ypos:.4f} {self.sensor_altitude:.4f} {self.sensor_xpos:.4f} {self.sensor_ypos+25000.0:.4f} {self.sensor_altitude:.4f} {spacing:.1f} {scan1:.1f} {scan2:.1f} {delscan:.4f}"
 
                 elif self.sensor_type == "sensor":
 
