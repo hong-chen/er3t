@@ -306,7 +306,7 @@ def gen_sen_file(
 
     Ndata = data['vza'].size
     data['vza'] = np.cos(np.deg2rad(180.0-data['vza']))
-    data['vaa'] = np.deg2rad(data['vaa'])
+    data['vaa'] = -(np.pi-np.deg2rad(data['vaa']))
 
     # generate extinction file
     #╭────────────────────────────────────────────────────────────────────────────╮#

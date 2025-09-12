@@ -1558,10 +1558,11 @@ def example_07_at3d_rad_cloud_merra(
     # vza = np.repeat(0.0, vaa.size)
 
     data = read_cam_viirs()
-    lon = data['lon_cam'][::5, ::5]
-    lat = data['lat_cam'][::5, ::5]
-    vaa = data['vaa_cam'][::5, ::5]
-    vza = data['vza_cam'][::5, ::5]
+    lon = data['lon_cam'][::15, ::25]
+    lat = data['lat_cam'][::15, ::25]
+    vaa = data['vaa_cam'][::15, ::25]
+    vza = data['vza_cam'][::15, ::25]
+    # print(lon.shape)
     # print(vza.min())
     # print(vza.max())
     # print(vaa.min())
@@ -1570,8 +1571,10 @@ def example_07_at3d_rad_cloud_merra(
     lat_mean = lat.mean()
     # sensor_xpos = (lon_mean+180.0)*cld0.lay['dx']['data']
     # sensor_ypos = (lat_mean+ 90.0)*cld0.lay['dy']['data']
-    sensor_xpos = 25000.0
-    sensor_ypos = 25000.0
+    sensor_xpos = np.zeros_like(lon)
+    sensor_ypos = np.zeros_like(lon)
+    sensor_xpos[:, :] = np.linspace(25500.0, 24500.0, lon.shape[0])[:, np.newaxis]
+    sensor_ypos[:, :] = np.linspace(24000.0, 26000.0, lon.shape[0])[:, np.newaxis]
     # print(sensor_xpos)
     # print(sensor_ypos)
 
@@ -1593,8 +1596,8 @@ def example_07_at3d_rad_cloud_merra(
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
             # sensor_type='radiometer',
-            # sensor_type='sensor',
-            sensor_type='camera2',
+            sensor_type='sensor',
+            # sensor_type='camera1',
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
             sensor_altitude=705.0,
@@ -1618,8 +1621,8 @@ def example_07_at3d_rad_cloud_merra(
     #     shd0.fnames_sav  (Ng), e.g., shd0.fnames_sav[0], state-sav file name for the first g of the first run
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
-    os.system("open tmp-data/00_er3t_shd/example_07_at3d_rad_cloud_merra/0550/rad_3d/shdom-out_g-000.pgm")
-    sys.exit()
+    # os.system("open tmp-data/00_er3t_shd/example_07_at3d_rad_cloud_merra/0550/rad_3d/shdom-out_g-000.pgm")
+    # sys.exit()
 
     # processing
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1628,14 +1631,14 @@ def example_07_at3d_rad_cloud_merra(
     plot = True
     # plot = False
     if plot:
-        data_cam = np.fromfile('tmp-data/00_er3t_shd/example_07_at3d_rad_cloud_merra/0550/rad_3d/shdom-out_g-000.txt.sHdOm-out', dtype='<f4').reshape(lon.shape)
+        data_cam = np.fromfile('tmp-data/00_er3t_shd/example_07_at3d_rad_cloud_merra/0550/rad_3d/shdom-out_g-000.txt.sHdOm-out', dtype='<f4').reshape(lon.shape, order='C')
         plt.close('all')
         fig = plt.figure(figsize=(8, 6))
         # fig.suptitle('Figure')
         # plot1
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(111)
-        cs = ax1.scatter(lon, lat, c=data_cam, s=2, lw=0.0, cmap='jet')
+        cs = ax1.imshow(data_cam, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
         divider = make_axes_locatable(ax1)
         cax = divider.append_axes('right', '5%', pad='3%')
         cbar = fig.colorbar(cs, cax=cax)
@@ -1704,10 +1707,102 @@ def example_07_at3d_rad_cloud_merra(
 
 
 
+def test_cam():
+
+    fname = 'cam1.txt'
+    data = np.loadtxt(fname)
+    data = data.reshape((500, 500, data.shape[-1]))
+
+    # figure
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    plot = True
+    if plot:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot1
+        #╭──────────────────────────────────────────────────────────────╮#
+        ax1 = fig.add_subplot(111)
+        # cs = ax1.imshow(data[:, :, 12].T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        cs = ax1.imshow(data[:, :, 13].T, origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        # ax1.scatter(data[:, :, 0]_x, data[:, :, 0]_y, s=2, c='k', lw=0.0)
+        # ax1.set_xlim((0, 1))
+        # ax1.set_ylim((0, 1))
+        # ax1.set_xlabel('X')
+        # ax1.set_ylabel('Y')
+        # ax1.set_title('Plot1')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #╰──────────────────────────────────────────────────────────────╯#
+        # save figure
+        #╭──────────────────────────────────────────────────────────────╮#
+        fig.subplots_adjust(hspace=0.35, wspace=0.35)
+        _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+        fname_fig = f'{_metadata_['Function']}.png'
+        plt.savefig(fname_fig, bbox_inches='tight', metadata=_metadata_, transparent=False)
+        #╰──────────────────────────────────────────────────────────────╯#
+        plt.show()
+        sys.exit()
+        plt.close(fig)
+        plt.clf()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+    print(data.shape)
+
+def test_sen():
+
+    # fname = 'sen.txt'
+    fname = 'sen2.txt'
+    data = np.loadtxt(fname)
+
+    data_viirs = read_cam_viirs()
+    lon = data_viirs['lon_cam'][::5, ::5]
+    lat = data_viirs['lat_cam'][::5, ::5]
+
+    data = data.reshape((lon.shape[0], lon.shape[1], data.shape[-1]))
+    print(lon.shape)
+
+    # figure
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    plot = True
+    if plot:
+        plt.close('all')
+        fig = plt.figure(figsize=(8, 6))
+        # fig.suptitle('Figure')
+        # plot1
+        #╭──────────────────────────────────────────────────────────────╮#
+        ax1 = fig.add_subplot(111)
+        cs = ax1.imshow(data[:, :, 6], origin='lower', cmap='jet', zorder=0) #, extent=extent, vmin=0.0, vmax=0.5)
+        # ax1.scatter(data[:, :, 0]_x, data[:, :, 0]_y, s=2, c='k', lw=0.0)
+        # ax1.set_xlim((0, 1))
+        # ax1.set_ylim((0, 1))
+        # ax1.set_xlabel('X')
+        # ax1.set_ylabel('Y')
+        # ax1.set_title('Plot1')
+        # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+        #╰──────────────────────────────────────────────────────────────╯#
+        # save figure
+        #╭──────────────────────────────────────────────────────────────╮#
+        fig.subplots_adjust(hspace=0.35, wspace=0.35)
+        _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+        fname_fig = f'{_metadata_['Function']}.png'
+        plt.savefig(fname_fig, bbox_inches='tight', metadata=_metadata_, transparent=False)
+        #╰──────────────────────────────────────────────────────────────╯#
+        plt.show()
+        sys.exit()
+        plt.close(fig)
+        plt.clf()
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+    print(data.shape)
+
 
 if __name__ == '__main__':
 
     warnings.warn('\nUnder active development ...')
+
+    example_07_at3d_rad_cloud_merra(wavelength=550.0, overwrite=False)
+    # test_cam()
+    # test_sen()
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1734,7 +1829,6 @@ if __name__ == '__main__':
     #     example_03_rad_atm1d_cloud_over_ocean(sza=sza)
 
     # example_07_at3d_rad_cloud_merra(wavelength=650.0)
-    example_07_at3d_rad_cloud_merra(wavelength=550.0, overwrite=False)
     # example_07_at3d_rad_cloud_merra(wavelength=450.0)
 
     pass

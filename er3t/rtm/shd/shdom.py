@@ -378,6 +378,8 @@ class shdom_ng:
             dy,
         ):
 
+        vza = np.array(vza).ravel()
+        vaa = np.array(vaa).ravel()
 
         for ig in range(self.Ng_):
 
@@ -385,9 +387,9 @@ class shdom_ng:
 
             if self.target == "radiance":
 
-                vza_new = np.array(vza).ravel()
+                vza_new = vza
                 mu_new  = np.cos(np.deg2rad(vza_new))
-                vaa_new = np.array([er3t.rtm.shd.cal_shd_vaa(vaa0) for vaa0 in vaa.ravel()])
+                vaa_new = np.array([er3t.rtm.shd.cal_shd_vaa(vaa0) for vaa0 in vaa])
 
                 if self.sensor_type == "radiometer":
 
@@ -404,10 +406,10 @@ class shdom_ng:
                     theta = 180.0
                     phi = 0.0
                     rotang = 0.0
-                    nlines = 600
-                    nsamps = 600
-                    delline = 0.25
-                    delsamp = 0.25
+                    nlines = 500
+                    nsamps = 500
+                    delline = 0.3
+                    delsamp = 0.3
                     self.nml[ig]['OUTPARMS(1,1)'] = f"1 {nbyte} {downscale} {self.sensor_xpos:.4f} {self.sensor_ypos:.4f} {self.sensor_altitude:.4f} {theta:.1f} {phi:.1f} {rotang:.1f} {nlines} {nsamps} {delline:.4f} {delsamp:.4f}"
 
                 elif self.sensor_type == "camera2":
