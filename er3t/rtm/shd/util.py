@@ -297,9 +297,13 @@ def gen_sen_file(
     if (N%Nparam != 0):
         msg = f"Error [gen_sen_file]: the size of sensor parameters does NOT match."
         raise OSError(msg)
+    Ndata = data[param].size
+
+    data_new = np.zeros((Nparam, Ndata), dtype=np.float32)
+    for i, param in enumerate(params):
+        data_new[i, :] = data[param]
 
     header = f"{Nparam}-parameter ({'|'.join(params)}) sensor file for SHDOM"
-    Ndata = data[param].size
 
     # generate extinction file
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -308,13 +312,12 @@ def gen_sen_file(
 
         f.write( "! The following provides information for interpreting binary data:\n")
         f.write(f"! {postfix}\n")
-        f.write(f"! {Ndata:10d},{Nparam:10d}\n")
+        f.write(f"! {Nparam:10d},{Ndata:10d}\n")
 
         # save gridded data into binary file
         #╭──────────────────────────────────────────────────────────────╮#
         with open('%s%s' % (fname, postfix), 'wb') as fb:
-            for param in params:
-                fb.write(struct.pack(f"<{Ndata}f", *data[param].flatten(order='F')))
+            fb.write(struct.pack(f"<{Nparam*Ndata}f", *data_new.flatten(order='F')))
         #╰──────────────────────────────────────────────────────────────╯#
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
