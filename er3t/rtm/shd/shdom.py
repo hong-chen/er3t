@@ -394,9 +394,15 @@ class shdom_ng:
                 if self.sensor_type == "radiometer":
 
                     self.nml[ig]['OUTTYPES(1)'] = "R"
-                    string_view = "\n".join([" %.16f, %.4f," % tuple(item) for item in zip(mu_new, vaa_new)])
-                    self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {mu_new.size},\n{string_view}"
-                    self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
+
+                    data_sensor = {}
+                    data_sensor['vza'] = mu_new
+                    data_sensor['vaa'] = vaa_new
+                    fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
+                    self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
+
+                    self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {mu_new.size}"
 
                 elif self.sensor_type == "camera1":
 
@@ -432,14 +438,21 @@ class shdom_ng:
                     data_sensor['x'] = self.sensor_xpos
                     data_sensor['y'] = self.sensor_ypos
                     data_sensor['z'] = self.sensor_altitude
-                    data_sensor['vza'] = vza_new
-                    data_sensor['vaa'] = vaa_new
+                    data_sensor['vza'] = np.cos(np.deg2rad(180.0-vza_new))
+                    data_sensor['vaa'] = np.pi - np.deg2rad(vaa_new)
+
+                    if ((isinstance(data_sensor['x'], float)) or (isinstance(data_sensor['x'], int))):
+                        data_sensor['x'] = np.repeat(data_sensor['x'], data_sensor['vza'].size)
+                    if ((isinstance(data_sensor['y'], float)) or (isinstance(data_sensor['y'], int))):
+                        data_sensor['y'] = np.repeat(data_sensor['y'], data_sensor['vza'].size)
+                    if ((isinstance(data_sensor['z'], float)) or (isinstance(data_sensor['z'], int))):
+                        data_sensor['z'] = np.repeat(data_sensor['z'], data_sensor['vza'].size)
+
                     fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
                     self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
 
                     self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
                     self.nml[ig]['OUTPARMS(1,1)'] = f"3 {data_sensor['vza'].size} {len(data_sensor.keys())}"
-
 
             elif self.target == 'flux':
 
