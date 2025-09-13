@@ -287,24 +287,24 @@ def gen_sen_file(
         postfix='.sHdOm-sen',
         ):
 
-    N = 0
-    for key in data.keys():
-        N += data[key].size
+    params = data.keys()
+    Nparam = len(params)
 
-    if (N%len(data.keys()) != 0):
+    N = 0
+    for param in params:
+        N += data[param].size
+
+    if (N%Nparam != 0):
         msg = f"Error [gen_sen_file]: the size of sensor parameters does NOT match."
         raise OSError(msg)
 
-    Nparam = len(data.keys())
-    Ndata = data['vza'].size
+    header = f"{Nparam}-parameter ({'|'.join(params)}) sensor file for SHDOM"
+    Ndata = data[param].size
 
     # generate extinction file
     #╭────────────────────────────────────────────────────────────────────────────╮#
     with open(fname, 'w') as f:
-        if Nparam == 2:
-            f.write(f"{Nparam}-parameter (vza|vaa) sensor file for SHDOM\n")
-        elif Nparam == 5:
-            f.write(f"{Nparam}-parameter (x|y|z|vza|vaa) sensor file for SHDOM\n")
+        f.write(f"{header}\n")
 
         f.write( "! The following provides information for interpreting binary data:\n")
         f.write(f"! {postfix}\n")
@@ -313,16 +313,8 @@ def gen_sen_file(
         # save gridded data into binary file
         #╭──────────────────────────────────────────────────────────────╮#
         with open('%s%s' % (fname, postfix), 'wb') as fb:
-            if 'x' in data.keys():
-                fb.write(struct.pack(f"<{Ndata}f", *data['x'].flatten(order='F')))
-            if 'y' in data.keys():
-                fb.write(struct.pack(f"<{Ndata}f", *data['y'].flatten(order='F')))
-            if 'z' in data.keys():
-                fb.write(struct.pack(f"<{Ndata}f", *data['z'].flatten(order='F')))
-            if 'vza' in data.keys():
-                fb.write(struct.pack(f"<{Ndata}f", *data['vza'].flatten(order='F')))
-            if 'vaa' in data.keys():
-                fb.write(struct.pack(f"<{Ndata}f", *data['vaa'].flatten(order='F')))
+            for param in params:
+                fb.write(struct.pack(f"<{Ndata}f", *data[param].flatten(order='F')))
         #╰──────────────────────────────────────────────────────────────╯#
     #╰────────────────────────────────────────────────────────────────────────────╯#
 

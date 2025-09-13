@@ -5,6 +5,7 @@ import time
 import psutil
 import datetime
 import warnings
+from collections import OrderedDict
 import multiprocessing as mp
 import numpy as np
 
@@ -395,7 +396,7 @@ class shdom_ng:
 
                     self.nml[ig]['OUTTYPES(1)'] = "R"
 
-                    data_sensor = {}
+                    data_sensor = OrderedDict()
                     data_sensor['vza'] = mu_new
                     data_sensor['vaa'] = vaa_new
                     fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
@@ -434,7 +435,7 @@ class shdom_ng:
 
                     self.nml[ig]['OUTTYPES(1)'] = "V"
 
-                    data_sensor = {}
+                    data_sensor = OrderedDict()
                     data_sensor['x'] = self.sensor_xpos
                     data_sensor['y'] = self.sensor_ypos
                     data_sensor['z'] = self.sensor_altitude
