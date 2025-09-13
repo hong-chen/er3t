@@ -112,10 +112,11 @@ class shd_sfc_2d:
             self.nml['header'] = dict(data='O', name='Header for SHDOM Surface File', units='N/A')
 
             # append additional albedo parameter
-            Nxx, Nyy, Npp = data['sfc']['data'].shape
+            Nxx, Nyy, Npp = self.sfc.data['sfc']['data'].shape
             data_new = np.zeros((Nxx, Nyy, Npp+1), dtype=np.float32)
-            data_new[:, :, 1:] = data['sfc']['data']
-            self.sfc_data = data_new
+            data_new[:, :, 1:] = self.sfc.data['sfc']['data']
+            self.sfc.data['sfc']['data'] = data_new
+            self.sfc_data = self.sfc.data['sfc']['data']
 
         else:
 
