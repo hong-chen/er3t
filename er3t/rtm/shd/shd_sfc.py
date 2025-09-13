@@ -121,28 +121,42 @@ class shd_sfc_2d:
     def gen_shd_2d_sfc_file(
             self,
             fname,
+            postfix='.sHdOm-sfc',
             ):
 
         fname = os.path.abspath(fname)
 
         if not self.quiet:
-            print('Message [shd_sfc_2d]: Creating 2D SFCFile <%s> for SHDOM...' % fname)
+            print(f"Message [shd_sfc_2d]: Creating 2D SFCFile <{fname}> for SHDOM...")
 
-        with open(fname, 'w') as f:
-            f.write('%s\n' % self.nml['header']['data'])
-            f.write('%d %d %.8f %.8f\n' % (self.Nx, self.Ny, self.dx, self.dy))
-            for ix in np.arange(self.Nx):
-                for iy in np.arange(self.Ny):
-                    string1 = '%d %d %.2f ' % ((ix+1), (iy+1), self.atm.lay['temperature']['data'][0])
-                    string2 = ('%.6e ' * self.sfc_data[ix, iy, :].size) % tuple(self.sfc_data[ix, iy, :])
-                    string3 = '\n'
-                    f.write(string1+string2[:-1]+string3) # [:-1] is used to get rid of last empty space
+        with open(fname, "w") as f:
+            f.write(f"{self.nml['header']['data']}\n")
+            f.write(f"{self.Nx} {self.Ny} {self.dx:.8f} {self.dy:.8f}\n")
+
+            f.write( "! The following provides information for interpreting binary data:\n")
+            f.write(f"! {postfix}\n")
+            f.write(f"! {self.Nx+1:10d},{self.Ny+1:10d},{self.sfc_data.shape[-1]+1:10d}\n")
+
+            # for iy in np.arange(self.Ny):
+            #     for ix in np.arange(self.Nx):
+            #         string1 = '%d %d %.2f ' % ((ix+1), (iy+1), self.atm.lay['temperature']['data'][0])
+            #         string2 = ('%.6e ' * self.sfc_data[ix, iy, :].size) % tuple(self.sfc_data[ix, iy, :])
+            #         string3 = '\n'
+            #         f.write(string1+string2[:-1]+string3) # [:-1] is used to get rid of last empty space
+
+            with open('%s%s' % (fname, postfix), 'wb') as fb:
+
+                data = np.zeros((self.Nx+1, self.Ny+1, self.sfc_data.shape[-1]+1), dtype=np.float32)
+                Ndata_t = self.Nx * self.Ny
+                data[:-1, :-1, 0] = np.repeat(self.atm.lay['temperature']['data'][0], Ndata_t).reshape(self.Nx, self.Ny)
+                data[:-1, :-1, 1:] = self.sfc_data
+                data = np.swapaxes(data, 2, 0) # [Nparam, Nx, Ny]
+                data = np.swapaxes(data, 1, 2) # [Nparam, Ny, Nx]
+
+                Ndata = data.size
+                fb.write(struct.pack(f"<{Ndata}f", *data.flatten(order='F')))
 
         self.nml['SFCFILE'] = {'data':fname}
-
-        # f = open(fname, 'wb')
-        # f.write(struct.pack('<%df' % self.nml['Sfc_psfc2d']['data'].size, *self.nml['Sfc_psfc2d']['data'].flatten(order='F')))
-        # f.close()
 
         if not self.quiet:
             print('Message [shd_sfc_2d]: File <%s> is created.' % fname)
