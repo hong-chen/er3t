@@ -110,7 +110,12 @@ class shd_sfc_2d:
         elif ('brdf-ocean' in self.sfc.data['sfc']['name'].lower()):
 
             self.nml['header'] = dict(data='O', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
+
+            # append additional albedo parameter
+            Nxx, Nyy, Npp = data['sfc']['data'].shape
+            data_new = np.zeros((Nxx, Nyy, Npp+1), dtype=np.float32)
+            data_new[:, :, 1:] = data['sfc']['data']
+            self.sfc_data = data_new
 
         else:
 
@@ -125,6 +130,17 @@ class shd_sfc_2d:
             ):
 
         fname = os.path.abspath(fname)
+        Nparam = self.sfc_data.shape[-1]
+
+        # add in edge pixels for SHDOM
+        data = np.zeros((self.Nx+1, self.Ny+1, Nparam+1), dtype=np.float32)
+        Ndata_t = self.Nx * self.Ny
+        data[:-1, :-1, 0] = np.repeat(self.atm.lay['temperature']['data'][0], Ndata_t).reshape(self.Nx, self.Ny)
+        data[:-1, :-1, 1:] = self.sfc_data
+
+        # reorder the array so SHDOM (fortran) can directly reads in the data into SFCPARMS
+        data = np.swapaxes(data, 2, 0) # [Nparam, Nx, Ny]
+        data = np.swapaxes(data, 1, 2) # [Nparam, Ny, Nx]
 
         if not self.quiet:
             print(f"Message [shd_sfc_2d]: Creating 2D SFCFile <{fname}> for SHDOM...")
@@ -135,7 +151,7 @@ class shd_sfc_2d:
 
             f.write( "! The following provides information for interpreting binary data:\n")
             f.write(f"! {postfix}\n")
-            f.write(f"! {self.Nx+1:10d},{self.Ny+1:10d},{self.sfc_data.shape[-1]+1:10d}\n")
+            f.write(f"! {self.Nx+1:10d},{self.Ny+1:10d},{Nparam+1:10d}\n")
 
             # for iy in np.arange(self.Ny):
             #     for ix in np.arange(self.Nx):
@@ -145,13 +161,6 @@ class shd_sfc_2d:
             #         f.write(string1+string2[:-1]+string3) # [:-1] is used to get rid of last empty space
 
             with open('%s%s' % (fname, postfix), 'wb') as fb:
-
-                data = np.zeros((self.Nx+1, self.Ny+1, self.sfc_data.shape[-1]+1), dtype=np.float32)
-                Ndata_t = self.Nx * self.Ny
-                data[:-1, :-1, 0] = np.repeat(self.atm.lay['temperature']['data'][0], Ndata_t).reshape(self.Nx, self.Ny)
-                data[:-1, :-1, 1:] = self.sfc_data
-                data = np.swapaxes(data, 2, 0) # [Nparam, Nx, Ny]
-                data = np.swapaxes(data, 1, 2) # [Nparam, Ny, Nx]
 
                 Ndata = data.size
                 fb.write(struct.pack(f"<{Ndata}f", *data.flatten(order='F')))
