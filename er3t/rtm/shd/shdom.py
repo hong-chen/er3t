@@ -396,14 +396,22 @@ class shdom_ng:
 
                     self.nml[ig]['OUTTYPES(1)'] = "R"
 
-                    data_sensor = OrderedDict()
-                    data_sensor['vza'] = mu_new
-                    data_sensor['vaa'] = vaa_new
-                    fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
-                    self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
+                    if mu_new.size <= 36:
 
-                    self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
-                    self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {mu_new.size}"
+                        view_str = "\n".join([f" {item[0]:.16f}, {item[1]:.4f}," for item in zip(mu_new, vaa_new)])
+                        self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {mu_new.size},\n{view_str}"
+                        self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
+
+                    else:
+
+                        data_sensor = OrderedDict()
+                        data_sensor['vza'] = mu_new
+                        data_sensor['vaa'] = vaa_new
+                        fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
+                        self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
+
+                        self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
+                        self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {mu_new.size}"
 
                 elif self.sensor_type == "camera1":
 
