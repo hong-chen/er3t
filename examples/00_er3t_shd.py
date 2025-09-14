@@ -43,7 +43,7 @@ rcParams['font.size'] = 14
 
 
 def example_01_rad_atm1d_clear_over_land(
-        wavelength=550.0,
+        wavelength=555.0,
         sza=30.0,
         saa=0.0,
         solver='IPA',
@@ -257,7 +257,7 @@ def example_01_rad_atm1d_clear_over_land(
 
 
 def example_02_rad_atm1d_clear_over_ocean(
-        wavelength=550.0,
+        wavelength=555.0,
         windspeed=1.0,
         pigment=0.01,
         sza=30.0,
@@ -474,7 +474,7 @@ def example_02_rad_atm1d_clear_over_ocean(
 
 def example_03_rad_atm1d_clear_over_snow(
         wavelength=555.0,
-        sza=63.0,
+        sza=30.0,
         saa=0.0,
         solver='IPA',
         overwrite=True,
@@ -691,7 +691,7 @@ def example_03_rad_atm1d_clear_over_snow(
 
 
 def example_04_rad_atm1d_cloud_over_ocean(
-        wavelength=550.0,
+        wavelength=555.0,
         cot=10.0,
         cer=12.0,
         sza=30.0,
