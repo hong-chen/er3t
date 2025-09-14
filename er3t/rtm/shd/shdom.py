@@ -615,14 +615,12 @@ class shdom_ng:
                     print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)")
                 print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
 
-            print(f"              Sensor Altitude : {self.sensor_altitude:.1f} km")
-
-        else:
-            if (self.sensor_type == "radiometer"):
-                print(f"        User-Specified Sensor : {os.path.basename(self.fname_sensor)}")
+                print(f"              Sensor Altitude : {self.sensor_altitude:.1f} km")
             else:
-                print(f"        User-Specified Sensor : Camera")
-
+                if (self.sensor_type == "radiometer"):
+                    print(f"        User-Specified Sensor : {os.path.basename(self.fname_sensor)}")
+                else:
+                    print(f"        User-Specified Sensor : Camera")
 
         if self.sfc_2d:
             print( "                 Surface BRDF : 2D domain")
