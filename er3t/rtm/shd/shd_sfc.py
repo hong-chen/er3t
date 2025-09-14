@@ -126,39 +126,45 @@ class shd_sfc_2d:
 
         fname = os.path.abspath(fname)
         Nparam = self.sfc_data.shape[-1]
-
-        # add in edge pixels for SHDOM
-        data = np.zeros((self.Nx+1, self.Ny+1, Nparam+1), dtype=np.float32)
-        Ndata_t = self.Nx * self.Ny
-        data[:-1, :-1, 0] = np.repeat(self.atm.lay['temperature']['data'][0], Ndata_t).reshape(self.Nx, self.Ny)
-        data[:-1, :-1, 1:] = self.sfc_data
-
-        # reorder the array so SHDOM (fortran) can directly reads in the data into SFCPARMS
-        data = np.swapaxes(data, 2, 0) # [Nparam, Nx, Ny]
-        data = np.swapaxes(data, 1, 2) # [Nparam, Ny, Nx]
+        temp_sfc = self.atm.lay['temperature']['data'][0]
 
         if not self.quiet:
             print(f"Message [shd_sfc_2d]: Creating 2D SFCFile <{fname}> for SHDOM...")
 
         with open(fname, "w") as f:
+
             f.write(f"{self.nml['header']['data']}\n")
             f.write(f"{self.Nx} {self.Ny} {self.dx:.8f} {self.dy:.8f}\n")
 
-            f.write( "! The following provides information for interpreting binary data:\n")
-            f.write(f"! {postfix}\n")
-            f.write(f"! {self.Nx+1:10d},{self.Ny+1:10d},{Nparam+1:10d}\n")
+            if self.Nx*self.Ny <= 36:
 
-            # for iy in np.arange(self.Ny):
-            #     for ix in np.arange(self.Nx):
-            #         string1 = '%d %d %.2f ' % ((ix+1), (iy+1), self.atm.lay['temperature']['data'][0])
-            #         string2 = ('%.6e ' * self.sfc_data[ix, iy, :].size) % tuple(self.sfc_data[ix, iy, :])
-            #         string3 = '\n'
-            #         f.write(string1+string2[:-1]+string3) # [:-1] is used to get rid of last empty space
+                for iy in np.arange(self.Ny):
+                    for ix in np.arange(self.Nx):
+                        string1 = f"{ix+1} {iy+1} {temp_sfc:.2f} "
+                        string2 = ('%.6e ' * self.sfc_data[ix, iy, :].size) % tuple(self.sfc_data[ix, iy, :])
+                        string3 = "\n"
+                        f.write(string1+string2[:-1]+string3) # [:-1] is used to get rid of last empty space
 
-            with open('%s%s' % (fname, postfix), 'wb') as fb:
+            else:
 
-                Ndata = data.size
-                fb.write(struct.pack(f"<{Ndata}f", *data.flatten(order='F')))
+                # add in edge pixels for SHDOM
+                data = np.zeros((self.Nx+1, self.Ny+1, Nparam+1), dtype=np.float32)
+                Ndata_t = self.Nx * self.Ny
+                data[:-1, :-1, 0] = np.repeat(temp_sfc, Ndata_t).reshape(self.Nx, self.Ny)
+                data[:-1, :-1, 1:] = self.sfc_data
+
+                # reorder the array so SHDOM (fortran) can directly reads in the data into SFCPARMS
+                data = np.swapaxes(data, 2, 0) # [Nparam, Nx, Ny]
+                data = np.swapaxes(data, 1, 2) # [Nparam, Ny, Nx]
+
+                f.write( "! The following provides information for interpreting binary data:\n")
+                f.write(f"! {postfix}\n")
+                f.write(f"! {self.Nx+1:10d},{self.Ny+1:10d},{Nparam+1:10d}\n")
+
+                with open('%s%s' % (fname, postfix), 'wb') as fb:
+
+                    Ndata = data.size
+                    fb.write(struct.pack(f"<{Ndata}f", *data.flatten(order='F')))
 
         self.nml['SFCFILE'] = {'data':fname}
 
