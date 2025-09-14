@@ -193,6 +193,13 @@ class shdom_ng:
 
         self.dx = sensor_dx
         self.dy = sensor_dy
+
+        # overwrite Nx, Ny, dx, dy if 1D atm but 2D surface
+        if self.sfc_2d and (self.Nx == 1) and (self.Ny == 1):
+            self.Nx = self.surface.nml['NX']['data']
+            self.Ny = self.surface.nml['NY']['data']
+            self.dx = self.surface.nml['dx']['data']
+            self.dy = self.surface.nml['dy']['data']
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # Determine how many CPUs to utilize
