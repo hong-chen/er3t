@@ -430,8 +430,8 @@ class shdom_ng:
                     rotang = 0.0
                     nlines = 500
                     nsamps = 500
-                    delline = 0.34
-                    delsamp = 0.34
+                    delline = 179.0/nlines
+                    delsamp = 179.0/nsamps
                     self.nml[ig]['OUTPARMS(1,1)'] = f"1 {nbyte} {downscale} {self.sensor_xpos:.4f} {self.sensor_ypos:.4f} {self.sensor_altitude:.4f} {theta:.1f} {phi:.1f} {rotang:.1f} {nlines} {nsamps} {delline:.4f} {delsamp:.4f}"
 
                 elif self.sensor_type == "camera2":
