@@ -438,6 +438,8 @@ def lrt_rad_one(
 
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
+    # lrt_cfg['rte_solver']      = 'fdisort1'
+    lrt_cfg['rte_solver']      = 'disort'
     lrt_cfg['mol_abs_param'] = 'reptran fine'
     lrt_cfg['number_of_streams'] = 32
 
