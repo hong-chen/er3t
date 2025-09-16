@@ -1230,7 +1230,7 @@ if __name__ == '__main__':
 
         # test_100_flux_one(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
-        wavelengths = np.arange(300.0, 2401.0, 5.0)
+        wavelengths = np.arange(300.0, 3201.0, 5.0)
         test_100_rad_spec(wavelengths, 0.0, 1.0, 100)
 
     else:
