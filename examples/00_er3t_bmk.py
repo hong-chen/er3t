@@ -463,7 +463,7 @@ def lrt_rad_one(
         input_dict_extra['brdf_ambrals vol'] = params['f_vol']
         input_dict_extra['brdf_ambrals geo'] = params['f_geo']
     elif surface == 'ocean':
-        input_dict_extra['brdf_cam'] = f"u10 {params['windspeed']:.2f}"
+        input_dict_extra['brdf_cam'] = f"u10 {params['windspeed']:.8f}"
     else:
         mute_list.pop()
 
@@ -960,7 +960,7 @@ def lrt_rad_spec(
     """
 
     _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    fdir_tmp = '%s/tmp-data/%s/%s/cot-%04.1f_cer-%04.1f' % (er3t.common.fdir_examples, name_tag, _metadata['Function'], params['cloud_optical_thickness'], params['cloud_effective_radius'])
+    fdir_tmp = f"{er3t.common.fdir_examples}/tmp-data/{name_tag}/{_metadata['Function']}/cot-{params['cloud_optical_thickness']:04.1f}_cer-{params['cloud_effective_radius']:04.1f}"
     if not os.path.exists(fdir_tmp):
         os.makedirs(fdir_tmp)
 
@@ -970,7 +970,7 @@ def lrt_rad_spec(
     lrt_cfg['number_of_streams'] = 32
 
     cld_cfg = er3t.rtm.lrt.get_cld_cfg()
-    cld_cfg['cloud_file']  = '%s/cloud.txt' % fdir_tmp
+    cld_cfg['cloud_file']  = f"{fdir_tmp}/cloud.txt"
     cld_cfg['cloud_optical_thickness'] = params['cloud_optical_thickness']
     cld_cfg['cloud_effective_radius']  = params['cloud_effective_radius']
     cld_cfg['cloud_altitude'] = np.arange(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height']+0.01, 0.1)
@@ -980,14 +980,14 @@ def lrt_rad_spec(
 
     for wvl0 in params['wavelengths']:
 
-        fname_out = '%s/output_rad_%4.4d.txt' % (fdir_tmp, wvl0)
+        fname_out = f"{fdir_tmp}/output_rad_{wvl0:04.0f}.txt"
         if (not overwrite) and (not os.path.exists(fname_out)):
             overwrite = True
 
         mute_list = ['source solar', 'slit_function_file', 'wavelength', 'spline', 'albedo']
 
         input_dict_extra = {
-                'wavelength_add': '%.1f %.1f' % (wvl0, wvl0),
+                'wavelength_add': f"{wvl0:.1f} {wvl0:.1f}",
                 }
 
         if surface == 'land':
@@ -995,12 +995,12 @@ def lrt_rad_spec(
             input_dict_extra['brdf_ambrals vol'] = params['f_vol']
             input_dict_extra['brdf_ambrals geo'] = params['f_geo']
         elif surface == 'ocean':
-            input_dict_extra['brdf_cam'] = 'u10 %.2f' % params['windspeed']
+            input_dict_extra['brdf_cam'] = f"u10 {params['windspeed']:.8f}"
         else:
             mute_list.pop()
 
         init_rad = er3t.rtm.lrt.lrt_init_mono_rad(
-                input_file  = '%s/input_rad_%4.4d.txt' % (fdir_tmp, wvl0),
+                input_file  = f"{fdir_tmp}/input_rad_{wvl0:04.0f}.txt",
                 output_file = fname_out,
                 date        = params['date'],
                 surface_albedo = params['surface_albedo'],
@@ -1018,8 +1018,8 @@ def lrt_rad_spec(
         inits_rad.append(init_rad)
 
         init_flx = er3t.rtm.lrt.lrt_init_mono_flx(
-                input_file  = '%s/input_flx_%4.4d.txt' % (fdir_tmp, wvl0),
-                output_file = '%s/output_flx_%4.4d.txt' % (fdir_tmp, wvl0),
+                input_file  = f"{fdir_tmp}/input_flx_{wvl0:04.0f}.txt",
+                output_file = f"{fdir_tmp}/output_flx_{wvl0:04.0f}.txt",
                 date        = params['date'],
                 surface_albedo = params['surface_albedo'],
                 solar_zenith_angle = params['solar_zenith_angle'],
@@ -1116,7 +1116,7 @@ def test_100_rad_spec(
 
     params = {
                             'date': datetime.datetime(2024, 5, 18),
-                 'atmosphere_file': '%s/afglss.dat' % er3t.common.fdir_data_atmmod,
+                 'atmosphere_file': f"{er3t.common.fdir_data_atmmod}/afglss.dat",
                   'surface_albedo': 0.8,
               'solar_zenith_angle': 63.0,
              'solar_azimuth_angle': 0.0,
@@ -1141,12 +1141,12 @@ def test_100_rad_spec(
         params['photons'] = 1.0e9
 
     # data_lrt_slit = lrt_rad_spec_slit(params, surface=surface, overwrite=False)
-    data_lrt = lrt_rad_spec(params, surface=surface, overwrite=False)
+    data_lrt = lrt_rad_spec(params, surface=surface, overwrite=overwrite)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
+    data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
 
-    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=True)
+    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
 
     # figure
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1199,7 +1199,8 @@ def test_100_rad_spec(
         #╭──────────────────────────────────────────────────────────────╮#
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        fig.savefig('%4.4d_%s_cot-%05.1f_cer-%05.1f.png' % (icount, _metadata['Function'], params['cloud_optical_thickness'], params['cloud_effective_radius']), bbox_inches='tight', metadata=_metadata)
+        fname_png = f"{icount:04d}_{_metadata['Function']}_cot-{params['cloud_optical_thickness']:05.1f}_cer-{params['cloud_effective_radius']:05.1f}.png"
+        fig.savefig(fname_png, bbox_inches='tight', metadata=_metadata)
         # plt.close()
         plt.show()
         #╰──────────────────────────────────────────────────────────────╯#
@@ -1217,7 +1218,7 @@ if __name__ == '__main__':
 
         # test_100_rad_one(555.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad_one(555.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
-        test_100_rad_one(555.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
+        # test_100_rad_one(555.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_flux_one(555.0, 10.0, 12.0, 100, plot=True, overwrite=True)
 
         # icount = 0
@@ -1229,8 +1230,8 @@ if __name__ == '__main__':
 
         # test_100_flux_one(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
-        # wavelengths = np.arange(350.0, 2001.0, 5.0)
-        # test_100_rad_spec(wavelengths, 0.0, 1.0, 100)
+        wavelengths = np.arange(300.0, 2401.0, 5.0)
+        test_100_rad_spec(wavelengths, 0.0, 1.0, 100)
 
     else:
 
