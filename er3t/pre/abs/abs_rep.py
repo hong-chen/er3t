@@ -197,9 +197,10 @@ class abs_rep:
         # get representative wavelength information
         #╭────────────────────────────────────────────────────────────────────────────╮#
         wvl_indices0 = f0.variables['iwvl'][:][:, index_band]
-        wvl_indices = wvl_indices0[wvl_indices0>0] - 1
         wvl_weights0 = f0.variables['iwvl_weight'][:][:, index_band]
-        wvl_weights = wvl_weights0[wvl_weights0>0]
+        logic_valid = (wvl_weights0>0) & (wvl_indices0>0)
+        wvl_indices = wvl_indices0[logic_valid] - 1
+        wvl_weights = wvl_weights0[logic_valid]
 
         # this is actually number of wavelength, use Ng for consistency
         self.Ng = wvl_weights.size
