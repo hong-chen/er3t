@@ -609,15 +609,15 @@ class shdom_ng:
                 if self.sensor_zenith_angle.size > 3:
                     print( "                         ...")
 
-                # print last vza, vaa pair
-                if (i == self.sensor_zenith_angle.size-1):
-                    vza0 = self.sensor_zenith_angle[i]
-                    vaa0 = self.sensor_azimuth_angle[i]
-                    if vza0 < 90.0:
-                        print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)")
-                    else:
-                        print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)")
-                    print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
+                    # print last vza, vaa pair
+                    if (i == self.sensor_zenith_angle.size-1):
+                        vza0 = self.sensor_zenith_angle[i]
+                        vaa0 = self.sensor_azimuth_angle[i]
+                        if vza0 < 90.0:
+                            print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)")
+                        else:
+                            print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)")
+                        print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
 
             else:
                 print(f"  User-Specified Sensor Specs : {os.path.basename(self.fname_sensor)}")
