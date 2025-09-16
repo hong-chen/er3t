@@ -1141,12 +1141,16 @@ def test_100_rad_spec(
         params['photons'] = 1.0e9
 
     # data_lrt_slit = lrt_rad_spec_slit(params, surface=surface, overwrite=False)
-    data_lrt = lrt_rad_spec(params, surface=surface, overwrite=overwrite)
+    data_lrt = lrt_rad_spec(params, surface=surface, overwrite=False)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
 
-    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=False)
+    print('libRadtran:', np.trapz(data_lrt['rad'], x=params['wavelengths']))
+    print('MCARaTS:', np.trapz(data_mca['rad'], x=params['wavelengths']))
+    print('SHDOM:', np.trapz(data_shd['rad'], x=params['wavelengths']))
+    sys.exit()
 
     # figure
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1193,7 +1197,7 @@ def test_100_rad_spec(
                           mpatches.Patch(color='cyan'     , label='MCARaTS Diff.'), \
                           mpatches.Patch(color='magenta'  , label='SHDOM Diff.'), \
                          ]
-        ax1.legend(handles=patches_legend, loc='upper right', fontsize=14)
+        ax1.legend(handles=patches_legend, loc='upper center', fontsize=14)
 
         # save figure
         #╭──────────────────────────────────────────────────────────────╮#
@@ -1231,7 +1235,7 @@ if __name__ == '__main__':
         # test_100_flux_one(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
         wavelengths = np.arange(300.0, 3201.0, 5.0)
-        test_100_rad_spec(wavelengths, 0.0, 1.0, 100)
+        test_100_rad_spec(wavelengths, 0.0, 1.0, 100, overwrite=False)
 
     else:
 
