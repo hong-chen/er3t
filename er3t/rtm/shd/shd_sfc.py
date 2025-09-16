@@ -141,7 +141,7 @@ class shd_sfc_2d:
                 for iy in np.arange(self.Ny):
                     for ix in np.arange(self.Nx):
                         string1 = f"{ix+1} {iy+1} {temp_sfc:.2f} "
-                        string2 = ('%.6e ' * self.sfc_data[ix, iy, :].size) % tuple(self.sfc_data[ix, iy, :])
+                        string2 = ('%.8f ' * self.sfc_data[ix, iy, :].size) % tuple(self.sfc_data[ix, iy, :])
                         string3 = "\n"
                         f.write(string1+string2[:-1]+string3) # [:-1] is used to get rid of last empty space
 
