@@ -593,34 +593,36 @@ class shdom_ng:
         print(f"           Solar Zenith Angle : {self.solar_zenith_angle:.4f}° (0 at local zenith)")
         print(f"          Solar Azimuth Angle : {self.solar_azimuth_angle:.4f}° (0 at north; 90° at east)")
 
-        if (self.target == "radiance") and (self.sensor_type == "radiometer"):
-            for i, vza0 in enumerate(self.sensor_zenith_angle[:min([2, self.sensor_zenith_angle.size])]):
-                vaa0 = self.sensor_azimuth_angle[i]
+        if (self.target == "radiance"):
+            if (self.sensor_zenith_angle.size <= 36) and (self.sensor_type == "radiometer"):
 
-                if vza0 < 90.0:
-                    print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)")
-                else:
-                    print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)")
-                print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
+                # print first three vza, vaa pairs
+                for i, vza0 in enumerate(self.sensor_zenith_angle[:min([2, self.sensor_zenith_angle.size])]):
+                    vaa0 = self.sensor_azimuth_angle[i]
+                    if vza0 < 90.0:
+                        print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)")
+                    else:
+                        print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)")
+                    print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
 
-            if self.sensor_zenith_angle.size >= 3:
+                # print '...'
                 if self.sensor_zenith_angle.size > 3:
                     print( "                         ...")
-                i = self.sensor_zenith_angle.size
-                vza0 = self.sensor_zenith_angle[-1]
-                vaa0 = self.sensor_azimuth_angle[-1]
-                if vza0 < 90.0:
-                    print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)")
-                else:
-                    print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)")
-                print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
 
-                print(f"              Sensor Altitude : {self.sensor_altitude:.1f} km")
+                # print last vza, vaa pair
+                if (i == self.sensor_zenith_angle.size-1):
+                    vza0 = self.sensor_zenith_angle[i]
+                    vaa0 = self.sensor_azimuth_angle[i]
+                    if vza0 < 90.0:
+                        print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)")
+                    else:
+                        print(f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)")
+                    print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
+
             else:
-                if (self.sensor_type == "radiometer"):
-                    print(f"        User-Specified Sensor : {os.path.basename(self.fname_sensor)}")
-                else:
-                    print(f"        User-Specified Sensor : Camera")
+                print(f"  User-Specified Sensor Specs : {os.path.basename(self.fname_sensor)}")
+
+            print(f"              Sensor Altitude : {self.sensor_altitude:.1f} km")
 
         if self.sfc_2d:
             print( "                 Surface BRDF : 2D domain")
