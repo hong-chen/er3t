@@ -351,6 +351,7 @@ def anim_gas_absorption(index):
         ax1.set_ylim((0, 1.20000001))
         ax1.set_xlabel('Wavelength [nm]')
         ax1.set_ylabel('Irradiance [$\\mathrm{W m^{-2} nm^{-1}}$]')
+        ax1.xaxis.set_minor_locator(FixedLocator(np.arange(0, 3201, 100)))
         ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 3201, 400)))
         ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 1.21, 0.2)))
 
