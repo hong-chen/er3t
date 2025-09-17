@@ -1,5 +1,6 @@
 import os
 import sys
+import pysolar
 import fnmatch
 import datetime
 import numpy as np
@@ -18,7 +19,7 @@ __all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
            'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
            'get_doy_tag', 'add_reference', 'print_reference', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
-           'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext_atm', 'mol_ext_wvl', 'cal_mol_ext', 'cal_ext', \
+           'cal_rho_air', 'cal_sol_fac', 'cal_sol_ang', 'cal_mol_ext_atm', 'mol_ext_wvl', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
            'format_time', 'region_parser', 'parse_geojson', 'unpack_uint_to_bits']
 
@@ -992,20 +993,6 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
         sza[i] = sza_i
 
         saa_i = pysolar.solar.get_azimuth(latitude[i], longitude[i], dtime_i, elevation=altitude[i])
-        # if saa_i >= 0.0:
-        #     if 0.0<=saa_i<=180.0:
-        #         saa_i = 180.0 - saa_i
-        #     elif 180.0<saa_i<=360.0:
-        #         saa_i = 540.0 - saa_i
-        #     else:
-        #         saa_i = np.nan
-        # elif saa_i < 0.0:
-        #     if -180.0<=saa_i<0.0:
-        #         saa_i = -saa_i + 180.0
-        #     elif -360.0<=saa_i<-180.0:
-        #         saa_i = -saa_i - 180.0
-        #     else:
-        #         saa_i = np.nan
         saa[i] = saa_i
 
     return sza, saa
