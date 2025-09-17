@@ -292,7 +292,7 @@ def anim_gas_absorption(index):
             'N2': {'name':'N$_{2}$'},
             'O2': {'name':'O$_{2}$'},
             'O3': {'name':'O$_{3}$'},
-            'O4': {'name':'O$_{4}$'},
+            'O4': {'name':'O$_{4}$ (O$_{2}$-O$_{2}$)'},
             'H2O': {'name':'H$_{2}$O'},
             'CO2': {'name':'CO$_{2}$'},
             'CO': {'name':'CO'},
@@ -334,13 +334,12 @@ def anim_gas_absorption(index):
             else:
                 ax1.fill_between(data['wvl'], data_gas['f_down'][index, :], data['f_down'][-1, :], facecolor=colors[i], lw=0.0, alpha=1.0)
 
-            if gas.lower() in atm0.lev.keys():
+            if (gas.lower() in atm0.lev.keys()) and (gas != 'O4'):
                 ax2.plot(atm0.lev[gas.lower()]['data'], atm0.lev['altitude']['data'], lw=1.0, color=colors[i])
                 gas_concentration = atm0.lev[gas.lower()]['data'][index:].sum()
+                patches_legend.append(mpatches.Patch(color=colors[i], label=f"{gases[gas]['name']} [{gas_concentration:.1E}]"))
             else:
-                if gas == 'O4':
-                    gas_concentration = atm0.lev['o2']['data'][index:].sum()**2
-            patches_legend.append(mpatches.Patch(color=colors[i], label=f"{gases[gas]['name']} [{gas_concentration:.1E}]"))
+                patches_legend.append(mpatches.Patch(color=colors[i], label=f"{gases[gas]['name']}"))
 
         gas_concentration = atm0.lev['air']['data'][index:].sum()
         patches_legend.append(mpatches.Patch(color='gray', label=f"Air [{gas_concentration:.1E}]"))
