@@ -26,6 +26,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 # mpl.use('Agg')
 
 import er3t
+from util import add_er3t_logo
 
 
 
@@ -283,10 +284,10 @@ def test_100_flux_spec(
 
 def anim_gas_absorption(index):
 
-    # gases = ['O3', 'O2', 'H2O', 'CO2', 'NO2', 'BRO', 'OCLO', 'HCHO', 'O4', 'SO2', 'CH4', 'N2O', 'CO', 'N2']
+    # gases_list = ['O3', 'O2', 'H2O', 'CO2', 'NO2', 'BRO', 'OCLO', 'HCHO', 'O4', 'SO2', 'CH4', 'N2O', 'CO', 'N2']
+    # gases_list = ['N2', 'O2', 'O3', 'H2O', 'CO2', 'CO', 'NO2', 'N2O', 'CH4']
 
     gases_list = ['H2O', 'N2', 'O2', 'O3', 'O4', 'CO2', 'CO', 'NO2', 'N2O', 'CH4']
-    # gases_list = ['N2', 'O2', 'O3', 'H2O', 'CO2', 'CO', 'NO2', 'N2O', 'CH4']
 
     gases = {
             'N2': {'name':'N$_{2}$'},
@@ -314,10 +315,10 @@ def anim_gas_absorption(index):
     if plot:
         plt.close('all')
         fig = plt.figure(figsize=(12, 5))
-        # fig.suptitle(f"At {data['alt'][index]:.1f} km", fontsize=24)
         # plot1
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(111)
+        ax1 = add_er3t_logo(ax1)
         ax2 = ax1.inset_axes([0.60, 0.18, 0.2, 0.80])
 
         patches_legend = []
@@ -344,7 +345,7 @@ def anim_gas_absorption(index):
         gas_concentration = atm0.lev['air']['data'][index]
         patches_legend.append(mpatches.Patch(color='gray', label=f"Air [{gas_concentration:.1E}]"))
 
-        ax1.plot(data['wvl'], data['f_down'][index, :], lw=0.5, color='k')
+        ax1.plot(data['wvl'], data['f_down'][index, :], lw=0.15, color='k')
         ax1.fill_between(data['wvl'], 0.0, data['f_down_diffuse'][index, :], lw=0.0, facecolor='gray', alpha=1.0)
 
         ax1.set_xlim((300, 3200.000001))
@@ -357,7 +358,6 @@ def anim_gas_absorption(index):
 
         ax2.axhline(data['alt'][index], color='black', lw=0.5)
         ax2.set_ylim((0.1, 60.0))
-        # ax2.set_xlim((0.1, 1000.0))
         ax2.set_xscale('log')
         ax2.set_yscale('log')
         ax2.tick_params(axis='both', labelsize=12)
@@ -382,8 +382,8 @@ def anim_gas_absorption(index):
 
 def main_gas_absorption():
 
-    # wavelengths = np.arange(300.0, 3201.0, 5.0)
-    # test_100_flux_spec(wavelengths, 0.0, 1.0, 100)
+    # wavelengths = np.arange(300.0, 3201.0, 1.0)
+    # test_100_flux_spec(wavelengths, 0.0, 1.0, 100, overwrite=True)
 
     for index in np.arange(189)[::-1]:
     # for index in np.arange(0, 1)[::-1]:
