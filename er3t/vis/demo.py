@@ -245,8 +245,7 @@ def test_100_flux_spec(
                        'windspeed': 1.0,
                          'pigment': 0.01,
                            'extra': None,
-                 # 'output_altitude': np.concatenate((np.arange(0.0, 8.0, 0.1), np.arange(8.0, 16.0, 0.2), np.arange(16.0, 30.0, 0.5), np.arange(30.0, 60.1, 1.0))),
-                 'output_altitude': np.concatenate((np.arange(0.0, 1.0, 0.01), np.arange(1.0, 10.0, 0.1), np.arange(10.0, 60.1, 1.0))),
+                 'output_altitude': np.concatenate((np.arange(0.0, 1.0, 0.05), np.arange(1.0, 8.0, 0.1), np.arange(8.0, 16.0, 0.2), np.arange(16.0, 30.0, 0.5), np.arange(30.0, 60.1, 1.0))),
          }
 
     if params['cloud_optical_thickness'] > 0.0:
@@ -287,6 +286,7 @@ def anim_gas_absorption(index):
     # gases = ['O3', 'O2', 'H2O', 'CO2', 'NO2', 'BRO', 'OCLO', 'HCHO', 'O4', 'SO2', 'CH4', 'N2O', 'CO', 'N2']
 
     gases_list = ['N2', 'O2', 'O3', 'O4', 'H2O', 'CO2', 'CO', 'NO2', 'N2O', 'CH4']
+    # gases_list = ['N2', 'O2', 'O3', 'H2O', 'CO2', 'CO', 'NO2', 'N2O', 'CH4']
 
     gases = {
             'N2': {'name':'N$_{2}$'},
@@ -325,9 +325,12 @@ def anim_gas_absorption(index):
             data_gas = er3t.util.load_h5(f"data/data_flux_{gas}.h5")
             if gas == 'O2':
                 data_gas0 = er3t.util.load_h5("data/data_flux_O4.h5")
-                ax1.fill_between(data['wvl'], data_gas0['f_down'][index, :], data_gas0['f_down'][-1, :], facecolor=colors[i], lw=0.0, alpha=1.0)
+                ax1.fill_between(data['wvl'], data_gas0['f_down'][index, :], data['f_down'][-1, :], facecolor=colors[i], lw=0.0, alpha=1.0)
+            elif gas == 'O4':
+                data_gas0 = er3t.util.load_h5("data/data_flux_O2.h5")
+                ax1.fill_between(data['wvl'], data_gas0['f_down'][index, :], data_gas['f_down'][index, :], facecolor=colors[i], lw=0.0, alpha=1.0)
             else:
-                ax1.fill_between(data['wvl'], data_gas['f_down'][index, :], data_gas['f_down'][-1, :], facecolor=colors[i], lw=0.0, alpha=1.0)
+                ax1.fill_between(data['wvl'], data_gas['f_down'][index, :], data['f_down'][-1, :], facecolor=colors[i], lw=0.0, alpha=1.0)
 
             if gas.lower() in atm0.lev.keys():
                 ax2.plot(atm0.lev[gas.lower()]['data'], atm0.lev['altitude']['data'], lw=1.0, color=colors[i])
@@ -366,7 +369,7 @@ def anim_gas_absorption(index):
         #╭──────────────────────────────────────────────────────────────╮#
         fig.subplots_adjust(hspace=0.35, wspace=0.35)
         _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
-        fname_fig = f'{240-index:04d}_{_metadata_['Function']}.png'
+        fname_fig = f'{188-index:04d}_{_metadata_['Function']}.png'
         plt.savefig(fname_fig, bbox_inches='tight', metadata=_metadata_, transparent=False)
         #╰──────────────────────────────────────────────────────────────╯#
         # plt.show()
@@ -380,7 +383,7 @@ def main_gas_absorption():
     # wavelengths = np.arange(300.0, 3201.0, 5.0)
     # test_100_flux_spec(wavelengths, 0.0, 1.0, 100)
 
-    for index in np.arange(241)[::-1]:
+    for index in np.arange(189)[::-1]:
     # for index in np.arange(0, 1)[::-1]:
         anim_gas_absorption(index)
 
