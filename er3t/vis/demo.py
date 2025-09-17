@@ -285,7 +285,7 @@ def anim_gas_absorption(index):
 
     # gases = ['O3', 'O2', 'H2O', 'CO2', 'NO2', 'BRO', 'OCLO', 'HCHO', 'O4', 'SO2', 'CH4', 'N2O', 'CO', 'N2']
 
-    gases_list = ['N2', 'O2', 'O3', 'O4', 'H2O', 'CO2', 'CO', 'NO2', 'N2O', 'CH4']
+    gases_list = ['H2O', 'N2', 'O2', 'O3', 'O4', 'CO2', 'CO', 'NO2', 'N2O', 'CH4']
     # gases_list = ['N2', 'O2', 'O3', 'H2O', 'CO2', 'CO', 'NO2', 'N2O', 'CH4']
 
     gases = {
@@ -313,12 +313,12 @@ def anim_gas_absorption(index):
     plot = True
     if plot:
         plt.close('all')
-        fig = plt.figure(figsize=(12, 6))
+        fig = plt.figure(figsize=(12, 5))
         # fig.suptitle(f"At {data['alt'][index]:.1f} km", fontsize=24)
         # plot1
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(111)
-        ax2 = ax1.inset_axes([0.60, 0.15, 0.2, 0.83])
+        ax2 = ax1.inset_axes([0.60, 0.18, 0.2, 0.80])
 
         patches_legend = []
         for i, gas in enumerate(gases_list):
@@ -329,6 +329,8 @@ def anim_gas_absorption(index):
             elif gas == 'O4':
                 data_gas0 = er3t.util.load_h5("data/data_flux_O2.h5")
                 ax1.fill_between(data['wvl'], data_gas0['f_down'][index, :], data_gas['f_down'][index, :], facecolor=colors[i], lw=0.0, alpha=1.0)
+            elif gas == 'H2O':
+                ax1.fill_between(data['wvl'], data['f_down'][index, :], data['f_down'][-1, :], facecolor=colors[i], lw=0.0, alpha=1.0)
             else:
                 ax1.fill_between(data['wvl'], data_gas['f_down'][index, :], data['f_down'][-1, :], facecolor=colors[i], lw=0.0, alpha=1.0)
 
