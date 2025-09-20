@@ -1,7 +1,7 @@
 EaR³T (Education and Research 3D Radiative Transfer Toolbox)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: https://dcbadge.vercel.app/api/server/ntqsguwaWv?style=flat&theme=discord-inverted
+.. image:: https://dcbadge.limes.pink/api/server/ntqsguwaWv?style=flat&theme=discord-inverted
     :target: https://discord.gg/ntqsguwaWv
     :alt: Discord Server
 
