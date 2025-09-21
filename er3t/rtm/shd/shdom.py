@@ -405,8 +405,8 @@ class shdom_ng:
 
                     if mu_new.size <= 36:
 
-                        view_str = "\n".join([f" {item[0]:.16f}, {item[1]:.4f}," for item in zip(mu_new, vaa_new)])
-                        self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {mu_new.size},\n{view_str}"
+                        view_str = "\n".join([f" {item[0]:.16e}, {item[1]:.4e}," for item in zip(mu_new, vaa_new)])
+                        self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4e}, {dx:.8e}, {dy:.8e}, 0.0, 0.0, {mu_new.size},\n{view_str}"
                         self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
 
                     else:
@@ -418,7 +418,7 @@ class shdom_ng:
                         self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
 
                         self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
-                        self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8f}, {dy:.8f}, 0.0, 0.0, {mu_new.size}"
+                        self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8e}, {dy:.8e}, 0.0, 0.0, {mu_new.size}"
 
                 elif self.sensor_type == "camera1":
 

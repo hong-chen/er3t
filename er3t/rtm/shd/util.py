@@ -150,7 +150,7 @@ def gen_ext_file(
     with open(fname, 'w') as f:
         f.write('2 parameter extinction file for SHDOM\n')
         f.write('%d %d %d\n' % ext.shape)
-        f.write('%.8f %.8f\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
+        f.write('%.8e %.8e\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
         f.write('%s\n' % ' '.join([str('%.6f' % alt0) for alt0 in zgrid]))
         f.write('%s\n' % ' '.join([str('%.4f' % np.nanmean(temp[:, :, iz])) for iz in range(Nz)]))
 
@@ -195,7 +195,7 @@ def gen_lwc_file(
     with open(fname, 'w') as f:
         f.write('2 parameter LWC file for SHDOM\n')
         f.write('%d %d %d\n' % lwc.shape)
-        f.write('%.8f %.8f\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
+        f.write('%.8e %.8e\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
         f.write('%s\n' % ' '.join([str('%.6f' % alt0) for alt0 in cld0.lay['altitude']['data']]))
         f.write('%s\n' % ' '.join([str('%.4f' % np.mean(temp[:, :, iz])) for iz in range(Nz)]))
 
