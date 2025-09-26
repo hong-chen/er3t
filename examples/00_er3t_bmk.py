@@ -279,7 +279,7 @@ def shd_flux_one(
             atm_3ds=atm_3ds,
             fdir=fdir,
             target='flux',
-            Niter=1000,
+            Niter=200,
             Nmu=16,
             Nphi=32,
             solar_zenith_angle=params['solar_zenith_angle'],
@@ -709,7 +709,7 @@ def shd_rad_one(
             Ng=abs0.Ng,
             fdir=fdir,
             target='rad',
-            Niter=1000,
+            Niter=200,
             Nmu=32,
             Nphi=64,
             solar_zenith_angle=params['solar_zenith_angle'],
@@ -719,8 +719,8 @@ def shd_rad_one(
             sensor_altitude=params['output_altitude'][-1],
             sensor_dx=cld0.lay['dx']['data'],
             sensor_dy=cld0.lay['dy']['data'],
-            sol_acc=1e-6,
-            split_acc=1e-6,
+            sol_acc=1e-8,
+            split_acc=1e-8,
             surface=sfc_2d,
             solver=solver,
             Ncpu=1,
@@ -1128,7 +1128,7 @@ def test_100_rad_spec(
           'cloud_effective_radius': cer,
                 'cloud_top_height': 1.5,
        'cloud_geometric_thickness': 1.0,
-                         'photons': 1.0e6,
+                         'photons': 1.0e7,
                            'f_iso': 0.12472048343113448,
                            'f_vol': 0.05460690884637945,
                            'f_geo': 0.03384929843579787,
@@ -1150,7 +1150,6 @@ def test_100_rad_spec(
     print('libRadtran:', np.trapz(data_lrt['rad'], x=params['wavelengths']))
     print('MCARaTS:', np.trapz(data_mca['rad'], x=params['wavelengths']))
     print('SHDOM:', np.trapz(data_shd['rad'], x=params['wavelengths']))
-    sys.exit()
 
     # figure
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -1220,10 +1219,10 @@ if __name__ == '__main__':
 
         # test_00_solar()
 
-        # test_100_rad_one(555.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
-        # test_100_rad_one(555.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
-        # test_100_rad_one(555.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
-        # test_100_flux_one(555.0, 10.0, 12.0, 100, plot=True, overwrite=True)
+        # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
+        # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
+        # test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
+        # test_100_flux_one(556.0, 10.0, 12.0, 100, plot=True, overwrite=True)
 
         # icount = 0
         # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
@@ -1232,11 +1231,11 @@ if __name__ == '__main__':
         #         test_100_flux_one(2130.0, cot, cer, icount, plot=True, overwrite=False)
         #         icount += 1
 
-        # test_100_flux_one(2130.0, 50.0, 9.0, 100, plot=True, overwrite=True)
+        # test_100_flux_one(2131.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
-        # wavelengths = np.arange(300.0, 3201.0, 5.0)
-        wavelengths = np.arange(1400.0, 1411.0, 5.0)
-        test_100_rad_spec(wavelengths, 0.0, 1.0, 100, overwrite=True)
+        wavelengths = np.arange(300.0, 3201.0, 5.0)
+        # wavelengths = np.arange(1400.0, 1411.0, 5.0)
+        test_100_rad_spec(wavelengths, 0.0, 1.0, 100, overwrite=False)
 
     else:
 
