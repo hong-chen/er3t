@@ -625,7 +625,7 @@ class shdom_ng:
             print(f"              Sensor Altitude : {self.sensor_altitude:.1f} km")
 
         if self.sfc_2d:
-            print( "                 Surface BRDF : 2D domain")
+            print(f"                      Surface : {self.surface.ID}")
         else:
             print(f"               Surface Albedo : {self.surface:.4f}")
 

@@ -36,9 +36,6 @@ class shd_sfc_2d:
     """
 
 
-    ID = 'SHDOM 2D Surface'
-
-
     def __init__(self,\
                  atm_obj   = None, \
                  sfc_obj   = None, \
@@ -92,25 +89,38 @@ class shd_sfc_2d:
         self.dx = self.nml['dx']['data']
         self.dy = self.nml['dy']['data']
 
+        if (self.Nx == 1) and (self.Ny == 1):
+            self.ID = "Homogeneous Surface"
+        else:
+            self.ID = f"2D [{self.Nx}x{self.Ny}] Domain"
+
         if ('lambertian' in self.sfc.data['sfc']['name'].lower()):
 
             self.nml['header'] = dict(data='L', name='Header for SHDOM Surface File', units='N/A')
             self.sfc_data = self.sfc.data['sfc']['data']
+
+            self.ID = f"{self.ID} (Lambertian, for SHDOM)"
 
         elif ('brdf-lsrt-jiao' in self.sfc.data['sfc']['name'].lower()):
 
             self.nml['header'] = dict(data='J', name='Header for SHDOM Surface File', units='N/A')
             self.sfc_data = self.sfc.data['sfc']['data']
 
+            self.ID = f"{self.ID} (LSRT-Jiao Snow, for SHDOM)"
+
         elif ('brdf-lsrt' in self.sfc.data['sfc']['name'].lower()):
 
             self.nml['header'] = dict(data='T', name='Header for SHDOM Surface File', units='N/A')
             self.sfc_data = self.sfc.data['sfc']['data']
 
+            self.ID = f"{self.ID} (LSRT Land, for SHDOM)"
+
         elif ('brdf-ocean' in self.sfc.data['sfc']['name'].lower()):
 
             self.nml['header'] = dict(data='O', name='Header for SHDOM Surface File', units='N/A')
             self.sfc_data = self.sfc.data['sfc']['data']
+
+            self.ID = f"{self.ID} (Cox-Munk Ocean, for SHDOM)"
 
         else:
 

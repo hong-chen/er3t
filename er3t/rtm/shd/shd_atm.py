@@ -339,8 +339,8 @@ class shd_atm_3d:
         else:
             fname_inp = er3t.rtm.shd.gen_lwc_file(fname.replace('prp', 'lwc'), cld0)
 
-        if len(self.z_extra) > 1000:
-            msg = 'Error [shd_atm_3d]: <z_extra> is greater than 1000-character-limit.'
+        if len(self.z_extra) > 1200:
+            msg = f"Error [shd_atm_3d]: <z_extra> [length={len(self.z_extra)}] is greater than 1200-character-limit."
             raise OSError(msg)
 
         wavelength /= 1000.0

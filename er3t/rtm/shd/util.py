@@ -93,31 +93,24 @@ def gen_mie_file(
 
     if fname is None:
 
-        fdir = '%s/shdom' % er3t.common.fdir_data_tmp
+        fdir = f"{er3t.common.fdir_data_tmp}/shdom"
         if not os.path.exists(fdir):
             os.makedirs(fdir)
 
-        fname = '%s/shdom-mie_%s_%s_%.4f-%.4f.txt' % (fdir, par_tag, pol_tag, wavelength_s, wavelength_e)
+        fname = f"{fdir}/shdom-mie_{par_tag}_{pol_tag}_{wavelength_s:.4f}-{wavelength_e:.4f}.txt"
 
     if (not os.path.exists(fname)) or overwrite:
 
         wavelength_s /= 1000.0 #convert to micron
         wavelength_e /= 1000.0 #convert to micron
 
-        command = '%s\
- "%s" "%15.8e %15.8e" "%s" "%s"\
- "%s" "%s"\
- "%d %.2f %.2f"\
- "%s" "%.2f"\
- "%s"\
- | %s' %\
-            (put_exe,\
-            pol_tag,  wavelength_s, wavelength_e, par_tag, avg_tag,\
-            dist_tag, alpha_tag,\
-            Nref, ref_s, ref_e,\
-            ref_tag, ref_max,\
-            fname,\
-            mie_exe)
+        command = f'{put_exe}\
+ "{pol_tag}" "{wavelength_s:15.8e} {wavelength_e:15.8e}" "{par_tag}" "{avg_tag}"\
+ "{dist_tag}" "{alpha_tag}"\
+ "{Nref} {ref_s:.2f} {ref_e:.2f}"\
+ "{ref_tag}" "{ref_max:.2f}"\
+ "{fname}"\
+ | {mie_exe}'
 
         os.system(command)
 
