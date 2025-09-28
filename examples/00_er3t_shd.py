@@ -837,7 +837,7 @@ def example_04_rad_atm1d_cloud_over_ocean(
             sol_acc=1.0e-6,
             target='radiance',
             solar_zenith_angle=sza,
-            solar_azimuth_angle=0.0,
+            solar_azimuth_angle=saa,
             sensor_zenith_angles=vza,
             sensor_azimuth_angles=vaa,
             sensor_altitude=705.0,
