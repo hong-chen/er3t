@@ -3,6 +3,7 @@ import sys
 import glob
 import pickle
 import datetime
+import warnings
 from netCDF4 import Dataset
 import numpy as np
 from scipy import interpolate
@@ -357,7 +358,7 @@ class abs_rep:
                     else:
 
                         msg = f'Warning [abs_rep]: <{gas_type}> is required by REPTRAN but is not available in <atm_obj>.'
-                        print(msg)
+                        warnings.warn(msg)
 
         self.gases = gases
         self.wvl_info = '%.2f nm (REPTRAN [Nwvl=%d|%s])' % (self.wvl, self.wvl_.size, ','.join(self.gases))
