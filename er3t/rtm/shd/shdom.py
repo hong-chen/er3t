@@ -233,7 +233,7 @@ class shdom_ng:
             #     self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.pgm")
             # else:
             self.fnames_out.append(f"{self.fdir}/shdom-out_g-{ig:03d}.txt")
-            self.fnames_sav.append(f"{self.fdir}/shdom-sav_g-{ig:03d}.sHdOm-sav")
+            self.fnames_sav.append(f"{self.fdir}/shdom-sav_g-{ig:03d}.sHdOmNG-sav")
 
         if not self.quiet and not self.overwrite:
             print("Message [shdom_ng]: Reading mode ...")

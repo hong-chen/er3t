@@ -120,7 +120,7 @@ def gen_mie_file(
 def gen_ext_file(
         fname,
         cld0,
-        postfix='.sHdOm-ext',
+        postfix='.sHdOmNG-ext',
         fname_atm_1d=None,
         ):
 
@@ -277,7 +277,7 @@ def gen_mie_file_from_nc(
 def gen_sen_file(
         fname,
         data,
-        postfix='.sHdOm-sen',
+        postfix='.sHdOmNG-sen',
         ):
 
     params = data.keys()

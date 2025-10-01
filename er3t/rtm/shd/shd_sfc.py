@@ -131,7 +131,7 @@ class shd_sfc_2d:
     def gen_shd_2d_sfc_file(
             self,
             fname,
-            postfix='.sHdOm-sfc',
+            postfix='.sHdOmNG-sfc',
             ):
 
         fname = os.path.abspath(fname)
