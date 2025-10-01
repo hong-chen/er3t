@@ -99,7 +99,7 @@ def example_01_rad_atm1d_clear_over_land(
     fname_abs = f"{fdir}/abs.pk"
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -315,7 +315,7 @@ def example_02_rad_atm1d_clear_over_ocean(
     fname_abs = f"{fdir}/abs.pk"
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -529,7 +529,7 @@ def example_03_rad_atm1d_clear_over_snow(
     fname_abs = f"{fdir}/abs.pk"
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -751,7 +751,7 @@ def example_04_rad_atm1d_cloud_over_ocean(
     fname_abs = f"{fdir}/abs.pk"
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']

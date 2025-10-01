@@ -91,7 +91,7 @@ def lrt_flux_one(
 
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
-    lrt_cfg['mol_abs_param'] = 'reptran fine'
+    lrt_cfg['mol_abs_param'] = 'reptran medium'
     lrt_cfg['number_of_streams'] = 32
 
     cld_cfg = er3t.rtm.lrt.get_cld_cfg()
@@ -157,7 +157,7 @@ def mca_flux_one(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = f"{fdir_tmp}/abs.pk"
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
     # rescale TOA flux
     if f_toa is not None:
         f_toa_ = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
@@ -245,7 +245,7 @@ def shd_flux_one(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = f"{fdir_tmp}/abs.pk"
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
     if f_toa is not None:
         f_toa_ = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
         abs0.coef['solar']['data'] = f_toa/f_toa_ * abs0.coef['solar']['data']
@@ -334,7 +334,7 @@ def test_100_flux_one(
                 'cloud_top_height': 1.5,
        'cloud_geometric_thickness': 1.0,
                          'photons': 1.0e7,
-                 'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0)),
+                 'output_altitude': np.concatenate((np.arange(0.0, 25.0, 1.0), np.arange(25.0, 50.0, 2.5), np.arange(50.0, 120.1, 5.0))),
          }
 
     data_lrt = lrt_flux_one(params, overwrite=overwrite)
@@ -440,7 +440,7 @@ def lrt_rad_one(
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
     # lrt_cfg['rte_solver']      = 'fdisort1'
     lrt_cfg['rte_solver']      = 'disort'
-    lrt_cfg['mol_abs_param'] = 'reptran fine'
+    lrt_cfg['mol_abs_param'] = 'reptran medium'
     lrt_cfg['number_of_streams'] = 32
 
     cld_cfg = er3t.rtm.lrt.get_cld_cfg()
@@ -535,7 +535,7 @@ def mca_rad_one(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = f"{fdir_tmp}/abs.pk"
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
     # rescale TOA flux
     if f_toa is not None:
         f_toa_ = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
@@ -652,7 +652,7 @@ def shd_rad_one(
     atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
 
     fname_abs = f"{fdir_tmp}/abs.pk"
-    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='fine', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
     # rescale TOA flux
     if f_toa is not None:
         f_toa_ = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
@@ -771,7 +771,7 @@ def test_100_rad_one(
                            'f_geo': 0.03384929843579787,
                        'windspeed': 1.0,
                          'pigment': 0.01,
-                 'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0)),
+                 'output_altitude': np.concatenate((np.arange(0.0, 25.0, 1.0), np.arange(25.0, 50.0, 2.5), np.arange(50.0, 120.1, 5.0))),
          }
 
     if params['cloud_optical_thickness'] > 0.0:
@@ -780,7 +780,7 @@ def test_100_rad_one(
     data_lrt = lrt_rad_one(params, surface=surface, overwrite=overwrite)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
 
@@ -868,8 +868,7 @@ def lrt_rad_spec_slit(
 
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
-    # lrt_cfg['mol_abs_param'] = 'reptran fine'
-    lrt_cfg['mol_abs_param'] = 'reptran coarse'
+    lrt_cfg['mol_abs_param'] = 'reptran medium'
     lrt_cfg['number_of_streams'] = 32
 
     cld_cfg = er3t.rtm.lrt.get_cld_cfg()
@@ -966,7 +965,7 @@ def lrt_rad_spec(
 
     lrt_cfg = er3t.rtm.lrt.get_lrt_cfg()
     lrt_cfg['atmosphere_file'] = params['atmosphere_file']
-    lrt_cfg['mol_abs_param'] = 'reptran fine'
+    lrt_cfg['mol_abs_param'] = 'reptran medium'
     lrt_cfg['number_of_streams'] = 32
 
     cld_cfg = er3t.rtm.lrt.get_cld_cfg()
@@ -1134,7 +1133,7 @@ def test_100_rad_spec(
                            'f_geo': 0.03384929843579787,
                        'windspeed': 1.0,
                          'pigment': 0.01,
-                 'output_altitude': np.append(np.arange(0.0, 2.0, 0.1), np.arange(2.0, 40.1, 2.0)),
+                 'output_altitude': np.concatenate((np.arange(0.0, 25.0, 1.0), np.arange(25.0, 50.0, 2.5), np.arange(50.0, 120.1, 5.0))),
          }
 
     if params['cloud_optical_thickness'] > 0.0:
@@ -1144,9 +1143,10 @@ def test_100_rad_spec(
     data_lrt = lrt_rad_spec(params, surface=surface, overwrite=overwrite)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
+    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+
     data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
 
-    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
     print('libRadtran:', np.trapz(data_lrt['rad'], x=params['wavelengths']))
     print('MCARaTS:', np.trapz(data_mca['rad'], x=params['wavelengths']))
     print('SHDOM:', np.trapz(data_shd['rad'], x=params['wavelengths']))
@@ -1221,7 +1221,7 @@ if __name__ == '__main__':
 
         # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
-        # test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
+        test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_flux_one(556.0, 10.0, 12.0, 100, plot=True, overwrite=True)
 
         # icount = 0
@@ -1233,9 +1233,9 @@ if __name__ == '__main__':
 
         # test_100_flux_one(2131.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
-        wavelengths = np.arange(300.0, 3201.0, 5.0)
+        # wavelengths = np.arange(300.0, 3201.0, 5.0)
         # wavelengths = np.arange(1400.0, 1411.0, 5.0)
-        test_100_rad_spec(wavelengths, 0.0, 1.0, 100, overwrite=False)
+        # test_100_rad_spec(wavelengths, 0.0, 1.0, 100, overwrite=False)
 
     else:
 
