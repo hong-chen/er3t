@@ -389,6 +389,8 @@ class shdom_ng:
         vza = np.array(vza).ravel()
         vaa = np.array(vaa).ravel()
 
+        self.fname_sensor = 'NONE'
+
         for ig in range(self.Ng_):
 
             self.nml[ig]['NUMOUT'] = 1
@@ -620,7 +622,8 @@ class shdom_ng:
                         print(f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)")
 
             else:
-                print(f"                 Sensor Specs : {os.path.basename(self.fname_sensor)}")
+                if (self.fname_sensor != 'NONE'):
+                    print(f"                 Sensor Specs : {os.path.basename(self.fname_sensor)}")
 
             print(f"              Sensor Altitude : {self.sensor_altitude:.1f} km")
 
