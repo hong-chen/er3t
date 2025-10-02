@@ -18,6 +18,7 @@ dependencies:
   - netcdf4
   - owslib
   - cartopy=0.22.*
+  - uuid-utils
   - mscorefonts
   - font-ttf-source-code-pro
   - vim
