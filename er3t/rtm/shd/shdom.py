@@ -532,13 +532,13 @@ class shdom_ng:
             else:
                 self.nml[ig]['SHACC'] = sh_acc
 
-            self.nml[ig]['MAX_TOTAL_MB'] = psutil.virtual_memory().total / 1024.0**2.0 / 2.0
+            self.nml[ig]['MAX_TOTAL_MB'] = psutil.virtual_memory().total / 1024.0**2.0 / 1.2
             if (self.Nx == 1) and (self.Ny == 1):
-                self.nml[ig]['ADAPT_GRID_FACTOR'] = 50.0
-                self.nml[ig]['CELL_TO_POINT_RATIO'] = 2.0
+                self.nml[ig]['ADAPT_GRID_FACTOR'] = 10.0
+                self.nml[ig]['CELL_TO_POINT_RATIO'] = 1.9
             else:
-                self.nml[ig]['ADAPT_GRID_FACTOR'] = 3.2
-                self.nml[ig]['CELL_TO_POINT_RATIO'] = 1.6
+                self.nml[ig]['ADAPT_GRID_FACTOR'] = 2.2
+                self.nml[ig]['CELL_TO_POINT_RATIO'] = 1.5
             self.nml[ig]['NUM_SH_TERM_FACTOR'] = 0.6
             self.nml[ig]['_footer'] = "$END"
 
