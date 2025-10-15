@@ -193,7 +193,7 @@ def load_shd_inp_nml():
              ('ADAPT_GRID_FACTOR', 2.2),
              ('NUM_SH_TERM_FACTOR', 0.6),
              ('CELL_TO_POINT_RATIO', 1.5),
-             ('VERBOSE', 7),
+             ('VERBOSE', 6),
 
              ('_footer', '$END'),
             ])
