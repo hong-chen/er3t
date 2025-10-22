@@ -255,20 +255,20 @@ class shdom_ng:
             # SHDOM namelist param
             self.nml_param(Niter, sol_acc=sol_acc, split_acc=split_acc, sh_acc=sh_acc)
 
-            # SHDOM namelist out
-            self.nml_out(
-                    sensor_zenith_angles,
-                    sensor_azimuth_angles,
-                    sensor_altitude,
-                    sensor_dx,
-                    sensor_dy
-                    )
+        # SHDOM namelist out
+        self.nml_out(
+                sensor_zenith_angles,
+                sensor_azimuth_angles,
+                sensor_altitude,
+                sensor_dx,
+                sensor_dy
+                )
 
-            # Create SHDOM input files (ASCII)
-            self.gen_shd_inp(comment=comment)
+        # Create SHDOM input files (ASCII)
+        self.gen_shd_inp(comment=comment)
 
-            # Run SHDOM to get output files (ASCII[info] + Binary[data])
-            self.gen_shd_out()
+        # Run SHDOM to get output files (ASCII[info] + Binary[data])
+        self.gen_shd_out()
 
 
     def nml_init(
@@ -441,14 +441,15 @@ class shdom_ng:
                     self.nml[ig]['OUTTYPES(1)'] = "V"
                     nbyte = 1
                     downscale = 1000
-                    spacing = 50.0
-                    scan1 = -80.0
-                    scan2 = 80.0
-                    delscan = 0.5
+                    spacing = 0.006493506493506494
+                    scan1 = -52.719418
+                    scan2 =  52.719418
+                    delscan = 0.20961995058457847
 
-                    self.nml[ig]['OUTPARMS(1,1)'] = f"2 {nbyte} {downscale} {self.sensor_xpos:.4f} {self.sensor_ypos:.4f} {self.sensor_altitude:.4f} {self.sensor_xpos:.4f} {self.sensor_ypos+25000.0:.4f} {self.sensor_altitude:.4f} {spacing:.1f} {scan1:.1f} {scan2:.1f} {delscan:.4f}"
+                    # self.nml[ig]['OUTPARMS(1,1)'] = f"2 {nbyte} {downscale} {self.sensor_xpos:.4f} {self.sensor_ypos:.4f} {self.sensor_altitude:.4f} {self.sensor_xpos:.4f} {self.sensor_ypos+25000.0:.4f} {self.sensor_altitude:.4f} {spacing:.1f} {scan1:.1f} {scan2:.1f} {delscan:.4f}"
+                    self.nml[ig]['OUTPARMS(1,1)'] = f"2 {nbyte} {downscale} {24.0} {20.0} {5.0} {24.0-5.0*np.sin(np.deg2rad(10.0))} {20.0+5.0*np.cos(np.deg2rad(10.0))} {5.0} {5.0/154.0} {scan1:.1f} {scan2:.1f} {delscan:.4f}"
 
-                elif self.sensor_type == "sensor":
+                elif self.sensor_type == "camera3":
 
                     self.nml[ig]['OUTTYPES(1)'] = "V"
 
@@ -456,8 +457,8 @@ class shdom_ng:
                     data_sensor['x'] = self.sensor_xpos
                     data_sensor['y'] = self.sensor_ypos
                     data_sensor['z'] = self.sensor_altitude
-                    data_sensor['vza'] = np.cos(np.deg2rad(180.0-vza_new))
-                    data_sensor['vaa'] = np.pi - np.deg2rad(vaa_new)
+                    data_sensor['vza'] = np.cos(np.pi-np.deg2rad(vza_new))
+                    data_sensor['vaa'] = np.deg2rad(vaa_new)
 
                     if ((isinstance(data_sensor['x'], float)) or (isinstance(data_sensor['x'], int))):
                         data_sensor['x'] = np.repeat(data_sensor['x'], data_sensor['vza'].size)

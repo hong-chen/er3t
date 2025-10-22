@@ -294,7 +294,7 @@ def gen_sen_file(
 
     data_new = np.zeros((Nparam, Ndata), dtype=np.float32)
     for i, param in enumerate(params):
-        data_new[i, :] = data[param]
+        data_new[i, :] = data[param].ravel()
 
     header = f"{Nparam}-parameter ({'|'.join(params)}) sensor file for SHDOM"
 
