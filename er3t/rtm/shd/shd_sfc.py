@@ -163,10 +163,6 @@ class shd_sfc_2d:
                 data[:-1, :-1, 0] = np.repeat(temp_sfc, Ndata_t).reshape(self.Nx, self.Ny)
                 data[:-1, :-1, 1:] = self.sfc_data
 
-                # reorder the array so SHDOM (fortran) can directly reads in the data into SFCPARMS
-                data = np.swapaxes(data, 2, 0) # [Nparam, Nx, Ny]
-                data = np.swapaxes(data, 1, 2) # [Nparam, Ny, Nx]
-
                 f.write( "! The following provides information for interpreting binary data:\n")
                 f.write(f"! {postfix}\n")
                 f.write(f"! {self.Nx+1:10d},{self.Ny+1:10d},{Nparam+1:10d}\n")
@@ -174,7 +170,8 @@ class shd_sfc_2d:
                 with open('%s%s' % (fname, postfix), 'wb') as fb:
 
                     Ndata = data.size
-                    fb.write(struct.pack(f"<{Ndata}f", *data.flatten(order='F')))
+                    # data.T reshapes data from [Nx, Ny, Nparam], to [Nparam, Ny, Nx]
+                    fb.write(struct.pack(f"<{Ndata}f", *data.T.flatten(order='F')))
 
         self.nml['SFCFILE'] = {'data':fname}
 
