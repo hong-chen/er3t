@@ -777,7 +777,7 @@ def test_100_rad_one(
     if params['cloud_optical_thickness'] > 0.0:
         params['photons'] = 1.0e8
 
-    data_lrt = lrt_rad_one(params, surface=surface, overwrite=overwrite)
+    data_lrt = lrt_rad_one(params, surface=surface, overwrite=False)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
     data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
@@ -1143,7 +1143,7 @@ def test_100_rad_spec(
     data_lrt = lrt_rad_spec(params, surface=surface, overwrite=overwrite)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
+    data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=True)
 
     data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
 
@@ -1221,7 +1221,7 @@ if __name__ == '__main__':
 
         # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
-        test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
+        # test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_flux_one(556.0, 10.0, 12.0, 100, plot=True, overwrite=True)
 
         # icount = 0
@@ -1234,8 +1234,8 @@ if __name__ == '__main__':
         # test_100_flux_one(2131.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
         # wavelengths = np.arange(300.0, 3201.0, 5.0)
-        # wavelengths = np.arange(1400.0, 1411.0, 5.0)
-        # test_100_rad_spec(wavelengths, 0.0, 1.0, 100, overwrite=False)
+        wavelengths = np.arange(300.0, 2001.0, 10.0)
+        test_100_rad_spec(wavelengths, 0.0, 1.0, 100, overwrite=False)
 
     else:
 
