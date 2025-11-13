@@ -122,6 +122,12 @@ class shd_sfc_2d:
 
             self.ID = f"{self.ID} (Cox-Munk Ocean, for SHDOM)"
 
+        elif ('brdf-mixed' in self.sfc.data['sfc']['name'].lower()):
+
+            self.nml['header'] = dict(data='X', name='Header for SHDOM Surface File', units='N/A')
+            self.sfc_data = self.sfc.data['sfc']['data']
+            self.ID = f"{self.ID} (Mixed BRDF Surface, for SHDOM)"
+
         else:
 
             msg = '\nError [shd_sfc_2d]: Cannot determine surface type - currently only supports Lambertian surface and LSRT BRDF surface (e.g., MCD43A1).'
