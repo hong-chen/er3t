@@ -181,6 +181,15 @@ class sfc_2d_gen:
             self.data['dy']   = {'data':self.sfc[keys['dy']], 'name':'dy', 'units':'km'}
             self.data['sfc']  = {'data':sfc, 'name':'Surface BRDF-Ocean', 'units':'N/A'}
 
+        elif ('mixedbrdf' in keys_check):
+
+            Nx, Ny, Np = self.sfc[keys['mixedbrdf']].shape
+            self.data['nx']   = {'data':Nx , 'name':'Nx', 'units':'N/A'}
+            self.data['ny']   = {'data':Ny , 'name':'Ny', 'units':'N/A'}
+            self.data['dx']   = {'data':self.sfc[keys['dx']], 'name':'dx', 'units':'km'}
+            self.data['dy']   = {'data':self.sfc[keys['dy']], 'name':'dy', 'units':'km'}
+            self.data['sfc']  = {'data':self.sfc[keys['mixedbrdf']], 'name':'Surface BRDF-Mixed', 'units':'N/A'}
+
         else:
 
             msg = '\nError [sfc_2d_gen]: Currently we only support 2D surface albedo or BRDF.'
