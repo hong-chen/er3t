@@ -82,8 +82,8 @@ class shdom_ng:
                  solar_azimuth_angle = 0.0,                     \
 
                  sensor_type           = "radiometer",          \
-                 sensor_zenith_angles  = np.array([0.0]),       \
-                 sensor_azimuth_angles = np.array([0.0]),       \
+                 sensor_zenith_angles  = np.array([]),          \
+                 sensor_azimuth_angles = np.array([]),          \
                  sensor_altitude       = 705.0,                 \
                  sensor_dx             = 0.1,                   \
                  sensor_dy             = 0.1,                   \
@@ -401,26 +401,32 @@ class shdom_ng:
                 mu_new  = np.cos(np.deg2rad(vza_new))
                 vaa_new = np.array([er3t.rtm.shd.cal_shd_vaa(vaa0) for vaa0 in vaa])
 
-                if self.sensor_type == "radiometer":
+                if (self.sensor_type == "radiometer"):
 
-                    self.nml[ig]['OUTTYPES(1)'] = "R"
+                    if mu_new.size > 0:
 
-                    if mu_new.size <= 36:
+                        self.nml[ig]['OUTTYPES(1)'] = "R"
 
-                        view_str = "\n".join([f" {item[0]:.16e}, {item[1]:.4e}," for item in zip(mu_new, vaa_new)])
-                        self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4e}, {dx:.8e}, {dy:.8e}, 0.0, 0.0, {mu_new.size},\n{view_str}"
-                        self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
+                        if mu_new.size <= 36:
+
+                            view_str = "\n".join([f" {item[0]:.16e}, {item[1]:.4e}," for item in zip(mu_new, vaa_new)])
+                            self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4e}, {dx:.8e}, {dy:.8e}, 0.0, 0.0, {mu_new.size},\n{view_str}"
+                            self.nml[ig]['OUTPARMS(1,1)'] = self.nml[ig]['OUTPARMS(1,1)'][:-1] # get rid of comma (,) at the end
+
+                        else:
+
+                            data_sensor = OrderedDict()
+                            data_sensor['vza'] = mu_new
+                            data_sensor['vaa'] = vaa_new
+                            fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
+                            self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
+
+                            self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
+                            self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8e}, {dy:.8e}, 0.0, 0.0, {mu_new.size}"
 
                     else:
 
-                        data_sensor = OrderedDict()
-                        data_sensor['vza'] = mu_new
-                        data_sensor['vaa'] = vaa_new
-                        fname_sensor = self.fnames_inp[ig].replace('shdom-inp', 'shdom-sen')
-                        self.fname_sensor = er3t.rtm.shd.gen_sen_file(fname_sensor, data_sensor)
-
-                        self.nml[ig]['SENFILE'] = f"{self.fname_sensor}"
-                        self.nml[ig]['OUTPARMS(1,1)'] = f"{alt0:.4f}, {dx:.8e}, {dy:.8e}, 0.0, 0.0, {mu_new.size}"
+                        self.nml[ig]['NUMOUT'] = 0
 
                 elif self.sensor_type == "camera1":
 

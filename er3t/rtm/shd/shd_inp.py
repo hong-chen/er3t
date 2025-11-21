@@ -295,7 +295,7 @@ def shd_inp_nml(input_dict, verbose=True, comment=False):
     # `shdom_nml_all` and `shdom_nml_all_info` will be updated in the loop
     for key in input_dict.keys():
         if key not in nml_ordered_keys_full:
-            if '(' in key and ')' in key:
+            if ('(' in key) and (')' in key):
                 ee          = key.index('(')
                 key_ori     = key[:ee]
                 index_ori   = nml_ordered_keys_full.index(key_ori)
@@ -340,6 +340,11 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
 
     # creating input file for SHDOM
     f = open(input_fname, 'w')
+
+    # if shdom_nml_input['NUMOUT'] == 0:
+    #     del shdom_nml_all['OUTTYPES(1)']
+    #     del shdom_nml_all['OUTPARMS(1,1)']
+    #     del shdom_nml_all['OUTFILES(1)']
 
     for nml_key in shdom_nml_all.keys():
 
