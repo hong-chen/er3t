@@ -325,6 +325,17 @@ def shd_inp_nml(input_dict, verbose=True, comment=False):
     #   'RUNNAME': 'shdom_nml_init'
     shdom_nml_input = OrderedDict(zip(nml_ordered_keys_full, nml_ordered_item_full))
 
+    # delete outfile parameters if NUMOUT=0
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    keys_to_delete = []
+    if shdom_nml_all['shdom_nml_out']['NUMOUT'] == 0:
+        for key in shdom_nml_input.keys():
+            if ('OUT' in key) and ('(' in key) and (')' in key):
+                keys_to_delete.append(key)
+    for key in keys_to_delete:
+        del shdom_nml_input[key]
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
     return shdom_nml_all, shdom_nml_all_info, shdom_nml_input
 
 
@@ -340,11 +351,6 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
 
     # creating input file for SHDOM
     f = open(input_fname, 'w')
-
-    # if shdom_nml_input['NUMOUT'] == 0:
-    #     del shdom_nml_all['OUTTYPES(1)']
-    #     del shdom_nml_all['OUTPARMS(1,1)']
-    #     del shdom_nml_all['OUTFILES(1)']
 
     for nml_key in shdom_nml_all.keys():
 
