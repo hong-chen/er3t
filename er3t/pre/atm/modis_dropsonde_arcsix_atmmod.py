@@ -79,12 +79,14 @@ class modis_dropsonde_arcsix_atmmod:
                  fname_ch4_clim = None, \
                  fname_o3_clim = None, \
                  fname_insitu = None, \
+                 marli_h        = None, \
+                 marli_wvmr     = None, \
                  date         = None, \
                  extent       = None, \
                  overwrite    = False, \
                  plot         = True, \
                  verbose      = False):
-        print("zpt_file: ", zpt_file)
+        # print("zpt_file: ", zpt_file)
         self.verbose      = verbose
         self.zpt_file     = zpt_file
         self.fname_atmmod = fname_atmmod
@@ -92,6 +94,8 @@ class modis_dropsonde_arcsix_atmmod:
         self.fname_ch4_clim = fname_ch4_clim
         self.fname_o3_clim = fname_o3_clim
         self.fname_insitu = fname_insitu
+        self.marli_h        = marli_h
+        self.marli_wvmr     = marli_wvmr
         self.plot         = plot
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
@@ -195,6 +199,8 @@ class modis_dropsonde_arcsix_atmmod:
         
         if self.fname_insitu is not None:
             self.add_insitu()
+        if (self.marli_h is not None) and (self.marli_wvmr is not None):
+            self.add_marli()
 
         # covert mixing ratio [unitless] to number density [cm-3]
         self.cal_num_den()
@@ -275,7 +281,7 @@ class modis_dropsonde_arcsix_atmmod:
             ch4_lon = f['longitude'][:]
             ch4_lat = f['latitude'][:]
             ch4_pressure = f['pressure_level'][:] # in hPa
-            ch4_time = f['valid_time'][:] # "seconds since 1970-01-01"
+            ch4_time = f['valid_time'][:]+6*60*60 # "seconds since 1970-01-01" # 6 hours offset
             ch4_mm = np.array([int(datetime.datetime.fromtimestamp(t).strftime('%m')) for t in ch4_time])
             if len(np.where(ch4_mm == int(sat_mm))) == 0:
                 sys.exit(f'Error   [atm_atmmod]: CH4 climatology file {self.fname_ch4_clim} does not contain data for {sat_mm}.')
@@ -290,20 +296,19 @@ class modis_dropsonde_arcsix_atmmod:
             ch4_loc = np.zeros(num_levels)
             lon_mid, lat_mid = np.mean(extent[:2]), np.mean(extent[2:])
             
-            ch4_lon_start = bisect.bisect_left(ch4_lon, extent[0])
-            ch4_lat_start = bisect.bisect_left(ch4_lat, extent[2])
-            ch4_lon_end = ch4_lon_start + 3
-            ch4_lat_end = ch4_lat_start + 3
-            ch4_lon_start -= 2
-            ch4_lat_start -= 2
+            ch4_lon_start = bisect.bisect_left(ch4_lon, extent[0]) - 2
+            ch4_lat_start = bisect.bisect_left(ch4_lat, extent[2]) - 2
+            ch4_lon_end = bisect.bisect_left(ch4_lon, extent[1]) + 3
+            ch4_lat_end = bisect.bisect_left(ch4_lat, extent[3]) +3
             ch4_lon_start = max(ch4_lon_start, 0)
             ch4_lat_start = max(ch4_lat_start, 0)
             ch4_lon_end = min(ch4_lon_end, len(ch4_lon))
             ch4_lat_end = min(ch4_lat_end, len(ch4_lat))
+            
             ch4_lon_mesh, ch4_lat_mesh = np.meshgrid(ch4_lon[ch4_lon_start:ch4_lon_end], ch4_lat[ch4_lat_start:ch4_lat_end])
             ch4_clim_mesh = ch4_clim[0, :, ch4_lat_start:ch4_lat_end, ch4_lon_start:ch4_lon_end]
 
-            print("sfc: ", ch4_clim_mesh[0, :, :])
+            # print("sfc: ", ch4_clim_mesh[0, :, :])
 
             for i in range(num_levels):
                 # Note: interp2d expects inputs in the order (x, y, z)
@@ -315,6 +320,8 @@ class modis_dropsonde_arcsix_atmmod:
             if not mask_ch4_nan.all():
                 print('Warning [atm_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
                 ch4_loc[mask_ch4_nan] = ch4_loc[~mask_ch4_nan][0]
+            else:
+                raise ValueError('Error   [atm_atmmod]: CH4 climatology contains all NaN values.')
             
             self.atm_ch4 = {}
             self.atm_ch4['ch4_clim'] = {'name':'ch4', 'units':'kg/kg', 'data':ch4_loc}
@@ -339,6 +346,7 @@ class modis_dropsonde_arcsix_atmmod:
             o3_ind = np.where(o3_yyyymm == int(sat_yyyymm))[0]
             
             o3_clim = f['O3'][o3_ind, :, :, :] # mixing ratio in kg/kg for levels, latitudes, and longitudes
+            o3_clim[o3_clim>0.1] = np.nan  # set invalid values to NaN
             
             num_levels = len(o3_pressure)
             o3_loc = np.zeros(num_levels)
@@ -346,12 +354,10 @@ class modis_dropsonde_arcsix_atmmod:
             # print("o3_lon: ", o3_lon)
             # print("o3_lat: ", o3_lat)
             
-            o3_lon_start = bisect.bisect_left(o3_lon, extent[0])
-            o3_lat_start = bisect.bisect_left(o3_lat, extent[2])
-            o3_lon_end = o3_lon_start + 3
-            o3_lat_end = o3_lat_start + 3
-            o3_lon_start -= 2
-            o3_lat_start -= 2
+            o3_lon_start = bisect.bisect_left(o3_lon, extent[0]) - 2
+            o3_lat_start = bisect.bisect_left(o3_lat, extent[2]) - 2
+            o3_lon_end = bisect.bisect_left(o3_lon, extent[1]) + 3
+            o3_lat_end = bisect.bisect_left(o3_lat, extent[3]) +3
             o3_lon_start = max(o3_lon_start, 0)
             o3_lat_start = max(o3_lat_start, 0)
             o3_lon_end = min(o3_lon_end, len(o3_lon))
@@ -363,18 +369,17 @@ class modis_dropsonde_arcsix_atmmod:
                 # Here we use o3_lon and o3_lat along with the slice at level 'i'
                 f_o3 = interpolate.LinearNDInterpolator(list(zip(o3_lon_mesh.flatten(), o3_lat_mesh.flatten())), o3_clim_mesh[i, :, :].flatten())
                 o3_loc[i] = f_o3(lon_mid, lat_mid)
-            
-            mask_o3_nan = o3_loc > 1
+              
+            mask_o3_nan = np.logical_or(o3_loc > 1, np.isnan(o3_loc))
             if not mask_o3_nan.all():
-                print('Warning [atm_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
+                print('Warning [atm_atmmod]: O3 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
                 o3_loc[mask_o3_nan] = o3_loc[~mask_o3_nan][0]
+            else:
+                raise ValueError('Error   [atm_atmmod]: O3 climatology contains all NaN values.')
             
             self.atm_o3 = {}
             self.atm_o3['o3_clim'] = {'name':'o3', 'units':'kg/kg', 'data':o3_loc}
             self.atm_o3['pressure'] = {'name':'pressure', 'units':'mb', 'data':o3_pressure}
-
-
-
 
     def interp(self, o2mix, plot=True):
 
@@ -409,13 +414,15 @@ class modis_dropsonde_arcsix_atmmod:
             self.lev[key]['data'] = f_key(self.lev['altitude']['data'])
             self.lay[key]['data'] = f_key(self.lay['altitude']['data'])
         
-        # calculate h2o vmr for lower layers with dropsonde data:
-        for key, key_value in zip(['temperature', 'h2o'], [self.t_dry_drop, self.h2o_vmr_drop]):
-            f_key_drop = interp1d(self.alt_drop, key_value, fill_value="extrapolate", kind='linear')
-            alt_drop_lev_select = np.logical_and(self.lev['altitude']['data'] <= self.alt_drop.max(), self.lev['altitude']['data'] >= self.alt_drop.min())
-            alt_drop_lay_select = np.logical_and(self.lay['altitude']['data'] <= self.alt_drop.max(), self.lay['altitude']['data'] >= self.alt_drop.min())
-            self.lev[key]['data'][alt_drop_lev_select] = f_key_drop(self.lev['altitude']['data'][alt_drop_lev_select])
-            self.lay[key]['data'][alt_drop_lay_select] = f_key_drop(self.lay['altitude']['data'][alt_drop_lay_select])
+        # use dropsonde data to refine the lower atmosphere profile if available
+        if np.isnan(self.alt_drop).all() == False:
+            # calculate h2o vmr for lower layers with dropsonde data:
+            for key, key_value in zip(['temperature', 'h2o'], [self.t_dry_drop, self.h2o_vmr_drop]):
+                f_key_drop = interp1d(self.alt_drop, key_value, fill_value="extrapolate", kind='linear')
+                alt_drop_lev_select = np.logical_and(self.lev['altitude']['data'] <= self.alt_drop.max(), self.lev['altitude']['data'] >= self.alt_drop.min())
+                alt_drop_lay_select = np.logical_and(self.lay['altitude']['data'] <= self.alt_drop.max(), self.lay['altitude']['data'] >= self.alt_drop.min())
+                self.lev[key]['data'][alt_drop_lev_select] = f_key_drop(self.lev['altitude']['data'][alt_drop_lev_select])
+                self.lay[key]['data'][alt_drop_lay_select] = f_key_drop(self.lay['altitude']['data'][alt_drop_lay_select])
             
         # calculate h2o vmr for upper layers:
         f_h2o_atm0 = interp1d(self.atm0['altitude']['data'], self.atm0['h2o']['data'], fill_value="extrapolate", kind='linear')
@@ -430,16 +437,17 @@ class modis_dropsonde_arcsix_atmmod:
                                                            self.lev['altitude']['data'], self.lev['temperature']['data'])
         self.lay['pressure']['data'] = atm_interp_pressure(self.lev_p, self.lev_h, self.lev_t, \
                                                            self.lay['altitude']['data'], self.lay['temperature']['data'])
-        # Use Barometric formula to interpolate pressure with dropsonde data for lower layers
-        alt_drop_lev_select = np.logical_and(self.lev['altitude']['data'] <= self.alt_drop.max(), self.lev['altitude']['data'] >= self.alt_drop.min())
-        alt_drop_lay_select = np.logical_and(self.lay['altitude']['data'] <= self.alt_drop.max(), self.lay['altitude']['data'] >= self.alt_drop.min())
+        if np.isnan(self.alt_drop).all() == False:
+            # Use Barometric formula to interpolate pressure with dropsonde data for lower layers
+            alt_drop_lev_select = np.logical_and(self.lev['altitude']['data'] <= self.alt_drop.max(), self.lev['altitude']['data'] >= self.alt_drop.min())
+            alt_drop_lay_select = np.logical_and(self.lay['altitude']['data'] <= self.alt_drop.max(), self.lay['altitude']['data'] >= self.alt_drop.min())
 
-        self.lev['pressure']['data'][alt_drop_lev_select] = atm_interp_pressure(self.p_drop, self.alt_drop, self.t_dry_drop, \
-                                                                                self.lev['altitude']['data'][alt_drop_lev_select], \
-                                                                                self.lev['temperature']['data'][alt_drop_lev_select])
-        self.lay['pressure']['data'][alt_drop_lay_select] = atm_interp_pressure(self.p_drop, self.alt_drop, self.t_dry_drop, \
-                                                                                self.lay['altitude']['data'][alt_drop_lay_select], \
-                                                                                self.lay['temperature']['data'][alt_drop_lay_select])
+            self.lev['pressure']['data'][alt_drop_lev_select] = atm_interp_pressure(self.p_drop, self.alt_drop, self.t_dry_drop, \
+                                                                                    self.lev['altitude']['data'][alt_drop_lev_select], \
+                                                                                    self.lev['temperature']['data'][alt_drop_lev_select])
+            self.lay['pressure']['data'][alt_drop_lay_select] = atm_interp_pressure(self.p_drop, self.alt_drop, self.t_dry_drop, \
+                                                                                    self.lay['altitude']['data'][alt_drop_lay_select], \
+                                                                                    self.lay['temperature']['data'][alt_drop_lay_select])
         
         # plot zpt data after interpolation and combination
         output = self.zpt_file.replace('.h5', '_interp.png')
@@ -473,7 +481,7 @@ class modis_dropsonde_arcsix_atmmod:
             n2_molec_weight = 28.0134  # N2 molecular weight in g/mol
             ch4_clim_vmr = ch4_clim / ch4_molec_weight * (o2_molec_weight*self.o2mix + n2_molec_weight* (1-self.o2mix)) # convert to volume mixing ratio
             f_ch4 = interp1d(self.atm_ch4['pressure']['data'], ch4_clim_vmr, fill_value="extrapolate", kind='linear')
-            print("ch4_clim_vmr: ", ch4_clim_vmr)
+            # print("ch4_clim_vmr: ", ch4_clim_vmr)
             self.lev['ch4']['data'] = f_ch4(self.lev['pressure']['data'])
             self.lay['ch4']['data'] = f_ch4(self.lay['pressure']['data'])
         if self.fname_o3_clim is not None:
@@ -530,7 +538,7 @@ class modis_dropsonde_arcsix_atmmod:
         alt = df_insitu['Altitude_km'].values
         
             
-        # interp in-situ data to levels and layers below in in-situ max altitude
+        # interp in-situ data to levels and layers below in-situ max altitude
         o3_nonan = ~np.isnan(df_insitu['O3_VMR_ppb'].values) & (df_insitu['O3_VMR_ppb'].values >= 0)
         ch4_nonan = ~np.isnan(df_insitu['CH4_VMR_ppm'].values) & (df_insitu['CH4_VMR_ppm'].values >= 0)
         co2_nonan = ~np.isnan(df_insitu['CO2_VMR_ppm'].values) & (df_insitu['CO2_VMR_ppm'].values >= 0)
@@ -550,8 +558,8 @@ class modis_dropsonde_arcsix_atmmod:
         self.lay['o3']['data'][lay_below_alt] = f_o3_insitu(self.lay['altitude']['data'][lay_below_alt])
         
         f_ch4_insitu = interp1d(alt, df_insitu['CH4_VMR_ppm'].values*1e-6, fill_value="extrapolate", kind='linear')
-        print("f_ch4_insitu(self.lev['altitude']['data'][lev_below_alt]): ", f_ch4_insitu(self.lev['altitude']['data'][lev_below_alt]))
-        print("self.lev['ch4']['data'] before: ", self.lev['ch4']['data'][lev_below_alt])
+        # print("f_ch4_insitu(self.lev['altitude']['data'][lev_below_alt]): ", f_ch4_insitu(self.lev['altitude']['data'][lev_below_alt]))
+        # print("self.lev['ch4']['data'] before: ", self.lev['ch4']['data'][lev_below_alt])
         self.lev['ch4']['data'][lev_below_alt] = f_ch4_insitu(self.lev['altitude']['data'][lev_below_alt])
         self.lay['ch4']['data'][lay_below_alt] = f_ch4_insitu(self.lay['altitude']['data'][lay_below_alt])
         
@@ -563,6 +571,46 @@ class modis_dropsonde_arcsix_atmmod:
             output = self.zpt_file.replace('.h5', '_interp.png')
             zpt_plot_gases(self.lev['pressure']['data'], self.lev['h2o']['data'], self.lev['co2']['data'], self.lev['o3']['data'],
                         output.replace('.png', '_gases_full_insitu.png'), pmin=1, ch4_vmr=self.lev['ch4']['data'])
+            
+    def add_marli(self, plot=True):
+        
+
+        # marli data
+        marli_wvmr = self.marli_wvmr # in g/kg
+        alt = self.marli_h
+        
+            
+        # interp marli data data to levels and layers below marli data max altitude
+        marli_nonnan = ~np.isnan(marli_wvmr) & (marli_wvmr >= 0)
+        if not marli_wvmr.any():
+            sys.exit('Error   [atm_atmmod]: Marli WVMR data are all NaN or negative.')
+        
+        alt = alt[marli_nonnan]
+        marli_wvmr = marli_wvmr[marli_nonnan]
+        lev_below_alt_max = self.lev['altitude']['data'] < alt.max()
+        lay_below_alt_max = self.lay['altitude']['data'] < alt.max()
+        lev_above_alt_min = self.lev['altitude']['data'] >= alt.min()
+        lay_above_alt_min = self.lay['altitude']['data'] >= alt.min()
+        lev_select = lev_below_alt_max & lev_above_alt_min
+        lay_select = lay_below_alt_max & lay_above_alt_min
+        # f_marli = interp1d(alt, marli_wvmr, fill_value="extrapolate", kind='linear')
+        # self.lev['h2o']['data'][lev_below_alt] = f_marli(self.lev['altitude']['data'][lev_below_alt])
+        # self.lay['h2o']['data'][lay_below_alt] = f_marli(self.lay['altitude']['data'][lay_below_alt])
+        
+        # convert g/kg to volume mixing ratio
+        # h2o_vmr = h2o_wvmr / h2o_molec_weight * (o2_molec_weight*o2mix + n2_molec_weight* (1-o2mix))
+        h2o_molec_weight = 18.01528  # H2O molecular weight in g/mol
+        o2_molec_weight = 31.998  # O2 molecular weight in g/mol
+        n2_molec_weight = 28.0134  # N2 molecular weight in g/mol
+        h2o_vmr = marli_wvmr / h2o_molec_weight * (o2_molec_weight*self.o2mix + n2_molec_weight* (1-self.o2mix)) * 1e-3 # convert from g/kg to kg/kg
+        f_h2o_vmr = interp1d(alt, h2o_vmr, fill_value="extrapolate", kind='linear') 
+        self.lev['h2o']['data'][lev_select] = f_h2o_vmr(self.lev['altitude']['data'][lev_select])
+        self.lay['h2o']['data'][lay_select] = f_h2o_vmr(self.lay['altitude']['data'][lay_select])
+        
+        if plot:
+            output = self.zpt_file.replace('.h5', '_interp.png')
+            zpt_plot_gases(self.lev['pressure']['data'], self.lev['h2o']['data'], self.lev['co2']['data'], self.lev['o3']['data'],
+                        output.replace('.png', '_gases_full_insitu_plus_marli.png'), pmin=1, ch4_vmr=self.lev['ch4']['data'])
 
     def cal_num_den(self):
         self.lev['factor']  = { \

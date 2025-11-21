@@ -281,7 +281,7 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
     EPSILON = 0.622
     kb = 1.380649e-23
     # ---------------------------------
-    if fname_mod07 == None or dropsonde_df is None:
+    if fname_mod07 == None:
         sys.exit("[Error] sat and dropsonde information must be provided!")
     else:
         # Get reanalysis from met and CO2 prior sounding data
@@ -340,6 +340,14 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
         hprf_lev_mean   = np.nanmean(hprf_l, axis=1)/1000     # height mid grid in km
         h2o_vmr_mean    = np.nanmean(h2o_vmr, axis=1)
         
+        while np.isnan(hprf_lev_mean[-1]):
+            pprf_lev_mean = pprf_lev_mean[:-1]
+            tprf_lev_mean = tprf_lev_mean[:-1]
+            dewTprf_lev_mean = dewTprf_lev_mean[:-1]
+            d_o2_lev_mean = d_o2_lev_mean[:-1]
+            d_h2o_lev_mean = d_h2o_lev_mean[:-1]
+            hprf_lev_mean = hprf_lev_mean[:-1]
+            h2o_vmr_mean = h2o_vmr_mean[:-1]
         
         if sfc_h_to_zero:
             sfc_h_mean = 0
@@ -356,24 +364,34 @@ def create_modis_dropsonde_atm(o2mix=0.20935, output_dir='.', output='zpt.h5',
         if sfc_T_set is not None:
             tprf_lev_mean[-1] = sfc_T_set
         
-        # Process dropsonde profile
-        p_drop = np.array(dropsonde_df['p']) # in hPa
-        alt_drop = np.array(dropsonde_df['alt']/1000) # in km
-        t_dry_drop = np.array(dropsonde_df['t_dry'])
-        t_dew_drop = np.array(dropsonde_df['t_dew'])
-        mr_drop = np.array(dropsonde_df['h2o_mr'])
-        r_drop = mr_drop/1000 # mass mixing ratio to kg/kg
-        eprf_drop = p_drop*r_drop/(EPSILON+r_drop)
-        air_drop = p_drop*100/(kb*t_dry_drop)/1e6  # air number density in molec/cm3
-        o2_drop = air_drop*o2mix          # O2 number density in molec/cm3
-        h2o_drop = eprf_drop*100/(kb*t_dry_drop)/1e6  # H2O number density in molec/cm3
-        h2o_vmr_drop = eprf_drop/(p_drop-eprf_drop)       # H2O volume mixing ratio
+        if dropsonde_df is not None:
+            # Process dropsonde profile
+            p_drop = np.array(dropsonde_df['p']) # in hPa
+            alt_drop = np.array(dropsonde_df['alt']/1000) # in km
+            t_dry_drop = np.array(dropsonde_df['t_dry'])
+            t_dew_drop = np.array(dropsonde_df['t_dew'])
+            mr_drop = np.array(dropsonde_df['h2o_mr'])
+            r_drop = mr_drop/1000 # mass mixing ratio to kg/kg
+            eprf_drop = p_drop*r_drop/(EPSILON+r_drop)
+            air_drop = p_drop*100/(kb*t_dry_drop)/1e6  # air number density in molec/cm3
+            o2_drop = air_drop*o2mix          # O2 number density in molec/cm3
+            h2o_drop = eprf_drop*100/(kb*t_dry_drop)/1e6  # H2O number density in molec/cm3
+            h2o_vmr_drop = eprf_drop/(p_drop-eprf_drop)       # H2O volume mixing ratio
         
-        # calculate 10m wind speed from dropsonde data
-        ws_10m = np.array(dropsonde_df['ws'])
-        ws_10m_nan_mask = np.isnan(ws_10m)
-        ws10m = np.interp(0.01, alt_drop[~ws_10m_nan_mask], ws_10m[~ws_10m_nan_mask])   # calculate 10m wind speed
-        
+            # calculate 10m wind speed from dropsonde data
+            ws_10m = np.array(dropsonde_df['ws'])
+            ws_10m_nan_mask = np.isnan(ws_10m)
+            ws10m = np.interp(0.01, alt_drop[~ws_10m_nan_mask], ws_10m[~ws_10m_nan_mask])   # calculate 10m wind speed
+        else:
+            p_drop = np.array([np.nan])
+            t_dry_drop = np.array([np.nan])
+            t_dew_drop = np.array([np.nan])
+            h2o_vmr_drop = np.array([np.nan])
+            alt_drop = np.array([np.nan])
+            air_drop = np.array([np.nan])
+            o2_drop = np.array([np.nan])
+            h2o_drop = np.array([np.nan])
+            ws10m = np.nan
 
     if new_h_edge is not None:
         levels = new_h_edge
