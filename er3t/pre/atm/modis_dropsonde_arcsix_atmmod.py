@@ -585,6 +585,7 @@ class modis_dropsonde_arcsix_atmmod:
         if not marli_wvmr.any():
             print('Warning   [atm_atmmod]: Marli WVMR data are all NaN or negative.')
             print('          Skip adding Marli WVMR data, use dropsone for WVMR only.')
+            return None
         
         alt = alt[marli_nonnan]
         marli_wvmr = marli_wvmr[marli_nonnan]
