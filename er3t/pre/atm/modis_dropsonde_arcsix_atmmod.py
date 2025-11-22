@@ -196,11 +196,11 @@ class modis_dropsonde_arcsix_atmmod:
         # add self.lev['n2o'] and self.lay['n2o']
         self.add_n2o()
 
-        
-        if self.fname_insitu is not None:
-            self.add_insitu()
         if (self.marli_h is not None) and (self.marli_wvmr is not None):
             self.add_marli()
+        if self.fname_insitu is not None:
+            self.add_insitu()
+        
 
         # covert mixing ratio [unitless] to number density [cm-3]
         self.cal_num_den()
@@ -258,7 +258,7 @@ class modis_dropsonde_arcsix_atmmod:
                 # Here we use co2_lon and co2_lat along with the slice at level 'i'
                 f_co2 = interpolate.interp2d(co2_lon, co2_lat, co2_clim[:, :, i].T, kind='linear')
                 co2_loc[i] = f_co2(lon_mid, lat_mid)
-            
+                
             mask_co2_nan = co2_loc < 0
             if not mask_co2_nan.all():
                 print('Warning [atm_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
@@ -267,7 +267,6 @@ class modis_dropsonde_arcsix_atmmod:
             self.atm_co2 = {}
             self.atm_co2['co2_clim'] = {'name':'co2', 'units':'N/A', 'data':co2_loc}
             self.atm_co2['pressure'] = {'name':'pressure', 'units':'mb', 'data':co2_pressure}
-
     
     def ch4_clim(self, date, extent):
         if self.fname_ch4_clim is None:
@@ -317,9 +316,6 @@ class modis_dropsonde_arcsix_atmmod:
                 f_ch4 = interpolate.LinearNDInterpolator(list(zip(ch4_lon_mesh.flatten(), ch4_lat_mesh.flatten())), ch4_clim_mesh[i, :, :].flatten())
                 ch4_loc[i] = f_ch4(lon_mid, lat_mid)
             
-            print("ch4_loc before fill NaN: ", ch4_loc)
-            print("ch4_pressure: ", ch4_pressure)
-            
             mask_ch4_nan = ch4_loc > 1
             if not mask_ch4_nan.all():
                 print('Warning [atm_atmmod]: CH4 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
@@ -330,9 +326,6 @@ class modis_dropsonde_arcsix_atmmod:
             self.atm_ch4 = {}
             self.atm_ch4['ch4_clim'] = {'name':'ch4', 'units':'kg/kg', 'data':ch4_loc}
             self.atm_ch4['pressure'] = {'name':'pressure', 'units':'mb', 'data':ch4_pressure}
-            
-            print("ch4_loc after fill NaN: ", ch4_loc)
-            print("ch4_pressure: ", ch4_pressure)
     
     def o3_clim(self, date, extent):
         if self.fname_o3_clim is None:
@@ -590,7 +583,8 @@ class modis_dropsonde_arcsix_atmmod:
         # interp marli data data to levels and layers below marli data max altitude
         marli_nonnan = ~np.isnan(marli_wvmr) & (marli_wvmr >= 0)
         if not marli_wvmr.any():
-            sys.exit('Error   [atm_atmmod]: Marli WVMR data are all NaN or negative.')
+            print('Warning   [atm_atmmod]: Marli WVMR data are all NaN or negative.')
+            print('          Skip adding Marli WVMR data, use dropsone for WVMR only.')
         
         alt = alt[marli_nonnan]
         marli_wvmr = marli_wvmr[marli_nonnan]
@@ -618,6 +612,7 @@ class modis_dropsonde_arcsix_atmmod:
             output = self.zpt_file.replace('.h5', '_interp.png')
             zpt_plot_gases(self.lev['pressure']['data'], self.lev['h2o']['data'], self.lev['co2']['data'], self.lev['o3']['data'],
                         output.replace('.png', '_gases_full_insitu_plus_marli.png'), pmin=1, ch4_vmr=self.lev['ch4']['data'])
+            
 
     def cal_num_den(self):
         self.lev['factor']  = { \
