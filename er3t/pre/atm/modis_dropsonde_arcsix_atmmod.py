@@ -258,7 +258,7 @@ class modis_dropsonde_arcsix_atmmod:
                 # Here we use co2_lon and co2_lat along with the slice at level 'i'
                 f_co2 = interpolate.interp2d(co2_lon, co2_lat, co2_clim[:, :, i].T, kind='linear')
                 co2_loc[i] = f_co2(lon_mid, lat_mid)
-                
+            
             mask_co2_nan = co2_loc < 0
             if not mask_co2_nan.all():
                 print('Warning [atm_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
@@ -267,6 +267,7 @@ class modis_dropsonde_arcsix_atmmod:
             self.atm_co2 = {}
             self.atm_co2['co2_clim'] = {'name':'co2', 'units':'N/A', 'data':co2_loc}
             self.atm_co2['pressure'] = {'name':'pressure', 'units':'mb', 'data':co2_pressure}
+
     
     def ch4_clim(self, date, extent):
         if self.fname_ch4_clim is None:
@@ -316,9 +317,12 @@ class modis_dropsonde_arcsix_atmmod:
                 f_ch4 = interpolate.LinearNDInterpolator(list(zip(ch4_lon_mesh.flatten(), ch4_lat_mesh.flatten())), ch4_clim_mesh[i, :, :].flatten())
                 ch4_loc[i] = f_ch4(lon_mid, lat_mid)
             
+            print("ch4_loc before fill NaN: ", ch4_loc)
+            print("ch4_pressure: ", ch4_pressure)
+            
             mask_ch4_nan = ch4_loc > 1
             if not mask_ch4_nan.all():
-                print('Warning [atm_atmmod]: CO2 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
+                print('Warning [atm_atmmod]: CH4 climatology contains NaN values. Filling with closest pressure level (the largest concentration).')
                 ch4_loc[mask_ch4_nan] = ch4_loc[~mask_ch4_nan][0]
             else:
                 raise ValueError('Error   [atm_atmmod]: CH4 climatology contains all NaN values.')
@@ -326,6 +330,9 @@ class modis_dropsonde_arcsix_atmmod:
             self.atm_ch4 = {}
             self.atm_ch4['ch4_clim'] = {'name':'ch4', 'units':'kg/kg', 'data':ch4_loc}
             self.atm_ch4['pressure'] = {'name':'pressure', 'units':'mb', 'data':ch4_pressure}
+            
+            print("ch4_loc after fill NaN: ", ch4_loc)
+            print("ch4_pressure: ", ch4_pressure)
     
     def o3_clim(self, date, extent):
         if self.fname_o3_clim is None:
