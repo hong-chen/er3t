@@ -10,20 +10,10 @@ import os
 import sys
 import warnings
 import h5py
-import time
 import numpy as np
 import datetime
-from scipy.io import readsav
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.path as mpl_path
-import matplotlib.image as mpl_img
-import matplotlib.patches as mpatches
-import matplotlib.gridspec as gridspec
-from matplotlib import rcParams, ticker
-from matplotlib.ticker import FixedLocator
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-# import cartopy.crs as ccrs
+from matplotlib import rcParams
 # mpl.use('Agg')
 
 
