@@ -19,8 +19,7 @@ dependencies:
   - owslib
   - cartopy=0.22.*
   - uuid-utils
-  - mscorefonts
-  - font-ttf-source-code-pro
-  - vim
+  - pysolar
+  - psutil
   #- sphinx=4.4.*
   #- sphinx_rtd_theme=0.4.*
