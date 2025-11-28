@@ -98,7 +98,7 @@ def lrt_flux_one(
     cld_cfg['cloud_file']  = f"{fdir_tmp}/cloud.txt"
     cld_cfg['cloud_optical_thickness'] = params['cloud_optical_thickness']
     cld_cfg['cloud_effective_radius']  = params['cloud_effective_radius']
-    cld_cfg['cloud_altitude'] = np.arange(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height']+0.01, 0.1)
+    cld_cfg['cloud_altitude'] = np.arange(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height']+0.01, 1.0)
 
     fname_out = '%s/output.txt' % fdir_tmp
     if (not overwrite) and (not os.path.exists(fname_out)):
@@ -170,7 +170,7 @@ def mca_flux_one(
             cer=np.array([params['cloud_effective_radius']]).reshape((1, 1)),
             cth=np.array([params['cloud_top_height']]).reshape((1, 1)),
             cgt=np.array([params['cloud_geometric_thickness']]).reshape((1, 1)),
-            dz=0.1,
+            dz=0.2,
             extent_xy=[0.0, 1.0, 0.0, 1.0],
             atm_obj=atm0,
             overwrite=overwrite
@@ -257,7 +257,7 @@ def shd_flux_one(
             cer=np.array([params['cloud_effective_radius']]).reshape((1, 1)),
             cth=np.array([params['cloud_top_height']]).reshape((1, 1)),
             cgt=np.array([params['cloud_geometric_thickness']]).reshape((1, 1)),
-            dz=0.1,
+            dz=0.2,
             extent_xy=[0.0, 1.0, 0.0, 1.0],
             atm_obj=atm0,
             overwrite=overwrite
@@ -331,18 +331,18 @@ def test_100_flux_one(
          'cloud_optical_thickness': cot,
           'cloud_effective_radius': cer,
                            'Niter': icount,
-                'cloud_top_height': 1.5,
+                'cloud_top_height': 1.8,
        'cloud_geometric_thickness': 1.0,
                          'photons': 1.0e7,
-                 'output_altitude': np.concatenate((np.arange(0.0, 25.0, 1.0), np.arange(25.0, 50.0, 2.5), np.arange(50.0, 120.1, 5.0))),
+                 'output_altitude': np.concatenate((np.arange(0.0, 2.0, 0.2), np.arange(2.0, 25.0, 1.0), np.arange(25.0, 50.0, 2.5), np.arange(50.0, 120.1, 5.0))),
          }
 
-    data_lrt = lrt_flux_one(params, overwrite=overwrite)
+    data_lrt = lrt_flux_one(params, overwrite=False)
     f_toa = data_lrt['f_down'][-1]/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
     data_shd = shd_flux_one(params, f_toa=f_toa, overwrite=overwrite)
 
-    data_mca = mca_flux_one(params, f_toa=f_toa, overwrite=overwrite)
+    data_mca = mca_flux_one(params, f_toa=f_toa, overwrite=False)
 
     error_shd_up = np.nanmean(np.abs(data_lrt['f_up']-data_shd['f_up'])/data_lrt['f_up']*100.0)
     error_mca_up = np.nanmean(np.abs(data_lrt['f_up']-data_mca['f_up'])/data_lrt['f_up']*100.0)
@@ -1140,7 +1140,7 @@ def test_100_rad_spec(
         params['photons'] = 1.0e9
 
     # data_lrt_slit = lrt_rad_spec_slit(params, surface=surface, overwrite=False)
-    data_lrt = lrt_rad_spec(params, surface=surface, overwrite=overwrite)
+    data_lrt = lrt_rad_spec(params, surface=surface, overwrite=True)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
     data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=True)
@@ -1219,10 +1219,10 @@ if __name__ == '__main__':
 
         # test_00_solar()
 
-        # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
+        test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
-        # test_100_flux_one(556.0, 10.0, 12.0, 100, plot=True, overwrite=True)
+        # test_100_flux_one(556.0, 2.0, 12.0, 100, plot=True, overwrite=True)
 
         # icount = 0
         # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
@@ -1234,8 +1234,8 @@ if __name__ == '__main__':
         # test_100_flux_one(2131.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 
         # wavelengths = np.arange(300.0, 3201.0, 5.0)
-        wavelengths = np.arange(300.0, 2001.0, 10.0)
-        test_100_rad_spec(wavelengths, 0.0, 1.0, 100, overwrite=False)
+        # wavelengths = np.arange(300.0, 2001.0, 10.0)
+        # test_100_rad_spec(wavelengths, 0.0, 1.0, 100, overwrite=False)
 
     else:
 

@@ -5,11 +5,9 @@ Installation
 Dependencies
 ------------
 
-1. Install ``conda`` Python package manager (pick **one** from the following installers)
+1. Install ``uv`` Python package manager
 
-    * `Anaconda <https://www.anaconda.com/>`_ (comprehensive, more popular);
-
-    * `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ (compact, more system-friendly).
+    * `UV <https://docs.astral.sh/uv/>`_
 
 2. Set up `NASA EARTHDATA <https://urs.earthdata.nasa.gov>`_
 
@@ -76,9 +74,24 @@ Dependencies
        If you encountered any error, please feel free to reach out at `Discord SUPPORT/libradtran <https://discord.com/channels/681619528945500252/1123343342730760222>`__
        for community support.
 
-5. (optional) Install `SHDOM <https://coloradolinux.com/shdom/>`_
+5. (optional) Install `SHDOM <https://github.com/hong-chen/shdom>`_ through the `official installation guide <https://github.com/hong-chen/shdom?tab=readme-ov-file#how-to-install>`__
 
-    **Unavailable yet (under development)**
+    * After installation, please specify environment variable ``SHDOM_EXE``.
+
+      For example, if you are using ``bash`` shell, add the following line to the shell source file
+      (e.g., ``~/.bashrc``):
+
+      .. code-block:: bash
+
+         export SHDOM_EXE="/system/path/to/shdom/build/bin/shdom"
+
+    * When the installation processes are complete,
+      ``er3t.rtm.shd`` can be used to perform IPA/3D radiance/irradiance simulation (details see ``examples/00_er3t_shd.py``).
+
+    .. tip::
+
+       If you encountered any error, please feel free to reach out at `Discord SUPPORT/shdom <https://discord.com/channels/681619528945500252/1348788282162548937>`__
+       for community support.
 
 
 |
@@ -101,12 +114,12 @@ EaR³T Python Package - ``er3t``
        git clone https://github.com/hong-chen/er3t.git
 
 
-2. Under newly cloned ``er3t/``, where it contains ``er3t-env.yml``, type in the following
+2. Under newly cloned ``er3t/``, where it contains ``pyproject.toml``, type in the following
 
     .. code-block:: bash
 
-       conda env create -f er3t-env.yml
-       conda activate er3t
+       uv sync
+       uv pip install -e .
 
     * A `Python package version reference list <https://discord.com/channels/681619528945500252/1004090233412923544/1014015720302059561>`_
       (available to Mac and Linux users) is provided for diagnosing dependency version conflicts.

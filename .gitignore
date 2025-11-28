@@ -2,13 +2,17 @@
 .DS_Store
 
 # python files
-*.pyc
 __pycache__
+dist/
+build/
+*.pyc
+*.python
 *.egg-info
-dist
-build
 *other*
 *for*
+
+# Virtual environments
+.venv
 
 # media files
 *graph*
