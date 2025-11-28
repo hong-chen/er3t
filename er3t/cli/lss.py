@@ -18,9 +18,7 @@ import argparse
 from collections import OrderedDict
 
 
-
 __all__ = ["main"]
-
 
 
 def get_data_brief(args):

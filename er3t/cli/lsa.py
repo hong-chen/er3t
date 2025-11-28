@@ -21,7 +21,6 @@ from collections import OrderedDict
 __all__ = ["main"]
 
 
-
 def get_data_brief(args):
 
     fname = os.path.abspath(args.fname[0])
