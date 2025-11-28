@@ -19,24 +19,24 @@ keywords = [
     "radiative transfer",
     "remote sensing",
     "atmospheric science"
-]
+    ]
 authors = [
     {name = "Hong Chen", email = "hong.chen@hchen.com"},
     {name = "Vikas Nataraja", email = "vikas.hanasogenataraja@lasp.colorado.edu"},
     {name = "Yu-Wen Chen", email = "yu-wen.chen@colorado.edu"},
     {name = "Ken Hirata", email = "ken.hirata@colorado.edu"},
     {name = "Sebastian Schmidt", email = "sebastian.schmidt@lasp.colorado.edu"},
-]
+    ]
 maintainers = [
     {name = "Hong Chen", email = "hong.chen@hchen.com"},
-]
+    ]
 classifiers = [
     'Development Status :: 4 - Beta',
     'License :: OSI Approved :: GNU GPLv3 License',
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
     'Topic :: Scientific/Engineering :: Atmospheric Science',
-]
+    ]
 dependencies = [
     "cartopy>=0.25.0",
     "gdown>=5.2.0",
@@ -55,7 +55,7 @@ dependencies = [
     "sphinx-rtd-theme>=3.0.2",
     "tqdm>=4.67.1",
     "uuid-utils>=0.11.1",
-]
+    ]
 
 [project.urls]
 Homepage = "https://github.com/hong-chen/er3t"
