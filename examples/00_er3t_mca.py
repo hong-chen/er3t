@@ -1070,8 +1070,7 @@ def example_05_rad_les_cloud_3d(
             sca=sca,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=0.0,
-            # sensor_zenith_angle=30.0,
-            sensor_zenith_angle=0.0,
+            sensor_zenith_angle=30.0,
             sensor_azimuth_angle=45.0,
             sensor_altitude=705.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
@@ -1259,7 +1258,6 @@ def example_06_rad_cld_gen_hem(
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
             surface=0.2,
-            sfc_2d=sfc_2d,
             Ng=abs0.Ng,
             target='radiance',
             sca=sca,
@@ -1339,9 +1337,8 @@ if __name__ == '__main__':
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # example_05_rad_les_cloud_3d(solver='3D')
-    # example_05_rad_les_cloud_3d(solver='IPA')
-    # example_06_rad_cld_gen_hem()
+    example_05_rad_les_cloud_3d()
+    example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     pass
