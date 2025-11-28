@@ -347,7 +347,7 @@ class shd_out_ng:
             for key0 in self.data[key].keys():
                 if key0 != 'data':
                     if key0 == 'dims_info':
-                        g[key].attrs[key0]  = np.string_(self.data[key][key0])
+                        g[key].attrs[key0]  = np.bytes_(self.data[key][key0])
                     else:
                         g[key].attrs[key0]  = self.data[key][key0]
 

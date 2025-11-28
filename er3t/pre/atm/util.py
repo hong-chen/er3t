@@ -140,13 +140,13 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
     """
 
     indices = np.argsort(alt)
-    h = np.float_(alt[indices])
-    p = np.float_(pres[indices])
-    t = np.float_(temp[indices])
+    h = np.float32(alt[indices])
+    p = np.float32(pres[indices])
+    t = np.float32(temp[indices])
 
     indices = np.argsort(alt_inp)
-    hn = np.float_(alt_inp[indices])
-    tn = np.float_(temp_inp[indices])
+    hn = np.float32(alt_inp[indices])
+    tn = np.float32(temp_inp[indices])
 
     n = p.size - 1
     a = 0.5*(t[1:]+t[:-1]) / (h[:-1]-h[1:]) * np.log(p[1:]/p[:-1])
