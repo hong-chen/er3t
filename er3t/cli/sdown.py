@@ -144,7 +144,7 @@ def create_args_parallel(date_list,
     return arg_list
 
 
-def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, geojson_fpath, products, verbose, parallel):
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, geojson_fpath, products, verbose, parallel, satlogger):
 
 
     ########################################################################################################
@@ -247,6 +247,7 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
             iou=iou,
             extent=extent,
             products=products,
+            satlogger=satlogger,
             verbose=verbose)
 
 
@@ -388,11 +389,12 @@ def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out,
                     iou=iou,
                     extent=extent,
                     products=products,
+                    satlogger=satlogger,
                     verbose=verbose)
 
 
 
-def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, extent, products, verbose):
+def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, extent, products, satlogger, verbose):
 
     # if extent is not None:
     #     lons = np.linspace(extent[0], extent[1], 200)
@@ -656,6 +658,7 @@ def main():
                                   geojson_fpath=geojson,
                                   products=products,
                                   parallel=parallel,
+                                  satlogger=satlogger,
                                   verbose=verbose)
     else:
 
@@ -674,6 +677,7 @@ def main():
                                   geojson_fpath=args.geojson,
                                   products=args.products,
                                   parallel=args.parallel,
+                                  satlogger=satlogger,
                                   verbose=args.verbose)
 
     exec_stop_dt = datetime.datetime.now() # to time sdown
