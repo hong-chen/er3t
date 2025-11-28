@@ -5,5 +5,6 @@ from . import pre
 from . import rtm
 from . import util
 from . import dev
+from . import cli
 
 __all__ = [s for s in dir() if not s.startswith('_')]

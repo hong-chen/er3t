@@ -58,6 +58,8 @@ import er3t.util.util
 import er3t.common
 from er3t.util.logger import Ear3tLogger
 
+__all__ = ["main"]
+
 # get width for stdout statements
 _width_, _    = shutil.get_terminal_size()
 
@@ -566,8 +568,7 @@ def get_sat_info_from_product_tag(tag_, nrt=False):
     #\----------------------------------------------------------------------------/#
 
 
-
-if __name__ == '__main__':
+def main():
 
     exec_start_dt = datetime.datetime.now() # to time sdown
 
@@ -679,3 +680,9 @@ if __name__ == '__main__':
     exec_total_time = exec_stop_dt - exec_start_dt
     sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs = er3t.util.util.format_time(exec_total_time.total_seconds())
     print('\n\nTotal Execution Time: {}:{}:{}.{}\n\n'.format(sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs))
+
+
+
+if __name__ == '__main__':
+
+    main()
