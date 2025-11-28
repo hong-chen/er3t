@@ -32,7 +32,7 @@ import er3t
 #╭────────────────────────────────────────────────────────────────────────────╮#
 name_tag = '00_er3t_mca'
 fdir0    = er3t.common.fdir_examples
-photons = 1e10
+photons = 1e7
 Ncpu    = 7
 rcParams['font.size'] = 14
 #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -95,7 +95,7 @@ def example_01_flux_clear_sky(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -271,7 +271,7 @@ def example_02_flux_les_cloud_3d(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -484,7 +484,7 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -706,7 +706,7 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -947,8 +947,7 @@ def example_05_rad_les_cloud_3d(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    # abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='modis', band_name='modis_aqua_b01', atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -1167,7 +1166,7 @@ def example_06_rad_cld_gen_hem(
     # define an absorption object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     fname_abs = '%s/abs.pk' % fdir
-    abs0      = er3t.pre.abs.abs_16g(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, overwrite=overwrite)
+    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -1332,16 +1331,16 @@ if __name__ == '__main__':
 
     # irradiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # example_01_flux_clear_sky()
-    # example_02_flux_les_cloud_3d()
-    # example_03_flux_les_cloud_3d_aerosol_1d()
-    # example_04_flux_les_cloud_3d_aerosol_3d()
+    example_01_flux_clear_sky()
+    example_02_flux_les_cloud_3d()
+    example_03_flux_les_cloud_3d_aerosol_1d()
+    example_04_flux_les_cloud_3d_aerosol_3d()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    example_05_rad_les_cloud_3d(solver='3D')
-    example_05_rad_les_cloud_3d(solver='IPA')
+    # example_05_rad_les_cloud_3d(solver='3D')
+    # example_05_rad_les_cloud_3d(solver='IPA')
     # example_06_rad_cld_gen_hem()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 

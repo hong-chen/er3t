@@ -697,8 +697,8 @@ def example_rad_02_libera_adm(
     ref_vis = np.zeros(vaa.size, dtype=np.float64)
     rad_vis = np.zeros(vaa.size, dtype=np.float64)
     for i in range(vaa.size):
-        rad_vis[i] = np.trapz(rad[:, i], x=wvl)
-        ref_vis[i] = np.pi*np.trapz(rad[:, i], x=wvl) / np.trapz(toa, x=wvl)
+        rad_vis[i] = np.trapezoid(rad[:, i], x=wvl)
+        ref_vis[i] = np.pi*np.trapezoid(rad[:, i], x=wvl) / np.trapezoid(toa, x=wvl)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 

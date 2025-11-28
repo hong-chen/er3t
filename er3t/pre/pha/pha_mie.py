@@ -193,8 +193,8 @@ class pha_mie_wc:
             pha[:, ireff] = f_pha0(angles)
 
             asy[ireff] = asy_all[iwvl, ireff]
-            asy_[ireff]  = np.trapz(pha0*mu0, x=mu0)/2.0
-            # asy_[ireff] = np.trapz(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
+            asy_[ireff]  = np.trapezoid(pha0*mu0, x=mu0)/2.0
+            # asy_[ireff] = np.trapezoid(pha[::-1, ireff]*mus[::-1], x=mus[::-1])/2.0
 
         data = {
                 'id'   : {'data':'Mie'       , 'name':'Mie'                , 'unit':'N/A'},
@@ -388,7 +388,7 @@ class pha_mie_wc_shd:
 
             # asymmetry parameter
             # half of the integral of: from cos(ang)=-1 to cos(ang)=1 for function pha(ang)*cos(ang)
-            # asy[ireff] = np.trapz(pha0[::-1]*mus[::-1], x=mus[::-1])/2.0
+            # asy[ireff] = np.trapezoid(pha0[::-1]*mus[::-1], x=mus[::-1])/2.0
             asy[ireff] = pmom[ireff, 1]/3.0 # consistent with SHDOM
 
             asy_[ireff] = asy[ireff]
@@ -681,7 +681,7 @@ class pha_mie_wc_pmom:
 
             # asymmetry parameter
             # half of the integral of: from cos(ang)=-1 to cos(ang)=1 for function pha(ang)*cos(ang)
-            asy[ireff] = np.trapz(pha0[::-1]*mus[::-1], x=mus[::-1])/2.0
+            asy[ireff] = np.trapezoid(pha0[::-1]*mus[::-1], x=mus[::-1])/2.0
 
         data = {
                 'id'  : {'data':'Mie'       , 'name':'Mie'                , 'unit':'N/A'},

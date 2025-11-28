@@ -1147,9 +1147,9 @@ def test_100_rad_spec(
 
     data_mca = mca_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=overwrite)
 
-    print('libRadtran:', np.trapz(data_lrt['rad'], x=params['wavelengths']))
-    print('MCARaTS:', np.trapz(data_mca['rad'], x=params['wavelengths']))
-    print('SHDOM:', np.trapz(data_shd['rad'], x=params['wavelengths']))
+    print('libRadtran:', np.trapezoid(data_lrt['rad'], x=params['wavelengths']))
+    print('MCARaTS:', np.trapezoid(data_mca['rad'], x=params['wavelengths']))
+    print('SHDOM:', np.trapezoid(data_shd['rad'], x=params['wavelengths']))
 
     # figure
     #╭────────────────────────────────────────────────────────────────────────────╮#
