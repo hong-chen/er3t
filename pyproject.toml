@@ -60,7 +60,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/hong-chen/er3t"
 Documentation = "https://er3t.readthedocs.io"
-Issues = "https://discord.gg/ntqsguwaWv"
+Chat = "https://discord.gg/ntqsguwaWv"
 
 [project.scripts]
 lss = "er3t.cli.lss:main"
