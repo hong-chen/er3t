@@ -213,6 +213,8 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
     for i in range(dp.size):
         pn[i+1] = pn[i] - dp[i]
 
+    pn[pn<0.0] = 1.0e-20
+
     return pn
 
 
