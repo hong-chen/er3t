@@ -1222,7 +1222,7 @@ if __name__ == '__main__':
         test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
-        # test_100_flux_one(556.0, 2.0, 12.0, 100, plot=True, overwrite=True)
+        test_100_flux_one(556.0, 2.0, 12.0, 100, plot=True, overwrite=True)
 
         # icount = 0
         # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
