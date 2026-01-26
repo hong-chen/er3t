@@ -238,20 +238,22 @@ class shdom_ng:
         if not self.quiet and not self.overwrite:
             print("Message [shdom_ng]: Reading mode ...")
 
-        # initialize namelist (list contains Ng Python dictionaries)
-        self.nml = [{} for ig in range(self.Ng_)]
+        if overwrite:
 
-        # SHDOM namelist init
-        self.nml_init()
+            # initialize namelist (list contains Ng Python dictionaries)
+            self.nml = [{} for ig in range(self.Ng_)]
 
-        # SHDOM namelist rad
-        self.nml_rad(
-                solar_zenith_angle,
-                solar_azimuth_angle,
-                )
+            # SHDOM namelist init
+            self.nml_init()
 
-        # SHDOM namelist param
-        self.nml_param(Niter, sol_acc=sol_acc, split_acc=split_acc, sh_acc=sh_acc)
+            # SHDOM namelist rad
+            self.nml_rad(
+                    solar_zenith_angle,
+                    solar_azimuth_angle,
+                    )
+
+            # SHDOM namelist param
+            self.nml_param(Niter, sol_acc=sol_acc, split_acc=split_acc, sh_acc=sh_acc)
 
         # SHDOM namelist out
         self.nml_out(

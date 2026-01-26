@@ -63,13 +63,13 @@ Features
 --------
 :Radiative Transfer:
 
-  * **solver**: `MCARaTS <https://sites.google.com/site/mcarats/>`_ | `SHDOM <https://github.com/hong-chen/shdom>`_ | `libRadtran <http://www.libradtran.org/>`_
+  * **solver**: `MCARaTS <https://sites.google.com/site/mcarats/>`_ | `SHDOM <https://github.com/hong-chen/shdom>`_ | `disort <http://www.rtatmocn.com/disort>`_ | `libRadtran <http://www.libradtran.org/>`_
 
   * **absorption**: `Correlated-k <https://doi.org/10.1029/90JD01945>`_ | `REPTRAN <https://doi.org/10.1016/j.jqsrt.2014.06.024>`_
 
   * **clouds**: `Mie (water) <https://doi.org/10.1364/AO.19.001505>`_
 
-  * **surface**: `Ocean BRDF (Cox-Munk) <https://doi.org/10.1364/JOSA.44.000838>`_ | `Land BRDF (LSRT) <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
+  * **surface**: `Ocean BRDF (Cox-Munk) <https://doi.org/10.1364/JOSA.44.000838>`_ | `Land BRDF (RTLSR) <https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/MCD43A1>`_
 
 :Remote Sensing:
 

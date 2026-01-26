@@ -30,7 +30,7 @@ import er3t
 
 # global variables
 #╭────────────────────────────────────────────────────────────────────────────╮#
-name_tag = '00_er3t_mca'
+name_tag = '02_er3t_mca'
 fdir0    = er3t.common.fdir_examples
 photons = 1e7
 Ncpu    = 7

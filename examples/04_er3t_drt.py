@@ -24,7 +24,7 @@ import er3t
 
 # global variables
 #╭────────────────────────────────────────────────────────────────────────────╮#
-name_tag = '00_er3t_shd'
+name_tag = '04_er3t_drt'
 fdir0 = er3t.common.fdir_examples
 Ncpu = 4
 rcParams['font.size'] = 14
@@ -145,19 +145,24 @@ def example_01_rad_atm1d_clear_over_land(
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
-    # generate surface, property files for SHDOM
+    # generate surface, property files for DISORT
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    sfc_2d = er3t.rtm.shd.shd_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname=f"{fdir}/shdom-sfc.txt", overwrite=overwrite)
+    sfc_2d  = er3t.rtm.drt.drt_sfc_2d(atm_obj=atm0, sfc_obj=sfc0,
+                                      fname=f"{fdir}/disort-sfc.txt", overwrite=overwrite)
 
-    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname=f"{fdir}/shdom-ckd.txt", overwrite=overwrite)
-    atm_1ds = [atm1d0]
+    ckd1d0  = er3t.rtm.drt.drt_ckd_1d(atm_obj=atm0, abs_obj=abs0,
+                                      fname=f"{fdir}/disort-ckd.txt", overwrite=overwrite)
+    ckd_1ds = [ckd1d0]
 
-    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname=f"{fdir}/shdom-prp.txt", fname_atm_1d=atm1d0.fname, overwrite=overwrite)
-    atm_3ds = [atm3d0]
+    prp1d0  = er3t.rtm.drt.drt_prp_1d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0,
+                                      fname=f"{fdir}/disort-prp.txt", fname_ckd_1d=ckd1d0.fname, overwrite=overwrite)
+    prp_1ds = [prp1d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#
+    print('haha')
+    sys.exit()
 
 
-    # define shdom object
+    # define disort object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     vaa_1d = np.arange(0.0, 360.1, 1.0)
     vza_1d = np.arange(0.0, 89.1, 1.0)
@@ -165,8 +170,8 @@ def example_01_rad_atm1d_clear_over_land(
     vaa = vaa_2d.ravel()
     vza = vza_2d.ravel()
 
-    # run shdom
-    shd0 = er3t.rtm.shd.shdom_ng(
+    # run disort
+    drt0 = er3t.rtm.drt.disort_ng(
             date=datetime.datetime(2024, 5, 18),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
@@ -192,26 +197,26 @@ def example_01_rad_atm1d_clear_over_land(
             )
 
     # data can be accessed at
-    #     shd0.Ng
-    #     shd0.nml         (Ng), e.g., shd0.nml[0], namelist for the first g of the first run
-    #     shd0.fnames_inp  (Ng), e.g., shd0.fnames_inp[0], input file name for the first g of the first run
-    #     shd0.fnames_out  (Ng), e.g., shd0.fnames_out[0], output file name for the first g of the first run
-    #     shd0.fnames_sav  (Ng), e.g., shd0.fnames_sav[0], state-sav file name for the first g of the first run
+    #     drt0.Ng
+    #     drt0.nml         (Ng), e.g., drt0.nml[0], namelist for the first g of the first run
+    #     drt0.fnames_inp  (Ng), e.g., drt0.fnames_inp[0], input file name for the first g of the first run
+    #     drt0.fnames_out  (Ng), e.g., drt0.fnames_out[0], output file name for the first g of the first run
+    #     drt0.fnames_sav  (Ng), e.g., drt0.fnames_sav[0], state-sav file name for the first g of the first run
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
-    # define shdom output object
+    # define disort output object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # read shdom output files (binary) and save the data into h5 file
+    # read disort output files (binary) and save the data into h5 file
     # The mode can be specified as 'all', 'mean', 'std', if 'all' is specified, the data will have last
     # dimension of number of runs
     # e.g.,
-    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
-    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
-    # out0 = shd_out_ng(fname='shd-out-rad-3d_les.h5', shd_obj=shd0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
+    # out0 = drt_out_ng(fname='drt-out-rad-3d_les.h5', drt_obj=drt0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=True)
+    # out0 = drt_out_ng(fname='drt-out-rad-3d_les.h5', drt_obj=drt0, abs_obj=abs0, mode='std' , squeeze=True, verbose=True, overwrite=True)
+    # out0 = drt_out_ng(fname='drt-out-rad-3d_les.h5', drt_obj=drt0, abs_obj=abs0, mode='all' , squeeze=True, verbose=True, overwrite=True)
 
-    fname_h5 = f"{fdir}/shd-out-rad-{solver.lower()}_{_metadata['Function']}.h5"
-    out0 = er3t.rtm.shd.shd_out_ng(fname=fname_h5, shd_obj=shd0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
+    fname_h5 = f"{fdir}/drt-out-rad-{solver.lower()}_{_metadata['Function']}.h5"
+    out0 = er3t.rtm.drt.drt_out_ng(fname=fname_h5, drt_obj=drt0, abs_obj=abs0, mode='mean', squeeze=True, verbose=True, overwrite=overwrite)
 
     # data can be accessed at
     #     out0.data['rad']['data']
@@ -1367,9 +1372,9 @@ if __name__ == '__main__':
     # radiance simulation
     #╭────────────────────────────────────────────────────────────────────────────╮#
     example_01_rad_atm1d_clear_over_land()
-    example_02_rad_atm1d_clear_over_ocean()
-    example_03_rad_atm1d_clear_over_snow()
-    example_04_rad_atm1d_cloud_over_ocean()
+    # example_02_rad_atm1d_clear_over_ocean()
+    # example_03_rad_atm1d_clear_over_snow()
+    # example_04_rad_atm1d_cloud_over_ocean()
 
     # example_05_rad_les_cloud_3d(solver='IPA')
     # example_05_rad_les_cloud_3d(solver='3D')

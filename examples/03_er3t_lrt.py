@@ -31,7 +31,7 @@ import er3t
 
 # global variables
 #╭────────────────────────────────────────────────────────────────────────────╮#
-name_tag = '00_er3t_lrt'
+name_tag = '03_er3t_lrt'
 fdir0    = er3t.common.fdir_examples
 rcParams['font.size'] = 14
 #╰────────────────────────────────────────────────────────────────────────────╯#
