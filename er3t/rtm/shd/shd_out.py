@@ -25,7 +25,8 @@ def get_shd_data_out_ori(
         ):
 
     if verbose:
-        print('Message [get_shd_data_out]: Reading SHDOM output ...')
+        msg = f"Reading SHDOM output ..."
+        er3t.common.logger.info(msg)
         print('╭────────────────────────────────────────────────────────────────────────────╮')
 
     headers = []
@@ -94,7 +95,8 @@ def get_shd_data_out(
         ):
 
     if verbose:
-        print('Message [get_shd_data_out]: Reading SHDOM output ...')
+        msg = f"Reading SHDOM output ..."
+        er3t.common.logger.info(msg)
         print('╭────────────────────────────────────────────────────────────────────────────╮')
 
 
@@ -294,14 +296,16 @@ class shd_out_ng:
 
         else:
 
-            msg = 'Error [shd_out_ng]: Please provide both <shd_obj> and <abs_obj> to proceed.'
-            raise OSError(msg)
+            msg = f"Please provide both <shd_obj> and <abs_obj> to proceed."
+            er3t.common.logger.error(msg)
+            raise OSError
 
 
     def load(self):
 
         if self.verbose:
-            print('Message [shd_out_ng]: Reading <%s> from <%s> ...' % (self.shd.target.lower(), self.fname))
+            msg = f"Reading <{self.shd.target.lower()}> from <self.fname> ..."
+            er3t.common.logger.info(msg)
 
         self.data = {}
 
@@ -318,7 +322,8 @@ class shd_out_ng:
     def run(self):
 
         if self.verbose:
-            print('Message [shd_out_ng]: Reading <%s> ...' % self.shd.target.lower())
+            msg = f"Reading <{self.shd.target.lower()}> ..."
+            er3t.common.logger.info(msg)
 
         if self.shd.target in ['flux', 'flux0']: # ['f', 'flux', 'irradiance', 'heating rate', 'hr']:
             self.data = read_flux_shd_out(self.shd, self.abs, squeeze=self.squeeze)
@@ -330,7 +335,8 @@ class shd_out_ng:
     def dump(self):
 
         if not self.quiet:
-            print('Message [shd_out_ng]: Saving <%s> into <%s> ...' % (self.shd.target.lower(), self.fname))
+            msg = f"Saving <{self.shd.target.lower()}> into <{self.fname}> ..."
+            er3t.common.logger.info(msg)
 
         mode = self.mode.lower()
 
@@ -373,8 +379,8 @@ class shd_out_raw:
         self.verbose = verbose
 
         if not os.path.isfile(fname_txt):
-            msg = 'Error [shd_out_raw]: Cannot find <%s>.' % fname_txt
-            raise OSError(msg)
+            msg = f"Cannot find <{fname_txt}>."
+            raise OSError
 
         self.fname_txt = fname_txt
 
@@ -385,7 +391,8 @@ class shd_out_raw:
     def read_txt(self):
 
         if self.verbose:
-            print('Message [get_shd_data_out]: Reading SHDOM output ...')
+            msg = f"Reading SHDOM output ..."
+            er3t.common.logger.info(msg)
             print('╭────────────────────────────────────────────────────────────────────────────╮')
 
 
@@ -603,8 +610,10 @@ def read_flux_shd_out(shd_obj, abs_obj, squeeze=True):
     factors = np.zeros((Nz, shd_obj.Ng), dtype=np.float32)
 
     if len(abs_obj.coef['weight']['data']) > 1:
-        msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
-        raise OSError(msg)
+        msg = f"Currently Ng > 1 is not supported."
+        er3t.logger.logger.error(msg)
+        raise OSError
+
     for iz in range(Nz):
         norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
         for ig in range(shd_obj.Ng):
@@ -699,8 +708,9 @@ def read_radiance_shd_out(shd_obj, abs_obj, squeeze=True):
     # factors = np.zeros((Nz, shd_obj.Ng), dtype=np.float32)
 
     # if len(abs_obj.coef['weight']['data']) > 1:
-    #     msg = 'Error [read_radiance_shd_out]: Currently Ng > 1 in not supported.'
-    #     raise OSError(msg)
+    #     msg = f"Currently Ng > 1 is not supported."
+    #     er3t.common.logger.error(msg)
+    #     raise OSError
     # for iz in range(Nz):
     #     norm[iz] = sol_fac/(abs_obj.coef['weight']['data'] * abs_obj.coef['slit_func']['data'][zz[iz], :]).sum()
     #     for ig in range(shd_obj.Ng):

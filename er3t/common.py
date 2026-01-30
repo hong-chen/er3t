@@ -62,7 +62,7 @@ params = {
 
 structlog.configure(
     processors=[
-        structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S", key="timestamp", utc=False),
+        structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S.%f", key="timestamp", utc=False),
 
         # Log level (colored)
         structlog.stdlib.add_log_level,
