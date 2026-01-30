@@ -148,7 +148,7 @@ class shd_sfc_2d:
         temp_sfc = self.atm.lay['temperature']['data'][0]
 
         if not self.quiet:
-            msg = f"Creating 2D surface file <{fname}> for SHDOM..."
+            msg = f"Creating 2D surface file <{fname}> for SHDOM ..."
             er3t.common.logger.info(msg)
 
         with open(fname, "w") as f:
@@ -306,7 +306,7 @@ class shd_sfc_2d_mix_test:
         fname = os.path.abspath(fname)
 
         if not self.quiet:
-            msg = f"Creating 2D surface file <{fname}> for SHDOM..."
+            msg = f"Creating 2D surface file <{fname}> for SHDOM ..."
             er3t.common.logger.info(msg)
 
         with open(fname, 'w') as f:

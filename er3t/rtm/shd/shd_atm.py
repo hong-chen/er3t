@@ -105,7 +105,7 @@ class shd_atm_1d:
             ):
 
         if not self.quiet:
-            msg = f"Creating 1D correlated-k file <{fname}> for SHDOM..."
+            msg = f"Creating 1D correlated-k file <{fname}> for SHDOM ..."
             er3t.common.logger.info(msg)
 
         with open(fname, 'w') as f:
@@ -369,7 +369,7 @@ class shd_atm_3d:
             prp_exe)
 
         if not self.quiet:
-            msg = f"Creating 3D property file <{fname}> for SHDOM..."
+            msg = f"Creating 3D property file <{fname}> for SHDOM ..."
             er3t.common.logger.info(msg)
 
         os.system(command)

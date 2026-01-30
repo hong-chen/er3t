@@ -73,7 +73,7 @@ class atm_atmmod:
                  fname_atmmod = '%s/afglus.dat' % er3t.common.fdir_data_atmmod, \
                  extra_gases  = ['ch4', 'co', 'n2o', 'n2'],
                  overwrite    = False, \
-                 verbose      = False):
+                 verbose      = er3t.common.params['verbose']):
 
         er3t.util.add_reference(self.reference)
 
@@ -106,8 +106,11 @@ class atm_atmmod:
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
             if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
+
                 if self.verbose:
-                    print('Message [atm_atmmod]: Loading %s ...' % fname)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
+
                 self.fname = obj.fname
                 self.lev   = obj.lev
                 self.lay   = obj.lay
@@ -155,8 +158,11 @@ class atm_atmmod:
 
         self.fname = fname
         with open(fname, 'wb') as f:
+
             if self.verbose:
-                print('Message [atm_atmmod]: Saving object into %s ...' % fname)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
+
             pickle.dump(self, f)
 
 
