@@ -3,6 +3,9 @@ import sys
 import shutil
 import datetime
 import importlib.util
+
+import colorama
+import structlog
 import numpy as np
 
 f_dtype = np.float32
@@ -56,6 +59,108 @@ params = {
                     'verbose': True,
                'earth_radius': 6371.009,
         }
+
+structlog.configure(
+    processors=[
+        structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S", key="timestamp", utc=False),
+
+        # Log level (colored)
+        structlog.stdlib.add_log_level,
+
+        # Module + line number
+        structlog.processors.CallsiteParameterAdder(
+            parameters=[
+                structlog.processors.CallsiteParameter.FILENAME,
+                structlog.processors.CallsiteParameter.MODULE,
+                structlog.processors.CallsiteParameter.FUNC_NAME,
+                structlog.processors.CallsiteParameter.LINENO,
+            ]
+        ),
+
+        structlog.stdlib.PositionalArgumentsFormatter(),
+
+        structlog.processors.format_exc_info,
+
+        structlog.dev.ConsoleRenderer(
+            columns=[
+
+                # Render the timestamp without the key name in yellow.
+                structlog.dev.Column(
+                    "timestamp",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=None,
+                        value_style=colorama.Style.BRIGHT+colorama.Fore.LIGHTWHITE_EX,
+                        reset_style=colorama.Style.RESET_ALL,
+                        value_repr=str,
+                    ),
+                ),
+
+                # Render the event without the key name in bright magenta.
+                structlog.dev.Column(
+                    "level",
+                    structlog.dev.LogLevelColumnFormatter(
+                        level_styles={
+                            'info' : colorama.Style.BRIGHT+colorama.Fore.LIGHTWHITE_EX,
+                            'error': colorama.Style.BRIGHT+colorama.Fore.RED,
+                            },
+                        reset_style=colorama.Style.RESET_ALL,
+                        ),
+                ),
+
+                # Render the event without the key name in bright magenta.
+                structlog.dev.Column(
+                    "event",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=None,
+                        value_style=colorama.Style.RESET_ALL,
+                        reset_style=colorama.Style.RESET_ALL,
+                        value_repr=str,
+                    ),
+                ),
+
+                # structlog.dev.Column(
+                #     "func_name",
+                #     structlog.dev.KeyValueColumnFormatter(
+                #         key_style=colorama.Fore.CYAN,
+                #         value_style=colorama.Fore.GREEN,
+                #         reset_style=colorama.Style.RESET_ALL,
+                #         value_repr=str,
+                #     ),
+                # ),
+
+                # structlog.dev.Column(
+                #     "lineno",
+                #     structlog.dev.KeyValueColumnFormatter(
+                #         key_style=colorama.Fore.CYAN,
+                #         value_style=colorama.Fore.GREEN,
+                #         reset_style=colorama.Style.RESET_ALL,
+                #         value_repr=str,
+                #     ),
+                # ),
+
+                # Default formatter for all keys not explicitly mentioned. The key is
+                # cyan, the value is green.
+                structlog.dev.Column(
+                    "",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=colorama.Fore.CYAN,
+                        value_style=colorama.Fore.GREEN,
+                        reset_style=colorama.Style.RESET_ALL,
+                        value_repr=str,
+                    ),
+                ),
+            ]
+        )
+
+    ],
+
+    # logger_factory=structlog.stdlib.LoggerFactory(),
+    logger_factory=structlog.PrintLoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    )
+
+logger = structlog.get_logger()
+
 
 references = [
 'EaR³T (Chen et al., 2023; Chen et al., 2025):\n- Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech., 16, 1971–2000, https://doi.org/10.5194/amt-16-1971-2023, 2023.\n- Chen, Y.-W., Schmidt, K. S., Chen, H., Massie, S. T., Kulawik, S. S., and Iwabuchi, H.: Mitigation of satellite OCO-2 CO₂ biases in the vicinity of clouds with 3D calculations using the Education and Research 3D Radiative Transfer Toolbox (EaR³T), Atmos. Meas. Tech., 18, 1859–1884, https://doi.org/10.5194/amt-18-1859-2025, 2025.'

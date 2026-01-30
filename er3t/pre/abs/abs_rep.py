@@ -85,8 +85,9 @@ class abs_rep:
 
         else:
 
-            msg = '\nError [abs_rep]: Please provide <wavelength> to proceed.'
-            raise OSError(msg)
+            msg = f"Please provide <wavelength> to proceed."
+            er3t.common.logger.error(msg)
+            raise OSError
 
 
     def load(self, fname):
@@ -95,8 +96,8 @@ class abs_rep:
             obj = pickle.load(f)
             if hasattr(obj, 'coef'):
                 if self.verbose:
-                    msg = 'Message [abs_rep]: Loading <%s> ...' % fname
-                    print(msg)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
                 self.fname = obj.fname
                 self.wvl   = obj.wvl
                 self.nwl   = obj.nwl
@@ -107,15 +108,17 @@ class abs_rep:
                 self.wvl_min_ = obj.wvl_min_
                 self.wvl_max_ = obj.wvl_max_
             else:
-                msg = '\nError [abs_rep]: <%s> is not the correct pickle file to load.' % fname
-                raise OSError(msg)
+                msg = f"<{fname}> is not the correct pickle file to load."
+                er3t.common.logger.error(msg)
+                raise OSError
 
 
     def run(self, wavelength, band_name=None):
 
         if not os.path.exists(self.fdir_data):
-            msg = '\nError [abs_rep]: Missing REPTRAN database.'
-            raise OSError(msg)
+            msg = f"Missing REPTRAN database."
+            er3t.common.logger.error(msg)
+            raise OSError
 
         self.load_main(wavelength, band_name=band_name)
         self.cal_coef()
@@ -126,8 +129,8 @@ class abs_rep:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                msg = 'Message [abs_rep]: Saving object into <%s> ...' % fname
-                print(msg)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
             pickle.dump(self, f)
 
 
@@ -153,8 +156,9 @@ class abs_rep:
         if band_name is not None:
             if band_name not in bands:
                 bands_info = '\n'.join(bands)
-                msg = '\nError [abs_rep]: <band_name=\'%s\'> is invalid, please specify one from the following \n%s' % (band_name, bands_info)
-                raise OSError(msg)
+                msg = f"<band_name=\'{band_name}\'> is invalid, please specify one from the following \n{bands_info}"
+                er3t.common.logger.error(msg)
+                raise OSError
             else:
                 index_band = bands.index(band_name)
                 self.band_name  = band_name
@@ -165,13 +169,15 @@ class abs_rep:
             indices = np.where(logic)[0]
             N_ = logic.sum()
             if N_ == 0:
-                msg = '\nError [abs_rep]: %.4f nm is outside REPTRAN-%s-%s supported wavelength range.' % (wavelength, self.source, self.target)
-                raise OSError(msg)
+                msg = f"{wavelength:.4f} nm is outside REPTRAN-{self.source}-{self.target} supported wavelength range."
+                er3t.common.logger.error(msg)
+                raise OSError
             elif N_ > 1:
                 bands_ = [bands[i] for i in indices]
                 bands_info_ = '\n'.join(bands_)
-                msg = '\nError [abs_rep]: found more than one band matching the wavelength criteria, please specify one from the following at <band_name>\n%s\nfor example, <band_name=\'%s\'>' % (bands_info_, bands_[0])
-                raise OSError(msg)
+                msg = f"Found more than one band matching the wavelength criteria, please specify one from the following at <band_name>\n{bands_info_}\nfor example, <band_name=\'{bands_[0]}\'>"
+                er3t.common.logger.error(msg)
+                raise OSError
             elif N_ == 1:
                 index_band = indices[0]
                 self.band_name  = bands[index_band]
@@ -357,11 +363,12 @@ class abs_rep:
 
                     else:
 
-                        msg = f'Warning [abs_rep]: <{gas_type}> is required by REPTRAN but is not available in <atm_obj>.'
+                        msg = f"<{gas_type}> is required by REPTRAN but is not available in <atm_obj>."
+                        er3t.common.logger.warning(msg)
                         warnings.warn(msg)
 
         self.gases = gases
-        self.wvl_info = '%.2f nm (REPTRAN [Nwvl=%d|%s])' % (self.wvl, self.wvl_.size, ','.join(self.gases))
+        self.wvl_info = f"{self.wvl:.2f} nm (REPTRAN [Nwvl={self.wvl_.size:d}|{','.join(self.gases)}])"
 
 
 
