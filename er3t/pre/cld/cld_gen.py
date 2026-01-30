@@ -149,7 +149,8 @@ class cld_gen_hem:
 
             if file_correct:
                 if self.verbose:
-                    print('Message [cld_gen_hem]: Loading <%s> ...' % fname)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
                 self.fname      = obj.fname
                 self.verbose    = obj.verbose
                 self.lay        = obj.lay
@@ -180,10 +181,12 @@ class cld_gen_hem:
     def run(self):
 
         if self.verbose:
-            print('Message [cld_gen_hem]: Generating an artificial 3D cloud field filled with hemispherical clouds...')
+            msg = f"Generating an artificial 3D cloud field filled with hemispherical clouds..."
+            er3t.common.logger.info(msg)
 
         if not check_equidistant(self.altitude):
-            msg = '\nWarning [cld_gen_hem]: Only support equidistant altitude (z), as well as equidistant x and y.'
+            msg = f"Only support equidistant altitude (z), as well as equidistant x and y."
+            er3t.common.logger.warning(msg)
             warnings.warn(msg)
 
         dz = self.altitude[1:]-self.altitude[:-1]
@@ -247,7 +250,8 @@ class cld_gen_hem:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_gen_hem]: Saving object into %s ...' % fname)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
             pickle.dump(self, f)
 
     def add_hem_cloud(self, radius, min_dist=0, w2h_ratio=1.0, limit=1):
@@ -423,7 +427,8 @@ class cld_gen_hem:
             new_shape = (self.Nx//dnx, self.Ny//dny, self.Nz//dnz)
 
             if self.verbose:
-                print('Message [cld_gen_hem]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
+                msg = f"Downscaling data from dimension {str(self.lay['temperature']['data'].shape)} to {str(new_shape)} ..."
+                er3t.common.logger.info(msg)
 
             # self.lay
             # =============================================================================
@@ -583,7 +588,8 @@ class cld_gen_hom:
 
             if file_correct:
                 if self.verbose:
-                    print('Message [cld_gen_hom]: Loading <%s> ...' % fname)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
                 self.fname      = obj.fname
                 self.verbose    = obj.verbose
                 self.lay        = obj.lay
@@ -604,10 +610,12 @@ class cld_gen_hom:
     def run(self, cot0, cer0, atm_obj=None):
 
         if self.verbose:
-            print('Message [cld_gen_hom]: Generating an artificial homogeneous 3D cloud field with <COT=%.1f> and <CER=%.1f μm> ...' % (cot0, cer0))
+            msg = f"Generating an artificial homogeneous 3D cloud field with <COT={cot0:.1f}> and <CER={cer0:.1f} μm> ..."
+            er3t.common.logger.info(msg)
 
         if not check_equidistant(self.altitude):
-            msg = 'Warning [cld_gen_hom]: Only support equidistant altitude (z), as well as equidistant x and y.'
+            msg = f"Only support equidistant altitude (z), as well as equidistant x and y."
+            er3t.common.logger.warning(msg)
             warnings.warn(msg)
 
         self.x = np.arange(self.Nx) * self.dx
@@ -657,7 +665,8 @@ class cld_gen_hom:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_gen_hom]: Saving object into %s ...' % fname)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
             pickle.dump(self, f)
 
     def cal_cld_opt_prop(self, cot0=10.0, cer0=10.0, cot_scale=1.0):
@@ -781,8 +790,11 @@ class cld_gen_cop:
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
             if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
+
                 if self.verbose:
-                    print('Message [cld_gen_cop]: Loading <%s> ...' % fname)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
+
                 self.fname  = obj.fname
                 self.extent = obj.extent
                 self.lay    = obj.lay
@@ -836,7 +848,8 @@ class cld_gen_cop:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_gen_cop]: Saving object into %s ...' % fname)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
             pickle.dump(self, f)
 
 
