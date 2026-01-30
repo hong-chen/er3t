@@ -346,8 +346,8 @@ class shd_atm_3d:
         else:
             fname_inp = er3t.rtm.shd.gen_lwc_file(fname.replace('prp', 'lwc'), cld0)
 
-        if len(self.z_extra) > 1200:
-            msg = f"<z_extra> [length={len(self.z_extra)}] is greater than 1200-character-limit."
+        if len(self.z_extra) > 5000:
+            msg = f"<z_extra> [length={len(self.z_extra)}] is greater than 5000-character-limit."
             er3t.common.logger.error(msg)
             raise OSError
 
