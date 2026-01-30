@@ -51,14 +51,16 @@ class shd_sfc_2d:
         self.quiet     = quiet
 
         if atm_obj is None:
-            msg = '\nError [shd_sfc_2d]: Please provide an <atm> object for <atm_obj>.'
-            raise OSError(msg)
+            msg = f"Please provide an <atm> object for <atm_obj>."
+            er3t.common.logger.error(msg)
+            raise OSError
         else:
             self.atm = atm_obj
 
         if sfc_obj is None:
-            msg = '\nError [shd_sfc_2d]: Please provide an <sfc> object for <sfc_obj>.'
-            raise OSError(msg)
+            msg = f"Please provide an <sfc> object for <sfc_obj>."
+            er3t.common.logger.error(msg)
+            raise OSError
         else:
             self.sfc = sfc_obj
 
@@ -130,8 +132,9 @@ class shd_sfc_2d:
 
         else:
 
-            msg = '\nError [shd_sfc_2d]: Cannot determine surface type - currently only supports Lambertian surface and LSRT BRDF surface (e.g., MCD43A1).'
-            raise OSError(msg)
+            msg = f"Cannot determine surface type - currently only supports Lambertian surface, Ocean, RTLSR BRDF surface (e.g., MCD43A1)."
+            er3t.common.logger.error(msg)
+            raise OSError
 
 
     def gen_shd_2d_sfc_file(
@@ -145,7 +148,8 @@ class shd_sfc_2d:
         temp_sfc = self.atm.lay['temperature']['data'][0]
 
         if not self.quiet:
-            print(f"Message [shd_sfc_2d]: Creating 2D SFCFile <{fname}> for SHDOM...")
+            msg = f"Creating 2D surface file <{fname}> for SHDOM..."
+            er3t.common.logger.info(msg)
 
         with open(fname, "w") as f:
 
@@ -182,7 +186,8 @@ class shd_sfc_2d:
         self.nml['SFCFILE'] = {'data':fname}
 
         if not self.quiet:
-            print('Message [shd_sfc_2d]: File <%s> is created.' % fname)
+            msg = f"File <{fname}> is created."
+            er3t.common.logger.info(msg)
 
 
 class shd_sfc_2d_mix_test:
@@ -226,14 +231,16 @@ class shd_sfc_2d_mix_test:
         self.quiet     = quiet
 
         if atm_obj is None:
-            msg = '\nError [shd_sfc_2d]: Please provide an <atm> object for <atm_obj>.'
-            raise OSError(msg)
+            msg = f"Please provide an <atm> object for <atm_obj>."
+            er3t.common.logger.error(msg)
+            raise OSError
         else:
             self.atm = atm_obj
 
         if sfc_obj is None:
-            msg = '\nError [shd_sfc_2d]: Please provide an <sfc> object for <sfc_obj>.'
-            raise OSError(msg)
+            msg = f"Please provide an <sfc> object for <sfc_obj>."
+            er3t.common.logger.error(msg)
+            raise OSError
         else:
             self.sfc = sfc_obj
 
@@ -286,8 +293,9 @@ class shd_sfc_2d_mix_test:
 
         else:
 
-            msg = '\nError [shd_sfc_2d]: Cannot determine surface type - currently only supports Lambertian surface and LSRT BRDF surface (e.g., MCD43A1).'
-            raise OSError(msg)
+            msg = f"Cannot determine surface type - currently only supports Lambertian surface and LSRT BRDF surface (e.g., MCD43A1)."
+            er3t.common.logger.error(msg)
+            raise OSError
 
 
     def gen_shd_2d_sfc_file(
@@ -298,7 +306,8 @@ class shd_sfc_2d_mix_test:
         fname = os.path.abspath(fname)
 
         if not self.quiet:
-            print('Message [shd_sfc_2d]: Creating 2D SFCFile <%s> for SHDOM...' % fname)
+            msg = f"Creating 2D surface file <{fname}> for SHDOM..."
+            er3t.common.logger.info(msg)
 
         with open(fname, 'w') as f:
             f.write('X\n')
@@ -323,7 +332,8 @@ class shd_sfc_2d_mix_test:
         # f.close()
 
         if not self.quiet:
-            print('Message [shd_sfc_2d]: File <%s> is created.' % fname)
+            msg = f"File <{fname}> is created."
+            er3t.common.logger.info(msg)
 
 
 if __name__ == '__main__':

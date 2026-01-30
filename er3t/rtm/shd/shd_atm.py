@@ -2,7 +2,6 @@ import os
 import sys
 import copy
 import struct
-import warnings
 import h5py
 import numpy as np
 from scipy import interpolate
@@ -48,14 +47,16 @@ class shd_atm_1d:
         self.quiet     = quiet
 
         if atm_obj is None:
-            msg = 'Error [shd_atm_1d]: please provide an atm object for <atm_obj>.'
-            raise OSError(msg)
+            msg = f"Please provide an atm object for <atm_obj>."
+            er3t.common.logger.error(msg)
+            raise OSError
         else:
             self.atm = atm_obj
 
         if abs_obj is None:
-            msg = 'Error [shd_atm_1d]: please provide an abs object for <abs_obj>.'
-            raise OSError(msg)
+            msg = f"Please provide an abs object for <abs_obj>."
+            er3t.common.logger.error(msg)
+            raise OSError
         else:
             self.abs = abs_obj
 
@@ -104,7 +105,8 @@ class shd_atm_1d:
             ):
 
         if not self.quiet:
-            print('Message [shd_atm_1d]: Creating 1D CKDFile <%s> for SHDOM...' % fname)
+            msg = f"Creating 1D correlated-k file <{fname}> for SHDOM..."
+            er3t.common.logger.info(msg)
 
         with open(fname, 'w') as f:
 
@@ -191,7 +193,8 @@ class shd_atm_1d:
         self.nml['CKDFILE'] = {'data':fname}
 
         if not self.quiet:
-            print('Message [shd_atm_1d]: File <%s> is created.' % fname)
+            msg = f"File <{fname}> is created."
+            er3t.common.logger.info(msg)
 
 
 
@@ -241,28 +244,32 @@ class shd_atm_3d:
         self.quiet     = quiet
 
         if atm_obj is None:
-            msg = 'Error [shd_atm_3d]: Please provide an atm object for <atm_obj>.'
-            raise OSError(msg)
+            msg = f"Please provide an atm object for <atm_obj>."
+            er3t.common.logger.error(msg)
+            raise OSError
         else:
             self.atm = atm_obj
 
         if abs_obj is None:
-            msg = 'Error [shd_atm_3d]: Please provide an abs object for <abs_obj>.'
-            raise OSError(msg)
+            msg = f"Please provide an abs object for <abs_obj>."
+            er3t.common.logger.error(msg)
+            raise OSError
         else:
             self.abs = abs_obj
 
         if cld_obj is None:
-            msg = 'Error [shd_atm_3d]: Please provide an cld object for <cld_obj>.'
-            raise OSError(msg)
+            msg = f"Please provide an cld object for <cld_obj>."
+            er3t.common.logger.error(msg)
+            raise OSError
         else:
             self.cld = cld_obj
 
         # Go through cloud layers and check whether atm is compatible
         # e.g., whether the sizes of the Altitude array (z) and Thickness array (dz) are the same
         if self.cld.lay['altitude']['data'].size != self.cld.lay['thickness']['data'].size: # layer number
-            msg = 'Error [shd_atm_3d]: Incorrect number of cloud layers (%d) vs layer thicknesses (%d).' % (self.cld.lay['altitude']['data'].size, self.cld.lay['thickness']['data'].size)
-            raise ValueError(msg)
+            msg = f"Incorrect number of cloud layers ({self.cld.lay['altitude']['data'].size:d}) vs layer thicknesses ({self.cld.lay['thickness']['data'].size:d})."
+            er3t.common.logger.error(msg)
+            raise ValueError
 
         self.pre_shd_3d_atm(alt_toa=alt_toa)
 
@@ -340,8 +347,9 @@ class shd_atm_3d:
             fname_inp = er3t.rtm.shd.gen_lwc_file(fname.replace('prp', 'lwc'), cld0)
 
         if len(self.z_extra) > 1200:
-            msg = f"Error [shd_atm_3d]: <z_extra> [length={len(self.z_extra)}] is greater than 1200-character-limit."
-            raise OSError(msg)
+            msg = f"<z_extra> [length={len(self.z_extra)}] is greater than 1200-character-limit."
+            er3t.common.logger.error(msg)
+            raise OSError
 
         wavelength /= 1000.0
 
@@ -361,12 +369,14 @@ class shd_atm_3d:
             prp_exe)
 
         if not self.quiet:
-            print('Message [shd_atm_3d]: Creating 3D PROPFile <%s> for SHDOM...' % fname)
+            msg = f"Creating 3D property file <{fname}> for SHDOM..."
+            er3t.common.logger.info(msg)
 
         os.system(command)
 
         if not self.quiet:
-            print('Message [shd_atm_3d]: File <%s> is created.' % fname)
+            msg = f'File <{fname}> is created.'
+            er3t.common.logger.info(msg)
 
         self.nml['PROPFILE'] = {'data':fname}
 

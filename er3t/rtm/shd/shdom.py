@@ -4,7 +4,6 @@ import copy
 import time
 import psutil
 import datetime
-import warnings
 from collections import OrderedDict
 import multiprocessing as mp
 import numpy as np
@@ -107,10 +106,12 @@ class shdom_ng:
         if not os.path.exists(fdir):
             os.makedirs(fdir)
             if not quiet:
-                print(f"Message [shdom_ng]: Directory <{fdir}> is created.")
+                msg = f"Directory <{fdir}> is created."
+                er3t.common.logger.info(msg)
         else:
             if verbose:
-                print(f"Message [shdom_ng]: Directory <{fdir}> already exists.")
+                msg = f"Directory <{fdir}> already exists."
+                er3t.common.logger.info(msg)
 
         self.Ng      = Ng
         self.Ng_     = 1 # currently SHDOM integrates gs within its calculation
@@ -144,8 +145,9 @@ class shdom_ng:
         elif solver in ['ipa', 'independent pixel approximation']:
             self.solver = 'IPA'
         else:
-            msg = f"Error [shdom_ng]: Cannot understand <solver={self.solver}>."
-            raise OSError(msg)
+            msg = f"Cannot understand <solver={self.solver}>."
+            er3t.common.logger.error(msg)
+            raise OSError
 
         target  = target.lower()
         if target in ['f', 'flux', 'irradiance']:
@@ -157,8 +159,9 @@ class shdom_ng:
         elif target in ['radiance', 'rad']:
             self.target = 'radiance'
         else:
-            msg = f"Error [shdom_ng]: Cannot understand <target={self.target}>."
-            raise OSError(msg)
+            msg = f"Cannot understand <target={self.target}>."
+            er3t.common.logger.error(msg)
+            raise OSError
 
         # params
         #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -214,8 +217,9 @@ class shdom_ng:
             else:
                 self.Ncpu = Ncpu
         else:
-            msg = f"Error [shdom_ng]: Cannot understand <Ncpu={Ncpu}>."
-            raise OSError(msg)
+            msg = f"Cannot understand <Ncpu={Ncpu}>."
+            er3t.common.logger.error(msg)
+            raise OSError
 
         if (self.Nx == 1) and (self.Ny == 1):
             self.Ncpu = 1
@@ -236,7 +240,8 @@ class shdom_ng:
             self.fnames_sav.append(f"{self.fdir}/shdom-sav_g-{ig:03d}.sHdOmNG-sav")
 
         if not self.quiet and not self.overwrite:
-            print("Message [shdom_ng]: Reading mode ...")
+            msg = f"Reading mode ..."
+            er3t.common.logger.info(msg)
 
         # initialize namelist (list contains Ng Python dictionaries)
         self.nml = [{} for ig in range(self.Ng_)]
@@ -494,8 +499,9 @@ class shdom_ng:
 
             else:
 
-                msg = f"Error [shdom_ng]: Does NOT support <target={self.target}>."
-                raise OSError(msg)
+                msg = f"Cannot understand <target={self.target}>."
+                er3t.common.logger.error(msg)
+                raise OSError
 
             self.nml[ig]['OUTFILES(1)'] = self.fnames_out[ig]
             self.nml[ig]['OutFileNC'] = "NONE"
@@ -567,7 +573,8 @@ class shdom_ng:
             shd_inp_file(self.fnames_inp[ig], self.nml[ig], comment=comment)
 
         if not self.quiet:
-            print(f"Message [shdom_ng]: Created SHDOM input files under <{self.fdir}>.")
+            msg = f"SHDOM input files under <{self.fdir}> are created."
+            er3t.common.logger.info(msg)
 
 
     def gen_shd_out(self):
@@ -580,7 +587,8 @@ class shdom_ng:
         fnames_out = self.fnames_out
 
         if not self.quiet:
-            print(f"Message [shdom_ng]: Running SHDOM to get output files under <{self.fdir}> ...")
+            msg = f"Running SHDOM to get output files under <{self.fdir}> ..."
+            er3t.common.logger.info(msg)
 
         if not self.quiet:
             self.print_info()

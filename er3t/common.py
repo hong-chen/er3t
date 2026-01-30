@@ -71,7 +71,6 @@ structlog.configure(
         structlog.processors.CallsiteParameterAdder(
             parameters=[
                 structlog.processors.CallsiteParameter.FILENAME,
-                structlog.processors.CallsiteParameter.MODULE,
                 structlog.processors.CallsiteParameter.FUNC_NAME,
                 structlog.processors.CallsiteParameter.LINENO,
             ]
@@ -153,8 +152,6 @@ structlog.configure(
         )
 
     ],
-
-    # logger_factory=structlog.stdlib.LoggerFactory(),
     logger_factory=structlog.PrintLoggerFactory(),
     wrapper_class=structlog.stdlib.BoundLogger,
     )
