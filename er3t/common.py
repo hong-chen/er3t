@@ -99,8 +99,10 @@ structlog.configure(
                     "level",
                     structlog.dev.LogLevelColumnFormatter(
                         level_styles={
-                            'info' : colorama.Style.BRIGHT+colorama.Fore.LIGHTWHITE_EX,
-                            'error': colorama.Style.BRIGHT+colorama.Fore.RED,
+                            'info' : colorama.Fore.GREEN,
+                            'warn' : colorama.Fore.RED,
+                            'error': colorama.Back.RED,
+                            'debug': colorama.Fore.CYAN,
                             },
                         reset_style=colorama.Style.RESET_ALL,
                         ),
