@@ -62,7 +62,7 @@ params = {
 
 structlog.configure(
     processors=[
-        structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S.%f", key="timestamp", utc=False),
+        structlog.processors.TimeStamper(fmt="%H:%M:%S", key="timestamp", utc=False),
 
         # Log level (colored)
         structlog.stdlib.add_log_level,
@@ -88,7 +88,7 @@ structlog.configure(
                     "timestamp",
                     structlog.dev.KeyValueColumnFormatter(
                         key_style=None,
-                        value_style=colorama.Style.BRIGHT+colorama.Fore.LIGHTWHITE_EX,
+                        value_style=colorama.Style.RESET_ALL,
                         reset_style=colorama.Style.RESET_ALL,
                         value_repr=str,
                     ),
@@ -100,8 +100,8 @@ structlog.configure(
                     structlog.dev.LogLevelColumnFormatter(
                         level_styles={
                             'info' : colorama.Fore.GREEN,
-                            'warn' : colorama.Fore.RED,
-                            'error': colorama.Back.RED,
+                            'warn' : colorama.Fore.WHITE+colorama.Back.YELLOW,
+                            'error': colorama.Fore.WHITE+colorama.Back.RED,
                             'debug': colorama.Fore.CYAN,
                             },
                         reset_style=colorama.Style.RESET_ALL,
@@ -113,39 +113,49 @@ structlog.configure(
                     "event",
                     structlog.dev.KeyValueColumnFormatter(
                         key_style=None,
-                        value_style=colorama.Style.RESET_ALL,
+                        value_style=colorama.Fore.LIGHTWHITE_EX,
                         reset_style=colorama.Style.RESET_ALL,
                         value_repr=str,
                     ),
                 ),
 
-                # structlog.dev.Column(
-                #     "func_name",
-                #     structlog.dev.KeyValueColumnFormatter(
-                #         key_style=colorama.Fore.CYAN,
-                #         value_style=colorama.Fore.GREEN,
-                #         reset_style=colorama.Style.RESET_ALL,
-                #         value_repr=str,
-                #     ),
-                # ),
+                structlog.dev.Column(
+                    "filename",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=colorama.Fore.BLACK,
+                        value_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Fore.BLACK,
+                        value_repr=str,
+                    ),
+                ),
 
-                # structlog.dev.Column(
-                #     "lineno",
-                #     structlog.dev.KeyValueColumnFormatter(
-                #         key_style=colorama.Fore.CYAN,
-                #         value_style=colorama.Fore.GREEN,
-                #         reset_style=colorama.Style.RESET_ALL,
-                #         value_repr=str,
-                #     ),
-                # ),
+                structlog.dev.Column(
+                    "func_name",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=colorama.Fore.BLACK,
+                        value_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Fore.BLACK,
+                        value_repr=str,
+                    ),
+                ),
+
+                structlog.dev.Column(
+                    "lineno",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=colorama.Fore.BLACK,
+                        value_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Fore.BLACK,
+                        value_repr=str,
+                    ),
+                ),
 
                 # Default formatter for all keys not explicitly mentioned. The key is
                 # cyan, the value is green.
                 structlog.dev.Column(
                     "",
                     structlog.dev.KeyValueColumnFormatter(
-                        key_style=colorama.Fore.CYAN,
-                        value_style=colorama.Fore.GREEN,
+                        key_style=colorama.Style.RESET_ALL,
+                        value_style=colorama.Style.RESET_ALL,
                         reset_style=colorama.Style.RESET_ALL,
                         value_repr=str,
                     ),
