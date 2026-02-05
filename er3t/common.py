@@ -126,21 +126,24 @@ structlog.configure(
                         value_style=colorama.Fore.BLACK,
                         reset_style=colorama.Fore.BLACK,
                         value_repr=str,
-                    ),
-                ),
-
-                structlog.dev.Column(
-                    "func_name",
-                    structlog.dev.KeyValueColumnFormatter(
-                        key_style=colorama.Fore.BLACK,
-                        value_style=colorama.Fore.BLACK,
-                        reset_style=colorama.Fore.BLACK,
-                        value_repr=str,
+                        prefix='\n                ',
+                        width=14
                     ),
                 ),
 
                 structlog.dev.Column(
                     "lineno",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=colorama.Fore.BLACK,
+                        value_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Fore.BLACK,
+                        value_repr=str,
+                        width=6
+                    ),
+                ),
+
+                structlog.dev.Column(
+                    "func_name",
                     structlog.dev.KeyValueColumnFormatter(
                         key_style=colorama.Fore.BLACK,
                         value_style=colorama.Fore.BLACK,
