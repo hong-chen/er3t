@@ -126,8 +126,8 @@ structlog.configure(
                         value_style=colorama.Fore.BLACK,
                         reset_style=colorama.Fore.BLACK,
                         value_repr=str,
-                        prefix='\n                ',
-                        width=14
+                        prefix='\n                 ',
+                        width=12
                     ),
                 ),
 
@@ -138,7 +138,7 @@ structlog.configure(
                         value_style=colorama.Fore.BLACK,
                         reset_style=colorama.Fore.BLACK,
                         value_repr=str,
-                        width=6
+                        width=5
                     ),
                 ),
 
