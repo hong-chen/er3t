@@ -74,7 +74,7 @@ class cld_gen_hem:
 
     """
 
-    ID = 'Hemispherical Cloud 3D'
+    ID = 'Hemispherical Water Cloud 3D'
 
     def __init__(
             self,
@@ -143,7 +143,7 @@ class cld_gen_hem:
             obj = pickle.load(f)
 
             try:
-                file_correct = (obj.ID == 'Hemispherical Cloud 3D')
+                file_correct = (obj.ID == 'Hemispherical Water Cloud 3D')
             except:
                 file_correct = False
 
@@ -347,7 +347,7 @@ class cld_gen_hem:
         data = self.space_3d.copy()
         data[data>0] = cer0
         data[data<=1.0] = 1.0
-        data[data>=25.0] = 25.0
+        # data[data>=25.0] = 25.0
         self.lay['cer'] = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
 
         # extinction coefficients (3D)
@@ -516,7 +516,7 @@ class cld_gen_hom:
 
     """
 
-    ID = 'Homogeneous Cloud 3D'
+    ID = 'Homogeneous Water Cloud 3D'
 
     def __init__(
             self,
@@ -582,7 +582,7 @@ class cld_gen_hom:
             obj = pickle.load(f)
 
             try:
-                file_correct = (obj.ID == 'Homogeneous Cloud 3D')
+                file_correct = (obj.ID == 'Homogeneous Water Cloud 3D')
             except:
                 file_correct = False
 
@@ -744,7 +744,7 @@ class cld_gen_cop:
     """
 
 
-    ID = 'Cloud Product 3D (Satellite)'
+    ID = 'Water Cloud Product 3D (Satellite)'
 
 
     def __init__(self,              \
@@ -961,7 +961,7 @@ class cld_gen_cop:
         cer_3d[ext_3d<=0.0] = 0.0
 
         cer_3d[cer_3d<=1.0] = 1.0
-        cer_3d[cer_3d>=25.0] = 25.0
+        # cer_3d[cer_3d>=25.0] = 25.0
 
         self.lay['cer'] = {'data':cer_3d, 'name':'Cloud Effective radius', 'units':'micron'}
         #╰──────────────────────────────────────────────────────────────╯#

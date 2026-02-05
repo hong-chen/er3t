@@ -14,7 +14,8 @@ import er3t.common
 __all__ = [
         'cal_shd_saa',
         'cal_shd_vaa',
-        'gen_mie_file',
+        'gen_mie_file_wc',
+        'gen_mie_file_ic',
         'gen_ext_file',
         'gen_lwc_file',
         'gen_mie_file_from_nc',
@@ -72,7 +73,7 @@ def cal_shd_vaa(normal_azimuth_angle):
     return shd_vaa
 
 
-def gen_mie_file(
+def gen_mie_file_wc(
         wavelength_s,
         wavelength_e,
         fname=None,
@@ -86,6 +87,50 @@ def gen_mie_file(
         ref_e=25.0,
         ref_tag='F', # even-spaced r_e
         ref_max=50.0,
+        put_exe='put',
+        mie_exe='make_mie_table',
+        overwrite=False,
+        ):
+
+    if fname is None:
+
+        fdir = f"{er3t.common.fdir_data_tmp}/shdom"
+        if not os.path.exists(fdir):
+            os.makedirs(fdir)
+
+        fname = f"{fdir}/shdom-mie_{par_tag}_{pol_tag}_{wavelength_s:.4f}-{wavelength_e:.4f}.txt"
+
+    if (not os.path.exists(fname)) or overwrite:
+
+        wavelength_s /= 1000.0 #convert to micron
+        wavelength_e /= 1000.0 #convert to micron
+
+        command = f'{put_exe}\
+ "{pol_tag}" "{wavelength_s:15.8e} {wavelength_e:15.8e}" "{par_tag}" "{avg_tag}"\
+ "{dist_tag}" "{alpha_tag}"\
+ "{Nref} {ref_s:.2f} {ref_e:.2f}"\
+ "{ref_tag}" "{ref_max:.2f}"\
+ "{fname}"\
+ | {mie_exe}'
+
+        os.system(command)
+
+    return fname
+
+def gen_mie_file_ic(
+        wavelength_s,
+        wavelength_e,
+        fname=None,
+        pol_tag='F', # unpolarized
+        par_tag='I', # water
+        avg_tag='C', # central wavelength
+        dist_tag='G', # gamma distribution
+        alpha_tag='7 i',
+        Nref=2,
+        ref_s=100.0,
+        ref_e=150.0,
+        ref_tag='F', # even-spaced r_e
+        ref_max=200.0,
         put_exe='put',
         mie_exe='make_mie_table',
         overwrite=False,

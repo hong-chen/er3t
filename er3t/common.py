@@ -71,8 +71,8 @@ structlog.configure(
         structlog.processors.CallsiteParameterAdder(
             parameters=[
                 structlog.processors.CallsiteParameter.FILENAME,
-                structlog.processors.CallsiteParameter.FUNC_NAME,
                 structlog.processors.CallsiteParameter.LINENO,
+                structlog.processors.CallsiteParameter.FUNC_NAME,
             ]
         ),
 
@@ -116,6 +116,7 @@ structlog.configure(
                         value_style=colorama.Fore.LIGHTWHITE_EX,
                         reset_style=colorama.Style.RESET_ALL,
                         value_repr=str,
+                        postfix='\n'
                     ),
                 ),
 
@@ -124,9 +125,9 @@ structlog.configure(
                     structlog.dev.KeyValueColumnFormatter(
                         key_style=colorama.Fore.BLACK,
                         value_style=colorama.Fore.BLACK,
-                        reset_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Style.RESET_ALL,
                         value_repr=str,
-                        prefix='\n                 ',
+                        prefix='                ',
                         width=12
                     ),
                 ),
@@ -136,7 +137,7 @@ structlog.configure(
                     structlog.dev.KeyValueColumnFormatter(
                         key_style=colorama.Fore.BLACK,
                         value_style=colorama.Fore.BLACK,
-                        reset_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Style.RESET_ALL,
                         value_repr=str,
                         width=5
                     ),
@@ -147,13 +148,12 @@ structlog.configure(
                     structlog.dev.KeyValueColumnFormatter(
                         key_style=colorama.Fore.BLACK,
                         value_style=colorama.Fore.BLACK,
-                        reset_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Style.RESET_ALL,
                         value_repr=str,
+                        postfix=colorama.Style.RESET_ALL,
                     ),
                 ),
 
-                # Default formatter for all keys not explicitly mentioned. The key is
-                # cyan, the value is green.
                 structlog.dev.Column(
                     "",
                     structlog.dev.KeyValueColumnFormatter(
