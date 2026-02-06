@@ -1235,8 +1235,8 @@ if __name__ == '__main__':
 
         # test_00_solar()
 
-        # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
-        test_100_rad_one(556.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
+        test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
+        # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_flux_one(556.0, 10.0, 12.0, 100, plot=True, overwrite=True)
 
