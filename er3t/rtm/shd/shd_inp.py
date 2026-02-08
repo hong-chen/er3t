@@ -66,7 +66,7 @@ def load_shd_inp_nml():
     '''
 
     shdom_nml_init = OrderedDict([
-             ('_header', '$SHDOMINPUT'),
+             ('_header', '&SHDOMINPUT'),
 
              ('RUNNAME', 'shdom-run_%s' % datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')),
              ('PROPFILE','shdom-prp.txt'),
@@ -195,7 +195,7 @@ def load_shd_inp_nml():
              ('CELL_TO_POINT_RATIO', 1.5),
              ('VERBOSE', 4),
 
-             ('_footer', '$END'),
+             ('_footer', '/'),
             ])
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -339,7 +339,7 @@ def shd_inp_nml(input_dict, verbose=True, comment=False):
     return shdom_nml_all, shdom_nml_all_info, shdom_nml_input
 
 
-def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
+def shd_inp_file(input_fname, input_dict, indent='  ', verbose=True, comment=False):
 
     shdom_nml_all, shdom_nml_all_info, shdom_nml_input \
         = shd_inp_nml(input_dict, verbose=verbose, comment=comment)
@@ -347,7 +347,7 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
     input_fname = os.path.abspath(input_fname)
     fdir_inp    = os.path.dirname(input_fname)
     if not os.path.exists(fdir_inp):
-        os.system('mkdir -p %s' % fdir_inp)
+        os.makedirs(fdir_inp)
 
     # creating input file for SHDOM
     f = open(input_fname, 'w')
@@ -359,19 +359,19 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
 
             var = shdom_nml_all[nml_key][var_key]
 
+            # bypass _header and _footer
             if (var_key[0] != '_'):
 
                 if isinstance(var, str):
 
-                    if '*' in var or (var_key in ['DELTAM', 'WAVENO', 'OUTPARMS(1,1)', 'ACCELFLAG']):
-                        f.write(' %-15s = %s\n' % (var_key, var))
+                    if ('*' in var) or (var_key in ['DELTAM', 'WAVENO', 'OUTPARMS(1,1)', 'ACCELFLAG']):
+                        f.write(f"{indent}{var_key:<15s} = {var}\n")
                     else:
-                        f.write(' %-15s = \'%s\'\n' % (var_key, var))
+                        f.write(f"{indent}{var_key:<15s} = '{var}'\n")
 
                 elif isinstance(var, (int, float, np.int32, np.int64, np.float32, np.float64)):
 
-                    f.write(' %-15s = %-.16g\n' % (var_key, var))
-
+                    f.write(f"{indent}{var_key:<15s} = {var:<.16g}\n")
 
                 elif isinstance(var, np.ndarray):
 
@@ -380,17 +380,18 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
                         var_str = nice_array_str(var)
 
                         if len(var_str) <= 80:
-                            f.write(' %-15s = %s\n' % (var_key, var_str))
+                            f.write(f"{indent}{var_key:<15s} = {var_str:<s}\n")
                         else:
-                            f.write(' %-15s =\n' % var_key)
-                            f.write('%s\n' % var_str)
+                            f.write(f"{indent}{var_key:<15s} =\n")
+                            f.write(f"{indent}{indent}{var_str:<s}\n")
 
                     elif var.size == 1:
-                        f.write(' %-15s = %-g\n' % (var_key, var))
+                        f.write(f"{indent}{var_key:<15s} = {var:<g}\n")
 
                 else:
-                    msg = 'Error [shd_inp_file]: only types of int, float, str, ndarray are supported (do not support <%s> as %s).' % (var_key, type(var))
-                    raise ValueError(msg)
+                    msg = f"Only types of int, float, str, ndarray are supported (do not support <{var_key}> as {var})."
+                    er3t.common.logger.fatal(msg)
+                    raise ValueError
 
                 if comment:
                     var_detail = shdom_nml_all_info[var_key]
@@ -405,7 +406,7 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
                     f.write('\n')
 
             else:
-                f.write(' %s\n' % (var))
+                f.write(f"{var:<s}\n")
 
     f.close()
 

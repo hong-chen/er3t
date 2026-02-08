@@ -280,7 +280,7 @@ class shdom_ng:
 
         for ig in range(self.Ng_):
 
-            self.nml[ig]['_header'] = "$SHDOMINPUT"
+            self.nml[ig]['_header'] = "&SHDOMINPUT"
             self.nml[ig]['RUNNAME'] = f"shdom-run_g-{ig:03d}"
             self.nml[ig]['PROPFILE'] = self.fname_prp
             self.nml[ig]['SFCFILE']  = self.fname_sfc
@@ -551,7 +551,7 @@ class shdom_ng:
                 self.nml[ig]['ADAPT_GRID_FACTOR'] = 2.2
                 self.nml[ig]['CELL_TO_POINT_RATIO'] = 1.5
             self.nml[ig]['NUM_SH_TERM_FACTOR'] = 0.6
-            self.nml[ig]['_footer'] = "$END"
+            self.nml[ig]['_footer'] = "/"
 
 
     def gen_shd_inp(self, comment=False):
