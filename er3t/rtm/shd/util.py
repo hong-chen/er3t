@@ -19,6 +19,7 @@ __all__ = [
         'gen_ext_file',
         'gen_lwc_file',
         'gen_mie_file_from_nc',
+        'gen_ice_file_from_nc',
         'gen_sen_file',
         ]
 
@@ -259,7 +260,10 @@ def gen_mie_file_from_nc(
         overwrite=True,
         ):
 
-    from netCDF4 import Dataset
+    if er3t.common.has_netcdf4:
+        from netCDF4 import Dataset
+    else:
+        er3t.common.logger.error('Need netCDF4 to proceed.')
 
     if fname is None:
 
@@ -319,6 +323,146 @@ def gen_mie_file_from_nc(
     return fname
 
 
+def gen_ice_file_from_nc(
+        wavelength_s,
+        wavelength_e,
+        fname=None,
+        fname_nc=f"/Users/hchen/Work/soft/libradtran/v2.0.5/data/ic/baum/ic.sol.baum.cdf",
+        pol_tag='F', # unpolarized
+        par_tag='I', # water
+        overwrite=True,
+        ):
+
+    if er3t.common.has_netcdf4:
+        from netCDF4 import Dataset
+    else:
+        er3t.common.logger.error('Need netCDF4 to proceed.')
+
+    if fname is None:
+
+        fdir = f"{er3t.common.fdir_data_tmp}/shdom"
+        if not os.path.exists(fdir):
+            os.makedirs(fdir)
+
+        fname = f"{fdir}/shdom-ice-nc_{par_tag}_{pol_tag}_{wavelength_s:.4f}-{wavelength_e:.4f}.txt"
+
+    # if (not os.path.exists(fname)) or overwrite:
+    if True:
+
+        wavelength_s /= 1000.0 #convert to micron
+        wavelength_e /= 1000.0 #convert to micron
+        wvl = (wavelength_s+wavelength_e)/2.0
+
+        # read data from nc file
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        f0 = Dataset(fname_nc, 'r')
+        param_alpha = 0.0
+        size_distr = 'L'
+        parameterization = f0.getncattr('parameterization')
+
+        wavelen = f0.variables['wavelen'][:]
+        index_wvl = np.argmin(np.abs(wavelen-wvl))
+
+        reff = f0.variables['reff'][:]
+        refre = f0.variables['refre'][:][index_wvl]
+        refim = f0.variables['refim'][:][index_wvl]
+        rho = f0.variables['rho'][:]
+
+        ext = f0.variables['ext'][:][index_wvl, :]
+        ssa = f0.variables['ssa'][:][index_wvl, :]
+
+        pmom = f0.variables['pmom'][:][index_wvl, :, 0, :]
+        ang = f0.variables['theta'][:][index_wvl, :, 0, :]
+        Nang = f0.variables['ntheta'][:][index_wvl, :, 0]
+        pha = f0.variables['phase'][:][index_wvl, :, 0, :]
+
+        f0.close()
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+        # figure
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        plot = False
+        if plot:
+            import matplotlib as mpl
+            import matplotlib.pyplot as plt
+            import matplotlib.path as mpl_path
+            import matplotlib.image as mpl_img
+            import matplotlib.patches as mpatches
+            import matplotlib.gridspec as gridspec
+            from matplotlib import rcParams, ticker
+            from matplotlib.ticker import FixedLocator
+            from mpl_toolkits.axes_grid1 import make_axes_locatable
+            # import cartopy.crs as ccrs
+            # mpl.use('Agg')
+            plt.close('all')
+            fig = plt.figure(figsize=(8, 6))
+            # fig.suptitle('Figure')
+            # plot1
+            #╭──────────────────────────────────────────────────────────────╮#
+            ax1 = fig.add_subplot(111)
+            for i, reff0 in enumerate(reff[:1]):
+                Nang0 = Nang[i]
+                ang0 = ang[i, :Nang0]
+                pha0 = pha[i, :Nang0]
+
+                Nmom0 = 2001
+                pmom0 = er3t.pre.pha.phase2pmom(ang0, pha0, Nleg=Nmom0, Ngauss=200)
+                pha1 = er3t.pre.pha.pmom2phase(pmom0, np.cos(np.deg2rad(ang0)))
+
+                ax1.plot(ang0, pha0, lw=2.0, color='k')
+                ax1.plot(ang0, pha1, lw=1.0, color='r')
+            # ax1.set_xlim((0, 1))
+            # ax1.set_ylim((0, 1))
+            ax1.set_yscale('log')
+            # ax1.set_xlabel('X')
+            # ax1.set_ylabel('Y')
+            # ax1.set_title('Plot1')
+            # ax1.xaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+            # ax1.yaxis.set_major_locator(FixedLocator(np.arange(0, 100, 5)))
+            #╰──────────────────────────────────────────────────────────────╯#
+            # save figure
+            #╭──────────────────────────────────────────────────────────────╮#
+            fig.subplots_adjust(hspace=0.35, wspace=0.35)
+            _metadata_ = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function': sys._getframe().f_code.co_name, 'Date': datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+            fname_fig = f"{_metadata_['Function']}.png"
+            plt.savefig(fname_fig, bbox_inches='tight', metadata=_metadata_, transparent=False)
+            #╰──────────────────────────────────────────────────────────────╯#
+            plt.show()
+            sys.exit()
+            plt.close(fig)
+            plt.clf()
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+        with open(fname, 'w') as f:
+            f.write(f"! {parameterization.title()} scattering table vs. effective radius (LWC=1 g/m^3)\n")
+            f.write(f"    {wavelength_s:.3f}    {wavelength_e:.3f}  wavelength range (micron)\n")
+            f.write(f" {rho.mean():.3f}  I   particle density (g/cm^3) and type (Water, Ice, Aerosol)\n")
+            f.write(f"  {refre:.6e} {refim:.6e}  particle index of refraction\n")
+            # f.write(f"{param_alpha:.6f} {size_distr.replace('.', '')} shape parameter\n")
+            f.write(f"7.00000 gamma size distribution shape parameter\n")
+            f.write(f"  {reff.size:d}    {reff[0]:.3f}   {reff[-1]:.3f}  number, starting, ending effective radius\n")
+
+            for i, reff0 in enumerate(reff):
+
+                pmom0 = pmom[i, :]
+                logic = np.logical_not(np.isnan(pmom0)) & np.logical_not(np.isinf(pmom0))
+                Nmom0 = logic.sum()
+
+                # Nang0 = Nang[i]
+                # ang0 = ang[i, :Nang0]
+                # pha0 = pha[i, :Nang0]
+
+                # Nmom0 = 2001
+                # pmom0 = er3t.pre.pha.phase2pmom(ang0, pha0, Nleg=Nmom0, Ngauss=200)
+
+                pmom0_str = er3t.util.nice_array_str(pmom0[:Nmom0], numPerLine=200, useSci=True)
+
+                f.write('  %7.4f    %.6e  %.12f   %4d  Reff  Ext  Alb  Nrank\n' % (reff0, ext[i], ssa[i], Nmom0-1))
+                f.write('%s' % pmom0_str)
+
+    return fname
+
+
 def gen_sen_file(
         fname,
         data,
@@ -364,20 +508,7 @@ def gen_sen_file(
 
 if __name__ == '__main__':
 
-    fname = gen_mie_file_from_nc(550.0, 550.0)
+    fname = gen_ice_file_from_nc(550.0, 550.0, par_tag='I', fname_nc='/Users/hchen/Work/soft/libradtran/v2.0.5/data/ic/baum/ic.sol.baum.cdf')
     print(fname)
 
-    # date = datetime.datetime(2019, 9, 2)
-    # sza = 34.93346840064262
-    # saa = -144.90807471473198
-    # vza = 14.44008093613803
-    # vaa = -99.99851773953723
-
-
-    # print('SOLARFLUX: %.6f' % er3t.util.cal_sol_fac(date))
-    # print('SOLARMU: %.6f' % np.cos(np.deg2rad(sza)))
-    # print('SOLARAZ: %.6f' % cal_shd_saa(saa))
-
-    # print('SENSORMU: %.6f' % np.cos(np.deg2rad(vza)))
-    # print('SENSORAZ: %.6f' % cal_shd_vaa(vaa))
     pass

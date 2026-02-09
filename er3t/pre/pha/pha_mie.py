@@ -6,13 +6,18 @@ from io import StringIO
 import numpy as np
 import warnings
 from scipy import interpolate
+from scipy.special import lpmn, eval_legendre
+from numpy.polynomial.legendre import leggauss
+from scipy.integrate import simpson
+from scipy.interpolate import interp1d
+
 
 import er3t.common
 import er3t.util
 
 
 
-__all__ = ['pha_mie_wc', 'pha_mie_wc_shd', 'legendre2phase']
+__all__ = ['pha_mie_wc', 'pha_mie_wc_shd', 'legendre2phase', 'phase2pmom', 'pmom2phase']
 
 
 
@@ -415,6 +420,37 @@ class pha_mie_wc_shd:
         self.data = data
 
 
+def phase2pmom(theta, phase, Nleg=2000, Ngauss=200):
+
+    mu = np.cos(np.deg2rad(theta))
+    # index_sort = np.argsort(mu)
+    # mu = mu[index_sort]
+    # phase = phase[index_sort]
+
+    mu, index_uniq = np.unique(mu, return_index=True)
+    phase = phase[index_uniq]
+
+    current_integral = 0.5 * simpson(y=phase, x=mu)
+    phase = phase / current_integral
+
+    pmom = np.zeros(Nleg)
+    for ileg in range(Nleg):
+        # Pl = eval_legendre(ileg, mu)
+        # pmom[ileg] = 0.5 * np.trapezoid(phase * Pl, mu)
+        pl = eval_legendre(ileg, mu)
+        pmom[ileg] = 0.5 * simpson(y=phase * pl, x=mu)
+
+    # f_interp = interp1d(mu, phase, kind='cubic', fill_value="extrapolate")
+
+    # mu, w = leggauss(Ngauss)
+    # Pmu = f_interp(mu)
+
+    # pmom = np.zeros(Nleg)
+    # for ileg in range(Nleg):
+    #     Pl = eval_legendre(ileg, mu)
+    #     pmom[ileg] = 0.5 * np.sum(w * Pmu * Pl)
+
+    return pmom
 
 
 def legendre2phase(
@@ -445,13 +481,13 @@ def legendre2phase(
     if lrt:
         phase = np.zeros_like(mu)
         for i, mu0 in enumerate(mu):
-            phase[i] = mom2phase(poly_coef, mu0)
+            phase[i] = pmom2phase(poly_coef, mu0)
     else:
         phase = np.polynomial.legendre.legval(mu, poly_coef)
 
     return phase
 
-def mom2phase(polys, mu):
+def pmom2phase_old(polys, mu):
 
     """
     Purpose: calculate phase function from phase function moments.
@@ -484,7 +520,18 @@ def mom2phase(polys, mu):
 
     return pha
 
-def mom2phaseint(polys, mu):
+def pmom2phase(pmom, mu_target):
+    """
+    Reconstructs the phase function from Legendre coefficients.
+    P(mu) = Sum [ (2l+1) * omega_l * Pl(mu) ]
+    """
+    phase_rec = np.zeros_like(mu_target)
+    for l, omega_l in enumerate(pmom):
+        pl = eval_legendre(l, mu_target)
+        phase_rec += (2 * l + 1) * omega_l * pl
+    return phase_rec
+
+def pmom2phaseint(polys, mu):
 
     """
     Purpose: Calculate integral of the phase function from -1 to x from the phase function moments

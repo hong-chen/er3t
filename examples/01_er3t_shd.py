@@ -1130,7 +1130,7 @@ def example_06_rad_atm1d_cloud_over_lambertian(
         wavelength=555.0,
         cot=1000.0,
         cer=100.0,
-        sza=65.0,
+        sza=60.0,
         saa=0.0,
         albedo=0.6,
         solver='IPA',
@@ -1213,6 +1213,7 @@ def example_06_rad_atm1d_cloud_over_lambertian(
             atm_obj=atm0,
             overwrite=overwrite
             )
+    cld0.ID = 'ice cloud'
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -1336,6 +1337,8 @@ def example_06_rad_atm1d_cloud_over_lambertian(
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
         cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='gist_ncar')
+        # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='jet')
+        # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='gist_ncar', vmin=0.1, vmax=0.6)
         # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='jet')
         cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.04, location='bottom')
 
