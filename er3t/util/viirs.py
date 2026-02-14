@@ -829,7 +829,7 @@ class viirs_cldprop_l2:
 
         # Retrieve 1. ctp, 2. cth, 3. cot, 4. cer, 5. cwp, and select regional extent
         ctp           = get_data_nc(ctp0, replace_fill_value=None)[logic_extent]
-        cth           = get_data_nc(cth0, replace_fill_value=None)[logic_extent]
+        cth           = get_data_nc(cth0, replace_fill_value=None)[logic_extent].astype('float64')
 
         cot0_data     = get_data_nc(cot0)[logic_extent]
         cer0_data     = get_data_nc(cer0)[logic_extent]
@@ -852,7 +852,7 @@ class viirs_cldprop_l2:
         cer_uct = cer_uct0_data.copy()
         cwp_uct = cwp_uct0_data.copy()
 
-        pcl = np.zeros_like(cot, dtype=np.uint8)
+        pcl = np.zeros_like(cot, dtype=np.uint8) # pcl will already be subselected to logic_extent shape
 
         # Mark negative (invalid) retrievals with clear-sky values
         logic_invalid          = (cot0_data < 0.0) | (cer0_data < 0.0) | (cwp0_data < 0.0) | (ctp == 0)
@@ -873,7 +873,16 @@ class viirs_cldprop_l2:
         # When the standard retrieval identifies a pixel as being clear-sky AND the corresponding PCL retrieval says it is cloudy,
         # we give credence to the PCL retrieval and mark the pixel with PCL-retrieved values
 
-        logic_pcl      = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & \
+        # IMPORTANT NOTE: July 30, 2025 Update
+        # We are changing the PCL logic to use `<=` for the standard retrieval checks instead of `==`
+        # as part of the logic. This is because there are cases where the standard retrieval fails
+        # but the PCL retrieval remains valid. In effect, this overrides the `logic_invalid` above
+        # but improves overall cloud retrievals and reduces high COT bias by including cloud edges
+        # and sub-pixel cloud retrievals. Especially liquid clouds over ocean.
+        # However, more checks are required.
+        # Refer Platnick et al. (2016): https://doi.org/10.1109/TGRS.2016.2610522
+
+        logic_pcl      = ((cot0_data <= 0.0) | (cer0_data <= 0.0) | (cwp0_data <= 0.0)) & \
                          ((cot1_data > 0.0)  & (cer1_data > 0.0)  & (cwp1_data > 0.0))
 
         pcl[logic_pcl] = 1
@@ -883,8 +892,6 @@ class viirs_cldprop_l2:
 
         f.close()
         # ------------------------------------------------------------------------------------ #
-
-        pcl = pcl[logic_extent]
 
         # save the data
         if hasattr(self, 'data'):

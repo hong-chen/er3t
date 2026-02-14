@@ -160,7 +160,6 @@ def get_command_earthdata(
 
     primary_command = '%s %s' % (primary_tool, options[primary_tool])
     backup_command  = '%s %s' % (backup_tool,  options[backup_tool])
-    
     return primary_command, backup_command
 
 
