@@ -837,7 +837,7 @@ def test_100_rad_one(
             diff = (data_shd['rad']-data_lrt['rad'])/data_lrt['rad'] * 100.0
             ax2.plot(params['sensor_azimuth_angle'], diff, color='magenta', lw=1.0, alpha=1.0, ls='-', zorder=2)
 
-        ax2.set_ylim((-100.0, 100.0))
+        ax2.set_ylim((-10.0, 10.0))
         ax2.axhline(0.0, color='gray', ls='--', zorder=0)
         ax2.set_ylabel('Difference [%]', rotation=270.0, labelpad=16)
         #╰──────────────────────────────────────────────────────────────╯#

@@ -1336,8 +1336,8 @@ def example_06_rad_atm1d_cloud_over_lambertian(
         # vaa_2d, vza_2d = np.meshgrid(vaa_1d, vza_1d, indexing='ij')
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='gist_ncar')
-        # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='jet')
+        # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='gist_ncar')
+        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='jet', vmin=0.28, vmax=0.34)
         # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='gist_ncar', vmin=0.1, vmax=0.6)
         # cs = ax1.pcolormesh(np.deg2rad(vaa_2d), abs(vza_2d), data, cmap='jet')
         cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.04, location='bottom')

@@ -405,7 +405,7 @@ def gen_ice_file_from_nc(
                 ang0 = ang[i, :Nang0]
                 pha0 = pha[i, :Nang0]
 
-                Nmom0 = 2001
+                Nmom0 = 1001
                 pmom0 = er3t.pre.pha.phase2pmom(ang0, pha0, Nleg=Nmom0, Ngauss=200)
                 pha1 = er3t.pre.pha.pmom2phase(pmom0, np.cos(np.deg2rad(ang0)))
 
@@ -444,16 +444,16 @@ def gen_ice_file_from_nc(
 
             for i, reff0 in enumerate(reff):
 
-                pmom0 = pmom[i, :]
-                logic = np.logical_not(np.isnan(pmom0)) & np.logical_not(np.isinf(pmom0))
-                Nmom0 = logic.sum()
+                # pmom0 = pmom[i, :]
+                # logic = np.logical_not(np.isnan(pmom0)) & np.logical_not(np.isinf(pmom0))
+                # Nmom0 = logic.sum()
 
-                # Nang0 = Nang[i]
-                # ang0 = ang[i, :Nang0]
-                # pha0 = pha[i, :Nang0]
+                Nang0 = Nang[i]
+                ang0 = ang[i, :Nang0]
+                pha0 = pha[i, :Nang0]
 
-                # Nmom0 = 2001
-                # pmom0 = er3t.pre.pha.phase2pmom(ang0, pha0, Nleg=Nmom0, Ngauss=200)
+                Nmom0 = 2001
+                pmom0 = er3t.pre.pha.phase2pmom(ang0, pha0, Nleg=Nmom0, Ngauss=200)
 
                 pmom0_str = er3t.util.nice_array_str(pmom0[:Nmom0], numPerLine=200, useSci=True)
 

@@ -340,8 +340,8 @@ class shd_atm_3d:
 
         # fname_mie = er3t.rtm.shd.gen_mie_file_from_nc(wavelength, wavelength)
         if 'ice' in cld0.ID.lower():
-            fname_mie = er3t.rtm.shd.gen_mie_file_ic(wavelength, wavelength)
-            # fname_mie = er3t.rtm.shd.gen_ice_file_from_nc(wavelength, wavelength)
+            # fname_mie = er3t.rtm.shd.gen_mie_file_ic(wavelength, wavelength)
+            fname_mie = er3t.rtm.shd.gen_ice_file_from_nc(wavelength, wavelength)
             # fname_mie = er3t.rtm.shd.gen_mie_file_from_nc(wavelength, wavelength)
         else:
             fname_mie = er3t.rtm.shd.gen_mie_file_wc(wavelength, wavelength)
