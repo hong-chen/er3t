@@ -95,7 +95,7 @@ class pha_mie_wc:
         pha0.data['ref']: effective radius
     """
 
-    fname_coef = '%s/wc.sol.mie_small.cdf' % er3t.common.fdir_data_pha
+    fname_coef = '%s/wc.sol.mie_reduced.cdf' % er3t.common.fdir_data_pha
 
     reference = '\nMie Scattering (Wiscombe, 1980):\n- Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, https://doi.org/10.1364/AO.19.001505, 1980.'
 
@@ -190,6 +190,8 @@ class pha_mie_wc:
             mu0  = np.cos(np.deg2rad(ang0))
             pha0 = pha_all[iwvl, ireff, logic0]
 
+            if ang0.max() < 180.0 and np.abs(ang0.max()-180.0) < 0.01:
+                ang0[ang0 == ang0.max()] = 180.0
             f_pha0 = interpolate.interp1d(ang0, pha0, kind='linear')
 
             pha[:, ireff] = f_pha0(angles)

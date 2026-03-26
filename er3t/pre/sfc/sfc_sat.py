@@ -22,7 +22,7 @@ class sfc_sat:
         self.sfc
                 ['nx']
                 ['ny']
-                ['alb']
+                ['sfc']
     """
 
 
