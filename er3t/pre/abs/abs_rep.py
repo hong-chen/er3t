@@ -9,9 +9,7 @@ from scipy import interpolate
 
 import er3t.common
 import er3t.util
-from .util import *
-
-
+from er3t.pre.abs.util import cal_xsec_o3_molina, cal_xsec_o4_greenblatt, cal_xsec_no2_burrows, cal_solar_kurudz
 
 __all__ = ['abs_rep']
 
@@ -369,6 +367,128 @@ class abs_rep:
 
         self.gases = gases
         self.wvl_info = '%.2f nm (REPTRAN [Nwvl=%d|%s])' % (self.wvl, self.wvl_.size, ','.join(self.gases))
+
+        # optional: apply user-provided slit / spectral response function
+        # Accepted forms:
+        #   1) Path to ASCII file with at least two columns: wavelength(nm), response
+        #   2) 1-D iterable of length Ng giving response at representative wavelengths (will be normalized)
+        #   3) 2-D array shape (Nz, Ng) specifying altitude-dependent response (advanced; used as-is, then row-normalized)
+        if self.slit_func is not None:
+            try:
+                slit_arr = None
+                method_used = 'direct'
+                self.slit_func_source = 'unspecified'
+                if isinstance(self.slit_func, str):
+                    if os.path.exists(self.slit_func):
+                        data_srf = np.loadtxt(self.slit_func)
+                        if data_srf.ndim != 2 or data_srf.shape[1] < 2:
+                            raise ValueError('Slit function file must have >=2 columns (wavelength response).')
+                        w_srf = data_srf[:, 0]
+                        r_srf = data_srf[:, 1]
+                        # if high-res (many samples) integrate over Voronoi bins; else simple interpolation
+                        if w_srf.size >= self.wvl_.size * 2:
+                            # Voronoi bin edges between representative wavelengths
+                            w_rep = self.wvl_
+                            edges = np.zeros(w_rep.size + 1, dtype=np.float64)
+                            edges[1:-1] = 0.5 * (w_rep[:-1] + w_rep[1:])
+
+                            # extend edges using band min/max if available, else extrapolate
+                            edges[0]  = self.wvl_min_ if hasattr(self, 'wvl_min_') else w_rep[0] - (w_rep[1]-w_rep[0]) / 2.0
+                            edges[-1] = self.wvl_max_ if hasattr(self, 'wvl_max_') else w_rep[-1] + (w_rep[-1]-w_rep[-2]) / 2.0
+
+                            # integrate response within each bin (trapezoidal)
+                            resp_per_rep = np.zeros_like(w_rep, dtype=np.float64)
+                            for i in range(w_rep.size):
+                                mask = (w_srf >= edges[i]) & (w_srf < edges[i+1])
+                                if mask.sum() == 0:
+
+                                    # attempt to include boundary points if none inside
+                                    mask = (w_srf >= edges[i]) & (w_srf <= edges[i+1])
+
+                                if mask.sum() > 1:
+                                    resp_per_rep[i] = np.trapz(r_srf[mask], w_srf[mask])
+
+                                elif mask.sum() == 1: # single point: approximate area as value * width
+                                    resp_per_rep[i] = r_srf[mask][0] * (edges[i+1]-edges[i])
+
+                                else:
+                                    resp_per_rep[i] = 0.0
+
+                            # convert integrated areas to relative weights (avoid all-zero)
+                            if resp_per_rep.max() > 0:
+                                slit_arr = resp_per_rep / resp_per_rep.max()
+
+                            else:
+                                slit_arr = np.zeros_like(resp_per_rep)
+                            method_used = 'voronoi-integrated'
+
+                        else:
+                            # interpolate instrument response to representative wavelengths
+                            r_interp = np.interp(self.wvl_, w_srf, r_srf, left=0.0, right=0.0)
+                            slit_arr = r_interp.astype(np.float64)
+                            method_used = 'interpolated'
+                        self.slit_func_source = f'file:{self.slit_func}'
+
+                    else:
+                        raise FileNotFoundError(f'Slit function file not found: {self.slit_func}')
+
+                # if slit_func is not a file, treat it as an array
+                else:
+                    arr = np.asarray(self.slit_func, dtype=np.float64)
+                    if arr.ndim == 1:
+                        if arr.size != Ng:
+                            raise ValueError(f'1-D slit_func length {arr.size} does not match Ng={Ng}.')
+                        slit_arr = arr
+                        self.slit_func_source = 'array:1d'
+                    elif arr.ndim == 2:
+                        if arr.shape != (Nz, Ng):
+                            raise ValueError(f'2-D slit_func shape {arr.shape} must be (Nz, Ng)=({Nz}, {Ng}).')
+                        slit_arr = arr
+                        self.slit_func_source = 'array:2d'
+                    else:
+                        raise ValueError('slit_func array must be 1-D or 2-D.')
+
+                if slit_arr is not None:
+                    # broadcast to (Nz, Ng) if needed
+                    if slit_arr.ndim == 1:
+                        slit_2d = np.tile(slit_arr[None, :], (Nz, 1))
+                    else:
+                        slit_2d = slit_arr
+
+                    # normalize each altitude row so weighting with REPTRAN weights preserves original sum(weight)
+                    w = self.coef['weight']['data']
+                    sum_w = np.sum(w)
+                    for iz in range(Nz):
+                        sw = np.sum(slit_2d[iz, :] * w)
+                        if sw > 0:
+                            slit_2d[iz, :] *= (sum_w / sw)
+                        else:
+                            # fallback to unity if degenerate row
+                            slit_2d[iz, :] = 1.0
+
+                    # store result
+                    self.coef['slit_func']['data'][...] = slit_2d
+                    self.coef['slit_func']['name'] += ' (custom)'
+
+                    # coverage validation (only once using first row)
+                    zero_frac = float(np.sum(slit_2d[0, :] == 0.0)) / float(Ng)
+                    if (zero_frac > 0.5) and self.verbose:
+                        print(f'Warning [abs_rep]: More than 50% ({zero_frac*100:.1f}%) of representative wavelengths have zero slit response.')
+                    # Attach metadata
+                    self.slit_func_method = method_used
+                else:
+                    self.slit_func_method = 'none'
+
+            except Exception as err:
+                if self.verbose:
+                    print(f'Warning [abs_rep]: Failed to apply slit_func ({err}); using unity response.')
+
+                self.slit_func_source = 'unity'
+                self.slit_func_method = 'none'
+
+        else:
+            self.slit_func_source = 'unity'
+            self.slit_func_method = 'none'
 
 
 
