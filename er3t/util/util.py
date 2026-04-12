@@ -1467,6 +1467,119 @@ def change_range(angle, min_value, max_value):
     return (angle - min_value) % (max_value - min_value) + min_value
 
 
+class fourier:
+
+    """
+    To calculate the Fourier coefficients
+
+    Usage example:
+
+    x = np.linspace(0.0, 360.0, 100)
+    y = np.sin(np.deg2rad(x)) + np.random.randint(-10, 10, size=x.size)*0.01
+
+    fft = fourier(x, y, order=2, period=[0.0, 360.0])
+    # fft.A0, fft.A, fft.B are fitted coefficients
+    # fft.x_fit, fft.y_fit are fitted x and y
+    """
+
+    def __init__(
+            self,
+            x,
+            y,
+            order=2,
+            period=np.array([0.0, 360.0]),
+            Nx=100
+            ):
+
+        self.order = order
+        self.period = period
+
+        self.fit(x, y, order, period)
+
+        self.val(self.A0, self.A, self.B, order, period, Nx=Nx)
+
+    def fit(self, x, y, order, period):
+
+        # sort the original data
+        x_s = np.sort(x)
+        y_s = y[np.argsort(x)]
+
+        # insert period[0] at beginning and period[-1] at the end for x_s
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        if x_s[0] > period[0]:
+            x_s = np.insert(x_s, 0, period[0])
+            add_at_begin = True
+        else:
+            add_at_begin = False
+
+        if x_s[-1] < period[-1]:
+            x_s = np.append(x_s, period[-1])
+            add_at_end = True
+        else:
+            add_at_end = False
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+        # insert interpolated y at beginning and at the end for y_s
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        theta = (2*np.pi) * (x_s / (period[-1]-period[0]))
+
+        if (add_at_begin or add_at_end):
+            y_i = ((theta[1])/(2*np.pi+theta[1]-theta[-2]))*y_s[-1] + \
+                  ((2*np.pi-theta[-2])/(2*np.pi+theta[1]-theta[-2]))*y_s[0]
+
+        if add_at_begin:
+            y_s = np.insert(y_s, 0, y_i)
+
+        if add_at_end:
+            y_s = np.append(y_s, y_i)
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+        # A0
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        A0_sum = 0.0
+        A0 = 0.0
+        for j in range(x_s.size-1):
+            dy = y_s[j+1] + y_s[j]
+            d_theta = theta[j+1] - theta[j]
+            A0_sum += dy/2.0 * d_theta
+        A0 = A0_sum/(2*np.pi)
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+        # A & B (e.g., A1, A2, A3, ... B1, B2, B3, ...)
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        A_sum = np.zeros((order), dtype=np.float32)
+        B_sum = np.zeros((order), dtype=np.float32)
+        A = np.zeros((order), dtype=np.float32)
+        B = np.zeros((order), dtype=np.float32)
+        for i in range(order):
+            for j in range(x_s.size-1):
+                dy = y_s[j+1] + y_s[j]
+                d_cos_ntheta = np.cos((i+1)*theta[j+1]) - np.cos((i+1)*theta[j])
+                d_sin_ntheta = np.sin((i+1)*theta[j+1]) - np.sin((i+1)*theta[j])
+                A_sum[i] += dy/2.0 * d_cos_ntheta
+                B_sum[i] += dy/2.0 * d_sin_ntheta
+            A[i] = -A_sum[i]/((i+1)*np.pi)
+            B[i] =  B_sum[i]/((i+1)*np.pi)
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+        self.A0 = A0
+        self.A = A
+        self.B = B
+
+    def val(self, A0, A, B, order, period, Nx=100):
+
+        self.x_fit = np.linspace(period[0], period[-1], Nx)
+
+        theta_f = (2*np.pi)*(self.x_fit / (period[-1]-period[0]))
+
+        self.y_fit = np.zeros((self.x_fit.size), dtype=np.float32)
+        self.y_fit = self.A0
+        for i in range(order):
+            self.y_fit += self.A[i]*np.sin((i+1)*theta_f) + \
+                    self.B[i]*np.cos((i+1)*theta_f)
 
 
 if __name__ == '__main__':
