@@ -41,6 +41,9 @@ def lrt_run(init, verbose=False):
     f.close()
 
     # Run libRadtran "$ uvspec < input.txt > output.txt"
+    print("Run command: %s < %s > %s" % (init.executable_file, init.input_file, init.output_file))
+    import sys
+    sys.exit()
     os.system('%s < %s > %s' % (init.executable_file, init.input_file, init.output_file))
 
 
