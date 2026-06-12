@@ -86,7 +86,7 @@ _sat_tags_support_ = {
                 },
 
         'MOD03': {
-                'dataset_tag': '61/MOD03',
+          'dataset_tag': '7/MOD03',
                    'dict_key': 'mod_03',
                 'description': 'Terra MODIS Geolocation Fields Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MOD03.061',
@@ -96,7 +96,7 @@ _sat_tags_support_ = {
                 },
 
         'MYD03': {
-                'dataset_tag': '61/MYD03',
+          'dataset_tag': '7/MYD03',
                    'dict_key': 'myd_03',
                 'description': 'Aqua MODIS Geolocation Fields Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MYD03.061',
@@ -106,7 +106,7 @@ _sat_tags_support_ = {
                 },
 
         'MOD02QKM': {
-                'dataset_tag': '61/MOD02QKM',
+          'dataset_tag': '7/MOD02QKM',
                    'dict_key': 'mod_02',
                 'description': 'Terra MODIS Level 1b (250m) Calibrated Radiances Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MOD02QKM.061',
@@ -116,7 +116,7 @@ _sat_tags_support_ = {
                 },
 
         'MYD02QKM': {
-                'dataset_tag': '61/MYD02QKM',
+          'dataset_tag': '7/MYD02QKM',
                    'dict_key': 'myd_02',
                 'description': 'Aqua MODIS Level 1b (250m) Calibrated Radiances Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MYD02QKM.061',
@@ -126,7 +126,7 @@ _sat_tags_support_ = {
                 },
 
         'MOD02HKM': {
-                'dataset_tag': '61/MOD02HKM',
+          'dataset_tag': '7/MOD02HKM',
                    'dict_key': 'mod_02',
                 'description': 'Terra MODIS Level 1b (500m) Calibrated Radiances Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MOD02HKM.061',
@@ -136,7 +136,7 @@ _sat_tags_support_ = {
                 },
 
         'MYD02HKM': {
-                'dataset_tag': '61/MYD02HKM',
+          'dataset_tag': '7/MYD02HKM',
                    'dict_key': 'myd_02',
                 'description': 'Aqua MODIS Level 1b (250m) Calibrated Radiances Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MYD02HKM.061',
@@ -146,7 +146,7 @@ _sat_tags_support_ = {
                 },
 
         'MOD021KM': {
-                'dataset_tag': '61/MOD021KM',
+          'dataset_tag': '7/MOD021KM',
                    'dict_key': 'mod_02',
                 'description': 'Terra MODIS Level 1b (1km) Calibrated Radiances Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MOD021KM.061',
@@ -156,7 +156,7 @@ _sat_tags_support_ = {
                 },
 
         'MYD021KM': {
-                'dataset_tag': '61/MYD021KM',
+          'dataset_tag': '7/MYD021KM',
                    'dict_key': 'myd_02',
                 'description': 'Aqua MODIS Level 1b (1km) Calibrated Radiances Product',
                     'website': 'http://dx.doi.org/10.5067/MODIS/MYD021KM.061',

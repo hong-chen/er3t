@@ -67,7 +67,7 @@ def test_download_modis(fdir):
 
     date = datetime.datetime(2017, 8, 25)
 
-    dataset_tags = ['61/MYD02QKM', '61/MYD03', '61/MYD06_L2']
+    dataset_tags = ['7/MYD02QKM', '7/MYD03', '61/MYD06_L2']
 
     filename_tag = '.2035.'
 
