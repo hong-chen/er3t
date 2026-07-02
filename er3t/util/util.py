@@ -156,8 +156,8 @@ def send_email(
     from email.mime.application import MIMEApplication
     import datetime
 
-    sender_email    = 'er3t@hongchen.cz'
-    sender_password = 'er3t@cuboulder'
+    sender_email    = os.environ.get('ER3T_SENDER_EMAIL', '')
+    sender_password = os.environ.get('ER3T_SENDER_PASSWORD', '')
 
     msg = MIMEMultipart()
     msg['Subject'] = '%s@%s: %s' % (os.getlogin(), socket.gethostname(), sys.argv[0])

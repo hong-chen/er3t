@@ -65,9 +65,15 @@ def get_token_earthdata():
     try:
         token = os.environ['EARTHDATA_TOKEN']
     except KeyError:
-        token = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImhvY2g0MjQwIiwiZXhwIjoxNzY5NDg3MTg1LCJpYXQiOjE3NjQzMDMxODUsImlzcyI6Imh0dHBzOi8vdXJzLmVhcnRoZGF0YS5uYXNhLmdvdiIsImlkZW50aXR5X3Byb3ZpZGVyIjoiZWRsX29wcyIsImFjciI6ImVkbCIsImFzc3VyYW5jZV9sZXZlbCI6M30.RJzt4cEw1n3YhdP4QrNfgEKU2Dz5-OirYOiXCHCxU4Ac0j6Petyr_qp571RndjpJDn8jd50_VezAUIEIpGk-fCuqdCUxLkHko-fgt4ccsVgOdTmONk0ANyRNIVvz5JjPq8NZlqSo2mCQeeTf3snHKXLRl1uensgrB4-meDktRz86HbugUcZ5R88aHQiqk9csMcgodPHdW7kPb3S7oRczBCd2awv0GpMzkMteRxSsZeyvNyRk99mbbrVCVGwiAc2x_z5XwfLUq2vMCGLawQtp4jPwBMKEd3Peb-ZY2sHYXQ5ZrCL9D5pELNs-_YR8vYOnbPPlfJpHrJNOjkX0MW4YFw'
+        token = None
 
-        msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+        msg = (
+            '\nWarning [get_earthdata_token]: EARTHDATA_TOKEN not set.'
+            '\nGet a token at https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens'
+            '\nThen add to your shell rc file (~/.bashrc or ~/.zshrc):'
+            '\n    export EARTHDATA_TOKEN="<your-token-here>"'
+            '\n'
+        )
         warnings.warn(msg)
 
     return token
