@@ -1,55 +1,51 @@
-# pack data
-# tar -czf er3t-data-examples.tar.gz data/00_er3t_mca/aux check
+#!/usr/bin/env bash
+# Download auxiliary data for er3t example scripts.
+# Run from the er3t/examples/ directory.
+#
+# Prerequisites:
+#   Run  er3t/install.sh  first to install core data (REPTRAN + auxiliary files).
+#   This script only downloads the LES cloud field needed for examples 02–05.
+#
+# Data sources:
+#   les.nc — Schmidt Lab Google Drive
+#
+# Previous Google Drive IDs (Hong Chen's, archived):
+#   les.nc: 1Oov75VffmuQSljxjoOS6q6egmfT6CmkI
 
-# download data from google drive
-#╭────────────────────────────────────────────────────────────────────────────╮#
-if ! command -v gdown &> /dev/null
-then
-    echo "[Error]: 'gdown' could not be found, please install 'gdown' first, abort."
-    exit
+# ── Google Drive file ID ──────────────────────────────────────────────────────
+LES_GDRIVE_ID="1cmrZDaCwoQNhaoPGhJ9OhSVEpDU9h-gg"
+LES_DEST="data/00_er3t_mca/aux/les.nc"
+# ─────────────────────────────────────────────────────────────────────────────
+
+echo "╭────────────────────────────────────────────────╮"
+echo "      EaR³T — Example Auxiliary Data Install      "
+echo "╰────────────────────────────────────────────────╯"
+echo
+
+# Check for gdown
+if ! command -v gdown &> /dev/null; then
+    echo "[Error] 'gdown' is required to download from Google Drive."
+    echo "  Install: pip install gdown"
+    echo "  (It is included in the er3t conda environment.)"
+    exit 1
 fi
 
-er3t_data_google_id="1Oov75VffmuQSljxjoOS6q6egmfT6CmkI"
-er3t_data_local_filename="er3t-data-examples.tar.gz"
-
-echo "1. Install Data ########################################"
+# ── LES cloud field ───────────────────────────────────────────────────────────
+echo "<1> Downloading LES cloud field (les.nc, ~209 MB) ..."
+echo "  Source : Google Drive (Schmidt Lab, ID: $LES_GDRIVE_ID)"
+echo "  Target : $LES_DEST"
 echo
-sleep 1
 
-echo "<1.1> Downloading required data ... (this will take minutes to hours depending on your internet speed)"
-echo "╭────────────────────────────────────────────────╮"
-echo
-echo "command: gdown $er3t_data_google_id --output $er3t_data_local_filename"
-echo
-gdown $er3t_data_google_id --output $er3t_data_local_filename
-echo "╰────────────────────────────────────────────────╯"
+mkdir -p "$(dirname "$LES_DEST")"
+gdown "$LES_GDRIVE_ID" --output "$LES_DEST"
 
-echo
-sleep 2
-#╰────────────────────────────────────────────────────────────────────────────╯#
-
-# check if file is successfully downloaded
-if  [ ! -f "$er3t_data_local_filename" ]
-then
-    echo "[Error]: cannot find '$er3t_data_local_filename', abort."
-    exit
+if [ ! -f "$LES_DEST" ]; then
+    echo "[Error] LES download failed — '$LES_DEST' not found."
+    exit 1
 fi
+echo "LES cloud field installed."
+echo
 
-echo "<1.2> Untaring the downloaded data ... (this will take a few minutes)"
 echo "╭────────────────────────────────────────────────╮"
-echo
-echo "command: tar -xzf $er3t_data_local_filename"
-echo
-tar -xzf $er3t_data_local_filename
-echo "╰────────────────────────────────────────────────╯"
-
-echo
-sleep 2
-
-echo "<1.3> Cleaning up ..."
-echo "╭────────────────────────────────────────────────╮"
-echo
-echo "command: rm -rf $er3t_data_local_filename"
-echo
-rm -rf $er3t_data_local_filename
+echo "  All example data installed. Ready to run.       "
 echo "╰────────────────────────────────────────────────╯"
