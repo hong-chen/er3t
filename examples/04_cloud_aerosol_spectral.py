@@ -84,8 +84,8 @@ z_out = [5]   # z coordinate(s) of output location [km].
                         # above the cloud.
 
 # ── MC settings ───────────────────────────────────────────────────────────
-photons    = 1e8        # Monte Carlo photons per spectral bin.
-Nrun       = 10          # Independent MC runs per solver (for noise reduction).
+photons    = 1e6        # Monte Carlo photons per spectral bin.
+Nrun       = 3          # Independent MC runs per solver (for noise reduction).
 
 # ── Scene parameters ──────────────────────────────────────────────────────
 surface_albedo      = 0.3   # Surface reflectance.
@@ -442,7 +442,7 @@ def example_04_spectral(
         '$\\lambda$ = [%s] nm,  SZA = %.0f°,  albedo = %.2f,  photons = %.0e\n'
         'AOD = %.2f  SSA = %.2f  asy = %.2f  z$_{aer}$ = [%.1f–%.1f km]'
         % (', '.join(['%.0f' % w for w in wl_list]),
-           solar_zenith_angle, surface_albedo, photons,
+           solar_zenith_angle, surface_albedo, photons*Nrun,
            aod, ssa, asy, z_bot, z_top),
         fontsize=11, y=1.02
     )
@@ -462,8 +462,8 @@ if __name__ == '__main__':
     print('=' * 65)
     print('EaR³T Example 04 — Cloud + Aerosol Spectral Flux (3D vs IPA)')
     print('  wavelengths         =', wavelengths, 'nm')
-    print('  photons             = %.0e (× 2 solvers × %d wavelengths)'
-          % (photons, len(wavelengths)))
+    print('  photons             = %.0e  (%.0e per run × %d runs × 2 solvers × %d wavelengths)'
+          % (photons*Nrun*2*len(wavelengths), photons, Nrun, len(wavelengths)))
     print('  Nrun                = %d' % Nrun)
     print('  surface_albedo      = %.2f' % surface_albedo)
     print('  solar_zenith_angle  = %.1f°' % solar_zenith_angle)

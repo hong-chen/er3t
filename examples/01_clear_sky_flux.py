@@ -306,7 +306,7 @@ def example_01_flux_clear_sky(
         ax1.set_title(
             'Clear Sky (%s), SZA=%.0f°\n'
             '$\\lambda$=%.0f nm,  albedo=%.2f,  photons=%.0e'
-            % (solver, solar_zenith_angle, wavelength, surface_albedo, photons)
+            % (solver, solar_zenith_angle, wavelength, surface_albedo, photons*Nrun)
         )
 
         plt.tight_layout()
@@ -324,7 +324,7 @@ if __name__ == '__main__':
     print('EaR³T Example 01 — Clear-Sky Flux')
     print('  wavelength          = %.1f nm'  % wavelength)
     print('  solver              = %s'        % solver)
-    print('  photons             = %.0e  (increase to reduce noise bands)'  % photons)
+    print('  photons             = %.0e  (%.0e per run × %d runs)'  % (photons*Nrun, photons, Nrun))
     print('  Nrun                = %d'        % Nrun)
     print('  surface_albedo      = %.2f'      % surface_albedo)
     print('  solar_zenith_angle  = %.1f deg'  % solar_zenith_angle)

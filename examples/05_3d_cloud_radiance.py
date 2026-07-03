@@ -352,7 +352,7 @@ def example_05_rad_les_cloud_3d(
         % (wavelength,
            solar_zenith_angle, solar_azimuth_angle,
            sensor_zenith_angle, sensor_azimuth_angle,
-           surface_albedo, photons)
+           surface_albedo, photons*Nrun)
     )
 
     # ═════════════════════════════════════════════════════════════════════════
@@ -542,7 +542,7 @@ if __name__ == '__main__':
     print('  plot_only           = %s' % plot_only)
     print('  wavelength          = %.1f nm'  % wavelength)
     if not plot_only:
-        print('  photons             = %.0e (× 2 solvers)' % photons)
+        print('  photons             = %.0e  (%.0e per run × %d runs × 2 solvers)' % (photons*Nrun*2, photons, Nrun))
         print('  Nrun                = %d'        % Nrun)
     print('  surface_albedo      = %.2f'      % surface_albedo)
     print('  solar_zenith_angle  = %.1f°'     % solar_zenith_angle)

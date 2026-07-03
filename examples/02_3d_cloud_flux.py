@@ -238,7 +238,7 @@ def example_02_flux_les_cloud_3d(
         fig.suptitle(
             'LES Cloud Flux Comparison: 3D vs IPA\n'
             '$\\lambda$=%.0f nm,  SZA=%.0f°,  albedo=%.2f,  photons=%.0e'
-            % (wavelength, solar_zenith_angle, surface_albedo, photons),
+            % (wavelength, solar_zenith_angle, surface_albedo, photons*Nrun),
             fontsize=13
         )
 
@@ -263,7 +263,7 @@ if __name__ == '__main__':
     print('=' * 60)
     print('EaR³T Example 02 — 3D Cloud Flux (LES), 3D vs IPA comparison')
     print('  wavelength          = %.1f nm'  % wavelength)
-    print('  photons             = %.0e (× 2 solvers)'  % photons)
+    print('  photons             = %.0e  (%.0e per run × %d runs × 2 solvers)'  % (photons*Nrun*2, photons, Nrun))
     print('  Nrun                = %d'        % Nrun)
     print('  z_index             = %d  (z = %.0f km)' % (z_index, z_index))
     print('  surface_albedo      = %.2f'      % surface_albedo)

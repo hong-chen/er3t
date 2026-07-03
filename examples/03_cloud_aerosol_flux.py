@@ -85,13 +85,13 @@ import er3t
 
 wavelength = 650.0      # Wavelength in nm.  Try: 400, 500, 650, 860, 1640
 
-photons    = 1e8        # Monte Carlo photons per spectral bin.
+photons    = 1e5        # Monte Carlo photons per spectral bin.
                         #   5e5  → fast (~minutes per solver)
                         #   1e6  → medium quality
                         #   1e7  → production quality
                         # Script runs BOTH solvers → total ≈ 2× single-solver time.
 
-Nrun       = 10         # Independent MC runs per solver.
+Nrun       = 3          # Independent MC runs per solver.
 
 z_index    = 0          # Vertical level index for the horizontal map panels.
                         # Atmosphere has 21 interfaces at 0, 1, … 20 km.
@@ -281,7 +281,7 @@ def example_03_flux_les_cloud_aerosol(
         'LES Cloud + Aerosol Flux: 3D vs IPA\n'
         '$\\lambda$=%.0f nm,  SZA=%.0f°,  albedo=%.2f,  photons=%.0e\n'
         'AOD=%.2f  SSA=%.2f  asy=%.2f  z$_{aer}$=[%.1f–%.1f km]'
-        % (wavelength, solar_zenith_angle, surface_albedo, photons,
+        % (wavelength, solar_zenith_angle, surface_albedo, photons*Nrun,
            aod, ssa, asy, z_bot, z_top)
     )
 
@@ -385,7 +385,6 @@ def example_03_flux_les_cloud_aerosol(
     # Figure 3 — Cross-sections  (x slice at y=y0 | y slice at x=x0)
     # ═════════════════════════════════════════════════════════════════════════
     fig_xs, (ax_x, ax_y) = plt.subplots(1, 2, figsize=(14, 6))
-    fig_xs.subplots_adjust(wspace=0.30)
 
     def _draw_xsection(ax, coords_km, pt_km, coord_label, pt_label,
                        slices_3d, slices_ipa):
@@ -429,7 +428,8 @@ def example_03_flux_les_cloud_aerosol(
                    '3D (—) vs IPA (- -)' % (x0_c, z_km))
 
     fig_xs.suptitle(suptitle_str + '\n★ = (%.1f, %.1f) km,  z = %.1f km'
-                    % (x0_c, y0_c, z_km), fontsize=11, y=1.02)
+                    % (x0_c, y0_c, z_km), fontsize=11)
+    fig_xs.tight_layout(rect=[0, 0, 1, 0.88])
 
     fname_xs = '%s/%s-xsection_%.0fnm.png' % (fdir_png, name_tag, wavelength)
     fig_xs.savefig(fname_xs, bbox_inches='tight')
@@ -461,7 +461,7 @@ if __name__ == '__main__':
     print('=' * 60)
     print('EaR³T Example 03 — Cloud + Aerosol Flux (3D vs IPA)')
     print('  wavelength          = %.1f nm'  % wavelength)
-    print('  photons             = %.0e (× 2 solvers)' % photons)
+    print('  photons             = %.0e  (%.0e per run × %d runs × 2 solvers)' % (photons*Nrun*2, photons, Nrun))
     print('  Nrun                = %d'        % Nrun)
     print('  z_index             = %d  (z = %.0f km)' % (z_index, z_index))
     print('  surface_albedo      = %.2f'      % surface_albedo)
