@@ -1,9 +1,12 @@
 """
 by Hong Chen (hong.chen.cu@gmail.com)
-   Ken Hirata (ken.hirata@colorado.edu)
 
 This code has been tested under:
-    1) MacBook Air M2 on 2025-05-14 by Hong Chen
+    1) Linux on 2023-06-27 by Hong Chen
+      Operating System: Red Hat Enterprise Linux
+           CPE OS Name: cpe:/o:redhat:enterprise_linux:7.7:GA:workstation
+                Kernel: Linux 3.10.0-1062.9.1.el7.x86_64
+          Architecture: x86-64
 """
 
 import os
@@ -15,7 +18,7 @@ import datetime
 import time
 from scipy.io import readsav
 import matplotlib as mpl
-# mpl.use('Agg')
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator
 from matplotlib import rcParams
@@ -23,6 +26,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 
 
+import multiprocessing
 import er3t
 
 
@@ -32,8 +36,8 @@ import er3t
 #╭────────────────────────────────────────────────────────────────────────────╮#
 name_tag = '00_er3t_mca'
 fdir0    = er3t.common.fdir_examples
-photons = 1e7
-Ncpu    = 7
+photons = 1e6   # set to 1e8 for production quality
+Ncpu    = max(1, multiprocessing.cpu_count() - 2)  # leave 2 CPUs free
 rcParams['font.size'] = 14
 #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -95,7 +99,7 @@ def example_01_flux_clear_sky(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, target='medium', overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -271,7 +275,7 @@ def example_02_flux_les_cloud_3d(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, target='medium', overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -352,9 +356,9 @@ def example_02_flux_les_cloud_3d(
             date=datetime.datetime(2017, 8, 13),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            surface=0.03,
             Ng=abs0.Ng,
             Nrun=3,
+            surface_albedo=0.03,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=45.0,
             fdir='%s/%4.4d/flux_%s' % (fdir, wavelength, solver.lower()),
@@ -484,7 +488,7 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, target='medium', overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -706,7 +710,7 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, target='medium', overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -810,11 +814,11 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
             date=datetime.datetime(2017, 8, 13),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            surface=0.03,
             sca=sca,
             Ng=abs0.Ng,
             target='flux0',
             Nrun=3,
+            surface_albedo=0.03,
             solar_zenith_angle=30.0,
             solar_azimuth_angle=45.0,
             fdir='%s/%4.4d/flux_%s' % (fdir, wavelength, solver.lower()),
@@ -912,7 +916,7 @@ def example_05_rad_les_cloud_3d(
     # define an atmosphere object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # levels: altitude of the layer interface in km, here, levels will be 0.0, 1.0, 2.0, ...., 20.0
-    levels = np.append(np.arange(0.0, 4.0, 0.2), np.arange(4.0, 20.1, 2.0))
+    levels    = np.linspace(0.0, 20.0, 21)
 
     # file name of the pickle file for atmosphere
     fname_atm = '%s/atm.pk' % fdir
@@ -947,7 +951,7 @@ def example_05_rad_les_cloud_3d(
     fname_abs = '%s/abs.pk' % fdir
 
     # absorption object
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, target='medium', overwrite=overwrite)
 
     # data can be accessed at
     #     abs0.coef['wavelength']['data']
@@ -956,6 +960,7 @@ def example_05_rad_les_cloud_3d(
     #     abs0.coef['solar']['data']
     #     abs0.coef['weight']['data']
     #╰────────────────────────────────────────────────────────────────────────────╯#
+
 
     # define an cloud object
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -966,7 +971,7 @@ def example_05_rad_les_cloud_3d(
     fname_les = '%s/les.pk' % fdir
 
     # cloud object
-    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[4, 4, 5], overwrite=overwrite)
+    cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
 
     # data can be accessed at
     #     cld0.lay['x']['data']
@@ -985,37 +990,8 @@ def example_05_rad_les_cloud_3d(
 
     # define mca_sca object
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
     pha0 = er3t.pre.pha.pha_mie_wc(wavelength=wavelength)
     sca  = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname='%s/mca_sca.bin' % fdir, overwrite=overwrite)
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
-
-    # sfc object
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    f = h5py.File('%s/data/pre-data.h5' % er3t.common.fdir_examples, 'r')
-    fiso = f['mod/sfc/fiso_43_0650'][...][:400, :480]
-    fvol = f['mod/sfc/fvol_43_0650'][...][:400, :480]
-    fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
-
-    lon, lat = np.meshgrid(np.linspace(0.0, 48.0, 400), np.linspace(0.0, 48.0, 480), indexing='ij')
-    x, y, fiso = er3t.util.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    x, y, fvol = er3t.util.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    x, y, fgeo = er3t.util.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-
-    sfc_dict = {
-            'dx': cld0.lay['dx']['data'],
-            'dy': cld0.lay['dy']['data'],
-            'fiso': fiso,
-            'fvol': fvol,
-            'fgeo': fgeo,
-            }
-    f.close()
-
-    fname_sfc = '%s/sfc.pk' % fdir
-    sfc0 = er3t.pre.sfc.sfc_2d_gen(sfc_dict=sfc_dict, fname=fname_sfc, overwrite=overwrite)
-
-    sfc_2d = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -1061,25 +1037,25 @@ def example_05_rad_les_cloud_3d(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     # run mcarats
     mca0 = er3t.rtm.mca.mcarats_ng(
-            date=datetime.datetime(2024, 5, 18),
+            date=datetime.datetime(2017, 8, 13),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            surface=sfc_2d,
             Ng=abs0.Ng,
             target='radiance',
+            surface_albedo=0.03,
             sca=sca,
             solar_zenith_angle=30.0,
-            solar_azimuth_angle=0.0,
-            sensor_zenith_angle=30.0,
-            sensor_azimuth_angle=45.0,
-            sensor_altitude=705.0,
+            solar_azimuth_angle=45.0,
+            sensor_zenith_angle=0.0,
+            sensor_azimuth_angle=0.0,
+            sensor_altitude=705000.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             photons=photons,
             weights=abs0.coef['weight']['data'],
             solver=solver,
             Ncpu=Ncpu,
-            mp_mode='mpi',
+            mp_mode='py',
             overwrite=overwrite
             )
 
@@ -1114,16 +1090,14 @@ def example_05_rad_les_cloud_3d(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
         fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
-        extent = [0, 48, 0, 48]
 
-        fig = plt.figure(figsize=(6, 6))
+        fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
-        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower', extent=extent, aspect='auto')
-        # ax1.set_xlabel('X Index')
-        # ax1.set_ylabel('Y Index')
-        # ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
-        ax1.axis('off')
-        plt.savefig(fname_png, bbox_inches='tight', transparent=False, pad_inches=0.0)
+        cs = ax1.imshow(np.transpose(out0.data['rad']['data']), cmap='Greys_r', vmin=0.0, vmax=0.3, origin='lower')
+        ax1.set_xlabel('X Index')
+        ax1.set_ylabel('Y Index')
+        ax1.set_title('Radiance at %.2f nm (%s Mode)' % (wavelength, solver))
+        plt.savefig(fname_png, bbox_inches='tight')
         plt.close(fig)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -1165,7 +1139,7 @@ def example_06_rad_cld_gen_hem(
     # define an absorption object
     #╭────────────────────────────────────────────────────────────────────────────╮#
     fname_abs = '%s/abs.pk' % fdir
-    abs0 = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
+    abs0      = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs, atm_obj=atm0, target='medium', overwrite=overwrite)
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -1257,15 +1231,15 @@ def example_06_rad_cld_gen_hem(
             date=datetime.datetime(2017, 8, 13),
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            surface=0.2,
             Ng=abs0.Ng,
             target='radiance',
+            surface_albedo=0.2,
             sca=sca,
             solar_zenith_angle=29.162360459281544,
             solar_azimuth_angle=-63.16777636586792,
             sensor_zenith_angle=0.0,
             sensor_azimuth_angle=0.0,
-            sensor_altitude=705,
+            sensor_altitude=705000.0,
             fdir='%s/%4.4d/rad_%s' % (fdir, wavelength, solver.lower()),
             Nrun=3,
             photons=photons,
@@ -1293,7 +1267,7 @@ def example_06_rad_cld_gen_hem(
         fig = plt.figure(figsize=(16, 5.0))
 
         ax1 = fig.add_subplot(131, projection='3d')
-        cmap = mpl.cm.get_cmap('jet').copy()
+        cmap = mpl.colormaps['jet'].copy()
         cs = ax1.plot_surface(cld0.x_3d[:, :, 0], cld0.y_3d[:, :, 0], cld0.lev['cth_2d']['data'], cmap=cmap, alpha=0.8, antialiased=False)
         ax1.set_zlim((0, 10))
         ax1.set_xlabel('X [km]')
