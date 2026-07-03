@@ -37,7 +37,7 @@ retrievals and are the core motivation for EaR³T.
 
 Requires
 --------
-  data/00_er3t_mca/aux/les.nc  (~209 MB, downloaded via install-examples.sh)
+  data/les.nc  (~209 MB, downloaded via install-examples.sh)
 
 Student controls — edit the block below
 -----------------------------------------
@@ -163,7 +163,7 @@ def example_02_flux_les_cloud_3d(
     Run 3D and IPA flux simulations on the same LES cloud field and
     produce a 4-panel side-by-side comparison figure.
 
-    Requires data/00_er3t_mca/aux/les.nc
+    Requires data/les.nc
     """
 
     fdir = '%s/tmp-data/%s/example_02_flux_les_cloud_3d' % (fdir0, name_tag)
@@ -182,7 +182,7 @@ def example_02_flux_les_cloud_3d(
 
     # Cloud field from LES
     #   coarsen=[1,1,25]: average 25 LES vertical levels into 1 model layer
-    fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
+    fname_nc  = '%s/data/les.nc' % er3t.common.fdir_examples
     fname_les = '%s/les.pk' % fdir
     cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les, coarsen=[1, 1, 25], overwrite=overwrite)
 
@@ -204,7 +204,9 @@ def example_02_flux_les_cloud_3d(
         z_km      = atm0.lev['altitude']['data'][z_index]
         vmin, vmax = 0.0, 1.6
 
-        fname_png = '%s-comparison_%4.0fnm.png' % (name_tag, wavelength)
+        fdir_png = '%s/tmp-png/%s' % (fdir0, name_tag)
+        os.makedirs(fdir_png, exist_ok=True)
+        fname_png = '%s/%s-comparison_%4.0fnm.png' % (fdir_png, name_tag, wavelength)
 
         fig, axes = plt.subplots(2, 2, figsize=(13, 10),
                                  gridspec_kw={'wspace': 0.08, 'hspace': 0.35})

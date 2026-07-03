@@ -60,7 +60,7 @@ Aerosol parameters you can tune (in the student control block):
 
 Requires
 --------
-  data/00_er3t_mca/aux/les.nc  (~209 MB, downloaded via install-examples.sh)
+  data/les.nc  (~209 MB, downloaded via install-examples.sh)
 
 Student controls — edit the block below
 -----------------------------------------
@@ -201,7 +201,7 @@ def example_03_flux_les_cloud_aerosol(
     Run 3D and IPA flux simulations on an LES cloud field with a 1D aerosol
     layer, and produce three figure files: maps, profiles, and cross-sections.
 
-    Requires data/00_er3t_mca/aux/les.nc
+    Requires data/les.nc
     """
 
     fdir = '%s/tmp-data/%s/example_03_flux_les_cloud_aerosol' % (fdir0, name_tag)
@@ -217,7 +217,7 @@ def example_03_flux_les_cloud_aerosol(
     abs0      = er3t.pre.abs.abs_rep(wavelength=wavelength, fname=fname_abs,
                                       atm_obj=atm0, target='medium', overwrite=overwrite)
 
-    fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
+    fname_nc  = '%s/data/les.nc' % er3t.common.fdir_examples
     fname_les = '%s/les.pk' % fdir
     cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les,
                                       coarsen=[1, 1, 25], overwrite=overwrite)
@@ -328,7 +328,9 @@ def example_03_flux_les_cloud_aerosol(
     fig_map.suptitle(suptitle_str + '\n★ = (%.1f, %.1f) km' % (x0_c, y0_c),
                      fontsize=11, y=1.01)
 
-    fname_map = '%s-map_%.0fnm.png' % (name_tag, wavelength)
+    fdir_png = '%s/tmp-png/%s' % (fdir0, name_tag)
+    os.makedirs(fdir_png, exist_ok=True)
+    fname_map = '%s/%s-map_%.0fnm.png' % (fdir_png, name_tag, wavelength)
     fig_map.savefig(fname_map, bbox_inches='tight')
     plt.close(fig_map)
     print('Map saved:       %s' % fname_map)
@@ -374,7 +376,7 @@ def example_03_flux_les_cloud_aerosol(
 
     fig_prof.suptitle(suptitle_str, fontsize=11, y=1.01)
 
-    fname_prof = '%s-profile_%.0fnm.png' % (name_tag, wavelength)
+    fname_prof = '%s/%s-profile_%.0fnm.png' % (fdir_png, name_tag, wavelength)
     fig_prof.savefig(fname_prof, bbox_inches='tight')
     plt.close(fig_prof)
     print('Profile saved:   %s' % fname_prof)
@@ -429,7 +431,7 @@ def example_03_flux_les_cloud_aerosol(
     fig_xs.suptitle(suptitle_str + '\n★ = (%.1f, %.1f) km,  z = %.1f km'
                     % (x0_c, y0_c, z_km), fontsize=11, y=1.02)
 
-    fname_xs = '%s-xsection_%.0fnm.png' % (name_tag, wavelength)
+    fname_xs = '%s/%s-xsection_%.0fnm.png' % (fdir_png, name_tag, wavelength)
     fig_xs.savefig(fname_xs, bbox_inches='tight')
     plt.close(fig_xs)
     print('X-section saved: %s' % fname_xs)

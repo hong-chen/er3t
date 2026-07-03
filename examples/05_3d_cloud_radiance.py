@@ -58,7 +58,7 @@ Reflectance: R = π L / (E₀ cos θ_s)
 
 Requires
 --------
-  data/00_er3t_mca/aux/les.nc  (~209 MB, downloaded via install-examples.sh)
+  data/les.nc  (~209 MB, downloaded via install-examples.sh)
 
 Student controls — edit the block below
 -----------------------------------------
@@ -261,7 +261,7 @@ def example_05_rad_les_cloud_3d(
                                           overwrite=overwrite)
 
         # ── Cloud field from LES ──────────────────────────────────────────────
-        fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
+        fname_nc  = '%s/data/les.nc' % er3t.common.fdir_examples
         fname_les = '%s/les.pk' % fdir
         cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les,
                                           coarsen=[1, 1, 25], overwrite=overwrite)
@@ -405,7 +405,9 @@ def example_05_rad_les_cloud_3d(
     ax_scat.legend(fontsize=10); ax_scat.grid(True, alpha=0.25)
     fig1.suptitle(suptitle_str, fontsize=12, y=1.01)
 
-    fname1 = '%s-comparison_%.0fnm.png' % (name_tag, wavelength)
+    fdir_png = '%s/tmp-png/%s' % (fdir0, name_tag)
+    os.makedirs(fdir_png, exist_ok=True)
+    fname1 = '%s/%s-comparison_%.0fnm.png' % (fdir_png, name_tag, wavelength)
     fig1.savefig(fname1, bbox_inches='tight')
     plt.close(fig1)
     print('Comparison saved: %s' % fname1)
@@ -436,7 +438,7 @@ def example_05_rad_les_cloud_3d(
     fig2.suptitle('LES cloud scene — %.0f nm' % wavelength,
                   fontsize=12, y=1.01)
 
-    fname2 = '%s-map_%.0fnm.png' % (name_tag, wavelength)
+    fname2 = '%s/%s-map_%.0fnm.png' % (fdir_png, name_tag, wavelength)
     fig2.savefig(fname2, bbox_inches='tight')
     plt.close(fig2)
     print('Map saved:        %s' % fname2)
@@ -521,7 +523,7 @@ def example_05_rad_les_cloud_3d(
 
     fig3.tight_layout()
 
-    fname3 = '%s-r_tau_%.0fnm.png' % (name_tag, wavelength)
+    fname3 = '%s/%s-r_tau_%.0fnm.png' % (fdir_png, name_tag, wavelength)
     fig3.savefig(fname3, bbox_inches='tight')
     plt.close(fig3)
     print('R(tau) saved:     %s' % fname3)

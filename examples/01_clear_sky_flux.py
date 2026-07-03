@@ -254,7 +254,9 @@ def example_01_flux_clear_sky(
     # plot — mean profiles with ±1σ noise bands
     #╭────────────────────────────────────────────────────────────────────────────╮#
     if plot:
-        fname_png = '%s-%s_%s.png' % (name_tag, _metadata['Function'], solver.lower())
+        fdir_png = '%s/tmp-png/%s' % (fdir0, name_tag)
+        os.makedirs(fdir_png, exist_ok=True)
+        fname_png = '%s/%s-%s_%s.png' % (fdir_png, name_tag, _metadata['Function'], solver.lower())
 
         z   = atm0.lev['altitude']['data']   # altitude grid for plotting
 

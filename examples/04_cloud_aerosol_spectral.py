@@ -40,7 +40,7 @@ Key physics / "aha" moments
 
 Requires
 --------
-  data/00_er3t_mca/aux/les.nc  (~209 MB, downloaded via install-examples.sh)
+  data/les.nc  (~209 MB, downloaded via install-examples.sh)
 
 Student controls — edit the block below
 -----------------------------------------
@@ -177,7 +177,7 @@ def example_04_spectral(
     atm0      = er3t.pre.atm.atm_atmmod(levels=levels, fname=fname_atm, overwrite=overwrite)
 
     # ── Build cloud (shared across wavelengths) ───────────────────────────────
-    fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
+    fname_nc  = '%s/data/les.nc' % er3t.common.fdir_examples
     fname_les = '%s/les.pk' % fdir
     cld0      = er3t.pre.cld.cld_les(fname_nc=fname_nc, fname=fname_les,
                                      coarsen=[1, 1, 25], overwrite=overwrite)
@@ -447,7 +447,9 @@ def example_04_spectral(
         fontsize=11, y=1.02
     )
 
-    fname_png = '%s-comparison_%snm.png' % (name_tag, wl_str)
+    fdir_png = '%s/tmp-png/%s' % (fdir0, name_tag)
+    os.makedirs(fdir_png, exist_ok=True)
+    fname_png = '%s/%s-comparison_%snm.png' % (fdir_png, name_tag, wl_str)
     plt.savefig(fname_png, bbox_inches='tight')
     plt.close(fig)
     print('\nPlot saved: %s' % fname_png)

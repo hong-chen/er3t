@@ -14,7 +14,7 @@
 
 # ── Google Drive file ID ──────────────────────────────────────────────────────
 LES_GDRIVE_ID="1cmrZDaCwoQNhaoPGhJ9OhSVEpDU9h-gg"
-LES_DEST="data/00_er3t_mca/aux/les.nc"
+LES_DEST="data/les.nc"
 # ─────────────────────────────────────────────────────────────────────────────
 
 echo "╭────────────────────────────────────────────────╮"

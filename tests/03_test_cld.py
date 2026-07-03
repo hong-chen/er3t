@@ -54,7 +54,7 @@ def test_cld_les(fdir):
     Offline — no internet or token needed.
     """
 
-    fname_nc  = '%s/data/00_er3t_mca/aux/les.nc' % er3t.common.fdir_examples
+    fname_nc  = '%s/data/les.nc' % er3t.common.fdir_examples
     fname_les = '%s/les.pk' % fdir
 
     if not os.path.exists(fname_nc):
