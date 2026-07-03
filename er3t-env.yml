@@ -1,0 +1,25 @@
+name: er3t
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.12.*
+  - numpy
+  - scipy
+  - matplotlib
+  - scikit-image
+  - h5py
+  - netcdf4
+  - pyhdf
+  - cartopy
+  - owslib
+  - requests
+  - tqdm
+  - gdown
+  - psutil
+  - pip
+  - pip:
+    - pysolar
+    - uuid-utils
