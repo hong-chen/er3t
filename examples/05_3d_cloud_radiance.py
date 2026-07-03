@@ -90,7 +90,7 @@ plot_only = False       # set True to skip RT and re-plot from saved HDF5 files
 
 wavelength = 650.0      # Wavelength [nm].  Try: 400, 500, 650, 860, 1640.
 
-photons    = 1e8        # Monte Carlo photons per spectral bin.
+photons    = 1e6        # Monte Carlo photons per spectral bin.
                         #   1e6 → fast (~minutes per solver); grainy image
                         #   1e7 → noticeably cleaner (recommended)
                         #   1e8 → production quality
