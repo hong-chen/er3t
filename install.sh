@@ -4,7 +4,7 @@
 #
 # Data sources:
 #   er3t core data  — Schmidt Lab Google Drive (temporary; will move to Zenodo for v2)
-#   REPTRAN         — libRadtran project: https://www.libradtran.org
+#   REPTRAN         — Schmidt Lab Google Drive (mirrored from libRadtran project)
 #
 # For future reference / Zenodo migration:
 #   Previous Google Drive ID (Hong Chen's original, archived):
@@ -14,8 +14,8 @@
 ER3T_DATA_GDRIVE_ID="15YymaUt1i3ad45OZI4kXFDZZlxCNVuGU"
 ER3T_DATA_FILE="er3t-data.tar.gz"
 
-REPTRAN_URL="https://www.libradtran.org/lib/exe/fetch.php?media=download:reptran_2024_all.tar.gz"
-REPTRAN_FILE="reptran_2024_all.tar.gz"
+REPTRAN_GDRIVE_ID="1oUQZBVv0tauoNaT-Mto1fKMpWGAeITaY"
+REPTRAN_FILE="reptran.tar.gz"
 REPTRAN_DEST="er3t/data/abs/reptran"
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -32,17 +32,6 @@ if ! command -v gdown &> /dev/null; then
     exit 1
 fi
 
-# Prefer curl (ships with macOS and most Linux); fall back to wget
-if command -v curl &> /dev/null; then
-    DOWNLOADER="curl"
-elif command -v wget &> /dev/null; then
-    DOWNLOADER="wget"
-else
-    echo "[Error]: Neither 'curl' nor 'wget' found."
-    echo "  macOS:  curl ships by default — check your PATH"
-    echo "  Ubuntu: sudo apt-get install curl"
-    exit 1
-fi
 
 # ── Step 1: er3t core data ────────────────────────────────────────────────────
 echo "<1.1> Downloading er3t core data package (~39 MB) ..."
@@ -63,13 +52,9 @@ echo
 
 # ── Step 2: REPTRAN absorption database ──────────────────────────────────────
 echo "<2.1> Downloading REPTRAN absorption database (~142 MB) ..."
-echo "  Source : libRadtran project (Gasteiger et al. 2014)"
+echo "  Source : Schmidt Lab Google Drive"
 echo
-if [ "$DOWNLOADER" = "curl" ]; then
-    curl -L --progress-bar -o "$REPTRAN_FILE" "$REPTRAN_URL"
-else
-    wget --show-progress -O "$REPTRAN_FILE" "$REPTRAN_URL"
-fi
+gdown "$REPTRAN_GDRIVE_ID" --output "$REPTRAN_FILE"
 
 if [ ! -f "$REPTRAN_FILE" ]; then
     echo "[Error]: REPTRAN download failed."
