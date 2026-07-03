@@ -128,7 +128,7 @@ def run_flux_simulation(
             atm_3ds=atm_3ds,
             Ng=abs0.Ng,
             Nrun=Nrun,
-            surface_albedo=surface_albedo,
+            surface=surface_albedo,
             solar_zenith_angle=solar_zenith_angle,
             solar_azimuth_angle=solar_azimuth_angle,
             fdir='%s/%.0fnm/flux_%s' % (fdir, wl, solver.lower()),

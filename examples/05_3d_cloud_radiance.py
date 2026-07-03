@@ -177,7 +177,7 @@ def run_radiance_simulation(
             atm_3ds=atm_3ds,
             Ng=abs0.Ng,
             target='radiance',
-            surface_albedo=surface_albedo,
+            surface=surface_albedo,
             sca=sca,
             solar_zenith_angle=solar_zenith_angle,
             solar_azimuth_angle=solar_azimuth_angle,

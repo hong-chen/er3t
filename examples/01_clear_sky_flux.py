@@ -211,7 +211,7 @@ def example_01_flux_clear_sky(
             fdir='%s/%4.4d/flux_%s' % (fdir, wavelength, solver.lower()),
             target='flux',
             Nrun=Nrun,
-            surface_albedo=surface_albedo,
+            surface=surface_albedo,
             solar_zenith_angle=solar_zenith_angle,
             solar_azimuth_angle=solar_azimuth_angle,
             photons=photons,
