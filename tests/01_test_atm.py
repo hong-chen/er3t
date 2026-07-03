@@ -1,6 +1,10 @@
 import os
 import numpy as np
 
+import matplotlib as mpl
+mpl.use('Agg')           # non-interactive backend — no plt.show() blocking
+import matplotlib.pyplot as plt
+
 from er3t.pre.atm import atm_atmmod
 
 
@@ -52,7 +56,8 @@ def test_atm_atmmod(fdir):
 def test_high_res_atm(fdir):
 
     """
-    Test for module er3t.pre.atm.atm_atmmod
+    Test for module er3t.pre.atm.atm_atmmod — high-resolution 1001-level atmosphere.
+    Saves a pressure–altitude profile plot to tmp-data/01/test_high_res_atm.png.
     """
 
     levels = np.linspace(0.0, 20.0, 1001)
@@ -60,19 +65,14 @@ def test_high_res_atm(fdir):
 
     atm_obj = atm_atmmod(levels=levels, verbose=True)
 
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    import matplotlib as mpl
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import FixedLocator
-    from matplotlib import rcParams
-
     fig = plt.figure(figsize=(3, 7))
     ax1 = fig.add_subplot(111)
     ax1.scatter(atm_obj.lev['pressure']['data'], atm_obj.lev['altitude']['data'])
     ax1.set_xlabel('Pressure [hPa]')
     ax1.set_ylabel('Altitude [km]')
-    plt.show()
-    # ---------------------------------------------------------------------
+    fig.savefig('%s/test_high_res_atm.png' % fdir, bbox_inches='tight')
+    plt.close(fig)
+    print('  Plot saved to %s/test_high_res_atm.png' % fdir)
 
 
 
