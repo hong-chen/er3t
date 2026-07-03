@@ -32,11 +32,15 @@ if ! command -v gdown &> /dev/null; then
     exit 1
 fi
 
-# Check for wget (needed for REPTRAN)
-if ! command -v wget &> /dev/null; then
-    echo "[Error]: 'wget' is required but not found."
-    echo "  macOS:  brew install wget"
-    echo "  Ubuntu: sudo apt-get install wget"
+# Prefer curl (ships with macOS and most Linux); fall back to wget
+if command -v curl &> /dev/null; then
+    DOWNLOADER="curl"
+elif command -v wget &> /dev/null; then
+    DOWNLOADER="wget"
+else
+    echo "[Error]: Neither 'curl' nor 'wget' found."
+    echo "  macOS:  curl ships by default — check your PATH"
+    echo "  Ubuntu: sudo apt-get install curl"
     exit 1
 fi
 
@@ -61,7 +65,11 @@ echo
 echo "<2.1> Downloading REPTRAN absorption database (~142 MB) ..."
 echo "  Source : libRadtran project (Gasteiger et al. 2014)"
 echo
-wget --show-progress -O "$REPTRAN_FILE" "$REPTRAN_URL"
+if [ "$DOWNLOADER" = "curl" ]; then
+    curl -L --progress-bar -o "$REPTRAN_FILE" "$REPTRAN_URL"
+else
+    wget --show-progress -O "$REPTRAN_FILE" "$REPTRAN_URL"
+fi
 
 if [ ! -f "$REPTRAN_FILE" ]; then
     echo "[Error]: REPTRAN download failed."
