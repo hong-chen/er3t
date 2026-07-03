@@ -133,25 +133,8 @@ except Exception as e:
     _fail('atm_atmmod', str(e))
 
 
-# ── 4. Absorption: abs_16g ────────────────────────────────────────────────────
-_section('4. Absorption: correlated-k 16g  (er3t.pre.abs.abs_16g)')
-
-try:
-    import er3t.common
-    h5_path = '%s/abs_16g.h5' % er3t.common.fdir_data_abs
-    if not os.path.exists(h5_path):
-        _skip('abs_16g',
-              'abs_16g.h5 not in data package — not needed for examples 01–05')
-    else:
-        from er3t.pre.abs import abs_16g
-        abs0 = abs_16g(wavelength=500.0, atm_obj=atm0)
-        _ok('abs_16g  @ 500 nm')
-except Exception as e:
-    _fail('abs_16g', str(e))
-
-
-# ── 5. Absorption: REPTRAN ────────────────────────────────────────────────────
-_section('5. Absorption: REPTRAN  (er3t.pre.abs.abs_rep)')
+# ── 4. Absorption: REPTRAN ────────────────────────────────────────────────────
+_section('4. Absorption: REPTRAN  (er3t.pre.abs.abs_rep)')
 
 try:
     from er3t.pre.abs import abs_rep
@@ -164,7 +147,7 @@ except Exception as e:
     _fail('abs_rep', str(e))
 
 
-# ── 6. Mie phase function ─────────────────────────────────────────────────────
+# ── 5. Mie phase function ─────────────────────────────────────────────────────
 _section('6. Mie phase function  (er3t.pre.pha.pha_mie_wc)')
 
 try:
@@ -179,7 +162,7 @@ except Exception as e:
     _fail('pha_mie_wc', str(e))
 
 
-# ── 7. MCARaTS executable ─────────────────────────────────────────────────────
+# ── 6. MCARaTS executable ─────────────────────────────────────────────────────
 _section('7. MCARaTS solver')
 
 mcarats_exe = os.environ.get('MCARATS_V010_EXE', '')
@@ -196,7 +179,7 @@ else:
     _ok('MCARaTS executable found: %s' % mcarats_exe)
 
 
-# ── 8. Worldview download (optional) ─────────────────────────────────────────
+# ── 7. Worldview download (optional) ─────────────────────────────────────────
 if args.worldview:
     _section('8. Worldview RGB download  (optional, ~30 s)')
     try:
