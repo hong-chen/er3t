@@ -1358,6 +1358,17 @@ def download_laads_https(
                 print("Message [download_laads_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
+                # A stale/invalid partial file (e.g. from an expired token or an
+                # interrupted download) must be removed before retrying — otherwise
+                # curl/wget's --continue-at/-c resume flag will try to resume from a
+                # corrupt file, which either appends garbage to garbage or fails
+                # outright with "server doesn't support byte ranges" on some DAAC
+                # endpoints, leaving the same bad file behind indefinitely.
+                if os.path.isfile(fname_local):
+                    if verbose:
+                        print("Message [download_laads_https]: Removing stale/invalid file {} before re-downloading.".format(fname_local))
+                    os.remove(fname_local)
+
                 fnames_local.append(fname_local)
                 primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
                 primary_commands.append(primary_command)
@@ -1485,6 +1496,13 @@ def download_lance_https(
                 print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
+                # remove stale/invalid partial file first — see comment in
+                # download_laads_https for why resuming onto a corrupt file is unsafe
+                if os.path.isfile(fname_local):
+                    if verbose:
+                        print("Message [download_lance_https]: Removing stale/invalid file {} before re-downloading.".format(fname_local))
+                    os.remove(fname_local)
+
                 fnames_local.append(fname_local)
                 primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, primary_tool='curl', backup_tool='wget', verbose=verbose)
                 primary_commands.append(primary_command)
@@ -1602,6 +1620,13 @@ def download_nsidc_https(
                 print("Message [download_nsidc_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
+                # remove stale/invalid partial file first — see comment in
+                # download_laads_https for why resuming onto a corrupt file is unsafe
+                if os.path.isfile(fname_local):
+                    if verbose:
+                        print("Message [download_nsidc_https]: Removing stale/invalid file {} before re-downloading.".format(fname_local))
+                    os.remove(fname_local)
+
                 fnames_local.append(fname_local)
                 primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
                 primary_commands.append(primary_command)

@@ -27,6 +27,7 @@ Set up your token:
 
 import os
 import sys
+import glob
 import argparse
 import datetime
 import numpy as np
@@ -88,17 +89,28 @@ def test_download_modis(fdir):
     Requires EARTHDATA_TOKEN to be set.
     """
 
-    from er3t.util.modis import download_modis_https
+    from er3t.util.daac import download_laads_https
 
     date = datetime.datetime(2017, 8, 25)
     dataset_tags = ['61/MYD02QKM', '61/MYD03', '61/MYD06_L2']
     filename_tag = '.2035.'
+    fdir_modis = '%s/modis' % fdir
 
     print('  Downloading MODIS files for %s ...' % date.strftime('%Y-%m-%d'))
     for dataset_tag in dataset_tags:
-        download_modis_https(date, dataset_tag, filename_tag,
-                             day_interval=1, fdir_out='%s/modis' % fdir, run=True)
-    print('  ✓  test_download_modis passed  →  files in %s/modis/' % fdir)
+        download_laads_https(date, dataset_tag, filename_tag,
+                             day_interval=1, fdir_out=fdir_modis, run=True)
+
+    # download_laads_https validates each file itself (and removes/skips bad ones),
+    # so checking disk state afterwards works whether files were freshly downloaded
+    # or already present and valid from a previous run.
+    fnames_downloaded = glob.glob('%s/*.hdf' % fdir_modis)
+    if len(fnames_downloaded) < len(dataset_tags):
+        print('  ✗  Expected %d MODIS files in %s/, found %d.' % (len(dataset_tags), fdir_modis, len(fnames_downloaded)))
+        print('     Check that EARTHDATA_TOKEN is set and has not expired:')
+        print('     https://konradsebastian.github.io/er3t-edu/install.html#earthdata-token')
+        sys.exit(1)
+    print('  ✓  test_download_modis passed  →  files in %s/' % fdir_modis)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
