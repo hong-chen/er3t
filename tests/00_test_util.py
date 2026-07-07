@@ -98,18 +98,18 @@ def test_download_worldview():
     central US.
     """
 
-    from er3t.util.daac import download_worldview_rgb
+    from er3t.util.daac import download_worldview_image
 
     date   = datetime.datetime(2022, 5, 18)
     extent = [-94.2607, -87.2079, 31.8594, 38.9122]
 
-    download_worldview_rgb(date, extent, fdir_out='tmp-data/00',
+    download_worldview_image(date, extent, fdir_out='tmp-data/00',
                            instrument='modis', satellite='aqua',   fmt='png')
-    download_worldview_rgb(date, extent, fdir_out='tmp-data/00',
+    download_worldview_image(date, extent, fdir_out='tmp-data/00',
                            instrument='modis', satellite='terra',  fmt='png')
-    download_worldview_rgb(date, extent, fdir_out='tmp-data/00',
+    download_worldview_image(date, extent, fdir_out='tmp-data/00',
                            instrument='viirs', satellite='snpp',   fmt='h5')
-    download_worldview_rgb(date, extent, fdir_out='tmp-data/00',
+    download_worldview_image(date, extent, fdir_out='tmp-data/00',
                            instrument='viirs', satellite='noaa20', fmt='h5')
 
     print('  ✓  test_download_worldview passed  →  files in tmp-data/00/')

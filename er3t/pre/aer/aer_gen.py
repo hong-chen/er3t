@@ -146,11 +146,11 @@ class aer_gen:
 
         lon       = lon0[:]
         lat       = lat0[:]
-        cot       = np.float_(cot0[:])
-        cer       = np.float_(cer0[:])
-        cot_pcl   = np.float_(cot_pcl0[:])
-        cer_pcl   = np.float_(cer_pcl0[:])
-        cth       = np.float_(cth0[:])
+        cot       = np.float64(cot0[:])
+        cer       = np.float64(cer0[:])
+        cot_pcl   = np.float64(cot_pcl0[:])
+        cer_pcl   = np.float64(cer_pcl0[:])
+        cth       = np.float64(cth0[:])
 
         logic     = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
         lon       = lon[logic]

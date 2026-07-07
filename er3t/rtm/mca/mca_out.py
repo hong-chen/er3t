@@ -56,11 +56,11 @@ class mca_out_raw:
 
             if 'XDEF' in line:
                 line = line.replace('XDEF', '').replace('LINEAR', '').strip()
-                Nx, S, I = np.int_(line.split())
+                Nx, S, I = np.int64(line.split())
 
             elif 'YDEF' in line:
                 line = line.replace('YDEF', '').replace('LINEAR', '').strip()
-                Ny, S, I = np.int_(line.split())
+                Ny, S, I = np.int64(line.split())
 
             elif 'TDEF' in line:
                 line = line.replace('TDEF', '').strip()

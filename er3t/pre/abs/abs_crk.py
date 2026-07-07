@@ -208,7 +208,7 @@ class abs_16g:
         pref, pref_log, tref, vref, vref_log = self.load_reference()
 
         p_log       = np.log(self.lay['pressure']['data'])
-        jpd         = np.int_(35.0 - 5.0*(p_log+0.04))
+        jpd         = np.int64(35.0 - 5.0*(p_log+0.04))
         jpd[jpd<0]  = 0
         jpd[jpd>57] = 57
         jpu         = jpd + 1
@@ -225,21 +225,21 @@ class abs_16g:
         # calculate temperature interpolation factor
         atm_temp   = self.lay['temperature']['data']
         # delt       = np.array([-30, -15, 0, 15, 30])
-        jtd        = np.int_(2.0 + (atm_temp-tref[jpd])/15.0)
+        jtd        = np.int64(2.0 + (atm_temp-tref[jpd])/15.0)
         jtd[jtd<0] = 0
         jtd[jtd>3] = 3
-        jtu        = np.int_(2.0 + (atm_temp-tref[jpu])/15.0)
+        jtu        = np.int64(2.0 + (atm_temp-tref[jpu])/15.0)
         jtu[jtu<0] = 0
         jtu[jtu>3] = 3
-        ftd        = (atm_temp-tref[jpd])/15.0 - np.float_(jtd-2.0)
-        ftu        = (atm_temp-tref[jpu])/15.0 - np.float_(jtu-2.0)
+        ftd        = (atm_temp-tref[jpd])/15.0 - np.float64(jtd-2.0)
+        ftu        = (atm_temp-tref[jpu])/15.0 - np.float64(jtu-2.0)
 
         # calculate water vapor mixing ratio interpolation factor
         atm_h2o_mix = self.lay['h2o']['data'] / self.lay['factor']['data']
         atm_h2o_mix_log = np.log(atm_h2o_mix)
         atm_h2o_mix_log[atm_h2o_mix_log<-1.2206e+01] = -1.2206e+01
         atm_h2o_mix_log[atm_h2o_mix_log>-3.2061e+00] = -3.2061e+00
-        jwd         = np.int_(12.2 + atm_h2o_mix_log)
+        jwd         = np.int64(12.2 + atm_h2o_mix_log)
         jwd[jwd<0]  = 0
         jwd[jwd>8]  = 8
         jwu         = jwd + 1
@@ -876,7 +876,7 @@ class abs_16g_txt:
         pref, pref_log, tref, vref, vref_log = self.load_reference()
 
         p_log       = np.log(self.lay['pressure']['data'])
-        jpd         = np.int_(35.0 - 5.0*(p_log+0.04))
+        jpd         = np.int64(35.0 - 5.0*(p_log+0.04))
         jpd[jpd<0]  = 0
         jpd[jpd>57] = 57
         jpu         = jpd + 1
@@ -893,21 +893,21 @@ class abs_16g_txt:
         # calculate temperature interpolation factor
         atm_temp   = self.lay['temperature']['data']
         # delt       = np.array([-30, -15, 0, 15, 30])
-        jtd        = np.int_(2.0 + (atm_temp-tref[jpd])/15.0)
+        jtd        = np.int64(2.0 + (atm_temp-tref[jpd])/15.0)
         jtd[jtd<0] = 0
         jtd[jtd>3] = 3
-        jtu        = np.int_(2.0 + (atm_temp-tref[jpu])/15.0)
+        jtu        = np.int64(2.0 + (atm_temp-tref[jpu])/15.0)
         jtu[jtu<0] = 0
         jtu[jtu>3] = 3
-        ftd        = (atm_temp-tref[jpd])/15.0 - np.float_(jtd-2.0)
-        ftu        = (atm_temp-tref[jpu])/15.0 - np.float_(jtu-2.0)
+        ftd        = (atm_temp-tref[jpd])/15.0 - np.float64(jtd-2.0)
+        ftu        = (atm_temp-tref[jpu])/15.0 - np.float64(jtu-2.0)
 
         # calculate water vapor mixing ratio interpolation factor
         atm_h2o_mix = self.lay['h2o']['data'] / self.lay['factor']['data']
         atm_h2o_mix_log = np.log(atm_h2o_mix)
         atm_h2o_mix_log[atm_h2o_mix_log<-1.2206e+01] = -1.2206e+01
         atm_h2o_mix_log[atm_h2o_mix_log>-3.2061e+00] = -3.2061e+00
-        jwd         = np.int_(12.2 + atm_h2o_mix_log)
+        jwd         = np.int64(12.2 + atm_h2o_mix_log)
         jwd[jwd<0]  = 0
         jwd[jwd>8]  = 8
         jwu         = jwd + 1

@@ -824,7 +824,7 @@ class viirs_cldprop_l2:
 
         # Retrieve 1. ctp, 2. cth, 3. cot, 4. cer, 5. cwp, and select regional extent
         ctp           = get_data_nc(ctp0, replace_fill_value=None)[logic_extent]
-        cth           = np.float_(get_data_nc(cth0, replace_fill_value=None)[logic_extent])
+        cth           = np.float64(get_data_nc(cth0, replace_fill_value=None)[logic_extent])
 
         cot0_data     = get_data_nc(cot0)[logic_extent]
         cer0_data     = get_data_nc(cer0)[logic_extent]

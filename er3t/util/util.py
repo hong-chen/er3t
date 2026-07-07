@@ -523,7 +523,7 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest', fil
     if extent is None:
         extent = [lon.min(), lon.max(), lat.min(), lat.max()]
     else:
-        extent = np.float_(np.array(extent))
+        extent = np.float64(np.array(extent))
 
     if NxNy is None:
         xy = (extent[1]-extent[0])*(extent[3]-extent[2])
@@ -669,7 +669,7 @@ def grid_by_dxdy(lon, lat, data, extent=None, dx=None, dy=None, method='nearest'
     if extent is None:
         extent = [np.nanmin(lon), np.nanmax(lon), np.nanmin(lat), np.nanmax(lat)]
     else:
-        extent = np.float_(np.array(extent))
+        extent = np.float64(np.array(extent))
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 

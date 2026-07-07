@@ -178,7 +178,10 @@ class mca_run:
 
 def execute_command(command):
 
-    os.system(command)
+    import subprocess, shlex
+    # Use subprocess with shell=False so parentheses and other special
+    # characters in directory paths are not interpreted by the shell.
+    subprocess.run(shlex.split(command), check=False)
 
 
 
