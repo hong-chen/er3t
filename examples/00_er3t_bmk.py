@@ -452,9 +452,9 @@ def lrt_rad_one(
     cld_cfg['cloud_effective_radius']  = params['cloud_effective_radius']
     cld_cfg['cloud_altitude'] = np.arange(params['cloud_top_height']-params['cloud_geometric_thickness'], params['cloud_top_height']+0.01, 0.1)
 
-    fname_out = f"{fdir_tmp}/output_rad.txt"
-    if (not overwrite) and (not os.path.exists(fname_out)):
-        overwrite = True
+    # fname_out = f"{fdir_tmp}/output_rad.txt"
+    # if (not overwrite) and (not os.path.exists(fname_out)):
+    #     overwrite = True
 
     mute_list = ['source solar', 'slit_function_file', 'wavelength', 'spline', 'albedo']
 
@@ -471,23 +471,27 @@ def lrt_rad_one(
         mute_list.pop()
 
     inits = []
-    init_rad = er3t.rtm.lrt.lrt_init_mono_rad(
-            input_file  = f"{fdir_tmp}/input_rad.txt",
-            output_file = fname_out,
-            date        = params['date'],
-            surface_albedo = params['surface_albedo'],
-            solar_zenith_angle   = params['solar_zenith_angle'],
-            solar_azimuth_angle  = params['solar_azimuth_angle'],
-            sensor_zenith_angle  = params['sensor_zenith_angle'],
-            sensor_azimuth_angle = params['sensor_azimuth_angle'],
-            wavelength         = params['wavelength'],
-            output_altitude    = params['output_altitude'][-1],
-            lrt_cfg            = lrt_cfg,
-            cld_cfg            = cld_cfg,
-            mute_list          = mute_list,
-            input_dict_extra   = input_dict_extra,
-            )
-    inits.append(init_rad)
+    for iv, vza0 in enumerate(params['sensor_zenith_angle']):
+        vaa0 = params['sensor_azimuth_angle'][iv]
+        fname_inp = f"{fdir_tmp}/input_rad_vaa{vaa0:06.1f}_vza{vza0:06.1f}.txt"
+        fname_out = f"{fdir_tmp}/output_rad_vaa{vaa0:06.1f}_vza{vza0:06.1f}.txt"
+        init_rad = er3t.rtm.lrt.lrt_init_mono_rad(
+                input_file  = fname_inp,
+                output_file = fname_out,
+                date        = params['date'],
+                surface_albedo = params['surface_albedo'],
+                solar_zenith_angle   = params['solar_zenith_angle'],
+                solar_azimuth_angle  = 0.0,
+                sensor_zenith_angle  = vza0,
+                sensor_azimuth_angle = vaa0,
+                wavelength         = params['wavelength'],
+                output_altitude    = params['output_altitude'][-1],
+                lrt_cfg            = lrt_cfg,
+                cld_cfg            = cld_cfg,
+                mute_list          = mute_list,
+                input_dict_extra   = input_dict_extra,
+                )
+        inits.append(init_rad)
 
     init_flx = er3t.rtm.lrt.lrt_init_mono_flx(
             input_file  = f"{fdir_tmp}/input_flx.txt",
@@ -508,7 +512,7 @@ def lrt_rad_one(
         er3t.rtm.lrt.lrt_run_mp(inits)
 
     data0 = er3t.rtm.lrt.lrt_read_uvspec_flx([init_flx])
-    data1 = er3t.rtm.lrt.lrt_read_uvspec_rad([init_rad])
+    data1 = er3t.rtm.lrt.lrt_read_uvspec_rad(inits[:-1])
 
     data = {
               'f_down': np.squeeze(data0.f_down),
@@ -718,7 +722,7 @@ def shd_rad_one(
             solar_zenith_angle=params['solar_zenith_angle'],
             solar_azimuth_angle=params['solar_azimuth_angle'],
             sensor_azimuth_angles=params['sensor_azimuth_angle'],
-            sensor_zenith_angles=np.repeat(params['sensor_zenith_angle'], params['sensor_azimuth_angle'].size),
+            sensor_zenith_angles=params['sensor_zenith_angle'],
             sensor_altitude=params['output_altitude'][-1],
             sensor_dx=cld0.lay['dx']['data'],
             sensor_dy=cld0.lay['dy']['data'],
@@ -752,6 +756,10 @@ def test_100_rad_one(
         overwrite=False,
         ):
 
+    vza = np.append(np.arange(89.0, 0.0, -1.0), np.arange(0.0, 89.1, 1.0))
+    vaa = np.zeros_like(vza)
+    vaa[:90] = 180.0
+
     params = {
                             'date': datetime.datetime(2024, 5, 18),
                  'atmosphere_file': f"{er3t.common.fdir_data_atmmod}/afglss.dat",
@@ -759,9 +767,8 @@ def test_100_rad_one(
               'solar_zenith_angle': 30.0,
              'solar_azimuth_angle': 0.0,
                  'sensor_altitude': 120.0,
-             'sensor_zenith_angle': 30.0,
-            'sensor_azimuth_angle': np.arange(0.0, 180.1, 5.0),
-            # 'sensor_azimuth_angle': np.array([0.0]),
+             'sensor_zenith_angle': vza,
+            'sensor_azimuth_angle': vaa,
                  'sensor_altitude': 120.0,
                       'wavelength': wavelength,
          'cloud_optical_thickness': cot,
@@ -780,30 +787,26 @@ def test_100_rad_one(
     if params['cloud_optical_thickness'] > 0.0:
         params['photons'] = 1.0e8
 
-    data_lrt = lrt_rad_one(params, surface=surface, overwrite=(runlibRadtran_ and overwrite))
+    data_lrt = lrt_rad_one(params, surface=surface, overwrite=True)
     f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
 
-    if runMCARaTS_:
-        data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=(runMCARaTS_ and overwrite))
+    # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
     data_shd = shd_rad_one(params, f_toa=f_toa, surface=surface, overwrite=(runSHDOM_ and overwrite))
 
     # add the other half (180.0 - 360.0)
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    params['sensor_azimuth_angle'] = np.append(params['sensor_azimuth_angle'], 180.0+params['sensor_azimuth_angle'][1:])
-    if runlibRadtran_:
-        data_lrt['rad'] = np.append(data_lrt['rad'], data_lrt['rad'][:-1][::-1])
+    # data_mca['rad'] = np.append(data_mca['rad'], data_mca['rad'][:-1][::-1])
+    # data_mca['rad_std'] = np.append(data_mca['rad_std'], data_mca['rad_std'][:-1][::-1])
 
-    if runMCARaTS_:
-        data_mca['rad'] = np.append(data_mca['rad'], data_mca['rad'][:-1][::-1])
-        data_mca['rad_std'] = np.append(data_mca['rad_std'], data_mca['rad_std'][:-1][::-1])
-        error_mca_rad = np.nanmean(np.abs(data_lrt['rad']-data_mca['rad'])/data_lrt['rad']*100.0)
-
-    if runSHDOM_:
-        data_shd['rad'] = np.append(data_shd['rad'], data_shd['rad'][:-1][::-1])
-        error_shd_rad = np.nanmean(np.abs(data_lrt['rad']-data_shd['rad'])/data_lrt['rad']*100.0)
+    # data_shd['rad'] = np.append(data_shd['rad'], data_shd['rad'][:-1][::-1])
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
+    # error_shd_rad = np.nanmean(np.abs(data_lrt['rad']-data_shd['rad'])/data_lrt['rad']*100.0)
+    # error_mca_rad = np.nanmean(np.abs(data_lrt['rad']-data_mca['rad'])/data_lrt['rad']*100.0)
+
+    xx = params['sensor_zenith_angle'].copy()
+    xx[:90] = -params['sensor_zenith_angle'][:90]
 
     # figure
     #╭────────────────────────────────────────────────────────────────────────────╮#
@@ -813,46 +816,37 @@ def test_100_rad_one(
         # fig.suptitle('COT=%.1f, CER=%.1f $\\mu m$' % (params['cloud_optical_thickness'], params['cloud_effective_radius']))
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(111)
-
-        if runlibRadtran_:
-            ax1.plot(params['sensor_azimuth_angle'], data_lrt['rad'], color='k' , lw=3.0, alpha=0.9, ls='-', zorder=0)
-        if runMCARaTS_:
-            ax1.fill_between(params['sensor_azimuth_angle'], data_mca['rad']-data_mca['rad_std'], data_mca['rad']+data_mca['rad_std'], color='blue', lw=1.0, alpha=1.0, zorder=1)
-        if runSHDOM_:
-            ax1.plot(params['sensor_azimuth_angle'], data_shd['rad'], color='r' , lw=1.0, alpha=1.0, ls='-', zorder=2)
-
+        ax1.plot(xx, data_lrt['rad'], color='k' , lw=2.0, alpha=0.9, ls='-', zorder=0)
+        # ax1.fill_between(params['sensor_azimuth_angle'], data_mca['rad']-data_mca['rad_std'], data_mca['rad']+data_mca['rad_std'], color='blue', lw=1.0, alpha=1.0, zorder=1)
+        ax1.plot(xx, data_shd['rad'], color='r' , lw=1.0, alpha=1.0, ls='-', zorder=2)
         ax1.set_xlabel('Viewing Azimuth Angle [$^\\circ$]')
         ax1.set_ylabel('Radiance [$\\mathrm{W m^{-2} nm^{-1} sr^{-1}}$]')
-        ax1.set_xlim((0, 360.0))
-        ax1.xaxis.set_major_locator(FixedLocator(np.arange(0.0, 360.1, 60.0)))
+        # ax1.set_xlim((0, 360.0))
+        ax1.xaxis.set_major_locator(FixedLocator(np.arange(-90.0, 90.1, 30.0)))
 
         ax2 = ax1.twinx()
 
-        if runMCARaTS_:
-            diff1 = (data_mca['rad']-data_mca['rad_std']-data_lrt['rad'])/data_lrt['rad'] * 100.0
-            diff2 = (data_mca['rad']+data_mca['rad_std']-data_lrt['rad'])/data_lrt['rad'] * 100.0
-            ax2.fill_between(params['sensor_azimuth_angle'], diff1, diff2, color='cyan', lw=0.75, alpha=1.0, zorder=1)
+        # diff1 = (data_mca['rad']-data_mca['rad_std']-data_lrt['rad'])/data_lrt['rad'] * 100.0
+        # diff2 = (data_mca['rad']+data_mca['rad_std']-data_lrt['rad'])/data_lrt['rad'] * 100.0
+        # ax2.fill_between(params['sensor_azimuth_angle'], diff1, diff2, color='cyan', lw=0.75, alpha=1.0, zorder=1)
 
-        if runSHDOM_:
-            diff = (data_shd['rad']-data_lrt['rad'])/data_lrt['rad'] * 100.0
-            ax2.plot(params['sensor_azimuth_angle'], diff, color='magenta', lw=1.0, alpha=1.0, ls='-', zorder=2)
+        diff = (data_shd['rad']-data_lrt['rad'])/data_lrt['rad'] * 100.0
+        ax2.plot(xx, diff, color='magenta', lw=1.0, alpha=1.0, ls='-', zorder=2)
+
+        ax2.set_ylim((-100.0, 100.0))
 
         ax2.set_ylim((-10.0, 10.0))
         ax2.axhline(0.0, color='gray', ls='--', zorder=0)
         ax2.set_ylabel('Difference [%]', rotation=270.0, labelpad=16)
         #╰──────────────────────────────────────────────────────────────╯#
 
-        patches_legend = []
-        if runlibRadtran_:
-            patches_legend.append(mpatches.Patch(color='black', label='libRadtran'))
-        if runMCARaTS_:
-            patches_legend.append(mpatches.Patch(color='blue' , label='MCARaTS'))
-        if runSHDOM_:
-            patches_legend.append(mpatches.Patch(color='red'  , label='SHDOM'))
-        if runMCARaTS_:
-            patches_legend.append(mpatches.Patch(color='cyan' , label='MCARaTS Diff.'))
-        if runSHDOM_:
-            patches_legend.append(mpatches.Patch(color='magenta', label='SHDOM Diff.'))
+        patches_legend = [
+                          mpatches.Patch(color='black', label='libRadtran'), \
+                          # mpatches.Patch(color='blue' , label='MCARaTS'), \
+                          mpatches.Patch(color='red'  , label='SHDOM'), \
+                          # mpatches.Patch(color='cyan'   , label='MCARaTS Diff.'), \
+                          mpatches.Patch(color='magenta', label='SHDOM Diff.'), \
+                         ]
         ax1.legend(handles=patches_legend, loc='upper right', fontsize=12)
 
         # save figure
@@ -1238,7 +1232,7 @@ if __name__ == '__main__':
         test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
-        # test_100_flux_one(556.0, 10.0, 12.0, 100, plot=True, overwrite=True)
+        # test_100_flux_one(556.0, 2.0, 12.0, 100, plot=True, overwrite=True)
 
         # icount = 0
         # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
