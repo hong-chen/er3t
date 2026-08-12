@@ -231,7 +231,7 @@ def example_01_rad_atm1d_clear_over_land(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet', vmin=0.0, vmax=0.1)
         cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.04, location='bottom')
 
         ax1.set_title(f"Radiance at {wavelength:.1f} nm (SZA={sza:.1f}$^\\circ$, {solver} Mode)")
@@ -446,7 +446,7 @@ def example_02_rad_atm1d_clear_over_ocean(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet', vmin=0.0, vmax=0.4)
         cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.04, location='bottom')
 
         ax1.set_title(f"Radiance at {wavelength:.1f} nm (SZA={sza:.1f}$^\\circ$, {solver} Mode)")
@@ -665,7 +665,7 @@ def example_03_rad_atm1d_clear_over_snow(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet', vmin=0.1, vmax=0.5)
         cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.04, location='bottom')
 
         ax1.set_title(f"Radiance at {wavelength:.1f} nm (SZA={sza:.1f}$^\\circ$, {solver} Mode)")
@@ -881,7 +881,7 @@ def example_04_rad_atm1d_cloud_over_ocean(
         ax1.set_rlim((0.0, 89.0))
 
         data = out0.data['rad']['data'][:].reshape(vaa_2d.shape)
-        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet')
+        cs = ax1.pcolormesh(np.deg2rad(vaa_2d), vza_2d, data, cmap='jet', vmin=0.1, vmax=0.3)
         cbar = fig.colorbar(cs, ax=ax1, shrink=0.5, aspect=30, pad=0.04, location='bottom')
 
         ax1.set_title(f"Radiance at {wavelength:.1f} nm (SZA={sza:.1f}$^\\circ$, {solver} Mode)")
