@@ -196,9 +196,9 @@ def cal_mca_flux(
     fname_cld = '%s/cld_ahi_%3.3d.pk' % (fdir, index)
 
     if overwrite:
-        ahi0      = er3t.util.ahi_l2(fnames=[fname_sat], extent=extent, vnames=['cld_height_acha'])
-        lon_2d, lat_2d, cot_2d = er3t.util.grid_by_dxdy(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cot']['data'], extent=extent, dx=params['dx'], dy=params['dy'])
-        lon_2d, lat_2d, cer_2d = er3t.util.grid_by_dxdy(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cer']['data'], extent=extent, dx=params['dx'], dy=params['dy'])
+        ahi0      = er3t.sat.readers.ahi.ahi_l2(fnames=[fname_sat], extent=extent, vnames=['cld_height_acha'])
+        lon_2d, lat_2d, cot_2d = er3t.core.grid_by_dxdy(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cot']['data'], extent=extent, dx=params['dx'], dy=params['dy'])
+        lon_2d, lat_2d, cer_2d = er3t.core.grid_by_dxdy(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cer']['data'], extent=extent, dx=params['dx'], dy=params['dy'])
         cot_2d[cot_2d>100.0] = 100.0
         cer_2d[cer_2d==0.0] = 1.0
         ahi0.data['lon_2d'] = dict(name='Gridded longitude'               , units='degrees'    , data=lon_2d)
@@ -207,7 +207,7 @@ def cal_mca_flux(
         ahi0.data['cer_2d'] = dict(name='Gridded cloud effective radius'  , units='micro'      , data=cer_2d)
 
         if cloud_top_height is None:
-            lon_2d, lat_2d, cth_2d = er3t.util.grid_by_dxdy(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cld_height_acha']['data'], extent=extent, dx=params['dx'], dy=params['dy'])
+            lon_2d, lat_2d, cth_2d = er3t.core.grid_by_dxdy(ahi0.data['lon']['data'], ahi0.data['lat']['data'], ahi0.data['cld_height_acha']['data'], extent=extent, dx=params['dx'], dy=params['dy'])
             cth_2d[cth_2d<0.0]  = 0.0; cth_2d /= 1000.0
             ahi0.data['cth_2d'] = dict(name='Gridded cloud top height', units='km', data=cth_2d)
             cloud_top_height = ahi0.data['cth_2d']['data']

@@ -209,7 +209,7 @@ def example_01_flux_clear_sky(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -422,7 +422,7 @@ def example_02_flux_les_cloud_3d(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -644,7 +644,7 @@ def example_03_flux_les_cloud_3d_aerosol_1d(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -882,7 +882,7 @@ def example_04_flux_les_cloud_3d_aerosol_3d(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -999,9 +999,9 @@ def example_05_rad_les_cloud_3d(
     fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
 
     lon, lat = np.meshgrid(np.linspace(0.0, 48.0, 400), np.linspace(0.0, 48.0, 480), indexing='ij')
-    x, y, fiso = er3t.util.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    x, y, fvol = er3t.util.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    x, y, fgeo = er3t.util.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fiso = er3t.core.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fvol = er3t.core.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fgeo = er3t.core.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
 
     sfc_dict = {
             'dx': cld0.lay['dx']['data'],
@@ -1129,7 +1129,7 @@ def example_05_rad_les_cloud_3d(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -1320,7 +1320,7 @@ def example_06_rad_cld_gen_hem(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 

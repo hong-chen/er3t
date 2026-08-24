@@ -154,21 +154,21 @@ class satellite_download:
         self.fnames = {}
 
         # MODIS RGB imagery
-        self.fnames['mod_rgb'] = [er3t.util.download_worldview_image(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
+        self.fnames['mod_rgb'] = [er3t.sat.download.download_worldview_image(self.date, self.extent, fdir_out=self.fdir_out, satellite=self.satellite, instrument='modis', coastline=True)]
 
         # MODIS Level 2 Cloud Product and MODIS 03 geo file
         self.fnames['mod_l2'] = []
         self.fnames['mod_02'] = []
         self.fnames['mod_03'] = []
 
-        filename_tags_03 = er3t.util.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
+        filename_tags_03 = er3t.sat.download.get_satfile_tag(self.date, lon, lat, satellite=self.satellite, instrument='modis')
         if self.verbose:
            print('Message [satellite_download]: Found %s %s overpasses' % (len(filename_tags_03), self.satellite))
 
         for filename_tag in filename_tags_03:
-            fnames_03     = er3t.util.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_l2     = er3t.util.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
-            fnames_02     = er3t.util.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_03     = er3t.sat.download.download_laads_https(self.date, dataset_tags[0], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_l2     = er3t.sat.download.download_laads_https(self.date, dataset_tags[1], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_02     = er3t.sat.download.download_laads_https(self.date, dataset_tags[2], filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
 
             self.fnames['mod_l2'] += fnames_l2
             self.fnames['mod_02'] += fnames_02
@@ -177,11 +177,11 @@ class satellite_download:
         # MODIS surface product
         self.fnames['mod_43a1'] = []
         self.fnames['mod_43a3'] = []
-        filename_tags_43 = er3t.util.modis.get_sinusoidal_grid_tag(lon, lat)
+        filename_tags_43 = er3t.sat.readers.modis.get_sinusoidal_grid_tag(lon, lat)
         for filename_tag in filename_tags_43:
-            fnames_43a1 = er3t.util.download_laads_https(self.date, '61/MCD43A1', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_43a1 = er3t.sat.download.download_laads_https(self.date, '61/MCD43A1', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_43a1'] += fnames_43a1
-            fnames_43a3 = er3t.util.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
+            fnames_43a3 = er3t.sat.download.download_laads_https(self.date, '61/MCD43A3', filename_tag, day_interval=1, fdir_out=self.fdir_out, run=run)
             self.fnames['mod_43a3'] += fnames_43a3
 
     def dump(self, fname):
@@ -257,13 +257,13 @@ def cdata_sat_raw(
 
     # MODIS radiance/reflectance at 650 nm
     #/--------------------------------------------------------------\#
-    modl1b = er3t.util.modis_l1b(fnames=sat0.fnames['mod_02'], extent=sat0.extent)
+    modl1b = er3t.sat.readers.modis.modis_l1b(fnames=sat0.fnames['mod_02'], extent=sat0.extent)
     lon0  = modl1b.data['lon']['data']
     lat0  = modl1b.data['lat']['data']
     ref0  = modl1b.data['ref']['data'][index_wvl, ...]
     rad0  = modl1b.data['rad']['data'][index_wvl, ...]
-    lon_2d, lat_2d, ref_2d = er3t.util.grid_by_dxdy(lon0, lat0, ref0, extent=sat0.extent, dx=dx, dy=dy, method='nearest')
-    lon_2d, lat_2d, rad_2d = er3t.util.grid_by_dxdy(lon0, lat0, rad0, extent=sat0.extent, dx=dx, dy=dy, method='nearest')
+    lon_2d, lat_2d, ref_2d = er3t.core.grid_by_dxdy(lon0, lat0, ref0, extent=sat0.extent, dx=dx, dy=dy, method='nearest')
+    lon_2d, lat_2d, rad_2d = er3t.core.grid_by_dxdy(lon0, lat0, rad0, extent=sat0.extent, dx=dx, dy=dy, method='nearest')
 
     g1['rad_%4.4d' % wvl] = rad_2d
     g1['ref_%4.4d' % wvl] = ref_2d
@@ -280,7 +280,7 @@ def cdata_sat_raw(
 
     # MODIS geo information - sza, saa, vza, vaa
     #/--------------------------------------------------------------\#
-    mod03 = er3t.util.modis_03(fnames=sat0.fnames['mod_03'], extent=sat0.extent, vnames=['Height'])
+    mod03 = er3t.sat.readers.modis.modis_03(fnames=sat0.fnames['mod_03'], extent=sat0.extent, vnames=['Height'])
     lon0  = mod03.data['lon']['data']
     lat0  = mod03.data['lat']['data']
     sza0  = mod03.data['sza']['data']
@@ -290,11 +290,11 @@ def cdata_sat_raw(
     sfh0  = mod03.data['height']['data']/1000.0 # units: km
     sfh0[sfh0<0.0] = np.nan
 
-    lon_2d, lat_2d, sza_2d = er3t.util.grid_by_dxdy(lon0, lat0, sza0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
-    lon_2d, lat_2d, saa_2d = er3t.util.grid_by_dxdy(lon0, lat0, saa0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
-    lon_2d, lat_2d, vza_2d = er3t.util.grid_by_dxdy(lon0, lat0, vza0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
-    lon_2d, lat_2d, vaa_2d = er3t.util.grid_by_dxdy(lon0, lat0, vaa0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
-    lon_2d, lat_2d, sfh_2d = er3t.util.grid_by_dxdy(lon0, lat0, sfh0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, sza_2d = er3t.core.grid_by_dxdy(lon0, lat0, sza0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, saa_2d = er3t.core.grid_by_dxdy(lon0, lat0, saa0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, vza_2d = er3t.core.grid_by_dxdy(lon0, lat0, vza0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, vaa_2d = er3t.core.grid_by_dxdy(lon0, lat0, vaa0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
+    lon_2d, lat_2d, sfh_2d = er3t.core.grid_by_dxdy(lon0, lat0, sfh0, extent=sat0.extent, dx=dx, dy=dy, method='linear')
 
     g0['sza'] = sza_2d
     g0['saa'] = saa_2d
@@ -308,7 +308,7 @@ def cdata_sat_raw(
 
     # cloud properties
     #/--------------------------------------------------------------\#
-    modl2 = er3t.util.modis_l2(fnames=sat0.fnames['mod_l2'], extent=sat0.extent, vnames=['cloud_top_height_1km'])
+    modl2 = er3t.sat.readers.modis.modis_l2(fnames=sat0.fnames['mod_l2'], extent=sat0.extent, vnames=['cloud_top_height_1km'])
 
     lon0  = modl2.data['lon']['data']
     lat0  = modl2.data['lat']['data']
@@ -318,13 +318,13 @@ def cdata_sat_raw(
     cth0  = modl2.data['cloud_top_height_1km']['data']/1000.0 # units: km
     cth0[cth0<=0.0] = np.nan
 
-    lon_2d, lat_2d, cer_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cer0, extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    lon_2d, lat_2d, cer_2d_l2 = er3t.core.grid_by_dxdy(lon0, lat0, cer0, extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     cer_2d_l2[cer_2d_l2<=1.0] = np.nan
 
-    lon_2d, lat_2d, cot_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cot0, extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    lon_2d, lat_2d, cot_2d_l2 = er3t.core.grid_by_dxdy(lon0, lat0, cot0, extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     cot_2d_l2[cot_2d_l2<=0.0] = np.nan
 
-    lon_2d, lat_2d, cth_2d_l2 = er3t.util.grid_by_dxdy(lon0, lat0, cth0, extent=sat0.extent, dx=dx, dy=dy, method='linear', Ngrid_limit=4)
+    lon_2d, lat_2d, cth_2d_l2 = er3t.core.grid_by_dxdy(lon0, lat0, cth0, extent=sat0.extent, dx=dx, dy=dy, method='linear', Ngrid_limit=4)
     cth_2d_l2[cth_2d_l2<=0.0] = np.nan
 
     g2['cot_l2'] = cot_2d_l2
@@ -345,10 +345,10 @@ def cdata_sat_raw(
     #   band 5: 1230 - 1250 nm, index 4
     #   band 6: 1628 - 1652 nm, index 5
     #   band 7: 2105 - 2155 nm, index 6
-    mod43a1 = er3t.util.modis_43a1(fnames=sat0.fnames['mod_43a1'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, fiso = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_iso']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
-    lon_2d_sfc, lat_2d_sfc, fvol = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_vol']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
-    lon_2d_sfc, lat_2d_sfc, fgeo = er3t.util.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_geo']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    mod43a1 = er3t.sat.readers.modis.modis_43a1(fnames=sat0.fnames['mod_43a1'], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, fiso = er3t.core.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_iso']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    lon_2d_sfc, lat_2d_sfc, fvol = er3t.core.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_vol']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    lon_2d_sfc, lat_2d_sfc, fgeo = er3t.core.grid_by_dxdy(mod43a1.data['lon']['data'], mod43a1.data['lat']['data'], mod43a1.data['f_geo']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
 
     fiso[np.isnan(fiso)|np.isinf(fiso)|(fiso<0.0)|(fiso>1.0)] = 0.0
     fvol[np.isnan(fvol)|np.isinf(fvol)|(fvol<0.0)|(fvol>1.0)] = 0.0
@@ -358,8 +358,8 @@ def cdata_sat_raw(
     g3['fvol_43_%4.4d' % wvl] = fvol
     g3['fgeo_43_%4.4d' % wvl] = fgeo
 
-    mod43a3 = er3t.util.modis_43a3(fnames=sat0.fnames['mod_43a3'], extent=sat0.extent)
-    lon_2d_sfc, lat_2d_sfc, alb = er3t.util.grid_by_dxdy(mod43a3.data['lon']['data'], mod43a3.data['lat']['data'], mod43a3.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
+    mod43a3 = er3t.sat.readers.modis.modis_43a3(fnames=sat0.fnames['mod_43a3'], extent=sat0.extent)
+    lon_2d_sfc, lat_2d_sfc, alb = er3t.core.grid_by_dxdy(mod43a3.data['lon']['data'], mod43a3.data['lat']['data'], mod43a3.data['wsa']['data'][index_wvl, :], extent=sat0.extent, dx=dx, dy=dy, method='nearest', Ngrid_limit=4)
     g3['alb_43_%4.4d' % wvl] = alb
 
     alb[np.isnan(alb)|np.isinf(alb)|(alb<0.0)|(alb>1.0)] = 0.0
@@ -711,7 +711,7 @@ def para_corr(lon0, lat0, vza, vaa, cld_h, sfc_h, verbose=True):
 
     dist = (cld_h-sfc_h)*np.tan(np.deg2rad(vza))
 
-    lon, lat = er3t.util.cal_geodesic_lonlat(lon0, lat0, dist, vaa)
+    lon, lat = er3t.core.cal_geodesic_lonlat(lon0, lat0, dist, vaa)
 
     return lon, lat
 
@@ -798,18 +798,18 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     data = np.zeros(cth.shape, dtype=np.int32)
     data[cth>0.0] = 1
 
-    offset_nx, offset_ny = er3t.util.move_correlate(data0, data)
+    offset_nx, offset_ny = er3t.core.move_correlate(data0, data)
 
     if offset_nx != 0:
         dist_x = params['dx'] * offset_nx
-        lon_2d_, _ = er3t.util.cal_geodesic_lonlat(lon_2d, lat_2d, dist_x, 90.0)
+        lon_2d_, _ = er3t.core.cal_geodesic_lonlat(lon_2d, lat_2d, dist_x, 90.0)
         lon_2d_ = lon_2d_.reshape(lon_2d.shape)
     else:
         lon_2d_ = lon_2d.copy()
 
     if offset_ny != 0:
         dist_y = params['dy'] * offset_ny
-        _, lat_2d_ = er3t.util.cal_geodesic_lonlat(lon_2d, lat_2d, dist_y, 0.0)
+        _, lat_2d_ = er3t.core.cal_geodesic_lonlat(lon_2d, lat_2d, dist_y, 0.0)
         lat_2d_ = lat_2d_.reshape(lat_2d.shape)
     else:
         lat_2d_ = lat_2d.copy()
@@ -818,7 +818,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     cth_[cth_==0.0] = np.nan
 
     cth_ipa0 = np.zeros_like(ref_2d)
-    cth_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cth_, lon_cld, lat_cld, Ngrid_limit=None)
+    cth_ipa0[indices_x, indices_y] = er3t.core.find_nearest(lon_2d_, lat_2d_, cth_, lon_cld, lat_cld, Ngrid_limit=None)
     cth_ipa0[np.isnan(cth_ipa0)] = np.nanmean(cth_ipa0[indices_x, indices_y])
 
     msg = 'Message [cdata_cld_ipa]: cloud top height is retrieved at <cth_ipa0>.'
@@ -828,7 +828,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
     # cer_ipa0
     #/--------------------------------------------------------------\#
     cer_ipa0 = np.zeros_like(ref_2d)
-    cer_ipa0[indices_x, indices_y] = er3t.util.find_nearest(lon_2d_, lat_2d_, cer_l2, lon_cld, lat_cld, Ngrid_limit=None)
+    cer_ipa0[indices_x, indices_y] = er3t.core.find_nearest(lon_2d_, lat_2d_, cer_l2, lon_cld, lat_cld, Ngrid_limit=None)
     cer_ipa0[np.isnan(cer_ipa0)] = np.nanmean(cer_ipa0[indices_x, indices_y])
 
     msg = 'Message [cdata_cld_ipa]: cloud effective radius is retrieved at <cer_ipa0>.'
@@ -924,8 +924,8 @@ def cdata_cld_ipa(wvl=params['wavelength']):
         lon_corr0 = lon_corr[i]
         lat_corr0 = lat_corr[i]
 
-        ix_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_2d[0, 0], lat_corr0) // params['dx'])
-        iy_corr = int(er3t.util.cal_geodesic_dist(lon_corr0, lat_corr0, lon_corr0, lat_2d[0, 0]) // params['dy'])
+        ix_corr = int(er3t.core.cal_geodesic_dist(lon_corr0, lat_corr0, lon_2d[0, 0], lat_corr0) // params['dx'])
+        iy_corr = int(er3t.core.cal_geodesic_dist(lon_corr0, lat_corr0, lon_corr0, lat_2d[0, 0]) // params['dy'])
 
         if (ix_corr>=0) and (ix_corr<Nx) and (iy_corr>=0) and (iy_corr<Ny):
             cot_ipa[ix_corr, iy_corr] = cot_ipa0[ix, iy]
@@ -1440,7 +1440,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
         vaa = f['mod/geo/vaa'][...].mean()
     f.close()
     #\----------------------------------------------------------------------------/#
-    print(er3t.util.cal_sol_fac(params['date']))
+    print(er3t.core.cal_sol_fac(params['date']))
     print(sza)
     print(saa)
     print(vza)

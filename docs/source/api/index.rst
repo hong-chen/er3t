@@ -2,12 +2,12 @@
 EaR³T API
 =========
 
-.. warning::
+.. toctree::
+   :maxdepth: 2
 
-    Incomplete, under development ...
-
-.. include:: util.rst
-
-.. include:: mca.rst
-
-.. include:: lrt.rst
+   core
+   io
+   sat
+   visualization
+   mca
+   lrt

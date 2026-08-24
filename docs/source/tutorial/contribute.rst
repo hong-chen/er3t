@@ -26,9 +26,9 @@ Current and past contributors are:
 
 * `Vikas Nataraja <Vikas.HanasogeNataraja@lasp.colorado.edu>`_ (Dec., 2022 - current)
 
-   - improved the automated process of satellite data download (functions in ``er3t/util/util.py``)
+   - improved the automated process of satellite data download (functions in ``er3t/sat/download/earthdata.py``)
 
-   - added support for MODIS 35 product (functions in ``er3t/util/modis.py``)
+   - added support for MODIS 35 product (functions in ``er3t/sat/readers/modis.py``)
 
    - implemented command line tool for satellite data download (``bin/sdown``)
 
@@ -41,6 +41,6 @@ Current and past contributors are:
 
 * `Yu-Wen Chen <Yu-Wen.Chen@colorado.edu>`_ (Apr., 2023 - current)
 
-   - added support for MODIS 04 product (functions in ``er3t/util/modis.py``)
+   - added support for MODIS 04 product (functions in ``er3t/sat/readers/modis.py``)
 
    - implementing spectroscopy support for OCO-2 (work in progress, functions in ``er3t/pre/abs/abs_oco.py``)

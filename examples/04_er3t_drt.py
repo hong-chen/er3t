@@ -246,7 +246,7 @@ def example_01_rad_atm1d_clear_over_land(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -462,7 +462,7 @@ def example_02_rad_atm1d_clear_over_ocean(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -602,7 +602,7 @@ def example_03_rad_atm1d_clear_over_snow(
     vaa = vaa_2d.ravel()
     vza = vza_2d.ravel()
 
-    raa = er3t.util.util.calculate_raa(saa=saa, vaa=vaa, forward_scattering='positive')
+    raa = er3t.core.calculate_raa(saa=saa, vaa=vaa, forward_scattering='positive')
 
     # run shdom
     shd0 = er3t.rtm.shd.shdom_ng(
@@ -680,7 +680,7 @@ def example_03_rad_atm1d_clear_over_snow(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -897,7 +897,7 @@ def example_04_rad_atm1d_cloud_over_ocean(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -1011,9 +1011,9 @@ def example_05_rad_les_cloud_3d(
     fgeo = f['mod/sfc/fgeo_43_0650'][...][:400, :480]
 
     lon, lat = np.meshgrid(np.linspace(0.0, 48.0, 400), np.linspace(0.0, 48.0, 480), indexing='ij')
-    x, y, fiso = er3t.util.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    x, y, fvol = er3t.util.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
-    x, y, fgeo = er3t.util.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fiso = er3t.core.grid_by_lonlat(lon, lat, fiso, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fvol = er3t.core.grid_by_lonlat(lon, lat, fvol, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
+    x, y, fgeo = er3t.core.grid_by_lonlat(lon, lat, fgeo, lon_1d=cld0.lay['x']['data'], lat_1d=cld0.lay['y']['data'], method='cubic')
 
     sfc_dict = {
             'dx': cld0.lay['dx']['data'],
@@ -1124,7 +1124,7 @@ def example_05_rad_les_cloud_3d(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -1360,7 +1360,7 @@ def example_06_rad_cld_gen_hem(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    er3t.util.print_reference()
+    er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 

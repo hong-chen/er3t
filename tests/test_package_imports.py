@@ -4,6 +4,7 @@ import importlib
 import sys
 
 import numpy as np
+import pytest
 
 
 def test_top_level_import_is_lightweight():
@@ -12,7 +13,7 @@ def test_top_level_import_is_lightweight():
     assert er3t.__version__
     assert "er3t.pre" not in sys.modules
     assert "er3t.rtm" not in sys.modules
-    assert "er3t.util.modis" not in sys.modules
+    assert "er3t.sat.readers.modis" not in sys.modules
 
 
 def test_public_subpackages_are_loaded_lazily():
@@ -24,21 +25,22 @@ def test_public_subpackages_are_loaded_lazily():
 
 
 def test_numerical_utility_does_not_load_satellite_readers():
-    from er3t.util import downscale
+    from er3t.core import downscale
 
     source = np.arange(16).reshape(4, 4)
     result = downscale(source, (2, 2))
 
     np.testing.assert_allclose(result, [[2.5, 4.5], [10.5, 12.5]])
-    assert "er3t.util.modis" not in sys.modules
-    assert "er3t.util.viirs" not in sys.modules
+    assert "er3t.sat.readers.modis" not in sys.modules
+    assert "er3t.sat.readers.viirs" not in sys.modules
 
 
-def test_common_compatibility_exports_remain_available():
+def test_common_is_an_explicit_submodule():
     import er3t
 
-    assert er3t.params is er3t.common.params
-    assert er3t.f_dtype is np.float32
+    assert er3t.common.f_dtype is np.float32
+    with pytest.raises(AttributeError):
+        _ = er3t.f_dtype
 
 
 def test_preprocessing_modules_with_corrected_imports_load():
@@ -49,3 +51,31 @@ def test_preprocessing_modules_with_corrected_imports_load():
     assert aer_gen.__name__ == "aer_gen"
     assert aer_lasso.__name__ == "aer_lasso"
     assert aer_les.__name__ == "aer_les"
+
+
+def test_core_settings_and_resources_are_explicit():
+    from er3t.core import default_settings, resource_path
+
+    first = default_settings()
+    second = default_settings()
+    first.Ncpu = 1
+
+    assert second.Ncpu != first.Ncpu
+    assert resource_path("atmmod", "afglus.dat", must_exist=True).is_file()
+
+
+def test_new_satellite_and_io_boundaries_are_public():
+    from er3t.io import load_h5
+    from er3t.sat.products import get_product_catalog
+    from er3t.sat.readers.modis import modis_l1b
+
+    catalog = get_product_catalog()
+    assert callable(load_h5)
+    assert modis_l1b.__name__ == "modis_l1b"
+    assert "MOD03" in catalog
+
+
+def test_visualization_api_has_no_legacy_switch():
+    import er3t.visualization as visualization
+
+    assert "legacy" not in visualization.__all__

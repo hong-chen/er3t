@@ -341,7 +341,7 @@ def test_100_flux_one(
          }
 
     data_lrt = lrt_flux_one(params, overwrite=overwrite)
-    f_toa = data_lrt['f_down'][-1]/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
+    f_toa = data_lrt['f_down'][-1]/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.core.cal_sol_fac(params['date'])
 
     data_shd = shd_flux_one(params, f_toa=f_toa, overwrite=overwrite)
 
@@ -419,7 +419,7 @@ def test_100_flux_one(
 
     # References
     #╭────────────────────────────────────────────────────────────────────────────╮#
-    # er3t.util.print_reference()
+    # er3t.core.print_reference()
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -788,7 +788,7 @@ def test_100_rad_one(
         params['photons'] = 1.0e8
 
     data_lrt = lrt_rad_one(params, surface=surface, overwrite=True)
-    f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
+    f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.core.cal_sol_fac(params['date'])
 
     # data_mca = mca_rad_one(params, f_toa=f_toa, surface=surface, overwrite=False)
 
@@ -1151,7 +1151,7 @@ def test_100_rad_spec(
 
     # data_lrt_slit = lrt_rad_spec_slit(params, surface=surface, overwrite=False)
     data_lrt = lrt_rad_spec(params, surface=surface, overwrite=True)
-    f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.util.cal_sol_fac(params['date'])
+    f_toa = data_lrt['f_down']/np.cos(np.deg2rad(params['solar_zenith_angle']))/er3t.core.cal_sol_fac(params['date'])
 
     data_shd = shd_rad_spec(params, f_toa=f_toa, surface=surface, overwrite=True)
 

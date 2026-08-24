@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "er3t"
-module-root = "."
+module-root = "src"
 
 [project]
 name = "er3t"
@@ -68,6 +68,9 @@ dev = [
     {include-group = "test"},
     {include-group = "docs"},
     ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
 
 [project.urls]
 Homepage = "https://github.com/hong-chen/er3t"

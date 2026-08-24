@@ -1,0 +1,692 @@
+#!/usr/bin/env python
+
+"""
+Downloads satellite data products for any user-specified date and geolocation (lat/lon).
+
+Now supports:
+    MODIS data: MODRGB,   MYDRGB
+                MOD03,    MYD03
+                MOD02QKM, MYD02QKM
+                MOD02HKM, MYD02HKM
+                MOD021KM, MYD021KM
+                MOD06_L2, MYD06_L2
+                MOD35_L2, MYD35_L2
+                          MYD_CLDMSK_L2 (or Aqua_CLDMSK_L2)
+                MOD09,    MYD09
+                MOD29,    MYD29
+                MCD43
+
+    VIIRS data: VNPRGB,         VJ1RGB,         VJ2RGB,
+                VNP03IMG,       VJ103IMG,       VJ203IMG,
+                VNP02IMG,       VJ102IMG,       VJ202IMG,
+                VNP03MOD,       VJ103MOD,       VJ203MOD
+                VNP02MOD,       VJ102MOD,       VJ202MOD
+                VNP_CLDPROP_L2, VJ1_CLDPROP_L2
+                VNP_CLDMSK_L2,  VJ1_CLDMSK_L2,  VJ2_CLDMSK_L2
+                VNP09,          VJ109
+
+    OCO-2 data: coming soon...
+
+This is a functionality of EaR3T.
+
+Authors:
+    Vikas Nataraja
+    Hong Chen
+
+Example Usage:
+    sdown --date 20210523 --lons 30 35 --lats 0 10 --products mod06_l2 --fdir sat-data/ --verbose
+    sdown --date 20130714 --extent 30 35 0 10 --products modrgb vnp02img --fdir sat-data/
+
+To see a demonstration of how this tool works, use:
+    sdown --run_demo
+
+To contribute to our Github page with code, issues, bugs, etc. : https://github.com/hong-chen/er3t
+
+EaR3T Documentation: https://er3t.readthedocs.io/
+"""
+
+import os
+import shutil
+import sys
+from argparse import ArgumentParser, RawTextHelpFormatter
+import numpy as np
+import datetime
+import multiprocessing
+
+from er3t.sat.download import earthdata
+from er3t.core import _utilities
+import er3t.common
+from er3t.core._logger import Ear3tLogger
+
+__all__ = ["main"]
+
+# get width for stdout statements
+_width_, _    = shutil.get_terminal_size()
+
+# set welcome text
+_description_ = '=' * _width_ + '\n\n' + \
+                'Education and Research 3D Radiative Transfer Toolbox (EaR\u00b3T)'.center(_width_) + '\n\n' + \
+                '=' * _width_ + '\n' + \
+                ' Satellite Data Product Download Tool '.center(_width_, '=') + '\n\n' + \
+                'Example Usage:\n'\
+                'sdown --date 20210523 --lons 30 35 --lats 0 10 --products MOD06_L2 --fdir sat-data/ --verbose\n'\
+                'sdown --date 20130714 --extent 30 35 0 10 --products MODRGB MYD02QKM --fdir sat-data/\n'
+
+# program name
+_prog_        = os.path.basename(sys.argv[0])
+
+# product tags
+# this <_sat_tags_support_> will be updated over time in common.py
+#/----------------------------------------------------------------------------\#
+_today_dt    = datetime.datetime.now(datetime.timezone.utc)
+_today_dt    = _today_dt.replace(tzinfo=None) # so that timedelta does not raise an error
+_date_today_ = _today_dt.strftime('%d %B, %Y')
+
+# Production start dates for error handling
+_aqua_modis_start_date   = datetime.datetime(2002, 7, 4)
+_terra_modis_start_date  = datetime.datetime(2000, 2, 24)
+_snpp_viirs_start_date   = datetime.datetime(2012, 1, 19)
+_noaa20_viirs_start_date = datetime.datetime(2018, 1, 5)
+_noaa21_viirs_start_date = datetime.datetime(2023, 2, 10)
+
+# Near Real Time (NRT) is available only for the most recent ~ 7 days
+_nrt_oldest_dt = _today_dt - datetime.timedelta(days=7)
+
+########################################################################################
+
+def create_args_parallel(date_list,
+                         start_dt_hhmm,
+                         end_dt_hhmm,
+                         lons,
+                         lats,
+                         fdir_out,
+                         nrt,
+                         iou,
+                         extent,
+                         products,
+                         verbose):
+    """
+    Create a list of arguments for parallel processing.
+
+    Args:
+        date_list (list): List of dates.
+        start_dt_hhmm (str): Start time in HHMM format.
+        end_dt_hhmm (str): End time in HHMM format.
+        fdir_out (str): Output directory.
+        nrt (bool): Flag indicating if the data is near real-time.
+        iou (float): Intersection over Union threshold.
+        extent (str): Extent to focus on.
+        products (list): List of products.
+        verbose (bool): Flag indicating if verbose output is enabled.
+
+    Returns:
+        list: List of argument lists.
+
+    """
+    arg_list = []
+    for i in range(len(date_list)):
+        mini_list = []
+
+        mini_list.append(date_list[i])
+        mini_list.append(start_dt_hhmm)
+        mini_list.append(end_dt_hhmm)
+        mini_list.append(lons)
+        mini_list.append(lats)
+        mini_list.append(fdir_out[i])
+        mini_list.append(nrt)
+        mini_list.append(iou)
+        mini_list.append(extent)
+        mini_list.append(products)
+        mini_list.append(verbose)
+
+        arg_list.append(mini_list)
+
+    return arg_list
+
+
+def satellite_download(date, start_date, end_date, extent, lons, lats, fdir_out, nrt, iou, geojson_fpath, products, verbose, parallel, satlogger):
+
+
+    ########################################################################################################
+    ############################################ Error handling ############################################
+    ########################################################################################################
+
+    if products is None:
+        msg = 'Error [sdown]: Please specify a product to download. \nWe currently support the following:\n{}'.format('\n'.join(er3t.common._sat_tags_support_.keys()))
+        satlogger.error(msg)
+        sys.exit()
+
+    else:
+        # separate product ids for error handling
+        modis_aqua   = list(filter(lambda x: x.upper().startswith('MYD'), products))
+        modis_terra  = list(filter(lambda x: x.upper().startswith('MOD'), products))
+        viirs_snpp   = list(filter(lambda x: x.upper().startswith('VNP'), products))
+        viirs_noaa20 = list(filter(lambda x: x.upper().startswith('VJ1'), products))
+        viirs_noaa21 = list(filter(lambda x: x.upper().startswith('VJ2'), products))
+
+    llons, llats = _utilities.region_parser(extent, lons, lats, geojson_fpath)
+    extent = [llons.min(), llons.max(), llats.min(), llats.max()] # override extent
+
+    if not os.path.exists(fdir_out):
+        os.makedirs(fdir_out)
+        if verbose:
+            satlogger.info('\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n' % fdir_out)
+
+    # error handling for dates
+    if (date is None) and ((start_date is None) or (end_date is None)) and ((nrt)):
+        satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date ')
+        sys.exit()
+
+    elif (date is not None) and ((start_date is None) or (end_date is None)):
+
+        start_dt_hhmm  = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]), 0, 0)
+        end_dt_hhmm    = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]), 23, 59)
+        single_dt      = datetime.datetime(int(date[:4]), int(date[4:6]), int(date[6:8]))
+
+        if single_dt > end_dt_hhmm:
+            msg = 'Error [sdown]: Provided date is in the future. Data will only be downloaded until today\'s date.' + \
+                  '\n\nReceived date   : %s\nToday\'s date is : %s UTC' % (single_dt.strftime("%d %B, %Y"), _today_dt.strftime("%d %B, %Y: %H%M"))
+            satlogger.error(msg)
+            sys.exit()
+
+        # check if products exist in those date ranges
+        if len(modis_aqua) > 0 and single_dt < _aqua_modis_start_date:
+            msg = 'Error [sdown]: Received %s as date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.' % (single_dt.strftime("%d %B, %Y"), _aqua_modis_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(modis_terra) > 0 and single_dt < _terra_modis_start_date:
+            msg = 'Error [sdown]: Received %s as date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.' % (single_dt.strftime("%d %B, %Y"), _terra_modis_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(viirs_snpp) > 0 and single_dt < _snpp_viirs_start_date:
+            msg = 'Error [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates.' % (single_dt.strftime("%d %B, %Y"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(viirs_noaa20) > 0 and single_dt < _noaa20_viirs_start_date:
+            msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(viirs_noaa21) > 0 and single_dt < _noaa21_viirs_start_date:
+            msg = '\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from %s. Retry with more recent dates.\n' % (single_dt.strftime("%d %B, %Y"), _noaa21_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        # NRT data is only available for the most recent ~ 7 days or so
+        if (single_dt < _nrt_oldest_dt) and nrt:
+            msg = 'Error [sdown]: Near Real Time data is only available for dates on or after %s. Given date: %s' % (_nrt_oldest_dt.strftime("%d %B, %Y"), single_dt.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        # Passed checks, start download
+        if verbose:
+            msg = 'Message [sdown]: Data will be downloaded for %s' % single_dt.strftime("%d %B, %Y")
+            satlogger.info(msg)
+
+        fdir_out_dt = os.path.join(fdir_out, single_dt.strftime('%Y-%m-%d')) # save files in dirs with dates specified
+        if not os.path.exists(fdir_out_dt):
+            os.makedirs(fdir_out_dt)
+
+        with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
+            f.write("Date: {}\n".format(single_dt))
+            f.write("Extent: {}\n".format([np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)]))
+
+        if verbose:
+            satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(single_dt.strftime("%d %B, %Y"), np.nanmin(llons), np.nanmax(llons), np.nanmin(llats), np.nanmax(llats)))
+
+        run(date=single_dt,
+            start_dt_hhmm=start_dt_hhmm,
+            end_dt_hhmm=end_dt_hhmm,
+            lons=llons,
+            lats=llats,
+            fdir_out=fdir_out_dt,
+            nrt=nrt,
+            iou=iou,
+            extent=extent,
+            products=products,
+            satlogger=satlogger,
+            verbose=verbose)
+
+
+    else:
+        if (start_date is not None) and (end_date is not None):
+
+            # start at 0 UTC unless specified by user
+            start_hr = 0
+            start_min = 0
+            if len(start_date) == 12:
+                start_hr, start_min = int(start_date[8:10]), int(start_date[10:12])
+
+            # look for data until the last minute of the day
+            end_hr = 23
+            end_min = 59
+            if (len(end_date) == 12):
+                if (int(end_date[8:10]) < end_hr): # update only if different
+                    end_hr = int(end_date[8:10])
+
+                if (int(end_date[10:12]) < end_min):
+                    end_min = int(end_date[10:12])
+
+
+            start_dt  = datetime.datetime(int(start_date[:4]), int(start_date[4:6]), int(start_date[6:8]), start_hr, start_min)
+            end_dt    = datetime.datetime(int(end_date[:4]), int(end_date[4:6]), int(end_date[6:8]), end_hr, end_min)
+
+        else:
+                satlogger.error('Error [sdown]: Please provide a date via --date or date range via --start_date and --end_date or --latest_nhours. Note that --latest_nhours is only valid for near-real time data')
+                sys.exit()
+
+
+        if start_dt == end_dt:
+            msg = 'Warning [sdown]: `end_date` %s UTC and `start_date` %s UTC are both the same' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
+            satlogger.warning(msg)
+
+
+        if start_dt > _today_dt:
+            msg = 'Error [sdown]: `start_date` cannot be in the future.' + \
+                  '\n\nReceived start date: %s UTC \nToday\'s date is    : %s UTC' % (start_dt.strftime("%d %B, %Y: %H%M"), _today_dt.strftime("%d %B, %Y: %H%M"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if end_dt > _today_dt:
+            msg = 'Warning [sdown]: End date is in the future. Data will only be downloaded until today\'s date.' + \
+                  '\n\nReceived end date: %s UTC\nToday\'s date is : %s UTC' % (end_dt.strftime("%d %B, %Y: %H%M"), _today_dt.strftime("%d %B, %Y: %H%M"))
+            satlogger.warn(msg)
+            end_dt = _today_dt
+
+        # NRT data is only available for the most recent ~ 7 days or so
+        if (start_dt < _nrt_oldest_dt) and nrt:
+            msg = 'Error [sdown]: Near Real Time data is only available for dates on or after %s. Given start date: %s UTC' % (_nrt_oldest_dt.strftime("%d %B, %Y"), start_dt.strftime("%d %B, %Y: %H%M"))
+            satlogger.error(msg)
+            sys.exit()
+
+        # check if products exist in those date ranges
+        if len(modis_aqua) > 0 and start_dt < _aqua_modis_start_date:
+            msg = 'Error [sdown]: Received %s UTC as starting date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y: %H%M"), _aqua_modis_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(modis_terra) > 0 and start_dt < _terra_modis_start_date:
+            msg = 'Error [sdown]: Received %s UTC as starting date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y: %H%M"), _terra_modis_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(viirs_snpp) > 0 and start_dt < _snpp_viirs_start_date:
+            msg = 'Error [sdown]: Received %s UTC as starting date of interest but data for VIIRS onboard S-NPP only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y: %H%M"), _snpp_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(viirs_noaa20) > 0 and start_dt < _noaa20_viirs_start_date:
+            msg = 'Error [sdown]: Received %s UTC as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y: %H%M"), _noaa20_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        if len(viirs_noaa21) > 0 and start_dt < _noaa21_viirs_start_date:
+            msg = 'Error [sdown]: Received %s UTC as starting date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from %s. Retry with more recent dates.' % (start_dt.strftime("%d %B, %Y: %H%M"), _noaa21_viirs_start_date.strftime("%d %B, %Y"))
+            satlogger.error(msg)
+            sys.exit()
+
+        ########################################################################################################
+        ########################################## End error handling ##########################################
+        ########################################################################################################
+
+        # Passed checks, start download
+        if verbose:
+            msg = 'Message [sdown]: Data will be downloaded for dates beginning %s UTC to %s UTC' % (start_dt.strftime("%d %B, %Y: %H%M"), end_dt.strftime("%d %B, %Y: %H%M"))
+            satlogger.info(msg)
+
+        date_list = [start_dt.date() + datetime.timedelta(days=x) for x in range((end_dt.date() - start_dt.date()).days + 1)]
+        if parallel:
+            # Experimental: delegate dates for parallel computing
+            msg = 'Warning [sdown]: Parallelization enabled. This is currently in experimental mode, downloads may fail.\n'
+            satlogger.warning(msg)
+
+            # need to create dirs and write metadata before
+            fdir_out_dt_list = []
+            for date_x in date_list: # download products date by date
+                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y-%m-%d')) # save files in dirs with dates specified
+                if not os.path.exists(fdir_out_dt):
+                    os.makedirs(fdir_out_dt)
+
+                fdir_out_dt_list.append(fdir_out_dt)
+                # Save metadata
+                with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
+                    f.write('Date: {}\n'.format(date_x))
+                    f.write('Extent: {}\n'.format(extent))
+
+            p_args = create_args_parallel(date_list, start_dt, end_dt, llons, llats, fdir_out_dt_list, nrt, iou, extent, products, verbose)
+            if verbose:
+                satlogger.info("Message [sdown]: Found {} CPUs. Downloads will be spread over all available CPUs.".format(multiprocessing.cpu_count()))
+            # start parallelization
+            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+            pool.starmap(run, p_args)
+            pool.close()
+
+        else: # run as usual
+            for date_x in date_list: # download products date by date
+                fdir_out_dt = os.path.join(fdir_out, date_x.strftime('%Y-%m-%d')) # save files in dirs with dates specified
+                if not os.path.exists(fdir_out_dt):
+                    os.makedirs(fdir_out_dt)
+
+                # Save metadata
+                with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
+                    f.write('Date: {}\n'.format(date_x))
+                    f.write('Extent: {}\n'.format(extent))
+
+                if verbose:
+                    satlogger.info("Message [sdown]: Obtaining data for: {} over following region:\nWest: {}, East: {}, South: {}, North: {}".format(date_x.strftime('%Y_%m_%d'), extent[0], extent[1], extent[2], extent[3]))
+
+
+                run(date=date_x,
+                    start_dt_hhmm=start_dt,
+                    end_dt_hhmm=end_dt,
+                    lons=llons,
+                    lats=llats,
+                    fdir_out=fdir_out_dt,
+                    nrt=nrt,
+                    iou=iou,
+                    extent=extent,
+                    products=products,
+                    satlogger=satlogger,
+                    verbose=verbose)
+
+
+
+def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, extent, products, satlogger, verbose):
+
+    # if extent is not None:
+    #     lons = np.linspace(extent[0], extent[1], 200)
+    #     lats = np.linspace(extent[2], extent[3], 200)
+    # else: # disabled since we are now pre-calculating lons and lats
+    #     lons = np.linspace(extent[0], extent[1], 100)
+    #     lats = np.linspace(extent[2], extent[3], 100)
+
+    # pre-calculate lons and lats
+    lon_2d, lat_2d = np.meshgrid(lons, lats, indexing='ij')
+
+    references = []
+    fnames = {}
+    download_counter = 0 # overall tracker for all products
+    for product in products:
+
+        product_download_counter = 0 # update counter per product
+        product_info = get_sat_info_from_product_tag(product, nrt)
+        fnames[product_info['dict_key']] = []
+
+        if verbose:
+            stdout = '=' * _width_ + '\n\n%s\n' % product_info['description'].center(_width_)
+            print(stdout)
+
+        # MODIS RGB imagery
+        if 'RGB' in product.upper():
+            p_fnames = [earthdata.download_worldview_image(date=date,
+                                                                extent=extent,
+                                                                fdir_out=fdir_out,
+                                                                satellite=product_info['satellite'],
+                                                                instrument=product_info['instrument'],
+                                                                coastline=False)]
+            fnames[product_info['dict_key']] += p_fnames
+            product_download_counter += 1 # update counter only by 1 since it is always a single RGB image per satellite per date
+
+        # MODIS BRDF product
+        elif '43' in product.upper():
+            from er3t.sat.readers.modis import get_sinusoidal_grid_tag
+            filename_tags_43 = get_sinusoidal_grid_tag(lon_2d, lat_2d)
+            product_download_counter += len(filename_tags_43) # update counter
+
+            for filename_tag in filename_tags_43:
+                p_fnames = earthdata.download_laads_https(date=date,
+                                                               dataset_tag=product_info['dataset_tag'],
+                                                               filename_tag=filename_tag,
+                                                               day_interval=1,
+                                                               fdir_out=fdir_out,
+                                                               verbose=verbose)
+                fnames[product_info['dict_key']] += p_fnames
+
+        # MODIS Level-1b radiances, Level-2 cloud products, surface reflectance products, and solar/viewing geoemetries
+        elif product.upper().endswith(('29', 'QKM', 'HKM', '1KM', 'L2', '03', '09', '02IMG', '02MOD', '03IMG', '03MOD', 'VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
+            if nrt:
+                if product.upper().endswith(('VNP_CLDPROP_L2', 'VJ1_CLDPROP_L2', 'VJ2_CLDPROP_L2')):
+                    msg = 'Warning [sdown]: VIIRS cloud products are not available in near real time (NRT)'
+                    satlogger.warning(msg)
+                    continue
+                # sys.exit()
+
+                link_to_nrt = 'https://www.earthdata.nasa.gov/learn/find-data/near-real-time/near-real-time-versus-standard-products'
+                msg = 'Warning [sdown]: Downloading Near Real Time (NRT) products. \n'\
+                      'Please note that the standard product processing rules are relaxed to allow '\
+                      'for faster generation of products and therefore may not be the same quality. '\
+                      'For a complete breakdown of how NASA generates these NRT products, visit:\n'\
+                      ' %s' % link_to_nrt
+                satlogger.warning(msg)
+
+                filename_tags_03 = earthdata.get_satfile_tag(date=date,
+                                                                  start_dt_hhmm=start_dt_hhmm,
+                                                                  end_dt_hhmm=end_dt_hhmm,
+                                                                  lon=lon_2d,
+                                                                  lat=lat_2d,
+                                                                  satellite=product_info['satellite'],
+                                                                  instrument=product_info['instrument'],
+                                                                  percent0=iou,
+                                                                  nrt=True)
+
+                product_download_counter += len(filename_tags_03) # update counter
+
+                if verbose:
+                    satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
+
+                for filename_tag in filename_tags_03:
+                    p_fnames = earthdata.download_lance_https(date=date,
+                                                                dataset_tag=product_info['dataset_tag'],
+                                                                filename_tag=filename_tag,
+                                                                day_interval=1,
+                                                                fdir_out=fdir_out,
+                                                                verbose=verbose)
+                    fnames[product_info['dict_key']] += p_fnames
+
+            else:
+
+                filename_tags_03 = earthdata.get_satfile_tag(date=date,
+                                                                  start_dt_hhmm=start_dt_hhmm,
+                                                                  end_dt_hhmm=end_dt_hhmm,
+                                                                  lon=lon_2d,
+                                                                  lat=lat_2d,
+                                                                  satellite=product_info['satellite'],
+                                                                  instrument=product_info['instrument'],
+                                                                  percent0=iou,
+                                                                  nrt=False)
+
+                product_download_counter += len(filename_tags_03) # update counter
+
+                if verbose:
+                    satlogger.info('Message [sdown]: Found %s %s overpasses for %s\n' % (len(filename_tags_03), product_info['satellite'], date.strftime('%B %d, %Y')))
+
+
+                # the 29 product is hosted on NSIDC and the backend is served differently
+                # and does not need a loop of the satfile tags
+                if product.upper().endswith('29'): # NRT product lives on LANCE server, standard product on NSIDC servver
+                    p_fnames = earthdata.download_nsidc_https(date=date,
+                                                                    extent=extent,
+                                                                    product_dict=product_info,
+                                                                    filename_tags=filename_tags_03,
+                                                                    fdir_out=fdir_out,
+                                                                    run=True,
+                                                                    start_dt_hhmm=start_dt_hhmm,
+                                                                    end_dt_hhmm=end_dt_hhmm,
+                                                                    verbose=True)
+
+                else:
+                    for filename_tag in filename_tags_03:
+                        p_fnames = earthdata.download_laads_https(date=date,
+                                                                    dataset_tag=product_info['dataset_tag'],
+                                                                    filename_tag=filename_tag,
+                                                                    day_interval=1,
+                                                                    fdir_out=fdir_out,
+                                                                    verbose=verbose)
+                    fnames[product_info['dict_key']] += p_fnames
+
+        else:
+            msg = 'Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(er3t.common._sat_tags_support_.keys()))
+            satlogger.error(msg)
+            raise OSError()
+
+        references.append(product_info['reference'])
+        download_counter += product_download_counter
+        if verbose:
+            satlogger.info('Message [sdown]: Downloaded {} files for {} ({} onboard {})'.format(product_download_counter, product_info['dataset_tag'], product_info['instrument'], product_info['satellite']))
+
+
+    if download_counter > 0:
+        satlogger.info('If you would like to cite the use of this data:\n\n%s' % '\n\n'.join(references))
+        satlogger.info('Message [sdown]: Finished downloading {} satellite files! You can find them in {}'.format(download_counter, fdir_out))
+
+    else: # could not find suitable downloads so no references needed
+        satlogger.info('Message [sdown]: No satellite files were found for the given parameters')
+
+
+def get_sat_info_from_product_tag(tag_, nrt=False):
+
+    # make all variable names (keys) upper case
+    #/----------------------------------------------------------------------------\#
+    tags_support = {}
+    for key in er3t.common._sat_tags_support_.keys():
+        tags_support[key.upper()] = er3t.common._sat_tags_support_[key]
+    #\----------------------------------------------------------------------------/#
+
+    # return satellite product information
+    #/----------------------------------------------------------------------------\#
+    tag = tag_.upper()
+    if tag.endswith('29') and nrt: # the MODIS 29 standard product is on the NSIDC server, NRT product is on NASA LANCE DAAC
+        tag = tag + '_NRT'
+
+    if (tag in tags_support.keys()):
+        return tags_support[tag]
+    else:
+        msg = '\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (tag_, '\n'.join(er3t.common._sat_tags_support_.keys()))
+        satlogger.error(msg)
+        raise OSError()
+    #\----------------------------------------------------------------------------/#
+
+
+def main():
+
+    exec_start_dt = datetime.datetime.now() # to time sdown
+
+    parser = ArgumentParser(prog='sdown', formatter_class=RawTextHelpFormatter,
+                            description=_description_)
+    parser.add_argument('--fdir', type=str, metavar='', default='sat-data/',
+                        help='Directory where the files will be downloaded\n'\
+                        'By default, files will be downloaded to \'sat-data/\'\n \n')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Pass --verbose if status of your request should be reported frequently.\n \n'\
+                        'This is disabled by default.\n \n')
+    parser.add_argument('--run_demo', action='store_true',
+                        help='Pass --run_demo if you would like to view a demonstration of this tool.\n \n')
+    parser.add_argument('-d', '--date', type=str, metavar='', default=None,
+                        help='Date for which you would like to download data. '\
+                        'Use yyyymmdd format.\n'\
+                        'Example: --date 20210404\n \n')
+    parser.add_argument('--start_date', type=str, metavar='', default=None,
+                        help='The start date of the range of dates for which you would like to download data. '\
+                        'Use yyyymmdd or yyyymmddhhmm format.\n'\
+                        'Example: --start_date 20210404\n \n')
+    parser.add_argument('--end_date', type=str, metavar='', default=None,
+                        help='The end date of the range of dates for which you would like to download data. '\
+                        'Use yyyymmdd or yyyymmddhhmm format.\n'\
+                        'Example: --end_date 20210414\n \n')
+    parser.add_argument('--iou', type=int, metavar='', default=0,
+                        help='Percentage of points within the region of interest that must overlap with the satellite granule. \n'\
+                        'If the overlap < iou, then the granule file will not be downloaded.\n'\
+                        'Example:  --iou 60\n \n')
+    parser.add_argument('-e', '--extent', nargs='+', type=float, metavar='',
+                        help='Extent of region of interest \nlon1 lon2 lat1 lat2 in West East South North format.\n'\
+                        'Example:  --extent -10 -5 25 30\n \n')
+    parser.add_argument('-x', '--lons', nargs='+', type=float, metavar='',
+                        help='The west-most and east-most longitudes of the region.\nAlternative to providing the first two terms in `extent`.\n'\
+                        'Example:  --lons -10 -5\n \n')
+    parser.add_argument('-y', '--lats', nargs='+', type=float, metavar='',
+                        help='The south-most and north-most latitudes of the region.\nAlternative to providing the last two terms in `extent`.\n'\
+                        'Example:  --lats 25 30\n \n')
+    parser.add_argument('--geojson', type=str, metavar='',
+                        help='Path to a geoJSON file containing the extent of interest coordinates\n'\
+                        'Example:  --geojson my/path/to/geofile.json\n \n')
+    parser.add_argument('--parallel', action='store_true',
+                        help='Pass --parallel to enable parallelization of downloads spread over multiple CPUs.\n')
+    parser.add_argument('--nrt', action='store_true',
+                        help='Pass --nrt if Near Real Time products should be downloaded.\n'\
+                             'This is disabled by default to automatically download standard products.\n'\
+                             'Currently, only MODIS and VIIRS NRT products can be downloaded.\n')
+    parser.add_argument('--products', type=str, nargs='+', metavar='',
+                        help='Short prefix (case insensitive) for the product name.\n'\
+                        'Example:  --products MOD02QKM\n'
+                        '\nTo see a list of supported products, type --help.\n'\
+                        '\nTo download multiple products at a time:\n'\
+                        '--products MOD021KM VJ102MOD MYD06_l2\n \n')
+
+    args = parser.parse_args()
+
+
+    if args.run_demo:
+        date       = '20210714'
+        start_date = None
+        end_date   = None
+        extent     = [-79.4, -71.1, 21.6, 25.8]
+        lons       = None
+        lats       = None
+        fdir       = 'sat-data/'
+        products   = ['MOD06_L2', 'VNP02IMG']
+        nrt        = False
+        iou        = 0
+        geojson    = None
+        parallel   = False
+        verbose    = 1
+
+        # initialize logger
+        satlogger = Ear3tLogger(_prog_, verbose=verbose, log_dir=er3t.common.fdir_logs)
+
+        sat0 = satellite_download(date=date,
+                                  start_date=start_date,
+                                  end_date=end_date,
+                                  extent=extent,
+                                  lons=lons,
+                                  lats=lats,
+                                  fdir_out=fdir,
+                                  nrt=nrt,
+                                  iou=iou,
+                                  geojson_fpath=geojson,
+                                  products=products,
+                                  parallel=parallel,
+                                  satlogger=satlogger,
+                                  verbose=verbose)
+    else:
+
+        # initialize logger
+        satlogger = Ear3tLogger(_prog_, verbose=args.verbose, log_dir=er3t.common.fdir_logs)
+
+        sat0 = satellite_download(date=args.date,
+                                  start_date=args.start_date,
+                                  end_date=args.end_date,
+                                  extent=args.extent,
+                                  lons=args.lons,
+                                  lats=args.lats,
+                                  fdir_out=args.fdir,
+                                  nrt=args.nrt,
+                                  iou=args.iou,
+                                  geojson_fpath=args.geojson,
+                                  products=args.products,
+                                  parallel=args.parallel,
+                                  satlogger=satlogger,
+                                  verbose=args.verbose)
+
+    exec_stop_dt = datetime.datetime.now() # to time sdown
+    exec_total_time = exec_stop_dt - exec_start_dt
+    sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs = _utilities.format_time(exec_total_time.total_seconds())
+    print('\n\nTotal Execution Time: {}:{}:{}.{}\n\n'.format(sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs))
+
+
+
+if __name__ == '__main__':
+
+    main()
