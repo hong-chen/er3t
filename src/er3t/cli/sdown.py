@@ -630,7 +630,7 @@ def run(
             stdout = "=" * _width_ + "\n\n%s\n" % product_info["description"].center(
                 _width_
             )
-            print(stdout)
+            er3t.common.logger.info(stdout)
 
         # MODIS RGB imagery
         if "RGB" in product.upper():
@@ -1042,7 +1042,7 @@ def main():
     sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs = _utilities.format_time(
         exec_total_time.total_seconds()
     )
-    print(
+    er3t.common.logger.info(
         "\n\nTotal Execution Time: {}:{}:{}.{}\n\n".format(
             sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs
         )

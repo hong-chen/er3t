@@ -386,11 +386,11 @@ class viirs_l1b:
                 "\nMessage [viirs_l1b]: The `extent` argument will be ignored as it is only available for consistency.\n"
                 "If only region of interest is needed, please use `viirs_03` reader and pass the class object here via `f03=`.\n"
             )
-            print(msg)
+            er3t.common.logger.info(msg)
 
         if f03 is None and verbose:
             msg = "\nMessage [viirs_l1b]: Geolocation data not provided. File will be read without geolocation.\n"
-            print(msg)
+            er3t.common.logger.info(msg)
 
         for i in range(len(fnames)):
             self.read(fnames[i])
@@ -1815,7 +1815,7 @@ class viirs_09:
         ]  # list of dataset names
 
         if len(search_terms_with_bands) != len(params):
-            print(
+            er3t.common.logger.info(
                 "Warning [viirs_09]: Not all bands were extracted. Check self.bands and self.resolution inputs"
             )
 

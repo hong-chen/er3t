@@ -32,7 +32,7 @@ def cal_ocean_brdf(
         Nx, Ny = u10.shape
         ndim = u10.ndim
     except Exception as error:
-        # print(error)
+        # er3t.common.logger.info(error)
         u10 = float(u10)
         ndim = 0
 

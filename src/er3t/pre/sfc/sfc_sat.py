@@ -1,3 +1,5 @@
+import er3t.common
+from er3t.core.logging import start_log_session
 import os
 import sys
 import pickle
@@ -28,6 +30,7 @@ class sfc_sat:
     def __init__(
         self, sat_obj=None, fname=None, extent=None, overwrite=False, verbose=False
     ):
+        start_log_session("pre/sfc")
         self.sat = sat_obj
         self.fname = fname  # file name of the pickle file
         self.extent = extent
@@ -67,7 +70,9 @@ class sfc_sat:
             obj = pickle.load(f)
             if hasattr(obj, "data"):
                 if self.verbose:
-                    print("Message [sfc_sat]: Loading '%s' ..." % fname)
+                    er3t.common.logger.info(
+                        "Message [sfc_sat]: Loading '%s' ..." % fname
+                    )
                 self.fname = obj.fname
                 self.extent = obj.extent
                 self.data = obj.data
@@ -86,7 +91,9 @@ class sfc_sat:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [sfc_sat]: Saving object into '%s' ..." % fname)
+                er3t.common.logger.info(
+                    "Message [sfc_sat]: Saving object into '%s' ..." % fname
+                )
             pickle.dump(self, f)
 
     def pre_sat(self):

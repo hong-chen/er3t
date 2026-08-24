@@ -141,7 +141,7 @@ def gen_h5_abs_ssfr(fname_h5):
             fdir = "%s/%s" % (fdir0, sub)
 
             fnames = get_all_files(fdir)
-            print(len(fnames))
+            er3t.common.logger.info(len(fnames))
 
             for fname in fnames:
                 vname = fname.split("/")[-1]
@@ -161,7 +161,7 @@ def gen_h5_abs_ssfr(fname_h5):
                     )
                     if group not in f:
                         g = f.create_group(group)
-                        print(group)
+                        er3t.common.logger.info(group)
                     g[vname] = np.loadtxt(fname)
 
         f.close()
@@ -178,7 +178,7 @@ def gen_h5_abs_ssfr(fname_h5):
 
                 if group not in f:
                     g = f.create_group(group)
-                    print(group)
+                    er3t.common.logger.info(group)
 
                 try:
                     with open(fname) as f0:

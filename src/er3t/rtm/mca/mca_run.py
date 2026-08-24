@@ -134,7 +134,9 @@ class mca_run:
     def run(self):
         if self.verbose:
             for command in self.commands:
-                print("Message [mca_run]: Executing <%s> ..." % command)
+                er3t.common.logger.info(
+                    "Message [mca_run]: Executing <%s> ..." % command
+                )
 
         if self.mp_mode == "mpi":
             try:
@@ -174,7 +176,9 @@ class mca_run:
             fname = "er3t-mca_shell-script_%18.7f.sh" % time.time()
 
         if not self.quiet:
-            print("Message [mca_run]: Creating batch script <%s> ..." % fname)
+            er3t.common.logger.info(
+                "Message [mca_run]: Creating batch script <%s> ..." % fname
+            )
 
         with open(fname, "w") as f:
             for command in self.commands:

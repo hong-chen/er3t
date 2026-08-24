@@ -11,6 +11,7 @@ import numpy as np
 import er3t.common
 from er3t.core.numerics import cal_sol_fac
 from er3t.core.references import add_reference
+from er3t.core.logging import start_log_session
 from er3t.rtm.shd import shd_inp_file
 from er3t.rtm.shd import shd_run
 
@@ -87,6 +88,7 @@ class shdom_ng:
         verbose=False,
         quiet=False,
     ):
+        start_log_session("rtm/shd")
         add_reference(self.reference)
 
         fdir = os.path.abspath(fdir)
@@ -604,19 +606,23 @@ class shdom_ng:
         )
 
     def print_info(self):
-        print("╭──────────────────────────────────────────────────────────────╮")
-        print("                     General Information")
-        print(f"                   Simulation : {self.solver} {self.target.title()}")
-        print(f"                   Wavelength : {self.wvl_info}")
+        er3t.common.logger.info(
+            "╭──────────────────────────────────────────────────────────────╮"
+        )
+        er3t.common.logger.info("                     General Information")
+        er3t.common.logger.info(
+            f"                   Simulation : {self.solver} {self.target.title()}"
+        )
+        er3t.common.logger.info(f"                   Wavelength : {self.wvl_info}")
 
-        print(
+        er3t.common.logger.info(
             f"                   Date (DOY) : {self.date.strftime('%Y-%m-%d')} ({self.date.timetuple().tm_yday})"
         )
 
-        print(
+        er3t.common.logger.info(
             f"           Solar Zenith Angle : {self.solar_zenith_angle:.4f}° (0 at local zenith)"
         )
-        print(
+        er3t.common.logger.info(
             f"          Solar Azimuth Angle : {self.solar_azimuth_angle:.4f}° (0 at north; 90° at east)"
         )
 
@@ -630,62 +636,74 @@ class shdom_ng:
                 ):
                     vaa0 = self.sensor_azimuth_angle[i]
                     if vza0 < 90.0:
-                        print(
+                        er3t.common.logger.info(
                             f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)"
                         )
                     else:
-                        print(
+                        er3t.common.logger.info(
                             f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)"
                         )
-                    print(
+                    er3t.common.logger.info(
                         f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)"
                     )
 
                 # print '...'
                 if self.sensor_zenith_angle.size > 3:
-                    print("                         ...")
+                    er3t.common.logger.info("                         ...")
 
                     # print last vza, vaa pair
                     if i == self.sensor_zenith_angle.size - 1:
                         vza0 = self.sensor_zenith_angle[i]
                         vaa0 = self.sensor_azimuth_angle[i]
                         if vza0 < 90.0:
-                            print(
+                            er3t.common.logger.info(
                                 f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking down, 0 straight down)"
                             )
                         else:
-                            print(
+                            er3t.common.logger.info(
                                 f"[{i:02d}]      Sensor Zenith Angle : {vza0:.4f}° (looking up, 180° straight up)"
                             )
-                        print(
+                        er3t.common.logger.info(
                             f"[{i:02d}]     Sensor Azimuth Angle : {vaa0:.4f}° (0 at north; 90° at east)"
                         )
 
             else:
                 if self.fname_sensor != "NONE":
-                    print(
+                    er3t.common.logger.info(
                         f"                 Sensor Specs : {os.path.basename(self.fname_sensor)}"
                     )
 
-            print(f"              Sensor Altitude : {self.sensor_altitude:.1f} km")
+            er3t.common.logger.info(
+                f"              Sensor Altitude : {self.sensor_altitude:.1f} km"
+            )
 
         if self.sfc_2d:
-            print(f"                      Surface : {self.surface.ID}")
+            er3t.common.logger.info(
+                f"                      Surface : {self.surface.ID}"
+            )
         else:
-            print(f"               Surface Albedo : {self.surface:.4f}")
+            er3t.common.logger.info(
+                f"               Surface Albedo : {self.surface:.4f}"
+            )
 
-        print("               Phase Function : Mie (Water Clouds, from SHDOM)")
+        er3t.common.logger.info(
+            "               Phase Function : Mie (Water Clouds, from SHDOM)"
+        )
 
         if (self.Nx > 1) | (self.Ny > 1):
-            print(f"         Domain Size (Nx, Ny) : ({self.Nx}, {self.Ny})")
-            print(
+            er3t.common.logger.info(
+                f"         Domain Size (Nx, Ny) : ({self.Nx}, {self.Ny})"
+            )
+            er3t.common.logger.info(
                 f"          Pixel Res. (dx, dy) : ({self.dx:.2f} km, {self.dy:.2f} km)"
             )
 
-        print(
+        er3t.common.logger.info(
             f"               Number of CPUs : {self.Ncpu} (used) of {self.Ncpu_total} (total)"
         )
-        print("╰──────────────────────────────────────────────────────────────╯")
+        er3t.common.logger.info(
+            "╰──────────────────────────────────────────────────────────────╯"
+        )
 
 
 if __name__ == "__main__":

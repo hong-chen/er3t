@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 from io import StringIO
@@ -2058,7 +2059,7 @@ class modis_04:
 
         for vname in vnames or ():
             data0 = f.select(vname)
-            print(get_data_h4(data0).shape)
+            er3t.common.logger.info(get_data_h4(data0).shape)
             data = get_data_h4(data0)[2, :, :][logic]
             if vname.lower() in self.data.keys():
                 self.data[vname.lower()] = dict(
@@ -2228,7 +2229,7 @@ class modis_09:
             i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands
         ]  # list of dataset names
         if len(search_terms_with_bands) != len(params):
-            print(
+            er3t.common.logger.info(
                 "Warning [modis_09]: Not all bands were extracted. Check self.bands and self.resolution inputs"
             )
 
@@ -2354,7 +2355,7 @@ class modis_09:
 
         # for atm tau, only bands 1 (650nm), 3 (470nm), 8 (412nm) are present at 1km in the MOD09 product
         if (self.bands is not None) or (self.resolution is not None):
-            print(
+            er3t.common.logger.info(
                 "Warning [modis_09]: `bands` and `resolution` are ignored when extracting atmospheric optical depth as only preset bands are available in the MOD09 product, all at 1km\n"
             )
 
@@ -3464,7 +3465,7 @@ class modis_tiff:
         pixelNy = f.RasterYSize
         geoInfo = f.GetGeoTransform()
         if verbose:
-            print(geoInfo)
+            er3t.common.logger.info(geoInfo)
 
         x0 = np.arange(pixelNx)
         y0 = np.arange(pixelNy)
@@ -3749,7 +3750,7 @@ def download_modis_https(
     except KeyError:
         app_key = "aG9jaDQyNDA6YUc5dVp5NWphR1Z1TFRGQVkyOXNiM0poWkc4dVpXUjE6MTYzMzcyNTY5OTplNjJlODUyYzFiOGI3N2M0NzNhZDUxYjhiNzE1ZjUyNmI1ZDAyNTlk"
         if verbose:
-            print(
+            er3t.common.logger.info(
                 "Warning [download_modis_https]: Please get your app key by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/tools-and-services/data-download-scripts/#appkeys\nThen add the following to the source file of your shell, e.g. '~/.bashrc'(Unix) or '~/.bash_profile'(Mac),\nexport MODIS_APP_KEY=\"XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX\"\n"
             )
 
@@ -3797,14 +3798,16 @@ def download_modis_https(
 
     if not run:
         if not quiet:
-            print("Message [download_modis_https]: The commands to run are:")
+            er3t.common.logger.info(
+                "Message [download_modis_https]: The commands to run are:"
+            )
             for command in commands:
-                print(command)
-                print()
+                er3t.common.logger.info(command)
+                er3t.common.logger.info("")
 
     else:
         for i, command in enumerate(commands):
-            print(
+            er3t.common.logger.info(
                 "Message [download_modis_https]: Downloading %s ..." % fnames_local[i]
             )
             os.system(command)
@@ -3823,13 +3826,13 @@ def download_modis_https(
 
                 f = SD(fname_local, SDC.READ)
                 f.end()
-                print(
+                er3t.common.logger.info(
                     "Message [download_modis_https]: '%s' has been downloaded.\n"
                     % fname_local
                 )
 
             else:
-                print(
+                er3t.common.logger.info(
                     "Warning [download_modis_https]: Do not support check for '%s'. Do not know whether '%s' has been successfully downloaded.\n"
                     % (data_format, fname_local)
                 )
@@ -3917,7 +3920,7 @@ def get_filename_tag(
     # data['GranuleID'].decode('UTF-8') to get the file name of MODIS granule
     # data['StartDateTime'].decode('UTF-8') to get the time stamp of MODIS granule
     # variable names can be found through
-    # print(data.dtype.names)
+    # er3t.common.logger.info(data.dtype.names)
 
     Ndata = data.size
 
@@ -4089,7 +4092,7 @@ def get_sinusoidal_grid_tag(lon, lat, verbose=False):
             if logic.sum() > 0:
                 tile_tag = "h%2.2dv%2.2d" % (index_h, index_v)
                 if verbose:
-                    print(
+                    er3t.common.logger.info(
                         "Message [get_sinusoidal_grid_tag]: '%s' contains %d/%d."
                         % (tile_tag, logic.sum(), logic.size)
                     )

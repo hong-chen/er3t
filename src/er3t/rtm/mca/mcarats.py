@@ -9,6 +9,7 @@ import numpy as np
 
 import er3t.common
 from er3t.core.references import add_reference
+from er3t.core.logging import start_log_session
 from er3t.rtm.mca import mca_inp_file
 from er3t.rtm.mca import mca_run
 
@@ -85,6 +86,7 @@ class mcarats_ng:
         verbose=False,
         quiet=False,
     ):
+        start_log_session("rtm/mca")
         add_reference(self.reference)
 
         fdir = os.path.abspath(fdir)
@@ -92,10 +94,14 @@ class mcarats_ng:
         if not os.path.exists(fdir):
             os.makedirs(fdir)
             if not quiet:
-                print("Message [mcarats_ng]: Directory <%s> is created." % fdir)
+                er3t.common.logger.info(
+                    "Message [mcarats_ng]: Directory <%s> is created." % fdir
+                )
         else:
             if verbose:
-                print("Message [mcarats_ng]: Directory <%s> already exists." % fdir)
+                er3t.common.logger.info(
+                    "Message [mcarats_ng]: Directory <%s> already exists." % fdir
+                )
 
         self.Ng = Ng
         self.date = date
@@ -193,7 +199,7 @@ class mcarats_ng:
             )
 
         if not self.quiet and not self.overwrite:
-            print("Message [mcarats_ng]: Reading mode ...")
+            er3t.common.logger.info("Message [mcarats_ng]: Reading mode ...")
 
         if overwrite:
             # initialize namelist (list contains 16 Python dictionaries)
@@ -390,7 +396,9 @@ class mcarats_ng:
     def init_sfc(self, surface=0.03):
         for ig in range(self.Ng):
             if self.verbose:
-                print("Message [mcarats_ng]: Assume Lambertian surface ...")
+                er3t.common.logger.info(
+                    "Message [mcarats_ng]: Assume Lambertian surface ..."
+                )
 
             if (
                 isinstance(surface, float)
@@ -441,7 +449,7 @@ class mcarats_ng:
                 mca_inp_file(self.fnames_inp[ir][ig], self.nml[ig], comment=comment)
 
         if not self.quiet:
-            print(
+            er3t.common.logger.info(
                 "Message [mcarats_ng]: Created MCARaTS input files under <%s>."
                 % self.fdir
             )
@@ -464,7 +472,7 @@ class mcarats_ng:
             fnames_out += self.fnames_out[ir]
 
         if not self.quiet:
-            print(
+            er3t.common.logger.info(
                 "Message [mcarats_ng]: Running MCARaTS to get output files under <%s> ..."
                 % self.fdir
             )
@@ -497,69 +505,81 @@ class mcarats_ng:
             raise OSError(msg)
 
     def print_info(self):
-        print("╭────────────────────────────────────────────────────────╮")
-        print("                 General Information")
-        print("               Simulation : %s %s" % (self.solver, self.target.title()))
-        print("               Wavelength : %s" % (self.wvl_info))
+        er3t.common.logger.info(
+            "╭────────────────────────────────────────────────────────╮"
+        )
+        er3t.common.logger.info("                 General Information")
+        er3t.common.logger.info(
+            "               Simulation : %s %s" % (self.solver, self.target.title())
+        )
+        er3t.common.logger.info("               Wavelength : %s" % (self.wvl_info))
 
-        print(
+        er3t.common.logger.info(
             "               Date (DOY) : %s (%d)"
             % (self.date.strftime("%Y-%m-%d"), self.date.timetuple().tm_yday)
         )
 
-        print(
+        er3t.common.logger.info(
             "       Solar Zenith Angle : %.4f° (0 at local zenith)"
             % self.solar_zenith_angle
         )
-        print(
+        er3t.common.logger.info(
             "      Solar Azimuth Angle : %.4f° (0 at north; 90° at east)"
             % self.solar_azimuth_angle
         )
 
         if self.target == "radiance":
             if self.sensor_zenith_angle < 90.0:
-                print(
+                er3t.common.logger.info(
                     "      Sensor Zenith Angle : %.4f° (looking down, 0 straight down)"
                     % self.sensor_zenith_angle
                 )
             else:
-                print(
+                er3t.common.logger.info(
                     "      Sensor Zenith Angle : %.4f° (looking up, 180° straight up)"
                     % self.sensor_zenith_angle
                 )
-            print(
+            er3t.common.logger.info(
                 "     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)"
                 % self.sensor_azimuth_angle
             )
-            print("          Sensor Altitude : %.1f km" % (self.sensor_altitude))
+            er3t.common.logger.info(
+                "          Sensor Altitude : %.1f km" % (self.sensor_altitude)
+            )
 
         if not self.sfc_2d:
-            print("           Surface Albedo : %.2f" % self.surface)
+            er3t.common.logger.info("           Surface Albedo : %.2f" % self.surface)
         else:
-            print("             Surface BRDF : 2D domain")
+            er3t.common.logger.info("             Surface BRDF : 2D domain")
 
         if self.sca is None:
-            print("           Phase Function : Henyey-Greenstein")
+            er3t.common.logger.info("           Phase Function : Henyey-Greenstein")
         else:
-            print("           Phase Function : %s" % self.sca.pha.ID)
+            er3t.common.logger.info("           Phase Function : %s" % self.sca.pha.ID)
 
         if (self.Nx > 1) | (self.Ny > 1):
-            print("     Domain Size (Nx, Ny) : (%d, %d)" % (self.Nx, self.Ny))
-            print(
+            er3t.common.logger.info(
+                "     Domain Size (Nx, Ny) : (%d, %d)" % (self.Nx, self.Ny)
+            )
+            er3t.common.logger.info(
                 "      Pixel Res. (dx, dy) : (%.2f km, %.2f km)"
                 % (self.dx / 1000.0, self.dy / 1000.0)
             )
 
-        print(
+        er3t.common.logger.info(
             "  Number of Photons / Set : %.1e (%s over %d g)"
             % (self.photons_per_set, self.np_mode, self.Ng)
         )
-        print("           Number of Runs : %s (g) * %d (set)" % (self.Ng, self.Nrun))
-        print(
+        er3t.common.logger.info(
+            "           Number of Runs : %s (g) * %d (set)" % (self.Ng, self.Nrun)
+        )
+        er3t.common.logger.info(
             "           Number of CPUs : %d (used) of %d (total)"
             % (self.Ncpu, self.Ncpu_total)
         )
-        print("╰────────────────────────────────────────────────────────╯")
+        er3t.common.logger.info(
+            "╰────────────────────────────────────────────────────────╯"
+        )
 
 
 def cal_mca_azimuth(normal_azimuth_angle):

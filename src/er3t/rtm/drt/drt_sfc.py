@@ -142,7 +142,9 @@ class drt_sfc_2d:
         temp_sfc = self.atm.lay["temperature"]["data"][0]
 
         if not self.quiet:
-            print(f"Message [drt_sfc_2d]: Creating 2D SFCFile <{fname}> for DISORT...")
+            er3t.common.logger.info(
+                f"Message [drt_sfc_2d]: Creating 2D SFCFile <{fname}> for DISORT..."
+            )
 
         with open(fname, "w") as f:
             f.write(f"{self.nml['header']['data']}\n")
@@ -185,7 +187,9 @@ class drt_sfc_2d:
         self.nml["SFCFILE"] = {"data": fname}
 
         if not self.quiet:
-            print("Message [drt_sfc_2d]: File <%s> is created." % fname)
+            er3t.common.logger.info(
+                "Message [drt_sfc_2d]: File <%s> is created." % fname
+            )
 
 
 if __name__ == "__main__":

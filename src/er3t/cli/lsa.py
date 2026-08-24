@@ -17,6 +17,8 @@ import sys
 import argparse
 from collections import OrderedDict
 
+from ._output import print_dialogue
+
 
 __all__ = ["main"]
 
@@ -390,7 +392,7 @@ def main():
     data_info0 = get_data_info(fname, dataType)
     data_info = process_data_info(data_info0)
     message = generate_message(data_info, dataType)
-    print(message)
+    print_dialogue(message)
 
 
 if __name__ == "__main__":

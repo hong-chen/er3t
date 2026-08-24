@@ -829,18 +829,11 @@ def add_reference(reference, reference_list=er3t.common.references):
 
 
 def print_reference():
-    print("\nReferences:")
-    print(
-        "╭────────────────────────────────────────────────────────────────────────────╮"
-    )
-    for reference in er3t.common.references:
-        print(reference)
-    print(
-        "╰────────────────────────────────────────────────────────────────────────────╯"
-    )
-    print()
+    from .logging import start_log_session
 
-    return
+    start_log_session("references")
+    for reference in er3t.common.references:
+        er3t.common.logger.info(reference)
 
 
 def combine_alt(atm_z, cld_z):
@@ -879,7 +872,7 @@ def get_lay_index(lay, lay_ref):
 
         dd = np.abs(z - lay_ref[index])
         if dd > threshold:
-            print(z, lay_ref[index])
+            er3t.common.logger.info("%s %s", z, lay_ref[index])
             raise ValueError(
                 "Error [get_layer_index]: Mismatch between layer and reference layer: "
                 + str(dd)
@@ -1341,7 +1334,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
         and ((lats is None) or (lons is None))
         and (geojson_fpath is None)
     ):
-        print(
+        er3t.common.logger.info(
             "Error [region_parser]: Must provide either extent or lon/lat coordinates or a geoJSON file"
         )
         sys.exit()
@@ -1351,7 +1344,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
         and ((lats is not None) or (lons is not None))
         and (geojson_fpath is not None)
     ):
-        print(
+        er3t.common.logger.info(
             "Warning [region_parser]: Received multiple regions of interest. Only `extent` will be used."
         )
         llons = np.linspace(extent[0], extent[1], 100)
@@ -1362,7 +1355,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
         if (len(extent) != 4) and (
             (lats is None) or (lons is None) or (len(lats) == 0) or (len(lons) == 0)
         ):
-            print(
+            er3t.common.logger.info(
                 "Error [region_parser]: Must provide either extent with [lon1 lon2 lat1 lat2] or lon/lat coordinates via --lons and --lats"
             )
             sys.exit()
@@ -1373,7 +1366,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
                 "Error [region_parser]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North."
                 % extent
             )
-            print(msg)
+            er3t.common.logger.info(msg)
             sys.exit()
 
         llons = np.linspace(extent[0], extent[1], 100)
@@ -1390,7 +1383,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
             llats = np.linspace(lats[0], lats[1], 100)
             return llons, llats
         else:
-            print(
+            er3t.common.logger.info(
                 "Error [region_parser]: Must provide two coorect bounds each for `--lons` and `--lats`"
             )
             sys.exit()

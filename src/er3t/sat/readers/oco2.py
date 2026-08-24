@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 import datetime
@@ -362,7 +363,7 @@ class oco2_std:
         f.close()
 
         if not self.quiet:
-            print("Message [oco2_std]: File '%s' is created." % fname)
+            er3t.common.logger.info("Message [oco2_std]: File '%s' is created." % fname)
 
 
 class oco2_met:
@@ -478,7 +479,7 @@ class oco2_met:
         f.close()
 
         if not self.quiet:
-            print("Message [oco2_std]: File '%s' is created." % fname)
+            er3t.common.logger.info("Message [oco2_std]: File '%s' is created." % fname)
 
 
 def get_fnames_from_web(website, extension):

@@ -1,8 +1,10 @@
 import os
+import re
 import sys
 import shutil
 import datetime
 import importlib.util
+from pathlib import Path
 
 import colorama
 import structlog
@@ -61,6 +63,59 @@ params = {
     "verbose": True,
     "earth_radius": 6371.009,
 }
+
+
+class _LogStream:
+    """Write structured log output to stdout and an optional text file."""
+
+    _ansi_escape = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+
+    def __init__(self) -> None:
+        self._file = None
+
+    def configure(self, log_file: str | os.PathLike[str] | None = None) -> None:
+        """Set the optional log-file destination, closing the previous one."""
+
+        if self._file is not None:
+            self._file.close()
+            self._file = None
+
+        if log_file is not None:
+            path = Path(log_file).expanduser()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            self._file = path.open("a", encoding="utf-8")
+
+    def write(self, message: str) -> int:
+        sys.stdout.write(message)
+        if self._file is not None:
+            self._file.write(self._ansi_escape.sub("", message))
+        return len(message)
+
+    def flush(self) -> None:
+        sys.stdout.flush()
+        if self._file is not None:
+            self._file.flush()
+
+
+_log_stream = _LogStream()
+
+
+def configure_logging(log_file: str | os.PathLike[str] | None = None) -> None:
+    """Mirror EaR³T log messages to ``log_file`` as well as the terminal.
+
+    Passing ``None`` disables file logging. ``ER3T_LOG_FILE`` configures the
+    initial destination at import time.
+    """
+
+    _log_stream.configure(log_file)
+
+
+def write_log_line(message: str = "") -> None:
+    """Write one unadorned line to every configured EaR³T log destination."""
+
+    _log_stream.write(f"{message.rstrip()}\n")
+    _log_stream.flush()
+
 
 structlog.configure(
     processors=[
@@ -156,11 +211,12 @@ structlog.configure(
             ]
         ),
     ],
-    logger_factory=structlog.PrintLoggerFactory(),
+    logger_factory=structlog.PrintLoggerFactory(file=_log_stream),
     wrapper_class=structlog.stdlib.BoundLogger,
 )
 
 logger = structlog.get_logger()
+configure_logging(os.environ.get("ER3T_LOG_FILE"))
 
 
 references = [

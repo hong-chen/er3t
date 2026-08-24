@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 import copy
@@ -103,7 +104,7 @@ class mca_sca:
         f.close()
 
         if not self.quiet:
-            print("Message [mca_sca]: File <%s> is created." % fname)
+            er3t.common.logger.info("Message [mca_sca]: File <%s> is created." % fname)
 
     def save_h5(self, fname):
         fname = os.path.abspath(fname)
@@ -120,7 +121,7 @@ class mca_sca:
         f.close()
 
         if not self.quiet:
-            print("Message [mca_sca]: File <%s> is created." % fname)
+            er3t.common.logger.info("Message [mca_sca]: File <%s> is created." % fname)
 
 
 if __name__ == "__main__":

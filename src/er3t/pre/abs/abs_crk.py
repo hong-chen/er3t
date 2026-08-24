@@ -12,6 +12,7 @@ from scipy.interpolate import interp2d
 import er3t.common
 from er3t.core.numerics import nice_array_str
 from er3t.core.references import add_reference
+from er3t.core.logging import start_log_session
 
 
 __all__ = [
@@ -72,6 +73,7 @@ class abs_16g:
         overwrite=False,
         verbose=er3t.common.params["verbose"],
     ):
+        start_log_session("pre/abs")
         self.verbose = verbose
         self.wvl = wavelength
         self.nwl = 1
@@ -109,7 +111,7 @@ class abs_16g:
             if hasattr(obj, "coef"):
                 if self.verbose:
                     msg = "Message [abs_16g]: Loading <%s> ..." % fname
-                    print(msg)
+                    er3t.common.logger.info(msg)
                 self.fname = obj.fname
                 self.wvl = obj.wvl
                 self.nwl = obj.nwl
@@ -185,7 +187,9 @@ class abs_16g:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [abs_16g]: Saving object into <%s> ..." % fname)
+                er3t.common.logger.info(
+                    "Message [abs_16g]: Saving object into <%s> ..." % fname
+                )
             pickle.dump(self, f)
 
     def prep_atmosphere(self, atm_obj):
@@ -1045,7 +1049,9 @@ class abs_16g_txt:
             obj = pickle.load(f)
             if hasattr(obj, "coef"):
                 if self.verbose:
-                    print("Message [abs_16g_txt]: loading %s ..." % fname)
+                    er3t.common.logger.info(
+                        "Message [abs_16g_txt]: loading %s ..." % fname
+                    )
                 self.fname = obj.fname
                 self.wvl = obj.wvl
                 self.coef = obj.coef
@@ -1109,7 +1115,9 @@ class abs_16g_txt:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [abs_16g_txt]: saving object into <%s> ..." % fname)
+                er3t.common.logger.info(
+                    "Message [abs_16g_txt]: saving object into <%s> ..." % fname
+                )
             pickle.dump(self, f)
 
     def prep_atmosphere(self, atm_obj):
@@ -1961,7 +1969,9 @@ class abs_oco:
             obj = pickle.load(f)
             if hasattr(obj, "coef"):
                 if self.verbose:
-                    print("Message [abs_oco_idl]: Loading %s ..." % fname)
+                    er3t.common.logger.info(
+                        "Message [abs_oco_idl]: Loading %s ..." % fname
+                    )
                 self.fname = obj.fname
                 self.wvl = obj.wvl
                 self.nwl = obj.nwl
@@ -1995,7 +2005,9 @@ class abs_oco:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [abs_oco_idl]: Saving object into %s ..." % fname)
+                er3t.common.logger.info(
+                    "Message [abs_oco_idl]: Saving object into %s ..." % fname
+                )
             pickle.dump(self, f)
 
     def get_coefficient(self, atm_obj, wvl_threshold=1.0):
@@ -2112,7 +2124,9 @@ class abs_oco_idl:
             obj = pickle.load(f)
             if hasattr(obj, "coef"):
                 if self.verbose:
-                    print("Message [abs_oco_idl]: Loading %s ..." % fname)
+                    er3t.common.logger.info(
+                        "Message [abs_oco_idl]: Loading %s ..." % fname
+                    )
                 self.fname = obj.fname
                 self.wvl = obj.wvl
                 self.nwl = obj.nwl
@@ -2140,7 +2154,9 @@ class abs_oco_idl:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [abs_oco_idl]: Saving object into %s ..." % fname)
+                er3t.common.logger.info(
+                    "Message [abs_oco_idl]: Saving object into %s ..." % fname
+                )
             pickle.dump(self, f)
 
     def get_coefficient(self, atm_obj, wvl_threshold=1.0):
@@ -2156,7 +2172,7 @@ class abs_oco_idl:
             )
         else:
             if self.verbose:
-                print(
+                er3t.common.logger.info(
                     "Message [abs_oco_idl]: Picked wvl=%.2f from '%s' for input wavelength %.2fnm."
                     % (wvl_center_oco[index_wvl], self.fname_idl, self.wvl)
                 )
@@ -2275,7 +2291,9 @@ class abs_oco_h5:
             obj = pickle.load(f)
             if hasattr(obj, "coef"):
                 if self.verbose:
-                    print("Message [abs_oco_h5]: Loading %s ..." % fname)
+                    er3t.common.logger.info(
+                        "Message [abs_oco_h5]: Loading %s ..." % fname
+                    )
                 self.fname = obj.fname
                 self.wvl = obj.wvl
                 self.nwl = obj.nwl
@@ -2304,7 +2322,9 @@ class abs_oco_h5:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [abs_oco_h5]: Saving object into %s ..." % fname)
+                er3t.common.logger.info(
+                    "Message [abs_oco_h5]: Saving object into %s ..." % fname
+                )
             pickle.dump(self, f)
 
     def get_coefficient(self, wvl_threshold=1.0):
@@ -2319,7 +2339,7 @@ class abs_oco_h5:
                 )
             else:
                 if self.verbose:
-                    print(
+                    er3t.common.logger.info(
                         "Message [abs_oco_h5]: Picked wvl=%.2f from '%s' for input wavelength %.2fnm."
                         % (wvl_center_oco[index_wvl], self.fname_h5, self.wvl)
                     )
@@ -2419,7 +2439,7 @@ class abs_rrtmg_sw:
             gas.decode("utf-8").replace(" ", "").lower()
             for gas in gas_bytes.view("S%d" % Nchar).ravel()
         ]
-        print(gases)
+        er3t.common.logger.info(gases)
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # read out key gas names
@@ -2454,8 +2474,8 @@ class abs_rrtmg_sw:
         key_gas_low = [gases[i] for i in ikey_gas_low]
         key_gas_upp = [gases[i] for i in ikey_gas_upp]
         # ╰────────────────────────────────────────────────────────────────────────────╯#
-        print(key_gas_low)
-        print(key_gas_upp)
+        er3t.common.logger.info(key_gas_low)
+        er3t.common.logger.info(key_gas_upp)
         sys.exit()
 
         # Gs, Nz
@@ -2564,8 +2584,8 @@ class abs_rrtmg_sw:
                     coef0_key_low = coef_key_low[ig, :, :, :]
                     coef0_key_upp = coef_key_upp[ig, :, :, :]
 
-                    print(gas0, ig)
-                    print(coef0_key_low)
+                    er3t.common.logger.info("%s %s", gas0, ig)
+                    er3t.common.logger.info(coef0_key_low)
 
         self.coef["abso_coef"] = {
             "name": "Absorption Coefficient (Nz, Ng)",
@@ -2583,28 +2603,40 @@ class abs_rrtmg_sw:
         # Coef    :  ('Absorber', 'GPoint', 'Temperature', 'KeySpeciesRatioLowerAtmos')
         # Coef Key:  ('GPoint', 'PressureLowerAtmos', 'TemperatureDiffFromMLS', 'KeySpeciesRatioLowerAtmos')
 
-        print("-" * 80)
-        print("Band #%d" % (iband + 1))
-        print("Center wavelength: %.4fnm" % self.wavelength)
-        print("Wavelength range: %.4f - %.4fnm" % self.band_range)
-        print("Number of Gs: ", Ng)
-        print()
-        print("Lower Atmosphere:")
-        print("Key species: ", key_gas_low)
-        print("Pressure: %s\n%s" % (p_low.shape, nice_array_str(p_low)))
-        print("Mixing Ratio: %s\n%s" % (mr_low.shape, nice_array_str(mr_low)))
-        print("Temperature Diff.: %s\n%s" % (dt.shape, nice_array_str(dt)))
-        print("Coef.: %s\n" % str(coef_low.shape))
-        print("Coef. Key: %s\n" % str(coef_key_low.shape))
-        print()
-        print("Upper Atmosphere:")
-        print("Key species: ", key_gas_upp)
-        print("Pressure: %s\n%s" % (p_upp.shape, nice_array_str(p_upp)))
-        print("Mixing Ratio: %s\n%s" % (mr_upp.shape, nice_array_str(mr_upp)))
-        print("Temperature Diff.: %s\n%s" % (dt.shape, nice_array_str(dt)))
-        print("Coef.: %s\n" % str(coef_upp.shape))
-        print("Coef. Key: %s\n" % str(coef_key_upp.shape))
-        print("-" * 80)
+        er3t.common.logger.info("-" * 80)
+        er3t.common.logger.info("Band #%d" % (iband + 1))
+        er3t.common.logger.info("Center wavelength: %.4fnm" % self.wavelength)
+        er3t.common.logger.info("Wavelength range: %.4f - %.4fnm" % self.band_range)
+        er3t.common.logger.info("Number of Gs: %s", Ng)
+        er3t.common.logger.info("")
+        er3t.common.logger.info("Lower Atmosphere:")
+        er3t.common.logger.info("Key species: %s", key_gas_low)
+        er3t.common.logger.info(
+            "Pressure: %s\n%s" % (p_low.shape, nice_array_str(p_low))
+        )
+        er3t.common.logger.info(
+            "Mixing Ratio: %s\n%s" % (mr_low.shape, nice_array_str(mr_low))
+        )
+        er3t.common.logger.info(
+            "Temperature Diff.: %s\n%s" % (dt.shape, nice_array_str(dt))
+        )
+        er3t.common.logger.info("Coef.: %s\n" % str(coef_low.shape))
+        er3t.common.logger.info("Coef. Key: %s\n" % str(coef_key_low.shape))
+        er3t.common.logger.info("")
+        er3t.common.logger.info("Upper Atmosphere:")
+        er3t.common.logger.info("Key species: %s", key_gas_upp)
+        er3t.common.logger.info(
+            "Pressure: %s\n%s" % (p_upp.shape, nice_array_str(p_upp))
+        )
+        er3t.common.logger.info(
+            "Mixing Ratio: %s\n%s" % (mr_upp.shape, nice_array_str(mr_upp))
+        )
+        er3t.common.logger.info(
+            "Temperature Diff.: %s\n%s" % (dt.shape, nice_array_str(dt))
+        )
+        er3t.common.logger.info("Coef.: %s\n" % str(coef_upp.shape))
+        er3t.common.logger.info("Coef. Key: %s\n" % str(coef_key_upp.shape))
+        er3t.common.logger.info("-" * 80)
 
         # + netCDF
         # variables['BandWavenumberLowerLimit'] -------------------- : Dataset  (14,)
@@ -2669,7 +2701,7 @@ def export_solar_16g():
             * 1000.0
         )
 
-        print("%5d %.6e" % (wvl, toa))
+        er3t.common.logger.info("%5d %.6e" % (wvl, toa))
 
 
 if __name__ == "__main__":

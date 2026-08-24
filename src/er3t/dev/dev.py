@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 import glob
@@ -570,9 +571,9 @@ def test_aqua_modis():
     for i in range(Ndata):
         line = data[i]
 
-        print(i)
-        print(line)
-        print()
+        er3t.common.logger.info(i)
+        er3t.common.logger.info(line)
+        er3t.common.logger.info("")
 
         lon, lat, jday = cal_lon_lat_utc_geometa(
             line, delta_t=300.0, N_cross=1354, N_along=2030, scan="cw", testing=True
@@ -592,9 +593,9 @@ def test_terra_modis():
     for i in range(Ndata):
         line = data[i]
 
-        print(i)
-        print(line)
-        print()
+        er3t.common.logger.info(i)
+        er3t.common.logger.info(line)
+        er3t.common.logger.info("")
 
         lon, lat, jday = cal_lon_lat_utc_geometa(
             line, delta_t=300.0, N_cross=1354, N_along=2030, scan="cw", testing=True
@@ -614,9 +615,9 @@ def test_snpp_viirs():
     for i in range(Ndata):
         line = data[i]
 
-        print(i)
-        print(line)
-        print()
+        er3t.common.logger.info(i)
+        er3t.common.logger.info(line)
+        er3t.common.logger.info("")
 
         lon, lat, jday = cal_lon_lat_utc_geometa(
             line, delta_t=360.0, N_along=3248, N_cross=3200, scan="cw", testing=True
@@ -721,9 +722,9 @@ def test_noaa20_viirs_extra():
                 # \--------------------------------------------------------------/#
             # \----------------------------------------------------------------------------/#
 
-            print(i)
-            print(line)
-            print()
+            er3t.common.logger.info(i)
+            er3t.common.logger.info(line)
+            er3t.common.logger.info("")
 
 
 def segment_label(data_in):
@@ -743,8 +744,8 @@ def segment_label(data_in):
     seg = skimage.measure.label(ws == foreground)
 
     obj_labels = np.unique(seg)
-    print(obj_labels)
-    print(obj_labels.size)
+    er3t.common.logger.info(obj_labels)
+    er3t.common.logger.info(obj_labels.size)
 
     import matplotlib as mpl
     import matplotlib.pyplot as plt

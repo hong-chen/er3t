@@ -6,6 +6,7 @@ import numpy as np
 
 
 import er3t.common
+from er3t.core.logging import start_log_session
 from .util import *
 
 
@@ -32,6 +33,7 @@ class sfc_2d_gen:
     ID = "Surface 2D"
 
     def __init__(self, sfc_dict=None, fname=None, overwrite=False, verbose=False):
+        start_log_session("pre/sfc")
         self.sfc = sfc_dict
         self.fname = fname  # file name of the pickle file
         self.verbose = verbose  # verbose tag
@@ -71,7 +73,9 @@ class sfc_2d_gen:
             obj = pickle.load(f)
             if hasattr(obj, "data"):
                 if self.verbose:
-                    print("Message [sfc_2d_gen]: Loading <%s> ..." % fname)
+                    er3t.common.logger.info(
+                        "Message [sfc_2d_gen]: Loading <%s> ..." % fname
+                    )
                 self.fname = obj.fname
                 self.data = obj.data
                 self.Nx = obj.Nx
@@ -92,7 +96,9 @@ class sfc_2d_gen:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [sfc_2d_gen]: Saving object into <%s> ..." % fname)
+                er3t.common.logger.info(
+                    "Message [sfc_2d_gen]: Saving object into <%s> ..." % fname
+                )
             pickle.dump(self, f)
 
     def pre_sfc(self):

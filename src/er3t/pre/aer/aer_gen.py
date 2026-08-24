@@ -7,6 +7,7 @@ from scipy import interpolate
 
 import er3t.common
 from er3t.core.numerics import mmr2vmr, cal_rho_air, downscale
+from er3t.core.logging import start_log_session
 from er3t.pre.atm import atm_atmmod
 
 
@@ -39,6 +40,7 @@ class aer_gen:
     def __init__(
         self, aod=None, ssa=None, asy=None, fname=None, overwrite=False, verbose=False
     ):
+        start_log_session("pre/aer")
         self.verbose = verbose  # verbose tag
 
         self.fname = fname  # file name of the pickle file
@@ -74,7 +76,7 @@ class aer_gen:
             obj = pickle.load(f)
             if hasattr(obj, "lev") and hasattr(obj, "lay"):
                 if self.verbose:
-                    print("Message [cld_gen]: loading %s ..." % fname)
+                    er3t.common.logger.info("Message [cld_gen]: loading %s ..." % fname)
                 self.fname = obj.fname
                 self.lay = obj.lay
                 self.lev = obj.lev
@@ -86,7 +88,7 @@ class aer_gen:
 
     def run(self, fname_h4):
         if self.verbose:
-            print("Message [cld_gen]: Processing %s ..." % fname_h4)
+            er3t.common.logger.info("Message [cld_gen]: Processing %s ..." % fname_h4)
 
         # pre process
         self.pre_gen()
@@ -102,7 +104,9 @@ class aer_gen:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [cld_gen]: saving object into %s ..." % fname)
+                er3t.common.logger.info(
+                    "Message [cld_gen]: saving object into %s ..." % fname
+                )
             pickle.dump(self, f)
 
     def pre_gen(self, earth_radius=6378.0, cloud_thickness=1.0):
@@ -337,7 +341,7 @@ class aer_gen:
             new_shape = (self.Nx // dnx, self.Ny // dny, self.Nz // dnz)
 
             if self.verbose:
-                print(
+                er3t.common.logger.info(
                     "Message [cld_gen]: Downgrading data from dimension %s to %s ..."
                     % (str(self.lay["Temperature"]["data"].shape), str(new_shape))
                 )
@@ -360,7 +364,7 @@ class aer_gen:
         dz0 = dz[0]
         diff = np.abs(dz - dz0)
         if any([i > 0.001 for i in diff]):
-            print(dz0, dz)
+            er3t.common.logger.info("%s %s", dz0, dz)
             sys.exit("Error   [cld_gen]: Non-equidistant intervals found in 'dz'.")
         else:
             dz = np.append(dz, dz0)

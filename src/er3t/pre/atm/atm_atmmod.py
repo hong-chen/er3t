@@ -7,6 +7,7 @@ import numpy as np
 
 import er3t.common
 from er3t.core.references import add_reference
+from er3t.core.logging import start_log_session
 from .util import *
 
 
@@ -73,6 +74,7 @@ class atm_atmmod:
         overwrite=False,
         verbose=er3t.common.params["verbose"],
     ):
+        start_log_session("pre/atm")
         add_reference(self.reference)
 
         self.verbose = verbose

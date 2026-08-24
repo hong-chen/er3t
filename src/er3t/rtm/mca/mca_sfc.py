@@ -176,7 +176,9 @@ class mca_sfc_2d:
         f.close()
 
         if not self.quiet:
-            print("Message [mca_sfc_2d]: File <%s> is created." % fname)
+            er3t.common.logger.info(
+                "Message [mca_sfc_2d]: File <%s> is created." % fname
+            )
 
     def save_h5(self, fname):
         fname = os.path.abspath(fname)
@@ -189,7 +191,9 @@ class mca_sfc_2d:
         f.close()
 
         if not self.quiet:
-            print("Message [mca_sfc_2d]: File <%s> is created." % fname)
+            er3t.common.logger.info(
+                "Message [mca_sfc_2d]: File <%s> is created." % fname
+            )
 
 
 if __name__ == "__main__":

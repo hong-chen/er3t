@@ -54,7 +54,7 @@ def get_calipso_vfm_rel(
     elif version == "v4-21":
         concept_id = "C1978624326-LARC_ASDC"  # for CALIPSO VFM V4-21 product
     else:
-        print("Error [get_calipso_vfm_rel]: Version not supported.")
+        common.logger.info("Error [get_calipso_vfm_rel]: Version not supported.")
         sys.exit()
     lon_w, lon_e, lat_s, lat_n = extent
     yyyy = date.year
@@ -69,7 +69,7 @@ def get_calipso_vfm_rel(
     if lon_e < -180.0:
         lon_e += 360.0
 
-    print("domain: ", lon_w, lon_e, lat_s, lat_n)
+    common.logger.info("domain: %s %s %s %s", lon_w, lon_e, lat_s, lat_n)
 
     search_option_id = f"parentIdentifier={concept_id}&"
     search_option_time = f"startTime={yyyy}-{mm:02d}-{dd:02d}T00%3A00%3A00Z&endTime={yyyy}-{mm:02d}-{dd:02d}T23%3A59%3A59Z&"
@@ -83,7 +83,7 @@ def get_calipso_vfm_rel(
         + search_act
     )
 
-    print("fname_server: ", fname_server)
+    common.logger.info("fname_server: %s", fname_server)
 
     try:
         username = os.environ["EARTHDATA_USERNAME"]
@@ -109,8 +109,8 @@ def get_calipso_vfm_rel(
             )
         )
 
-    print("content: ", content)
-    print('hdf"' in content)
+    common.logger.info("content: %s", content)
+    common.logger.info('hdf"' in content)
 
     start_index = 0
     search_content = content
@@ -137,7 +137,7 @@ def download_calipso_vfm_http(
 ):
     rel_result = get_calipso_vfm_rel(date, extent)
 
-    print("rel_result: ", rel_result)
+    common.logger.info("rel_result: %s", rel_result)
 
     # get download commands
     # ╭────────────────────────────────────────────────────────────────────────────╮#
@@ -155,7 +155,7 @@ def download_calipso_vfm_http(
             fname_local, data_format=data_format, verbose=verbose
         ):
             fnames_local.append(fname_local)
-            print(
+            er3t.common.logger.info(
                 "Message [download_calipso_vfm_http]: File {} already exists and looks good. Will not re-download this file.".format(
                     fname_local
                 )
@@ -169,7 +169,7 @@ def download_calipso_vfm_http(
             primary_commands.append(primary_command)
             backup_commands.append(backup_command)
 
-    print(
+    er3t.common.logger.info(
         "Message [download_calipso_vfm_http]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(
             len(fnames_local), exist_count
         )
@@ -183,7 +183,7 @@ def download_calipso_vfm_http(
             fname_local = fnames_local[i]
 
             if verbose:
-                print(
+                er3t.common.logger.info(
                     "Message [download_calipso_vfm_http]: Downloading %s ..."
                     % fname_local
                 )
@@ -199,7 +199,7 @@ def download_calipso_vfm_http(
                 if not final_file_check(
                     fname_local, data_format=data_format, verbose=verbose
                 ):
-                    print(
+                    er3t.common.logger.info(
                         "Message [download_calipso_vfm_http]: Could not complete the download of or something is wrong with {}...deleting...".format(
                             fname_local
                         )
@@ -207,9 +207,11 @@ def download_calipso_vfm_http(
                     os.remove(fname_local)
                     fnames_local.remove(fname_local)  # remove from list
     else:
-        print("Message [download_calipso_vfm_http]: The commands to run are:")
+        er3t.common.logger.info(
+            "Message [download_calipso_vfm_http]: The commands to run are:"
+        )
         for command in primary_commands:
-            print(command)
+            er3t.common.logger.info(command)
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     return fnames_local
@@ -440,9 +442,9 @@ def read_calipso_vfm(
         height = product["metadata"]["Lidar_Data_Altitudes"][33:-5:]
         dataset = product["Feature_Classification_Flags"][first_lat:last_lat, :]
         latitude = product["Latitude"][first_lat:last_lat, 0]
-        print("latitude: ", latitude)
+        common.logger.info("latitude: %s", latitude)
         # latitude = latitude[::prof_per_row]
-        # print('latitude: ', latitude)
+        # common.logger.info("latitude: %s", latitude)
         time = np.array([ccplot.utils.calipso_time2dt(t) for t in time])
 
         # Mask all unknown values

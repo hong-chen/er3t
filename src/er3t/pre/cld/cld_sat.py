@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 import pickle
@@ -13,6 +14,7 @@ from er3t.core.numerics import (
     cal_geodesic_dist,
 )
 from er3t.pre.atm import atm_atmmod
+from er3t.core.logging import start_log_session
 
 
 __all__ = ["cld_sat"]
@@ -61,6 +63,7 @@ class cld_sat:
         overwrite=False,
         verbose=False,
     ):
+        start_log_session("pre/cld")
         self.verbose = verbose  # verbose tag
         self.coarsen = coarsen  # (dn_x, dn_y, dn_z)
 
@@ -102,7 +105,7 @@ class cld_sat:
             obj = pickle.load(f)
             if hasattr(obj, "lev") and hasattr(obj, "lay"):
                 if self.verbose:
-                    print("Message [cld_sat]: loading %s ..." % fname)
+                    er3t.common.logger.info("Message [cld_sat]: loading %s ..." % fname)
                 self.fname = obj.fname
                 self.extent = obj.extent
                 self.lay = obj.lay
@@ -116,15 +119,21 @@ class cld_sat:
     def run(self, cth, cgt, dz):
         if cth is None:
             cth = 3.0
-            print("Warning [cld_sat]: 'cth' is not specified, setting 'cth' to 3km ...")
+            er3t.common.logger.info(
+                "Warning [cld_sat]: 'cth' is not specified, setting 'cth' to 3km ..."
+            )
 
         if cgt is None:
             cgt = 1.0
-            print("Warning [cld_sat]: 'cgt' is not specified, setting 'cgt' to 1km ...")
+            er3t.common.logger.info(
+                "Warning [cld_sat]: 'cgt' is not specified, setting 'cgt' to 1km ..."
+            )
 
         if dz is None:
             dz = 1.0
-            print("Warning [cld_sat]: 'dz' is not specified, setting 'dz' to 1km ...")
+            er3t.common.logger.info(
+                "Warning [cld_sat]: 'dz' is not specified, setting 'dz' to 1km ..."
+            )
 
         # process
         self.process(
@@ -142,7 +151,9 @@ class cld_sat:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [cld_sat]: saving object into %s ..." % fname)
+                er3t.common.logger.info(
+                    "Message [cld_sat]: saving object into %s ..." % fname
+                )
             pickle.dump(self, f)
 
     def process(
@@ -311,7 +322,7 @@ class cld_sat:
             new_shape = (self.Nx // dnx, self.Ny // dny, self.Nz // dnz)
 
             if self.verbose:
-                print(
+                er3t.common.logger.info(
                     "Message [cld_sat]: Downscaling data from dimension %s to %s ..."
                     % (str(self.lay["temperature"]["data"].shape), str(new_shape))
                 )

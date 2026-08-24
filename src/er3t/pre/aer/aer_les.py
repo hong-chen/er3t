@@ -1,9 +1,11 @@
+import er3t.common
 import os
 import sys
 import pickle
 import numpy as np
 
 from er3t.core.numerics import mmr2vmr, cal_rho_air, downscale
+from er3t.core.logging import start_log_session
 
 
 __all__ = ["aer_les"]
@@ -41,6 +43,7 @@ class aer_les:
         overwrite=False,
         verbose=False,
     ):
+        start_log_session("pre/aer")
         self.verbose = verbose  # verbose tag
         self.fname = fname  # file name of the pickle file
         self.coarsing = coarsing  # (dn_x, dn_y, dn_z, dn_t)
@@ -79,7 +82,7 @@ class aer_les:
             obj = pickle.load(f)
             if hasattr(obj, "lev") and hasattr(obj, "lay"):
                 if self.verbose:
-                    print("Message [aer_les]: Loading %s ..." % fname)
+                    er3t.common.logger.info("Message [aer_les]: Loading %s ..." % fname)
                 self.fname = obj.fname
                 self.lay = obj.lay
                 self.lev = obj.lev
@@ -91,7 +94,7 @@ class aer_les:
 
     def run(self, fname_nc):
         if self.verbose:
-            print("Message [aer_les]: Processing %s ..." % fname_nc)
+            er3t.common.logger.info("Message [aer_les]: Processing %s ..." % fname_nc)
 
         # pre process
         self.pre_les(fname_nc)
@@ -107,7 +110,9 @@ class aer_les:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [aer_les]: Saving object into %s ..." % fname)
+                er3t.common.logger.info(
+                    "Message [aer_les]: Saving object into %s ..." % fname
+                )
             pickle.dump(self, f)
 
     def pre_les(self, fname_nc, q_factor=2):
@@ -198,7 +203,7 @@ class aer_les:
             new_shape = (self.Nt // dnt, self.Nz // dnz, self.Ny // dny, self.Nx // dnx)
 
             if self.verbose:
-                print(
+                er3t.common.logger.info(
                     "Message [aer_les]: Downgrading data from dimension %s to %s ..."
                     % (str(self.P.shape), str(new_shape))
                 )
@@ -224,9 +229,11 @@ class aer_les:
         dz0 = dz[0]
         diff = np.abs(dz - dz0)
         if any([i > 0.001 for i in diff]):
-            print(dz0, dz)
+            er3t.common.logger.info("%s %s", dz0, dz)
             # sys.exit('Error   [aer_les]: Non-equidistant intervals found in \'dz\'.')
-            print("Warning [aer_les]: Non-equidistant intervals found in 'dz'.")
+            er3t.common.logger.info(
+                "Warning [aer_les]: Non-equidistant intervals found in 'dz'."
+            )
         dz = np.append(dz, dz0)
         alt = np.append(
             self.lay["altitude"]["data"] - dz0 / 2.0,

@@ -86,7 +86,7 @@ def gen_file_earthdata(
             username = os.environ["EARTHDATA_USERNAME"]
             password = os.environ["EARTHDATA_PASSWORD"]
         except Exception as error:
-            print(error)
+            er3t.common.logger.info(error)
             msg = "\nError [gen_file_earthdata]: Please follow the instructions at \nhttps://disc.gsfc.nasa.gov/data-access\nto register a login account and create a <~/.netrc> file."
             raise OSError(msg)
 
@@ -94,7 +94,7 @@ def gen_file_earthdata(
             username,
             password,
         )
-        print("Message [gen_file_earthdata]: Creating <~/.netrc> ...")
+        er3t.common.logger.info("Message [gen_file_earthdata]: Creating <~/.netrc> ...")
         with open(fname_login, "w") as f:
             f.write(content)
 
@@ -102,7 +102,9 @@ def gen_file_earthdata(
 
     fname_cookies = os.path.abspath(os.path.expanduser(fname_cookies))
     if not os.path.exists(fname_cookies):
-        print("Message [gen_file_earthdata]: Creating <~/.urs_cookies> ...")
+        er3t.common.logger.info(
+            "Message [gen_file_earthdata]: Creating <~/.urs_cookies> ..."
+        )
         os.system("touch ~/.urs_cookies")
 
     secret["cookies"] = fname_cookies
@@ -296,8 +298,8 @@ def get_online_file(
             os.system(primary_command)
             content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
         except Exception as message:
-            print(message, "\n")
-            print(
+            er3t.common.logger.info(f"{message}\n")
+            er3t.common.logger.info(
                 "Message [get_online_file]: Failed to download/read {},\nAttempting again...".format(
                     fname_file
                 )
@@ -309,8 +311,8 @@ def get_online_file(
                     fname_file, filename=filename, fdir_save=fdir_save
                 )
             except Exception as message:
-                print(message, "\n")
-                print(
+                er3t.common.logger.info(f"{message}\n")
+                er3t.common.logger.info(
                     "Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(
                         fname_file
                     )
@@ -323,7 +325,7 @@ def get_online_file(
                         fname_file, filename=filename, fdir_save=fdir_save
                     )
                 except Exception as message:
-                    print(message, "\n")
+                    er3t.common.logger.info(f"{message}\n")
                     msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(
                         fname_file
                     )
@@ -356,7 +358,7 @@ def get_online_file(
         #     webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
         # except urllib.error.HTTPError:
         #     msg = "The LAADS DAAC servers appear to be down. Attempting again in 10 seconds..."
-        #     print(msg)
+        #     er3t.common.logger.info(msg)
         #     time.sleep(10)
         #     try:
         #         webpage  = urllib.request.urlopen('%s.csv' % fdir_server)
@@ -387,7 +389,7 @@ def final_file_check(fname_local, data_format=None, verbose=False):
             checked = True
 
         except Exception as error:
-            print(error)
+            er3t.common.logger.info(error)
             pass
 
     elif data_format in ["nc", "nc4", "netcdf", "netcdf4"]:
@@ -399,7 +401,7 @@ def final_file_check(fname_local, data_format=None, verbose=False):
             checked = True
 
         except Exception as error:
-            print(error)
+            er3t.common.logger.info(error)
             pass
 
     elif data_format in ["h5", "hdf5"]:
@@ -411,7 +413,7 @@ def final_file_check(fname_local, data_format=None, verbose=False):
             checked = True
 
         except Exception as error:
-            print(error)
+            er3t.common.logger.info(error)
             pass
 
     else:
@@ -427,7 +429,7 @@ def final_file_check(fname_local, data_format=None, verbose=False):
                 "\nMessage [final_file_check]: <%s> has been successfully downloaded.\n"
                 % fname_local
             )
-            print(msg)
+            er3t.common.logger.info(msg)
         return 1
 
     else:
@@ -1214,7 +1216,7 @@ def download_laads_https(
             fname_local = fnames_local[i]
 
             if verbose:
-                print(
+                er3t.common.logger.info(
                     "Message [download_laads_https]: Downloading %s ..." % fname_local
                 )
             os.system(primary_commands[i])
@@ -1225,9 +1227,11 @@ def download_laads_https(
                 os.system(backup_commands[i])
 
     else:
-        print("Message [download_laads_https]: The commands to run are:")
+        er3t.common.logger.info(
+            "Message [download_laads_https]: The commands to run are:"
+        )
         for command in primary_commands:
-            print(command)
+            er3t.common.logger.info(command)
     # \----------------------------------------------------------------------------/#
 
     return fnames_local
@@ -1332,7 +1336,7 @@ def download_lance_https(
             fname_local = fnames_local[i]
 
             if verbose:
-                print(
+                er3t.common.logger.info(
                     "Message [download_laads_https]: Downloading %s ..." % fname_local
                 )
             os.system(primary_commands[i])
@@ -1343,9 +1347,11 @@ def download_lance_https(
                 os.system(backup_commands[i])
 
     else:
-        print("Message [download_laads_https]: The commands to run are:")
+        er3t.common.logger.info(
+            "Message [download_laads_https]: The commands to run are:"
+        )
         for command in primary_commands:
-            print(command)
+            er3t.common.logger.info(command)
     # \----------------------------------------------------------------------------/#
 
     return fnames_local
@@ -1472,7 +1478,9 @@ def download_oco2_https(
             fname_local = fnames_local[i]
 
             if verbose:
-                print("Message [download_oco2_https]: Downloading %s ..." % fname_local)
+                er3t.common.logger.info(
+                    "Message [download_oco2_https]: Downloading %s ..." % fname_local
+                )
 
             os.system(primary_commands[i])
 
@@ -1482,9 +1490,11 @@ def download_oco2_https(
                 os.system(backup_commands[i])
 
     else:
-        print("Message [download_oco2_https]: The commands to run are:")
+        er3t.common.logger.info(
+            "Message [download_oco2_https]: The commands to run are:"
+        )
         for command in primary_commands:
-            print(command)
+            er3t.common.logger.info(command)
 
     return fnames_local
 
@@ -1599,7 +1609,7 @@ def download_worldview_image(
             )
 
         except Exception as error:
-            print(error)
+            er3t.common.logger.info(error)
             fname = "%s/%s-%s_%s_%s_(%s).png" % (
                 fdir_out,
                 instrument,
@@ -1674,7 +1684,7 @@ def download_worldview_image(
             plt.close(fig)
 
         except Exception as error:
-            print(error)
+            er3t.common.logger.info(error)
             msg = (
                 "\nError [download_wordview_image]: Unable to download imagery for <%s> onboard <%s> at <%s>."
                 % (instrument, satellite, date_s)

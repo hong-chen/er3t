@@ -560,6 +560,6 @@ if __name__ == "__main__":
         par_tag="I",
         fname_nc="/Users/hchen/Work/soft/libradtran/v2.0.5/data/ic/baum/ic.sol.baum.cdf",
     )
-    print(fname)
+    er3t.common.logger.info(fname)
 
     pass

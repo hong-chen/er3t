@@ -2,6 +2,7 @@
 
 import importlib
 import inspect
+import io
 import logging
 import sys
 
@@ -93,3 +94,31 @@ def test_public_classes_use_concrete_bases_and_safe_defaults():
     assert PreprocessFigure.__bases__ == (object,)
     assert inspect.signature(mcarats_ng.init_atm).parameters["atm_1ds"].default is None
     assert inspect.signature(modis_03.read_vars).parameters["vnames"].default is None
+
+
+def test_cli_dialogue_separator_uses_requested_width():
+    from er3t.cli._output import dialogue_separator, print_dialogue
+
+    stream = io.StringIO()
+    print_dialogue("results", stream=stream)
+
+    assert dialogue_separator(width=7) == "─" * 7
+    assert stream.getvalue().splitlines()[1] == "results"
+
+
+def test_package_logger_mirrors_messages_to_an_optional_file(tmp_path):
+    import er3t.common
+    from er3t.core import configure_logging, start_log_session
+
+    log_file = tmp_path / "er3t.log"
+    configure_logging(log_file=log_file)
+    start_log_session("pre/atm", width=9)
+    er3t.common.logger.info("saved message")
+    er3t.common.configure_logging()
+
+    contents = log_file.read_text(encoding="utf-8")
+    assert "saved message" in contents
+    assert "─" * 9 in contents
+    assert "pre/atm" in contents
+    assert contents.splitlines()[:3] == ["─" * 9, "pre/atm", "─" * 9]
+    assert "\x1b" not in contents

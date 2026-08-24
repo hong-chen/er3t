@@ -14,6 +14,7 @@ from scipy.interpolate import interp1d
 
 import er3t.common
 from er3t.core.references import add_reference
+from er3t.core.logging import start_log_session
 
 
 __all__ = ["pha_mie_wc", "pha_mie_wc_shd", "legendre2phase", "phase2pmom", "pmom2phase"]
@@ -122,6 +123,7 @@ class pha_mie_wc:
         overwrite=True,
         verbose=False,
     ):
+        start_log_session("pre/pha")
         add_reference(self.reference)
 
         self.interpolate = interpolate
@@ -147,7 +149,7 @@ class pha_mie_wc:
                 with open(fname, "rb") as f0:
                     data0 = pickle.load(f0)
                 if np.abs(angles - data0["ang"]["data"]).sum() < 0.00000001:
-                    print(
+                    er3t.common.logger.info(
                         "Message [pha_mie_wc]: Re-using phase function from <%s> ..."
                         % fname
                     )
@@ -216,7 +218,7 @@ class pha_mie_wc:
         with open(fname, "wb") as f:
             pickle.dump(data, f)
 
-        print(
+        er3t.common.logger.info(
             "Message [pha_mie_wc]: Phase function for %.2fnm has been stored at <%s>."
             % (wvl0, fname)
         )
@@ -327,6 +329,7 @@ class pha_mie_wc_shd:
         overwrite=True,
         verbose=False,
     ):
+        start_log_session("pre/pha")
         fdir_shd = "%s/shdom" % er3t.common.fdir_data_tmp
         fname_coef = "%s/shdom-mie_W_F_%.4f-%.4f.txt" % (
             fdir_shd,
@@ -364,7 +367,7 @@ class pha_mie_wc_shd:
                 with open(fname, "rb") as f0:
                     data0 = pickle.load(f0)
                 if np.abs(angles - data0["ang"]["data"]).sum() < 0.00000001:
-                    print(
+                    er3t.common.logger.info(
                         "Message [pha_mie_wc_shd]: Re-using phase function from <%s> ..."
                         % fname
                     )
@@ -434,7 +437,7 @@ class pha_mie_wc_shd:
         with open(fname, "wb") as f:
             pickle.dump(data, f)
 
-        print(
+        er3t.common.logger.info(
             "Message [pha_mie_wc_shd]: Phase function for %.2fnm has been stored at <%s>."
             % (wvl0, fname)
         )
@@ -677,6 +680,7 @@ class pha_mie_wc_pmom:
         overwrite=True,
         verbose=False,
     ):
+        start_log_session("pre/pha")
         self.interpolate = interpolate
         self.overwrite = overwrite
         self.verbose = verbose
@@ -702,7 +706,7 @@ class pha_mie_wc_pmom:
                 with open(fname, "rb") as f0:
                     data0 = pickle.load(f0)
                 if np.abs(angles - data0["ang"]["data"]).sum() < 0.00000001:
-                    print(
+                    er3t.common.logger.info(
                         "Message [pha_mie_wc_pmom]: Re-using phase function from <%s> ..."
                         % fname
                     )
@@ -768,7 +772,7 @@ class pha_mie_wc_pmom:
         with open(fname, "wb") as f:
             pickle.dump(data, f)
 
-        print(
+        er3t.common.logger.info(
             "Message [pha_mie_wc_pmom]: Phase function for %.2fnm has been stored at <%s>."
             % (wvl0, fname)
         )

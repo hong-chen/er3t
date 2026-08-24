@@ -353,7 +353,7 @@ def gen_sen_file(
 
 if __name__ == "__main__":
     fname = gen_mie_file_from_nc(550.0, 550.0)
-    print(fname)
+    er3t.common.logger.info(fname)
 
     # date = datetime.datetime(2019, 9, 2)
     # sza = 34.93346840064262
@@ -361,10 +361,10 @@ if __name__ == "__main__":
     # vza = 14.44008093613803
     # vaa = -99.99851773953723
 
-    # print('SOLARFLUX: %.6f' % er3t.core.cal_sol_fac(date))
-    # print('SOLARMU: %.6f' % np.cos(np.deg2rad(sza)))
-    # print('SOLARAZ: %.6f' % cal_shd_saa(saa))
+    # er3t.common.logger.info('SOLARFLUX: %.6f' % er3t.core.cal_sol_fac(date))
+    # er3t.common.logger.info('SOLARMU: %.6f' % np.cos(np.deg2rad(sza)))
+    # er3t.common.logger.info('SOLARAZ: %.6f' % cal_shd_saa(saa))
 
-    # print('SENSORMU: %.6f' % np.cos(np.deg2rad(vza)))
-    # print('SENSORAZ: %.6f' % cal_shd_vaa(vaa))
+    # er3t.common.logger.info('SENSORMU: %.6f' % np.cos(np.deg2rad(vza)))
+    # er3t.common.logger.info('SENSORAZ: %.6f' % cal_shd_vaa(vaa))
     pass

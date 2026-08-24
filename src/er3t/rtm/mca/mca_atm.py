@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 import copy
@@ -467,7 +468,7 @@ class mca_atm_3d:
 
     def gen_mca_3d_atm_file(self, fname):
         if not self.quiet:
-            print(
+            er3t.common.logger.info(
                 "Message [mca_atm_3d]: Creating 3D atm file <%s> for MCARaTS ..."
                 % fname
             )
@@ -517,7 +518,9 @@ class mca_atm_3d:
         f.close()
 
         if not self.quiet:
-            print("Message [mca_atm_3d]: File <%s> is created." % fname)
+            er3t.common.logger.info(
+                "Message [mca_atm_3d]: File <%s> is created." % fname
+            )
 
     def save_h5(self, fname):
         fname = os.path.abspath(fname)
@@ -530,7 +533,9 @@ class mca_atm_3d:
         f.close()
 
         if not self.quiet:
-            print("Message [mca_atm_3d]: File <%s> is created." % fname)
+            er3t.common.logger.info(
+                "Message [mca_atm_3d]: File <%s> is created." % fname
+            )
 
 
 if __name__ == "__main__":

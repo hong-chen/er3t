@@ -28,7 +28,7 @@ def get_shd_data_out_ori(
     if verbose:
         msg = f"Reading SHDOM output ..."
         er3t.common.logger.info(msg)
-        print(
+        er3t.common.logger.info(
             "╭────────────────────────────────────────────────────────────────────────────╮"
         )
 
@@ -95,9 +95,11 @@ def get_shd_data_out_ori(
     data = np.moveaxis(data, 0, 1)
 
     if verbose:
-        print("target file: <%s>" % os.path.abspath(fname))
-        print("%s (Nx, Ny, Nz, Nset, Nvar): %s" % (output_type.title(), data.shape))
-        print(
+        er3t.common.logger.info("target file: <%s>" % os.path.abspath(fname))
+        er3t.common.logger.info(
+            "%s (Nx, Ny, Nz, Nset, Nvar): %s" % (output_type.title(), data.shape)
+        )
+        er3t.common.logger.info(
             "╰────────────────────────────────────────────────────────────────────────────╯"
         )
 
@@ -111,7 +113,7 @@ def get_shd_data_out(
     if verbose:
         msg = f"Reading SHDOM output ..."
         er3t.common.logger.info(msg)
-        print(
+        er3t.common.logger.info(
             "╭────────────────────────────────────────────────────────────────────────────╮"
         )
 
@@ -257,13 +259,17 @@ def get_shd_data_out(
         data = np.moveaxis(data, 0, 1)
 
     if verbose:
-        print("target file: <%s>" % os.path.abspath(fname))
-        print("  data file: <%s>" % os.path.abspath(fname_data))
+        er3t.common.logger.info("target file: <%s>" % os.path.abspath(fname))
+        er3t.common.logger.info("  data file: <%s>" % os.path.abspath(fname_data))
         if data.ndim > 2:
-            print("%s (Nx, Ny, Nz, Nset, Nvar): %s" % (output_type.title(), data.shape))
+            er3t.common.logger.info(
+                "%s (Nx, Ny, Nz, Nset, Nvar): %s" % (output_type.title(), data.shape)
+            )
         else:
-            print("%s (Ndata, Nvar): %s" % (output_type.title(), data.shape))
-        print(
+            er3t.common.logger.info(
+                "%s (Ndata, Nvar): %s" % (output_type.title(), data.shape)
+            )
+        er3t.common.logger.info(
             "╰────────────────────────────────────────────────────────────────────────────╯"
         )
 
@@ -430,7 +436,7 @@ class shd_out_raw:
         if self.verbose:
             msg = f"Reading SHDOM output ..."
             er3t.common.logger.info(msg)
-            print(
+            er3t.common.logger.info(
                 "╭────────────────────────────────────────────────────────────────────────────╮"
             )
 
@@ -578,16 +584,20 @@ class shd_out_raw:
             data = np.moveaxis(data, 0, 1)
 
         if self.verbose:
-            print("target file: <%s>" % os.path.abspath(self.fname_txt))
-            print("  data file: <%s>" % os.path.abspath(fname_data))
+            er3t.common.logger.info(
+                "target file: <%s>" % os.path.abspath(self.fname_txt)
+            )
+            er3t.common.logger.info("  data file: <%s>" % os.path.abspath(fname_data))
             if data.ndim > 2:
-                print(
+                er3t.common.logger.info(
                     "%s (Nx, Ny, Nz, Nset, Nvar): %s"
                     % (output_type.title(), data.shape)
                 )
             else:
-                print("%s (Ndata, Nvar): %s" % (output_type.title(), data.shape))
-            print(
+                er3t.common.logger.info(
+                    "%s (Ndata, Nvar): %s" % (output_type.title(), data.shape)
+                )
+            er3t.common.logger.info(
                 "╰────────────────────────────────────────────────────────────────────────────╯"
             )
 

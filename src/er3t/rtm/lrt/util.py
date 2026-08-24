@@ -560,9 +560,9 @@ def retrieve(prop1, prop2, cld_tau, cld_ref, prop1_data, prop2_data):
     f.close()
 
     a1, a2 = retrieve(0.5, 0.4, cld_tau, cld_ref, prop1_data, prop2_data)
-    print(a1, a2)
+    er3t.common.logger.info("%s %s", a1, a2)
     a1, a2 = retrieve(0.0, 0.0, cld_tau, cld_ref, prop1_data, prop2_data)
-    print(a1, a2)
+    er3t.common.logger.info("%s %s", a1, a2)
     """
 
     import numpy as np

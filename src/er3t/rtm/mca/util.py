@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 import glob
@@ -138,7 +139,7 @@ class func_ref_vs_cot:
             overwrite=False,
         )
         # sol0 = np.sum(abs0.coef['solar']['data'] * abs0.coef['weight']['data']) * 1000.0
-        # print(sol0)
+        # er3t.common.logger.info(sol0)
         # sys.exit()
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 

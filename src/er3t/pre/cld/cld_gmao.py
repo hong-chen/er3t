@@ -6,6 +6,7 @@ import numpy as np
 
 import er3t.common
 from er3t.core.numerics import mmr2vmr, cal_rho_air, downscale
+from er3t.core.logging import start_log_session
 
 
 __all__ = ["cld_merra"]
@@ -46,6 +47,7 @@ class cld_merra:
         overwrite=False,
         verbose=True,
     ):
+        start_log_session("pre/cld")
         self.verbose = verbose  # verbose tag
         self.fname = fname  # file name of the pickle file
         self.coarsen = coarsen  # (dn_x, dn_y, dn_z, dn_t)
@@ -91,7 +93,9 @@ class cld_merra:
 
             if file_correct:
                 if self.verbose:
-                    print("Message [cld_merra]: Loading <%s> ..." % fname)
+                    er3t.common.logger.info(
+                        "Message [cld_merra]: Loading <%s> ..." % fname
+                    )
                 self.fname = obj.fname
                 self.lay = obj.lay
                 self.lev = obj.lev
@@ -104,7 +108,9 @@ class cld_merra:
 
     def run(self, fname_nc):
         if self.verbose:
-            print("Message [cld_merra]: Processing <%s> ..." % fname_nc)
+            er3t.common.logger.info(
+                "Message [cld_merra]: Processing <%s> ..." % fname_nc
+            )
 
         # pre process
         self.pre(fname_nc)
@@ -116,7 +122,9 @@ class cld_merra:
         self.fname = fname
         with open(fname, "wb") as f:
             if self.verbose:
-                print("Message [cld_merra]: Saving object into <%s> ..." % fname)
+                er3t.common.logger.info(
+                    "Message [cld_merra]: Saving object into <%s> ..." % fname
+                )
             pickle.dump(self, f)
 
     def pre(self, fname_nc, q_factor=2.0, index_t=0):
@@ -349,7 +357,7 @@ class cld_merra:
             new_shape = (self.Nx // dnx, self.Ny // dny, self.Nz // dnz)
 
             if self.verbose:
-                print(
+                er3t.common.logger.info(
                     "Message [cld_merra]: Downscaling data from dimension %s to %s ..."
                     % (str(self.lay["temperature"]["data"].shape), str(new_shape))
                 )

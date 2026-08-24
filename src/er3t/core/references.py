@@ -1,5 +1,7 @@
 """Citation registry shared by high-level workflows."""
 
+import er3t.common
+
 
 def add_reference(reference: str) -> None:
     """Register a citation once in the package-level reference list."""
@@ -21,5 +23,8 @@ def get_references() -> tuple[str, ...]:
 def print_references() -> None:
     """Print all registered citations."""
 
+    from .logging import start_log_session
+
+    start_log_session("references")
     for reference in get_references():
-        print(reference)
+        er3t.common.logger.info(reference)

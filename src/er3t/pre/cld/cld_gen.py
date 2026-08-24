@@ -8,6 +8,7 @@ import numpy as np
 import er3t.common
 from er3t.pre.atm import atm_atmmod
 from er3t.core.numerics import downscale, check_equidistant
+from er3t.core.logging import start_log_session
 
 
 __all__ = ["cld_gen_hem", "cld_gen_hom", "cld_gen_cop"]
@@ -90,6 +91,7 @@ class cld_gen_hem:
         overwrite=False,
         verbose=True,
     ):
+        start_log_session("pre/cld")
         self.fname = os.path.abspath(fname)  # file name of the pickle file
         self.altitude = altitude  # in km
 
@@ -587,6 +589,7 @@ class cld_gen_hom:
         overwrite=False,
         verbose=True,
     ):
+        start_log_session("pre/cld")
         if fname is not None:
             self.fname = os.path.abspath(fname)  # file name of the pickle file
         else:
@@ -839,6 +842,7 @@ class cld_gen_cop:
         overwrite=False,
         verbose=True,
     ):
+        start_log_session("pre/cld")
         self.fname = fname  # file name of the pickle file
         self.atm = atm_obj
         self.extent = extent_xy

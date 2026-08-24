@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 import h5py
@@ -176,7 +177,7 @@ class mca_out_ng:
 
     def load(self):
         if self.verbose:
-            print(
+            er3t.common.logger.info(
                 "Message [mca_out_ng]: Reading <%s> from <%s> ..."
                 % (self.mca.target.lower(), self.fname)
             )
@@ -193,7 +194,9 @@ class mca_out_ng:
 
     def run(self):
         if self.verbose:
-            print("Message [mca_out_ng]: Reading <%s> ..." % self.mca.target.lower())
+            er3t.common.logger.info(
+                "Message [mca_out_ng]: Reading <%s> ..." % self.mca.target.lower()
+            )
 
         if self.mca.target in [
             "flux",
@@ -210,7 +213,7 @@ class mca_out_ng:
 
     def dump(self):
         if not self.quiet:
-            print(
+            er3t.common.logger.info(
                 "Message [mca_out_ng]: Saving <%s> into <%s> ..."
                 % (self.mca.target.lower(), self.fname)
             )

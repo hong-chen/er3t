@@ -8,6 +8,34 @@ project under ``<root>/examples`` (will be referred to as ``examples/``) and hop
 usage of EaR³T from the provided examples.
 
 
+Logging
+~~~~~~~
+
+EaR³T status messages are written to the terminal through the package logger.
+Set ``ER3T_LOG_FILE`` to save the same messages to a plain-text log file:
+
+.. code-block:: bash
+
+   ER3T_LOG_FILE=run.log python 00_er3t_mca.py
+
+Applications can configure this programmatically as well:
+
+.. code-block:: Python
+
+   from er3t.core import configure_logging
+
+   configure_logging(log_file="run.log")
+
+The atmosphere and absorption preprocessors automatically start named sessions
+(``pre/atm`` and ``pre/abs``). Custom workflows can create matching boundaries:
+
+.. code-block:: Python
+
+   from er3t.core import start_log_session
+
+   start_log_session("rtm/mca")
+
+
 Examples
 ~~~~~~~~
 

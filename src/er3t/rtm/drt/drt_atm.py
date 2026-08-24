@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 import copy
@@ -117,7 +118,7 @@ class drt_ckd_1d:
         alt_toa=100.0,
     ):
         if not self.quiet:
-            print(
+            er3t.common.logger.info(
                 "Message [drt_ckd_1d]: Creating 1D CKDFile <%s> for DISORT..." % fname
             )
 
@@ -221,7 +222,9 @@ class drt_ckd_1d:
         self.nml["CKDFILE"] = {"data": fname}
 
         if not self.quiet:
-            print("Message [drt_ckd_1d]: File <%s> is created." % fname)
+            er3t.common.logger.info(
+                "Message [drt_ckd_1d]: File <%s> is created." % fname
+            )
 
 
 class drt_prp_1d:
@@ -426,14 +429,18 @@ class drt_prp_1d:
 "{alt_str}" "{temp_str}" {optical_data} "{molecular_abs}" \
 {rayleigh_coef} {fname} {fname_ckd_1d} | {prp_exe}'
         if not self.quiet:
-            print("Message [drt_prp_1d]: Creating PROPFile <%s> for DISORT..." % fname)
+            er3t.common.logger.info(
+                "Message [drt_prp_1d]: Creating PROPFile <%s> for DISORT..." % fname
+            )
 
-        print(command)
+        er3t.common.logger.info(command)
 
         os.system(command)
 
         if not self.quiet:
-            print("Message [drt_prp_1d]: File <%s> is created." % fname)
+            er3t.common.logger.info(
+                "Message [drt_prp_1d]: File <%s> is created." % fname
+            )
 
         self.nml["PROPFILE"] = {"data": fname}
 

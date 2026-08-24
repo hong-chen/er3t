@@ -1,3 +1,4 @@
+import er3t.common
 import datetime
 import os
 import sys
@@ -342,9 +343,9 @@ def test_100_flux_spec(
                     else:
                         extra[f"mol_modify {gas0}"] = "0.0 DU"
             params["extra"] = extra
-            print(gas)
-            print(extra)
-            print()
+            er3t.common.logger.info(gas)
+            er3t.common.logger.info(extra)
+            er3t.common.logger.info("")
 
         data_lrt = lrt_flux_spec(params, surface=surface, overwrite=overwrite)
 

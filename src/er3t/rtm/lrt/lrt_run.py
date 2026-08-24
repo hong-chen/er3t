@@ -1,17 +1,24 @@
+import er3t.common
 import os
 import multiprocessing as mp
+from functools import partial
+
+from er3t.core.logging import start_log_session
 
 
 __all__ = ["lrt_run", "lrt_run_mp"]
 
 
-def lrt_run(init, verbose=False):
+def lrt_run(init, verbose=False, *, log_session=True):
     """
     Create libRadtran input file that contains RTM parameters.
 
     Input:
         lrt_init object
     """
+
+    if log_session:
+        start_log_session("rtm/lrt")
 
     f = open(init.input_file, "w")
     for key in init.input_dict.keys():
@@ -51,19 +58,24 @@ def lrt_run_mp(inits, Ncpu=None):
         Python list of lrt_init objects
     """
 
+    start_log_session("rtm/lrt")
+
     if Ncpu is None:
         Ncpu = mp.cpu_count() - 1
 
     try:
         from tqdm import tqdm
 
-        print("\nMessage [lrt_run_mp]: running libRadtran ...")
+        er3t.common.logger.info("\nMessage [lrt_run_mp]: running libRadtran ...")
         with mp.Pool(processes=Ncpu) as pool:
-            r = list(tqdm(pool.imap_unordered(lrt_run, inits), total=len(inits)))
+            run_without_session = partial(lrt_run, log_session=False)
+            r = list(
+                tqdm(pool.imap_unordered(run_without_session, inits), total=len(inits))
+            )
 
     except ImportError:
         pool = mp.Pool(processes=Ncpu)
-        pool.outputs = pool.map_async(lrt_run, inits)
+        pool.outputs = pool.map_async(partial(lrt_run, log_session=False), inits)
         pool.close()
         pool.join()
 

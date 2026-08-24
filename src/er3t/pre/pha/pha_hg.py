@@ -1,6 +1,8 @@
 import er3t
 import numpy as np
 
+from er3t.core.logging import start_log_session
+
 
 __all__ = ["pha_hg"]
 
@@ -43,6 +45,7 @@ class pha_hg:
     """
 
     def __init__(self, asy_params=[-0.85, 0.85], angles=np.linspace(0.0, 180.0, 1801)):
+        start_log_session("pre/pha")
         asy_params = np.array(asy_params)
         angles = np.array(angles)
 

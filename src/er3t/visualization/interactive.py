@@ -1,3 +1,4 @@
+import er3t.common
 import os
 import sys
 import glob
@@ -50,7 +51,7 @@ def compare_data_2d(
     else:
         title = "Compare Data-2D"
     # ╰────────────────────────────────────────────────────────────────────────────╯#
-    print(title)
+    er3t.common.logger.info(title)
 
     # set html file name
     # ╭────────────────────────────────────────────────────────────────────────────╮#
@@ -61,7 +62,7 @@ def compare_data_2d(
             data_y["name"].lower().replace(" ", "-"),
         )
     # ╰────────────────────────────────────────────────────────────────────────────╯#
-    print(fname_html)
+    er3t.common.logger.info(fname_html)
 
     # output_file(fname_html, title=title, mode='inline')
 

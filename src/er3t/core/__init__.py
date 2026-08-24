@@ -2,7 +2,7 @@
 
 from .capabilities import Capabilities, detect_capabilities
 from .config import Settings, default_settings
-from .logging import configure_logging, get_logger
+from .logging import configure_logging, get_logger, start_log_session
 from .files import get_all_files, get_all_folders
 from ._utilities import calculate_raa, find_nearest, move_correlate
 from .numerics import (
@@ -73,6 +73,7 @@ __all__ = [
     "package_dir",
     "repository_dir",
     "resource_path",
+    "start_log_session",
     "print_references",
     "print_reference",
     "unpack_uint_to_bits",
