@@ -8,7 +8,7 @@ import sys
 import pickle
 import numpy as np
 
-from er3t.util import mmr2vmr, cal_rho_air, downgrading
+from er3t.util import mmr2vmr, cal_rho_air, downscale
 
 
 
@@ -186,15 +186,15 @@ class aer_lasso:
             if self.verbose:
                 print('Message [aer_les]: Downgrading data from dimension %s to %s ...' % (str(self.P.shape), str(new_shape)))
 
-            self.lay['x']['data']        = downgrading(self.lay['x']['data']       , (self.Nx//dnx,))
-            self.lay['y']['data']        = downgrading(self.lay['y']['data']       , (self.Ny//dny,))
-            self.lay['altitude']['data'] = downgrading(self.lay['altitude']['data'], (self.Nz//dnz,))
-            self.lay['pressure']['data'] = downgrading(self.lay['pressure']['data'], (self.Nz//dnz,))
+            self.lay['x']['data']        = downscale(self.lay['x']['data']       , (self.Nx//dnx,))
+            self.lay['y']['data']        = downscale(self.lay['y']['data']       , (self.Ny//dny,))
+            self.lay['altitude']['data'] = downscale(self.lay['altitude']['data'], (self.Nz//dnz,))
+            self.lay['pressure']['data'] = downscale(self.lay['pressure']['data'], (self.Nz//dnz,))
 
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
                     if self.lay[key]['data'].ndim == len(coarsing):
-                        self.lay[key]['data']  = downgrading(self.lay[key]['data'], new_shape)
+                        self.lay[key]['data']  = downscale(self.lay[key]['data'], new_shape)
 
 
     def post_les(self):

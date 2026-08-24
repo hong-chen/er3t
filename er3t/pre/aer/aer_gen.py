@@ -120,7 +120,7 @@ class aer_gen:
         self.lay = {}
         self.lev = {}
 
-        if er3t.comomn.has_hdf4:
+        if er3t.common.has_hdf4:
             from pyhdf.SD import SD, SDC
         else:
             sys.exit('Error   [aer_gen]: Please install <pyhdf> to proceed.')
@@ -303,14 +303,14 @@ class aer_gen:
             if self.verbose:
                 print('Message [cld_gen]: Downgrading data from dimension %s to %s ...' % (str(self.lay['Temperature']['data'].shape), str(new_shape)))
 
-            self.lay['x']['data']        = downgrading(self.lay['x']['data']       , (self.Nx//dnx,))
-            self.lay['y']['data']        = downgrading(self.lay['y']['data']       , (self.Ny//dny,))
-            self.lay['altitude']['data'] = downgrading(self.lay['altitude']['data'], (self.Nz//dnz,))
+            self.lay['x']['data']        = downscale(self.lay['x']['data']       , (self.Nx//dnx,))
+            self.lay['y']['data']        = downscale(self.lay['y']['data']       , (self.Ny//dny,))
+            self.lay['altitude']['data'] = downscale(self.lay['altitude']['data'], (self.Nz//dnz,))
 
             for key in self.lay.keys():
                 if isinstance(self.lay[key]['data'], np.ndarray):
                     if self.lay[key]['data'].ndim == len(coarsing):
-                        self.lay[key]['data']  = downgrading(self.lay[key]['data'], new_shape)
+                        self.lay[key]['data']  = downscale(self.lay[key]['data'], new_shape)
 
 
     def post_gen(self):

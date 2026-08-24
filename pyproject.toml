@@ -38,6 +38,7 @@ classifiers = [
     ]
 dependencies = [
     "cartopy>=0.25.0",
+    "colorama>=0.4.6",
     "gdown>=5.2.0",
     "h5py>=3.15.1",
     "matplotlib>=3.10.7",
@@ -50,11 +51,22 @@ dependencies = [
     "requests>=2.32.5",
     "scikit-image>=0.25.2",
     "scipy>=1.16.3",
-    "sphinx>=8.2.3",
-    "sphinx-rtd-theme>=3.0.2",
     "tqdm>=4.67.1",
     "uuid-utils>=0.11.1",
     "structlog>=25.5.0",
+    ]
+
+[dependency-groups]
+test = [
+    "pytest>=8.4.2",
+    ]
+docs = [
+    "sphinx>=8.2.3",
+    "sphinx-rtd-theme>=3.0.2",
+    ]
+dev = [
+    {include-group = "test"},
+    {include-group = "docs"},
     ]
 
 [project.urls]

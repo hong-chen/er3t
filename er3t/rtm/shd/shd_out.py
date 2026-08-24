@@ -611,7 +611,7 @@ def read_flux_shd_out(shd_obj, abs_obj, squeeze=True):
 
     if len(abs_obj.coef['weight']['data']) > 1:
         msg = f"Currently Ng > 1 is not supported."
-        er3t.logger.logger.error(msg)
+        er3t.common.logger.error(msg)
         raise OSError
 
     for iz in range(Nz):

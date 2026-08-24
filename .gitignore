@@ -48,3 +48,7 @@ future_dev
 !docs/assets/*
 !docs/source/*
 !docs/source/other/*
+
+# Keep the reproducible uv development environment under version control even
+# when a contributor's global ignore file excludes lockfiles.
+!uv.lock

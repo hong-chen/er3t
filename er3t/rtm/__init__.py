@@ -1,8 +1,20 @@
-from __future__ import division, print_function, absolute_import
+"""Interfaces to supported radiative-transfer models."""
 
-from . import shd
-from . import mca
-from . import lrt
-from . import drt
+from importlib import import_module
+from typing import Any
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+
+__all__ = ["drt", "lrt", "mca", "shd"]
+
+
+def __getattr__(name: str) -> Any:
+    if name not in __all__:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    value = import_module(f"{__name__}.{name}")
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(__all__))
