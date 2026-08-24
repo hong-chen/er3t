@@ -24,7 +24,7 @@ has_xarray = importlib.util.find_spec("xarray") is not None
 has_mpi = shutil.which("mpirun") is not None
 
 fdir_er3t = os.path.abspath(
-    os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), "../..")
 )
 
 fdir_data = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
