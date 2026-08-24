@@ -6,6 +6,7 @@ import datetime
 import copy
 import multiprocessing as mp
 from collections import OrderedDict
+
 # from tqdm import tqdm
 import numpy as np
 from scipy import interpolate
@@ -13,18 +14,17 @@ import er3t.common
 from er3t.core.numerics import nice_array_str
 
 __all__ = [
-        'cal_shd_saa',
-        'cal_shd_vaa',
-        'gen_mie_file',
-        'gen_ext_file',
-        'gen_lwc_file',
-        'gen_mie_file_from_nc',
-        'gen_sen_file',
-        ]
+    "cal_shd_saa",
+    "cal_shd_vaa",
+    "gen_mie_file",
+    "gen_ext_file",
+    "gen_lwc_file",
+    "gen_mie_file_from_nc",
+    "gen_sen_file",
+]
 
 
 def cal_shd_saa(normal_azimuth_angle):
-
     """
     Convert normal azimuth angle (0 pointing north, positive when clockwise) to viewing azimuth in SHDOM
 
@@ -49,7 +49,6 @@ def cal_shd_saa(normal_azimuth_angle):
 
 
 def cal_shd_vaa(normal_azimuth_angle):
-
     """
     Convert normal azimuth angle (0 pointing north, positive when clockwise) to viewing azimuth in SHDOM
 
@@ -74,26 +73,24 @@ def cal_shd_vaa(normal_azimuth_angle):
 
 
 def gen_mie_file(
-        wavelength_s,
-        wavelength_e,
-        fname=None,
-        pol_tag='F', # unpolarized
-        par_tag='W', # water
-        avg_tag='C', # central wavelength
-        dist_tag='G', # gamma distribution
-        alpha_tag='7 i',
-        Nref=25,
-        ref_s=1.0,
-        ref_e=25.0,
-        ref_tag='F', # even-spaced r_e
-        ref_max=50.0,
-        put_exe='put',
-        mie_exe='make_mie_table',
-        overwrite=False,
-        ):
-
+    wavelength_s,
+    wavelength_e,
+    fname=None,
+    pol_tag="F",  # unpolarized
+    par_tag="W",  # water
+    avg_tag="C",  # central wavelength
+    dist_tag="G",  # gamma distribution
+    alpha_tag="7 i",
+    Nref=25,
+    ref_s=1.0,
+    ref_e=25.0,
+    ref_tag="F",  # even-spaced r_e
+    ref_max=50.0,
+    put_exe="put",
+    mie_exe="make_mie_table",
+    overwrite=False,
+):
     if fname is None:
-
         fdir = f"{er3t.common.fdir_data_tmp}/shdom"
         if not os.path.exists(fdir):
             os.makedirs(fdir)
@@ -101,9 +98,8 @@ def gen_mie_file(
         fname = f"{fdir}/shdom-mie_{par_tag}_{pol_tag}_{wavelength_s:.4f}-{wavelength_e:.4f}.txt"
 
     if (not os.path.exists(fname)) or overwrite:
-
-        wavelength_s /= 1000.0 #convert to micron
-        wavelength_e /= 1000.0 #convert to micron
+        wavelength_s /= 1000.0  # convert to micron
+        wavelength_e /= 1000.0  # convert to micron
 
         command = f'{put_exe}\
  "{pol_tag}" "{wavelength_s:15.8e} {wavelength_e:15.8e}" "{par_tag}" "{avg_tag}"\
@@ -119,168 +115,205 @@ def gen_mie_file(
 
 
 def gen_ext_file(
-        fname,
-        cld0,
-        postfix='.sHdOmNG-ext',
-        fname_ckd_1d=None,
-        ):
-
+    fname,
+    cld0,
+    postfix=".sHdOmNG-ext",
+    fname_ckd_1d=None,
+):
     # retrieve optical properties
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    cer = cld0.lay['cer']['data']
-    ext = cld0.lay['extinction']['data'] * 1000.0
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
+    cer = cld0.lay["cer"]["data"]
+    ext = cld0.lay["extinction"]["data"] * 1000.0
 
     # zgrid = cld0.lay['altitude']['data'] + cld0.lay['thickness']['data']/2.0
-    zgrid = cld0.lev['altitude']['data'][1:]
+    zgrid = cld0.lev["altitude"]["data"][1:]
     # zgrid = cld0.lev['altitude']['data'][:-1]
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # generate extinction file
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    temp = cld0.lay['temperature']['data']
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
+    temp = cld0.lay["temperature"]["data"]
 
     Nx, Ny, Nz = ext.shape
 
-    with open(fname, 'w') as f:
-        f.write('2 parameter extinction file for SHDOM\n')
-        f.write('%d %d %d\n' % ext.shape)
-        f.write('%.8e %.8e\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
-        f.write('%s\n' % ' '.join([str('%.6f' % alt0) for alt0 in zgrid]))
-        f.write('%s\n' % ' '.join([str('%.4f' % np.nanmean(temp[:, :, iz])) for iz in range(Nz)]))
+    with open(fname, "w") as f:
+        f.write("2 parameter extinction file for SHDOM\n")
+        f.write("%d %d %d\n" % ext.shape)
+        f.write("%.8e %.8e\n" % (cld0.lay["dx"]["data"], cld0.lay["dy"]["data"]))
+        f.write("%s\n" % " ".join([str("%.6f" % alt0) for alt0 in zgrid]))
+        f.write(
+            "%s\n"
+            % " ".join([str("%.4f" % np.nanmean(temp[:, :, iz])) for iz in range(Nz)])
+        )
 
-        f.write('! The following provides information for interpreting binary data:\n')
-        f.write('! %s\n' % postfix)
-        f.write('! %10d,%10d,%10d,%10d\n' % (Nx, Ny, Nz, 2))
+        f.write("! The following provides information for interpreting binary data:\n")
+        f.write("! %s\n" % postfix)
+        f.write("! %10d,%10d,%10d,%10d\n" % (Nx, Ny, Nz, 2))
         if fname_ckd_1d is not None:
-            f.write('! %s\n' % fname_ckd_1d)
+            f.write("! %s\n" % fname_ckd_1d)
 
         # save gridded data into binary file
-        #╭──────────────────────────────────────────────────────────────╮#
-        with open('%s%s' % (fname, postfix), 'wb') as fb:
+        # ╭──────────────────────────────────────────────────────────────╮#
+        with open("%s%s" % (fname, postfix), "wb") as fb:
             # ext.T/cer.T converts the dimention from (Nx, Ny, Nz) to (Nz, Ny, Nx)
-            fb.write(struct.pack('<%df' % ext.size, *ext.T.flatten(order='F')))
-            fb.write(struct.pack('<%df' % cer.size, *cer.T.flatten(order='F')))
-        #╰──────────────────────────────────────────────────────────────╯#
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+            fb.write(struct.pack("<%df" % ext.size, *ext.T.flatten(order="F")))
+            fb.write(struct.pack("<%df" % cer.size, *cer.T.flatten(order="F")))
+        # ╰──────────────────────────────────────────────────────────────╯#
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     return fname
 
 
 def gen_lwc_file(
-        fname,
-        cld0,
-        q_factor=2.0,
-        ):
-
+    fname,
+    cld0,
+    q_factor=2.0,
+):
     # retrieve optical properties
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    cer = cld0.lay['cer']['data']
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
+    cer = cld0.lay["cer"]["data"]
 
-    const0 = 0.75*q_factor/(1000.0*1.0e-6)
-    lwc = cld0.lay['extinction']['data']/(const0/cer) * 1000.0
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+    const0 = 0.75 * q_factor / (1000.0 * 1.0e-6)
+    lwc = cld0.lay["extinction"]["data"] / (const0 / cer) * 1000.0
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # generate LWC file
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    temp = cld0.lay['temperature']['data']
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
+    temp = cld0.lay["temperature"]["data"]
 
     Nx, Ny, Nz = lwc.shape
 
-    with open(fname, 'w') as f:
-        f.write('2 parameter LWC file for SHDOM\n')
-        f.write('%d %d %d\n' % lwc.shape)
-        f.write('%.8e %.8e\n' % (cld0.lay['dx']['data'], cld0.lay['dy']['data']))
-        f.write('%s\n' % ' '.join([str('%.6f' % alt0) for alt0 in cld0.lay['altitude']['data']]))
-        f.write('%s\n' % ' '.join([str('%.4f' % np.mean(temp[:, :, iz])) for iz in range(Nz)]))
+    with open(fname, "w") as f:
+        f.write("2 parameter LWC file for SHDOM\n")
+        f.write("%d %d %d\n" % lwc.shape)
+        f.write("%.8e %.8e\n" % (cld0.lay["dx"]["data"], cld0.lay["dy"]["data"]))
+        f.write(
+            "%s\n"
+            % " ".join([str("%.6f" % alt0) for alt0 in cld0.lay["altitude"]["data"]])
+        )
+        f.write(
+            "%s\n"
+            % " ".join([str("%.4f" % np.mean(temp[:, :, iz])) for iz in range(Nz)])
+        )
 
         # save gridded data into ascii file
-        #╭──────────────────────────────────────────────────────────────╮#
+        # ╭──────────────────────────────────────────────────────────────╮#
         for ix in np.arange(Nx):
             for iy in np.arange(Ny):
                 for iz in np.arange(Nz):
-                    f.write('%d %d %d %.6e %.6e\n' % ((ix+1), (iy+1), (iz+1), lwc[ix, iy, iz], cer[ix, iy, iz]))
-        #╰──────────────────────────────────────────────────────────────╯#
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+                    f.write(
+                        "%d %d %d %.6e %.6e\n"
+                        % (
+                            (ix + 1),
+                            (iy + 1),
+                            (iz + 1),
+                            lwc[ix, iy, iz],
+                            cer[ix, iy, iz],
+                        )
+                    )
+        # ╰──────────────────────────────────────────────────────────────╯#
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     return fname
 
 
 def gen_mie_file_from_nc(
-        wavelength_s,
-        wavelength_e,
-        fname=None,
-        fname_nc='%s/wc.sol.mie.cdf' % er3t.common.fdir_data_pha,
-        pol_tag='F', # unpolarized
-        par_tag='W', # water
-        overwrite=True,
-        ):
-
+    wavelength_s,
+    wavelength_e,
+    fname=None,
+    fname_nc="%s/wc.sol.mie.cdf" % er3t.common.fdir_data_pha,
+    pol_tag="F",  # unpolarized
+    par_tag="W",  # water
+    overwrite=True,
+):
     from netCDF4 import Dataset
 
     if fname is None:
-
-        fdir = '%s/shdom' % er3t.common.fdir_data_tmp
+        fdir = "%s/shdom" % er3t.common.fdir_data_tmp
         if not os.path.exists(fdir):
             os.makedirs(fdir)
 
-        fname = '%s/shdom-mie-nc_%s_%s_%.4f-%.4f.txt' % (fdir, par_tag, pol_tag, wavelength_s, wavelength_e)
+        fname = "%s/shdom-mie-nc_%s_%s_%.4f-%.4f.txt" % (
+            fdir,
+            par_tag,
+            pol_tag,
+            wavelength_s,
+            wavelength_e,
+        )
 
     if (not os.path.exists(fname)) or overwrite:
-
-        wavelength_s /= 1000.0 #convert to micron
-        wavelength_e /= 1000.0 #convert to micron
-        wvl = (wavelength_s+wavelength_e)/2.0
+        wavelength_s /= 1000.0  # convert to micron
+        wavelength_e /= 1000.0  # convert to micron
+        wvl = (wavelength_s + wavelength_e) / 2.0
 
         # read data from nc file
-        #╭────────────────────────────────────────────────────────────────────────────╮#
-        f0 = Dataset(fname_nc, 'r')
-        param_alpha = f0.getncattr('param_alpha')
-        size_distr = f0.getncattr('size_distr')
-        parameterization = f0.getncattr('parameterization')
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
+        f0 = Dataset(fname_nc, "r")
+        param_alpha = f0.getncattr("param_alpha")
+        size_distr = f0.getncattr("size_distr")
+        parameterization = f0.getncattr("parameterization")
 
-        wavelen = f0.variables['wavelen'][:]
-        index_wvl = np.argmin(np.abs(wavelen-wvl))
+        wavelen = f0.variables["wavelen"][:]
+        index_wvl = np.argmin(np.abs(wavelen - wvl))
 
-        reff = f0.variables['reff'][:]
-        refre = f0.variables['refre'][:][index_wvl]
-        refim = f0.variables['refim'][:][index_wvl]
-        rho = f0.variables['rho'][:]
+        reff = f0.variables["reff"][:]
+        refre = f0.variables["refre"][:][index_wvl]
+        refim = f0.variables["refim"][:][index_wvl]
+        rho = f0.variables["rho"][:]
 
-        ext = f0.variables['ext'][:][index_wvl, :]
-        ssa = f0.variables['ssa'][:][index_wvl, :]
+        ext = f0.variables["ext"][:][index_wvl, :]
+        ssa = f0.variables["ssa"][:][index_wvl, :]
 
-        pmom = f0.variables['pmom'][:][index_wvl, :, 0, :]
+        pmom = f0.variables["pmom"][:][index_wvl, :, 0, :]
 
         f0.close()
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
-        with open(fname, 'w') as f:
-            f.write('! %s scattering table vs. effective radius (LWC=1 g/m^3)\n' % parameterization.title())
-            f.write('    %.3f    %.3f  wavelength range (micron)\n' % (wavelength_s, wavelength_e))
-            f.write(' %.3f  W   particle density (g/cm^3) and type (Water, Ice, Aerosol)\n' % rho.mean())
-            f.write('  %.6e %.6e  particle index of refraction\n' % (refre, refim))
-            f.write('%.6f %s shape parameter\n' % (param_alpha, size_distr.replace('.', '')))
-            f.write('  %d    %.3f   %.3f  number, starting, ending effective radius\n' % (reff.size, reff[0], reff[-1]))
+        with open(fname, "w") as f:
+            f.write(
+                "! %s scattering table vs. effective radius (LWC=1 g/m^3)\n"
+                % parameterization.title()
+            )
+            f.write(
+                "    %.3f    %.3f  wavelength range (micron)\n"
+                % (wavelength_s, wavelength_e)
+            )
+            f.write(
+                " %.3f  W   particle density (g/cm^3) and type (Water, Ice, Aerosol)\n"
+                % rho.mean()
+            )
+            f.write("  %.6e %.6e  particle index of refraction\n" % (refre, refim))
+            f.write(
+                "%.6f %s shape parameter\n" % (param_alpha, size_distr.replace(".", ""))
+            )
+            f.write(
+                "  %d    %.3f   %.3f  number, starting, ending effective radius\n"
+                % (reff.size, reff[0], reff[-1])
+            )
 
             for i, reff0 in enumerate(reff):
                 pmom0 = pmom[i, :]
-                logic = np.logical_not(np.isnan(pmom0)) & np.logical_not(np.isinf(pmom0))
+                logic = np.logical_not(np.isnan(pmom0)) & np.logical_not(
+                    np.isinf(pmom0)
+                )
                 Nmom0 = logic.sum()
 
                 pmom0_str = nice_array_str(pmom0[:Nmom0], numPerLine=200, useSci=True)
 
-                f.write('  %7.4f    %.6e  %.12f   %4d  Reff  Ext  Alb  Nrank\n' % (reff0, ext[i], ssa[i], Nmom0-1))
-                f.write('%s' % pmom0_str)
+                f.write(
+                    "  %7.4f    %.6e  %.12f   %4d  Reff  Ext  Alb  Nrank\n"
+                    % (reff0, ext[i], ssa[i], Nmom0 - 1)
+                )
+                f.write("%s" % pmom0_str)
 
     return fname
 
 
 def gen_sen_file(
-        fname,
-        data,
-        postfix='.sHdOmNG-sen',
-        ):
-
+    fname,
+    data,
+    postfix=".sHdOmNG-sen",
+):
     params = data.keys()
     Nparam = len(params)
 
@@ -288,7 +321,7 @@ def gen_sen_file(
     for param in params:
         N += data[param].size
 
-    if (N%Nparam != 0):
+    if N % Nparam != 0:
         msg = f"Error [gen_sen_file]: the size of sensor parameters does NOT match."
         raise OSError(msg)
     Ndata = data[param].size
@@ -300,26 +333,25 @@ def gen_sen_file(
     header = f"{Nparam}-parameter ({'|'.join(params)}) sensor file for SHDOM"
 
     # generate extinction file
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    with open(fname, 'w') as f:
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
+    with open(fname, "w") as f:
         f.write(f"{header}\n")
 
-        f.write( "! The following provides information for interpreting binary data:\n")
+        f.write("! The following provides information for interpreting binary data:\n")
         f.write(f"! {postfix}\n")
         f.write(f"! {Nparam:10d},{Ndata:10d}\n")
 
         # save gridded data into binary file
-        #╭──────────────────────────────────────────────────────────────╮#
-        with open('%s%s' % (fname, postfix), 'wb') as fb:
-            fb.write(struct.pack(f"<{Nparam*Ndata}f", *data_new.flatten(order='F')))
-        #╰──────────────────────────────────────────────────────────────╯#
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╭──────────────────────────────────────────────────────────────╮#
+        with open("%s%s" % (fname, postfix), "wb") as fb:
+            fb.write(struct.pack(f"<{Nparam * Ndata}f", *data_new.flatten(order="F")))
+        # ╰──────────────────────────────────────────────────────────────╯#
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     return fname
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     fname = gen_mie_file_from_nc(550.0, 550.0)
     print(fname)
 
@@ -328,7 +360,6 @@ if __name__ == '__main__':
     # saa = -144.90807471473198
     # vza = 14.44008093613803
     # vaa = -99.99851773953723
-
 
     # print('SOLARFLUX: %.6f' % er3t.core.cal_sol_fac(date))
     # print('SOLARMU: %.6f' % np.cos(np.deg2rad(sza)))

@@ -1,5 +1,6 @@
 """Citation registry shared by high-level workflows."""
 
+
 def add_reference(reference: str) -> None:
     """Register a citation once in the package-level reference list."""
 

@@ -7,18 +7,13 @@ import numpy as np
 from scipy import interpolate
 
 
-
-__all__ = ['cloud_partition']
-
+__all__ = ["cloud_partition"]
 
 
 class cloud_partition:
-
     def __init__(self):
-
         pass
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     pass

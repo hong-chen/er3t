@@ -13,13 +13,10 @@ from er3t.core.references import add_reference
 from .util import *
 
 
-
-__all__ = ['abs_rep']
-
+__all__ = ["abs_rep"]
 
 
 class abs_rep:
-
     """
     This module is based on the REPTRAN database developed by Gasteiger et al., 2014.
     Database can be downloaded at http://www.meteo.physik.uni-muenchen.de/~libradtran/lib/exe/fetch.php?media=download:reptran_2017_all.tar.gz
@@ -39,72 +36,73 @@ class abs_rep:
         self.coef['weight']
     """
 
-    fdir_data = '%s/reptran' % er3t.common.fdir_data_abs
-    reference = '\nREPTRAN (Gasteiger et al., 2014):\n- Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler, S. A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014.'
+    fdir_data = "%s/reptran" % er3t.common.fdir_data_abs
+    reference = "\nREPTRAN (Gasteiger et al., 2014):\n- Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler, S. A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014."
 
     def __init__(
-            self,\
-            wavelength=er3t.common.params['wavelength'],\
-            target='fine',  \
-            fname=None,     \
-            atm_obj=None,   \
-            band_name=None, \
-            slit_func=None, \
-            overwrite=False,\
-            verbose=er3t.common.params['verbose'],\
-            ):
-
+        self,
+        wavelength=er3t.common.params["wavelength"],
+        target="fine",
+        fname=None,
+        atm_obj=None,
+        band_name=None,
+        slit_func=None,
+        overwrite=False,
+        verbose=er3t.common.params["verbose"],
+    ):
         add_reference(self.reference)
 
         if wavelength < 5025.0:
-            source = 'solar'
+            source = "solar"
         else:
-            source = 'thermal'
+            source = "thermal"
 
-        self.wvl       = wavelength
-        self.nwl       = 1
-        self.target    = target.lower()
-        self.source    = source.lower()
-        self.atm_obj   = atm_obj
+        self.wvl = wavelength
+        self.nwl = 1
+        self.target = target.lower()
+        self.source = source.lower()
+        self.atm_obj = atm_obj
         self.slit_func = slit_func
-        self.verbose   = verbose
+        self.verbose = verbose
 
-        if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
-
+        if (fname is not None) and (os.path.exists(fname)) and (not overwrite):
             self.load(fname)
 
-        elif ((wavelength is not None) and (fname is not None) and (os.path.exists(fname)) and (overwrite)) or \
-             ((wavelength is not None) and (fname is not None) and (not os.path.exists(fname))):
-
+        elif (
+            (wavelength is not None)
+            and (fname is not None)
+            and (os.path.exists(fname))
+            and (overwrite)
+        ) or (
+            (wavelength is not None)
+            and (fname is not None)
+            and (not os.path.exists(fname))
+        ):
             self.run(wavelength, band_name=band_name)
             self.dump(fname)
 
-        elif ((wavelength is not None) and (fname is None)):
-
+        elif (wavelength is not None) and (fname is None):
             self.run(wavelength)
 
         else:
-
             msg = f"Please provide <wavelength> to proceed."
             er3t.common.logger.error(msg)
             raise OSError
 
-
     def load(self, fname):
-
-        with open(fname, 'rb') as f:
+        with open(fname, "rb") as f:
             obj = pickle.load(f)
-            if hasattr(obj, 'coef'):
+            if hasattr(obj, "coef"):
                 if self.verbose:
                     msg = f"Loading <{fname}> ..."
                     er3t.common.logger.info(msg)
                 self.fname = obj.fname
-                self.wvl   = obj.wvl
-                self.nwl   = obj.nwl
-                self.Ng    = obj.Ng
-                self.coef  = obj.coef
+                self.wvl = obj.wvl
+                self.nwl = obj.nwl
+                self.Ng = obj.Ng
+                self.coef = obj.coef
                 self.wvl_info = obj.wvl_info
-                self.wvl_     = obj.wvl_
+                self.wvl_ = obj.wvl_
                 self.wvl_min_ = obj.wvl_min_
                 self.wvl_max_ = obj.wvl_max_
             else:
@@ -112,9 +110,7 @@ class abs_rep:
                 er3t.common.logger.error(msg)
                 raise OSError
 
-
     def run(self, wavelength, band_name=None):
-
         if not os.path.exists(self.fdir_data):
             msg = f"Missing REPTRAN database."
             er3t.common.logger.error(msg)
@@ -123,49 +119,48 @@ class abs_rep:
         self.load_main(wavelength, band_name=band_name)
         self.cal_coef()
 
-
     def dump(self, fname):
-
         self.fname = fname
-        with open(fname, 'wb') as f:
+        with open(fname, "wb") as f:
             if self.verbose:
                 msg = f"Saving object into <{fname}> ..."
                 er3t.common.logger.info(msg)
             pickle.dump(self, f)
 
-
     def load_main(self, wavelength, band_name=None):
-
-        f0 = Dataset('%s/reptran_%s_%s.cdf' % (self.fdir_data, self.source, self.target), 'r')
+        f0 = Dataset(
+            "%s/reptran_%s_%s.cdf" % (self.fdir_data, self.source, self.target), "r"
+        )
 
         # read out band names
-        #╭────────────────────────────────────────────────────────────────────────────╮#
-        band_bytes = f0.variables['band_name'][:]
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
+        band_bytes = f0.variables["band_name"][:]
         Nband, Nchar = band_bytes.shape
-        bands = [band.decode('utf-8').replace(' ', '') for band in band_bytes.view('S%d' % Nchar).ravel()]
-        #╰────────────────────────────────────────────────────────────────────────────╯#
-
+        bands = [
+            band.decode("utf-8").replace(" ", "")
+            for band in band_bytes.view("S%d" % Nchar).ravel()
+        ]
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # select band
         # if <band_name=> is specified, use <band_name=>
         # if <band_name=> is not specified, fall back to <wavelength=>
-        #╭────────────────────────────────────────────────────────────────────────────╮#
-        wvl_min = f0.variables['wvlmin'][:]
-        wvl_max = f0.variables['wvlmax'][:]
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
+        wvl_min = f0.variables["wvlmin"][:]
+        wvl_max = f0.variables["wvlmax"][:]
 
         if band_name is not None:
             if band_name not in bands:
-                bands_info = '\n'.join(bands)
-                msg = f"<band_name=\'{band_name}\'> is invalid, please specify one from the following \n{bands_info}"
+                bands_info = "\n".join(bands)
+                msg = f"<band_name='{band_name}'> is invalid, please specify one from the following \n{bands_info}"
                 er3t.common.logger.error(msg)
                 raise OSError
             else:
                 index_band = bands.index(band_name)
-                self.band_name  = band_name
+                self.band_name = band_name
                 self.run_reptran = True
         else:
-
-            logic = (wavelength>=wvl_min) & (wavelength<wvl_max)
+            logic = (wavelength >= wvl_min) & (wavelength < wvl_max)
             indices = np.where(logic)[0]
             N_ = logic.sum()
             if N_ == 0:
@@ -174,180 +169,203 @@ class abs_rep:
                 raise OSError
             elif N_ > 1:
                 bands_ = [bands[i] for i in indices]
-                bands_info_ = '\n'.join(bands_)
-                msg = f"Found more than one band matching the wavelength criteria, please specify one from the following at <band_name>\n{bands_info_}\nfor example, <band_name=\'{bands_[0]}\'>"
+                bands_info_ = "\n".join(bands_)
+                msg = f"Found more than one band matching the wavelength criteria, please specify one from the following at <band_name>\n{bands_info_}\nfor example, <band_name='{bands_[0]}'>"
                 er3t.common.logger.error(msg)
                 raise OSError
             elif N_ == 1:
                 index_band = indices[0]
-                self.band_name  = bands[index_band]
+                self.band_name = bands[index_band]
                 self.run_reptran = True
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # read out gases
-        #╭────────────────────────────────────────────────────────────────────────────╮#
-        gas_bytes = f0.variables['species_name'][:]
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
+        gas_bytes = f0.variables["species_name"][:]
         Ngas, Nchar = gas_bytes.shape
-        gases = [gas.decode('utf-8').replace(' ', '') for gas in gas_bytes.view('S%d' % Nchar).ravel()]
-        #╰────────────────────────────────────────────────────────────────────────────╯#
-
+        gases = [
+            gas.decode("utf-8").replace(" ", "")
+            for gas in gas_bytes.view("S%d" % Nchar).ravel()
+        ]
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # get band information
-        #╭────────────────────────────────────────────────────────────────────────────╮#
-        wvl_min0 = f0.variables['wvlmin'][:][index_band]
-        wvl_max0 = f0.variables['wvlmax'][:][index_band]
-        wvl_int0 = f0.variables['wvl_integral'][:][index_band]
-        avg_err0 = f0.variables['avg_error'][:][index_band]
-        nwvl0    = f0.variables['nwvl_in_band'][:][index_band]
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
+        wvl_min0 = f0.variables["wvlmin"][:][index_band]
+        wvl_max0 = f0.variables["wvlmax"][:][index_band]
+        wvl_int0 = f0.variables["wvl_integral"][:][index_band]
+        avg_err0 = f0.variables["avg_error"][:][index_band]
+        nwvl0 = f0.variables["nwvl_in_band"][:][index_band]
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # get representative wavelength information
-        #╭────────────────────────────────────────────────────────────────────────────╮#
-        wvl_indices0 = f0.variables['iwvl'][:][:, index_band]
-        wvl_weights0 = f0.variables['iwvl_weight'][:][:, index_band]
-        logic_valid = (wvl_weights0>0) & (wvl_indices0>0)
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
+        wvl_indices0 = f0.variables["iwvl"][:][:, index_band]
+        wvl_weights0 = f0.variables["iwvl_weight"][:][:, index_band]
+        logic_valid = (wvl_weights0 > 0) & (wvl_indices0 > 0)
         wvl_indices = wvl_indices0[logic_valid] - 1
         wvl_weights = wvl_weights0[logic_valid]
 
         # this is actually number of wavelength, use Ng for consistency
         self.Ng = wvl_weights.size
 
-        wvl = f0.variables['wvl'][:][wvl_indices]
-        sol = f0.variables['extra'][:][wvl_indices] / 1000.0 # convert units to Wm^-2nm^-1
+        wvl = f0.variables["wvl"][:][wvl_indices]
+        sol = (
+            f0.variables["extra"][:][wvl_indices] / 1000.0
+        )  # convert units to Wm^-2nm^-1
 
-        gas_indices = np.where(np.sum(f0.variables['cross_section_source'][:][wvl_indices, :], axis=0)>0)[0]
+        gas_indices = np.where(
+            np.sum(f0.variables["cross_section_source"][:][wvl_indices, :], axis=0) > 0
+        )[0]
 
-        self.wvl_all = f0.variables['wvl'][:].data
-        self.wvl_  = wvl
+        self.wvl_all = f0.variables["wvl"][:].data
+        self.wvl_ = wvl
         self.wvl_min_ = wvl_min0
         self.wvl_max_ = wvl_max0
-        self.sol   = sol
-        self.wgt   = wvl_weights
+        self.sol = sol
+        self.wgt = wvl_weights
         self.gases = [gases[index] for index in gas_indices]
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         f0.close()
 
-
     def cal_coef(self, logp=True):
-
-        Nz = self.atm_obj.lay['altitude']['data'].size
+        Nz = self.atm_obj.lay["altitude"]["data"].size
         Ng = self.Ng
 
         if logp:
-            p_ = np.log(self.atm_obj.lay['pressure']['data']*100.0) # from hPa to Pa (log-scale pressure)
+            p_ = np.log(
+                self.atm_obj.lay["pressure"]["data"] * 100.0
+            )  # from hPa to Pa (log-scale pressure)
         else:
-            p_ = self.atm_obj.lay['pressure']['data']*100.0 # from hPa to Pa
+            p_ = self.atm_obj.lay["pressure"]["data"] * 100.0  # from hPa to Pa
 
-        t_ = self.atm_obj.lay['temperature']['data']
+        t_ = self.atm_obj.lay["temperature"]["data"]
 
         self.coef = {}
 
-        self.coef['wvl'] = {
-                'name': 'Wavelength',
-                'units': 'nm',
-                'data': self.wvl_.data
-                }
+        self.coef["wvl"] = {"name": "Wavelength", "units": "nm", "data": self.wvl_.data}
 
         # this is actually number of wavelength, use Ng for consistency
-        self.coef['weight'] = {
-                'name': 'Weight (Ng)',
-                'data': self.wgt.data
-                }
+        self.coef["weight"] = {"name": "Weight (Ng)", "data": self.wgt.data}
 
-        self.coef['solar'] = {
-                'name': 'Solar Factor (Ng)',
-                'data': self.sol.data
-                }
+        self.coef["solar"] = {"name": "Solar Factor (Ng)", "data": self.sol.data}
 
-        self.coef['slit_func'] = {
-                'name': 'Slit Function (Nz, Ng)',
-                'data': np.ones((Nz, Ng), dtype=np.float64)
-                }
+        self.coef["slit_func"] = {
+            "name": "Slit Function (Nz, Ng)",
+            "data": np.ones((Nz, Ng), dtype=np.float64),
+        }
 
-        self.coef['abso_coef'] = {
-                'name':'Absorption Coefficient (Nz, Ng)',
-                'data': np.zeros((Nz, Ng), dtype=np.float64)
-                }
+        self.coef["abso_coef"] = {
+            "name": "Absorption Coefficient (Nz, Ng)",
+            "data": np.zeros((Nz, Ng), dtype=np.float64),
+        }
 
         gases = self.gases.copy()
 
         for i, wvl0 in enumerate(self.wvl_):
-
             if (wvl0 >= 116.0) & (wvl0 <= 850.0):
+                xsec = cal_xsec_o3_molina(wvl0, self.atm_obj.lay["temperature"]["data"])
+                abso_coef0 = (
+                    xsec
+                    * self.atm_obj.lay["o3"]["data"]
+                    * 1e5
+                    * self.atm_obj.lay["thickness"]["data"]
+                )
+                abso_coef0[abso_coef0 < 0.0] = 0.0
+                self.coef["abso_coef"]["data"][:, i] += abso_coef0
 
-                xsec = cal_xsec_o3_molina(wvl0, self.atm_obj.lay['temperature']['data'])
-                abso_coef0 = xsec * self.atm_obj.lay['o3']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
-                abso_coef0[abso_coef0<0.0] = 0.0
-                self.coef['abso_coef']['data'][:, i] += abso_coef0
-
-                if ('O3' not in gases) and ('o3' not in gases):
-                    gases.append('O3')
+                if ("O3" not in gases) and ("o3" not in gases):
+                    gases.append("O3")
 
             if (wvl0 >= 301.4) & (wvl0 <= 1338.2):
-
                 xsec2 = cal_xsec2_o4_greenblatt(wvl0)
                 # O4 is O2 to O2 collision, thus the units of xsec2 <cm^5 x molecule^-2> is different from xsec <cm^2 x molecule^-1>
                 #    also because it's collision, we need to multipy xsec2 by the square of O2 concentration
-                abso_coef0 = xsec2 * self.atm_obj.lay['o2']['data']**2 * 1e5 * self.atm_obj.lay['thickness']['data']
-                abso_coef0[abso_coef0<0.0] = 0.0
-                self.coef['abso_coef']['data'][:, i] += abso_coef0
+                abso_coef0 = (
+                    xsec2
+                    * self.atm_obj.lay["o2"]["data"] ** 2
+                    * 1e5
+                    * self.atm_obj.lay["thickness"]["data"]
+                )
+                abso_coef0[abso_coef0 < 0.0] = 0.0
+                self.coef["abso_coef"]["data"][:, i] += abso_coef0
 
-                if ('O4' not in gases) and ('o4' not in gases):
-                    gases.append('O4')
+                if ("O4" not in gases) and ("o4" not in gases):
+                    gases.append("O4")
 
             if (wvl0 >= 230.91383) & (wvl0 <= 794.04565):
-
                 xsec = cal_xsec_no2_burrows(wvl0)
-                abso_coef0 = xsec * self.atm_obj.lay['no2']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
-                abso_coef0[abso_coef0<0.0] = 0.0
-                self.coef['abso_coef']['data'][:, i] += abso_coef0
+                abso_coef0 = (
+                    xsec
+                    * self.atm_obj.lay["no2"]["data"]
+                    * 1e5
+                    * self.atm_obj.lay["thickness"]["data"]
+                )
+                abso_coef0[abso_coef0 < 0.0] = 0.0
+                self.coef["abso_coef"]["data"][:, i] += abso_coef0
 
-                if ('NO2' not in gases) and ('no2' not in gases):
-                    gases.append('NO2')
+                if ("NO2" not in gases) and ("no2" not in gases):
+                    gases.append("NO2")
 
             if self.run_reptran:
-
                 for gas_type in self.gases:
-
                     if gas_type.lower() in self.atm_obj.lay.keys():
-
-                        f0 = Dataset('%s/reptran_%s_%s.lookup.%s.cdf' % (self.fdir_data, self.source, self.target, gas_type), 'r')
-                        xsec     = np.squeeze(f0.variables['xsec'][:])
-                        t_ref    = f0.variables['t_ref'][:]
-                        dt_ref   = f0.variables['t_pert'][:]
-                        vmr_ref  = f0.variables['vmrs'][:]
-                        wvl_ref  = f0.variables['wvl'][:]
+                        f0 = Dataset(
+                            "%s/reptran_%s_%s.lookup.%s.cdf"
+                            % (self.fdir_data, self.source, self.target, gas_type),
+                            "r",
+                        )
+                        xsec = np.squeeze(f0.variables["xsec"][:])
+                        t_ref = f0.variables["t_ref"][:]
+                        dt_ref = f0.variables["t_pert"][:]
+                        vmr_ref = f0.variables["vmrs"][:]
+                        wvl_ref = f0.variables["wvl"][:]
                         if logp:
-                            p_ref = np.log(f0.variables['pressure'][:]) # log-scale pressure
+                            p_ref = np.log(
+                                f0.variables["pressure"][:]
+                            )  # log-scale pressure
                         else:
-                            p_ref = f0.variables['pressure'][:]
+                            p_ref = f0.variables["pressure"][:]
                         f0.close()
 
                         i_sort_p = np.argsort(p_ref)
                         dt_ = t_ - np.interp(p_, p_ref[i_sort_p], t_ref[i_sort_p])
 
-                        iwvl = np.argmin(np.abs(wvl_ref-wvl0))
+                        iwvl = np.argmin(np.abs(wvl_ref - wvl0))
 
                         # for water vapor (H2O)
-                        #╭──────────────────────────────────────────────────────────────╮#
+                        # ╭──────────────────────────────────────────────────────────────╮#
                         if xsec.ndim == 4:
                             points = (dt_ref, vmr_ref, p_ref[i_sort_p])
-                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_p], bounds_error=False, fill_value=None)
+                            f_interp = interpolate.RegularGridInterpolator(
+                                points,
+                                xsec[:, :, iwvl, i_sort_p],
+                                bounds_error=False,
+                                fill_value=None,
+                            )
 
-                            vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
+                            vmr_ = (
+                                self.atm_obj.lay["h2o"]["data"]
+                                / self.atm_obj.lay["factor"]["data"]
+                            )
 
                             f_points = np.transpose(np.vstack((dt_, vmr_, p_)))
-                        #╰──────────────────────────────────────────────────────────────╯#
+                        # ╰──────────────────────────────────────────────────────────────╯#
 
                         # for other gases (CH4, CO2, CO, N2, N2O, O2, O3)
-                        #╭──────────────────────────────────────────────────────────────╮#
+                        # ╭──────────────────────────────────────────────────────────────╮#
                         else:
                             points = (dt_ref, p_ref[i_sort_p])
-                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, iwvl, i_sort_p], bounds_error=False, fill_value=None)
+                            f_interp = interpolate.RegularGridInterpolator(
+                                points,
+                                xsec[:, iwvl, i_sort_p],
+                                bounds_error=False,
+                                fill_value=None,
+                            )
 
                             f_points = np.transpose(np.vstack((dt_, p_)))
-                        #╰──────────────────────────────────────────────────────────────╯#
+                        # ╰──────────────────────────────────────────────────────────────╯#
 
                         # in REPTRAN netcdf files, the default units of the cross section (xsec) are
                         #     <m^2 x molecule^-1> with a scale factor of <1e-20>,
@@ -356,13 +374,17 @@ class abs_rep:
                         #     thus the scale factor becomes <1e-16> (1e-20 x 1e2 x 1e2)
                         # additionally we need a scale factor of <1e5> for converting km to cm for layer thickness
                         # thus <1e-11> becomes the final scale factor
-                        abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-11 * self.atm_obj.lay['thickness']['data']
-                        abso_coef0[abso_coef0<0.0] = 0.0
+                        abso_coef0 = (
+                            f_interp(f_points)
+                            * self.atm_obj.lay[gas_type.lower()]["data"]
+                            * 1e-11
+                            * self.atm_obj.lay["thickness"]["data"]
+                        )
+                        abso_coef0[abso_coef0 < 0.0] = 0.0
 
-                        self.coef['abso_coef']['data'][:, i] += abso_coef0
+                        self.coef["abso_coef"]["data"][:, i] += abso_coef0
 
                     else:
-
                         msg = f"<{gas_type}> is required by REPTRAN but is not available in <atm_obj>."
                         er3t.common.logger.warning(msg)
                         warnings.warn(msg)
@@ -371,7 +393,5 @@ class abs_rep:
         self.wvl_info = f"{self.wvl:.2f} nm (REPTRAN [Nwvl={self.wvl_.size:d}|{','.join(self.gases)}])"
 
 
-
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     pass

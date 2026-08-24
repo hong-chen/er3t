@@ -9,13 +9,10 @@ import numpy as np
 import er3t.common
 
 
-
-__all__ = ['mca_run']
-
+__all__ = ["mca_run"]
 
 
 class mca_run:
-
     """
     Run MCARaTS
 
@@ -38,35 +35,35 @@ class mca_run:
         2. if mp_mode='sh', a shell script will be saved.
     """
 
-    def __init__(self,
-                 fnames_inp, \
-                 fnames_out, \
-                 executable = None, \
-                 photons    = 1.0e6,  \
-                 solver     = 0,      \
-                 Ncpu       = 1,      \
-                 mp_mode    = 'py',   \
-                 optimize   = True,   \
-                 has_mpi    = er3t.common.has_mpi, \
-                 fname_sh   = None,   \
-                 verbose    = er3t.common.params['verbose'],   \
-                 quiet      = False   \
-                ):
-
+    def __init__(
+        self,
+        fnames_inp,
+        fnames_out,
+        executable=None,
+        photons=1.0e6,
+        solver=0,
+        Ncpu=1,
+        mp_mode="py",
+        optimize=True,
+        has_mpi=er3t.common.has_mpi,
+        fname_sh=None,
+        verbose=er3t.common.params["verbose"],
+        quiet=False,
+    ):
         if executable is None:
             if er3t.common.has_mcarats:
-                executable = os.environ['MCARATS_V010_EXE']
+                executable = os.environ["MCARATS_V010_EXE"]
             else:
-                msg = '\nError [mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>.'
+                msg = "\nError [mca_run]: Cannot locate MCARaTS. Please make sure MCARaTS is installed and specified at enviroment variable <MCARaTS_V010_EXE>."
                 raise OSError(msg)
 
         Nfile = len(fnames_inp)
         if len(fnames_out) != Nfile:
-            msg = '\nError [mca_run]: Inconsistent input and output files.'
+            msg = "\nError [mca_run]: Inconsistent input and output files."
             raise OSError(msg)
 
-        self.Ncpu    = Ncpu
-        self.quiet   = quiet
+        self.Ncpu = Ncpu
+        self.quiet = quiet
         self.verbose = verbose
 
         if not isinstance(photons, np.ndarray):
@@ -75,19 +72,22 @@ class mca_run:
             if photons.size == Nfile:
                 photons_dist = photons.copy()
             else:
-                msg = 'Error [mca_run]: Cannot distribute photon set of %d over %d runs.' % (photons.size, Nfile)
+                msg = (
+                    "Error [mca_run]: Cannot distribute photon set of %d over %d runs."
+                    % (photons.size, Nfile)
+                )
                 raise ValueError(msg)
 
         mp_mode = mp_mode.lower()
-        if mp_mode in ['mpi', 'openmpi']:
-            mp_mode = 'mpi'
+        if mp_mode in ["mpi", "openmpi"]:
+            mp_mode = "mpi"
             has_mpi = True
-        elif mp_mode in ['python', 'multiprocessing', 'py', 'mp', 'pymp']:
-            mp_mode = 'py'
-        elif mp_mode in ['batch', 'shell', 'bash', 'hpc', 'sh']:
-            mp_mode = 'sh'
+        elif mp_mode in ["python", "multiprocessing", "py", "mp", "pymp"]:
+            mp_mode = "py"
+        elif mp_mode in ["batch", "shell", "bash", "hpc", "sh"]:
+            mp_mode = "sh"
         else:
-            msg = '\nError [mca_run]: Cannot understand input <mp_mode=\'%s\'>.' % mp_mode
+            msg = "\nError [mca_run]: Cannot understand input <mp_mode='%s'>." % mp_mode
             raise OSError(msg)
         self.mp_mode = mp_mode
 
@@ -99,35 +99,44 @@ class mca_run:
             indices = np.arange(Nfile)
 
         for i in indices:
-
-            input_file  = os.path.abspath(fnames_inp[i])
+            input_file = os.path.abspath(fnames_inp[i])
             output_file = os.path.abspath(fnames_out[i])
 
-            fdir_out    = os.path.dirname(output_file)
+            fdir_out = os.path.dirname(output_file)
             if not os.path.exists(fdir_out):
-                os.system('mkdir -p %s' % fdir_out)
+                os.system("mkdir -p %s" % fdir_out)
 
             if (Ncpu > 1) and has_mpi:
-                command = 'mpirun -n %d %s %d %d %s %s' % (Ncpu, executable, photons_dist[i], solver, input_file, output_file)
+                command = "mpirun -n %d %s %d %d %s %s" % (
+                    Ncpu,
+                    executable,
+                    photons_dist[i],
+                    solver,
+                    input_file,
+                    output_file,
+                )
             else:
-                command = '%s %d %d %s %s' % (executable, photons_dist[i], solver, input_file, output_file)
+                command = "%s %d %d %s %s" % (
+                    executable,
+                    photons_dist[i],
+                    solver,
+                    input_file,
+                    output_file,
+                )
 
             self.commands.append(command)
 
-        if self.mp_mode == 'mpi' or self.mp_mode == 'py':
+        if self.mp_mode == "mpi" or self.mp_mode == "py":
             self.run()
-        if self.mp_mode == 'sh':
+        if self.mp_mode == "sh":
             self.save(fname=fname_sh)
 
-
     def run(self):
-
         if self.verbose:
             for command in self.commands:
-                print('Message [mca_run]: Executing <%s> ...' % command)
+                print("Message [mca_run]: Executing <%s> ..." % command)
 
-        if self.mp_mode == 'mpi':
-
+        if self.mp_mode == "mpi":
             try:
                 from tqdm import tqdm
 
@@ -137,53 +146,48 @@ class mca_run:
                         pbar.update(1)
 
             except ImportError:
-
                 for command in self.commands:
                     execute_command(command)
 
-        elif self.mp_mode == 'py':
-
+        elif self.mp_mode == "py":
             try:
                 from tqdm import tqdm
 
                 with mp.Pool(processes=self.Ncpu) as pool:
-                    r = list(tqdm(pool.imap(execute_command, self.commands), total=len(self.commands)))
+                    r = list(
+                        tqdm(
+                            pool.imap(execute_command, self.commands),
+                            total=len(self.commands),
+                        )
+                    )
                     pool.close()
                     pool.join()
 
             except ImportError:
-
                 with mp.Pool(processes=self.Ncpu) as pool:
                     pool.outputs = pool.map(execute_command, self.commands)
                     pool.close()
                     pool.join()
 
-
     def save(self, fname=None):
-
         if fname is None:
-            fname = 'er3t-mca_shell-script_%18.7f.sh' % time.time()
+            fname = "er3t-mca_shell-script_%18.7f.sh" % time.time()
 
         if not self.quiet:
-            print('Message [mca_run]: Creating batch script <%s> ...' % fname)
+            print("Message [mca_run]: Creating batch script <%s> ..." % fname)
 
-        with open(fname, 'w') as f:
-
+        with open(fname, "w") as f:
             for command in self.commands:
-                f.write(command + '\n')
+                f.write(command + "\n")
 
-        os.system('chmod +x %s' % fname)
-
+        os.system("chmod +x %s" % fname)
 
 
 def execute_command(command):
-
     os.system(command)
 
 
-
 def rearrange_jobs(Ncpu, weights_in):
-
     """
     Purpose:
         Rearrange jobs to optimize computational time by assigning specific set of jobs
@@ -198,53 +202,47 @@ def rearrange_jobs(Ncpu, weights_in):
     """
 
     # make input weights an array
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     weights_in = np.array(weights_in.ravel())
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # weights
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     weights = weights_in.copy()
     weights += weights.min()
     Nweight = weights.size
     ids = np.arange(Nweight)
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # sort weights in descending order
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     indices = np.argsort(weights)[::-1]
-    ids     = ids[indices]
+    ids = ids[indices]
     weights = weights[indices]
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # make jobs (python list)
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     jobs = list(zip(ids, weights))
     Njob = len(jobs)
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # define workers (python dict)
-    #╭────────────────────────────────────────────────────────────────────────────╮#
-    workers = {iworker:[] for iworker in range(Ncpu)}
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
+    workers = {iworker: [] for iworker in range(Ncpu)}
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # assign jobs to workers in a way that the difference between the work load of
     # workers is minimized
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     loads_now = np.zeros(Ncpu, dtype=er3t.common.f_dtype)
     while Njob > 0:
-
         job0 = jobs[0]
 
-        id0  = job0[0]
+        id0 = job0[0]
         weight0 = job0[1]
 
-        loads_diff = ((loads_now+weight0)-loads_now.min())**2
+        loads_diff = ((loads_now + weight0) - loads_now.min()) ** 2
         iplace = np.argmin(loads_diff)
 
         loads_now[iplace] += weight0
@@ -252,24 +250,22 @@ def rearrange_jobs(Ncpu, weights_in):
 
         jobs.pop(0)
         Njob = len(jobs)
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # sorted workers with number of jobs in descending order
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     rounds = [len(workers[i]) for i in range(Ncpu)]
     indices = np.argsort(np.array(rounds))[::-1]
-    workers_sorted = {iworker:[] for iworker in range(Ncpu)}
+    workers_sorted = {iworker: [] for iworker in range(Ncpu)}
 
     for i in range(Ncpu):
         workers_sorted[i] = workers[indices[i]]
 
     # workers_sorted_ = copy.deepcopy(workers_sorted) # variable backup
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # rearrange jobs
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     rounds = [len(workers_sorted[i]) for i in range(Ncpu)]
     Nround = max(rounds)
 
@@ -279,12 +275,10 @@ def rearrange_jobs(Ncpu, weights_in):
     counts = np.zeros(Ncpu)
 
     while Nround > 0:
-
         weight0_round = np.array([], dtype=er3t.common.f_dtype)
         index0_round = np.array([], dtype=np.int32)
 
         for i in i_next_round:
-
             loads0 = workers_sorted[i]
             if len(loads0) > 0:
                 id0 = loads0[0][0]
@@ -293,16 +287,16 @@ def rearrange_jobs(Ncpu, weights_in):
                 counts[i] += weight0
 
                 weight0_round = np.append(weight0_round, weight0)
-                index0_round  = np.append(index0_round, i)
+                index0_round = np.append(index0_round, i)
 
                 indices_out.append(id0)
 
                 workers_sorted[i].pop(0)
 
         if Nround == max(rounds):
-            weight0_base = weight0_round[:weight0_round.size].copy()
+            weight0_base = weight0_round[: weight0_round.size].copy()
         else:
-            weight0_base = weight0_base[:weight0_round.size].copy()
+            weight0_base = weight0_base[: weight0_round.size].copy()
             weight0_base += weight0_round
 
         i_next_round = index0_round[np.argsort(weight0_base)]
@@ -310,12 +304,10 @@ def rearrange_jobs(Ncpu, weights_in):
         Nround = max(len(workers_sorted[i]) for i in range(Ncpu))
 
     indices_out = np.array(indices_out)
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     return indices_out
 
 
-
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     pass

@@ -1,6 +1,8 @@
 """Fast package-boundary and import smoke tests."""
 
 import importlib
+import inspect
+import logging
 import sys
 
 import numpy as np
@@ -79,3 +81,15 @@ def test_visualization_api_has_no_legacy_switch():
     import er3t.visualization as visualization
 
     assert "legacy" not in visualization.__all__
+
+
+def test_public_classes_use_concrete_bases_and_safe_defaults():
+    from er3t.core._logger import Ear3tLogger
+    from er3t.rtm.mca.mcarats import mcarats_ng
+    from er3t.sat.readers.modis import modis_03
+    from er3t.visualization.plot import PreprocessFigure
+
+    assert issubclass(Ear3tLogger, logging.Logger)
+    assert PreprocessFigure.__bases__ == (object,)
+    assert inspect.signature(mcarats_ng.init_atm).parameters["atm_1ds"].default is None
+    assert inspect.signature(modis_03.read_vars).parameters["vnames"].default is None

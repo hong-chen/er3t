@@ -9,24 +9,21 @@ from scipy import interpolate
 from scipy.io import readsav
 
 
-__all__ = ['compare_data_2d']
-
+__all__ = ["compare_data_2d"]
 
 
 def compare_data_2d(
-        data_x,
-        data_y,
-        wvl0=None,
-        tmhr0=None,
-        tmhr_range=None,
-        wvl_range=[300.0, 2200.0],
-        tmhr_step=10,
-        wvl_step=2,
-        description=None,
-        fname_html=None
-        ):
-
-
+    data_x,
+    data_y,
+    wvl0=None,
+    tmhr0=None,
+    tmhr_range=None,
+    wvl_range=[300.0, 2200.0],
+    tmhr_step=10,
+    wvl_step=2,
+    description=None,
+    fname_html=None,
+):
     from bokeh.layouts import layout, gridplot
     from bokeh.models import ColumnDataSource, ColorBar
     from bokeh.models.widgets import Select, Slider, CheckboxGroup
@@ -36,35 +33,35 @@ def compare_data_2d(
     from bokeh.palettes import RdYlBu6, Spectral6
     from bokeh.tile_providers import get_provider, Vendors
 
-
     # obtain basic information of the script, function, system etc.
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     _metadata = {
-            'Computer': os.uname()[1],
-            'Script': os.path.abspath(__file__),
-            'Function':sys._getframe().f_code.co_name,
-            'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-    #╰────────────────────────────────────────────────────────────────────────────╯#
-
+        "Computer": os.uname()[1],
+        "Script": os.path.abspath(__file__),
+        "Function": sys._getframe().f_code.co_name,
+        "Date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # set title
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     if description is not None:
-        title = 'Compare Data-2D (%s)' % description
+        title = "Compare Data-2D (%s)" % description
     else:
-        title = 'Compare Data-2D'
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+        title = "Compare Data-2D"
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
     print(title)
 
-
     # set html file name
-    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # ╭────────────────────────────────────────────────────────────────────────────╮#
     if fname_html is None:
-        fname_html = '%s_%s_vs_%s.html' % (_metadata['Function'], data_x['name'].lower().replace(' ', '-'), data_y['name'].lower().replace(' ', '-'))
-    #╰────────────────────────────────────────────────────────────────────────────╯#
+        fname_html = "%s_%s_vs_%s.html" % (
+            _metadata["Function"],
+            data_x["name"].lower().replace(" ", "-"),
+            data_y["name"].lower().replace(" ", "-"),
+        )
+    # ╰────────────────────────────────────────────────────────────────────────────╯#
     print(fname_html)
-
 
     # output_file(fname_html, title=title, mode='inline')
 
@@ -77,7 +74,5 @@ def compare_data_2d(
     # save(layout0)
 
 
-
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     pass

@@ -67,10 +67,19 @@ docs = [
 dev = [
     {include-group = "test"},
     {include-group = "docs"},
+    "ruff>=0.14.7",
     ]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+extend-exclude = ["src/er3t/dev"]
+
+[tool.ruff.lint]
+select = ["E401", "E711", "E712", "E722", "E741", "F821"]
 
 [project.urls]
 Homepage = "https://github.com/hong-chen/er3t"

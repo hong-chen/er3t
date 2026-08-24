@@ -22,68 +22,63 @@ __all__ = ["main"]
 
 
 def get_data_brief(args):
-
     fname = os.path.abspath(args.fname[0])
     if not os.path.exists(fname):
-        msg = '\nError [lss]: cannot locate file <{fname}>.'.format(fname=fname)
+        msg = "\nError [lss]: cannot locate file <{fname}>.".format(fname=fname)
         raise OSError(msg)
 
-    if args.format != None:
-
+    if args.format is not None:
         dataType = args.format.lower()
 
     else:
-
         filename = os.path.basename(fname)
         try:
-
-            words = filename.split('.')
+            words = filename.split(".")
 
             if len(words) == 1:
-                msg = '\nError [lss]: cannot determine the data type of file <{filename}>.'.format(filename=filename)
+                msg = "\nError [lss]: cannot determine the data type of file <{filename}>.".format(
+                    filename=filename
+                )
                 raise ValueError(msg)
             else:
                 dataType = words[-1].lower()
 
         except ValueError:
-
-            msg = '\nError [lss]: cannot determine the data type of file <{filename}>.'.format(filename=filename)
+            msg = "\nError [lss]: cannot determine the data type of file <{filename}>.".format(
+                filename=filename
+            )
             raise ValueError(msg)
 
     dataTypeDict = {
-            'out' : 'IDL',
-            'sav' : 'IDL',
-            'idl' : 'IDL',
-
-            'hdf' : 'HDF4',
-            'h4'  : 'HDF4',
-            'hdf4': 'HDF4',
-
-            'h5'  : 'HDF5',
-            'he5' : 'HDF5',
-            'hdf5': 'HDF5',
-
-            'nc'     : 'netCDF',
-            'netcdf' : 'netCDF',
-            'cdf'    : 'netCDF',
-            'n4'     : 'netCDF',
-            'nc4'    : 'netCDF'
-            }
+        "out": "IDL",
+        "sav": "IDL",
+        "idl": "IDL",
+        "hdf": "HDF4",
+        "h4": "HDF4",
+        "hdf4": "HDF4",
+        "h5": "HDF5",
+        "he5": "HDF5",
+        "hdf5": "HDF5",
+        "nc": "netCDF",
+        "netcdf": "netCDF",
+        "cdf": "netCDF",
+        "n4": "netCDF",
+        "nc4": "netCDF",
+    }
 
     if dataType in dataTypeDict.keys():
         return fname, dataTypeDict[dataType]
     else:
-        msg = '\nError [lss]: do NOT support the data type of file \'{filename}\'.'.format(filename=filename)
+        msg = (
+            "\nError [lss]: do NOT support the data type of file '{filename}'.".format(
+                filename=filename
+            )
+        )
         raise ValueError(msg)
 
 
-
-
-
-def get_data_info_nc(fname, dataType='netCDF4'):
-
-    def get_variable_names(obj, prefix=''):
-
+def get_data_info_nc(fname, dataType="netCDF4"):
+    def get_variable_names(obj, prefix=""):
         """
         Purpose: Walk through the file and extract information of data groups and data variables
 
@@ -100,65 +95,64 @@ def get_data_info_nc(fname, dataType='netCDF4'):
         for key in keys:
             try:
                 item = obj.groups[key]
-                path = '{prefix}.groups[\'{key}\']'.format(prefix=prefix, key=key)
+                path = "{prefix}.groups['{key}']".format(prefix=prefix, key=key)
                 yield from get_variable_names(item, prefix=path)
             except KeyError:
                 item = obj.variables[key]
-                path = '{prefix}.variables[\'{key}\']'.format(prefix=prefix, key=key)
+                path = "{prefix}.variables['{key}']".format(prefix=prefix, key=key)
                 yield path, item
 
     try:
         from netCDF4 import Dataset
     except ImportError:
-        msg = '\nError [lss]: cannot import <netCDF4>.'
+        msg = "\nError [lss]: cannot import <netCDF4>."
         raise ImportError(msg)
 
     try:
-        f = Dataset(fname, 'r')
-    except:
-        msg = '\nError [lss]: cannot access <{fname}>.'.format(fname=fname)
+        f = Dataset(fname, "r")
+    except Exception:
+        msg = "\nError [lss]: cannot access <{fname}>.".format(fname=fname)
         raise OSError(msg)
 
-    if dataType.upper() == 'HDF4':
+    if dataType.upper() == "HDF4":
         try:
             import pyhdf
         except ImportError:
-            msg = '\nError [lss]: require a HDF4 library (e.g., <pyhdf>).'
+            msg = "\nError [lss]: require a HDF4 library (e.g., <pyhdf>)."
             raise ImportError(msg)
 
     vnames = []
-    objs   = []
+    objs = []
     for vname, obj in get_variable_names(f):
         vnames.append(vname[1:])
         objs.append(obj)
 
     data_info = OrderedDict()
 
-    data_info['!FILE!'] = '(1,)'
+    data_info["!FILE!"] = "(1,)"
     for attr in f.ncattrs():
         attr0 = f.getncattr(attr)
-        data_info['!FILE!|%s' % (attr)] = attr0
+        data_info["!FILE!|%s" % (attr)] = attr0
 
     for i, vname in enumerate(vnames):
         data_info[vname] = str(objs[i].shape)
         for attr in objs[i].ncattrs():
             attr0 = objs[i].getncattr(attr)
             if isinstance(attr0, (bytes, bytearray)):
-                attr0 = str(attr0, encoding='utf-8')
+                attr0 = str(attr0, encoding="utf-8")
             else:
                 attr0 = str(attr0)
-            data_info['%s|%s' % (vname, attr)] = attr0
-        if hasattr(objs[i], 'dimensions'):
-            data_info['%s|dims' % (vname)] = str(objs[i].dimensions)
+            data_info["%s|%s" % (vname, attr)] = attr0
+        if hasattr(objs[i], "dimensions"):
+            data_info["%s|dims" % (vname)] = str(objs[i].dimensions)
 
     f.close()
 
     return data_info
 
-def get_data_info_h5(fname, dataType='HDF5'):
 
-    def get_variable_names(obj, prefix=''):
-
+def get_data_info_h5(fname, dataType="HDF5"):
+    def get_variable_names(obj, prefix=""):
         """
         Purpose: Walk through the file and extract information of data groups and data variables
 
@@ -171,9 +165,8 @@ def get_data_info_h5(fname, dataType='HDF5'):
         """
 
         for key in obj.keys():
-
             item = obj[key]
-            path = '{prefix}/{key}'.format(prefix=prefix, key=key)
+            path = "{prefix}/{key}".format(prefix=prefix, key=key)
             if isinstance(item, h5py.Dataset):
                 yield path
             elif isinstance(item, h5py.Group):
@@ -182,13 +175,13 @@ def get_data_info_h5(fname, dataType='HDF5'):
     try:
         import h5py
     except ImportError:
-        msg = '\nError [lss]: cannot import <h5py>.'
+        msg = "\nError [lss]: cannot import <h5py>."
         raise ImportError(msg)
 
     try:
-        f = h5py.File(fname, 'r')
-    except:
-        msg = '\nError [lss]: cannot access <{fname}>.'.format(fname=fname)
+        f = h5py.File(fname, "r")
+    except Exception:
+        msg = "\nError [lss]: cannot access <{fname}>.".format(fname=fname)
         raise OSError(msg)
 
     vnames = []
@@ -197,41 +190,41 @@ def get_data_info_h5(fname, dataType='HDF5'):
 
     data_info = OrderedDict()
 
-    data_info['!FILE!'] = '(1,)'
+    data_info["!FILE!"] = "(1,)"
     for attr in f.attrs.keys():
         attr0 = f.attrs[attr]
-        data_info['!FILE!|%s' % (attr)] = attr0
+        data_info["!FILE!|%s" % (attr)] = attr0
 
     for vname in vnames:
         obj = f[vname]
         data_info[vname] = str(obj.shape)
         for attr in obj.attrs.keys():
             attr0 = obj.attrs[attr]
-            if '_LIST' in attr:
-                data_info['%s|%s' % (vname, attr)] = attr0.shape
+            if "_LIST" in attr:
+                data_info["%s|%s" % (vname, attr)] = attr0.shape
             else:
                 if isinstance(attr0, (bytes, bytearray)):
-                    attr0 = str(attr0, encoding='utf-8')
+                    attr0 = str(attr0, encoding="utf-8")
                 else:
                     attr0 = str(attr0)
-                data_info['%s|%s' % (vname, attr)] = attr0
+                data_info["%s|%s" % (vname, attr)] = attr0
 
     f.close()
 
     return data_info
 
-def get_data_info_h4(fname, dataType='HDF4'):
 
+def get_data_info_h4(fname, dataType="HDF4"):
     try:
         from pyhdf.SD import SD, SDC
     except ImportError:
-        msg = '\nError [lss]: cannot import <pyhdf>.'
+        msg = "\nError [lss]: cannot import <pyhdf>."
         raise ImportError(msg)
 
     try:
         f = SD(fname, SDC.READ)
-    except:
-        msg = '\nError [lss]: cannot access <{fname}>.'.format(fname=fname)
+    except Exception:
+        msg = "\nError [lss]: cannot access <{fname}>.".format(fname=fname)
         raise OSError(msg)
 
     vnames = f.datasets().keys()
@@ -248,27 +241,28 @@ def get_data_info_h4(fname, dataType='HDF4'):
         for attr in obj.attributes().keys():
             attr0 = obj.attributes()[attr]
             if isinstance(attr0, (bytes, bytearray)):
-                attr0 = str(attr0, encoding='utf-8')
+                attr0 = str(attr0, encoding="utf-8")
             else:
                 attr0 = str(attr0)
-            data_info['%s|%s' % (vname, attr)] = attr0
+            data_info["%s|%s" % (vname, attr)] = attr0
 
     f.end()
 
     return data_info
 
-def get_data_info_idl(fname, dataType='IDL'):
 
+def get_data_info_idl(fname, dataType="IDL"):
     try:
-        import numpy, scipy.io
+        import numpy
+        import scipy.io
     except ImportError:
-        msg = '\nError [lss]: cannot import <numpy> and <scipy>.'
+        msg = "\nError [lss]: cannot import <numpy> and <scipy>."
         raise ImportError(msg)
 
     try:
         f = scipy.io.readsav(fname)
-    except:
-        msg = '\nError [lss]: cannot access <{fname}>.'.format(fname=fname)
+    except Exception:
+        msg = "\nError [lss]: cannot access <{fname}>.".format(fname=fname)
         raise OSError(msg)
 
     vnames0 = f.keys()
@@ -278,12 +272,12 @@ def get_data_info_idl(fname, dataType='IDL'):
         if isinstance(obj, numpy.recarray):
             vnames1 = obj.dtype.names
             for vname1 in vnames1:
-                vname = '{vname0}.{vname1}[0]'.format(vname0=vname0, vname1=vname1)
-                obj_new   = obj[vname1][0]
+                vname = "{vname0}.{vname1}[0]".format(vname0=vname0, vname1=vname1)
+                obj_new = obj[vname1][0]
                 if isinstance(obj_new, numpy.ndarray):
                     data_info[vname] = str(obj_new.shape)
                 elif isinstance(obj_new, bytes):
-                    data_info[vname] = obj_new.decode('utf-8')
+                    data_info[vname] = obj_new.decode("utf-8")
                 else:
                     data_info[vname] = str(obj_new)
         elif isinstance(obj, numpy.ndarray):
@@ -291,7 +285,7 @@ def get_data_info_idl(fname, dataType='IDL'):
             data_info[vname] = str(obj.shape)
         elif isinstance(obj, bytes):
             vname = vname0
-            data_info[vname] = obj.decode('utf-8')
+            data_info[vname] = obj.decode("utf-8")
         else:
             vname = vname0
             data_info[vname] = str(obj)
@@ -299,97 +293,105 @@ def get_data_info_idl(fname, dataType='IDL'):
     return data_info
 
 
-
-
-
 def get_data_info(fname, dataType):
-
-    if dataType in ['netCDF']:
+    if dataType in ["netCDF"]:
         data_info = get_data_info_nc(fname)
-    elif dataType in ['HDF5']:
+    elif dataType in ["HDF5"]:
         data_info = get_data_info_h5(fname)
-    elif dataType in ['HDF4']:
+    elif dataType in ["HDF4"]:
         data_info = get_data_info_h4(fname)
-    elif dataType == 'IDL':
+    elif dataType == "IDL":
         data_info = get_data_info_idl(fname)
 
     return data_info
 
 
-
-
-
 def process_data_info(data_info):
-
-    vnames = sorted(data_info.keys(), key=lambda x: x.split('|')[0])
+    vnames = sorted(data_info.keys(), key=lambda x: x.split("|")[0])
     data_info_new = OrderedDict()
 
     i = 0
     for vname in vnames:
-        if ('|' not in vname):
+        if "|" not in vname:
             i += 1
-            if '(' in data_info[vname] and ')' in data_info[vname] and len(data_info[vname])>2 \
-               and (data_info[vname].replace(' ', '')!='(1,)'):
-                data_info_new['%3d. %s' % (i, vname)] = 'Dataset  {shape}'.format(shape=data_info[vname])
+            if (
+                "(" in data_info[vname]
+                and ")" in data_info[vname]
+                and len(data_info[vname]) > 2
+                and (data_info[vname].replace(" ", "") != "(1,)")
+            ):
+                data_info_new["%3d. %s" % (i, vname)] = "Dataset  {shape}".format(
+                    shape=data_info[vname]
+                )
             else:
-                data_info_new['%3d. %s' % (i, vname)] = 'Data     1'
+                data_info_new["%3d. %s" % (i, vname)] = "Data     1"
             j = 1
         else:
-            data_info_new['  %3d.%02d|\'%s\'' % (i, j, vname.split('|')[-1])] = data_info[vname]
+            data_info_new["  %3d.%02d|'%s'" % (i, j, vname.split("|")[-1])] = data_info[
+                vname
+            ]
             j += 1
 
     return data_info_new
 
 
-
-
-
 def generate_message(data_info, dataType, dash_extra=2):
-
-    header   = '+ %s\n' % dataType
-    footer   = '-'
+    header = "+ %s\n" % dataType
+    footer = "-"
 
     vnames = list(data_info.keys())
     Nmax = max([len(vname) for vname in vnames]) + dash_extra
 
-    body = ''
+    body = ""
     for i, vname in enumerate(vnames):
-        dashed_line = '─'*(Nmax-len(vname))
+        dashed_line = "─" * (Nmax - len(vname))
         info = data_info[vname]
-        line = '{vname} {dashed_line} : {info}\n'.format(vname=vname, dashed_line=dashed_line, info=info)
+        line = "{vname} {dashed_line} : {info}\n".format(
+            vname=vname, dashed_line=dashed_line, info=info
+        )
         body += line
-        if ((i<len(vnames)-1) and ('|' not in vnames[i+1])):
-            body += '\n\n'
+        if (i < len(vnames) - 1) and ("|" not in vnames[i + 1]):
+            body += "\n\n"
 
     message = header + body + footer
 
     return message
 
 
-
-
-
 def main():
-
-    parser = argparse.ArgumentParser(description='List dataset information contained in a hierarchical data file.')
-    parser.add_argument('fname', metavar='file_path', type=str, nargs=1,
-                        help='file name including path, e.g., /some/path/sample.h5')
-    parser.add_argument('format', metavar='data_type', type=str, nargs='?',
-                        help='format of the data file, e.g., h5')
-    parser.add_argument('mode', metavar='mode', type=str, nargs='?', default='file_info',
-                        help='mode, e.g., \'file_info\' or \'dataset_info\', default is \'file_info\'.')
+    parser = argparse.ArgumentParser(
+        description="List dataset information contained in a hierarchical data file."
+    )
+    parser.add_argument(
+        "fname",
+        metavar="file_path",
+        type=str,
+        nargs=1,
+        help="file name including path, e.g., /some/path/sample.h5",
+    )
+    parser.add_argument(
+        "format",
+        metavar="data_type",
+        type=str,
+        nargs="?",
+        help="format of the data file, e.g., h5",
+    )
+    parser.add_argument(
+        "mode",
+        metavar="mode",
+        type=str,
+        nargs="?",
+        default="file_info",
+        help="mode, e.g., 'file_info' or 'dataset_info', default is 'file_info'.",
+    )
     args = parser.parse_args()
 
     fname, dataType = get_data_brief(args)
     data_info0 = get_data_info(fname, dataType)
-    data_info  = process_data_info(data_info0)
-    message    = generate_message(data_info, dataType)
+    data_info = process_data_info(data_info0)
+    message = generate_message(data_info, dataType)
     print(message)
 
 
-
-
-
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     main()

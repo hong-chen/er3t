@@ -15,9 +15,7 @@ except PackageNotFoundError:  # Running directly from an unpackaged source tree.
     __version__ = "0+unknown"
 
 
-_LAZY_SUBMODULES = (
-    "cli", "common", "core", "io", "pre", "rtm", "sat", "visualization"
-)
+_LAZY_SUBMODULES = ("cli", "common", "core", "io", "pre", "rtm", "sat", "visualization")
 __all__ = ["__version__", *_LAZY_SUBMODULES]
 
 

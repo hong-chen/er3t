@@ -9,12 +9,10 @@ import numpy as np
 import er3t.common
 
 
-__all__ = ['shd_sfc_2d']
-
+__all__ = ["shd_sfc_2d"]
 
 
 class shd_sfc_2d:
-
     """
     Input:
         atm_obj=: keyword argument, default=None, atmosphere object, for example, atm_obj = atm_atmmod(fname='atm.pk')
@@ -35,20 +33,19 @@ class shd_sfc_2d:
         self.save_h5: method to save data into HDF5 file
     """
 
-
-    def __init__(self,\
-                 atm_obj   = None, \
-                 sfc_obj   = None, \
-                 fname     = None, \
-                 overwrite = True, \
-                 force     = False,\
-                 verbose   = False,\
-                 quiet     = False \
-                 ):
-
+    def __init__(
+        self,
+        atm_obj=None,
+        sfc_obj=None,
+        fname=None,
+        overwrite=True,
+        force=False,
+        verbose=False,
+        quiet=False,
+    ):
         self.overwrite = overwrite
-        self.verbose   = verbose
-        self.quiet     = quiet
+        self.verbose = verbose
+        self.quiet = quiet
 
         if atm_obj is None:
             msg = f"Please provide an <atm> object for <atm_obj>."
@@ -67,123 +64,129 @@ class shd_sfc_2d:
         self.pre_shd_2d_sfc()
 
         if fname is None:
-            fname = 'shdom-sfc_2d.txt'
+            fname = "shdom-sfc_2d.txt"
 
         if not self.overwrite:
             if (not os.path.exists(fname)) and (not force):
                 self.gen_shd_2d_sfc_file(fname)
-            self.nml['SFCFILE'] = {'data':fname}
+            self.nml["SFCFILE"] = {"data": fname}
         else:
             self.gen_shd_2d_sfc_file(fname)
 
-
     def pre_shd_2d_sfc(self):
+        self.nml = {}
 
-        self.nml= {}
+        self.nml["NX"] = copy.deepcopy(self.sfc.data["nx"])
+        self.nml["NY"] = copy.deepcopy(self.sfc.data["ny"])
+        self.nml["dx"] = copy.deepcopy(self.sfc.data["dx"])
+        self.nml["dy"] = copy.deepcopy(self.sfc.data["dy"])
 
-        self.nml['NX'] = copy.deepcopy(self.sfc.data['nx'])
-        self.nml['NY'] = copy.deepcopy(self.sfc.data['ny'])
-        self.nml['dx'] = copy.deepcopy(self.sfc.data['dx'])
-        self.nml['dy'] = copy.deepcopy(self.sfc.data['dy'])
-
-        self.Nx = self.nml['NX']['data']
-        self.Ny = self.nml['NY']['data']
-        self.dx = self.nml['dx']['data']
-        self.dy = self.nml['dy']['data']
+        self.Nx = self.nml["NX"]["data"]
+        self.Ny = self.nml["NY"]["data"]
+        self.dx = self.nml["dx"]["data"]
+        self.dy = self.nml["dy"]["data"]
 
         if (self.Nx == 1) and (self.Ny == 1):
             self.ID = "Homogeneous Surface"
         else:
             self.ID = f"2D [{self.Nx}x{self.Ny}] Domain"
 
-        if ('lambertian' in self.sfc.data['sfc']['name'].lower()):
-
-            self.nml['header'] = dict(data='L', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
+        if "lambertian" in self.sfc.data["sfc"]["name"].lower():
+            self.nml["header"] = dict(
+                data="L", name="Header for SHDOM Surface File", units="N/A"
+            )
+            self.sfc_data = self.sfc.data["sfc"]["data"]
 
             self.ID = f"{self.ID} (Lambertian, for SHDOM)"
 
-        elif ('brdf-lsrt-jiao' in self.sfc.data['sfc']['name'].lower()):
-
-            self.nml['header'] = dict(data='J', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
+        elif "brdf-lsrt-jiao" in self.sfc.data["sfc"]["name"].lower():
+            self.nml["header"] = dict(
+                data="J", name="Header for SHDOM Surface File", units="N/A"
+            )
+            self.sfc_data = self.sfc.data["sfc"]["data"]
 
             self.ID = f"{self.ID} (LSRT-Jiao Snow, for SHDOM)"
 
-        elif ('brdf-lsrt' in self.sfc.data['sfc']['name'].lower()):
-
-            self.nml['header'] = dict(data='T', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
+        elif "brdf-lsrt" in self.sfc.data["sfc"]["name"].lower():
+            self.nml["header"] = dict(
+                data="T", name="Header for SHDOM Surface File", units="N/A"
+            )
+            self.sfc_data = self.sfc.data["sfc"]["data"]
 
             self.ID = f"{self.ID} (LSRT Land, for SHDOM)"
 
-        elif ('brdf-ocean' in self.sfc.data['sfc']['name'].lower()):
-
-            self.nml['header'] = dict(data='O', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
+        elif "brdf-ocean" in self.sfc.data["sfc"]["name"].lower():
+            self.nml["header"] = dict(
+                data="O", name="Header for SHDOM Surface File", units="N/A"
+            )
+            self.sfc_data = self.sfc.data["sfc"]["data"]
 
             self.ID = f"{self.ID} (Cox-Munk Ocean, for SHDOM)"
 
-        elif ('brdf-mixed' in self.sfc.data['sfc']['name'].lower()):
-
-            self.nml['header'] = dict(data='X', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
+        elif "brdf-mixed" in self.sfc.data["sfc"]["name"].lower():
+            self.nml["header"] = dict(
+                data="X", name="Header for SHDOM Surface File", units="N/A"
+            )
+            self.sfc_data = self.sfc.data["sfc"]["data"]
             self.ID = f"{self.ID} (Mixed BRDF Surface, for SHDOM)"
 
         else:
-
             msg = f"Cannot determine surface type - currently only supports Lambertian surface, Ocean, RTLSR BRDF surface (e.g., MCD43A1)."
             er3t.common.logger.error(msg)
             raise OSError
 
-
     def gen_shd_2d_sfc_file(
-            self,
-            fname,
-            postfix='.sHdOmNG-sfc',
-            ):
-
+        self,
+        fname,
+        postfix=".sHdOmNG-sfc",
+    ):
         fname = os.path.abspath(fname)
         Nparam = self.sfc_data.shape[-1]
-        temp_sfc = self.atm.lay['temperature']['data'][0]
+        temp_sfc = self.atm.lay["temperature"]["data"][0]
 
         if not self.quiet:
             msg = f"Creating 2D surface file <{fname}> for SHDOM ..."
             er3t.common.logger.info(msg)
 
         with open(fname, "w") as f:
-
             f.write(f"{self.nml['header']['data']}\n")
             f.write(f"{self.Nx} {self.Ny} {self.dx:.8e} {self.dy:.8e}\n")
 
-            if self.Nx*self.Ny <= 36:
-
+            if self.Nx * self.Ny <= 36:
                 for iy in np.arange(self.Ny):
                     for ix in np.arange(self.Nx):
-                        string1 = f"{ix+1} {iy+1} {temp_sfc:.2f} "
-                        string2 = ('%.8e ' * self.sfc_data[ix, iy, :].size) % tuple(self.sfc_data[ix, iy, :])
+                        string1 = f"{ix + 1} {iy + 1} {temp_sfc:.2f} "
+                        string2 = ("%.8e " * self.sfc_data[ix, iy, :].size) % tuple(
+                            self.sfc_data[ix, iy, :]
+                        )
                         string3 = "\n"
-                        f.write(string1+string2[:-1]+string3) # [:-1] is used to get rid of last empty space
+                        f.write(
+                            string1 + string2[:-1] + string3
+                        )  # [:-1] is used to get rid of last empty space
 
             else:
-
                 # add in edge pixels for SHDOM
-                data = np.zeros((self.Nx+1, self.Ny+1, Nparam+1), dtype=np.float32)
+                data = np.zeros(
+                    (self.Nx + 1, self.Ny + 1, Nparam + 1), dtype=np.float32
+                )
                 Ndata_t = self.Nx * self.Ny
-                data[:-1, :-1, 0] = np.repeat(temp_sfc, Ndata_t).reshape(self.Nx, self.Ny)
+                data[:-1, :-1, 0] = np.repeat(temp_sfc, Ndata_t).reshape(
+                    self.Nx, self.Ny
+                )
                 data[:-1, :-1, 1:] = self.sfc_data
 
-                f.write( "! The following provides information for interpreting binary data:\n")
+                f.write(
+                    "! The following provides information for interpreting binary data:\n"
+                )
                 f.write(f"! {postfix}\n")
-                f.write(f"! {self.Nx+1:10d},{self.Ny+1:10d},{Nparam+1:10d}\n")
+                f.write(f"! {self.Nx + 1:10d},{self.Ny + 1:10d},{Nparam + 1:10d}\n")
 
-                with open('%s%s' % (fname, postfix), 'wb') as fb:
-
+                with open("%s%s" % (fname, postfix), "wb") as fb:
                     Ndata = data.size
                     # data.T reshapes data from [Nx, Ny, Nparam], to [Nparam, Ny, Nx]
-                    fb.write(struct.pack(f"<{Ndata}f", *data.T.flatten(order='F')))
+                    fb.write(struct.pack(f"<{Ndata}f", *data.T.flatten(order="F")))
 
-        self.nml['SFCFILE'] = {'data':fname}
+        self.nml["SFCFILE"] = {"data": fname}
 
         if not self.quiet:
             msg = f"File <{fname}> is created."
@@ -191,7 +194,6 @@ class shd_sfc_2d:
 
 
 class shd_sfc_2d_mix_test:
-
     """
     Input:
         atm_obj=: keyword argument, default=None, atmosphere object, for example, atm_obj = atm_atmmod(fname='atm.pk')
@@ -212,23 +214,21 @@ class shd_sfc_2d_mix_test:
         self.save_h5: method to save data into HDF5 file
     """
 
+    ID = "SHDOM 2D Surface"
 
-    ID = 'SHDOM 2D Surface'
-
-
-    def __init__(self,\
-                 atm_obj   = None, \
-                 sfc_obj   = None, \
-                 fname     = None, \
-                 overwrite = True, \
-                 force     = False,\
-                 verbose   = False,\
-                 quiet     = False \
-                 ):
-
+    def __init__(
+        self,
+        atm_obj=None,
+        sfc_obj=None,
+        fname=None,
+        overwrite=True,
+        force=False,
+        verbose=False,
+        quiet=False,
+    ):
         self.overwrite = overwrite
-        self.verbose   = verbose
-        self.quiet     = quiet
+        self.verbose = verbose
+        self.quiet = quiet
 
         if atm_obj is None:
             msg = f"Please provide an <atm> object for <atm_obj>."
@@ -247,85 +247,100 @@ class shd_sfc_2d_mix_test:
         self.pre_shd_2d_sfc()
 
         if fname is None:
-            fname = 'shdom-sfc_2d.txt'
+            fname = "shdom-sfc_2d.txt"
 
         if not self.overwrite:
             if (not os.path.exists(fname)) and (not force):
                 self.gen_shd_2d_sfc_file(fname)
-            self.nml['SFCFILE'] = {'data':fname}
+            self.nml["SFCFILE"] = {"data": fname}
         else:
             self.gen_shd_2d_sfc_file(fname)
 
-
     def pre_shd_2d_sfc(self):
+        self.nml = {}
 
-        self.nml= {}
+        self.nml["NX"] = copy.deepcopy(self.sfc.data["nx"])
+        self.nml["NY"] = copy.deepcopy(self.sfc.data["ny"])
+        self.nml["dx"] = copy.deepcopy(self.sfc.data["dx"])
+        self.nml["dy"] = copy.deepcopy(self.sfc.data["dy"])
 
-        self.nml['NX'] = copy.deepcopy(self.sfc.data['nx'])
-        self.nml['NY'] = copy.deepcopy(self.sfc.data['ny'])
-        self.nml['dx'] = copy.deepcopy(self.sfc.data['dx'])
-        self.nml['dy'] = copy.deepcopy(self.sfc.data['dy'])
+        self.Nx = self.nml["NX"]["data"]
+        self.Ny = self.nml["NY"]["data"]
+        self.dx = self.nml["dx"]["data"]
+        self.dy = self.nml["dy"]["data"]
 
-        self.Nx = self.nml['NX']['data']
-        self.Ny = self.nml['NY']['data']
-        self.dx = self.nml['dx']['data']
-        self.dy = self.nml['dy']['data']
+        if "lambertian" in self.sfc.data["sfc"]["name"].lower():
+            self.nml["header"] = dict(
+                data="L", name="Header for SHDOM Surface File", units="N/A"
+            )
+            self.sfc_data = self.sfc.data["sfc"]["data"]
 
-        if ('lambertian' in self.sfc.data['sfc']['name'].lower()):
+        elif "brdf-lsrt-jiao" in self.sfc.data["sfc"]["name"].lower():
+            self.nml["header"] = dict(
+                data="J", name="Header for SHDOM Surface File", units="N/A"
+            )
+            self.sfc_data = self.sfc.data["sfc"]["data"]
 
-            self.nml['header'] = dict(data='L', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
+        elif "brdf-lsrt" in self.sfc.data["sfc"]["name"].lower():
+            self.nml["header"] = dict(
+                data="T", name="Header for SHDOM Surface File", units="N/A"
+            )
+            self.sfc_data = self.sfc.data["sfc"]["data"]
 
-        elif ('brdf-lsrt-jiao' in self.sfc.data['sfc']['name'].lower()):
-
-            self.nml['header'] = dict(data='J', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
-
-        elif ('brdf-lsrt' in self.sfc.data['sfc']['name'].lower()):
-
-            self.nml['header'] = dict(data='T', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
-
-        elif ('brdf-ocean' in self.sfc.data['sfc']['name'].lower()):
-
-            self.nml['header'] = dict(data='O', name='Header for SHDOM Surface File', units='N/A')
-            self.sfc_data = self.sfc.data['sfc']['data']
+        elif "brdf-ocean" in self.sfc.data["sfc"]["name"].lower():
+            self.nml["header"] = dict(
+                data="O", name="Header for SHDOM Surface File", units="N/A"
+            )
+            self.sfc_data = self.sfc.data["sfc"]["data"]
 
         else:
-
             msg = f"Cannot determine surface type - currently only supports Lambertian surface and LSRT BRDF surface (e.g., MCD43A1)."
             er3t.common.logger.error(msg)
             raise OSError
 
-
     def gen_shd_2d_sfc_file(
-            self,
-            fname,
-            ):
-
+        self,
+        fname,
+    ):
         fname = os.path.abspath(fname)
 
         if not self.quiet:
             msg = f"Creating 2D surface file <{fname}> for SHDOM ..."
             er3t.common.logger.info(msg)
 
-        with open(fname, 'w') as f:
-            f.write('X\n')
-            f.write('%d %d %15.8e %15.8e\n' % (self.Nx, self.Ny, self.dx, self.dy))
+        with open(fname, "w") as f:
+            f.write("X\n")
+            f.write("%d %d %15.8e %15.8e\n" % (self.Nx, self.Ny, self.dx, self.dy))
             for ix in np.arange(self.Nx):
                 for iy in np.arange(self.Ny):
-                    if (ix >= 50.0 and ix <= 70.0) and (iy >=50.0) and (iy <= 70.0):
-                        string1 = '%d %d %.2f ' % ((ix+1), (iy+1), self.atm.lay['temperature']['data'][0])
-                        string2 = ('%.6e ' * 7) % tuple([1.0, 0.01] + [-999.0]*4 + [997.0])
-                        string3 = '\n'
+                    if (ix >= 50.0 and ix <= 70.0) and (iy >= 50.0) and (iy <= 70.0):
+                        string1 = "%d %d %.2f " % (
+                            (ix + 1),
+                            (iy + 1),
+                            self.atm.lay["temperature"]["data"][0],
+                        )
+                        string2 = ("%.6e " * 7) % tuple(
+                            [1.0, 0.01] + [-999.0] * 4 + [997.0]
+                        )
+                        string3 = "\n"
                     else:
-                        string1 = '%d %d %.2f ' % ((ix+1), (iy+1), self.atm.lay['temperature']['data'][0])
-                        string2 = ('%.6e ' * 7) % tuple(list(self.sfc_data[ix, iy, :]) + [-999.0]*(6-self.sfc_data[ix, iy, :].size) + [994.0])
-                        string3 = '\n'
+                        string1 = "%d %d %.2f " % (
+                            (ix + 1),
+                            (iy + 1),
+                            self.atm.lay["temperature"]["data"][0],
+                        )
+                        string2 = ("%.6e " * 7) % tuple(
+                            list(self.sfc_data[ix, iy, :])
+                            + [-999.0] * (6 - self.sfc_data[ix, iy, :].size)
+                            + [994.0]
+                        )
+                        string3 = "\n"
 
-                    f.write(string1+string2[:-1]+string3) # [:-1] is used to get rid of last empty space
+                    f.write(
+                        string1 + string2[:-1] + string3
+                    )  # [:-1] is used to get rid of last empty space
 
-        self.nml['SFCFILE'] = {'data':fname}
+        self.nml["SFCFILE"] = {"data": fname}
 
         # f = open(fname, 'wb')
         # f.write(struct.pack('<%df' % self.nml['Sfc_psfc2d']['data'].size, *self.nml['Sfc_psfc2d']['data'].flatten(order='F')))
@@ -336,6 +351,5 @@ class shd_sfc_2d_mix_test:
             er3t.common.logger.info(msg)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     pass

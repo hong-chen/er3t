@@ -12,7 +12,6 @@ from pre_atm import ATMOSPHERE
 
 
 class AEROSOL:
-
     """
     Input:
         aod: aerosol optical thickness
@@ -25,25 +24,23 @@ class AEROSOL:
 
     """
 
-    ID = 'Aerosol'
+    ID = "Aerosol"
 
     def __init__(
-            self            , \
-            aod       = None, \
-            ssa       = None, \
-            asy       = None, \
-            fname     = None, \
-            fname_atm = None, \
-            overwrite = False,\
-            verbose   = True
-            ):
-
+        self,
+        aod=None,
+        ssa=None,
+        asy=None,
+        fname=None,
+        fname_atm=None,
+        overwrite=False,
+        verbose=True,
+    ):
         self.verbose = verbose
 
         atm0 = ATMOSPHERE(fname=fname_atm, verbose=self.verbose)
         self.coef = {}
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     aer = AEROSOL()
