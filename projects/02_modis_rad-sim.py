@@ -846,7 +846,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
             fdir=fdir,
             date=params['date'],
             wavelength=wvl,
-            surface_albedo=alb.mean(),
+            surface=alb.mean(),
             solar_zenith_angle=sza.mean(),
             solar_azimuth_angle=saa.mean(),
             sensor_zenith_angle=vza.mean(),
@@ -865,7 +865,7 @@ def cdata_cld_ipa(wvl=params['wavelength']):
             fdir=fdir,
             date=params['date'],
             wavelength=wvl,
-            surface_albedo=alb.mean(),
+            surface=alb.mean(),
             solar_zenith_angle=sza.mean(),
             solar_azimuth_angle=saa.mean(),
             sensor_zenith_angle=vza.mean(),
@@ -1368,7 +1368,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
             }
 
     fname_sfc = '%s/sfc.pk' % fdir
-    sfc0      = er3t.pre.sfc.sfc_2d_gen(sfc_2d=coef_dict, fname=fname_sfc, overwrite=overwrite)
+    sfc0      = er3t.pre.sfc.sfc_2d_gen(sfc_dict=coef_dict, fname=fname_sfc, overwrite=overwrite)
     sfc_2d    = er3t.rtm.mca.mca_sfc_2d(atm_obj=atm0, sfc_obj=sfc0, fname='%s/mca_sfc_2d.bin' % fdir, overwrite=overwrite)
     #\----------------------------------------------------------------------------/#
 
@@ -1453,7 +1453,7 @@ def cal_mca_rad(sat, wavelength, photon, fdir='tmp-data', solver='3D', overwrite
             date=sat.date,
             atm_1ds=atm_1ds,
             atm_3ds=atm_3ds,
-            surface_albedo=sfc_2d,
+            surface=sfc_2d,
             sca=sca,
             Ng=abs0.Ng,
             target='radiance',

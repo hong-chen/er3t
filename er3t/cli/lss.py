@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-A tool to display detailed dataset info of a hierarchical data file.
+A tool to display general dataset info of a hierarchical data file.
 
 Currently, the following data formats are supported:
     1) netCDF (supported by <netCDF4>)
@@ -18,20 +18,7 @@ import argparse
 from collections import OrderedDict
 
 
-
-
-
-parser = argparse.ArgumentParser(description='List dataset information contained in a hierarchical data file.')
-parser.add_argument('fname', metavar='file_path', type=str, nargs=1,
-                    help='file name including path, e.g., /some/path/sample.h5')
-parser.add_argument('format', metavar='data_type', type=str, nargs='?',
-                    help='format of the data file, e.g., h5')
-parser.add_argument('mode', metavar='mode', type=str, nargs='?', default='file_info',
-                    help='mode, e.g., \'file_info\' or \'dataset_info\', default is \'file_info\'.')
-args = parser.parse_args()
-
-
-
+__all__ = ["main"]
 
 
 def get_data_brief(args):
@@ -145,24 +132,9 @@ def get_data_info_nc(fname, dataType='netCDF4'):
         vnames.append(vname[1:])
         objs.append(obj)
 
-    data_info = OrderedDict()
-
-    data_info['!FILE!'] = '(1,)'
-    for attr in f.ncattrs():
-        attr0 = f.getncattr(attr)
-        data_info['!FILE!|%s' % (attr)] = attr0
-
+    data_info = {}
     for i, vname in enumerate(vnames):
         data_info[vname] = str(objs[i].shape)
-        for attr in objs[i].ncattrs():
-            attr0 = objs[i].getncattr(attr)
-            if isinstance(attr0, (bytes, bytearray)):
-                attr0 = str(attr0, encoding='utf-8')
-            else:
-                attr0 = str(attr0)
-            data_info['%s|%s' % (vname, attr)] = attr0
-        if hasattr(objs[i], 'dimensions'):
-            data_info['%s|dims' % (vname)] = str(objs[i].dimensions)
 
     f.close()
 
@@ -208,26 +180,10 @@ def get_data_info_h5(fname, dataType='HDF5'):
     for vname in get_variable_names(f):
         vnames.append(vname[1:])
 
-    data_info = OrderedDict()
-
-    data_info['!FILE!'] = '(1,)'
-    for attr in f.attrs.keys():
-        attr0 = f.attrs[attr]
-        data_info['!FILE!|%s' % (attr)] = attr0
-
+    data_info = {}
     for vname in vnames:
         obj = f[vname]
         data_info[vname] = str(obj.shape)
-        for attr in obj.attrs.keys():
-            attr0 = obj.attrs[attr]
-            if '_LIST' in attr:
-                data_info['%s|%s' % (vname, attr)] = attr0.shape
-            else:
-                if isinstance(attr0, (bytes, bytearray)):
-                    attr0 = str(attr0, encoding='utf-8')
-                else:
-                    attr0 = str(attr0)
-                data_info['%s|%s' % (vname, attr)] = attr0
 
     f.close()
 
@@ -249,7 +205,7 @@ def get_data_info_h4(fname, dataType='HDF4'):
 
     vnames = f.datasets().keys()
 
-    data_info = OrderedDict()
+    data_info = {}
     for vname in vnames:
         obj = f.select(vname)
         info = obj.info()
@@ -257,14 +213,6 @@ def get_data_info_h4(fname, dataType='HDF4'):
             data_info[vname] = str((info[2],))
         elif info[1] > 1:
             data_info[vname] = str(tuple(info[2]))
-
-        for attr in obj.attributes().keys():
-            attr0 = obj.attributes()[attr]
-            if isinstance(attr0, (bytes, bytearray)):
-                attr0 = str(attr0, encoding='utf-8')
-            else:
-                attr0 = str(attr0)
-            data_info['%s|%s' % (vname, attr)] = attr0
 
     f.end()
 
@@ -285,7 +233,7 @@ def get_data_info_idl(fname, dataType='IDL'):
         raise OSError(msg)
 
     vnames0 = f.keys()
-    data_info = OrderedDict()
+    data_info = {}
     for vname0 in vnames0:
         obj = f[vname0]
         if isinstance(obj, numpy.recarray):
@@ -332,47 +280,38 @@ def get_data_info(fname, dataType):
 
 
 
-def process_data_info(data_info):
+def process_data_info(data_dict):
 
-    vnames = sorted(data_info.keys(), key=lambda x: x.split('|')[0])
-    data_info_new = OrderedDict()
+    vnames = sorted(data_dict.keys())
+    data_dict_new = OrderedDict()
 
-    i = 0
     for vname in vnames:
-        if ('|' not in vname):
-            i += 1
-            if '(' in data_info[vname] and ')' in data_info[vname] and len(data_info[vname])>2 \
-               and (data_info[vname].replace(' ', '')!='(1,)'):
-                data_info_new['%3d. %s' % (i, vname)] = 'Dataset  {shape}'.format(shape=data_info[vname])
-            else:
-                data_info_new['%3d. %s' % (i, vname)] = 'Data     1'
-            j = 1
+
+        if '(' in data_dict[vname] and ')' in data_dict[vname] and len(data_dict[vname])>2 and (data_dict[vname].replace(' ', '')!='(1,)'):
+            data_dict_new[vname] = 'Dataset  {shape}'.format(shape=data_dict[vname])
         else:
-            data_info_new['  %3d.%02d|\'%s\'' % (i, j, vname.split('|')[-1])] = data_info[vname]
-            j += 1
+            data_dict_new[vname] = 'Data     1'
 
-    return data_info_new
-
+    return data_dict_new
 
 
 
 
-def generate_message(data_info, dataType, dash_extra=2):
+
+def generate_message(data_dict, dataType, dash_extra=2):
 
     header   = '+ %s\n' % dataType
     footer   = '-'
 
-    vnames = list(data_info.keys())
+    vnames = data_dict.keys()
     Nmax = max([len(vname) for vname in vnames]) + dash_extra
 
     body = ''
-    for i, vname in enumerate(vnames):
+    for vname in vnames:
         dashed_line = '─'*(Nmax-len(vname))
-        info = data_info[vname]
-        line = '{vname} {dashed_line} : {info}\n'.format(vname=vname, dashed_line=dashed_line, info=info)
+        data_info   = data_dict[vname]
+        line = '{vname} {dashed_line} : {data_info}\n'.format(vname=vname, dashed_line=dashed_line, data_info=data_info)
         body += line
-        if ((i<len(vnames)-1) and ('|' not in vnames[i+1])):
-            body += '\n\n'
 
     message = header + body + footer
 
@@ -382,7 +321,16 @@ def generate_message(data_info, dataType, dash_extra=2):
 
 
 
-def main(args):
+def main():
+
+    parser = argparse.ArgumentParser(description='List dataset information contained in a hierarchical data file.')
+    parser.add_argument('fname', metavar='file_path', type=str, nargs=1,
+                        help='file name including path, e.g., /some/path/sample.h5')
+    parser.add_argument('format', metavar='data_type', type=str, nargs='?',
+                        help='format of the data file, e.g., h5')
+    parser.add_argument('mode', metavar='mode', type=str, nargs='?', default='file_info',
+                        help='mode, e.g., \'file_info\' or \'dataset_info\', default is \'file_info\'.')
+    args = parser.parse_args()
 
     fname, dataType = get_data_brief(args)
     data_info0 = get_data_info(fname, dataType)
@@ -396,4 +344,4 @@ def main(args):
 
 if __name__ == '__main__':
 
-    main(args)
+    main()

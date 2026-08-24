@@ -3,6 +3,7 @@ import sys
 import glob
 import pickle
 import datetime
+import warnings
 from netCDF4 import Dataset
 import numpy as np
 from scipy import interpolate
@@ -84,8 +85,9 @@ class abs_rep:
 
         else:
 
-            msg = '\nError [abs_rep]: Please provide <wavelength> to proceed.'
-            raise OSError(msg)
+            msg = f"Please provide <wavelength> to proceed."
+            er3t.common.logger.error(msg)
+            raise OSError
 
 
     def load(self, fname):
@@ -94,8 +96,8 @@ class abs_rep:
             obj = pickle.load(f)
             if hasattr(obj, 'coef'):
                 if self.verbose:
-                    msg = 'Message [abs_rep]: Loading <%s> ...' % fname
-                    print(msg)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
                 self.fname = obj.fname
                 self.wvl   = obj.wvl
                 self.nwl   = obj.nwl
@@ -106,15 +108,17 @@ class abs_rep:
                 self.wvl_min_ = obj.wvl_min_
                 self.wvl_max_ = obj.wvl_max_
             else:
-                msg = '\nError [abs_rep]: <%s> is not the correct pickle file to load.' % fname
-                raise OSError(msg)
+                msg = f"<{fname}> is not the correct pickle file to load."
+                er3t.common.logger.error(msg)
+                raise OSError
 
 
     def run(self, wavelength, band_name=None):
 
         if not os.path.exists(self.fdir_data):
-            msg = '\nError [abs_rep]: Missing REPTRAN database.'
-            raise OSError(msg)
+            msg = f"Missing REPTRAN database."
+            er3t.common.logger.error(msg)
+            raise OSError
 
         self.load_main(wavelength, band_name=band_name)
         self.cal_coef()
@@ -125,8 +129,8 @@ class abs_rep:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                msg = 'Message [abs_rep]: Saving object into <%s> ...' % fname
-                print(msg)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
             pickle.dump(self, f)
 
 
@@ -152,8 +156,9 @@ class abs_rep:
         if band_name is not None:
             if band_name not in bands:
                 bands_info = '\n'.join(bands)
-                msg = '\nError [abs_rep]: <band_name=\'%s\'> is invalid, please specify one from the following \n%s' % (band_name, bands_info)
-                raise OSError(msg)
+                msg = f"<band_name=\'{band_name}\'> is invalid, please specify one from the following \n{bands_info}"
+                er3t.common.logger.error(msg)
+                raise OSError
             else:
                 index_band = bands.index(band_name)
                 self.band_name  = band_name
@@ -164,13 +169,15 @@ class abs_rep:
             indices = np.where(logic)[0]
             N_ = logic.sum()
             if N_ == 0:
-                msg = '\nError [abs_rep]: %.4f nm is outside REPTRAN-%s-%s supported wavelength range.' % (wavelength, self.source, self.target)
-                raise OSError(msg)
+                msg = f"{wavelength:.4f} nm is outside REPTRAN-{self.source}-{self.target} supported wavelength range."
+                er3t.common.logger.error(msg)
+                raise OSError
             elif N_ > 1:
                 bands_ = [bands[i] for i in indices]
                 bands_info_ = '\n'.join(bands_)
-                msg = '\nError [abs_rep]: found more than one band matching the wavelength criteria, please specify one from the following at <band_name>\n%s\nfor example, <band_name=\'%s\'>' % (bands_info_, bands_[0])
-                raise OSError(msg)
+                msg = f"Found more than one band matching the wavelength criteria, please specify one from the following at <band_name>\n{bands_info_}\nfor example, <band_name=\'{bands_[0]}\'>"
+                er3t.common.logger.error(msg)
+                raise OSError
             elif N_ == 1:
                 index_band = indices[0]
                 self.band_name  = bands[index_band]
@@ -197,9 +204,10 @@ class abs_rep:
         # get representative wavelength information
         #╭────────────────────────────────────────────────────────────────────────────╮#
         wvl_indices0 = f0.variables['iwvl'][:][:, index_band]
-        wvl_indices = wvl_indices0[wvl_indices0>0] - 1
         wvl_weights0 = f0.variables['iwvl_weight'][:][:, index_band]
-        wvl_weights = wvl_weights0[wvl_weights0>0]
+        logic_valid = (wvl_weights0>0) & (wvl_indices0>0)
+        wvl_indices = wvl_indices0[logic_valid] - 1
+        wvl_weights = wvl_weights0[logic_valid]
 
         # this is actually number of wavelength, use Ng for consistency
         self.Ng = wvl_weights.size
@@ -221,7 +229,7 @@ class abs_rep:
         f0.close()
 
 
-    def cal_coef(self, logp=False):
+    def cal_coef(self, logp=True):
 
         Nz = self.atm_obj.lay['altitude']['data'].size
         Ng = self.Ng
@@ -252,27 +260,6 @@ class abs_rep:
                 'data': self.sol.data
                 }
 
-        # sol0 = self.sol.data.copy()
-        # print('+'*20)
-        # print(self.wvl)
-        # print(sol0)
-        # if (self.source == 'solar') and (self.target in ['fine', 'medium', 'coarse']):
-        #     self.coef['solar']['data'][...] = cal_solar_kurudz(self.wvl, slit_func=self.slit_func)
-        # else:
-        #     self.coef['solar']['data'][...] = np.sum(self.sol.data*self.wgt.data)
-        # sol1 = self.coef['solar']['data']
-        # print(sol1)
-        # print()
-        # print(self.wgt.data)
-        # sol0_ = np.sum(sol0*self.wgt.data)
-        # sol1_ = np.sum(sol1*self.wgt.data)
-        # print(sol0_)
-        # print(sol1_)
-        # print((sol1_-sol0_)/sol0_ * 100.0)
-        # print()
-        # print('-'*20)
-        # print()
-
         self.coef['slit_func'] = {
                 'name': 'Slit Function (Nz, Ng)',
                 'data': np.ones((Nz, Ng), dtype=np.float64)
@@ -288,28 +275,36 @@ class abs_rep:
         for i, wvl0 in enumerate(self.wvl_):
 
             if (wvl0 >= 116.0) & (wvl0 <= 850.0):
+
                 xsec = cal_xsec_o3_molina(wvl0, self.atm_obj.lay['temperature']['data'])
                 abso_coef0 = xsec * self.atm_obj.lay['o3']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
 
-                gases.append('O3')
+                if ('O3' not in gases) and ('o3' not in gases):
+                    gases.append('O3')
 
             if (wvl0 >= 301.4) & (wvl0 <= 1338.2):
-                xsec = cal_xsec_o4_greenblatt(wvl0)
-                abso_coef0 = xsec * self.atm_obj.lay['o2']['data'] * 1e-41 * self.atm_obj.lay['thickness']['data']
+
+                xsec2 = cal_xsec2_o4_greenblatt(wvl0)
+                # O4 is O2 to O2 collision, thus the units of xsec2 <cm^5 x molecule^-2> is different from xsec <cm^2 x molecule^-1>
+                #    also because it's collision, we need to multipy xsec2 by the square of O2 concentration
+                abso_coef0 = xsec2 * self.atm_obj.lay['o2']['data']**2 * 1e5 * self.atm_obj.lay['thickness']['data']
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
 
-                gases.append('O4')
+                if ('O4' not in gases) and ('o4' not in gases):
+                    gases.append('O4')
 
             if (wvl0 >= 230.91383) & (wvl0 <= 794.04565):
+
                 xsec = cal_xsec_no2_burrows(wvl0)
                 abso_coef0 = xsec * self.atm_obj.lay['no2']['data'] * 1e5 * self.atm_obj.lay['thickness']['data']
                 abso_coef0[abso_coef0<0.0] = 0.0
                 self.coef['abso_coef']['data'][:, i] += abso_coef0
 
-                gases.append('NO2')
+                if ('NO2' not in gases) and ('no2' not in gases):
+                    gases.append('NO2')
 
             if self.run_reptran:
 
@@ -338,13 +333,9 @@ class abs_rep:
                         #╭──────────────────────────────────────────────────────────────╮#
                         if xsec.ndim == 4:
                             points = (dt_ref, vmr_ref, p_ref[i_sort_p])
-                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_p])
+                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, :, iwvl, i_sort_p], bounds_error=False, fill_value=None)
 
-                            # vmr_ = np.log(self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data'])
                             vmr_ = self.atm_obj.lay['h2o']['data'] / self.atm_obj.lay['factor']['data']
-
-                            if vmr_.max() > vmr_ref.max():
-                                vmr_[vmr_>vmr_ref.max()] = vmr_ref.max()
 
                             f_points = np.transpose(np.vstack((dt_, vmr_, p_)))
                         #╰──────────────────────────────────────────────────────────────╯#
@@ -353,22 +344,31 @@ class abs_rep:
                         #╭──────────────────────────────────────────────────────────────╮#
                         else:
                             points = (dt_ref, p_ref[i_sort_p])
-                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, iwvl, i_sort_p])
+                            f_interp = interpolate.RegularGridInterpolator(points, xsec[:, iwvl, i_sort_p], bounds_error=False, fill_value=None)
 
                             f_points = np.transpose(np.vstack((dt_, p_)))
                         #╰──────────────────────────────────────────────────────────────╯#
 
-                        # from <libRadtran>/src/molecular.c: <The lookup table file contains the cross sections in units of 10^(-20)m^2; here we need cm^2, thus we multiply with 10^(-16)>
-                        # first factor: 10^(-16) for converting units from m^-2 to cm^-2
-                        # second factor: 10^(5) for converting km to cm by timing layer thickness <final output is absorption optical depth>
-                        # thus 10^(-11) as scale factor
+                        # in REPTRAN netcdf files, the default units of the cross section (xsec) are
+                        #     <m^2 x molecule^-1> with a scale factor of <1e-20>,
+                        #     but we need <cm^2 x molecule^-1> because
+                        #     <atm_obj> has gas concentration in the units of <molecule x cm^-3>
+                        #     thus the scale factor becomes <1e-16> (1e-20 x 1e2 x 1e2)
+                        # additionally we need a scale factor of <1e5> for converting km to cm for layer thickness
+                        # thus <1e-11> becomes the final scale factor
                         abso_coef0 = f_interp(f_points) * self.atm_obj.lay[gas_type.lower()]['data'] * 1e-11 * self.atm_obj.lay['thickness']['data']
                         abso_coef0[abso_coef0<0.0] = 0.0
 
                         self.coef['abso_coef']['data'][:, i] += abso_coef0
 
+                    else:
+
+                        msg = f"<{gas_type}> is required by REPTRAN but is not available in <atm_obj>."
+                        er3t.common.logger.warning(msg)
+                        warnings.warn(msg)
+
         self.gases = gases
-        self.wvl_info = '%.2f nm (REPTRAN [Nwvl=%d|%s])' % (self.wvl, self.wvl_.size, ','.join(self.gases))
+        self.wvl_info = f"{self.wvl:.2f} nm (REPTRAN [Nwvl={self.wvl_.size:d}|{','.join(self.gases)}])"
 
 
 

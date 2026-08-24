@@ -74,7 +74,7 @@ class cld_gen_hem:
 
     """
 
-    ID = 'Hemispherical Cloud 3D'
+    ID = 'Hemispherical Water Cloud 3D'
 
     def __init__(
             self,
@@ -143,13 +143,14 @@ class cld_gen_hem:
             obj = pickle.load(f)
 
             try:
-                file_correct = (obj.ID == 'Hemispherical Cloud 3D')
+                file_correct = (obj.ID == 'Hemispherical Water Cloud 3D')
             except:
                 file_correct = False
 
             if file_correct:
                 if self.verbose:
-                    print('Message [cld_gen_hem]: Loading <%s> ...' % fname)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
                 self.fname      = obj.fname
                 self.verbose    = obj.verbose
                 self.lay        = obj.lay
@@ -180,10 +181,12 @@ class cld_gen_hem:
     def run(self):
 
         if self.verbose:
-            print('Message [cld_gen_hem]: Generating an artificial 3D cloud field filled with hemispherical clouds...')
+            msg = f"Generating an artificial 3D cloud field filled with hemispherical clouds..."
+            er3t.common.logger.info(msg)
 
         if not check_equidistant(self.altitude):
-            msg = '\nWarning [cld_gen_hem]: Only support equidistant altitude (z), as well as equidistant x and y.'
+            msg = f"Only support equidistant altitude (z), as well as equidistant x and y."
+            er3t.common.logger.warning(msg)
             warnings.warn(msg)
 
         dz = self.altitude[1:]-self.altitude[:-1]
@@ -192,7 +195,9 @@ class cld_gen_hem:
         self.y = np.arange(self.Ny) * self.dy
 
         self.dz = dz[0]
-        altitude_new  = np.arange(self.altitude[0], min([self.altitude[-1], max(self.radii)/self.w2h_ratio+self.altitude[0]])+self.dz, self.dz)
+        zlay_start = self.altitude[0]+self.dz/2.0
+        zlay_end   = min([self.altitude[-1], max(self.radii)/self.w2h_ratio+self.altitude[0]])+self.dz/2.0*1.01
+        altitude_new  = np.arange(zlay_start, zlay_end, self.dz)
         self.altitude = altitude_new
         self.z  = self.altitude-self.altitude[0]
         self.Nz = self.z.size
@@ -245,7 +250,8 @@ class cld_gen_hem:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_gen_hem]: Saving object into %s ...' % fname)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
             pickle.dump(self, f)
 
     def add_hem_cloud(self, radius, min_dist=0, w2h_ratio=1.0, limit=1):
@@ -340,6 +346,8 @@ class cld_gen_hem:
         # cloud effective radius (3D)
         data = self.space_3d.copy()
         data[data>0] = cer0
+        data[data<=1.0] = 1.0
+        # data[data>=25.0] = 25.0
         self.lay['cer'] = {'data':data, 'name':'Cloud effective radius', 'units':'micron'}
 
         # extinction coefficients (3D)
@@ -419,7 +427,8 @@ class cld_gen_hem:
             new_shape = (self.Nx//dnx, self.Ny//dny, self.Nz//dnz)
 
             if self.verbose:
-                print('Message [cld_gen_hem]: Downscaling data from dimension %s to %s ...' % (str(self.lay['temperature']['data'].shape), str(new_shape)))
+                msg = f"Downscaling data from dimension {str(self.lay['temperature']['data'].shape)} to {str(new_shape)} ..."
+                er3t.common.logger.info(msg)
 
             # self.lay
             # =============================================================================
@@ -507,7 +516,7 @@ class cld_gen_hom:
 
     """
 
-    ID = 'Homogeneous Cloud 3D'
+    ID = 'Homogeneous Water Cloud 3D'
 
     def __init__(
             self,
@@ -573,13 +582,14 @@ class cld_gen_hom:
             obj = pickle.load(f)
 
             try:
-                file_correct = (obj.ID == 'Homogeneous Cloud 3D')
+                file_correct = (obj.ID == 'Homogeneous Water Cloud 3D')
             except:
                 file_correct = False
 
             if file_correct:
                 if self.verbose:
-                    print('Message [cld_gen_hom]: Loading <%s> ...' % fname)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
                 self.fname      = obj.fname
                 self.verbose    = obj.verbose
                 self.lay        = obj.lay
@@ -600,10 +610,12 @@ class cld_gen_hom:
     def run(self, cot0, cer0, atm_obj=None):
 
         if self.verbose:
-            print('Message [cld_gen_hom]: Generating an artificial homogeneous 3D cloud field with <COT=%.1f> and <CER=%.1f μm> ...' % (cot0, cer0))
+            msg = f"Generating an artificial homogeneous 3D cloud field with <COT={cot0:.1f}> and <CER={cer0:.1f} μm> ..."
+            er3t.common.logger.info(msg)
 
         if not check_equidistant(self.altitude):
-            msg = 'Warning [cld_gen_hom]: Only support equidistant altitude (z), as well as equidistant x and y.'
+            msg = f"Only support equidistant altitude (z), as well as equidistant x and y."
+            er3t.common.logger.warning(msg)
             warnings.warn(msg)
 
         self.x = np.arange(self.Nx) * self.dx
@@ -653,7 +665,8 @@ class cld_gen_hom:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_gen_hom]: Saving object into %s ...' % fname)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
             pickle.dump(self, f)
 
     def cal_cld_opt_prop(self, cot0=10.0, cer0=10.0, cot_scale=1.0):
@@ -731,7 +744,7 @@ class cld_gen_cop:
     """
 
 
-    ID = 'Cloud Product 3D (Satellite)'
+    ID = 'Water Cloud Product 3D (Satellite)'
 
 
     def __init__(self,              \
@@ -777,8 +790,11 @@ class cld_gen_cop:
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
             if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
+
                 if self.verbose:
-                    print('Message [cld_gen_cop]: Loading <%s> ...' % fname)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
+
                 self.fname  = obj.fname
                 self.extent = obj.extent
                 self.lay    = obj.lay
@@ -832,7 +848,8 @@ class cld_gen_cop:
         self.fname = fname
         with open(fname, 'wb') as f:
             if self.verbose:
-                print('Message [cld_gen_cop]: Saving object into %s ...' % fname)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
             pickle.dump(self, f)
 
 
@@ -942,6 +959,10 @@ class cld_gen_cop:
         cer_3d[...] = cloud_effective_radius[:, :, None]
 
         cer_3d[ext_3d<=0.0] = 0.0
+
+        cer_3d[cer_3d<=1.0] = 1.0
+        # cer_3d[cer_3d>=25.0] = 25.0
+
         self.lay['cer'] = {'data':cer_3d, 'name':'Cloud Effective radius', 'units':'micron'}
         #╰──────────────────────────────────────────────────────────────╯#
 

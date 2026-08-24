@@ -1,12 +1,17 @@
 import os
 import sys
+import shutil
 import datetime
 import importlib.util
+
+import colorama
+import structlog
 import numpy as np
 
 f_dtype = np.float32
 i_dtype = np.int16
 
+has_shdom       = ('SHDOM_EXE' in dict(os.environ))
 has_mcarats     = ('MCARATS_V010_EXE' in dict(os.environ))
 has_libradtran  = ('LIBRADTRAN_V2_DIR' in dict(os.environ))
 has_token       = ('EARTHDATA_TOKEN' in dict(os.environ))
@@ -14,7 +19,7 @@ has_netcdf4     = (importlib.util.find_spec('netCDF4') is not None)
 has_hdf4        = (importlib.util.find_spec('pyhdf') is not None)
 has_hdf5        = (importlib.util.find_spec('h5py') is not None)
 has_xarray      = (importlib.util.find_spec('xarray') is not None)
-has_mpi         = False
+has_mpi         = (shutil.which('mpirun') is not None)
 
 fdir_er3t        = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
 
@@ -27,9 +32,10 @@ fdir_data_slit   = os.path.join(fdir_data, 'slit')
 fdir_data_ssfr   = os.path.join(fdir_data_slit, 'ssfr')
 
 fdir_data_tmp    = os.path.join(fdir_er3t, 'tmp-data')
+fdir_logs        = os.path.join(fdir_data_tmp, 'logs')
 fdir_examples    = os.path.join(fdir_er3t, 'examples')
+fdir_projects    = os.path.join(fdir_er3t, 'projects')
 fdir_tests       = os.path.join(fdir_er3t, 'tests')
-fdir_logs        = os.path.join(fdir_er3t, 'logs')
 
 params = {
                  'wavelength': 650.0,
@@ -38,7 +44,7 @@ params = {
         'solar_azimuth_angle': 0.0,
         'sensor_zenith_angle': 0.0,
        'sensor_azimuth_angle': 0.0,
-            'sensor_altitude': 705000.0,
+            'sensor_altitude': 705.0,
                      'target': '3d radiance',
                      'solver': 'mcarats',
         'atmospheric_profile': '%s/afglus.dat' % fdir_data_atmmod,
@@ -54,8 +60,122 @@ params = {
                'earth_radius': 6371.009,
         }
 
+structlog.configure(
+    processors=[
+        structlog.processors.TimeStamper(fmt="%H:%M:%S", key="timestamp", utc=False),
+
+        # Log level (colored)
+        structlog.stdlib.add_log_level,
+
+        # Module + line number
+        structlog.processors.CallsiteParameterAdder(
+            parameters=[
+                structlog.processors.CallsiteParameter.FILENAME,
+                structlog.processors.CallsiteParameter.LINENO,
+                structlog.processors.CallsiteParameter.FUNC_NAME,
+            ]
+        ),
+
+        structlog.stdlib.PositionalArgumentsFormatter(),
+
+        structlog.processors.format_exc_info,
+
+        structlog.dev.ConsoleRenderer(
+            columns=[
+
+                # Render the timestamp without the key name in yellow.
+                structlog.dev.Column(
+                    "timestamp",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=None,
+                        value_style=colorama.Style.RESET_ALL,
+                        reset_style=colorama.Style.RESET_ALL,
+                        value_repr=str,
+                    ),
+                ),
+
+                # Render the event without the key name in bright magenta.
+                structlog.dev.Column(
+                    "level",
+                    structlog.dev.LogLevelColumnFormatter(
+                        level_styles={
+                            'info' : colorama.Fore.GREEN,
+                            'warn' : colorama.Fore.WHITE+colorama.Back.YELLOW,
+                            'error': colorama.Fore.WHITE+colorama.Back.RED,
+                            'debug': colorama.Fore.CYAN,
+                            },
+                        reset_style=colorama.Style.RESET_ALL,
+                        ),
+                ),
+
+                # Render the event without the key name in bright magenta.
+                structlog.dev.Column(
+                    "event",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=None,
+                        value_style=colorama.Fore.LIGHTWHITE_EX,
+                        reset_style=colorama.Style.RESET_ALL,
+                        value_repr=str,
+                        postfix='\n'
+                    ),
+                ),
+
+                structlog.dev.Column(
+                    "filename",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=colorama.Fore.BLACK,
+                        value_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Style.RESET_ALL,
+                        value_repr=str,
+                        prefix='                ',
+                        width=12
+                    ),
+                ),
+
+                structlog.dev.Column(
+                    "lineno",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=colorama.Fore.BLACK,
+                        value_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Style.RESET_ALL,
+                        value_repr=str,
+                        width=5
+                    ),
+                ),
+
+                structlog.dev.Column(
+                    "func_name",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=colorama.Fore.BLACK,
+                        value_style=colorama.Fore.BLACK,
+                        reset_style=colorama.Style.RESET_ALL,
+                        value_repr=str,
+                        postfix=colorama.Style.RESET_ALL,
+                    ),
+                ),
+
+                structlog.dev.Column(
+                    "",
+                    structlog.dev.KeyValueColumnFormatter(
+                        key_style=colorama.Style.RESET_ALL,
+                        value_style=colorama.Style.RESET_ALL,
+                        reset_style=colorama.Style.RESET_ALL,
+                        value_repr=str,
+                    ),
+                ),
+            ]
+        )
+
+    ],
+    logger_factory=structlog.PrintLoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    )
+
+logger = structlog.get_logger()
+
+
 references = [
-'EaR³T (Chen et al., 2023):\n- Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech., 16, 1971–2000, https://doi.org/10.5194/amt-16-1971-2023, 2023.'
+'EaR³T (Chen et al., 2023; Chen et al., 2025):\n- Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech., 16, 1971–2000, https://doi.org/10.5194/amt-16-1971-2023, 2023.\n- Chen, Y.-W., Schmidt, K. S., Chen, H., Massie, S. T., Kulawik, S. S., and Iwabuchi, H.: Mitigation of satellite OCO-2 CO₂ biases in the vicinity of clouds with 3D calculations using the Education and Research 3D Radiative Transfer Toolbox (EaR³T), Atmos. Meas. Tech., 18, 1859–1884, https://doi.org/10.5194/amt-18-1859-2025, 2025.'
         ]
 
 _today_dt    = datetime.datetime.now(datetime.timezone.utc)
@@ -589,4 +709,3 @@ _sat_tags_support_ = {
                 },
 
         }
-#\----------------------------------------------------------------------------/#

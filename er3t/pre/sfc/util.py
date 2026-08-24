@@ -32,7 +32,6 @@ def cal_ocean_brdf(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     try:
         Nx, Ny = u10.shape
-        u10 = np.float_(u10)
         ndim = u10.ndim
     except Exception as error:
         # print(error)
@@ -131,13 +130,92 @@ def cal_ocean_brdf(
                 }
 
         diffuse_frac = 2.95e-06 * (u10**3.52)
-        diffuse_alb  = np.interp(wvl, reflectance_whitecaps['wvl'], reflectance_whitecaps['ref'])
+        ref_whitecap = np.interp(wvl, reflectance_whitecaps['wvl'], reflectance_whitecaps['ref'])
 
     else:
 
         diffuse_frac = 0.0*u10
-        diffuse_alb  = 0.0*u10
+        ref_whitecap = 0.0*u10
     #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+    # underwater backscatter
+    #╭────────────────────────────────────────────────────────────────────────────╮#
+    # subsurface reflectance from Case-I water (Morel et al., 1988)
+    # This is the pigment-dependent term used by oceabrdf.f and
+    # shd_sfc__brdfOcean.  It is Lambertian below the water surface.
+
+    reference = '\nWhitecaps (Koepke, 1984):\n- Koepke, P.: Effective reflectance of oceanic whitecaps, Appl. Opt. 23, 1816-1824, https://doi.org/10.1364/AO.23.001816, 1984.'
+    er3t.util.add_reference(reference)
+
+    morel_wvl = np.arange(0.400, 0.701, 0.005)
+
+    kw = np.array([
+        0.0209,0.0200,0.0196,0.0189,0.0183,0.0182,0.0171,0.0170,0.0168,0.0166,
+        0.0168,0.0170,0.0173,0.0174,0.0175,0.0184,0.0194,0.0203,0.0217,0.0240,
+        0.0271,0.0320,0.0384,0.0445,0.0490,0.0505,0.0518,0.0543,0.0568,0.0615,
+        0.0640,0.0640,0.0717,0.0762,0.0807,0.0940,0.1070,0.1280,0.1570,0.2000,
+        0.2530,0.2790,0.2960,0.3030,0.3100,0.3150,0.3200,0.3250,0.3300,0.3400,
+        0.3500,0.3700,0.4050,0.4180,0.4300,0.4400,0.4500,0.4700,0.5000,0.5500,
+        0.6500])
+
+    xc = np.array([
+        0.1100,0.1110,0.1125,0.1135,0.1126,0.1104,0.1078,0.1065,0.1041,0.0996,
+        0.0971,0.0939,0.0896,0.0859,0.0823,0.0788,0.0746,0.0726,0.0690,0.0660,
+        0.0636,0.0600,0.0578,0.0540,0.0498,0.0475,0.0467,0.0450,0.0440,0.0426,
+        0.0410,0.0400,0.0390,0.0375,0.0360,0.0340,0.0330,0.0328,0.0325,0.0330,
+        0.0340,0.0350,0.0360,0.0375,0.0385,0.0400,0.0420,0.0430,0.0440,0.0445,
+        0.0450,0.0460,0.0475,0.0490,0.0515,0.0520,0.0505,0.0440,0.0390,0.0340,
+        0.0300])
+
+    exponent = np.array([
+        0.668,0.672,0.680,0.687,0.693,0.701,0.707,0.708,0.707,0.704,
+        0.701,0.699,0.700,0.703,0.703,0.703,0.703,0.704,0.702,0.700,
+        0.700,0.695,0.690,0.685,0.680,0.675,0.670,0.665,0.660,0.655,
+        0.650,0.645,0.640,0.630,0.623,0.615,0.610,0.614,0.618,0.622,
+        0.626,0.630,0.634,0.638,0.642,0.647,0.653,0.658,0.663,0.667,
+        0.672,0.677,0.682,0.687,0.695,0.697,0.693,0.665,0.640,0.620,
+        0.600])
+
+    bw = np.array([
+        0.0076,0.0072,0.0068,0.0064,0.0061,0.0058,0.0055,0.0052,0.0049,0.0047,
+        0.0045,0.0043,0.0041,0.0039,0.0037,0.0036,0.0034,0.0033,0.0031,0.0030,
+        0.0029,0.0027,0.0026,0.0025,0.0024,0.0023,0.0022,0.0022,0.0021,0.0020,
+        0.0019,0.0018,0.0018,0.0017,0.0017,0.0016,0.0016,0.0015,0.0015,0.0014,
+        0.0014,0.0013,0.0013,0.0012,0.0012,0.0011,0.0011,0.0010,0.0010,0.0010,
+        0.0010,0.0009,0.0008,0.0008,0.0008,0.0007,0.0007,0.0007,0.0007,0.0007,
+        0.0007])
+
+    kw = np.interp(wvl, morel_wvl, kw)
+    xc = np.interp(wvl, morel_wvl, xc)
+    exponent = np.interp(wvl, morel_wvl, exponent)
+
+    bw = np.interp(wvl, morel_wvl, bw)
+    valid = (wvl >= 0.4) & (wvl <= 0.7)
+
+    pigment = np.maximum(np.asarray(pcl), 0.0)
+    bb = 0.5*bw
+    kd = kw
+    with_pigment = pigment >= 1.0e-4
+    b = 0.30*pigment**0.62
+    bbt = 0.002 + 0.02*(0.5 - 0.25*np.log10(np.maximum(pigment, 1.0e-4)))*0.550/np.maximum(wvl, 1.0e-12)
+    bb = np.where(with_pigment, 0.5*bw + bbt*b, bb)
+    kd = np.where(with_pigment, kw + xc*pigment**exponent, kd)
+
+    ref0 = 0.33*bb/(0.75*kd)
+
+    for _ in range(100):
+        u = 0.90*(1.0-ref0)/(1.0+2.25*ref0)
+        ref_underwater = 0.33*bb/(u*kd)
+        if np.all(np.abs((ref_underwater-ref0)/np.maximum(ref_underwater, 1.0e-30)) < 1.0e-4):
+            break
+        ref0 = ref_underwater
+
+    ref_underwater = np.where(valid, ref_underwater, 0.0)
+    #╰────────────────────────────────────────────────────────────────────────────╯#
+
+    diffuse_alb = (1.0 - ref_whitecap)*ref_underwater + ref_whitecap
+    # diffuse_alb = ref_whitecap
 
     params = {
           'diffuse_alb': diffuse_alb,

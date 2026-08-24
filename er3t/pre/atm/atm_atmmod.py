@@ -63,7 +63,7 @@ class atm_atmmod:
 
     ID     = 'Atmosphere 1D'
 
-    gases  = ['o3', 'o2', 'h2o', 'co2', 'no2', 'ch4']
+    gases  = ['o3', 'o2', 'h2o', 'co2', 'no2']
 
     reference = '\nAFGL Atmospheric Profile (Anderson et al., 1986):\n- Anderson, G. P., Clough, S. A., Kneizys, F. X., Chetwynd, J. H., and Shettle, E. P.: AFGL atmospheric constituent profiles (0–120 km), Tech. Rep. AFGL-TR-86–0110, Air Force Geophys. Lab., Hanscom Air Force Base, Bedford, Massachusetts, USA, 1986.'
 
@@ -71,13 +71,16 @@ class atm_atmmod:
                  levels       = None, \
                  fname        = None, \
                  fname_atmmod = '%s/afglus.dat' % er3t.common.fdir_data_atmmod, \
+                 extra_gases  = ['ch4', 'co', 'n2o', 'n2'],
                  overwrite    = False, \
-                 verbose      = False):
+                 verbose      = er3t.common.params['verbose']):
 
         er3t.util.add_reference(self.reference)
 
         self.verbose      = verbose
         self.fname_atmmod = fname_atmmod
+        self.gases        = self.gases + extra_gases
+        self.extra_gases  = extra_gases
 
         if ((fname is not None) and (os.path.exists(fname)) and (not overwrite)):
 
@@ -103,8 +106,11 @@ class atm_atmmod:
         with open(fname, 'rb') as f:
             obj = pickle.load(f)
             if hasattr(obj, 'lev') and hasattr(obj, 'lay'):
+
                 if self.verbose:
-                    print('Message [atm_atmmod]: Loading %s ...' % fname)
+                    msg = f"Loading <{fname}> ..."
+                    er3t.common.logger.info(msg)
+
                 self.fname = obj.fname
                 self.lev   = obj.lev
                 self.lay   = obj.lay
@@ -144,7 +150,9 @@ class atm_atmmod:
         self.interp()
 
         # add self.lev['ch4'] and self.lay['ch4']
-        self.add_ch4()
+        # add self.lev['co'] and self.lay['ch4']
+        # add self.lev['n2o'] and self.lay['ch4']
+        self.add_extra_gases(gases=self.extra_gases)
 
         # covert mixing ratio [unitless] to number density [cm-3]
         self.cal_num_den()
@@ -154,8 +162,11 @@ class atm_atmmod:
 
         self.fname = fname
         with open(fname, 'wb') as f:
+
             if self.verbose:
-                print('Message [atm_atmmod]: Saving object into %s ...' % fname)
+                msg = f"Saving object into <{fname}> ..."
+                er3t.common.logger.info(msg)
+
             pickle.dump(self, f)
 
 
@@ -215,13 +226,13 @@ class atm_atmmod:
                 self.lay['altitude']['data'], self.lay['temperature']['data'])
 
 
-    def add_ch4(self):
+    def add_extra_gases(self, gases=['ch4', 'n2o', 'co', 'n2']):
 
-        ch4 = {'name':'ch4', 'units':'cm-3', 'data':interp_ch4(self.levels)}
-        self.lev['ch4'] = ch4
+        for gas in gases:
 
-        ch4 = {'name':'ch4', 'units':'cm-3', 'data':interp_ch4(self.layers)}
-        self.lay['ch4'] = ch4
+            self.lev[gas] = {'name':gas, 'units':'N/A', 'data':interp_gas(self.levels, gas=gas)}
+
+            self.lay[gas] = {'name':gas, 'units':'N/A', 'data':interp_gas(self.layers, gas=gas)}
 
 
     def cal_num_den(self):

@@ -58,7 +58,7 @@ echo "Complete ==============================================="
 
 echo
 
-if [ -f setup.py ]
+if [ -f .venv/bin/activate]
 then
-    python setup.py develop
+    source .venv/bin/activate
 fi

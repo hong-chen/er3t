@@ -11,7 +11,6 @@ from scipy.interpolate import interp2d
 
 import er3t.common
 import er3t.util
-# from .util import *
 
 
 __all__ = [
@@ -62,7 +61,7 @@ class abs_16g:
 
     Ng       = 16
     group_s  = '/solar_v1.3'
-    fname_h5 = '%s/abs_16g.h5' % er3t.common.fdir_data_abs
+    fname_h5 = '%s/16g/abs_16g.h5' % er3t.common.fdir_data_abs
     reference = '\nSSFR Correlated-k Absorption Database (Coddington et al., 2008):\n- Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R., Roman, M., Redemann, J., Russell, P. B., Liu, J., and Schaaf, C. C.: Aircraft measurements of spectral surface albedo and its consistency with ground based and space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089, 2008.'
 
     def __init__(self, \
@@ -75,6 +74,8 @@ class abs_16g:
         self.verbose   = verbose
         self.wvl       = wavelength
         self.nwl       = 1
+        self.wvl_min_  = wavelength
+        self.wvl_max_  = wavelength
 
         er3t.util.add_reference(self.reference)
 
@@ -112,6 +113,8 @@ class abs_16g:
                 self.Ng    = obj.Ng
                 self.coef  = obj.coef
                 self.wvl_info = obj.wvl_info
+                self.wvl_min_ = obj.wvl_min_
+                self.wvl_max_ = obj.wvl_max_
             else:
                 msg = '\nError [abs_16g]: <%s> is not the correct pickle file to load.' % fname
                 raise OSError(msg)

@@ -65,8 +65,7 @@ def get_token_earthdata():
     try:
         token = os.environ['EARTHDATA_TOKEN']
     except KeyError:
-        token = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImhvY2g0MjQwIiwiZXhwIjoxNzM5NTYyODkzLCJpYXQiOjE3MzQzNzg4OTMsImlzcyI6Imh0dHBzOi8vdXJzLmVhcnRoZGF0YS5uYXNhLmdvdiIsImlkZW50aXR5X3Byb3ZpZGVyIjoiZWRsX29wcyIsImFzc3VyYW5jZV9sZXZlbCI6Mn0.4Kl8rPSIex6ib0aue0qQkhafOvnJZETO9fwxr5cXYNauQ1cxP40jbgypV5R2BRCFlxEsJHT1G-9S6ipnZ-O2FQyJGFF1Tu8oe4HSz-yFET2waS3OZ0pp9ca3jwPz-1byatscxoVneys7CgDPxuTq5XHIo6ooDxEK5k_LfDH6qti8NpMWITNHd11t96H0C6AuDBfVDU5CYENpvg1YnD7_nasi2H4o78cEiypmapG86vQYvN7dV-idrs3BJ4sk7lgnIXYlU3rPYGLTJCXgIEMjandZpzoEBos58Er59Bwft-BCepmNbYO4xRh-4yyzNGOd06SIhbWk7i_pIO_X7JRx8g'
-
+        token = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImhvY2g0MjQwIiwiZXhwIjoxNzY5NDg3MTg1LCJpYXQiOjE3NjQzMDMxODUsImlzcyI6Imh0dHBzOi8vdXJzLmVhcnRoZGF0YS5uYXNhLmdvdiIsImlkZW50aXR5X3Byb3ZpZGVyIjoiZWRsX29wcyIsImFjciI6ImVkbCIsImFzc3VyYW5jZV9sZXZlbCI6M30.RJzt4cEw1n3YhdP4QrNfgEKU2Dz5-OirYOiXCHCxU4Ac0j6Petyr_qp571RndjpJDn8jd50_VezAUIEIpGk-fCuqdCUxLkHko-fgt4ccsVgOdTmONk0ANyRNIVvz5JjPq8NZlqSo2mCQeeTf3snHKXLRl1uensgrB4-meDktRz86HbugUcZ5R88aHQiqk9csMcgodPHdW7kPb3S7oRczBCd2awv0GpMzkMteRxSsZeyvNyRk99mbbrVCVGwiAc2x_z5XwfLUq2vMCGLawQtp4jPwBMKEd3Peb-ZY2sHYXQ5ZrCL9D5pELNs-_YR8vYOnbPPlfJpHrJNOjkX0MW4YFw'
 
         msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
         warnings.warn(msg)

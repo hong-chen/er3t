@@ -1,5 +1,6 @@
 import os
 import sys
+import pysolar
 import fnmatch
 import datetime
 import numpy as np
@@ -18,7 +19,7 @@ __all__ = ['get_all_files', 'get_all_folders', 'load_h5', \
            'grid_by_extent', 'grid_by_lonlat', 'grid_by_dxdy', \
            'get_doy_tag', 'add_reference', 'print_reference', \
            'combine_alt', 'get_lay_index', 'downscale', 'upscale_2d', 'mmr2vmr', \
-           'cal_rho_air', 'cal_sol_fac', 'cal_mol_ext_atm', 'mol_ext_wvl', 'cal_mol_ext', 'cal_ext', \
+           'cal_rho_air', 'cal_sol_fac', 'cal_sol_ang', 'cal_mol_ext_atm', 'mol_ext_wvl', 'cal_mol_ext', 'cal_ext', \
            'cal_r_twostream', 'cal_t_twostream', 'cal_geodesic_dist', 'cal_geodesic_lonlat', \
            'format_time', 'region_parser', 'parse_geojson', 'unpack_uint_to_bits']
 
@@ -187,7 +188,7 @@ def send_email(
 
 
 
-def nice_array_str(array1d, numPerLine=6):
+def nice_array_str(array1d, numPerLine=6, useSci=False):
 
     """
     Covert 1d array to string
@@ -207,13 +208,23 @@ def nice_array_str(array1d, numPerLine=6):
     for iLine in range(numLine):
         lineS = ''
         for iNum in range(numPerLine):
-            lineS += '  %12g' % array1d[iLine*numPerLine + iNum]
+            num0 = array1d[iLine*numPerLine + iNum]
+            if useSci:
+                lineS += '  %18.8e' % num0
+            else:
+                lineS += '  %18.8g' % num0
         lineS += '\n'
         niceString += lineS
+
     if numRest != 0:
+
         lineS = ''
         for iNum in range(numRest):
-            lineS += '  %12g' % array1d[numLine*numPerLine + iNum]
+            num0 = array1d[numLine*numPerLine + iNum]
+            if useSci:
+                lineS += '  %18.8e' % num0
+            else:
+                lineS += '  %18.8g' % num0
         lineS += '\n'
         niceString += lineS
 
@@ -982,20 +993,6 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
         sza[i] = sza_i
 
         saa_i = pysolar.solar.get_azimuth(latitude[i], longitude[i], dtime_i, elevation=altitude[i])
-        # if saa_i >= 0.0:
-        #     if 0.0<=saa_i<=180.0:
-        #         saa_i = 180.0 - saa_i
-        #     elif 180.0<saa_i<=360.0:
-        #         saa_i = 540.0 - saa_i
-        #     else:
-        #         saa_i = np.nan
-        # elif saa_i < 0.0:
-        #     if -180.0<=saa_i<0.0:
-        #         saa_i = -saa_i + 180.0
-        #     elif -360.0<=saa_i<-180.0:
-        #         saa_i = -saa_i - 180.0
-        #     else:
-        #         saa_i = np.nan
         saa[i] = saa_i
 
     return sza, saa
@@ -1003,27 +1000,32 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
 
 
 def g0_calc(lat):
+
     """
     Calculate the surface gravity acceleration.
 
     according to Eq. 11 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
     """
+
     lat_rad = lat * np.pi / 180
+
     return 9.806160 * (1 - 0.0026373 * np.cos(2*lat_rad) + 0.0000059 * np.cos(2*lat_rad)**2) # in m/s^2
 
 
 
 def g_alt_calc(g0, lat, z):
+
     """
     Calculate the gravity acceleration at z.
 
-    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
-    
+    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
+
     Input:
         g0: gravity acceleration at the surface (m/s^2)
         lat: latitude (degrees)
         z: height (m)
     """
+
     lat_rad = lat * np.pi / 180
     g = g0*100 - (3.085462e-4 + 2.27e-7 * np.cos(2 * lat_rad)) * z \
            + (7.254e-11 + 1.0e-13 * np.cos(2 * lat_rad)) * z**2 \
@@ -1036,61 +1038,66 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
 
     """
     Input:
-        wv0: wavelength (in microns) --- can be an array
-        pz1: numpy array, Pressure of lower layer (hPa)
-        pz2: numpy array, Pressure of upper layer (hPa; pz1 > pz2)
-        atm0: er3t atmosphere object
-        method: string, 'sfc' or 'lay'
+        wv0    : wavelength (in microns) --- can be an array
+        atm0   : er3t atmosphere object
+        method=: string, 'sfc', 'atm', or 'lay'
     Output:
         tauray: extinction
-    Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
+
     in Python program:
-        result=bodhaine(0.5,1000,4)
+        result=cal_mol_ext_atm(0.5, atm0)
     Note: If you input an array of wavelengths, the result will also be an
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
+
+    reference = '\nRayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
+
     # avogadro's number
     A_ = 6.02214179e23
-    try:
+    if hasattr(atm0, 'lat'):
         lat = atm0.lat
-    except AttributeError:
+    else:
         lat = 0.0 # default latitude is 0 degree
-        
-    g0 = g0_calc(lat) # m/s^2
-    g0 = g0_calc(0) # m/s^2
-    z = atm0.lay['altitude']['data']
-    g = g_alt_calc(g0, lat, z*1000) * 100 # convert to cm/s^2
 
-    g0 = g0 * 100 # convert to cm/s^2
+    g0 = g0_calc(lat) # m/s^2
+    z = atm0.lay['altitude']['data']
+    g = g_alt_calc(g0, lat, z*1000.0) * 100.0 # convert to cm/s^2
+
+    g0 = g0 * 100.0 # convert to cm/s^2
     ma = 28.9595 + (15.0556 * atm0.lay['co2']['data']/atm0.lay['air']['data'])
 
-    p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
+    p_lev = atm0.lev['pressure']['data'] * 1000.0 # convert to dyne/cm^2
     dp_lev = (p_lev[:-1]-p_lev[1:]) # convert to dyne/cm^2
     crs = mol_ext_wvl(wv0)
-    
+
     # original calculation
     # tauray = 0.00210966*(crs)*(p_lev[:-1]-p_lev[1:])/1013.25
-        
+
     if method == 'sfc':
-        const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
+        const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1.0e-28
         tauray = const_sfc*(crs)*(p_lev[:-1]-p_lev[1:])/p_lev[0]
     elif method == 'lay':
-        const_lay = dp_lev * A_ / (g * ma) * 1e-28
+        const_lay = dp_lev * A_ / (g * ma) * 1.0e-28
         tauray = const_lay*(crs)
     elif method == 'atm':
-        tauray = (crs) * 1e-28 * atm0.lay['air']['data'] * atm0.lay['thickness']['data'] * 1000 * 100
+        tauray = (crs) * 1.0e-28 * atm0.lay['air']['data'] * atm0.lay['thickness']['data'] * 1000.0 * 100.0
     else:
-        raise ValueError("Error [cal_mol_ext_atm]: method not supported.")
+        msg = 'Error [cal_mol_ext_atm]: method not supported.'
+        raise ValueError(msg)
+
+    add_reference(reference)
 
     return tauray
 
 
+
 def mol_ext_wvl(wv0):
+
     """
     Calculate the rayleigh scattering cross-section for given wavelength.
 
-    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
-    
+    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
+
     Input:
         wv0: wavelength (in microns)
     """
@@ -1098,11 +1105,11 @@ def mol_ext_wvl(wv0):
     num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
     den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
     crs = num/den
-    
+
     return crs   # in 10^-28 cm^2/molecule
 
-  
-  
+
+
 def cal_mol_ext(wv0, pz1, pz2):
 
     """
@@ -1114,13 +1121,17 @@ def cal_mol_ext(wv0, pz1, pz2):
         tauray: extinction
     Example: calculate Rayleigh optical depth between 37 km (~4 hPa) and sea level (1000 hPa) at 0.5 microns:
     in Python program:
-        result=bodhaine(0.5,1000,4)
+        result = cal_mol_ext(0.5,1000,4)
     Note: If you input an array of wavelengths, the result will also be an
           array corresponding to the Rayleigh optical depth at these wavelengths.
     """
 
+    reference = '\nRayleigh Extinction (Bodhaine et al., 1999):\n- Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R.: On Rayleigh Optical Depth Calculations, J. Atmos. Ocean. Tech., 16, 1854–1861, 1999.'
+
     tauray = 0.00210966 * mol_ext_wvl(wv0) * (pz1-pz2) / 1013.25
-    
+
+    add_reference(reference)
+
     return tauray
 
 
@@ -1400,6 +1411,175 @@ def has_common_substring(input_str, substring_list):
     """
     return any(substring in input_str for substring in substring_list)
 
+
+def calculate_raa(vaa, saa, forward_scattering='positive'):
+    """
+    Calculate the relative azimuth angle (RAA) in [0, 360) given:
+      - viewing azimuth angle (VAA) in [-180, 180)
+      - solar azimuth angle (SAA)  in [-180, 180)
+
+    RAA = (VAA - SAA) modulo 360, ensuring a result in [0, 360).
+
+    There's one of two ways to denote RAA:
+    1) RT theory -> forward scattering should be assigned to positive viewing zenith angles
+    2) remote sensing applications -> backscattering should be assigned to positive viewing zenith angles
+
+    Args:
+    ----
+        vaa (float or ndarr): Viewing azimuth angle in degrees, in [-180, 180).
+        saa (float or ndarr): Solar azimuth angle in degrees, in [-180, 180).
+        forward_scattering (str): one of 'positive' or 'negative'.
+                                  if positive (default), raa is calculated simply as vaa - saa
+                                  to denote that positive viewing zenith angles are assigned to forward scattering
+                                  if negative, raa is calculated by subtracting 180 from above
+                                  to denote that positive viewing zenith angles are assigned to backscattering
+
+    Returns:
+    -------
+        raa (float or ndarr): Relative azimuth angle in [0, 360).
+
+    Reference: Korkin et al. (2022), https://doi.org/10.1016/j.cpc.2021.108198
+
+    """
+    # Normalize input angles to [-180, 180)
+    # Not strictly necessary unless the inputs might be out of range
+    # vaa = ((vaa + 180) % 360) - 180
+    # saa = ((saa + 180) % 360) - 180
+
+    # convert them to [0, 360) range for subtraction
+    vaa0 = vaa % 360
+    saa0 = saa % 360
+
+    # compute RAA in [0, 360)
+    raa = (vaa0 - saa0) % 360
+
+    # if hotspot is observed at raa=0, then flip around nadir
+    # for instance if raa was 90, it should become 270
+    # if raa was 180, it should now be 0
+    if forward_scattering.lower() == 'negative':
+        raa = 180 - raa
+        raa = change_range(raa, 0, 360)
+
+    return raa
+
+
+def change_range(angle, min_value, max_value):
+    return (angle - min_value) % (max_value - min_value) + min_value
+
+
+class fourier:
+
+    """
+    To calculate the Fourier coefficients
+
+    Usage example:
+
+    x = np.linspace(0.0, 360.0, 100)
+    y = np.sin(np.deg2rad(x)) + np.random.randint(-10, 10, size=x.size)*0.01
+
+    fft = fourier(x, y, order=2, period=[0.0, 360.0])
+    # fft.A0, fft.A, fft.B are fitted coefficients
+    # fft.x_fit, fft.y_fit are fitted x and y
+    """
+
+    def __init__(
+            self,
+            x,
+            y,
+            order=2,
+            period=np.array([0.0, 360.0]),
+            Nx=100
+            ):
+
+        self.order = order
+        self.period = period
+
+        self.fit(x, y, order, period)
+
+        self.val(self.A0, self.A, self.B, order, period, Nx=Nx)
+
+    def fit(self, x, y, order, period):
+
+        # sort the original data
+        x_s = np.sort(x)
+        y_s = y[np.argsort(x)]
+
+        # insert period[0] at beginning and period[-1] at the end for x_s
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        if x_s[0] > period[0]:
+            x_s = np.insert(x_s, 0, period[0])
+            add_at_begin = True
+        else:
+            add_at_begin = False
+
+        if x_s[-1] < period[-1]:
+            x_s = np.append(x_s, period[-1])
+            add_at_end = True
+        else:
+            add_at_end = False
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+        # insert interpolated y at beginning and at the end for y_s
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        theta = (2*np.pi) * (x_s / (period[-1]-period[0]))
+
+        if (add_at_begin or add_at_end):
+            y_i = ((theta[1])/(2*np.pi+theta[1]-theta[-2]))*y_s[-1] + \
+                  ((2*np.pi-theta[-2])/(2*np.pi+theta[1]-theta[-2]))*y_s[0]
+
+        if add_at_begin:
+            y_s = np.insert(y_s, 0, y_i)
+
+        if add_at_end:
+            y_s = np.append(y_s, y_i)
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+        # A0
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        A0_sum = 0.0
+        A0 = 0.0
+        for j in range(x_s.size-1):
+            dy = y_s[j+1] + y_s[j]
+            d_theta = theta[j+1] - theta[j]
+            A0_sum += dy/2.0 * d_theta
+        A0 = A0_sum/(2*np.pi)
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+
+        # A & B (e.g., A1, A2, A3, ... B1, B2, B3, ...)
+        #╭────────────────────────────────────────────────────────────────────────────╮#
+        A_sum = np.zeros((order), dtype=np.float32)
+        B_sum = np.zeros((order), dtype=np.float32)
+        A = np.zeros((order), dtype=np.float32)
+        B = np.zeros((order), dtype=np.float32)
+        for i in range(order):
+            for j in range(x_s.size-1):
+                dy = y_s[j+1] + y_s[j]
+                d_cos_ntheta = np.cos((i+1)*theta[j+1]) - np.cos((i+1)*theta[j])
+                d_sin_ntheta = np.sin((i+1)*theta[j+1]) - np.sin((i+1)*theta[j])
+                A_sum[i] += dy/2.0 * d_cos_ntheta
+                B_sum[i] += dy/2.0 * d_sin_ntheta
+            A[i] = -A_sum[i]/((i+1)*np.pi)
+            B[i] =  B_sum[i]/((i+1)*np.pi)
+        #╰────────────────────────────────────────────────────────────────────────────╯#
+
+        self.A0 = A0
+        self.A = A
+        self.B = B
+
+    def val(self, A0, A, B, order, period, Nx=100):
+
+        self.x_fit = np.linspace(period[0], period[-1], Nx)
+
+        theta_f = (2*np.pi)*(self.x_fit / (period[-1]-period[0]))
+
+        self.y_fit = np.zeros((self.x_fit.size), dtype=np.float32)
+        self.y_fit = self.A0
+        for i in range(order):
+            self.y_fit += self.A[i]*np.sin((i+1)*theta_f) + \
+                    self.B[i]*np.cos((i+1)*theta_f)
 
 
 if __name__ == '__main__':
