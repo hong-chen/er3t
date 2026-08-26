@@ -77,10 +77,7 @@ class cld_merra:
             self.run(fname_nc)
 
         else:
-            msg = (
-                "\nError [cld_merra]: Please check if <%s> exists or provide <fname_nc> to proceed."
-                % self.fname
-            )
+            msg = f"\nError [cld_merra]: Please check if <{self.fname}> exists or provide <fname_nc> to proceed."
             raise OSError(msg)
 
     def load(self, fname):
@@ -94,23 +91,18 @@ class cld_merra:
             if file_correct:
                 if self.verbose:
                     er3t.common.logger.info(
-                        "Message [cld_merra]: Loading <%s> ..." % fname
+                        f"Message [cld_merra]: Loading <{fname}> ..."
                     )
                 self.fname = obj.fname
                 self.lay = obj.lay
                 self.lev = obj.lev
             else:
-                msg = (
-                    "\nError [cld_merra]: <%s> is not the correct pickle file to load."
-                    % fname
-                )
+                msg = f"\nError [cld_merra]: <{fname}> is not the correct pickle file to load."
                 raise OSError(msg)
 
     def run(self, fname_nc):
         if self.verbose:
-            er3t.common.logger.info(
-                "Message [cld_merra]: Processing <%s> ..." % fname_nc
-            )
+            er3t.common.logger.info(f"Message [cld_merra]: Processing <{fname_nc}> ...")
 
         # pre process
         self.pre(fname_nc)
@@ -123,7 +115,7 @@ class cld_merra:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [cld_merra]: Saving object into <%s> ..." % fname
+                    f"Message [cld_merra]: Saving object into <{fname}> ..."
                 )
             pickle.dump(self, f)
 
@@ -347,9 +339,8 @@ class cld_merra:
         # downscale in process
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         if (self.Nx % dnx != 0) or (self.Ny % dny != 0) or (self.Nz % dnz != 0):
-            msg = (
-                "\nError [cld_merra]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt)."
-                % (str(self.lay["temperature"]["data"].shape), str(coarsen))
+            msg = "\nError [cld_merra]: The original dimension {} is not divisible with {}, please check input (dnx, dny, dnz, dnt).".format(
+                str(self.lay["temperature"]["data"].shape), str(coarsen)
             )
             raise ValueError(msg)
 
@@ -358,8 +349,9 @@ class cld_merra:
 
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [cld_merra]: Downscaling data from dimension %s to %s ..."
-                    % (str(self.lay["temperature"]["data"].shape), str(new_shape))
+                    "Message [cld_merra]: Downscaling data from dimension {} to {} ...".format(
+                        str(self.lay["temperature"]["data"].shape), str(new_shape)
+                    )
                 )
 
             self.lay["x"]["data"] = downscale(

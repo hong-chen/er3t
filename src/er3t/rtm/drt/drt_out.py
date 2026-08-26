@@ -32,7 +32,7 @@ def get_shd_data_out_ori(
         )
 
     headers = []
-    with open(fname, "r") as f:
+    with open(fname) as f:
         line = f.readline().strip()
         while line[0] == "!":
             headers.append(line)
@@ -94,9 +94,9 @@ def get_shd_data_out_ori(
     data = np.moveaxis(data, 0, 1)
 
     if verbose:
-        er3t.common.logger.info("target file: <%s>" % os.path.abspath(fname))
+        er3t.common.logger.info(f"target file: <{os.path.abspath(fname)}>")
         er3t.common.logger.info(
-            "%s (Nx, Ny, Nz, Nset, Nvar): %s" % (output_type.title(), data.shape)
+            f"{output_type.title()} (Nx, Ny, Nz, Nset, Nvar): {data.shape}"
         )
         er3t.common.logger.info(
             "╰────────────────────────────────────────────────────────────────────────────╯"
@@ -118,7 +118,7 @@ def get_shd_data_out(
     # read headers
     # ╭────────────────────────────────────────────────────────────────────────────╮#
     headers = []
-    with open(fname, "r") as f:
+    with open(fname) as f:
         line = f.readline().strip()
         while (line) and (line[0] == "!"):
             headers.append(line)
@@ -257,15 +257,15 @@ def get_shd_data_out(
         data = np.moveaxis(data, 0, 1)
 
     if verbose:
-        er3t.common.logger.info("target file: <%s>" % os.path.abspath(fname))
-        er3t.common.logger.info("  data file: <%s>" % os.path.abspath(fname_data))
+        er3t.common.logger.info(f"target file: <{os.path.abspath(fname)}>")
+        er3t.common.logger.info(f"  data file: <{os.path.abspath(fname_data)}>")
         if data.ndim > 2:
             er3t.common.logger.info(
-                "%s (Nx, Ny, Nz, Nset, Nvar): %s" % (output_type.title(), data.shape)
+                f"{output_type.title()} (Nx, Ny, Nz, Nset, Nvar): {data.shape}"
             )
         else:
             er3t.common.logger.info(
-                "%s (Ndata, Nvar): %s" % (output_type.title(), data.shape)
+                f"{output_type.title()} (Ndata, Nvar): {data.shape}"
             )
         er3t.common.logger.info(
             "╰────────────────────────────────────────────────────────────────────────────╯"
@@ -348,8 +348,7 @@ class shd_out_ng:
     def load(self):
         if self.verbose:
             er3t.common.logger.info(
-                "Message [shd_out_ng]: Reading <%s> from <%s> ..."
-                % (self.shd.target.lower(), self.fname)
+                f"Message [shd_out_ng]: Reading <{self.shd.target.lower()}> from <{self.fname}> ..."
             )
 
         self.data = {}
@@ -365,7 +364,7 @@ class shd_out_ng:
     def run(self):
         if self.verbose:
             er3t.common.logger.info(
-                "Message [shd_out_ng]: Reading <%s> ..." % self.shd.target.lower()
+                f"Message [shd_out_ng]: Reading <{self.shd.target.lower()}> ..."
             )
 
         if self.shd.target in [
@@ -380,8 +379,7 @@ class shd_out_ng:
     def dump(self):
         if not self.quiet:
             er3t.common.logger.info(
-                "Message [shd_out_ng]: Saving <%s> into <%s> ..."
-                % (self.shd.target.lower(), self.fname)
+                f"Message [shd_out_ng]: Saving <{self.shd.target.lower()}> into <{self.fname}> ..."
             )
 
         mode = self.mode.lower()
@@ -426,7 +424,7 @@ class shd_out_raw:
         self.verbose = verbose
 
         if not os.path.isfile(fname_txt):
-            msg = "Error [shd_out_raw]: Cannot find <%s>." % fname_txt
+            msg = f"Error [shd_out_raw]: Cannot find <{fname_txt}>."
             raise OSError(msg)
 
         self.fname_txt = fname_txt
@@ -446,7 +444,7 @@ class shd_out_raw:
         # read headers
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         headers = []
-        with open(self.fname_txt, "r") as f:
+        with open(self.fname_txt) as f:
             line = f.readline().strip()
             while (line) and (line[0] == "!"):
                 headers.append(line)
@@ -587,18 +585,15 @@ class shd_out_raw:
             data = np.moveaxis(data, 0, 1)
 
         if self.verbose:
-            er3t.common.logger.info(
-                "target file: <%s>" % os.path.abspath(self.fname_txt)
-            )
-            er3t.common.logger.info("  data file: <%s>" % os.path.abspath(fname_data))
+            er3t.common.logger.info(f"target file: <{os.path.abspath(self.fname_txt)}>")
+            er3t.common.logger.info(f"  data file: <{os.path.abspath(fname_data)}>")
             if data.ndim > 2:
                 er3t.common.logger.info(
-                    "%s (Nx, Ny, Nz, Nset, Nvar): %s"
-                    % (output_type.title(), data.shape)
+                    f"{output_type.title()} (Nx, Ny, Nz, Nset, Nvar): {data.shape}"
                 )
             else:
                 er3t.common.logger.info(
-                    "%s (Ndata, Nvar): %s" % (output_type.title(), data.shape)
+                    f"{output_type.title()} (Ndata, Nvar): {data.shape}"
                 )
             er3t.common.logger.info(
                 "╰────────────────────────────────────────────────────────────────────────────╯"
@@ -606,7 +601,7 @@ class shd_out_raw:
 
         self.data = [{} for i in range(Nvar)]
         for i in range(Nvar):
-            self.data[i]["name"] = "var_%02d" % (i)
+            self.data[i]["name"] = f"var_{int(i):02}"
             self.data[i]["dims"] = [Ny, Nx, Nz, Nset]
             self.data[i]["dims_info"] = ["Nx", "Ny", "Nz", "Nset"]
             self.data[i]["data"] = data[..., i]

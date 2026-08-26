@@ -157,28 +157,26 @@ class mca_sfc_2d:
         f = open(fname, "wb")
         f.write(
             struct.pack(
-                "<%df" % self.nml["Sfc_tmps2d"]["data"].size,
+                f"<{int(self.nml['Sfc_tmps2d']['data'].size)}f",
                 *self.nml["Sfc_tmps2d"]["data"].flatten(order="F"),
             )
         )
         f.write(
             struct.pack(
-                "<%df" % self.nml["Sfc_jsfc2d"]["data"].size,
+                f"<{int(self.nml['Sfc_jsfc2d']['data'].size)}f",
                 *self.nml["Sfc_jsfc2d"]["data"].flatten(order="F"),
             )
         )
         f.write(
             struct.pack(
-                "<%df" % self.nml["Sfc_psfc2d"]["data"].size,
+                f"<{int(self.nml['Sfc_psfc2d']['data'].size)}f",
                 *self.nml["Sfc_psfc2d"]["data"].flatten(order="F"),
             )
         )
         f.close()
 
         if not self.quiet:
-            er3t.common.logger.info(
-                "Message [mca_sfc_2d]: File <%s> is created." % fname
-            )
+            er3t.common.logger.info(f"Message [mca_sfc_2d]: File <{fname}> is created.")
 
     def save_h5(self, fname):
         fname = os.path.abspath(fname)
@@ -191,9 +189,7 @@ class mca_sfc_2d:
         f.close()
 
         if not self.quiet:
-            er3t.common.logger.info(
-                "Message [mca_sfc_2d]: File <%s> is created." % fname
-            )
+            er3t.common.logger.info(f"Message [mca_sfc_2d]: File <{fname}> is created.")
 
 
 if __name__ == "__main__":

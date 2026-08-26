@@ -79,7 +79,20 @@ line-length = 88
 extend-exclude = ["src/er3t/dev"]
 
 [tool.ruff.lint]
-select = ["E401", "E711", "E712", "E722", "E741", "F821"]
+select = [
+    "E401",
+    "E711",
+    "E712",
+    "E722",
+    "E741",
+    "F821",
+    "UP010",
+    "UP015",
+    "UP017",
+    "UP018",
+    "UP032",
+    "UP034",
+]
 
 [project.urls]
 Homepage = "https://github.com/hong-chen/er3t"

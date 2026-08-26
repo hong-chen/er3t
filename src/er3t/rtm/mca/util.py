@@ -78,11 +78,11 @@ class func_ref_vs_cot:
         self.rad = np.array([])
         self.rad_std = np.array([])
         for i in range(self.cot.size):
-            name_tag = "cot-%05.1f_cer-%04.1f" % (self.cot[i], self.cer0)
+            name_tag = f"cot-{self.cot[i]:05.1f}_cer-{self.cer0:04.1f}"
 
             # read data
             # ╭────────────────────────────────────────────────────────────────────────────╮#
-            fname = "%s/%s_%s.h5" % (self.fdir, self.output_tag, name_tag)
+            fname = f"{self.fdir}/{self.output_tag}_{name_tag}.h5"
             f0 = h5py.File(fname, "r")
             rad0 = f0["mean/rad"][...].mean()
             rad_std0 = f0["mean/rad_std"][...].mean()
@@ -101,7 +101,7 @@ class func_ref_vs_cot:
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     def run_all(self):
-        os.system("rm -rf %s" % self.fdir)
+        os.system(f"rm -rf {self.fdir}")
         os.makedirs(self.fdir)
 
         for cot0 in self.cot:
@@ -110,13 +110,13 @@ class func_ref_vs_cot:
             )
 
     def run_one(self, cot0, cer0, cbh0=1.0, cth0=2.0, atm0=None):
-        name_tag = "cot-%05.1f_cer-%04.1f" % (cot0, cer0)
+        name_tag = f"cot-{cot0:05.1f}_cer-{cer0:04.1f}"
 
         # atm object
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         if atm0 is None:
             levels = np.arange(0.0, 20.1, 0.1)
-            fname_atm = "%s/atm_wvl-%06.1fnm.pk" % (self.fdir, self.wvl0)
+            fname_atm = f"{self.fdir}/atm_wvl-{self.wvl0:06.1f}nm.pk"
             atm0 = er3t.pre.atm.atm_atmmod(
                 levels=levels,
                 fname=fname_atm,
@@ -129,7 +129,7 @@ class func_ref_vs_cot:
 
         # abs object
         # ╭────────────────────────────────────────────────────────────────────────────╮#
-        fname_abs = "%s/abs_wvl-%06.1fnm.pk" % (self.fdir, self.wvl0)
+        fname_abs = f"{self.fdir}/abs_wvl-{self.wvl0:06.1f}nm.pk"
         # abs0      = er3t.pre.abs.abs_16g(wavelength=self.wvl0, fname=fname_abs, atm_obj=atm0, overwrite=False)
         abs0 = er3t.pre.abs.abs_rep(
             wavelength=self.wvl0,
@@ -150,7 +150,7 @@ class func_ref_vs_cot:
 
         # mca_sca object
         # ╭────────────────────────────────────────────────────────────────────────────╮#
-        fname_sca = "%s/mca_sca-%06.1fnm.bin" % (self.fdir, self.wvl0)
+        fname_sca = f"{self.fdir}/mca_sca-{self.wvl0:06.1f}nm.bin"
         sca0 = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname=fname_sca, overwrite=True)
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -187,7 +187,7 @@ class func_ref_vs_cot:
             sensor_zenith_angle=self.vza0,
             sensor_azimuth_angle=self.vaa0,
             sensor_altitude=self.alt0,
-            fdir="%s/%s_%s/rad" % (self.fdir, self.output_tag, name_tag),
+            fdir=f"{self.fdir}/{self.output_tag}_{name_tag}/rad",
             Nrun=3,
             Ng=abs0.Ng,
             weights=abs0.coef["weight"]["data"],
@@ -202,7 +202,7 @@ class func_ref_vs_cot:
         # mcarats output
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         out0 = er3t.rtm.mca.mca_out_ng(
-            fname="%s/%s_%s.h5" % (self.fdir, self.output_tag, name_tag),
+            fname=f"{self.fdir}/{self.output_tag}_{name_tag}.h5",
             mca_obj=mca0,
             abs_obj=abs0,
             mode="mean",
@@ -308,11 +308,11 @@ class func_ref_vs_cot_multi_pixel:
         self.rad = np.array([])
         self.rad_std = np.array([])
         for i in range(self.cot.size):
-            name_tag = "cot-%05.1f_cer-%04.1f" % (self.cot[i], self.cer0)
+            name_tag = f"cot-{self.cot[i]:05.1f}_cer-{self.cer0:04.1f}"
 
             # read data
             # ╭────────────────────────────────────────────────────────────────────────────╮#
-            fname = "%s/%s_%s.h5" % (self.fdir, self.output_tag, name_tag)
+            fname = f"{self.fdir}/{self.output_tag}_{name_tag}.h5"
             f0 = h5py.File(fname, "r")
             rad0 = f0["mean/rad"][...].mean()
             rad_std0 = f0["mean/rad_std"][...].mean()
@@ -331,7 +331,7 @@ class func_ref_vs_cot_multi_pixel:
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     def run_all(self):
-        os.system("rm -rf %s" % self.fdir)
+        os.system(f"rm -rf {self.fdir}")
         os.makedirs(self.fdir)
 
         for cot0 in self.cot:
@@ -350,13 +350,13 @@ class func_ref_vs_cot_multi_pixel:
     def run_one(
         self, cot0, cer0, Nx=2, Ny=2, dx=0.1, dy=0.1, cbh0=1.0, cth0=2.0, atm0=None
     ):
-        name_tag = "cot-%05.1f_cer-%04.1f" % (cot0, cer0)
+        name_tag = f"cot-{cot0:05.1f}_cer-{cer0:04.1f}"
 
         # atm object
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         if atm0 is None:
             levels = np.arange(0.0, 20.1, 0.1)
-            fname_atm = "%s/atm_wvl-%06.1fnm.pk" % (self.fdir, self.wvl0)
+            fname_atm = f"{self.fdir}/atm_wvl-{self.wvl0:06.1f}nm.pk"
             atm0 = er3t.pre.atm.atm_atmmod(
                 levels=levels,
                 fname=fname_atm,
@@ -369,7 +369,7 @@ class func_ref_vs_cot_multi_pixel:
 
         # abs object
         # ╭────────────────────────────────────────────────────────────────────────────╮#
-        fname_abs = "%s/abs_wvl-%06.1fnm.pk" % (self.fdir, self.wvl0)
+        fname_abs = f"{self.fdir}/abs_wvl-{self.wvl0:06.1f}nm.pk"
         abs0 = er3t.pre.abs.abs_16g(
             wavelength=self.wvl0, fname=fname_abs, atm_obj=atm0, overwrite=False
         )
@@ -377,7 +377,7 @@ class func_ref_vs_cot_multi_pixel:
 
         # cloud object
         # ╭────────────────────────────────────────────────────────────────────────────╮#
-        fname_cld = "%s/cld_%s.pk" % (self.fdir, name_tag)
+        fname_cld = f"{self.fdir}/cld_{name_tag}.pk"
         altitude0 = atm0.lay["altitude"]["data"][
             (atm0.lay["altitude"]["data"] >= cbh0)
             & (atm0.lay["altitude"]["data"] <= cth0)
@@ -403,7 +403,7 @@ class func_ref_vs_cot_multi_pixel:
 
         # mca_sca object
         # ╭────────────────────────────────────────────────────────────────────────────╮#
-        fname_sca = "%s/mca_sca-%06.1fnm.bin" % (self.fdir, self.wvl0)
+        fname_sca = f"{self.fdir}/mca_sca-{self.wvl0:06.1f}nm.bin"
         sca = er3t.rtm.mca.mca_sca(pha_obj=pha0, fname=fname_sca, overwrite=True)
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -411,7 +411,7 @@ class func_ref_vs_cot_multi_pixel:
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         atm1d0 = er3t.rtm.mca.mca_atm_1d(atm_obj=atm0, abs_obj=abs0)
 
-        fname_atm_3d = "%s/mca_atm_3d_%s.bin" % (self.fdir, name_tag)
+        fname_atm_3d = f"{self.fdir}/mca_atm_3d_{name_tag}.bin"
         atm3d0 = er3t.rtm.mca.mca_atm_3d(
             cld_obj=cld0, atm_obj=atm0, pha_obj=pha0, fname=fname_atm_3d, overwrite=True
         )
@@ -434,7 +434,7 @@ class func_ref_vs_cot_multi_pixel:
             sensor_zenith_angle=self.vza0,
             sensor_azimuth_angle=self.vaa0,
             sensor_altitude=self.alt0,
-            fdir="%s/%s_%s/rad" % (self.fdir, self.output_tag, name_tag),
+            fdir=f"{self.fdir}/{self.output_tag}_{name_tag}/rad",
             Nrun=3,
             Ng=abs0.Ng,
             weights=abs0.coef["weight"]["data"],
@@ -449,7 +449,7 @@ class func_ref_vs_cot_multi_pixel:
         # mcarats output
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         out0 = er3t.rtm.mca.mca_out_ng(
-            fname="%s/%s_%s.h5" % (self.fdir, self.output_tag, name_tag),
+            fname=f"{self.fdir}/{self.output_tag}_{name_tag}.h5",
             mca_obj=mca0,
             abs_obj=abs0,
             mode="mean",

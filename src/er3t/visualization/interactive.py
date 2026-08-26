@@ -47,7 +47,7 @@ def compare_data_2d(
     # set title
     # ╭────────────────────────────────────────────────────────────────────────────╮#
     if description is not None:
-        title = "Compare Data-2D (%s)" % description
+        title = f"Compare Data-2D ({description})"
     else:
         title = "Compare Data-2D"
     # ╰────────────────────────────────────────────────────────────────────────────╯#
@@ -56,7 +56,7 @@ def compare_data_2d(
     # set html file name
     # ╭────────────────────────────────────────────────────────────────────────────╮#
     if fname_html is None:
-        fname_html = "%s_%s_vs_%s.html" % (
+        fname_html = "{}_{}_vs_{}.html".format(
             _metadata["Function"],
             data_x["name"].lower().replace(" ", "-"),
             data_y["name"].lower().replace(" ", "-"),

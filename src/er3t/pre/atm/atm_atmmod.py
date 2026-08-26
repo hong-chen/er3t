@@ -69,7 +69,7 @@ class atm_atmmod:
         self,
         levels=None,
         fname=None,
-        fname_atmmod="%s/afglus.dat" % er3t.common.fdir_data_atmmod,
+        fname_atmmod=f"{er3t.common.fdir_data_atmmod}/afglus.dat",
         extra_gases=["ch4", "co", "n2o", "n2"],
         overwrite=False,
         verbose=er3t.common.params["verbose"],
@@ -101,8 +101,7 @@ class atm_atmmod:
 
         else:
             sys.exit(
-                "Error   [atm_atmmod]: Please check if '%s' exists or provide 'levels' to proceed."
-                % fname
+                f"Error   [atm_atmmod]: Please check if '{fname}' exists or provide 'levels' to proceed."
             )
 
     def load(self, fname):
@@ -118,8 +117,7 @@ class atm_atmmod:
                 self.lay = obj.lay
             else:
                 sys.exit(
-                    "Error   [atm_atmmod]: File '%s' is not the correct pickle file to load."
-                    % fname
+                    f"Error   [atm_atmmod]: File '{fname}' is not the correct pickle file to load."
                 )
 
     def run(self, levels):

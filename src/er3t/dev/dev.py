@@ -231,14 +231,12 @@ def cal_lon_lat_utc_geometa(
     # /----------------------------------------------------------------------------\#
     if line_data["Instrument"].lower() == "modis" and delta_t != 300.0:
         msg = (
-            "\nwarnings [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t=%.1f>, please double-check."
-            % delta_t
+            f"\nwarnings [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t={delta_t:.1f}>, please double-check."
         )
         warnings.warn(msg)
     elif line_data["Instrument"].lower() == "viirs" and delta_t != 360.0:
         msg = (
-            "\nwarnings [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t=%.1f>, please double-check."
-            % delta_t
+            f"\nwarnings [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t={delta_t:.1f}>, please double-check."
         )
         warnings.warn(msg)
     # \----------------------------------------------------------------------------/#
@@ -405,7 +403,7 @@ def cal_lon_lat_utc_geometa(
         }
         fname_png = filename.replace(".hdf", ".png").replace(".nc", ".png")
         fig.savefig(
-            "globe-view_%s" % fname_png, bbox_inches="tight", metadata=_metadata
+            f"globe-view_{fname_png}", bbox_inches="tight", metadata=_metadata
         )
         # \--------------------------------------------------------------/#
     # \----------------------------------------------------------------------------/#
@@ -477,10 +475,7 @@ def cal_sec_offset_abi(extent, satname="GEOS-East|ABI", sec_per_scan=30.0):
         center_lat = 0.0
 
     else:
-        msg = "\nError [cal_utc_abi]: Currently do not support <%s> onboard <%s>." % (
-            instrument,
-            satellite,
-        )
+        msg = f"\nError [cal_utc_abi]: Currently do not support <{instrument}> onboard <{satellite}>."
         raise NameError(msg)
 
     # define projections
@@ -561,8 +556,8 @@ def cal_sec_offset_abi(extent, satname="GEOS-East|ABI", sec_per_scan=30.0):
 def test_aqua_modis():
     # deal with geoMeta data
     # /----------------------------------------------------------------------------\#
-    fname_txt = "%s/satfile/MYD03_2019-09-02.txt" % er3t.common.fdir_data_tmp
-    with open(fname_txt, "r") as f_:
+    fname_txt = f"{er3t.common.fdir_data_tmp}/satfile/MYD03_2019-09-02.txt"
+    with open(fname_txt) as f_:
         content = f_.read()
     data = read_geometa(content)
     # \----------------------------------------------------------------------------/#
@@ -583,8 +578,8 @@ def test_aqua_modis():
 def test_terra_modis():
     # deal with geoMeta data
     # /----------------------------------------------------------------------------\#
-    fname_txt = "%s/satfile/MOD03_2023-08-18.txt" % er3t.common.fdir_data_tmp
-    with open(fname_txt, "r") as f_:
+    fname_txt = f"{er3t.common.fdir_data_tmp}/satfile/MOD03_2023-08-18.txt"
+    with open(fname_txt) as f_:
         content = f_.read()
     data = read_geometa(content)
     # \----------------------------------------------------------------------------/#
@@ -605,8 +600,8 @@ def test_terra_modis():
 def test_snpp_viirs():
     # deal with geoMeta data
     # /----------------------------------------------------------------------------\#
-    fname_txt = "%s/satfile/VNP03MOD_2023-08-05.txt" % er3t.common.fdir_data_tmp
-    with open(fname_txt, "r") as f_:
+    fname_txt = f"{er3t.common.fdir_data_tmp}/satfile/VNP03MOD_2023-08-05.txt"
+    with open(fname_txt) as f_:
         content = f_.read()
     data = read_geometa(content)
     # \----------------------------------------------------------------------------/#
@@ -630,7 +625,7 @@ def test_noaa20_viirs_extra():
     fname_txt = (
         "/data/hong/2023/work/01_libera/03_demo/data_l1b/VJ103MOD_2021-05-18.txt"
     )
-    with open(fname_txt, "r") as f_:
+    with open(fname_txt) as f_:
         content = f_.read()
     data = read_geometa(content)
     # \----------------------------------------------------------------------------/#
@@ -641,8 +636,7 @@ def test_noaa20_viirs_extra():
 
         pattern = ".".join(line["GranuleID"].split(".")[:3])
         fnames = glob.glob(
-            "/data/hong/2023/work/01_libera/03_demo/data_l1b/VJ103MOD/2021/138/*%s*.nc"
-            % pattern
+            f"/data/hong/2023/work/01_libera/03_demo/data_l1b/VJ103MOD/2021/138/*{pattern}*.nc"
         )
         if len(fnames) == 1:
             fname = fnames[0]

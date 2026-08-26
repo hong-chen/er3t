@@ -44,13 +44,11 @@ def gen_cloud_1d(cld_cfg):
         )
         for i, alt0 in enumerate(altitude):
             f.write(
-                "     %.4f                   %.4f                          %.4f\n"
-                % (alt[i], lwc[i], cer[i])
+                f"     {alt[i]:.4f}                   {lwc[i]:.4f}                          {cer[i]:.4f}\n"
             )
         if abs(alt[-1] - 0.0) > 0.001:
             f.write(
-                "     %.4f                   %.4f                          %.4f\n"
-                % (0.0, 0.0, 0.0)
+                f"     {0.0:.4f}                   {0.0:.4f}                          {0.0:.4f}\n"
             )
 
     return cld_cfg
@@ -74,15 +72,15 @@ def gen_aerosol_1d(aer_cfg):
         msg = "Error [gen_aerosol_1d]: Only support scalar or array for <aerosol_optical_depth>."
         raise OSError(msg)
 
-    filename_aod = "aer-aod_%s" % filename_aer
+    filename_aod = f"aer-aod_{filename_aer}"
     fname_aod = aer_cfg["aerosol_file"].replace(filename_aer, filename_aod)
 
     with open(fname_aod, "w") as f:
         f.write("# Altitude[km]   AOD\n")
         for i, alt0 in enumerate(altitude):
-            f.write("     %.4f                %.4f\n" % (alt[i], data[i]))
+            f.write(f"     {alt[i]:.4f}                {data[i]:.4f}\n")
         if abs(alt[-1] - 0.0) > 0.001:
-            f.write("     %.4f                %.4f\n" % (0.0, 0.0))
+            f.write(f"     {0.0:.4f}                {0.0:.4f}\n")
 
     aer_cfg["aerosol_file_aod"] = os.path.abspath(fname_aod)
     # =====================================================================================
@@ -99,15 +97,15 @@ def gen_aerosol_1d(aer_cfg):
         msg = "Error [gen_aerosol_1d]: Only support scalar or array for <single_scattering_albedo>."
         raise OSError(msg)
 
-    filename_ssa = "aer-ssa_%s" % filename_aer
+    filename_ssa = f"aer-ssa_{filename_aer}"
     fname_ssa = aer_cfg["aerosol_file"].replace(filename_aer, filename_ssa)
 
     with open(fname_ssa, "w") as f:
         f.write("# Altitude[km]   SSA\n")
         for i, alt0 in enumerate(altitude):
-            f.write("     %.4f                %.4f\n" % (alt[i], data[i]))
+            f.write(f"     {alt[i]:.4f}                {data[i]:.4f}\n")
         if abs(alt[-1] - 0.0) > 0.001:
-            f.write("     %.4f                %.4f\n" % (0.0, 0.0))
+            f.write(f"     {0.0:.4f}                {0.0:.4f}\n")
 
     aer_cfg["aerosol_file_ssa"] = os.path.abspath(fname_ssa)
     # =====================================================================================
@@ -124,15 +122,15 @@ def gen_aerosol_1d(aer_cfg):
         msg = "Error [gen_aerosol_1d]: only support scalar or array for <asymmetry_parameter>."
         raise OSError(msg)
 
-    filename_asy = "aer-asy_%s" % filename_aer
+    filename_asy = f"aer-asy_{filename_aer}"
     fname_asy = aer_cfg["aerosol_file"].replace(filename_aer, filename_asy)
 
     with open(fname_asy, "w") as f:
         f.write("# Altitude[km]   ASY\n")
         for i, alt0 in enumerate(altitude):
-            f.write("     %.4f                %.4f\n" % (alt[i], data[i]))
+            f.write(f"     {alt[i]:.4f}                {data[i]:.4f}\n")
         if abs(alt[-1] - 0.0) > 0.001:
-            f.write("     %.4f                %.4f\n" % (0.0, 0.0))
+            f.write(f"     {0.0:.4f}                {0.0:.4f}\n")
 
     aer_cfg["aerosol_file_asy"] = os.path.abspath(fname_asy)
     # =====================================================================================
@@ -220,22 +218,21 @@ def gen_bispectral_lookup_table(
     fdir_tmp="tmp-data",  # directory to store temporary data (string)
     fdir_lut="data/lut",  # directory to store lookup table data
     prop_tag="reflectance",  # property tag, can be "radiance", "reflectance", "albedo-top", "albedo-bottom", "_reflectance", "transmittance", "absorptance" (string)
-    atmosphere_file="%s/afglus.dat"
-    % er3t.common.fdir_data_atmmod,  # atmosphere profile
+    atmosphere_file=f"{er3t.common.fdir_data_atmmod}/afglus.dat",  # atmosphere profile
     overwrite=True,
 ):
     # create temporary data directory
     # ╭────────────────────────────────────────────────────────────────────────────╮#
     fdir_tmp = os.path.abspath(fdir_tmp)
     if not os.path.exists(fdir_tmp):
-        os.system("mkdir -p %s" % fdir_tmp)
+        os.system(f"mkdir -p {fdir_tmp}")
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # delete old files if overwrite is specified
     # ╭────────────────────────────────────────────────────────────────────────────╮#
     if overwrite:
-        if len(glob.glob("%s/*.txt" % fdir_tmp)) > 0:
-            os.system('find %s -name "*.txt" | xargs rm -f' % fdir_tmp)
+        if len(glob.glob(f"{fdir_tmp}/*.txt")) > 0:
+            os.system(f'find {fdir_tmp} -name "*.txt" | xargs rm -f')
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # assign parameters
@@ -262,10 +259,7 @@ def gen_bispectral_lookup_table(
     if cloud_type.lower() == "water":
         cld_cfg["wc_properties"] = "mie"
     else:
-        msg = (
-            '\nError [gen_bispectral_lookup_table]: <cloud_type="%s"> is NOT supported.'
-            % (cloud_type)
-        )
+        msg = f'\nError [gen_bispectral_lookup_table]: <cloud_type="{cloud_type}"> is NOT supported.'
         raise OSError(msg)
     # ╰────────────────────────────────────────────────╯#
 
@@ -274,7 +268,7 @@ def gen_bispectral_lookup_table(
     if aerosol_optical_depth > 0.0:
         aer_cfg = lrt.get_aer_cfg()
         aer_cfg["aerosol"]
-        aer_cfg["aerosol_file"] = "%s/lrt_aerosol.txt" % (fdir_tmp)
+        aer_cfg["aerosol_file"] = f"{fdir_tmp}/lrt_aerosol.txt"
         aer_cfg["aerosol_optical_depth"] = aerosol_optical_depth
         aer_cfg["single_scattering_albedo"] = aerosol_single_scattering_albedo
         aer_cfg["asymmetry_parameter"] = aerosol_asymmetry_parameter
@@ -287,8 +281,8 @@ def gen_bispectral_lookup_table(
     # ╭────────────────────────────────────────────────╮#
     init_x0 = lrt.lrt_init_mono_flx(
         output_altitude="toa",
-        input_file="%s/lrt_inpfile_%4.4dnm_toa.txt" % (fdir_tmp, wvl_x),
-        output_file="%s/lrt_outfile_%4.4dnm_toa.txt" % (fdir_tmp, wvl_x),
+        input_file=f"{fdir_tmp}/lrt_inpfile_{int(wvl_x):04d}nm_toa.txt",
+        output_file=f"{fdir_tmp}/lrt_outfile_{int(wvl_x):04d}nm_toa.txt",
         date=date,
         surface_albedo=alb_x,
         wavelength=wvl_x,
@@ -298,8 +292,8 @@ def gen_bispectral_lookup_table(
 
     init_y0 = lrt.lrt_init_mono_flx(
         output_altitude="toa",
-        input_file="%s/lrt_inpfile_%4.4dnm_toa.txt" % (fdir_tmp, wvl_y),
-        output_file="%s/lrt_outfile_%4.4dnm_toa.txt" % (fdir_tmp, wvl_y),
+        input_file=f"{fdir_tmp}/lrt_inpfile_{int(wvl_y):04d}nm_toa.txt",
+        output_file=f"{fdir_tmp}/lrt_outfile_{int(wvl_y):04d}nm_toa.txt",
         date=date,
         surface_albedo=alb_y,
         wavelength=wvl_y,
@@ -313,11 +307,7 @@ def gen_bispectral_lookup_table(
 
     for cot in cloud_optical_thickness_all:
         for cer in cloud_effective_radius_all:
-            cld_cfg["cloud_file"] = "%s/lrt_cloud_%06.2f_%06.2f.txt" % (
-                fdir_tmp,
-                cot,
-                cer,
-            )
+            cld_cfg["cloud_file"] = f"{fdir_tmp}/lrt_cloud_{cot:06.2f}_{cer:06.2f}.txt"
             cld_cfg["cloud_altitude"] = cloud_altitude
             cld_cfg["cloud_optical_thickness"] = cot
             cld_cfg["cloud_effective_radius"] = cer
@@ -408,10 +398,7 @@ def gen_bispectral_lookup_table(
                 )
 
             else:
-                msg = (
-                    '\nError [gen_bispectral_lookup_table]: currently we do not support <prop_tag="%s">'
-                    % (prop_tag)
-                )
+                msg = f'\nError [gen_bispectral_lookup_table]: currently we do not support <prop_tag="{prop_tag}">'
                 sys.exit(msg)
 
             inits_x.append(init_x)
@@ -472,7 +459,7 @@ def gen_bispectral_lookup_table(
     fdir_lut = os.path.abspath(fdir_lut)
 
     if not os.path.exists(fdir_lut):
-        os.system("mkdir -p %s" % fdir_lut)
+        os.system(f"mkdir -p {fdir_lut}")
     # ╰──────────────────────────────────────────────────────────────╯#
 
     if fname is None:
@@ -511,12 +498,12 @@ def gen_bispectral_lookup_table(
     f["prop_x"] = prop_x
     f["prop_x"].dims[0].label = "Cloud Optical Thickness"
     f["prop_x"].dims[1].label = "Cloud Effective Radius [micron]"
-    f["prop_x"].attrs["description"] = "%s at %.2f nm" % (prop_tag.title(), wvl_x)
+    f["prop_x"].attrs["description"] = f"{prop_tag.title()} at {wvl_x:.2f} nm"
 
     f["prop_y"] = prop_y
     f["prop_y"].dims[0].label = "Cloud Optical Thickness"
     f["prop_y"].dims[1].label = "Cloud Effective Radius [micron]"
-    f["prop_y"].attrs["description"] = "%s at %.2f nm" % (prop_tag.title(), wvl_y)
+    f["prop_y"].attrs["description"] = f"{prop_tag.title()} at {wvl_y:.2f} nm"
 
     f["cot"] = cloud_optical_thickness_all
     f["cot"].attrs["description"] = "Cloud Optical Thickness"
@@ -686,22 +673,21 @@ def gen_bispectral_lookup_table(
     fdir_tmp="tmp-data",  # directory to store temporary data (string)
     fdir_lut="data/lut",  # directory to store lookup table data
     prop_tag="reflectance",  # property tag, can be "radiance", "reflectance", "albedo-top", "albedo-bottom", "_reflectance", "transmittance", "absorptance" (string)
-    atmosphere_file="%s/afglus.dat"
-    % er3t.common.fdir_data_atmmod,  # atmosphere profile
+    atmosphere_file=f"{er3t.common.fdir_data_atmmod}/afglus.dat",  # atmosphere profile
     overwrite=True,
 ):
     # create temporary data directory
     # ╭────────────────────────────────────────────────────────────────────────────╮#
     fdir_tmp = os.path.abspath(fdir_tmp)
     if not os.path.exists(fdir_tmp):
-        os.system("mkdir -p %s" % fdir_tmp)
+        os.system(f"mkdir -p {fdir_tmp}")
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # delete old files if overwrite is specified
     # ╭────────────────────────────────────────────────────────────────────────────╮#
     if overwrite:
-        if len(glob.glob("%s/*.txt" % fdir_tmp)) > 0:
-            os.system('find %s -name "*.txt" | xargs rm -f' % fdir_tmp)
+        if len(glob.glob(f"{fdir_tmp}/*.txt")) > 0:
+            os.system(f'find {fdir_tmp} -name "*.txt" | xargs rm -f')
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # assign parameters
@@ -728,10 +714,7 @@ def gen_bispectral_lookup_table(
     if cloud_type.lower() == "water":
         cld_cfg["wc_properties"] = "mie"
     else:
-        msg = (
-            '\nError [gen_bispectral_lookup_table]: <cloud_type="%s"> is NOT supported.'
-            % (cloud_type)
-        )
+        msg = f'\nError [gen_bispectral_lookup_table]: <cloud_type="{cloud_type}"> is NOT supported.'
         raise OSError(msg)
     # ╰────────────────────────────────────────────────╯#
 
@@ -740,7 +723,7 @@ def gen_bispectral_lookup_table(
     if aerosol_optical_depth > 0.0:
         aer_cfg = lrt.get_aer_cfg()
         aer_cfg["aerosol"]
-        aer_cfg["aerosol_file"] = "%s/lrt_aerosol.txt" % (fdir_tmp)
+        aer_cfg["aerosol_file"] = f"{fdir_tmp}/lrt_aerosol.txt"
         aer_cfg["aerosol_optical_depth"] = aerosol_optical_depth
         aer_cfg["single_scattering_albedo"] = aerosol_single_scattering_albedo
         aer_cfg["asymmetry_parameter"] = aerosol_asymmetry_parameter
@@ -753,8 +736,8 @@ def gen_bispectral_lookup_table(
     # ╭────────────────────────────────────────────────╮#
     init_x0 = lrt.lrt_init_mono_flx(
         output_altitude="toa",
-        input_file="%s/lrt_inpfile_%4.4dnm_toa.txt" % (fdir_tmp, wvl_x),
-        output_file="%s/lrt_outfile_%4.4dnm_toa.txt" % (fdir_tmp, wvl_x),
+        input_file=f"{fdir_tmp}/lrt_inpfile_{int(wvl_x):04d}nm_toa.txt",
+        output_file=f"{fdir_tmp}/lrt_outfile_{int(wvl_x):04d}nm_toa.txt",
         date=date,
         surface_albedo=alb_x,
         wavelength=wvl_x,
@@ -764,8 +747,8 @@ def gen_bispectral_lookup_table(
 
     init_y0 = lrt.lrt_init_mono_flx(
         output_altitude="toa",
-        input_file="%s/lrt_inpfile_%4.4dnm_toa.txt" % (fdir_tmp, wvl_y),
-        output_file="%s/lrt_outfile_%4.4dnm_toa.txt" % (fdir_tmp, wvl_y),
+        input_file=f"{fdir_tmp}/lrt_inpfile_{int(wvl_y):04d}nm_toa.txt",
+        output_file=f"{fdir_tmp}/lrt_outfile_{int(wvl_y):04d}nm_toa.txt",
         date=date,
         surface_albedo=alb_y,
         wavelength=wvl_y,
@@ -779,11 +762,7 @@ def gen_bispectral_lookup_table(
 
     for cot in cloud_optical_thickness_all:
         for cer in cloud_effective_radius_all:
-            cld_cfg["cloud_file"] = "%s/lrt_cloud_%06.2f_%06.2f.txt" % (
-                fdir_tmp,
-                cot,
-                cer,
-            )
+            cld_cfg["cloud_file"] = f"{fdir_tmp}/lrt_cloud_{cot:06.2f}_{cer:06.2f}.txt"
             cld_cfg["cloud_altitude"] = cloud_altitude
             cld_cfg["cloud_optical_thickness"] = cot
             cld_cfg["cloud_effective_radius"] = cer
@@ -874,10 +853,7 @@ def gen_bispectral_lookup_table(
                 )
 
             else:
-                msg = (
-                    '\nError [gen_bispectral_lookup_table]: currently we do not support <prop_tag="%s">'
-                    % (prop_tag)
-                )
+                msg = f'\nError [gen_bispectral_lookup_table]: currently we do not support <prop_tag="{prop_tag}">'
                 sys.exit(msg)
 
             inits_x.append(init_x)
@@ -938,7 +914,7 @@ def gen_bispectral_lookup_table(
     fdir_lut = os.path.abspath(fdir_lut)
 
     if not os.path.exists(fdir_lut):
-        os.system("mkdir -p %s" % fdir_lut)
+        os.system(f"mkdir -p {fdir_lut}")
     # ╰──────────────────────────────────────────────────────────────╯#
 
     if fname is None:
@@ -977,12 +953,12 @@ def gen_bispectral_lookup_table(
     f["prop_x"] = prop_x
     f["prop_x"].dims[0].label = "Cloud Optical Thickness"
     f["prop_x"].dims[1].label = "Cloud Effective Radius [micron]"
-    f["prop_x"].attrs["description"] = "%s at %.2f nm" % (prop_tag.title(), wvl_x)
+    f["prop_x"].attrs["description"] = f"{prop_tag.title()} at {wvl_x:.2f} nm"
 
     f["prop_y"] = prop_y
     f["prop_y"].dims[0].label = "Cloud Optical Thickness"
     f["prop_y"].dims[1].label = "Cloud Effective Radius [micron]"
-    f["prop_y"].attrs["description"] = "%s at %.2f nm" % (prop_tag.title(), wvl_y)
+    f["prop_y"].attrs["description"] = f"{prop_tag.title()} at {wvl_y:.2f} nm"
 
     f["cot"] = cloud_optical_thickness_all
     f["cot"].attrs["description"] = "Cloud Optical Thickness"
@@ -1003,7 +979,7 @@ class func_ref_vs_cot:
         wavelength=er3t.common.params["wavelength"],
         surface_albedo=er3t.common.params["surface_albedo"],
         atmospheric_profile=er3t.common.params["atmospheric_profile"],
-        solar_file="%s/solar_16g_1.0nm.dat" % (er3t.common.fdir_data_solar),
+        solar_file=f"{er3t.common.fdir_data_solar}/solar_16g_1.0nm.dat",
         solar_zenith_angle=er3t.common.params["solar_zenith_angle"],
         solar_azimuth_angle=er3t.common.params["solar_azimuth_angle"],
         sensor_zenith_angle=er3t.common.params["sensor_zenith_angle"],
@@ -1073,8 +1049,8 @@ class func_ref_vs_cot:
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         init_toa = lrt.lrt_init_mono_flx(
             output_altitude="toa",
-            input_file="%s/lrt-toa-inp_%4.4dnm.txt" % (self.fdir, self.wvl0),
-            output_file="%s/lrt-toa-out_%4.4dnm.txt" % (self.fdir, self.wvl0),
+            input_file=f"{self.fdir}/lrt-toa-inp_{int(self.wvl0):04d}nm.txt",
+            output_file=f"{self.fdir}/lrt-toa-out_{int(self.wvl0):04d}nm.txt",
             date=self.date0,
             surface_albedo=self.alb0,
             wavelength=self.wvl0,
@@ -1083,7 +1059,7 @@ class func_ref_vs_cot:
             lrt_cfg=lrt_cfg,
             mute_list=["slit_function_file", "wavelength", "source solar"],
             input_dict_extra={
-                "wavelength": "%.1f %.1f" % (self.wvl0, self.wvl0),
+                "wavelength": f"{self.wvl0:.1f} {self.wvl0:.1f}",
             },
         )
         # ╰────────────────────────────────────────────────────────────────────────────╯#
@@ -1093,10 +1069,8 @@ class func_ref_vs_cot:
         inits_rad = []
 
         for cot0 in self.cot:
-            cld_cfg["cloud_file"] = "%s/lrt-cld_cot-%06.2f_cer-%06.2f.txt" % (
-                self.fdir,
-                cot0,
-                self.cer0,
+            cld_cfg["cloud_file"] = (
+                f"{self.fdir}/lrt-cld_cot-{cot0:06.2f}_cer-{self.cer0:06.2f}.txt"
             )
             cld_cfg["cloud_altitude"] = np.arange(self.cbh0, self.cth0 + 0.1, 0.1)
             cld_cfg["cloud_optical_thickness"] = cot0
@@ -1128,7 +1102,7 @@ class func_ref_vs_cot:
                 output_altitude="toa",
                 mute_list=["slit_function_file", "wavelength", "source solar"],
                 input_dict_extra={
-                    "wavelength": "%.1f %.1f" % (self.wvl0, self.wvl0),
+                    "wavelength": f"{self.wvl0:.1f} {self.wvl0:.1f}",
                 },
             )
 
@@ -1142,7 +1116,7 @@ class func_ref_vs_cot:
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     def run_all(self):
-        os.system("rm -rf %s" % self.fdir)
+        os.system(f"rm -rf {self.fdir}")
         os.makedirs(self.fdir)
 
         self.get_inits()

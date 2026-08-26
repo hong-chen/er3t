@@ -86,8 +86,8 @@ class abi_l2:
             vname_cot = "cld_opd_dcomp"
             vname_cer = "cld_reff_dcomp"
         else:
-            vname_cot = "cld_opd_%s" % cop_flag
-            vname_cer = "cld_reff_%s" % cop_flag
+            vname_cot = f"cld_opd_{cop_flag}"
+            vname_cer = f"cld_reff_{cop_flag}"
 
         f = nc4.Dataset(fname, "r")
 

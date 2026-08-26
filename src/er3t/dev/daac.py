@@ -50,14 +50,11 @@ def get_satname(satellite, instrument):
         instrument = instrument.upper()
         satellite = satellite.upper().replace("WEST", "West").replace("EAST", "East")
     else:
-        msg = "\nError [get_satname]: Currently do not support <%s> onboard <%s>." % (
-            instrument,
-            satellite,
-        )
+        msg = f"\nError [get_satname]: Currently do not support <{instrument}> onboard <{satellite}>."
         raise NameError(msg)
     # \----------------------------------------------------------------------------/#
 
-    satname = "%s|%s" % (satellite, instrument)
+    satname = f"{satellite}|{instrument}"
 
     return satname
 
@@ -90,10 +87,7 @@ def gen_file_earthdata(
             msg = "\nError [gen_file_earthdata]: Please follow the instructions at \nhttps://disc.gsfc.nasa.gov/data-access\nto register a login account and create a <~/.netrc> file."
             raise OSError(msg)
 
-        content = "machine urs.earthdata.nasa.gov login %s password %s" % (
-            username,
-            password,
-        )
+        content = f"machine urs.earthdata.nasa.gov login {username} password {password}"
         er3t.common.logger.info("Message [gen_file_earthdata]: Creating <~/.netrc> ...")
         with open(fname_login, "w") as f:
             f.write(content)
@@ -118,31 +112,27 @@ def get_command_earthdata(
     token_mode=True,
     primary_tool="curl",
     backup_tool="wget",
-    fdir_save="%s/satfile" % er3t.common.fdir_data_tmp,
+    fdir_save=f"{er3t.common.fdir_data_tmp}/satfile",
     verbose=1,
 ):
     if filename is None:
         filename = os.path.basename(fname_target)
 
-    fname_save = "%s/%s" % (fdir_save, filename)
+    fname_save = f"{fdir_save}/{filename}"
 
     if token_mode:
         token = get_token_earthdata()
-        header = '"Authorization: Bearer %s"' % token
+        header = f'"Authorization: Bearer {token}"'
 
         if verbose == 1:
             options = {
-                "curl": '--header %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"'
-                % (header, fname_save, fname_target),
-                "wget": '--header=%s --continue --timeout=120 --tries=3 --show-progress --output-document="%s" "%s"'
-                % (header, fname_save, fname_target),
+                "curl": f'--header {header} --connect-timeout 120.0 --retry 3 --location --continue-at - --output "{fname_save}" "{fname_target}"',
+                "wget": f'--header={header} --continue --timeout=120 --tries=3 --show-progress --output-document="{fname_save}" "{fname_target}"',
             }
         else:
             options = {
-                "curl": '-s --header %s --connect-timeout 120.0 --retry 3 --location --continue-at - "%s" "%s"'
-                % (header, fname_save, fname_target),
-                "wget": '--header=%s --continue --timeout=120 --tries=3  --quiet --output-document="%s" "%s"'
-                % (header, fname_save, fname_target),
+                "curl": f'-s --header {header} --connect-timeout 120.0 --retry 3 --location --continue-at - "{fname_save}" "{fname_target}"',
+                "wget": f'--header={header} --continue --timeout=120 --tries=3  --quiet --output-document="{fname_save}" "{fname_target}"',
             }
 
     else:
@@ -150,24 +140,20 @@ def get_command_earthdata(
 
         if verbose == 1:
             options = {
-                "curl": '--netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"'
-                % (secret["cookies"], secret["cookies"], fname_save, fname_target),
-                "wget": '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="%s" "%s"'
-                % (secret["cookies"], secret["cookies"], fname_save, fname_target),
+                "curl": '--netrc --cookie-jar {} --cookie {} --connect-timeout 120.0 --retry 3 --location --continue-at - --output "{}" "{}"'.format(secret["cookies"], secret["cookies"], fname_save, fname_target),
+                "wget": '--continue --load-cookies={} --save-cookies={} --auth-no-challenge --keep-session-cookies --content-disposition --timeout=120 --tries=3 --show-progress --output-document="{}" "{}"'.format(secret["cookies"], secret["cookies"], fname_save, fname_target),
             }
         else:
             options = {
-                "curl": '-s --netrc --cookie-jar %s --cookie %s --connect-timeout 120.0 --retry 3 --location --continue-at - --output "%s" "%s"'
-                % (secret["cookies"], secret["cookies"], fname_save, fname_target),
-                "wget": '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --quiet --keep-session-cookies --content-disposition --timeout=120 --tries=3 --output-document="%s" "%s"'
-                % (secret["cookies"], secret["cookies"], fname_save, fname_target),
+                "curl": '-s --netrc --cookie-jar {} --cookie {} --connect-timeout 120.0 --retry 3 --location --continue-at - --output "{}" "{}"'.format(secret["cookies"], secret["cookies"], fname_save, fname_target),
+                "wget": '--continue --load-cookies={} --save-cookies={} --auth-no-challenge --quiet --keep-session-cookies --content-disposition --timeout=120 --tries=3 --output-document="{}" "{}"'.format(secret["cookies"], secret["cookies"], fname_save, fname_target),
             }
 
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
-    primary_command = "%s %s" % (primary_tool, options[primary_tool])
-    backup_command = "%s %s" % (backup_tool, options[backup_tool])
+    primary_command = f"{primary_tool} {options[primary_tool]}"
+    backup_command = f"{backup_tool} {options[backup_tool]}"
 
     return primary_command, backup_command
 
@@ -183,31 +169,22 @@ def get_fname_geometa(
 
     if server == "https://ladsweb.modaps.eosdis.nasa.gov":
         fnames_geometa = {
-            "Aqua|MODIS": "%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt"
-            % (server, date.year, date_s),
-            "Terra|MODIS": "%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt"
-            % (server, date.year, date_s),
-            "NOAA20|VIIRS": "%s/archive/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_%s.txt"
-            % (server, date.year, date_s),
-            "SNPP|VIIRS": "%s/archive/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_%s.txt"
-            % (server, date.year, date_s),
+            "Aqua|MODIS": f"{server}/archive/geoMeta/61/AQUA/{date.year:04d}/MYD03_{date_s}.txt",
+            "Terra|MODIS": f"{server}/archive/geoMeta/61/TERRA/{date.year:04d}/MOD03_{date_s}.txt",
+            "NOAA20|VIIRS": f"{server}/archive/geoMetaVIIRS/5201/NOAA-20/{date.year:04d}/VJ103MOD_{date_s}.txt",
+            "SNPP|VIIRS": f"{server}/archive/geoMetaVIIRS/5200/NPP/{date.year:04d}/VNP03MOD_{date_s}.txt",
         }
 
     elif server == "https://nrt3.modaps.eosdis.nasa.gov":
         fnames_geometa = {
-            "Aqua|MODIS": "%s/api/v2/content/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt"
-            % (server, date.year, date_s),
-            "Terra|MODIS": "%s/api/v2/content/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt"
-            % (server, date.year, date_s),
-            "NOAA20|VIIRS": "%s/api/v2/content/archives/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt"
-            % (server, date.year, date_s),
-            "SNPP|VIIRS": "%s/api/v2/content/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt"
-            % (server, date.year, date_s),
+            "Aqua|MODIS": f"{server}/api/v2/content/archives/geoMetaMODIS/61/AQUA/{date.year:04d}/MYD03_{date_s}.txt",
+            "Terra|MODIS": f"{server}/api/v2/content/archives/geoMetaMODIS/61/TERRA/{date.year:04d}/MOD03_{date_s}.txt",
+            "NOAA20|VIIRS": f"{server}/api/v2/content/archives/geoMetaVIIRS/5201/NOAA-20/{date.year:04d}/VJ103MOD_NRT_{date_s}.txt",
+            "SNPP|VIIRS": f"{server}/api/v2/content/archives/geoMetaVIIRS/5200/NPP/{date.year:04d}/VNP03MOD_NRT_{date_s}.txt",
         }
     else:
         msg = (
-            "\nError [get_fname_geometa]: Currently do not support accessing geometa data from <%s>."
-            % server
+            f"\nError [get_fname_geometa]: Currently do not support accessing geometa data from <{server}>."
         )
         raise OSError(msg)
 
@@ -221,13 +198,13 @@ def delete_file(
     fname_file,
     filename=None,
     fdir_local="./",
-    fdir_save="%s/satfile" % er3t.common.fdir_data_tmp,
+    fdir_save=f"{er3t.common.fdir_data_tmp}/satfile",
 ):
     if filename is None:
         filename = os.path.basename(fname_file)
 
-    fname_local1 = os.path.abspath("%s/%s" % (fdir_save, filename))
-    fname_local2 = os.path.abspath("%s/%s" % (fdir_local, filename))
+    fname_local1 = os.path.abspath(f"{fdir_save}/{filename}")
+    fname_local2 = os.path.abspath(f"{fdir_local}/{filename}")
 
     if os.path.exists(fname_local1):
         os.remove(fname_local1)
@@ -240,7 +217,7 @@ def get_local_file(
     fname_file,
     filename=None,
     fdir_local="./",
-    fdir_save="%s/satfile" % er3t.common.fdir_data_tmp,
+    fdir_save=f"{er3t.common.fdir_data_tmp}/satfile",
 ):
     if filename is None:
         filename = os.path.basename(fname_file)
@@ -253,16 +230,16 @@ def get_local_file(
     if not os.path.exists(fdir_save):
         os.makedirs(fdir_save)
 
-    fname_local1 = os.path.abspath("%s/%s" % (fdir_save, filename))
-    fname_local2 = os.path.abspath("%s/%s" % (fdir_local, filename))
+    fname_local1 = os.path.abspath(f"{fdir_save}/{filename}")
+    fname_local2 = os.path.abspath(f"{fdir_local}/{filename}")
 
     if os.path.exists(fname_local1):
-        with open(fname_local1, "r") as f_:
+        with open(fname_local1) as f_:
             content = f_.read()
 
     elif os.path.exists(fname_local2):
-        os.system("cp %s %s" % (fname_local2, fname_local1))
-        with open(fname_local2, "r") as f_:
+        os.system(f"cp {fname_local2} {fname_local1}")
+        with open(fname_local2) as f_:
             content = f_.read()
 
     else:
@@ -278,7 +255,7 @@ def get_online_file(
     download=True,
     primary_tool="curl",
     backup_tool="wget",
-    fdir_save="%s/satfile" % er3t.common.fdir_data_tmp,
+    fdir_save=f"{er3t.common.fdir_data_tmp}/satfile",
     verbose=1,
 ):
     if filename is None:
@@ -300,9 +277,7 @@ def get_online_file(
         except Exception as message:
             er3t.common.logger.info(f"{message}\n")
             er3t.common.logger.info(
-                "Message [get_online_file]: Failed to download/read {},\nAttempting again...".format(
-                    fname_file
-                )
+                f"Message [get_online_file]: Failed to download/read {fname_file},\nAttempting again..."
             )
 
             try:
@@ -313,9 +288,7 @@ def get_online_file(
             except Exception as message:
                 er3t.common.logger.info(f"{message}\n")
                 er3t.common.logger.info(
-                    "Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(
-                        fname_file
-                    )
+                    f"Message [get_online_file]: Failed to download/read {fname_file},\nAttempting with backup tool..."
                 )
                 delete_file(fname_file, filename=filename, fdir_save=fdir_save)
 
@@ -326,9 +299,7 @@ def get_online_file(
                     )
                 except Exception as message:
                     er3t.common.logger.info(f"{message}\n")
-                    msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(
-                        fname_file
-                    )
+                    msg = f"Message [get_online_file]: Failed to download/read {fname_file},\nTry again later."
                     delete_file(fname_file, filename=filename, fdir_save=fdir_save)
                     raise OSError(msg)
 
@@ -418,24 +389,21 @@ def final_file_check(fname_local, data_format=None, verbose=False):
 
     else:
         msg = (
-            "\nWarning [final_file_check]: Do not support check for <.%s> file.\nDo not know whether <%s> has been successfully downloaded.\n"
-            % (data_format, fname_local)
+            f"\nWarning [final_file_check]: Do not support check for <.{data_format}> file.\nDo not know whether <{fname_local}> has been successfully downloaded.\n"
         )
         warnings.warn(msg)
 
     if checked:
         if verbose:
             msg = (
-                "\nMessage [final_file_check]: <%s> has been successfully downloaded.\n"
-                % fname_local
+                f"\nMessage [final_file_check]: <{fname_local}> has been successfully downloaded.\n"
             )
             er3t.common.logger.info(msg)
         return 1
 
     else:
         msg = (
-            "\nWarning [final_file_check]: Do not know whether <%s> has been successfully downloaded.\n"
-            % (fname_local)
+            f"\nWarning [final_file_check]: Do not know whether <{fname_local}> has been successfully downloaded.\n"
         )
         warnings.warn(msg)
         return 0
@@ -647,14 +615,12 @@ def cal_lon_lat_utc_geometa(
     # /----------------------------------------------------------------------------\#
     if line_data["Instrument"].lower() == "modis" and delta_t != 300.0:
         msg = (
-            "\nWarning [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t=%.1f>, please double-check."
-            % delta_t
+            f"\nWarning [cal_lon_lat_utc_geometa]: MODIS should have <delta_t=300.0> but given <delta_t={delta_t:.1f}>, please double-check."
         )
         warnings.warn(msg)
     elif line_data["Instrument"].lower() == "viirs" and delta_t != 360.0:
         msg = (
-            "\nWarning [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t=%.1f>, please double-check."
-            % delta_t
+            f"\nWarning [cal_lon_lat_utc_geometa]: VIIRS should have <delta_t=360.0> but given <delta_t={delta_t:.1f}>, please double-check."
         )
         warnings.warn(msg)
     # \----------------------------------------------------------------------------/#
@@ -829,7 +795,7 @@ def cal_lon_lat_utc_geometa(
         }
         fname_png = filename.replace(".hdf", ".png").replace(".nc", ".png")
         fig.savefig(
-            "globe-view_%s" % fname_png, bbox_inches="tight", metadata=_metadata
+            f"globe-view_{fname_png}", bbox_inches="tight", metadata=_metadata
         )
         # \--------------------------------------------------------------/#
     # \----------------------------------------------------------------------------/#
@@ -901,10 +867,7 @@ def cal_sec_offset_abi(extent, satname="GOES-East|ABI", sec_per_scan=30.0):
         center_lat = 0.0
 
     else:
-        msg = "\nError [cal_utc_abi]: Currently do not support <%s> onboard <%s>." % (
-            instrument,
-            satellite,
-        )
+        msg = f"\nError [cal_utc_abi]: Currently do not support <{instrument}> onboard <{satellite}>."
         raise NameError(msg)
 
     # define projections
@@ -990,7 +953,7 @@ def get_satfile_tag(
     instrument="modis",
     server="https://ladsweb.modaps.eosdis.nasa.gov",
     fdir_local="./",
-    fdir_save="%s/satfile" % er3t.common.fdir_data_tmp,
+    fdir_save=f"{er3t.common.fdir_data_tmp}/satfile",
     geometa=False,
     percent0=0.0,
     worldview=False,
@@ -1044,7 +1007,7 @@ def get_satfile_tag(
 
     # get geometa info
     # /----------------------------------------------------------------------------\#
-    filename_geometa = "%s_%s" % (
+    filename_geometa = "{}_{}".format(
         server.replace("https://", "").split(".")[0],
         os.path.basename(fname_geometa),
     )
@@ -1136,7 +1099,7 @@ def download_laads_https(
     fdir_prefix="/archive/allData",
     day_interval=1,
     fdir_out="tmp-data",
-    fdir_save="%s/satfile" % er3t.common.fdir_data_tmp,
+    fdir_save=f"{er3t.common.fdir_data_tmp}/satfile",
     data_format=None,
     run=True,
     verbose=True,
@@ -1168,15 +1131,15 @@ def download_laads_https(
     else:
         doy_str = get_doy_tag(date, day_interval=day_interval)
 
-    fdir_data = "%s/%s/%s/%s" % (fdir_prefix, dataset_tag, year_str, doy_str)
+    fdir_data = f"{fdir_prefix}/{dataset_tag}/{year_str}/{doy_str}"
     fdir_server = server + fdir_data
     # \----------------------------------------------------------------------------/#
 
     # get csv info
     # /----------------------------------------------------------------------------\#
-    fname_csv = "%s.csv" % fdir_server
+    fname_csv = f"{fdir_server}.csv"
     filename_csv = server.replace("https://", "").split(".")[0] + "_".join(
-        ("%s.csv" % fdir_data).split("/")
+        (f"{fdir_data}.csv").split("/")
     )
 
     # try to get geometa information from local
@@ -1198,8 +1161,8 @@ def download_laads_https(
         filename = line.strip().split(",")[0]
 
         if filename_tag in filename:
-            fname_server = "%s/%s" % (fdir_server, filename)
-            fname_local = "%s/%s" % (fdir_out, filename)
+            fname_server = f"{fdir_server}/{filename}"
+            fname_local = f"{fdir_out}/{filename}"
             fnames_local.append(fname_local)
 
             primary_command, backup_command = get_command_earthdata(
@@ -1217,7 +1180,7 @@ def download_laads_https(
 
             if verbose:
                 er3t.common.logger.info(
-                    "Message [download_laads_https]: Downloading %s ..." % fname_local
+                    f"Message [download_laads_https]: Downloading {fname_local} ..."
                 )
             os.system(primary_commands[i])
 
@@ -1245,7 +1208,7 @@ def download_lance_https(
     fdir_prefix="/archives/allData",
     day_interval=1,
     fdir_out="tmp-data",
-    fdir_save="%s/satfile" % er3t.common.fdir_data_tmp,
+    fdir_save=f"{er3t.common.fdir_data_tmp}/satfile",
     data_format=None,
     run=True,
     verbose=True,
@@ -1284,19 +1247,14 @@ def download_lance_https(
     else:
         doy_str = get_doy_tag(date, day_interval=day_interval)
 
-    fdir_data = "%s/%s/%s/%s" % (fdir_prefix, dataset_tag, year_str, doy_str)
+    fdir_data = f"{fdir_prefix}/{dataset_tag}/{year_str}/{doy_str}"
     # \----------------------------------------------------------------------------/#
 
     # get csv info
     # /----------------------------------------------------------------------------\#
-    fname_csv = "%s/api/v2/content/details/allData/%s/%s/%s?fields=all&formats=csv" % (
-        server,
-        dataset_tag,
-        year_str,
-        doy_str,
-    )
+    fname_csv = f"{server}/api/v2/content/details/allData/{dataset_tag}/{year_str}/{doy_str}?fields=all&formats=csv"
     filename_csv = server.replace("https://", "").split(".")[0] + "_".join(
-        ("%s.csv" % fdir_data).split("/")
+        (f"{fdir_data}.csv").split("/")
     )
 
     # try to get geometa information from local
@@ -1318,8 +1276,8 @@ def download_lance_https(
         filename = line.strip().split(",")[0]
 
         if (filename_tag in filename) and (".met" not in filename):
-            fname_server = "%s/api/v2/content%s/%s" % (server, fdir_data, filename)
-            fname_local = "%s/%s" % (fdir_out, filename)
+            fname_server = f"{server}/api/v2/content{fdir_data}/{filename}"
+            fname_local = f"{fdir_out}/{filename}"
             fnames_local.append(fname_local)
 
             primary_command, backup_command = get_command_earthdata(
@@ -1337,7 +1295,7 @@ def download_lance_https(
 
             if verbose:
                 er3t.common.logger.info(
-                    "Message [download_laads_https]: Downloading %s ..." % fname_local
+                    f"Message [download_laads_https]: Downloading {fname_local} ..."
                 )
             os.system(primary_commands[i])
 
@@ -1404,19 +1362,18 @@ def download_oco2_https(
         "OCO2_L2_Diagnostic.10r",
         "OCO2_L2_Diagnostic.10",
     ]:
-        fdir_data = "%s/%s/%s/%s" % (fdir_prefix, dataset_tag, year_str, doy_str)
+        fdir_data = f"{fdir_prefix}/{dataset_tag}/{year_str}/{doy_str}"
 
     elif dataset_tag in [
         "OCO2_L2_Lite_FP.9r",
         "OCO2_L2_Lite_FP.10r",
         "OCO2_L2_Lite_SIF.10r",
     ]:
-        fdir_data = "%s/%s/%s" % (fdir_prefix, dataset_tag, year_str)
+        fdir_data = f"{fdir_prefix}/{dataset_tag}/{year_str}"
 
     else:
         msg = (
-            "\nError [download_oco2_https]: Currently do not support downloading <%s>."
-            % dataset_tag
+            f"\nError [download_oco2_https]: Currently do not support downloading <{dataset_tag}>."
         )
         raise OSError(msg)
 
@@ -1427,8 +1384,7 @@ def download_oco2_https(
         data_format = fnames_xml[0].split(".")[-2]
     else:
         msg = (
-            "\nError [download_oco2_https]: XML files are not available at <%s>."
-            % fdir_server
+            f"\nError [download_oco2_https]: XML files are not available at <{fdir_server}>."
         )
         raise OSError(msg)
 
@@ -1436,7 +1392,7 @@ def download_oco2_https(
 
     if fnames is not None:
         for fname in fnames:
-            fname_server = "%s/%s" % (fdir_server, fname)
+            fname_server = f"{fdir_server}/{fname}"
             fnames_server.append(fname_server)
 
     else:
@@ -1449,10 +1405,10 @@ def download_oco2_https(
 
         for i in range(Nfile):
             dtime_s, dtime_e = get_dtime_from_xml(
-                "%s/%s" % (fdir_server, fnames_xml[i])
+                f"{fdir_server}/{fnames_xml[i]}"
             )
             if (dtime >= dtime_s) & (dtime <= dtime_e):
-                fname_server = "%s/%s" % (fdir_server, fnames_dat[i])
+                fname_server = f"{fdir_server}/{fnames_dat[i]}"
                 fnames_server.append(fname_server)
 
     primary_commands = []
@@ -1460,7 +1416,7 @@ def download_oco2_https(
     fnames_local = []
     for fname_server in fnames_server:
         filename = os.path.basename(fname_server)
-        fname_local = "%s/%s" % (fdir_out, filename)
+        fname_local = f"{fdir_out}/{filename}"
         fnames_local.append(fname_local)
 
         primary_command, backup_command = get_command_earthdata(
@@ -1479,7 +1435,7 @@ def download_oco2_https(
 
             if verbose:
                 er3t.common.logger.info(
-                    "Message [download_oco2_https]: Downloading %s ..." % fname_local
+                    f"Message [download_oco2_https]: Downloading {fname_local} ..."
                 )
 
             os.system(primary_commands[i])
@@ -1546,7 +1502,7 @@ def download_worldview_image(
         # /--------------------------------------------------------------\#
         if layer_name0 is None:
             layer_name0 = "CorrectedReflectance_TrueColor"
-        layer_name = "%s_%s_%s" % (instrument, satellite, layer_name0)
+        layer_name = f"{instrument}_{satellite}_{layer_name0}"
         # \--------------------------------------------------------------/#
 
         # calculate time based on the relative location of
@@ -1599,24 +1555,24 @@ def download_worldview_image(
             date0 = er3t.core._utilities.jday_to_dtime(jday0)
             date_s0 = date0.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-            fname = "%s/%s-%s_%s_%s_(%s).png" % (
+            fname = "{}/{}-{}_{}_{}_({}).png".format(
                 fdir_out,
                 instrument,
                 satellite,
                 layer_name0.split("_")[-1],
                 date_s0,
-                ",".join(["%.2f" % extent0 for extent0 in extent]),
+                ",".join([f"{extent0:.2f}" for extent0 in extent]),
             )
 
         except Exception as error:
             er3t.common.logger.info(error)
-            fname = "%s/%s-%s_%s_%s_(%s).png" % (
+            fname = "{}/{}-{}_{}_{}_({}).png".format(
                 fdir_out,
                 instrument,
                 satellite,
                 layer_name0.split("_")[-1],
                 date_s,
-                ",".join(["%.2f" % extent0 for extent0 in extent]),
+                ",".join([f"{extent0:.2f}" for extent0 in extent]),
             )
         # \--------------------------------------------------------------/#
 
@@ -1625,7 +1581,7 @@ def download_worldview_image(
         # /--------------------------------------------------------------\#
         if layer_name0 is None:
             layer_name0 = "GeoColor"
-        layer_name = "%s_%s_%s" % (satellite, instrument, layer_name0)
+        layer_name = f"{satellite}_{instrument}_{layer_name0}"
         # \--------------------------------------------------------------/#
 
         # every 10 minutes, e.g., 10:10, 10:20, 10:30 ...
@@ -1641,13 +1597,13 @@ def download_worldview_image(
         date0 = date + datetime.timedelta(seconds=sec_offset)
         date_s0 = date0.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        fname = "%s/%s-%s_%s_%s_(%s).png" % (
+        fname = "{}/{}-{}_{}_{}_({}).png".format(
             fdir_out,
             instrument,
             satellite,
             layer_name0.split("_")[-1],
             date_s0,
-            ",".join(["%.2f" % extent0 for extent0 in extent]),
+            ",".join([f"{extent0:.2f}" for extent0 in extent]),
         )
         # \--------------------------------------------------------------/#
 
@@ -1686,8 +1642,7 @@ def download_worldview_image(
         except Exception as error:
             er3t.common.logger.info(error)
             msg = (
-                "\nError [download_wordview_image]: Unable to download imagery for <%s> onboard <%s> at <%s>."
-                % (instrument, satellite, date_s)
+                f"\nError [download_wordview_image]: Unable to download imagery for <{instrument}> onboard <{satellite}> at <{date_s}>."
             )
             warnings.warn(msg)
 

@@ -95,12 +95,12 @@ class mcarats_ng:
             os.makedirs(fdir)
             if not quiet:
                 er3t.common.logger.info(
-                    "Message [mcarats_ng]: Directory <%s> is created." % fdir
+                    f"Message [mcarats_ng]: Directory <{fdir}> is created."
                 )
         else:
             if verbose:
                 er3t.common.logger.info(
-                    "Message [mcarats_ng]: Directory <%s> already exists." % fdir
+                    f"Message [mcarats_ng]: Directory <{fdir}> already exists."
                 )
 
         self.Ng = Ng
@@ -134,7 +134,7 @@ class mcarats_ng:
         elif solver in ["ipa", "independent pixel approximation"]:
             self.solver = "IPA"
         else:
-            msg = "Error [mcarats_ng]: Cannot understand <solver=%s>." % self.solver
+            msg = f"Error [mcarats_ng]: Cannot understand <solver={self.solver}>."
             raise OSError(msg)
 
         self.target = target
@@ -175,7 +175,7 @@ class mcarats_ng:
             else:
                 self.Ncpu = Ncpu
         else:
-            msg = "Error [mcarats_ng]: Cannot understand <Ncpu=%s>." % Ncpu
+            msg = f"Error [mcarats_ng]: Cannot understand <Ncpu={Ncpu}>."
             raise OSError(msg)
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -187,13 +187,13 @@ class mcarats_ng:
         for ir in range(self.Nrun):
             self.fnames_inp.append(
                 [
-                    "%s/r%2.2d.g%3.3d.inp.txt" % (self.fdir, ir, ig)
+                    f"{self.fdir}/r{int(ir):02d}.g{int(ig):03d}.inp.txt"
                     for ig in range(self.Ng)
                 ]
             )
             self.fnames_out.append(
                 [
-                    "%s/r%2.2d.g%3.3d.out.bin" % (self.fdir, ir, ig)
+                    f"{self.fdir}/r{int(ir):02d}.g{int(ig):03d}.out.bin"
                     for ig in range(self.Ng)
                 ]
             )
@@ -261,7 +261,7 @@ class mcarats_ng:
         elif self.target.lower() in ["radiance", "rad"]:
             self.target = "radiance"
         else:
-            msg = "Error [mcarats_ng]: Cannot understand <target=%s>." % self.target
+            msg = f"Error [mcarats_ng]: Cannot understand <target={self.target}>."
             raise OSError(msg)
 
         for ig in range(self.Ng):
@@ -316,7 +316,7 @@ class mcarats_ng:
                 self.nml[ig]["Rad_zloc"] = sensor_altitude * 1000.0
 
             else:
-                msg = "Error [mcarats_ng]: Cannot understand <target=%s>." % self.target
+                msg = f"Error [mcarats_ng]: Cannot understand <target={self.target}>."
                 raise OSError(msg)
 
     def init_sca(self, sca=None):
@@ -450,8 +450,7 @@ class mcarats_ng:
 
         if not self.quiet:
             er3t.common.logger.info(
-                "Message [mcarats_ng]: Created MCARaTS input files under <%s>."
-                % self.fdir
+                f"Message [mcarats_ng]: Created MCARaTS input files under <{self.fdir}>."
             )
 
     def gen_mca_out(self):
@@ -473,8 +472,7 @@ class mcarats_ng:
 
         if not self.quiet:
             er3t.common.logger.info(
-                "Message [mcarats_ng]: Running MCARaTS to get output files under <%s> ..."
-                % self.fdir
+                f"Message [mcarats_ng]: Running MCARaTS to get output files under <{self.fdir}> ..."
             )
 
         if not self.quiet:
@@ -510,72 +508,66 @@ class mcarats_ng:
         )
         er3t.common.logger.info("                 General Information")
         er3t.common.logger.info(
-            "               Simulation : %s %s" % (self.solver, self.target.title())
+            f"               Simulation : {self.solver} {self.target.title()}"
         )
-        er3t.common.logger.info("               Wavelength : %s" % (self.wvl_info))
+        er3t.common.logger.info(f"               Wavelength : {self.wvl_info}")
 
         er3t.common.logger.info(
-            "               Date (DOY) : %s (%d)"
-            % (self.date.strftime("%Y-%m-%d"), self.date.timetuple().tm_yday)
+            f"               Date (DOY) : {self.date:%Y-%m-%d} "
+            f"({self.date.timetuple().tm_yday})"
         )
 
         er3t.common.logger.info(
-            "       Solar Zenith Angle : %.4f° (0 at local zenith)"
-            % self.solar_zenith_angle
+            f"       Solar Zenith Angle : {self.solar_zenith_angle:.4f}° (0 at local zenith)"
         )
         er3t.common.logger.info(
-            "      Solar Azimuth Angle : %.4f° (0 at north; 90° at east)"
-            % self.solar_azimuth_angle
+            f"      Solar Azimuth Angle : {self.solar_azimuth_angle:.4f}° (0 at north; 90° at east)"
         )
 
         if self.target == "radiance":
             if self.sensor_zenith_angle < 90.0:
                 er3t.common.logger.info(
-                    "      Sensor Zenith Angle : %.4f° (looking down, 0 straight down)"
-                    % self.sensor_zenith_angle
+                    f"      Sensor Zenith Angle : {self.sensor_zenith_angle:.4f}° (looking down, 0 straight down)"
                 )
             else:
                 er3t.common.logger.info(
-                    "      Sensor Zenith Angle : %.4f° (looking up, 180° straight up)"
-                    % self.sensor_zenith_angle
+                    f"      Sensor Zenith Angle : {self.sensor_zenith_angle:.4f}° (looking up, 180° straight up)"
                 )
             er3t.common.logger.info(
-                "     Sensor Azimuth Angle : %.4f° (0 at north; 90° at east)"
-                % self.sensor_azimuth_angle
+                f"     Sensor Azimuth Angle : {self.sensor_azimuth_angle:.4f}° (0 at north; 90° at east)"
             )
             er3t.common.logger.info(
-                "          Sensor Altitude : %.1f km" % (self.sensor_altitude)
+                f"          Sensor Altitude : {self.sensor_altitude:.1f} km"
             )
 
         if not self.sfc_2d:
-            er3t.common.logger.info("           Surface Albedo : %.2f" % self.surface)
+            er3t.common.logger.info(f"           Surface Albedo : {self.surface:.2f}")
         else:
             er3t.common.logger.info("             Surface BRDF : 2D domain")
 
         if self.sca is None:
             er3t.common.logger.info("           Phase Function : Henyey-Greenstein")
         else:
-            er3t.common.logger.info("           Phase Function : %s" % self.sca.pha.ID)
+            er3t.common.logger.info(f"           Phase Function : {self.sca.pha.ID}")
 
         if (self.Nx > 1) | (self.Ny > 1):
             er3t.common.logger.info(
-                "     Domain Size (Nx, Ny) : (%d, %d)" % (self.Nx, self.Ny)
+                f"     Domain Size (Nx, Ny) : ({int(self.Nx)}, {int(self.Ny)})"
             )
             er3t.common.logger.info(
-                "      Pixel Res. (dx, dy) : (%.2f km, %.2f km)"
-                % (self.dx / 1000.0, self.dy / 1000.0)
+                f"      Pixel Res. (dx, dy) : ({self.dx / 1000.0:.2f} km, {self.dy / 1000.0:.2f} km)"
             )
 
         er3t.common.logger.info(
-            "  Number of Photons / Set : %.1e (%s over %d g)"
-            % (self.photons_per_set, self.np_mode, self.Ng)
+            f"  Number of Photons / Set : {self.photons_per_set:.1e} "
+            f"({self.np_mode} over {self.Ng} g)"
         )
         er3t.common.logger.info(
-            "           Number of Runs : %s (g) * %d (set)" % (self.Ng, self.Nrun)
+            f"           Number of Runs : {self.Ng} (g) * {int(self.Nrun)} (set)"
         )
         er3t.common.logger.info(
-            "           Number of CPUs : %d (used) of %d (total)"
-            % (self.Ncpu, self.Ncpu_total)
+            f"           Number of CPUs : {self.Ncpu} (used) of "
+            f"{self.Ncpu_total} (total)"
         )
         er3t.common.logger.info(
             "╰────────────────────────────────────────────────────────╯"

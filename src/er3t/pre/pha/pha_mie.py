@@ -98,7 +98,7 @@ class pha_mie_wc:
         pha0.data['ref']: effective radius
     """
 
-    fname_coef = "%s/wc.sol.mie.cdf" % er3t.common.fdir_data_pha
+    fname_coef = f"{er3t.common.fdir_data_pha}/wc.sol.mie.cdf"
 
     reference = "\nMie Scattering (Wiscombe, 1980):\n- Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, https://doi.org/10.1364/AO.19.001505, 1980."
 
@@ -117,7 +117,7 @@ class pha_mie_wc:
                 np.arange(176.0, 180.1, 0.25),
             )
         ),
-        fdir_pha_mie="%s/pha/mie" % er3t.common.fdir_data_tmp,
+        fdir_pha_mie=f"{er3t.common.fdir_data_tmp}/pha/mie",
         interpolate=False,
         angles_fine=False,
         overwrite=True,
@@ -137,12 +137,12 @@ class pha_mie_wc:
         self,
         wvl0,
         angles,
-        fdir="%s/pha/mie" % er3t.common.fdir_data_tmp,
+        fdir=f"{er3t.common.fdir_data_tmp}/pha/mie",
     ):
         if not os.path.exists(fdir):
             os.makedirs(fdir)
 
-        fname = "%s/pha_mie_wc_%09.4fnm.pk" % (fdir, wvl0)
+        fname = f"{fdir}/pha_mie_wc_{wvl0:09.4f}nm.pk"
 
         if not self.overwrite:
             if os.path.exists(fname):
@@ -150,8 +150,7 @@ class pha_mie_wc:
                     data0 = pickle.load(f0)
                 if np.abs(angles - data0["ang"]["data"]).sum() < 0.00000001:
                     er3t.common.logger.info(
-                        "Message [pha_mie_wc]: Re-using phase function from <%s> ..."
-                        % fname
+                        f"Message [pha_mie_wc]: Re-using phase function from <{fname}> ..."
                     )
                     self.data = copy.deepcopy(data0)
                 else:
@@ -219,8 +218,7 @@ class pha_mie_wc:
             pickle.dump(data, f)
 
         er3t.common.logger.info(
-            "Message [pha_mie_wc]: Phase function for %.2fnm has been stored at <%s>."
-            % (wvl0, fname)
+            f"Message [pha_mie_wc]: Phase function for {wvl0:.2f}nm has been stored at <{fname}>."
         )
 
         self.data = data
@@ -242,7 +240,7 @@ def read_mie_shd(fname, Npmom_max=1000):
         pmom: pmom coefficients
     """
 
-    with open(fname, "r") as f:
+    with open(fname) as f:
         lines = f.readlines()
 
     # wavelength
@@ -324,18 +322,14 @@ class pha_mie_wc_shd:
                 np.arange(176.0, 180.1, 0.25),
             )
         ),
-        fdir_pha_mie="%s/pha/mie" % er3t.common.fdir_data_tmp,
+        fdir_pha_mie=f"{er3t.common.fdir_data_tmp}/pha/mie",
         Npmom_max=1000,
         overwrite=True,
         verbose=False,
     ):
         start_log_session("pre/pha")
-        fdir_shd = "%s/shdom" % er3t.common.fdir_data_tmp
-        fname_coef = "%s/shdom-mie_W_F_%.4f-%.4f.txt" % (
-            fdir_shd,
-            wavelength,
-            wavelength,
-        )
+        fdir_shd = f"{er3t.common.fdir_data_tmp}/shdom"
+        fname_coef = f"{fdir_shd}/shdom-mie_W_F_{wavelength:.4f}-{wavelength:.4f}.txt"
         if not os.path.exists(fname_coef):
             if not os.path.exists(fdir_shd):
                 os.makedirs(fdir_shd)
@@ -354,13 +348,13 @@ class pha_mie_wc_shd:
         self,
         wvl0,
         angles,
-        fdir="%s/pha/mie" % er3t.common.fdir_data_tmp,
+        fdir=f"{er3t.common.fdir_data_tmp}/pha/mie",
         Npmom_max=1000,
     ):
         if not os.path.exists(fdir):
             os.makedirs(fdir)
 
-        fname = "%s/pha_mie_wc_shd_%09.4fnm.pk" % (fdir, wvl0)
+        fname = f"{fdir}/pha_mie_wc_shd_{wvl0:09.4f}nm.pk"
 
         if not self.overwrite:
             if os.path.exists(fname):
@@ -368,8 +362,7 @@ class pha_mie_wc_shd:
                     data0 = pickle.load(f0)
                 if np.abs(angles - data0["ang"]["data"]).sum() < 0.00000001:
                     er3t.common.logger.info(
-                        "Message [pha_mie_wc_shd]: Re-using phase function from <%s> ..."
-                        % fname
+                        f"Message [pha_mie_wc_shd]: Re-using phase function from <{fname}> ..."
                     )
                     self.data = copy.deepcopy(data0)
                 else:
@@ -438,8 +431,7 @@ class pha_mie_wc_shd:
             pickle.dump(data, f)
 
         er3t.common.logger.info(
-            "Message [pha_mie_wc_shd]: Phase function for %.2fnm has been stored at <%s>."
-            % (wvl0, fname)
+            f"Message [pha_mie_wc_shd]: Phase function for {wvl0:.2f}nm has been stored at <{fname}>."
         )
 
         self.data = data
@@ -658,7 +650,7 @@ class pha_mie_wc_pmom:
         pha0.data['ref']: effective radius
     """
 
-    fname_coef = "%s/wc.sol.mie.cdf" % er3t.common.fdir_data_pha
+    fname_coef = f"{er3t.common.fdir_data_pha}/wc.sol.mie.cdf"
 
     reference = "Wiscombe, W.: Improved Mie scattering algorithms, Applied Optics, 19, 1505–1509, 1980."
 
@@ -675,7 +667,7 @@ class pha_mie_wc_pmom:
                 np.arange(176.0, 180.1, 0.25),
             )
         ),
-        fdir_pha_mie="%s/pha/mie" % er3t.common.fdir_data_tmp,
+        fdir_pha_mie=f"{er3t.common.fdir_data_tmp}/pha/mie",
         interpolate=False,
         overwrite=True,
         verbose=False,
@@ -694,12 +686,12 @@ class pha_mie_wc_pmom:
         self,
         wvl0,
         angles,
-        fdir="%s/pha/mie" % er3t.common.fdir_data_tmp,
+        fdir=f"{er3t.common.fdir_data_tmp}/pha/mie",
     ):
         if not os.path.exists(fdir):
             os.makedirs(fdir)
 
-        fname = "%s/pha_mie_wc_pmom_%09.4fnm.pk" % (fdir, wvl0)
+        fname = f"{fdir}/pha_mie_wc_pmom_{wvl0:09.4f}nm.pk"
 
         if not self.overwrite:
             if os.path.exists(fname):
@@ -707,8 +699,7 @@ class pha_mie_wc_pmom:
                     data0 = pickle.load(f0)
                 if np.abs(angles - data0["ang"]["data"]).sum() < 0.00000001:
                     er3t.common.logger.info(
-                        "Message [pha_mie_wc_pmom]: Re-using phase function from <%s> ..."
-                        % fname
+                        f"Message [pha_mie_wc_pmom]: Re-using phase function from <{fname}> ..."
                     )
                     self.data = copy.deepcopy(data0)
                 else:
@@ -737,10 +728,7 @@ class pha_mie_wc_pmom:
             pmom0 = pmom[iwvl, ireff, :]
 
             if pmom0[-1] > 0.001:
-                msg = (
-                    "\nWarning [pha_mie]: Ref=%.2f Legendre series did not converge."
-                    % ref[ireff]
-                )
+                msg = f"\nWarning [pha_mie]: Ref={ref[ireff]:.2f} Legendre series did not converge."
                 warnings.warn(msg)
 
             pmom0 = pmom0 / (2.0 * np.arange(Npoly) + 1.0)
@@ -773,8 +761,7 @@ class pha_mie_wc_pmom:
             pickle.dump(data, f)
 
         er3t.common.logger.info(
-            "Message [pha_mie_wc_pmom]: Phase function for %.2fnm has been stored at <%s>."
-            % (wvl0, fname)
+            f"Message [pha_mie_wc_pmom]: Phase function for {wvl0:.2f}nm has been stored at <{fname}>."
         )
 
         self.data = data

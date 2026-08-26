@@ -68,7 +68,9 @@ def load_shd_inp_nml():
             ("_header", "&SHDOMINPUT"),
             (
                 "RUNNAME",
-                "shdom-run_%s" % datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
+                "shdom-run_{}".format(
+                    datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+                ),
             ),
             ("PROPFILE", "shdom-prp.txt"),
             ("PROPERTY_VERTICAL_GRID", "LAYER"),
@@ -339,7 +341,7 @@ def shd_inp_nml(input_dict, verbose=True, comment=False):
                 if comment:
                     shdom_nml_all_info[key] = shdom_nml_all_info[key_ori]
             else:
-                msg = "Error [shd_inp_nml]: please check input variable <%s>." % key
+                msg = f"Error [shd_inp_nml]: please check input variable <{key}>."
                 raise OSError(msg)
         else:
             index = nml_ordered_keys_full.index(key)
@@ -425,9 +427,9 @@ def shd_inp_file(input_fname, input_dict, indent="  ", verbose=True, comment=Fal
                     if "\n" in var_detail:
                         lines = var_detail.split("\n")
                         for line in lines:
-                            f.write(" !----> %s\n" % line)
+                            f.write(f" !----> {line}\n")
                     else:
-                        f.write(" !----> %s\n" % shdom_nml_all_info[var_key])
+                        f.write(f" !----> {shdom_nml_all_info[var_key]}\n")
                     f.write(
                         " !-----------------------------------------------------------------------------------------------------------\n"
                     )

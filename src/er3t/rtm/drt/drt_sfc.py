@@ -179,7 +179,7 @@ class drt_sfc_2d:
                 f.write(f"! {postfix}\n")
                 f.write(f"! {self.Nx + 1:10d},{self.Ny + 1:10d},{Nparam + 1:10d}\n")
 
-                with open("%s%s" % (fname, postfix), "wb") as fb:
+                with open(f"{fname}{postfix}", "wb") as fb:
                     Ndata = data.size
                     # data.T reshapes data from [Nx, Ny, Nparam], to [Nparam, Ny, Nx]
                     fb.write(struct.pack(f"<{Ndata}f", *data.T.flatten(order="F")))
@@ -187,9 +187,7 @@ class drt_sfc_2d:
         self.nml["SFCFILE"] = {"data": fname}
 
         if not self.quiet:
-            er3t.common.logger.info(
-                "Message [drt_sfc_2d]: File <%s> is created." % fname
-            )
+            er3t.common.logger.info(f"Message [drt_sfc_2d]: File <{fname}> is created.")
 
 
 if __name__ == "__main__":

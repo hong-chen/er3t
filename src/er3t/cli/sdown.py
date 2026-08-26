@@ -86,7 +86,7 @@ _prog_ = os.path.basename(sys.argv[0])
 # product tags
 # this <_sat_tags_support_> will be updated over time in common.py
 # /----------------------------------------------------------------------------\#
-_today_dt = datetime.datetime.now(datetime.timezone.utc)
+_today_dt = datetime.datetime.now(datetime.UTC)
 _today_dt = _today_dt.replace(tzinfo=None)  # so that timedelta does not raise an error
 _date_today_ = _today_dt.strftime("%d %B, %Y")
 
@@ -197,8 +197,7 @@ def satellite_download(
         os.makedirs(fdir_out)
         if verbose:
             satlogger.info(
-                "\nMessage [sdown]: Created %s. Files will be downloaded to this directory and structured by date\n"
-                % fdir_out
+                f"\nMessage [sdown]: Created {fdir_out}. Files will be downloaded to this directory and structured by date\n"
             )
 
     # error handling for dates
@@ -220,8 +219,7 @@ def satellite_download(
         if single_dt > end_dt_hhmm:
             msg = (
                 "Error [sdown]: Provided date is in the future. Data will only be downloaded until today's date."
-                + "\n\nReceived date   : %s\nToday's date is : %s UTC"
-                % (
+                + "\n\nReceived date   : {}\nToday's date is : {} UTC".format(
                     single_dt.strftime("%d %B, %Y"),
                     _today_dt.strftime("%d %B, %Y: %H%M"),
                 )
@@ -231,77 +229,58 @@ def satellite_download(
 
         # check if products exist in those date ranges
         if len(modis_aqua) > 0 and single_dt < _aqua_modis_start_date:
-            msg = (
-                "Error [sdown]: Received %s as date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates."
-                % (
-                    single_dt.strftime("%d %B, %Y"),
-                    _aqua_modis_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "Error [sdown]: Received {} as date of interest but data for MODIS onboard Aqua only exists from {}. Retry with more recent dates.".format(
+                single_dt.strftime("%d %B, %Y"),
+                _aqua_modis_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         if len(modis_terra) > 0 and single_dt < _terra_modis_start_date:
-            msg = (
-                "Error [sdown]: Received %s as date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates."
-                % (
-                    single_dt.strftime("%d %B, %Y"),
-                    _terra_modis_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "Error [sdown]: Received {} as date of interest but data for MODIS onboard Terra only exists from {}. Retry with more recent dates.".format(
+                single_dt.strftime("%d %B, %Y"),
+                _terra_modis_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         if len(viirs_snpp) > 0 and single_dt < _snpp_viirs_start_date:
-            msg = (
-                "Error [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from %s. Retry with more recent dates."
-                % (
-                    single_dt.strftime("%d %B, %Y"),
-                    _snpp_viirs_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "Error [sdown]: Received {} as date of interest but data for VIIRS onboard NOAA-20 (SNPP) only exists from {}. Retry with more recent dates.".format(
+                single_dt.strftime("%d %B, %Y"),
+                _snpp_viirs_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         if len(viirs_noaa20) > 0 and single_dt < _noaa20_viirs_start_date:
-            msg = (
-                "\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates.\n"
-                % (
-                    single_dt.strftime("%d %B, %Y"),
-                    _noaa20_viirs_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "\nError [sdown]: Received {} as date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from {}. Retry with more recent dates.\n".format(
+                single_dt.strftime("%d %B, %Y"),
+                _noaa20_viirs_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         if len(viirs_noaa21) > 0 and single_dt < _noaa21_viirs_start_date:
-            msg = (
-                "\nError [sdown]: Received %s as date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from %s. Retry with more recent dates.\n"
-                % (
-                    single_dt.strftime("%d %B, %Y"),
-                    _noaa21_viirs_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "\nError [sdown]: Received {} as date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from {}. Retry with more recent dates.\n".format(
+                single_dt.strftime("%d %B, %Y"),
+                _noaa21_viirs_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         # NRT data is only available for the most recent ~ 7 days or so
         if (single_dt < _nrt_oldest_dt) and nrt:
-            msg = (
-                "Error [sdown]: Near Real Time data is only available for dates on or after %s. Given date: %s"
-                % (
-                    _nrt_oldest_dt.strftime("%d %B, %Y"),
-                    single_dt.strftime("%d %B, %Y"),
-                )
+            msg = "Error [sdown]: Near Real Time data is only available for dates on or after {}. Given date: {}".format(
+                _nrt_oldest_dt.strftime("%d %B, %Y"),
+                single_dt.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         # Passed checks, start download
         if verbose:
-            msg = (
-                "Message [sdown]: Data will be downloaded for %s"
-                % single_dt.strftime("%d %B, %Y")
+            msg = "Message [sdown]: Data will be downloaded for {}".format(
+                single_dt.strftime("%d %B, %Y")
             )
             satlogger.info(msg)
 
@@ -312,7 +291,7 @@ def satellite_download(
             os.makedirs(fdir_out_dt)
 
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-            f.write("Date: {}\n".format(single_dt))
+            f.write(f"Date: {single_dt}\n")
             f.write(
                 "Extent: {}\n".format(
                     [
@@ -390,20 +369,16 @@ def satellite_download(
             sys.exit()
 
         if start_dt == end_dt:
-            msg = (
-                "Warning [sdown]: `end_date` %s UTC and `start_date` %s UTC are both the same"
-                % (
-                    start_dt.strftime("%d %B, %Y: %H%M"),
-                    end_dt.strftime("%d %B, %Y: %H%M"),
-                )
+            msg = "Warning [sdown]: `end_date` {} UTC and `start_date` {} UTC are both the same".format(
+                start_dt.strftime("%d %B, %Y: %H%M"),
+                end_dt.strftime("%d %B, %Y: %H%M"),
             )
             satlogger.warning(msg)
 
         if start_dt > _today_dt:
             msg = (
                 "Error [sdown]: `start_date` cannot be in the future."
-                + "\n\nReceived start date: %s UTC \nToday's date is    : %s UTC"
-                % (
+                + "\n\nReceived start date: {} UTC \nToday's date is    : {} UTC".format(
                     start_dt.strftime("%d %B, %Y: %H%M"),
                     _today_dt.strftime("%d %B, %Y: %H%M"),
                 )
@@ -414,8 +389,7 @@ def satellite_download(
         if end_dt > _today_dt:
             msg = (
                 "Warning [sdown]: End date is in the future. Data will only be downloaded until today's date."
-                + "\n\nReceived end date: %s UTC\nToday's date is : %s UTC"
-                % (
+                + "\n\nReceived end date: {} UTC\nToday's date is : {} UTC".format(
                     end_dt.strftime("%d %B, %Y: %H%M"),
                     _today_dt.strftime("%d %B, %Y: %H%M"),
                 )
@@ -425,68 +399,50 @@ def satellite_download(
 
         # NRT data is only available for the most recent ~ 7 days or so
         if (start_dt < _nrt_oldest_dt) and nrt:
-            msg = (
-                "Error [sdown]: Near Real Time data is only available for dates on or after %s. Given start date: %s UTC"
-                % (
-                    _nrt_oldest_dt.strftime("%d %B, %Y"),
-                    start_dt.strftime("%d %B, %Y: %H%M"),
-                )
+            msg = "Error [sdown]: Near Real Time data is only available for dates on or after {}. Given start date: {} UTC".format(
+                _nrt_oldest_dt.strftime("%d %B, %Y"),
+                start_dt.strftime("%d %B, %Y: %H%M"),
             )
             satlogger.error(msg)
             sys.exit()
 
         # check if products exist in those date ranges
         if len(modis_aqua) > 0 and start_dt < _aqua_modis_start_date:
-            msg = (
-                "Error [sdown]: Received %s UTC as starting date of interest but data for MODIS onboard Aqua only exists from %s. Retry with more recent dates."
-                % (
-                    start_dt.strftime("%d %B, %Y: %H%M"),
-                    _aqua_modis_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "Error [sdown]: Received {} UTC as starting date of interest but data for MODIS onboard Aqua only exists from {}. Retry with more recent dates.".format(
+                start_dt.strftime("%d %B, %Y: %H%M"),
+                _aqua_modis_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         if len(modis_terra) > 0 and start_dt < _terra_modis_start_date:
-            msg = (
-                "Error [sdown]: Received %s UTC as starting date of interest but data for MODIS onboard Terra only exists from %s. Retry with more recent dates."
-                % (
-                    start_dt.strftime("%d %B, %Y: %H%M"),
-                    _terra_modis_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "Error [sdown]: Received {} UTC as starting date of interest but data for MODIS onboard Terra only exists from {}. Retry with more recent dates.".format(
+                start_dt.strftime("%d %B, %Y: %H%M"),
+                _terra_modis_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         if len(viirs_snpp) > 0 and start_dt < _snpp_viirs_start_date:
-            msg = (
-                "Error [sdown]: Received %s UTC as starting date of interest but data for VIIRS onboard S-NPP only exists from %s. Retry with more recent dates."
-                % (
-                    start_dt.strftime("%d %B, %Y: %H%M"),
-                    _snpp_viirs_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "Error [sdown]: Received {} UTC as starting date of interest but data for VIIRS onboard S-NPP only exists from {}. Retry with more recent dates.".format(
+                start_dt.strftime("%d %B, %Y: %H%M"),
+                _snpp_viirs_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         if len(viirs_noaa20) > 0 and start_dt < _noaa20_viirs_start_date:
-            msg = (
-                "Error [sdown]: Received %s UTC as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from %s. Retry with more recent dates."
-                % (
-                    start_dt.strftime("%d %B, %Y: %H%M"),
-                    _noaa20_viirs_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "Error [sdown]: Received {} UTC as starting date of interest but data for VIIRS onboard NOAA-20 (JPSS1) only exists from {}. Retry with more recent dates.".format(
+                start_dt.strftime("%d %B, %Y: %H%M"),
+                _noaa20_viirs_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
 
         if len(viirs_noaa21) > 0 and start_dt < _noaa21_viirs_start_date:
-            msg = (
-                "Error [sdown]: Received %s UTC as starting date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from %s. Retry with more recent dates."
-                % (
-                    start_dt.strftime("%d %B, %Y: %H%M"),
-                    _noaa21_viirs_start_date.strftime("%d %B, %Y"),
-                )
+            msg = "Error [sdown]: Received {} UTC as starting date of interest but data for VIIRS onboard NOAA-21 (JPSS2) only exists from {}. Retry with more recent dates.".format(
+                start_dt.strftime("%d %B, %Y: %H%M"),
+                _noaa21_viirs_start_date.strftime("%d %B, %Y"),
             )
             satlogger.error(msg)
             sys.exit()
@@ -497,12 +453,9 @@ def satellite_download(
 
         # Passed checks, start download
         if verbose:
-            msg = (
-                "Message [sdown]: Data will be downloaded for dates beginning %s UTC to %s UTC"
-                % (
-                    start_dt.strftime("%d %B, %Y: %H%M"),
-                    end_dt.strftime("%d %B, %Y: %H%M"),
-                )
+            msg = "Message [sdown]: Data will be downloaded for dates beginning {} UTC to {} UTC".format(
+                start_dt.strftime("%d %B, %Y: %H%M"),
+                end_dt.strftime("%d %B, %Y: %H%M"),
             )
             satlogger.info(msg)
 
@@ -527,8 +480,8 @@ def satellite_download(
                 fdir_out_dt_list.append(fdir_out_dt)
                 # Save metadata
                 with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-                    f.write("Date: {}\n".format(date_x))
-                    f.write("Extent: {}\n".format(extent))
+                    f.write(f"Date: {date_x}\n")
+                    f.write(f"Extent: {extent}\n")
 
             p_args = create_args_parallel(
                 date_list,
@@ -545,9 +498,7 @@ def satellite_download(
             )
             if verbose:
                 satlogger.info(
-                    "Message [sdown]: Found {} CPUs. Downloads will be spread over all available CPUs.".format(
-                        multiprocessing.cpu_count()
-                    )
+                    f"Message [sdown]: Found {multiprocessing.cpu_count()} CPUs. Downloads will be spread over all available CPUs."
                 )
             # start parallelization
             pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
@@ -564,8 +515,8 @@ def satellite_download(
 
                 # Save metadata
                 with open(os.path.join(fdir_out_dt, "metadata.txt"), "w") as f:
-                    f.write("Date: {}\n".format(date_x))
-                    f.write("Extent: {}\n".format(extent))
+                    f.write(f"Date: {date_x}\n")
+                    f.write(f"Extent: {extent}\n")
 
                 if verbose:
                     satlogger.info(
@@ -627,8 +578,8 @@ def run(
         fnames[product_info["dict_key"]] = []
 
         if verbose:
-            stdout = "=" * _width_ + "\n\n%s\n" % product_info["description"].center(
-                _width_
+            stdout = "=" * _width_ + "\n\n{}\n".format(
+                product_info["description"].center(_width_)
             )
             er3t.common.logger.info(stdout)
 
@@ -699,7 +650,7 @@ def run(
                     "Please note that the standard product processing rules are relaxed to allow "
                     "for faster generation of products and therefore may not be the same quality. "
                     "For a complete breakdown of how NASA generates these NRT products, visit:\n"
-                    " %s" % link_to_nrt
+                    f" {link_to_nrt}"
                 )
                 satlogger.warning(msg)
 
@@ -719,8 +670,7 @@ def run(
 
                 if verbose:
                     satlogger.info(
-                        "Message [sdown]: Found %s %s overpasses for %s\n"
-                        % (
+                        "Message [sdown]: Found {} {} overpasses for {}\n".format(
                             len(filename_tags_03),
                             product_info["satellite"],
                             date.strftime("%B %d, %Y"),
@@ -755,8 +705,7 @@ def run(
 
                 if verbose:
                     satlogger.info(
-                        "Message [sdown]: Found %s %s overpasses for %s\n"
-                        % (
+                        "Message [sdown]: Found {} {} overpasses for {}\n".format(
                             len(filename_tags_03),
                             product_info["satellite"],
                             date.strftime("%B %d, %Y"),
@@ -793,9 +742,8 @@ def run(
                     fnames[product_info["dict_key"]] += p_fnames
 
         else:
-            msg = (
-                "Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s"
-                % (product, "\n".join(er3t.common._sat_tags_support_.keys()))
+            msg = "Error [sdown]: Cannot recognize satellite product from the given tag <{}>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n{}".format(
+                product, "\n".join(er3t.common._sat_tags_support_.keys())
             )
             satlogger.error(msg)
             raise OSError()
@@ -814,13 +762,12 @@ def run(
 
     if download_counter > 0:
         satlogger.info(
-            "If you would like to cite the use of this data:\n\n%s"
-            % "\n\n".join(references)
+            "If you would like to cite the use of this data:\n\n{}".format(
+                "\n\n".join(references)
+            )
         )
         satlogger.info(
-            "Message [sdown]: Finished downloading {} satellite files! You can find them in {}".format(
-                download_counter, fdir_out
-            )
+            f"Message [sdown]: Finished downloading {download_counter} satellite files! You can find them in {fdir_out}"
         )
 
     else:  # could not find suitable downloads so no references needed
@@ -845,12 +792,11 @@ def get_sat_info_from_product_tag(tag_, nrt=False):
     ):  # the MODIS 29 standard product is on the NSIDC server, NRT product is on NASA LANCE DAAC
         tag = tag + "_NRT"
 
-    if tag in tags_support.keys():
+    if tag in tags_support:
         return tags_support[tag]
     else:
-        msg = (
-            "\nError [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s"
-            % (tag_, "\n".join(er3t.common._sat_tags_support_.keys()))
+        msg = "\nError [sdown]: Cannot recognize satellite product from the given tag <{}>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n{}".format(
+            tag_, "\n".join(er3t.common._sat_tags_support_.keys())
         )
         er3t.common.logger.error(msg)
         raise OSError()
@@ -1043,9 +989,7 @@ def main():
         exec_total_time.total_seconds()
     )
     er3t.common.logger.info(
-        "\n\nTotal Execution Time: {}:{}:{}.{}\n\n".format(
-            sdown_hrs, sdown_mins, sdown_secs, sdown_millisecs
-        )
+        f"\n\nTotal Execution Time: {sdown_hrs}:{sdown_mins}:{sdown_secs}.{sdown_millisecs}\n\n"
     )
 
 

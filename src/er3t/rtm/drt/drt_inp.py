@@ -67,7 +67,7 @@ def load_shd_inp_nml():
             ("_header", "$SHDOMINPUT"),
             (
                 "RUNNAME",
-                "shdom-run_%s" % datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
+                f"shdom-run_{datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}",
             ),
             ("PROPFILE", "shdom-prp.txt"),
             ("SFCFILE", "NONE"),
@@ -336,7 +336,7 @@ def shd_inp_nml(input_dict, verbose=True, comment=False):
                 if comment:
                     shdom_nml_all_info[key] = shdom_nml_all_info[key_ori]
             else:
-                msg = "Error [shd_inp_nml]: please check input variable <%s>." % key
+                msg = f"Error [shd_inp_nml]: please check input variable <{key}>."
                 raise OSError(msg)
         else:
             index = nml_ordered_keys_full.index(key)
@@ -369,7 +369,7 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
     input_fname = os.path.abspath(input_fname)
     fdir_inp = os.path.dirname(input_fname)
     if not os.path.exists(fdir_inp):
-        os.system("mkdir -p %s" % fdir_inp)
+        os.system(f"mkdir -p {fdir_inp}")
 
     # creating input file for SHDOM
     f = open(input_fname, "w")
@@ -386,33 +386,30 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
                     if "*" in var or (
                         var_key in ["DELTAM", "WAVENO", "OUTPARMS(1,1)", "ACCELFLAG"]
                     ):
-                        f.write(" %-15s = %s\n" % (var_key, var))
+                        f.write(f" {var_key:15} = {var}\n")
                     else:
-                        f.write(" %-15s = '%s'\n" % (var_key, var))
+                        f.write(f" {var_key:15} = '{var}'\n")
 
                 elif isinstance(
                     var, (int, float, np.int32, np.int64, np.float32, np.float64)
                 ):
-                    f.write(" %-15s = %-.16g\n" % (var_key, var))
+                    f.write(f" {var_key:15} = {var:-.16g}\n")
 
                 elif isinstance(var, np.ndarray):
                     if var.size > 1:
                         var_str = nice_array_str(var)
 
                         if len(var_str) <= 80:
-                            f.write(" %-15s = %s\n" % (var_key, var_str))
+                            f.write(f" {var_key:15} = {var_str}\n")
                         else:
-                            f.write(" %-15s =\n" % var_key)
-                            f.write("%s\n" % var_str)
+                            f.write(f" {var_key:15} =\n")
+                            f.write(f"{var_str}\n")
 
                     elif var.size == 1:
-                        f.write(" %-15s = %-g\n" % (var_key, var))
+                        f.write(f" {var_key:15} = {var:-g}\n")
 
                 else:
-                    msg = (
-                        "Error [shd_inp_file]: only types of int, float, str, ndarray are supported (do not support <%s> as %s)."
-                        % (var_key, type(var))
-                    )
+                    msg = f"Error [shd_inp_file]: only types of int, float, str, ndarray are supported (do not support <{var_key}> as {type(var)})."
                     raise ValueError(msg)
 
                 if comment:
@@ -423,16 +420,16 @@ def shd_inp_file(input_fname, input_dict, verbose=True, comment=False):
                     if "\n" in var_detail:
                         lines = var_detail.split("\n")
                         for line in lines:
-                            f.write(" !----> %s\n" % line)
+                            f.write(f" !----> {line}\n")
                     else:
-                        f.write(" !----> %s\n" % shdom_nml_all_info[var_key])
+                        f.write(f" !----> {shdom_nml_all_info[var_key]}\n")
                     f.write(
                         " !-----------------------------------------------------------------------------------------------------------\n"
                     )
                     f.write("\n")
 
             else:
-                f.write(" %s\n" % (var))
+                f.write(f" {var}\n")
 
     f.close()
 

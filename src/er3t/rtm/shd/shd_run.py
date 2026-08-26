@@ -65,7 +65,7 @@ class shd_run:
         elif mp_mode in ["batch", "shell", "bash", "hpc", "sh"]:
             mp_mode = "sh"
         else:
-            msg = "\nError [shd_run]: Cannot understand input <mp_mode='%s'>." % mp_mode
+            msg = f"\nError [shd_run]: Cannot understand input <mp_mode='{mp_mode}'>."
             raise OSError(msg)
 
         self.mp_mode = mp_mode
@@ -79,16 +79,12 @@ class shd_run:
 
             fdir_out = os.path.dirname(input_file)
             if not os.path.exists(fdir_out):
-                os.system("mkdir -p %s" % fdir_out)
+                os.system(f"mkdir -p {fdir_out}")
 
             if (Ncpu > 1) and has_mpi:
-                command = "mpirun --oversubscribe -np %d %s %s" % (
-                    Ncpu,
-                    executable,
-                    input_file,
-                )
+                command = f"mpirun --oversubscribe -np {Ncpu} {executable} {input_file}"
             else:
-                command = "%s %s" % (executable, input_file)
+                command = f"{executable} {input_file}"
 
             self.commands.append(command)
 
@@ -101,9 +97,7 @@ class shd_run:
     def run(self):
         if self.verbose:
             for command in self.commands:
-                er3t.common.logger.info(
-                    "Message [shd_run]: Executing <%s> ..." % command
-                )
+                er3t.common.logger.info(f"Message [shd_run]: Executing <{command}> ...")
 
         if self.mp_mode == "mpi":
             try:
@@ -140,18 +134,18 @@ class shd_run:
 
     def save(self, fname=None):
         if fname is None:
-            fname = "er3t-shd_shell-script_%18.7f.sh" % time.time()
+            fname = f"er3t-shd_shell-script_{time.time():18.7f}.sh"
 
         if not self.quiet:
             er3t.common.logger.info(
-                "Message [shd_run]: Creating batch script <%s> ..." % fname
+                f"Message [shd_run]: Creating batch script <{fname}> ..."
             )
 
         with open(fname, "w") as f:
             for command in self.commands:
                 f.write(command + "\n")
 
-        os.system("chmod +x %s" % fname)
+        os.system(f"chmod +x {fname}")
 
 
 def execute_command(command):

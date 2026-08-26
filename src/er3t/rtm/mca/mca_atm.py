@@ -169,17 +169,17 @@ class mca_atm_1d:
 
             N = self.nml[ig]["Atm_np1d"]["data"] + 1
 
-            self.nml[ig]["Atm_ext1d(1:, %d)" % N] = {
+            self.nml[ig][f"Atm_ext1d(1:, {int(N)})"] = {
                 "data": atm_ext,
                 "units": "/m",
                 "name": "Extinction coefficients",
             }
-            self.nml[ig]["Atm_omg1d(1:, %d)" % N] = {
+            self.nml[ig][f"Atm_omg1d(1:, {int(N)})"] = {
                 "data": atm_omg,
                 "units": "N/A",
                 "name": "Single scattering albedo",
             }
-            self.nml[ig]["Atm_apf1d(1:, %d)" % N] = {
+            self.nml[ig][f"Atm_apf1d(1:, {int(N)})"] = {
                 "data": atm_apf,
                 "units": "N/A",
                 "name": "Phase function",
@@ -469,8 +469,7 @@ class mca_atm_3d:
     def gen_mca_3d_atm_file(self, fname):
         if not self.quiet:
             er3t.common.logger.info(
-                "Message [mca_atm_3d]: Creating 3D atm file <%s> for MCARaTS ..."
-                % fname
+                f"Message [mca_atm_3d]: Creating 3D atm file <{fname}> for MCARaTS ..."
             )
 
         fname = os.path.abspath(fname)
@@ -480,20 +479,20 @@ class mca_atm_3d:
         f = open(fname, "wb")
         f.write(
             struct.pack(
-                "<%df" % self.nml["Atm_tmpa3d"]["data"].size,
+                f"<{int(self.nml['Atm_tmpa3d']['data'].size)}f",
                 *self.nml["Atm_tmpa3d"]["data"].flatten(order="F"),
             )
         )
         f.write(
             struct.pack(
-                "<%df" % self.nml["Atm_abst3d"]["data"].size,
+                f"<{int(self.nml['Atm_abst3d']['data'].size)}f",
                 *self.nml["Atm_abst3d"]["data"].flatten(order="F"),
             )
         )
         for i in range(self.nml["Atm_np3d"]["data"]):
             f.write(
                 struct.pack(
-                    "<%df" % self.nml["Atm_extp3d"]["data"][..., i].size,
+                    f"<{int(self.nml['Atm_extp3d']['data'][..., i].size)}f",
                     *self.nml["Atm_extp3d"]["data"][..., i][..., np.newaxis].flatten(
                         order="F"
                     ),
@@ -501,7 +500,7 @@ class mca_atm_3d:
             )
             f.write(
                 struct.pack(
-                    "<%df" % self.nml["Atm_omgp3d"]["data"][..., i].size,
+                    f"<{int(self.nml['Atm_omgp3d']['data'][..., i].size)}f",
                     *self.nml["Atm_omgp3d"]["data"][..., i][..., np.newaxis].flatten(
                         order="F"
                     ),
@@ -509,7 +508,7 @@ class mca_atm_3d:
             )
             f.write(
                 struct.pack(
-                    "<%df" % self.nml["Atm_apfp3d"]["data"][..., i].size,
+                    f"<{int(self.nml['Atm_apfp3d']['data'][..., i].size)}f",
                     *self.nml["Atm_apfp3d"]["data"][..., i][..., np.newaxis].flatten(
                         order="F"
                     ),
@@ -518,9 +517,7 @@ class mca_atm_3d:
         f.close()
 
         if not self.quiet:
-            er3t.common.logger.info(
-                "Message [mca_atm_3d]: File <%s> is created." % fname
-            )
+            er3t.common.logger.info(f"Message [mca_atm_3d]: File <{fname}> is created.")
 
     def save_h5(self, fname):
         fname = os.path.abspath(fname)
@@ -533,9 +530,7 @@ class mca_atm_3d:
         f.close()
 
         if not self.quiet:
-            er3t.common.logger.info(
-                "Message [mca_atm_3d]: File <%s> is created." % fname
-            )
+            er3t.common.logger.info(f"Message [mca_atm_3d]: File <{fname}> is created.")
 
 
 if __name__ == "__main__":

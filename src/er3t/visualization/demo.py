@@ -109,8 +109,7 @@ def anim_phase_mie(index, cer0=1.0, Nstart=5, Nend=751):
             ax1.set_xlabel("Angle [$^\\circ$]")
             ax1.set_ylabel("Phase Function")
             ax1.set_title(
-                "Using %d Legendre Coefficients (CER=%d$\\mu m$) ..."
-                % (Npmom_max, cer0)
+                f"Using {Npmom_max} Legendre Coefficients (CER={cer0}$\\mu m$) ..."
             )
             # ╰──────────────────────────────────────────────────────────────╯#
 
@@ -156,11 +155,8 @@ def anim_phase_mie(index, cer0=1.0, Nstart=5, Nend=751):
                 "Function": sys._getframe().f_code.co_name,
                 "Date": datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
             }
-            fname_fig = "%4.4d_%3.3d_%s_cer-%2.2d.png" % (
-                index,
-                Npmom_max,
-                "phase",
-                cer0,
+            fname_fig = (
+                f"{int(index):04d}_{int(Npmom_max):03d}_phase_cer-{int(cer0):02d}.png"
             )
             plt.savefig(
                 fname_fig, bbox_inches="tight", metadata=_metadata_, transparent=False
@@ -202,7 +198,7 @@ def lrt_flux_spec(
         "Function": sys._getframe().f_code.co_name,
         "Date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
-    fdir_tmp = "%s/tmp-data/%s/%s/cot-%04.1f_cer-%04.1f" % (
+    fdir_tmp = "{}/tmp-data/{}/{}/cot-{:04.1f}_cer-{:04.1f}".format(
         er3t.common.fdir_examples,
         name_tag,
         _metadata["Function"],
@@ -230,7 +226,7 @@ def lrt_flux_spec(
     inits_flux = []
 
     for wvl0 in params["wavelengths"]:
-        fname_out = "%s/output_flux_%4.4d.txt" % (fdir_tmp, wvl0)
+        fname_out = f"{fdir_tmp}/output_flux_{int(wvl0):04d}.txt"
         if (not overwrite) and (not os.path.exists(fname_out)):
             overwrite = True
 
@@ -243,7 +239,7 @@ def lrt_flux_spec(
         ]
 
         input_dict_extra = {
-            "wavelength_add": "%.1f %.1f" % (wvl0, wvl0),
+            "wavelength_add": f"{wvl0:.1f} {wvl0:.1f}",
         }
 
         if params["extra"] is not None:
@@ -255,12 +251,12 @@ def lrt_flux_spec(
             input_dict_extra["brdf_ambrals vol"] = params["f_vol"]
             input_dict_extra["brdf_ambrals geo"] = params["f_geo"]
         elif surface == "ocean":
-            input_dict_extra["brdf_cam"] = "u10 %.2f" % params["windspeed"]
+            input_dict_extra["brdf_cam"] = f"u10 {params['windspeed']:.2f}"
         else:
             mute_list.pop()
 
         init_flux = er3t.rtm.lrt.lrt_init_mono_flx(
-            input_file="%s/input_flux_%4.4d.txt" % (fdir_tmp, wvl0),
+            input_file=f"{fdir_tmp}/input_flux_{int(wvl0):04d}.txt",
             output_file=fname_out,
             date=params["date"],
             surface_albedo=params["surface_albedo"],
@@ -298,7 +294,7 @@ def test_100_flux_spec(
 ):
     params = {
         "date": datetime.datetime(2024, 5, 18),
-        "atmosphere_file": "%s/afglss.dat" % er3t.common.fdir_data_atmmod,
+        "atmosphere_file": f"{er3t.common.fdir_data_atmmod}/afglss.dat",
         "surface_albedo": 0.8,
         "solar_zenith_angle": 60.0,
         "solar_azimuth_angle": 0.0,
@@ -553,5 +549,3 @@ if __name__ == "__main__":
     # main_phase_mie()
 
     main_gas_absorption()
-
-    pass

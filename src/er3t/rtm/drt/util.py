@@ -139,25 +139,26 @@ def gen_ext_file(
     with open(fname, "w") as f:
         f.write("2 parameter extinction file for SHDOM\n")
         f.write("%d %d %d\n" % ext.shape)
-        f.write("%.8e %.8e\n" % (cld0.lay["dx"]["data"], cld0.lay["dy"]["data"]))
-        f.write("%s\n" % " ".join([str("%.6f" % alt0) for alt0 in zgrid]))
+        f.write(f"{cld0.lay['dx']['data']:.8e} {cld0.lay['dy']['data']:.8e}\n")
+        f.write(f"{' '.join([str(f'{alt0:.6f}') for alt0 in zgrid])}\n")
         f.write(
-            "%s\n"
-            % " ".join([str("%.4f" % np.nanmean(temp[:, :, iz])) for iz in range(Nz)])
+            "{}\n".format(
+                " ".join([str(f"{np.nanmean(temp[:, :, iz]):.4f}") for iz in range(Nz)])
+            )
         )
 
         f.write("! The following provides information for interpreting binary data:\n")
-        f.write("! %s\n" % postfix)
-        f.write("! %10d,%10d,%10d,%10d\n" % (Nx, Ny, Nz, 2))
+        f.write(f"! {postfix}\n")
+        f.write(f"! {int(Nx):10},{int(Ny):10},{int(Nz):10},{2:10}\n")
         if fname_ckd_1d is not None:
-            f.write("! %s\n" % fname_ckd_1d)
+            f.write(f"! {fname_ckd_1d}\n")
 
         # save gridded data into binary file
         # ╭──────────────────────────────────────────────────────────────╮#
-        with open("%s%s" % (fname, postfix), "wb") as fb:
+        with open(f"{fname}{postfix}", "wb") as fb:
             # ext.T/cer.T converts the dimention from (Nx, Ny, Nz) to (Nz, Ny, Nx)
-            fb.write(struct.pack("<%df" % ext.size, *ext.T.flatten(order="F")))
-            fb.write(struct.pack("<%df" % cer.size, *cer.T.flatten(order="F")))
+            fb.write(struct.pack(f"<{int(ext.size)}f", *ext.T.flatten(order="F")))
+            fb.write(struct.pack(f"<{int(cer.size)}f", *cer.T.flatten(order="F")))
         # ╰──────────────────────────────────────────────────────────────╯#
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -186,14 +187,14 @@ def gen_lwc_file(
     with open(fname, "w") as f:
         f.write("2 parameter LWC file for SHDOM\n")
         f.write("%d %d %d\n" % lwc.shape)
-        f.write("%.8e %.8e\n" % (cld0.lay["dx"]["data"], cld0.lay["dy"]["data"]))
+        f.write(f"{cld0.lay['dx']['data']:.8e} {cld0.lay['dy']['data']:.8e}\n")
         f.write(
-            "%s\n"
-            % " ".join([str("%.6f" % alt0) for alt0 in cld0.lay["altitude"]["data"]])
+            "{}\n".format(
+                " ".join([str(f"{alt0:.6f}") for alt0 in cld0.lay["altitude"]["data"]])
+            )
         )
         f.write(
-            "%s\n"
-            % " ".join([str("%.4f" % np.mean(temp[:, :, iz])) for iz in range(Nz)])
+            f"{' '.join([str(f'{np.mean(temp[:, :, iz]):.4f}') for iz in range(Nz)])}\n"
         )
 
         # save gridded data into ascii file
@@ -221,7 +222,7 @@ def gen_mie_file_from_nc(
     wavelength_s,
     wavelength_e,
     fname=None,
-    fname_nc="%s/wc.sol.mie.cdf" % er3t.common.fdir_data_pha,
+    fname_nc=f"{er3t.common.fdir_data_pha}/wc.sol.mie.cdf",
     pol_tag="F",  # unpolarized
     par_tag="W",  # water
     overwrite=True,
@@ -229,17 +230,11 @@ def gen_mie_file_from_nc(
     from netCDF4 import Dataset
 
     if fname is None:
-        fdir = "%s/shdom" % er3t.common.fdir_data_tmp
+        fdir = f"{er3t.common.fdir_data_tmp}/shdom"
         if not os.path.exists(fdir):
             os.makedirs(fdir)
 
-        fname = "%s/shdom-mie-nc_%s_%s_%.4f-%.4f.txt" % (
-            fdir,
-            par_tag,
-            pol_tag,
-            wavelength_s,
-            wavelength_e,
-        )
+        fname = f"{fdir}/shdom-mie-nc_{par_tag}_{pol_tag}_{wavelength_s:.4f}-{wavelength_e:.4f}.txt"
 
     if (not os.path.exists(fname)) or overwrite:
         wavelength_s /= 1000.0  # convert to micron
@@ -271,20 +266,17 @@ def gen_mie_file_from_nc(
 
         with open(fname, "w") as f:
             f.write(
-                "! %s scattering table vs. effective radius (LWC=1 g/m^3)\n"
-                % parameterization.title()
+                f"! {parameterization.title()} scattering table vs. effective radius (LWC=1 g/m^3)\n"
             )
             f.write(
-                "    %.3f    %.3f  wavelength range (micron)\n"
-                % (wavelength_s, wavelength_e)
+                f"    {wavelength_s:.3f}    {wavelength_e:.3f}  wavelength range (micron)\n"
             )
             f.write(
-                " %.3f  W   particle density (g/cm^3) and type (Water, Ice, Aerosol)\n"
-                % rho.mean()
+                f" {rho.mean():.3f}  W   particle density (g/cm^3) and type (Water, Ice, Aerosol)\n"
             )
-            f.write("  %.6e %.6e  particle index of refraction\n" % (refre, refim))
+            f.write(f"  {refre:.6e} {refim:.6e}  particle index of refraction\n")
             f.write(
-                "%.6f %s shape parameter\n" % (param_alpha, size_distr.replace(".", ""))
+                f"{param_alpha:.6f} {size_distr.replace('.', '')} shape parameter\n"
             )
             f.write(
                 "  %d    %.3f   %.3f  number, starting, ending effective radius\n"
@@ -304,7 +296,7 @@ def gen_mie_file_from_nc(
                     "  %7.4f    %.6e  %.12f   %4d  Reff  Ext  Alb  Nrank\n"
                     % (reff0, ext[i], ssa[i], Nmom0 - 1)
                 )
-                f.write("%s" % pmom0_str)
+                f.write(f"{pmom0_str}")
 
     return fname
 
@@ -343,7 +335,7 @@ def gen_sen_file(
 
         # save gridded data into binary file
         # ╭──────────────────────────────────────────────────────────────╮#
-        with open("%s%s" % (fname, postfix), "wb") as fb:
+        with open(f"{fname}{postfix}", "wb") as fb:
             fb.write(struct.pack(f"<{Nparam * Ndata}f", *data_new.flatten(order="F")))
         # ╰──────────────────────────────────────────────────────────────╯#
     # ╰────────────────────────────────────────────────────────────────────────────╯#
@@ -367,4 +359,3 @@ if __name__ == "__main__":
 
     # er3t.common.logger.info('SENSORMU: %.6f' % np.cos(np.deg2rad(vza)))
     # er3t.common.logger.info('SENSORAZ: %.6f' % cal_shd_vaa(vaa))
-    pass

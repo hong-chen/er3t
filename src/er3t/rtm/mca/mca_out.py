@@ -26,12 +26,12 @@ class mca_out_raw:
 
     def __init__(self, fname_bin):
         if not os.path.isfile(fname_bin):
-            msg = "Error [mca_out_raw]: Cannot find <%s>." % fname_bin
+            msg = f"Error [mca_out_raw]: Cannot find <{fname_bin}>."
             raise OSError(msg)
 
         fname_ctl = fname_bin + ".ctl"
         if not os.path.isfile(fname_ctl):
-            msg = "Error [mca_out_raw]: Cannot find <%s>." % fname_ctl
+            msg = f"Error [mca_out_raw]: Cannot find <{fname_ctl}>."
             raise OSError(msg)
 
         self.fname_bin = fname_bin
@@ -42,7 +42,7 @@ class mca_out_raw:
         self.read_bin()
 
     def read_ctl(self):
-        f = open(self.fname_ctl, "r")
+        f = open(self.fname_ctl)
         lines = f.readlines()
 
         Ns = 0
@@ -69,7 +69,7 @@ class mca_out_raw:
                 for j in range(i + 1, i + Nvar + 1):
                     line = lines[j].strip()
                     words = line.split()
-                    vname = " ".join(([words[0]] + ["(%s)" % " ".join(words[3:])]))
+                    vname = " ".join([words[0]] + ["({})".format(" ".join(words[3:]))])
 
                     Nz = int(words[1])
                     dims = [Nx, Ny, Nz, Nt]
@@ -178,8 +178,7 @@ class mca_out_ng:
     def load(self):
         if self.verbose:
             er3t.common.logger.info(
-                "Message [mca_out_ng]: Reading <%s> from <%s> ..."
-                % (self.mca.target.lower(), self.fname)
+                f"Message [mca_out_ng]: Reading <{self.mca.target.lower()}> from <{self.fname}> ..."
             )
 
         self.data = {}
@@ -195,7 +194,7 @@ class mca_out_ng:
     def run(self):
         if self.verbose:
             er3t.common.logger.info(
-                "Message [mca_out_ng]: Reading <%s> ..." % self.mca.target.lower()
+                f"Message [mca_out_ng]: Reading <{self.mca.target.lower()}> ..."
             )
 
         if self.mca.target in [
@@ -214,8 +213,7 @@ class mca_out_ng:
     def dump(self):
         if not self.quiet:
             er3t.common.logger.info(
-                "Message [mca_out_ng]: Saving <%s> into <%s> ..."
-                % (self.mca.target.lower(), self.fname)
+                f"Message [mca_out_ng]: Saving <{self.mca.target.lower()}> into <{self.fname}> ..."
             )
 
         mode = self.mode.lower()
@@ -490,7 +488,7 @@ def read_flux_mca_out(mca_obj, abs_obj, mode="mean", squeeze=True):
         }
 
     else:
-        msg = "Error [read_flux_mca_out]: Do not support <mode=%s>." % mode
+        msg = f"Error [read_flux_mca_out]: Do not support <mode={mode}>."
         raise OSError(msg)
 
     return data_dict
@@ -627,7 +625,7 @@ def read_radiance_mca_out(mca_obj, abs_obj, mode="mean", squeeze=True):
             "units": "N/A",
         }
     else:
-        msg = "Error [read_radiance_mca_out]: Do not support <mode=%s>." % mode
+        msg = f"Error [read_radiance_mca_out]: Do not support <mode={mode}>."
         raise OSError(msg)
 
     return data_dict

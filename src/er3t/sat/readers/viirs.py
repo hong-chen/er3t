@@ -347,17 +347,12 @@ class viirs_l1b:
             if bands is None:
                 self.bands = list(VIIRS_L1B_IMG_BANDS.keys())
                 if verbose:
-                    msg = (
-                        "Message [viirs_l1b]: Data will be extracted for the following bands %s"
-                        % VIIRS_L1B_IMG_BANDS
-                    )
+                    msg = f"Message [viirs_l1b]: Data will be extracted for the following bands {VIIRS_L1B_IMG_BANDS}"
 
             elif (bands is not None) and not (
                 set(bands).issubset(set(VIIRS_L1B_IMG_BANDS.keys()))
             ):
-                msg = "Error [viirs_l1b]: Bands must be one or more of %s" % list(
-                    VIIRS_L1B_IMG_BANDS.keys()
-                )
+                msg = f"Error [viirs_l1b]: Bands must be one or more of {list(VIIRS_L1B_IMG_BANDS.keys())}"
                 raise KeyError(msg)
 
         elif ("02mod" in filename) or ("02dnb" in filename):
@@ -365,17 +360,12 @@ class viirs_l1b:
             if bands is None:
                 self.bands = list(VIIRS_L1B_MOD_DEFAULT_BANDS.keys())
                 if verbose:
-                    msg = (
-                        "Message [viirs_l1b]: Data will be extracted for the following bands %s"
-                        % VIIRS_L1B_MOD_DEFAULT_BANDS
-                    )
+                    msg = f"Message [viirs_l1b]: Data will be extracted for the following bands {VIIRS_L1B_MOD_DEFAULT_BANDS}"
 
             elif (bands is not None) and not (
                 set(bands).issubset(set(VIIRS_L1B_MOD_BANDS.keys()))
             ):
-                msg = "Error [viirs_l1b]: Bands must be one or more of %s" % list(
-                    VIIRS_L1B_MOD_BANDS.keys()
-                )
+                msg = f"Error [viirs_l1b]: Bands must be one or more of {list(VIIRS_L1B_MOD_BANDS.keys())}"
                 raise KeyError(msg)
         else:
             msg = "Error [viirs_l1b]: Currently, only IMG (0.375km) and MOD (0.75km) products are supported."
@@ -1779,9 +1769,7 @@ class viirs_09:
             not set(self.bands).issubset(self.available_product_bands)
         ):
             raise AttributeError(
-                "Error [viirs_09]: Your input for `bands`={}\n`bands` must be one of {}\n".format(
-                    self.bands, self.available_product_bands
-                )
+                f"Error [viirs_09]: Your input for `bands`={self.bands}\n`bands` must be one of {self.available_product_bands}\n"
             )
 
         # resolution and band settings
@@ -1808,7 +1796,7 @@ class viirs_09:
         # search datasets containing the search term derived from param and resolution
         search_term = self.resolution + " " + "Surface Reflectance"
         search_terms_with_bands = [
-            search_term + " " + "Band {}".format(str(band)) for band in self.bands
+            search_term + " " + f"Band {str(band)}" for band in self.bands
         ]
         params = [
             i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands
@@ -1829,8 +1817,8 @@ class viirs_09:
         # loop through bands, scale and offset each param and store in tau
         for idx, band_num in enumerate(self.bands):
             if len(band_num) != 3:
-                band_key = band_num[0] + "0{}".format(
-                    band_num[1]
+                band_key = (
+                    band_num[0] + f"0{band_num[1]}"
                 )  # pad 0 for dictionary indexing
             else:
                 band_key = band_num
@@ -2143,7 +2131,7 @@ class viirs_09a1:
             .groups["GRIDS"]
             .groups["VNP_Grid_1km_L3_2d"]
             .groups["Data Fields"]
-            .variables["SurfReflect_%s" % band]
+            .variables[f"SurfReflect_{band}"]
         )
         dset.set_auto_maskandscale(True)
         ref = np.ma.getdata(dset[:])[logic]
@@ -2291,7 +2279,7 @@ class viirs_43ma3:
                 .groups["GRIDS"]
                 .groups["VIIRS_Grid_BRDF"]
                 .groups["Data Fields"]
-                .variables["Albedo_BSA_%s" % channels[ichan]]
+                .variables[f"Albedo_BSA_{channels[ichan]}"]
             )
             data = get_data_nc(data0)
             bsky_alb[ichan, :] = data[logic]
@@ -2301,7 +2289,7 @@ class viirs_43ma3:
                 .groups["GRIDS"]
                 .groups["VIIRS_Grid_BRDF"]
                 .groups["Data Fields"]
-                .variables["Albedo_WSA_%s" % channels[ichan]]
+                .variables[f"Albedo_WSA_{channels[ichan]}"]
             )
             data = get_data_nc(data0)
             wsky_alb[ichan, :] = data[logic]
@@ -2464,7 +2452,7 @@ class viirs_43ma4:
                 .groups["GRIDS"]
                 .groups["VIIRS_Grid_BRDF"]
                 .groups["Data Fields"]
-                .variables["Nadir_Reflectance_%s" % channels[ichan]]
+                .variables[f"Nadir_Reflectance_{channels[ichan]}"]
             )
             data = get_data_nc(data0)
             sfc_ref[ichan, :] = data[logic]

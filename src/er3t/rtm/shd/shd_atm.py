@@ -91,7 +91,7 @@ class shd_atm_1d:
         wvln_min = 1.0 / self.abs.wvl_max_ * 1e7
         wvln_max = 1.0 / self.abs.wvl_min_ * 1e7
         self.nml["WAVENO"] = {
-            "data": "%.2f %.2f" % (wvln_min, wvln_max),
+            "data": f"{wvln_min:.2f} {wvln_max:.2f}",
             "units": "cm^-1",
             "name": "Wave Number Range",
         }
@@ -123,10 +123,9 @@ class shd_atm_1d:
 
         with open(fname, "w") as f:
             f.write("! correlated k-distribution file for SHDOM\n")
-            f.write("%d ! number of bands\n" % 1)
+            f.write(f"{1} ! number of bands\n")
             f.write(
-                "! Band# | Wave#1 [%.2f nm] | Wave#2 [%.2f nm] | Ng | SolFlx1| SolFlx2 | ... | g1 | g2 | ...\n"
-                % (abs0.wvl_max_, abs0.wvl_min_)
+                f"! Band# | Wave#1 [{abs0.wvl_max_:.2f} nm] | Wave#2 [{abs0.wvl_min_:.2f} nm] | Ng | SolFlx1| SolFlx2 | ... | g1 | g2 | ...\n"
             )
 
             # wave number cm^-1
@@ -137,10 +136,10 @@ class shd_atm_1d:
             indices_sort = np.argsort(abs0.coef["weight"]["data"])
 
             sol = " ".join(
-                ["%.12f" % value for value in abs0.coef["solar"]["data"][indices_sort]]
+                [f"{value:.12f}" for value in abs0.coef["solar"]["data"][indices_sort]]
             )
             wgt = " ".join(
-                ["%.12f" % value for value in abs0.coef["weight"]["data"][indices_sort]]
+                [f"{value:.12f}" for value in abs0.coef["weight"]["data"][indices_sort]]
             )
 
             for iband in range(Nband):
@@ -201,22 +200,22 @@ class shd_atm_1d:
             # atm_sca[...] = 0.0
             # ╰────────────────────────────────────────────────────────────────────────────╯#
 
-            f.write("%d\n" % zgrid.size)
+            f.write(f"{int(zgrid.size)}\n")
 
             f.write("!\n")
             f.write("! Alt [km] | ScaCoef [km^-1]\n")
 
             for j in range(zgrid.size):
-                f.write("%10.6f %15.6e\n" % (zgrid[j], atm_sca[j]))
+                f.write(f"{zgrid[j]:10.6f} {atm_sca[j]:15.6e}\n")
 
             f.write("! iBand | iLay | AbsCoef [km^-1]\n")
 
             for iband in range(Nband):
                 for j in range(zgrid.size):
                     atm_abs_s = " ".join(
-                        ["%15.6e" % atm_abs0 for atm_abs0 in atm_abs[j, :]]
+                        [f"{atm_abs0:15.6e}" for atm_abs0 in atm_abs[j, :]]
                     )
-                    f.write("%4d %4d %s\n" % (iband + 1, j + 1, atm_abs_s))
+                    f.write(f"{int(iband + 1):4} {int(j + 1):4} {atm_abs_s}\n")
 
         self.nml["CKDFILE"] = {"data": fname}
 
@@ -330,7 +329,7 @@ class shd_atm_3d:
         wvln_min = 1.0 / self.abs.wvl_max_ * 1e7
         wvln_max = 1.0 / self.abs.wvl_min_ * 1e7
         self.nml["WAVENO"] = {
-            "data": "%.2f %.2f" % (wvln_min, wvln_max),
+            "data": f"{wvln_min:.2f} {wvln_max:.2f}",
             "units": "cm^-1",
             "name": "Wave Number Range",
         }
@@ -359,14 +358,16 @@ class shd_atm_3d:
             )
         )
         self.Nz_extra = logic_z_extra.sum()
-        self.z_extra = "%s" % "\n".join(
-            [
-                "%.4e %.4e" % tuple(item)
-                for item in zip(zgrid_atm[logic_z_extra], temp_atm[logic_z_extra])
-            ]
+        self.z_extra = "{}".format(
+            "\n".join(
+                [
+                    "{:.4e} {:.4e}".format(*tuple(item))
+                    for item in zip(zgrid_atm[logic_z_extra], temp_atm[logic_z_extra])
+                ]
+            )
         )
         if (zgrid_atm[0] >= 1.0e-6) and (zgrid_cld[0] >= 1.0e-6):
-            self.z_extra = "%.4e %.4e\n%s" % (
+            self.z_extra = "{:.4e} {:.4e}\n{}".format(
                 0.0,
                 self.atm.lev["temperature"]["data"][0],
                 self.z_extra,

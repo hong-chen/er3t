@@ -62,10 +62,7 @@ class sfc_2d_gen:
             self.run()
 
         else:
-            msg = (
-                "Error [sfc_2d_gen]: Please check if <%s> exists or provide <sfc_dict> to proceed."
-                % self.fname
-            )
+            msg = f"Error [sfc_2d_gen]: Please check if <{self.fname}> exists or provide <sfc_dict> to proceed."
             raise OSError(msg)
 
     def load(self, fname):
@@ -74,7 +71,7 @@ class sfc_2d_gen:
             if hasattr(obj, "data"):
                 if self.verbose:
                     er3t.common.logger.info(
-                        "Message [sfc_2d_gen]: Loading <%s> ..." % fname
+                        f"Message [sfc_2d_gen]: Loading <{fname}> ..."
                     )
                 self.fname = obj.fname
                 self.data = obj.data
@@ -83,10 +80,7 @@ class sfc_2d_gen:
                 self.dx = obj.dx
                 self.dy = obj.dy
             else:
-                msg = (
-                    "Error [sfc_2d_gen]: <%s> is not the correct <pickle> file to load."
-                    % fname
-                )
+                msg = f"Error [sfc_2d_gen]: <{fname}> is not the correct <pickle> file to load."
                 raise OSError(msg)
 
     def run(self):
@@ -97,7 +91,7 @@ class sfc_2d_gen:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [sfc_2d_gen]: Saving object into <%s> ..." % fname
+                    f"Message [sfc_2d_gen]: Saving object into <{fname}> ..."
                 )
             pickle.dump(self, f)
 
@@ -105,7 +99,7 @@ class sfc_2d_gen:
         self.data = {}
 
         keys = {key.lower().replace("_", ""): key for key in self.sfc.keys()}
-        keys_check = [key for key in keys.keys()]
+        keys_check = [key for key in keys]
 
         if "alb" in keys_check:
             Nx, Ny = self.sfc[keys["alb"]].shape

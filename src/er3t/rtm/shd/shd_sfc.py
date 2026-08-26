@@ -181,7 +181,7 @@ class shd_sfc_2d:
                 f.write(f"! {postfix}\n")
                 f.write(f"! {self.Nx + 1:10d},{self.Ny + 1:10d},{Nparam + 1:10d}\n")
 
-                with open("%s%s" % (fname, postfix), "wb") as fb:
+                with open(f"{fname}{postfix}", "wb") as fb:
                     Ndata = data.size
                     # data.T reshapes data from [Nx, Ny, Nparam], to [Nparam, Ny, Nx]
                     fb.write(struct.pack(f"<{Ndata}f", *data.T.flatten(order="F")))
@@ -310,7 +310,7 @@ class shd_sfc_2d_mix_test:
 
         with open(fname, "w") as f:
             f.write("X\n")
-            f.write("%d %d %15.8e %15.8e\n" % (self.Nx, self.Ny, self.dx, self.dy))
+            f.write(f"{int(self.Nx)} {int(self.Ny)} {self.dx:15.8e} {self.dy:15.8e}\n")
             for ix in np.arange(self.Nx):
                 for iy in np.arange(self.Ny):
                     if (ix >= 50.0 and ix <= 70.0) and (iy >= 50.0) and (iy <= 70.0):

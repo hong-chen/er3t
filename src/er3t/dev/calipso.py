@@ -90,9 +90,7 @@ def get_calipso_vfm_rel(
         password = os.environ["EARTHDATA_PASSWORD"]
     except Exception as err:
         exit(
-            "Error   [get_filename_tag]: {}\nCannot find environment variables 'EARTHDATA_USERNAME' and 'EARTHDATA_PASSWORD'.".format(
-                err
-            )
+            f"Error   [get_filename_tag]: {err}\nCannot find environment variables 'EARTHDATA_USERNAME' and 'EARTHDATA_PASSWORD'."
         )
 
     try:
@@ -104,9 +102,7 @@ def get_calipso_vfm_rel(
                 content = r.content.decode("utf-8")
     except Exception as err:
         exit(
-            "Error   [get_filename_tag]: {}\nCannot access {}.".format(
-                err, fname_server
-            )
+            f"Error   [get_filename_tag]: {err}\nCannot access {fname_server}."
         )
 
     common.logger.info("content: %s", content)
@@ -150,15 +146,13 @@ def download_calipso_vfm_http(
     for rel in rel_result:
         filename = rel.split("/")[-1]
         fname_server = rel
-        fname_local = "%s/%s" % (fdir_out, filename)
+        fname_local = f"{fdir_out}/{filename}"
         if os.path.isfile(fname_local) and final_file_check(
             fname_local, data_format=data_format, verbose=verbose
         ):
             fnames_local.append(fname_local)
             er3t.common.logger.info(
-                "Message [download_calipso_vfm_http]: File {} already exists and looks good. Will not re-download this file.".format(
-                    fname_local
-                )
+                f"Message [download_calipso_vfm_http]: File {fname_local} already exists and looks good. Will not re-download this file."
             )
             exist_count += 1
         else:
@@ -170,9 +164,7 @@ def download_calipso_vfm_http(
             backup_commands.append(backup_command)
 
     er3t.common.logger.info(
-        "Message [download_calipso_vfm_http]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(
-            len(fnames_local), exist_count
-        )
+        f"Message [download_calipso_vfm_http]: Total of {len(fnames_local)} will be downloaded. {exist_count} will be skipped as they already exist and work as advertised."
     )
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -184,8 +176,7 @@ def download_calipso_vfm_http(
 
             if verbose:
                 er3t.common.logger.info(
-                    "Message [download_calipso_vfm_http]: Downloading %s ..."
-                    % fname_local
+                    f"Message [download_calipso_vfm_http]: Downloading {fname_local} ..."
                 )
             os.system(primary_commands[i])
 
@@ -200,9 +191,7 @@ def download_calipso_vfm_http(
                     fname_local, data_format=data_format, verbose=verbose
                 ):
                     er3t.common.logger.info(
-                        "Message [download_calipso_vfm_http]: Could not complete the download of or something is wrong with {}...deleting...".format(
-                            fname_local
-                        )
+                        f"Message [download_calipso_vfm_http]: Could not complete the download of or something is wrong with {fname_local}...deleting..."
                     )
                     os.remove(fname_local)
                     fnames_local.remove(fname_local)  # remove from list

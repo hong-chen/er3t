@@ -37,7 +37,7 @@ class abs_rep:
         self.coef['weight']
     """
 
-    fdir_data = "%s/reptran" % er3t.common.fdir_data_abs
+    fdir_data = f"{er3t.common.fdir_data_abs}/reptran"
     reference = "\nREPTRAN (Gasteiger et al., 2014):\n- Gasteiger, J., Emde, C., Mayer, B., Buras, R., Buehler, S. A., and Lemke, O.: Representative wavelengths absorption parameterization applied to satellite channels and spectral bands, J. Quant. Spectrosc. Radiat. Transf., 148, 99-115, https://doi.org/10.1016/j.jqsrt.2014.06.024, 2014."
 
     def __init__(
@@ -130,9 +130,7 @@ class abs_rep:
             pickle.dump(self, f)
 
     def load_main(self, wavelength, band_name=None):
-        f0 = Dataset(
-            "%s/reptran_%s_%s.cdf" % (self.fdir_data, self.source, self.target), "r"
-        )
+        f0 = Dataset(f"{self.fdir_data}/reptran_{self.source}_{self.target}.cdf", "r")
 
         # read out band names
         # ╭────────────────────────────────────────────────────────────────────────────╮#
@@ -140,7 +138,7 @@ class abs_rep:
         Nband, Nchar = band_bytes.shape
         bands = [
             band.decode("utf-8").replace(" ", "")
-            for band in band_bytes.view("S%d" % Nchar).ravel()
+            for band in band_bytes.view(f"S{int(Nchar)}").ravel()
         ]
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -187,7 +185,7 @@ class abs_rep:
         Ngas, Nchar = gas_bytes.shape
         gases = [
             gas.decode("utf-8").replace(" ", "")
-            for gas in gas_bytes.view("S%d" % Nchar).ravel()
+            for gas in gas_bytes.view(f"S{int(Nchar)}").ravel()
         ]
         # ╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -314,8 +312,7 @@ class abs_rep:
                 for gas_type in self.gases:
                     if gas_type.lower() in self.atm_obj.lay.keys():
                         f0 = Dataset(
-                            "%s/reptran_%s_%s.lookup.%s.cdf"
-                            % (self.fdir_data, self.source, self.target, gas_type),
+                            f"{self.fdir_data}/reptran_{self.source}_{self.target}.lookup.{gas_type}.cdf",
                             "r",
                         )
                         xsec = np.squeeze(f0.variables["xsec"][:])

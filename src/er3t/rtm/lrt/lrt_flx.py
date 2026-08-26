@@ -52,37 +52,35 @@ class lrt_init_mono_flx:
         self.mute_list = mute_list
 
         # executable file
-        #╭────────────────────────────────────────────────────────────────────────────╮#
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
         self.executable_file = lrt_cfg["executable_file"]
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # input file
-        #╭────────────────────────────────────────────────────────────────────────────╮#
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
         if input_file is None:
             dtime_tmp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            input_file = "lrt_input_%s.txt" % dtime_tmp
+            input_file = f"lrt_input_{dtime_tmp}.txt"
             if verbose:
                 er3t.common.logger.info(
-                    "Message [lrt_init_mono]: <input_file> is missing, assigning input_file = %s."
-                    % input_file
+                    f"Message [lrt_init_mono]: <input_file> is missing, assigning input_file = {input_file}."
                 )
         self.input_file = input_file
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # output file
-        #╭────────────────────────────────────────────────────────────────────────────╮#
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
         if output_file is None:
-            output_file = "lrt_output_%s.txt" % dtime_tmp
+            output_file = f"lrt_output_{dtime_tmp}.txt"
             if verbose:
                 er3t.common.logger.info(
-                    "Message [lrt_init_mono]: <output_file> is missing, assigning output_file = %s."
-                    % output_file
+                    f"Message [lrt_init_mono]: <output_file> is missing, assigning output_file = {output_file}."
                 )
         self.output_file = output_file
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # date
-        #╭────────────────────────────────────────────────────────────────────────────╮#
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
         if date is None:
             date = datetime.date.today()
             if verbose:
@@ -90,30 +88,30 @@ class lrt_init_mono_flx:
                     "Message [lrt_init_mono]: <date> is missing, assigning date = datetime.date.today()."
                 )
         day_of_year = date.timetuple().tm_yday
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # surface albedo
-        #╭────────────────────────────────────────────────────────────────────────────╮#
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
         if surface_albedo is None:
             surface_albedo = 0.03
             if verbose:
                 er3t.common.logger.info(
                     "Message [lrt_init_mono]: <surface_albedo> is missing, assigning surface_albedo = 0.03."
                 )
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # solar zenith angle
-        #╭────────────────────────────────────────────────────────────────────────────╮#
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
         if solar_zenith_angle is None:
             solar_zenith_angle = 0.0
             if verbose:
                 er3t.common.logger.info(
                     "Message [lrt_init_mono]: <solar_zenith_angle> is missing, assigning solar_zenith_angle = 0.0."
                 )
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # wavelength
-        #╭────────────────────────────────────────────────────────────────────────────╮#
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
         if wavelength is None:
             wavelength = 500.0
             if verbose:
@@ -121,7 +119,7 @@ class lrt_init_mono_flx:
                     "Message [lrt_init_mono]: <wavelength> is missing, assigning wavelength = 500.0."
                 )
         self.Nx = 1
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         # slit function
         if wavelength < 950.0:
@@ -132,12 +130,11 @@ class lrt_init_mono_flx:
             wavelength_half_width = 16.0
         if verbose:
             er3t.common.logger.info(
-                "Message [lrt_init_mono]: slit_function_file = '%s'."
-                % slit_function_file
+                f"Message [lrt_init_mono]: slit_function_file = '{slit_function_file}'."
             )
 
         # output altitude
-        #╭────────────────────────────────────────────────────────────────────────────╮#
+        # ╭────────────────────────────────────────────────────────────────────────────╮#
         if output_altitude is None:
             output_altitude = "TOA"
             if verbose:
@@ -151,7 +148,7 @@ class lrt_init_mono_flx:
             else:
                 output_altitude = str(output_altitude)
         self.Ny = len(output_altitude.split())
-        #╰────────────────────────────────────────────────────────────────────────────╯#
+        # ╰────────────────────────────────────────────────────────────────────────────╯#
 
         wavelength_s = np.round(
             wavelength - wavelength_half_width - spectral_resolution,
@@ -169,14 +166,14 @@ class lrt_init_mono_flx:
                 ("atmosphere_file", lrt_cfg["atmosphere_file"]),
                 ("source solar", lrt_cfg["solar_file"]),
                 ("day_of_year", str(day_of_year)),
-                ("albedo", "%.6f" % surface_albedo),
-                ("sza", "%.4f" % solar_zenith_angle),
+                ("albedo", f"{surface_albedo:.6f}"),
+                ("sza", f"{solar_zenith_angle:.4f}"),
                 ("rte_solver", lrt_cfg["rte_solver"]),
                 ("number_of_streams", str(lrt_cfg["number_of_streams"])),
-                ("wavelength", "%.1f %.1f" % (wavelength_s, wavelength_e)),
+                ("wavelength", f"{wavelength_s:.1f} {wavelength_e:.1f}"),
                 (
                     "spline",
-                    "%.3f %.3f %.3f" % (wavelength, wavelength, spectral_resolution),
+                    f"{wavelength:.3f} {wavelength:.3f} {spectral_resolution:.3f}",
                 ),
                 ("slit_function_file", slit_function_file),
                 ("data_files_path", lrt_cfg["data_files_path"]),
@@ -199,25 +196,28 @@ class lrt_init_mono_flx:
                     prefix = "ic"
 
                 if self.input_dict_extra is not None:
-                    self.input_dict_extra["%s_file 1D" % prefix] = cld_cfg["cloud_file"]
+                    self.input_dict_extra[f"{prefix}_file 1D"] = cld_cfg["cloud_file"]
                     self.input_dict_extra[
-                        "%s_properties %s" % (prefix, cld_cfg["%s_properties" % prefix])
+                        "{}_properties {}".format(
+                            prefix, cld_cfg[f"{prefix}_properties"]
+                        )
                     ] = "interpolate"
-                    self.input_dict_extra["%s_modify tau set" % prefix] = str(
+                    self.input_dict_extra[f"{prefix}_modify tau set"] = str(
                         cld_cfg["cloud_optical_thickness"]
                     )
 
                 else:
                     self.input_dict_extra = OD(
                         [
-                            ("%s_file 1D" % prefix, cld_cfg["cloud_file"]),
+                            (f"{prefix}_file 1D", cld_cfg["cloud_file"]),
                             (
-                                "%s_properties %s"
-                                % (prefix, cld_cfg["%s_properties" % prefix]),
+                                "{}_properties {}".format(
+                                    prefix, cld_cfg[f"{prefix}_properties"]
+                                ),
                                 "interpolate",
                             ),
                             (
-                                "%s_modify tau set" % prefix,
+                                f"{prefix}_modify tau set",
                                 str(cld_cfg["cloud_optical_thickness"]),
                             ),
                         ]
@@ -301,21 +301,19 @@ class lrt_init_spec_flx:
         # input file
         if input_file is None:
             dtime_tmp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            input_file = "lrt_input_%s.txt" % dtime_tmp
+            input_file = f"lrt_input_{dtime_tmp}.txt"
             if verbose:
                 er3t.common.logger.info(
-                    "Message [lrt_init_spec]: <input_file> is missing, assigning input_file = %s."
-                    % input_file
+                    f"Message [lrt_init_spec]: <input_file> is missing, assigning input_file = {input_file}."
                 )
         self.input_file = input_file
 
         # output file
         if output_file is None:
-            output_file = "lrt_output_%s.txt" % dtime_tmp
+            output_file = f"lrt_output_{dtime_tmp}.txt"
             if verbose:
                 er3t.common.logger.info(
-                    "Message [lrt_init_spec]: <output_file> is missing, assigning output_file = %s."
-                    % output_file
+                    f"Message [lrt_init_spec]: <output_file> is missing, assigning output_file = {output_file}."
                 )
         self.output_file = output_file
 
@@ -335,7 +333,7 @@ class lrt_init_spec_flx:
                 er3t.common.logger.info(
                     "Message [lrt_init_spec]: <wavelength_file> is missing, assigning wavelength = [350.0, 355.0, ..., 950.0]."
                 )
-            wavelength_file = "lrt_wvl_%s.txt" % dtime_tmp
+            wavelength_file = f"lrt_wvl_{dtime_tmp}.txt"
             gen_wavelength_file(wavelength_file, wavelength)
         else:
             wavelength = np.loadtxt(wavelength_file)
@@ -373,8 +371,7 @@ class lrt_init_spec_flx:
 
         if verbose:
             er3t.common.logger.info(
-                "Message [lrt_init_spec]: slit_function_file = '%s'."
-                % slit_function_file
+                f"Message [lrt_init_spec]: slit_function_file = '{slit_function_file}'."
             )
 
         # output altitude
@@ -404,11 +401,7 @@ class lrt_init_spec_flx:
                     ("number_of_streams", str(lrt_cfg["number_of_streams"])),
                     (
                         "wavelength",
-                        "%.1f %.1f"
-                        % (
-                            wavelength.min() - wavelength_half_width,
-                            wavelength.max() + wavelength_half_width,
-                        ),
+                        f"{wavelength.min() - wavelength_half_width:.1f} {wavelength.max() + wavelength_half_width:.1f}",
                     ),
                     ("spline_file", wavelength_file),
                     ("slit_function_file", slit_function_file),
@@ -428,11 +421,7 @@ class lrt_init_spec_flx:
                     ("number_of_streams", str(lrt_cfg["number_of_streams"])),
                     (
                         "wavelength",
-                        "%.1f %.1f"
-                        % (
-                            wavelength.min() - wavelength_half_width,
-                            wavelength.max() + wavelength_half_width,
-                        ),
+                        f"{wavelength.min() - wavelength_half_width:.1f} {wavelength.max() + wavelength_half_width:.1f}",
                     ),
                     ("spline_file", wavelength_file),
                     ("slit_function_file", slit_function_file),
@@ -457,14 +446,15 @@ class lrt_init_spec_flx:
 
                 self.input_dict_extra = OD(
                     [
-                        ("%s_file 1D" % prefix, cld_cfg["cloud_file"]),
+                        (f"{prefix}_file 1D", cld_cfg["cloud_file"]),
                         (
-                            "%s_properties %s"
-                            % (prefix, cld_cfg["%s_properties" % prefix]),
+                            "{}_properties {}".format(
+                                prefix, cld_cfg[f"{prefix}_properties"]
+                            ),
                             "interpolate",
                         ),
                         (
-                            "%s_modify tau set" % prefix,
+                            f"{prefix}_modify tau set",
                             str(cld_cfg["cloud_optical_thickness"]),
                         ),
                     ]

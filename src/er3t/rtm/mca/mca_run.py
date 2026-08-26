@@ -72,10 +72,7 @@ class mca_run:
             if photons.size == Nfile:
                 photons_dist = photons.copy()
             else:
-                msg = (
-                    "Error [mca_run]: Cannot distribute photon set of %d over %d runs."
-                    % (photons.size, Nfile)
-                )
+                msg = f"Error [mca_run]: Cannot distribute photon set of {photons.size} over {Nfile} runs."
                 raise ValueError(msg)
 
         mp_mode = mp_mode.lower()
@@ -87,7 +84,7 @@ class mca_run:
         elif mp_mode in ["batch", "shell", "bash", "hpc", "sh"]:
             mp_mode = "sh"
         else:
-            msg = "\nError [mca_run]: Cannot understand input <mp_mode='%s'>." % mp_mode
+            msg = f"\nError [mca_run]: Cannot understand input <mp_mode='{mp_mode}'>."
             raise OSError(msg)
         self.mp_mode = mp_mode
 
@@ -104,24 +101,17 @@ class mca_run:
 
             fdir_out = os.path.dirname(output_file)
             if not os.path.exists(fdir_out):
-                os.system("mkdir -p %s" % fdir_out)
+                os.system(f"mkdir -p {fdir_out}")
 
             if (Ncpu > 1) and has_mpi:
-                command = "mpirun -n %d %s %d %d %s %s" % (
-                    Ncpu,
-                    executable,
-                    photons_dist[i],
-                    solver,
-                    input_file,
-                    output_file,
+                command = (
+                    f"mpirun -n {Ncpu} {executable} {int(photons_dist[i])} "
+                    f"{solver} {input_file} {output_file}"
                 )
             else:
-                command = "%s %d %d %s %s" % (
-                    executable,
-                    photons_dist[i],
-                    solver,
-                    input_file,
-                    output_file,
+                command = (
+                    f"{executable} {int(photons_dist[i])} {solver} "
+                    f"{input_file} {output_file}"
                 )
 
             self.commands.append(command)
@@ -134,9 +124,7 @@ class mca_run:
     def run(self):
         if self.verbose:
             for command in self.commands:
-                er3t.common.logger.info(
-                    "Message [mca_run]: Executing <%s> ..." % command
-                )
+                er3t.common.logger.info(f"Message [mca_run]: Executing <{command}> ...")
 
         if self.mp_mode == "mpi":
             try:
@@ -173,18 +161,18 @@ class mca_run:
 
     def save(self, fname=None):
         if fname is None:
-            fname = "er3t-mca_shell-script_%18.7f.sh" % time.time()
+            fname = f"er3t-mca_shell-script_{time.time():18.7f}.sh"
 
         if not self.quiet:
             er3t.common.logger.info(
-                "Message [mca_run]: Creating batch script <%s> ..." % fname
+                f"Message [mca_run]: Creating batch script <{fname}> ..."
             )
 
         with open(fname, "w") as f:
             for command in self.commands:
                 f.write(command + "\n")
 
-        os.system("chmod +x %s" % fname)
+        os.system(f"chmod +x {fname}")
 
 
 def execute_command(command):

@@ -29,18 +29,15 @@ def get_lrt_cfg(
             raise OSError(msg)
 
     lrt_cfg = {
-        "executable_file": "%s/bin/uvspec" % lrt_fdir,
-        "atmosphere_file": "%s/data/atmmod/afglus.dat" % lrt_fdir,
-        "solar_file": "%s/data/solar_flux/kurudz_%.1fnm.dat"
-        % (lrt_fdir, spectral_resolution),
-        "data_files_path": "%s/data" % lrt_fdir,
+        "executable_file": f"{lrt_fdir}/bin/uvspec",
+        "atmosphere_file": f"{lrt_fdir}/data/atmmod/afglus.dat",
+        "solar_file": f"{lrt_fdir}/data/solar_flux/kurudz_{spectral_resolution:.1f}nm.dat",
+        "data_files_path": f"{lrt_fdir}/data",
         "rte_solver": "disort",
         "number_of_streams": 8,
         "mol_abs_param": "reptran coarse",  # use 'reptran fine' for higher resolution
-        "slit_function_file_vis": "%s/vis_%.1fnm_s.dat"
-        % (ssfr_fdir, spectral_resolution),
-        "slit_function_file_nir": "%s/nir_%.1fnm_s.dat"
-        % (ssfr_fdir, spectral_resolution),
+        "slit_function_file_vis": f"{ssfr_fdir}/vis_{spectral_resolution:.1f}nm_s.dat",
+        "slit_function_file_nir": f"{ssfr_fdir}/nir_{spectral_resolution:.1f}nm_s.dat",
     }
 
     return lrt_cfg

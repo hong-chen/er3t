@@ -51,13 +51,15 @@ params = {
     "sensor_altitude": 705.0,
     "target": "3d radiance",
     "solver": "mcarats",
-    "atmospheric_profile": "%s/afglus.dat" % fdir_data_atmmod,
+    "atmospheric_profile": f"{fdir_data_atmmod}/afglus.dat",
     "absorption": "abs_16g",
     "surface_albedo": 0.03,
     "phase_cloud": "mie",
     "Nphoton": 1e8,
     "Ncpu": 12,
-    "fdir_tmp": "tmp-data/%s" % datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
+    "fdir_tmp": "tmp-data/{}".format(
+        datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    ),
     "output_tag": "rtm-out_rad-3d",
     "overwrite": True,
     "verbose": True,
@@ -223,7 +225,7 @@ references = [
     "EaR³T (Chen et al., 2023; Chen et al., 2025):\n- Chen, H., Schmidt, K. S., Massie, S. T., Nataraja, V., Norgren, M. S., Gristey, J. J., Feingold, G., Holz, R. E., and Iwabuchi, H.: The Education and Research 3D Radiative Transfer Toolbox (EaR³T) - Towards the Mitigation of 3D Bias in Airborne and Spaceborne Passive Imagery Cloud Retrievals, Atmos. Meas. Tech., 16, 1971–2000, https://doi.org/10.5194/amt-16-1971-2023, 2023.\n- Chen, Y.-W., Schmidt, K. S., Chen, H., Massie, S. T., Kulawik, S. S., and Iwabuchi, H.: Mitigation of satellite OCO-2 CO₂ biases in the vicinity of clouds with 3D calculations using the Education and Research 3D Radiative Transfer Toolbox (EaR³T), Atmos. Meas. Tech., 18, 1859–1884, https://doi.org/10.5194/amt-18-1859-2025, 2025."
 ]
 
-_today_dt = datetime.datetime.now(datetime.timezone.utc)
+_today_dt = datetime.datetime.now(datetime.UTC)
 _today_dt = _today_dt.replace(tzinfo=None)  # so that timedelta does not raise an error
 _date_today_ = _today_dt.strftime("%d %B, %Y")
 
@@ -254,8 +256,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MOD03.061",
         "satellite": "Terra",
         "instrument": "MODIS",
-        "reference": "MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD03.061 (last access: %s), 2017."
-        % _date_today_,
+        "reference": f"MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD03.061 (last access: {_date_today_}), 2017.",
     },
     "MYD03": {
         "dataset_tag": "61/MYD03",
@@ -264,8 +265,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MYD03.061",
         "satellite": "Aqua",
         "instrument": "MODIS",
-        "reference": "MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD03.061 (last access: %s), 2017."
-        % _date_today_,
+        "reference": f"MODIS Characterization Support Team: MODIS Geolocation Fields Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD03.061 (last access: {_date_today_}), 2017.",
     },
     "MOD02QKM": {
         "dataset_tag": "61/MOD02QKM",
@@ -274,8 +274,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MOD02QKM.061",
         "satellite": "Terra",
         "instrument": "MODIS",
-        "reference": "MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02QKM.061 (last access: %s), 2017."
-        % _date_today_,
+        "reference": f"MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02QKM.061 (last access: {_date_today_}), 2017.",
     },
     "MYD02QKM": {
         "dataset_tag": "61/MYD02QKM",
@@ -284,8 +283,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MYD02QKM.061",
         "satellite": "Aqua",
         "instrument": "MODIS",
-        "reference": "MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02QKM.061 (last access: %s), 2017."
-        % _date_today_,
+        "reference": f"MODIS Characterization Support Team: MODIS 250m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02QKM.061 (last access: {_date_today_}), 2017.",
     },
     "MOD02HKM": {
         "dataset_tag": "61/MOD02HKM",
@@ -294,8 +292,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MOD02HKM.061",
         "satellite": "Terra",
         "instrument": "MODIS",
-        "reference": "MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02HKM.061 (last access: %s), 2017."
-        % _date_today_,
+        "reference": f"MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD02HKM.061 (last access: {_date_today_}), 2017.",
     },
     "MYD02HKM": {
         "dataset_tag": "61/MYD02HKM",
@@ -304,8 +301,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MYD02HKM.061",
         "satellite": "Aqua",
         "instrument": "MODIS",
-        "reference": "MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02HKM.061 (last access: %s), 2017."
-        % _date_today_,
+        "reference": f"MODIS Characterization Support Team: MODIS 500m Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD02HKM.061 (last access: {_date_today_}), 2017.",
     },
     "MOD021KM": {
         "dataset_tag": "61/MOD021KM",
@@ -314,8 +310,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MOD021KM.061",
         "satellite": "Terra",
         "instrument": "MODIS",
-        "reference": "MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD021KM.061 (last access: %s), 2017."
-        % _date_today_,
+        "reference": f"MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD021KM.061 (last access: {_date_today_}), 2017.",
     },
     "MYD021KM": {
         "dataset_tag": "61/MYD021KM",
@@ -324,8 +319,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MYD021KM.061",
         "satellite": "Aqua",
         "instrument": "MODIS",
-        "reference": "MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD021KM.061 (last access: %s), 2017."
-        % _date_today_,
+        "reference": f"MODIS Characterization Support Team: MODIS 1km Calibrated Radiances Product, NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MYD021KM.061 (last access: {_date_today_}), 2017.",
     },
     "MOD06_L2": {
         "dataset_tag": "61/MOD06_L2",
@@ -334,8 +328,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MOD06_L2.061",
         "satellite": "Terra",
         "instrument": "MODIS",
-        "reference": "Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015."
-        % _date_today_,
+        "reference": f"Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: {_date_today_}), 2015.",
     },
     "MYD06_L2": {
         "dataset_tag": "61/MYD06_L2",
@@ -344,8 +337,7 @@ _sat_tags_support_ = {
         "website": "http://dx.doi.org/10.5067/MODIS/MYD06_L2.061",
         "satellite": "Aqua",
         "instrument": "MODIS",
-        "reference": "Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: %s), 2015."
-        % _date_today_,
+        "reference": f"Platnick, S., Ackerman, S. A., King, M. D. , Meyer, K., Menzel, W. P. , Holz, R. E., Baum, B. A., and Yang, P., 2015: MODIS atmosphere L2 cloud product (06_L2), NASA MODIS Adaptive Processing System [data set], Goddard Space Flight Center, USA, http://dx.doi.org/10.5067/MODIS/MOD06_L2.061 (last access: {_date_today_}), 2015.",
     },
     "MOD35_L2": {
         "dataset_tag": "61/MOD35_L2",
@@ -431,8 +423,7 @@ _sat_tags_support_ = {
         "website": "https://doi.org/10.5067/MODIS/MCD43A3.061",
         "satellite": "Terra & Aqua",
         "instrument": "MODIS",
-        "reference": "Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: %s), 2021."
-        % _date_today_,
+        "reference": f"Schaaf, C., and Wang, Z.: MODIS/Terra+Aqua BRDF/Albedo Daily L3 Global - 500m V061, NASA EOSDIS Land Processes DAAC [data set], https://doi.org/10.5067/MODIS/MCD43A3.061 (last access: {_date_today_}), 2021.",
     },
     "VNP02IMG": {
         "dataset_tag": "5200/VNP02IMG",
@@ -692,8 +683,7 @@ _sat_tags_support_ = {
         "website": "https://doi.org/10.5067/6O3GEUK7U2JG",
         "satellite": "OCO-2",
         "instrument": "OCO-2",
-        "reference": "OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 1B calibrated, geolocated science spectra, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6O3GEUK7U2JG (last access: %s), 2019."
-        % _date_today_,
+        "reference": f"OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 1B calibrated, geolocated science spectra, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6O3GEUK7U2JG (last access: {_date_today_}), 2019.",
     },
     "oco2_L2MetND": {
         "dataset_tag": "oco2_L2MetND",
@@ -702,8 +692,7 @@ _sat_tags_support_ = {
         "website": "https://doi.org/10.5067/OJZZW0LIGSDH",
         "satellite": "OCO-2",
         "instrument": "OCO-2",
-        "reference": "OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 meteorological parameters interpolated from global assimilation model for each sounding, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/OJZZW0LIGSDH (last access: %s), 2019."
-        % _date_today_,
+        "reference": f"OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 meteorological parameters interpolated from global assimilation model for each sounding, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/OJZZW0LIGSDH (last access: {_date_today_}), 2019.",
     },
     "oco2_L2StdND": {
         "dataset_tag": "oco2_L2StdND",
@@ -712,7 +701,6 @@ _sat_tags_support_ = {
         "website": "https://doi.org/10.5067/6SBROTA57TFH",
         "satellite": "OCO-2",
         "instrument": "OCO-2",
-        "reference": "OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 geolocated XCO2 retrievals results, physical model, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6SBROTA57TFH (last access: %s), 2020."
-        % _date_today_,
+        "reference": f"OCO-2 Science Team/Gunson, M., and Eldering, A.: OCO-2 Level 2 geolocated XCO2 retrievals results, physical model, Retrospective Processing V10r, Goddard Earth Sciences Data and Information Services Center (GES DISC) [data set], Greenbelt, MD, USA, https://doi.org/10.5067/6SBROTA57TFH (last access: {_date_today_}), 2020.",
     },
 }

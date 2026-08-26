@@ -62,7 +62,7 @@ class abs_16g:
 
     Ng = 16
     group_s = "/solar_v1.3"
-    fname_h5 = "%s/16g/abs_16g.h5" % er3t.common.fdir_data_abs
+    fname_h5 = f"{er3t.common.fdir_data_abs}/16g/abs_16g.h5"
     reference = "\nSSFR Correlated-k Absorption Database (Coddington et al., 2008):\n- Coddington, O., Schmidt, K. S., Pilewskie, P., Gore, W. J., Bergstrom, R., Roman, M., Redemann, J., Russell, P. B., Liu, J., and Schaaf, C. C.: Aircraft measurements of spectral surface albedo and its consistency with ground based and space-borne observations, J. Geophys. Res., 113, D17209, doi:10.1029/2008JD010089, 2008."
 
     def __init__(
@@ -110,7 +110,7 @@ class abs_16g:
             obj = pickle.load(f)
             if hasattr(obj, "coef"):
                 if self.verbose:
-                    msg = "Message [abs_16g]: Loading <%s> ..." % fname
+                    msg = f"Message [abs_16g]: Loading <{fname}> ..."
                     er3t.common.logger.info(msg)
                 self.fname = obj.fname
                 self.wvl = obj.wvl
@@ -121,14 +121,11 @@ class abs_16g:
                 self.wvl_min_ = obj.wvl_min_
                 self.wvl_max_ = obj.wvl_max_
             else:
-                msg = (
-                    "\nError [abs_16g]: <%s> is not the correct pickle file to load."
-                    % fname
-                )
+                msg = f"\nError [abs_16g]: <{fname}> is not the correct pickle file to load."
                 raise OSError(msg)
 
     def run(self, atm_obj):
-        self.wvl_info = "%.2f nm (applied SSFR slit)" % self.wvl
+        self.wvl_info = f"{self.wvl:.2f} nm (applied SSFR slit)"
 
         if not os.path.exists(self.fname_h5):
             msg = "\nError [abs_16g]: Missing HDF5 database."
@@ -188,7 +185,7 @@ class abs_16g:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [abs_16g]: Saving object into <%s> ..." % fname
+                    f"Message [abs_16g]: Saving object into <{fname}> ..."
                 )
             pickle.dump(self, f)
 
@@ -218,7 +215,7 @@ class abs_16g:
         # calculate pressure interpolation factor
         fpu = np.zeros_like(p_log, dtype=np.float64)
         div = pref_log[jpd] - pref_log[jpu]
-        indices = np.where((div > 0.001))[0]
+        indices = np.where(div > 0.001)[0]
         fpu[indices] = (pref_log[jpd[indices]] - p_log[indices]) / div[indices]
         fpu[fpu > 1.0] = 1.0
         fpu[fpu < 0.0] = 0.0
@@ -301,7 +298,7 @@ class abs_16g:
         elif 300.0 <= self.wvl < 448.0:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso0["group_s"] = {"name": "group_s", "data": "%s/solar_uv" % self.group_s}
+            abso0["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_uv"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["o3"])
             self.abso[0] = abso0
@@ -309,7 +306,7 @@ class abs_16g:
         elif 448.0 <= self.wvl < 500.0:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["group_s"] = {"name": "group_s", "data": "%s/solar_uv" % self.group_s}
+            abso0["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_uv"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             abso0["slit"]["data"] = False
@@ -317,7 +314,7 @@ class abs_16g:
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["group_s"] = {"name": "group_s", "data": "%s/solar_uv" % self.group_s}
+            abso1["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_uv"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["solar"]["data"] = False
@@ -326,14 +323,14 @@ class abs_16g:
         elif 500.0 <= self.wvl < 620.0:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["group_s"] = {"name": "group_s", "data": "%s/solar_k" % self.group_s}
+            abso0["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_k"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             self.abso[0] = abso0
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["group_s"] = {"name": "group_s", "data": "%s/solar_k" % self.group_s}
+            abso1["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_k"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["slit"]["data"] = False
@@ -348,14 +345,14 @@ class abs_16g:
         ):
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["O2_cont5", "kgo2"]}
-            abso0["group_s"] = {"name": "group_s", "data": "%s/solar_o2" % self.group_s}
+            abso0["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_o2"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_vTp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["o2"])
             self.abso[0] = abso0
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["group_s"] = {"name": "group_s", "data": "%s/solar_o2" % self.group_s}
+            abso1["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_o2"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["slit"]["data"] = False
@@ -365,14 +362,14 @@ class abs_16g:
         elif (640.0 <= self.wvl < 680.0) | (700.0 <= self.wvl < 750.0):
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["group_s"] = {"name": "group_s", "data": "%s/solar_k" % self.group_s}
+            abso0["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_k"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             self.abso[0] = abso0
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["group_s"] = {"name": "group_s", "data": "%s/solar_k" % self.group_s}
+            abso1["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_k"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["slit"]["data"] = False
@@ -381,7 +378,7 @@ class abs_16g:
 
             abso2 = copy.deepcopy(abso_ref)
             abso2["absorber"] = {"name": "absorber", "data": ["O2_cont5", "kgo2"]}
-            abso2["group_s"] = {"name": "group_s", "data": "%s/solar_k" % self.group_s}
+            abso2["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_k"}
             abso2["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso2["gas_conc"] = copy.deepcopy(self.lay["o2"])
             abso2["slit"]["data"] = False
@@ -391,7 +388,7 @@ class abs_16g:
         elif 760.0 <= self.wvl < 770.0:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["group_s"] = {"name": "group_s", "data": "%s/solar_o2" % self.group_s}
+            abso0["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_o2"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             abso0["slit"]["data"] = False
@@ -399,7 +396,7 @@ class abs_16g:
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["group_s"] = {"name": "group_s", "data": "%s/solar_o2" % self.group_s}
+            abso1["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_o2"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["slit"]["data"] = False
@@ -408,7 +405,7 @@ class abs_16g:
 
             abso2 = copy.deepcopy(abso_ref)
             abso2["absorber"] = {"name": "absorber", "data": ["O2_cont5", "kgo2"]}
-            abso2["group_s"] = {"name": "group_s", "data": "%s/solar_o2" % self.group_s}
+            abso2["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_o2"}
             abso2["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso2["gas_conc"] = copy.deepcopy(self.lay["o2"])
             abso2["solar"]["data"] = False
@@ -417,7 +414,7 @@ class abs_16g:
         elif 780.0 <= self.wvl < wvl_join:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["group_s"] = {"name": "group_s", "data": "%s/solar_k" % self.group_s}
+            abso0["group_s"] = {"name": "group_s", "data": f"{self.group_s}/solar_k"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             self.abso[0] = abso0
@@ -430,7 +427,7 @@ class abs_16g:
             }
             abso0["group_s"] = {
                 "name": "group_s",
-                "data": "%s/solar_nir" % self.group_s,
+                "data": f"{self.group_s}/solar_nir",
             }
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
@@ -444,7 +441,7 @@ class abs_16g:
             }
             abso0["group_s"] = {
                 "name": "group_s",
-                "data": "%s/solar_nir" % self.group_s,
+                "data": f"{self.group_s}/solar_nir",
             }
             abso0["factor"] = copy.deepcopy(self.fac["fac_vTp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["o2"])
@@ -454,7 +451,7 @@ class abs_16g:
             abso1["absorber"] = {"name": "absorber", "data": ["CO2", "kgco2"]}
             abso1["group_s"] = {
                 "name": "group_s",
-                "data": "%s/solar_nir" % self.group_s,
+                "data": f"{self.group_s}/solar_nir",
             }
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["co2"])
@@ -470,7 +467,7 @@ class abs_16g:
             }
             abso0["group_s"] = {
                 "name": "group_s",
-                "data": "%s/solar_nir" % self.group_s,
+                "data": f"{self.group_s}/solar_nir",
             }
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
@@ -480,7 +477,7 @@ class abs_16g:
             abso1["absorber"] = {"name": "absorber", "data": ["CO2", "kgco2"]}
             abso1["group_s"] = {
                 "name": "group_s",
-                "data": "%s/solar_nir" % self.group_s,
+                "data": f"{self.group_s}/solar_nir",
             }
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["co2"])
@@ -497,7 +494,7 @@ class abs_16g:
             abso0["absorber"] = {"name": "absorber", "data": ["CO2", "kgco2"]}
             abso0["group_s"] = {
                 "name": "group_s",
-                "data": "%s/solar_nir" % self.group_s,
+                "data": f"{self.group_s}/solar_nir",
             }
             abso0["factor"] = copy.deepcopy(self.fac["fac_vTp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["co2"])
@@ -508,7 +505,7 @@ class abs_16g:
             abso0["absorber"] = {"name": "absorber", "data": ["CH4", "kgch4"]}
             abso0["group_s"] = {
                 "name": "group_s",
-                "data": "%s/solar_nir" % self.group_s,
+                "data": f"{self.group_s}/solar_nir",
             }
             abso0["factor"] = copy.deepcopy(self.fac["fac_vTp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["ch4"])
@@ -535,14 +532,12 @@ class abs_16g:
                 np.round(abso_dict["wvl"]["data"]),
             )
             if group_s not in f_h5:
-                sys.exit("Error   [abs_16g]: Cannot find '%s'." % group_s)
+                sys.exit(f"Error   [abs_16g]: Cannot find '{group_s}'.")
 
             # read solar file
             # =============================================================================================
-            v1, v2, dv, npts, sol_min, sol_max, sol_int = f_h5["%s/params" % group_s][
-                ...
-            ]
-            s0 = f_h5["%s/data" % group_s][...][:, -1]
+            v1, v2, dv, npts, sol_min, sol_max, sol_int = f_h5[f"{group_s}/params"][...]
+            s0 = f_h5[f"{group_s}/data"][...][:, -1]
 
             l1 = 1.0e7 / v2
             l2 = 1.0e7 / v1
@@ -1050,20 +1045,19 @@ class abs_16g_txt:
             if hasattr(obj, "coef"):
                 if self.verbose:
                     er3t.common.logger.info(
-                        "Message [abs_16g_txt]: loading %s ..." % fname
+                        f"Message [abs_16g_txt]: loading {fname} ..."
                     )
                 self.fname = obj.fname
                 self.wvl = obj.wvl
                 self.coef = obj.coef
             else:
                 sys.exit(
-                    "Error   [abs_16g_txt]: %s is not the correct 'pickle' file to load."
-                    % fname
+                    f"Error   [abs_16g_txt]: {fname} is not the correct 'pickle' file to load."
                 )
 
     def run(self, atm_obj):
         if not (os.path.exists(self.fdir_k) & os.path.exists(self.fdir_s)):
-            sys.exit("Error   [abs_16g_txt]: missing database at %s." % self.fdir_k)
+            sys.exit(f"Error   [abs_16g_txt]: missing database at {self.fdir_k}.")
 
         # self.lay: Python dictionary
         #   self.lay['pressure']: Python dictionary, contain 'name', 'data' etc
@@ -1116,7 +1110,7 @@ class abs_16g_txt:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [abs_16g_txt]: saving object into <%s> ..." % fname
+                    f"Message [abs_16g_txt]: saving object into <{fname}> ..."
                 )
             pickle.dump(self, f)
 
@@ -1146,7 +1140,7 @@ class abs_16g_txt:
         # calculate pressure interpolation factor
         fpu = np.zeros_like(p_log, dtype=np.float64)
         div = pref_log[jpd] - pref_log[jpu]
-        indices = np.where((div > 0.001))[0]
+        indices = np.where(div > 0.001)[0]
         fpu[indices] = (pref_log[jpd[indices]] - p_log[indices]) / div[indices]
         fpu[fpu > 1.0] = 1.0
         fpu[fpu < 0.0] = 0.0
@@ -1231,7 +1225,7 @@ class abs_16g_txt:
         elif 300.0 <= self.wvl < 448.0:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_uv" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_uv"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["o3"])
             self.abso[0] = abso0
@@ -1239,7 +1233,7 @@ class abs_16g_txt:
         elif 448.0 <= self.wvl < 500.0:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_uv" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_uv"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             abso0["slit"]["data"] = False
@@ -1247,7 +1241,7 @@ class abs_16g_txt:
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_uv" % self.fdir_s}
+            abso1["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_uv"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["solar"]["data"] = False
@@ -1256,14 +1250,14 @@ class abs_16g_txt:
         elif 500.0 <= self.wvl < 620.0:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_k" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_k"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             self.abso[0] = abso0
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_k" % self.fdir_s}
+            abso1["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_k"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["slit"]["data"] = False
@@ -1278,14 +1272,14 @@ class abs_16g_txt:
         ):
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["O2_cont5", "kgo2"]}
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_o2" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_o2"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_vTp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["o2"])
             self.abso[0] = abso0
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_o2" % self.fdir_s}
+            abso1["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_o2"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["slit"]["data"] = False
@@ -1295,14 +1289,14 @@ class abs_16g_txt:
         elif (640.0 <= self.wvl < 680.0) | (700.0 <= self.wvl < 750.0):
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_k" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_k"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             self.abso[0] = abso0
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_k" % self.fdir_s}
+            abso1["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_k"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["slit"]["data"] = False
@@ -1311,7 +1305,7 @@ class abs_16g_txt:
 
             abso2 = copy.deepcopy(abso_ref)
             abso2["absorber"] = {"name": "absorber", "data": ["O2_cont5", "kgo2"]}
-            abso2["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_k" % self.fdir_s}
+            abso2["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_k"}
             abso2["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso2["gas_conc"] = copy.deepcopy(self.lay["o2"])
             abso2["slit"]["data"] = False
@@ -1321,7 +1315,7 @@ class abs_16g_txt:
         elif 760.0 <= self.wvl < 770.0:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_o2" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_o2"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             abso0["slit"]["data"] = False
@@ -1329,7 +1323,7 @@ class abs_16g_txt:
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["O3", "kgo3"]}
-            abso1["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_o2" % self.fdir_s}
+            abso1["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_o2"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["o3"])
             abso1["slit"]["data"] = False
@@ -1338,7 +1332,7 @@ class abs_16g_txt:
 
             abso2 = copy.deepcopy(abso_ref)
             abso2["absorber"] = {"name": "absorber", "data": ["O2_cont5", "kgo2"]}
-            abso2["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_o2" % self.fdir_s}
+            abso2["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_o2"}
             abso2["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso2["gas_conc"] = copy.deepcopy(self.lay["o2"])
             abso2["solar"]["data"] = False
@@ -1347,7 +1341,7 @@ class abs_16g_txt:
         elif 780.0 <= self.wvl < wvl_join:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["H2O", "kgh2o"]}
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_k" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_k"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             self.abso[0] = abso0
@@ -1358,7 +1352,7 @@ class abs_16g_txt:
                 "name": "absorber",
                 "data": ["H2O/k_arraynir", "kgh2o"],
             }
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_nir" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_nir"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             self.abso[0] = abso0
@@ -1369,14 +1363,14 @@ class abs_16g_txt:
                 "name": "absorber",
                 "data": ["O2_cont5/k_arraynir", "kgo2"],
             }
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_nir" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_nir"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_vTp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["o2"])
             self.abso[0] = abso0
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["CO2", "kgco2"]}
-            abso1["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_nir" % self.fdir_s}
+            abso1["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_nir"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["co2"])
             abso1["slit"]["data"] = False
@@ -1389,14 +1383,14 @@ class abs_16g_txt:
                 "name": "absorber",
                 "data": ["H2O/k_arraynir", "kgh2o"],
             }
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_nir" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_nir"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["h2o"])
             self.abso[0] = abso0
 
             abso1 = copy.deepcopy(abso_ref)
             abso1["absorber"] = {"name": "absorber", "data": ["CO2", "kgco2"]}
-            abso1["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_nir" % self.fdir_s}
+            abso1["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_nir"}
             abso1["factor"] = copy.deepcopy(self.fac["fac_Tp"])
             abso1["gas_conc"] = copy.deepcopy(self.lay["co2"])
             abso1["slit"]["data"] = False
@@ -1410,7 +1404,7 @@ class abs_16g_txt:
         ):
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["CO2", "kgco2"]}
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_nir" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_nir"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_vTp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["co2"])
             self.abso[0] = abso0
@@ -1418,7 +1412,7 @@ class abs_16g_txt:
         elif 2150.0 <= self.wvl < 2500.0:
             abso0 = copy.deepcopy(abso_ref)
             abso0["absorber"] = {"name": "absorber", "data": ["CH4", "kgch4"]}
-            abso0["fdir_s"] = {"name": "fdir_s", "data": "%s/solar_nir" % self.fdir_s}
+            abso0["fdir_s"] = {"name": "fdir_s", "data": f"{self.fdir_s}/solar_nir"}
             abso0["factor"] = copy.deepcopy(self.fac["fac_vTp"])
             abso0["gas_conc"] = copy.deepcopy(self.lay["ch4"])
             self.abso[0] = abso0
@@ -1443,7 +1437,7 @@ class abs_16g_txt:
                 np.round(abso_dict["wvl"]["data"]),
             )
             if not os.path.isfile(fname_s):
-                sys.exit("Error   [abs_16g_txt]: cannot find '%s'." % fname_s)
+                sys.exit(f"Error   [abs_16g_txt]: cannot find '{fname_s}'.")
 
             # read solar file
             # =============================================================================================
@@ -1970,7 +1964,7 @@ class abs_oco:
             if hasattr(obj, "coef"):
                 if self.verbose:
                     er3t.common.logger.info(
-                        "Message [abs_oco_idl]: Loading %s ..." % fname
+                        f"Message [abs_oco_idl]: Loading {fname} ..."
                     )
                 self.fname = obj.fname
                 self.wvl = obj.wvl
@@ -1979,8 +1973,7 @@ class abs_oco:
                 self.Ng = obj.Ng
             else:
                 sys.exit(
-                    "Error   [abs_oco_idl]: '%s' is not the correct pickle file to load."
-                    % fname
+                    f"Error   [abs_oco_idl]: '{fname}' is not the correct pickle file to load."
                 )
 
     def run(self, atm_obj):
@@ -1991,7 +1984,7 @@ class abs_oco:
 
         if not os.path.exists(self.fname_idl):
             sys.exit(
-                "Error   [abs_oco]: Failed to locate 'fname_idl=%s'." % self.fname_idl
+                f"Error   [abs_oco]: Failed to locate 'fname_idl={self.fname_idl}'."
             )
 
         # self.coef
@@ -2006,7 +1999,7 @@ class abs_oco:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [abs_oco_idl]: Saving object into %s ..." % fname
+                    f"Message [abs_oco_idl]: Saving object into {fname} ..."
                 )
             pickle.dump(self, f)
 
@@ -2089,13 +2082,13 @@ class abs_oco_idl:
         verbose=False,
     ):
         if fname_idl is None:
-            self.fname_idl = "%s/abs/abs_oco_11.sav" % er3t.common.fdir_data
+            self.fname_idl = f"{er3t.common.fdir_data}/abs/abs_oco_11.sav"
         else:
             self.fname_idl = fname_idl
 
         self.verbose = verbose
         self.wvl = wavelength
-        self.wvl_info = "%.4f nm (applied OCO-2 slit)" % wavelength
+        self.wvl_info = f"{wavelength:.4f} nm (applied OCO-2 slit)"
 
         if (fname is not None) and (os.path.exists(fname)) and (not overwrite):
             self.load(fname)
@@ -2125,7 +2118,7 @@ class abs_oco_idl:
             if hasattr(obj, "coef"):
                 if self.verbose:
                     er3t.common.logger.info(
-                        "Message [abs_oco_idl]: Loading %s ..." % fname
+                        f"Message [abs_oco_idl]: Loading {fname} ..."
                     )
                 self.fname = obj.fname
                 self.wvl = obj.wvl
@@ -2135,8 +2128,7 @@ class abs_oco_idl:
                 self.wvl_info = obj.wvl_info
             else:
                 sys.exit(
-                    "Error   [abs_oco_idl]: '%s' is not the correct pickle file to load."
-                    % fname
+                    f"Error   [abs_oco_idl]: '{fname}' is not the correct pickle file to load."
                 )
 
     def run(self, atm_obj):
@@ -2155,7 +2147,7 @@ class abs_oco_idl:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [abs_oco_idl]: Saving object into %s ..." % fname
+                    f"Message [abs_oco_idl]: Saving object into {fname} ..."
                 )
             pickle.dump(self, f)
 
@@ -2167,14 +2159,12 @@ class abs_oco_idl:
         index_wvl = np.argmin(np.abs(wvl_center_oco - self.wvl))
         if abs(wvl_center_oco[index_wvl] - self.wvl) >= wvl_threshold:
             sys.exit(
-                "Error [abs_oco_idl]: Cannot pick a close wavelength for %.2fnm from '%s'."
-                % (self.wvl, self.fname_idl)
+                f"Error [abs_oco_idl]: Cannot pick a close wavelength for {self.wvl:.2f}nm from '{self.fname_idl}'."
             )
         else:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [abs_oco_idl]: Picked wvl=%.2f from '%s' for input wavelength %.2fnm."
-                    % (wvl_center_oco[index_wvl], self.fname_idl, self.wvl)
+                    f"Message [abs_oco_idl]: Picked wvl={wvl_center_oco[index_wvl]:.2f} from '{self.fname_idl}' for input wavelength {self.wvl:.2f}nm."
                 )
             self.wvl = wvl_center_oco[index_wvl]
 
@@ -2256,13 +2246,13 @@ class abs_oco_h5:
         verbose=False,
     ):
         if fname_h5 is None:
-            self.fname_h5 = "%s/abs/abs_oco_11.h5" % er3t.common.fdir_data
+            self.fname_h5 = f"{er3t.common.fdir_data}/abs/abs_oco_11.h5"
         else:
             self.fname_h5 = fname_h5
 
         self.verbose = verbose
         self.wvl = wavelength
-        self.wvl_info = "%.4f nm (applied OCO-2 slit)" % wavelength
+        self.wvl_info = f"{wavelength:.4f} nm (applied OCO-2 slit)"
 
         if (fname is not None) and (os.path.exists(fname)) and (not overwrite):
             self.load(fname)
@@ -2292,7 +2282,7 @@ class abs_oco_h5:
             if hasattr(obj, "coef"):
                 if self.verbose:
                     er3t.common.logger.info(
-                        "Message [abs_oco_h5]: Loading %s ..." % fname
+                        f"Message [abs_oco_h5]: Loading {fname} ..."
                     )
                 self.fname = obj.fname
                 self.wvl = obj.wvl
@@ -2303,8 +2293,7 @@ class abs_oco_h5:
 
             else:
                 sys.exit(
-                    "Error   [abs_oco_h5]: '%s' is not the correct pickle file to load."
-                    % fname
+                    f"Error   [abs_oco_h5]: '{fname}' is not the correct pickle file to load."
                 )
 
     def run(self, atm_obj):
@@ -2323,7 +2312,7 @@ class abs_oco_h5:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [abs_oco_h5]: Saving object into %s ..." % fname
+                    f"Message [abs_oco_h5]: Saving object into {fname} ..."
                 )
             pickle.dump(self, f)
 
@@ -2334,14 +2323,12 @@ class abs_oco_h5:
             index_wvl = np.argmin(np.abs(wvl_center_oco - self.wvl))
             if abs(wvl_center_oco[index_wvl] - self.wvl) >= wvl_threshold:
                 sys.exit(
-                    "Error   [abs_oco_h5]: Cannot pick a close wavelength for %.2fnm from '%s'."
-                    % (self.wvl, self.fname_h5)
+                    f"Error   [abs_oco_h5]: Cannot pick a close wavelength for {self.wvl:.2f}nm from '{self.fname_h5}'."
                 )
             else:
                 if self.verbose:
                     er3t.common.logger.info(
-                        "Message [abs_oco_h5]: Picked wvl=%.2f from '%s' for input wavelength %.2fnm."
-                        % (wvl_center_oco[index_wvl], self.fname_h5, self.wvl)
+                        f"Message [abs_oco_h5]: Picked wvl={wvl_center_oco[index_wvl]:.2f} from '{self.fname_h5}' for input wavelength {self.wvl:.2f}nm."
                     )
                 self.wvl = wvl_center_oco[index_wvl]
 
@@ -2385,7 +2372,7 @@ class abs_rrtmg_sw:
         self.coef['weight']
     """
 
-    fname = "%s/rrtmg/rrtmg_sw.nc" % er3t.common.fdir_data_abs
+    fname = f"{er3t.common.fdir_data_abs}/rrtmg/rrtmg_sw.nc"
     reference = "\nRRTMG Shortwave Absorption Database (Iacono et al., 2008):\nIacono, M.J., Delamere, J.S., Mlawer, E.J., Shephard, M.W., Clough, S.A., and Collins, W.D.: Radiative forcing by long-lived greenhouse gases: Calculations with the AER radiative transfer models, J. Geophys. Res., 113, D13103, https://doi.org/10.1029/2008JD009944, 2008."
 
     def __init__(
@@ -2437,7 +2424,7 @@ class abs_rrtmg_sw:
         Ngas, Nchar = gas_bytes.shape
         gases = [
             gas.decode("utf-8").replace(" ", "").lower()
-            for gas in gas_bytes.view("S%d" % Nchar).ravel()
+            for gas in gas_bytes.view(f"S{int(Nchar)}").ravel()
         ]
         er3t.common.logger.info(gases)
         # ╰────────────────────────────────────────────────────────────────────────────╯#
@@ -2604,38 +2591,32 @@ class abs_rrtmg_sw:
         # Coef Key:  ('GPoint', 'PressureLowerAtmos', 'TemperatureDiffFromMLS', 'KeySpeciesRatioLowerAtmos')
 
         er3t.common.logger.info("-" * 80)
-        er3t.common.logger.info("Band #%d" % (iband + 1))
-        er3t.common.logger.info("Center wavelength: %.4fnm" % self.wavelength)
-        er3t.common.logger.info("Wavelength range: %.4f - %.4fnm" % self.band_range)
+        er3t.common.logger.info(f"Band #{int(iband + 1)}")
+        er3t.common.logger.info(f"Center wavelength: {self.wavelength:.4f}nm")
+        er3t.common.logger.info(
+            "Wavelength range: {:.4f} - {:.4f}nm".format(*self.band_range)
+        )
         er3t.common.logger.info("Number of Gs: %s", Ng)
         er3t.common.logger.info("")
         er3t.common.logger.info("Lower Atmosphere:")
         er3t.common.logger.info("Key species: %s", key_gas_low)
+        er3t.common.logger.info(f"Pressure: {p_low.shape}\n{nice_array_str(p_low)}")
         er3t.common.logger.info(
-            "Pressure: %s\n%s" % (p_low.shape, nice_array_str(p_low))
+            f"Mixing Ratio: {mr_low.shape}\n{nice_array_str(mr_low)}"
         )
-        er3t.common.logger.info(
-            "Mixing Ratio: %s\n%s" % (mr_low.shape, nice_array_str(mr_low))
-        )
-        er3t.common.logger.info(
-            "Temperature Diff.: %s\n%s" % (dt.shape, nice_array_str(dt))
-        )
-        er3t.common.logger.info("Coef.: %s\n" % str(coef_low.shape))
-        er3t.common.logger.info("Coef. Key: %s\n" % str(coef_key_low.shape))
+        er3t.common.logger.info(f"Temperature Diff.: {dt.shape}\n{nice_array_str(dt)}")
+        er3t.common.logger.info(f"Coef.: {str(coef_low.shape)}\n")
+        er3t.common.logger.info(f"Coef. Key: {str(coef_key_low.shape)}\n")
         er3t.common.logger.info("")
         er3t.common.logger.info("Upper Atmosphere:")
         er3t.common.logger.info("Key species: %s", key_gas_upp)
+        er3t.common.logger.info(f"Pressure: {p_upp.shape}\n{nice_array_str(p_upp)}")
         er3t.common.logger.info(
-            "Pressure: %s\n%s" % (p_upp.shape, nice_array_str(p_upp))
+            f"Mixing Ratio: {mr_upp.shape}\n{nice_array_str(mr_upp)}"
         )
-        er3t.common.logger.info(
-            "Mixing Ratio: %s\n%s" % (mr_upp.shape, nice_array_str(mr_upp))
-        )
-        er3t.common.logger.info(
-            "Temperature Diff.: %s\n%s" % (dt.shape, nice_array_str(dt))
-        )
-        er3t.common.logger.info("Coef.: %s\n" % str(coef_upp.shape))
-        er3t.common.logger.info("Coef. Key: %s\n" % str(coef_key_upp.shape))
+        er3t.common.logger.info(f"Temperature Diff.: {dt.shape}\n{nice_array_str(dt)}")
+        er3t.common.logger.info(f"Coef.: {str(coef_upp.shape)}\n")
+        er3t.common.logger.info(f"Coef. Key: {str(coef_key_upp.shape)}\n")
         er3t.common.logger.info("-" * 80)
 
         # + netCDF
@@ -2701,7 +2682,7 @@ def export_solar_16g():
             * 1000.0
         )
 
-        er3t.common.logger.info("%5d %.6e" % (wvl, toa))
+        er3t.common.logger.info(f"{int(wvl):5} {toa:.6e}")
 
 
 if __name__ == "__main__":

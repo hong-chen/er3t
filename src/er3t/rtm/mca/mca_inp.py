@@ -768,7 +768,7 @@ def mca_inp_nml(input_dict, verbose=True, comment=True):
                 if comment:
                     mcarats_nml_all_info[key] = mcarats_nml_all_info[key_ori]
             else:
-                msg = "Error [mca_inp_nml]: please check input variable <%s>." % key
+                msg = f"Error [mca_inp_nml]: please check input variable <{key}>."
                 raise OSError(msg)
         else:
             index = nml_ordered_keys_full.index(key)
@@ -791,13 +791,13 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
     input_fname = os.path.abspath(input_fname)
     fdir_inp = os.path.dirname(input_fname)
     if not os.path.exists(fdir_inp):
-        os.system("mkdir -p %s" % fdir_inp)
+        os.system(f"mkdir -p {fdir_inp}")
 
     # creating input file for MCARaTS
     f = open(input_fname, "w")
 
     for nml_key in mcarats_nml_all.keys():
-        f.write("&%s\n" % nml_key)
+        f.write(f"&{nml_key}\n")
 
         vars_key = [
             xx for xx in mcarats_nml_input.keys() if mcarats_nml_input[xx] == nml_key
@@ -808,30 +808,27 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
                 if isinstance(
                     var, (int, float, np.int32, np.int64, np.float32, np.float64)
                 ):
-                    f.write(" %-15s = %-.16g\n" % (var_key, var))
+                    f.write(f" {var_key:15} = {var:-.16g}\n")
                 elif isinstance(var, str):
                     if "*" in var:
-                        f.write(" %-15s = %s\n" % (var_key, var))
+                        f.write(f" {var_key:15} = {var}\n")
                     else:
-                        f.write(" %-15s = '%s'\n" % (var_key, var))
+                        f.write(f" {var_key:15} = '{var}'\n")
                 elif isinstance(var, np.ndarray):
                     if var.size > 1:
                         var_str = nice_array_str(var)
 
                         if len(var_str) <= 80:
-                            f.write(" %-15s = %s\n" % (var_key, var_str))
+                            f.write(f" {var_key:15} = {var_str}\n")
                         else:
-                            f.write(" %-15s =\n" % var_key)
-                            f.write("%s\n" % var_str)
+                            f.write(f" {var_key:15} =\n")
+                            f.write(f"{var_str}\n")
 
                     elif var.size == 1:
-                        f.write(" %-15s = %-g\n" % (var_key, var))
+                        f.write(f" {var_key:15} = {var:-g}\n")
 
                 else:
-                    msg = (
-                        "Error [mca_inp_file]: only types of int, float, str, ndarray are supported (do not support <%s> as %s)."
-                        % (var_key, type(var))
-                    )
+                    msg = f"Error [mca_inp_file]: only types of int, float, str, ndarray are supported (do not support <{var_key}> as {type(var)})."
                     raise ValueError(msg)
 
                 if comment:
@@ -842,9 +839,9 @@ def mca_inp_file(input_fname, input_dict, verbose=True, comment=True):
                     if "\n" in var_detail:
                         lines = var_detail.split("\n")
                         for line in lines:
-                            f.write(" !----> %s\n" % line)
+                            f.write(f" !----> {line}\n")
                     else:
-                        f.write(" !----> %s\n" % mcarats_nml_all_info[var_key])
+                        f.write(f" !----> {mcarats_nml_all_info[var_key]}\n")
                     f.write(
                         " !-----------------------------------------------------------------------------------------------------------\n"
                     )

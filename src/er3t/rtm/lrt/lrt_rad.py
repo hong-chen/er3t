@@ -75,11 +75,10 @@ class lrt_init_mono_rad:
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         if input_file is None:
             dtime_tmp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            input_file = "lrt_input_%s.txt" % dtime_tmp
+            input_file = f"lrt_input_{dtime_tmp}.txt"
             if verbose:
                 er3t.common.logger.info(
-                    "Message [lrt_init_mono]: <input_file> is missing, assigning input_file = %s."
-                    % input_file
+                    f"Message [lrt_init_mono]: <input_file> is missing, assigning input_file = {input_file}."
                 )
         self.input_file = input_file
         # ╰────────────────────────────────────────────────────────────────────────────╯#
@@ -87,11 +86,10 @@ class lrt_init_mono_rad:
         # output file
         # ╭────────────────────────────────────────────────────────────────────────────╮#
         if output_file is None:
-            output_file = "lrt_output_%s.txt" % dtime_tmp
+            output_file = f"lrt_output_{dtime_tmp}.txt"
             if verbose:
                 er3t.common.logger.info(
-                    "Message [lrt_init_mono]: <output_file> is missing, assigning output_file = %s."
-                    % output_file
+                    f"Message [lrt_init_mono]: <output_file> is missing, assigning output_file = {output_file}."
                 )
         self.output_file = output_file
         # ╰────────────────────────────────────────────────────────────────────────────╯#
@@ -150,13 +148,10 @@ class lrt_init_mono_rad:
             if isinstance(sensor_zenith_angle, (list, np.ndarray)):
                 self.Nvar = len(sensor_zenith_angle) + 1
                 sensor_zenith_angle = " ".join(
-                    "{:.8f}".format(vza0)
-                    for vza0 in np.cos(np.deg2rad(sensor_zenith_angle))
+                    f"{vza0:.8f}" for vza0 in np.cos(np.deg2rad(sensor_zenith_angle))
                 )
             else:
-                sensor_zenith_angle = "{:.8f}".format(
-                    np.cos(np.deg2rad(sensor_zenith_angle))
-                )
+                sensor_zenith_angle = f"{np.cos(np.deg2rad(sensor_zenith_angle)):.8f}"
                 self.Nvar = 2
         else:
             self.Nvar = 2
@@ -210,8 +205,7 @@ class lrt_init_mono_rad:
             wavelength_half_width = 16.0
         if verbose:
             er3t.common.logger.info(
-                "Message [lrt_init_mono]: slit_function_file = '%s'."
-                % slit_function_file
+                f"Message [lrt_init_mono]: slit_function_file = '{slit_function_file}'."
             )
 
         # output altitude
@@ -247,14 +241,14 @@ class lrt_init_mono_rad:
                 ("atmosphere_file", lrt_cfg["atmosphere_file"]),
                 # ('source solar'      , lrt_cfg['solar_file']),
                 ("day_of_year", str(day_of_year)),
-                ("albedo", "%.6f" % surface_albedo),
-                ("sza", "%.4f" % solar_zenith_angle),
-                ("phi0", "%.4f" % solar_azimuth_angle),
+                ("albedo", f"{surface_albedo:.6f}"),
+                ("sza", f"{solar_zenith_angle:.4f}"),
+                ("phi0", f"{solar_azimuth_angle:.4f}"),
                 ("umu", sensor_zenith_angle),
                 ("phi", sensor_azimuth_angle),
                 ("rte_solver", lrt_cfg["rte_solver"]),
                 ("number_of_streams", str(lrt_cfg["number_of_streams"])),
-                ("wavelength", "%.1f %.1f" % (wavelength_s, wavelength_e)),
+                ("wavelength", f"{wavelength_s:.1f} {wavelength_e:.1f}"),
                 ("data_files_path", lrt_cfg["data_files_path"]),
                 ("mol_abs_param", lrt_cfg["mol_abs_param"]),
                 ("output_user", output_format),
@@ -264,10 +258,8 @@ class lrt_init_mono_rad:
 
         if lrt_cfg["solar_file"] is not None:
             self.input_dict["source solar"] = lrt_cfg["solar_file"]
-            self.input_dict["spline"] = "%.3f %.3f %.3f" % (
-                wavelength,
-                wavelength,
-                spectral_resolution,
+            self.input_dict["spline"] = (
+                f"{wavelength:.3f} {wavelength:.3f} {spectral_resolution:.3f}"
             )
             self.input_dict["slit_function_file"] = slit_function_file
             # self.input_dict['output_process'] = lrt_cfg['output_process']
@@ -292,25 +284,28 @@ class lrt_init_mono_rad:
                     prefix = "ic"
 
                 if self.input_dict_extra is not None:
-                    self.input_dict_extra["%s_file 1D" % prefix] = cld_cfg["cloud_file"]
+                    self.input_dict_extra[f"{prefix}_file 1D"] = cld_cfg["cloud_file"]
                     self.input_dict_extra[
-                        "%s_properties %s" % (prefix, cld_cfg["%s_properties" % prefix])
+                        "{}_properties {}".format(
+                            prefix, cld_cfg[f"{prefix}_properties"]
+                        )
                     ] = "interpolate"
-                    self.input_dict_extra["%s_modify tau set" % prefix] = str(
+                    self.input_dict_extra[f"{prefix}_modify tau set"] = str(
                         cld_cfg["cloud_optical_thickness"]
                     )
 
                 else:
                     self.input_dict_extra = OD(
                         [
-                            ("%s_file 1D" % prefix, cld_cfg["cloud_file"]),
+                            (f"{prefix}_file 1D", cld_cfg["cloud_file"]),
                             (
-                                "%s_properties %s"
-                                % (prefix, cld_cfg["%s_properties" % prefix]),
+                                "{}_properties {}".format(
+                                    prefix, cld_cfg[f"{prefix}_properties"]
+                                ),
                                 "interpolate",
                             ),
                             (
-                                "%s_modify tau set" % prefix,
+                                f"{prefix}_modify tau set",
                                 str(cld_cfg["cloud_optical_thickness"]),
                             ),
                         ]
@@ -399,21 +394,19 @@ class lrt_init_spec_rad:
         # input file
         if input_file is None:
             dtime_tmp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            input_file = "lrt_input_%s.txt" % dtime_tmp
+            input_file = f"lrt_input_{dtime_tmp}.txt"
             if verbose:
                 er3t.common.logger.info(
-                    "Message [lrt_init_spec]: <input_file> is missing, assigning input_file = %s."
-                    % input_file
+                    f"Message [lrt_init_spec]: <input_file> is missing, assigning input_file = {input_file}."
                 )
         self.input_file = input_file
 
         # output file
         if output_file is None:
-            output_file = "lrt_output_%s.txt" % dtime_tmp
+            output_file = f"lrt_output_{dtime_tmp}.txt"
             if verbose:
                 er3t.common.logger.info(
-                    "Message [lrt_init_spec]: <output_file> is missing, assigning output_file = %s."
-                    % output_file
+                    f"Message [lrt_init_spec]: <output_file> is missing, assigning output_file = {output_file}."
                 )
         self.output_file = output_file
 
@@ -433,7 +426,7 @@ class lrt_init_spec_rad:
                 er3t.common.logger.info(
                     "Message [lrt_init_spec]: <wavelength_file> is missing, assigning wavelength = [350.0, 355.0, ..., 950.0]."
                 )
-            wavelength_file = "lrt_wvl_%s.txt" % dtime_tmp
+            wavelength_file = f"lrt_wvl_{dtime_tmp}.txt"
             gen_wavelength_file(wavelength_file, wavelength)
         else:
             wavelength = np.loadtxt(wavelength_file)
@@ -497,8 +490,7 @@ class lrt_init_spec_rad:
 
         if verbose:
             er3t.common.logger.info(
-                "Message [lrt_init_spec]: slit_function_file = '%s'."
-                % slit_function_file
+                f"Message [lrt_init_spec]: slit_function_file = '{slit_function_file}'."
             )
 
         # output altitude
@@ -524,18 +516,14 @@ class lrt_init_spec_rad:
                     ("day_of_year", str(day_of_year)),
                     ("albedo", str(np.round(surface_albedo, decimals=10))),
                     ("sza", str(np.round(solar_zenith_angle, decimals=10))),
-                    ("phi0", "%.4f" % solar_azimuth_angle),
-                    ("umu", "%.8f" % np.cos(np.deg2rad(sensor_zenith_angle))),
-                    ("phi", "%.4f" % sensor_azimuth_angle),
+                    ("phi0", f"{solar_azimuth_angle:.4f}"),
+                    ("umu", f"{np.cos(np.deg2rad(sensor_zenith_angle)):.8f}"),
+                    ("phi", f"{sensor_azimuth_angle:.4f}"),
                     ("rte_solver", lrt_cfg["rte_solver"]),
                     ("number_of_streams", str(lrt_cfg["number_of_streams"])),
                     (
                         "wavelength",
-                        "%.1f %.1f"
-                        % (
-                            wavelength.min() - wavelength_half_width,
-                            wavelength.max() + wavelength_half_width,
-                        ),
+                        f"{wavelength.min() - wavelength_half_width:.1f} {wavelength.max() + wavelength_half_width:.1f}",
                     ),
                     ("spline_file", wavelength_file),
                     ("slit_function_file", slit_function_file),
@@ -552,18 +540,14 @@ class lrt_init_spec_rad:
                     ("day_of_year", str(day_of_year)),
                     ("albedo_file", surface_albedo_file),
                     ("sza", str(solar_zenith_angle)),
-                    ("phi0", "%.4f" % solar_azimuth_angle),
-                    ("umu", "%.4f" % sensor_zenith_angle),
-                    ("phi", "%.4f" % sensor_azimuth_angle),
+                    ("phi0", f"{solar_azimuth_angle:.4f}"),
+                    ("umu", f"{sensor_zenith_angle:.4f}"),
+                    ("phi", f"{sensor_azimuth_angle:.4f}"),
                     ("rte_solver", lrt_cfg["rte_solver"]),
                     ("number_of_streams", str(lrt_cfg["number_of_streams"])),
                     (
                         "wavelength",
-                        "%.1f %.1f"
-                        % (
-                            wavelength.min() - wavelength_half_width,
-                            wavelength.max() + wavelength_half_width,
-                        ),
+                        f"{wavelength.min() - wavelength_half_width:.1f} {wavelength.max() + wavelength_half_width:.1f}",
                     ),
                     ("spline_file", wavelength_file),
                     ("slit_function_file", slit_function_file),
@@ -589,14 +573,15 @@ class lrt_init_spec_rad:
 
                 self.input_dict_extra = OD(
                     [
-                        ("%s_file 1D" % prefix, cld_cfg["cloud_file"]),
+                        (f"{prefix}_file 1D", cld_cfg["cloud_file"]),
                         (
-                            "%s_properties %s"
-                            % (prefix, cld_cfg["%s_properties" % prefix]),
+                            "{}_properties {}".format(
+                                prefix, cld_cfg[f"{prefix}_properties"]
+                            ),
                             "interpolate",
                         ),
                         (
-                            "%s_modify tau set" % prefix,
+                            f"{prefix}_modify tau set",
                             str(cld_cfg["cloud_optical_thickness"]),
                         ),
                     ]

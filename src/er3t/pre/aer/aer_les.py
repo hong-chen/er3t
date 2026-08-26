@@ -73,8 +73,7 @@ class aer_les:
 
         else:
             sys.exit(
-                "Error   [aer_les]: Please check if '%s' exists or provide 'fname_nc' to proceed."
-                % self.fname
+                f"Error   [aer_les]: Please check if '{self.fname}' exists or provide 'fname_nc' to proceed."
             )
 
     def load(self, fname):
@@ -82,19 +81,18 @@ class aer_les:
             obj = pickle.load(f)
             if hasattr(obj, "lev") and hasattr(obj, "lay"):
                 if self.verbose:
-                    er3t.common.logger.info("Message [aer_les]: Loading %s ..." % fname)
+                    er3t.common.logger.info(f"Message [aer_les]: Loading {fname} ...")
                 self.fname = obj.fname
                 self.lay = obj.lay
                 self.lev = obj.lev
             else:
                 sys.exit(
-                    "Error   [aer_les]: %s is not the correct 'pickle' file to load."
-                    % fname
+                    f"Error   [aer_les]: {fname} is not the correct 'pickle' file to load."
                 )
 
     def run(self, fname_nc):
         if self.verbose:
-            er3t.common.logger.info("Message [aer_les]: Processing %s ..." % fname_nc)
+            er3t.common.logger.info(f"Message [aer_les]: Processing {fname_nc} ...")
 
         # pre process
         self.pre_les(fname_nc)
@@ -111,7 +109,7 @@ class aer_les:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [aer_les]: Saving object into %s ..." % fname
+                    f"Message [aer_les]: Saving object into {fname} ..."
                 )
             pickle.dump(self, f)
 
@@ -196,16 +194,16 @@ class aer_les:
             or (self.Nt % dnt != 0)
         ):
             sys.exit(
-                "Error   [aer_les]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz, dnt)."
-                % (str(self.lay["Temperature"].shape), str(coarsing))
+                "Error   [aer_les]: The original dimension {} is not divisible with {}, please check input (dnx, dny, dnz, dnt).".format(
+                    str(self.lay["Temperature"].shape), str(coarsing)
+                )
             )
         else:
             new_shape = (self.Nt // dnt, self.Nz // dnz, self.Ny // dny, self.Nx // dnx)
 
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [aer_les]: Downgrading data from dimension %s to %s ..."
-                    % (str(self.P.shape), str(new_shape))
+                    f"Message [aer_les]: Downgrading data from dimension {str(self.P.shape)} to {str(new_shape)} ..."
                 )
 
             self.lay["x"]["data"] = downscale(self.lay["x"]["data"], (self.Nx // dnx,))

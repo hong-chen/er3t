@@ -346,9 +346,7 @@ class modis_l1b:
             elif (bands is not None) and not (
                 set(bands).issubset(set(MODIS_L1B_QKM_BANDS.keys()))
             ):
-                msg = "Error [modis_l1b]: Bands must be one or more of %s" % list(
-                    MODIS_L1B_QKM_BANDS.keys()
-                )
+                msg = f"Error [modis_l1b]: Bands must be one or more of {list(MODIS_L1B_QKM_BANDS.keys())}"
                 raise KeyError(msg)
 
         elif "hkm" in filename:
@@ -359,9 +357,7 @@ class modis_l1b:
             elif (bands is not None) and not (
                 set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))
             ):
-                msg = "Error [modis_l1b]: Bands must be one or more of %s" % list(
-                    MODIS_L1B_HKM_1KM_BANDS.keys()
-                )
+                msg = f"Error [modis_l1b]: Bands must be one or more of {list(MODIS_L1B_HKM_1KM_BANDS.keys())}"
                 raise KeyError(msg)
 
         elif "1km" in filename:
@@ -372,9 +368,7 @@ class modis_l1b:
             elif (bands is not None) and not (
                 set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))
             ):
-                msg = "Error [modis_l1b]: Bands must be one or more of %s" % list(
-                    MODIS_L1B_HKM_1KM_BANDS.keys()
-                )
+                msg = f"Error [modis_l1b]: Bands must be one or more of {list(MODIS_L1B_HKM_1KM_BANDS.keys())}"
                 raise KeyError(msg)
 
         else:
@@ -657,8 +651,7 @@ class modis_l1b:
 
         else:
             sys.exit(
-                "Error   [modis_l1b]: 'resolution=%f' has not been implemented."
-                % self.resolution
+                f"Error   [modis_l1b]: 'resolution={self.resolution:f}' has not been implemented."
             )
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
@@ -835,12 +828,12 @@ class modis_l2:
             vname_cwp_err = "Cloud_Water_Path_Uncertainty"
         else:
             vname_ctp = "Cloud_Phase_Optical_Properties"
-            vname_cot = "Cloud_Optical_Thickness_%s" % cop_flag
-            vname_cer = "Cloud_Effective_Radius_%s" % cop_flag
-            vname_cwp = "Cloud_Water_Path_%s" % cop_flag
-            vname_cot_err = "Cloud_Optical_Thickness_Uncertainty_%s" % cop_flag
-            vname_cer_err = "Cloud_Effective_Radius_Uncertainty_%s" % cop_flag
-            vname_cwp_err = "Cloud_Water_Path_Uncertainty_%s" % cop_flag
+            vname_cot = f"Cloud_Optical_Thickness_{cop_flag}"
+            vname_cer = f"Cloud_Effective_Radius_{cop_flag}"
+            vname_cwp = f"Cloud_Water_Path_{cop_flag}"
+            vname_cot_err = f"Cloud_Optical_Thickness_Uncertainty_{cop_flag}"
+            vname_cer_err = f"Cloud_Effective_Radius_Uncertainty_{cop_flag}"
+            vname_cwp_err = f"Cloud_Water_Path_Uncertainty_{cop_flag}"
 
         f = SD(fname, SDC.READ)
 
@@ -853,9 +846,9 @@ class modis_l2:
         cot0 = f.select(vname_cot)
         cer0 = f.select(vname_cer)
         cwp0 = f.select(vname_cwp)
-        cot1 = f.select("%s_PCL" % vname_cot)
-        cer1 = f.select("%s_PCL" % vname_cer)
-        cwp1 = f.select("%s_PCL" % vname_cwp)
+        cot1 = f.select(f"{vname_cot}_PCL")
+        cer1 = f.select(f"{vname_cer}_PCL")
+        cwp1 = f.select(f"{vname_cwp}_PCL")
         cot_err0 = f.select(vname_cot_err)
         cer_err0 = f.select(vname_cer_err)
         cwp_err0 = f.select(vname_cwp_err)
@@ -1096,7 +1089,7 @@ class modis_l2:
             elif dim0 == dim_5km:
                 logic = self.logic[fname]["5km"]
             else:
-                msg = "Error [modis_l2]: Unknow resolution for <%s>." % vname
+                msg = f"Error [modis_l2]: Unknow resolution for <{vname}>."
                 raise ValueError(msg)
             data = get_data_h4(data0)[logic]
             if vname.lower() in self.data.keys():
@@ -2159,9 +2152,7 @@ class modis_09:
                 - atm_correction (int): The atmospheric correction QA value.
                 - adjacent_correction (int): The adjacent correction QA value.
         """
-        band_qa_byte = hdf_obj.select(
-            "{} Reflectance Band Quality".format(self.resolution)
-        )
+        band_qa_byte = hdf_obj.select(f"{self.resolution} Reflectance Band Quality")
         band_qa_byte = band_qa_byte[:]
 
         band_qa = unpack_uint_to_bits(band_qa_byte, num_bits=32, bitorder="little")
@@ -2194,9 +2185,7 @@ class modis_09:
             not set(self.bands).issubset(list(MODIS_L1B_HKM_1KM_BANDS.keys()))
         ):
             raise AttributeError(
-                "Error [modis_09]: Your input for `bands`={}\n`bands` must be one of {}\n".format(
-                    self.bands, list(MODIS_L1B_HKM_1KM_BANDS.keys())
-                )
+                f"Error [modis_09]: Your input for `bands`={self.bands}\n`bands` must be one of {list(MODIS_L1B_HKM_1KM_BANDS.keys())}\n"
             )
 
         # resolution and lon/lat interpolation (if needed)
@@ -2223,7 +2212,7 @@ class modis_09:
         # search datasets containing the search term derived from param and resolution
         search_term = self.resolution + " " + " ".join(self.param.title().split("_"))
         search_terms_with_bands = [
-            search_term + " " + "Band {}".format(str(band)) for band in self.bands
+            search_term + " " + f"Band {str(band)}" for band in self.bands
         ]
         params = [
             i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands
@@ -2366,7 +2355,7 @@ class modis_09:
         # search datasets containing the search term derived from param and resolution
         search_term = self.resolution + " " + " ".join(self.param.title().split("_"))
         search_terms_with_bands = [
-            search_term + " " + "Band {}".format(str(band)) for band in self.bands
+            search_term + " " + f"Band {str(band)}" for band in self.bands
         ]
         params = [
             i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands
@@ -2927,7 +2916,7 @@ class modis_09a1:
         Nchan = 7  # wavelengths are 0:620-670nm, 1:841-876nm, 2:459-479nm, 3:545-565nm, 4:1230-1250nm, 5:1628-1652nm, 6:2105-2155nm
         ref = np.zeros((Nchan, logic.sum()), dtype=np.float32)
         for ichan in range(Nchan):
-            data0 = f.select("sur_refl_b%2.2d" % (ichan + 1))
+            data0 = f.select(f"sur_refl_b{int(ichan + 1):02d}")
             data = get_data_h4(data0)[logic]
             ref[ichan, :] = data
 
@@ -3218,7 +3207,7 @@ class modis_43a1:
         f_geo = np.zeros((Nchan, logic.sum()), dtype=np.float32)
 
         for ichan in range(Nchan):
-            data0 = f.select("BRDF_Albedo_Parameters_Band%d" % (ichan + 1))
+            data0 = f.select(f"BRDF_Albedo_Parameters_Band{int(ichan + 1)}")
             data = get_data_h4(data0)[logic, :]
             f_iso[ichan, :] = data[..., 0]
             f_vol[ichan, :] = data[..., 1]
@@ -3378,11 +3367,11 @@ class modis_43a3:
         wsky_alb = np.zeros((Nchan, logic.sum()), dtype=np.float32)
 
         for ichan in range(Nchan):
-            data0 = f.select("Albedo_BSA_Band%d" % (ichan + 1))
+            data0 = f.select(f"Albedo_BSA_Band{int(ichan + 1)}")
             data = get_data_h4(data0)[logic]
             bsky_alb[ichan, :] = data
 
-            data0 = f.select("Albedo_WSA_Band%d" % (ichan + 1))
+            data0 = f.select(f"Albedo_WSA_Band{int(ichan + 1)}")
             data = get_data_h4(data0)[logic]
             wsky_alb[ichan, :] = data
 
@@ -3650,11 +3639,11 @@ def download_modis_rgb(
 ):
     which = which.lower()
     date_s = date.strftime("%Y-%m-%d")
-    fname = "%s/%s_rgb_%s_%s.png" % (
+    fname = "{}/{}_rgb_{}_{}.png".format(
         fdir,
         which,
         date_s,
-        "-".join(["%.2f" % extent0 for extent0 in extent]),
+        "-".join([f"{extent0:.2f}" for extent0 in extent]),
     )
 
     if run:
@@ -3769,10 +3758,10 @@ def download_modis_https(
     else:
         doy_str = get_doy_tag(date, day_interval=day_interval)
 
-    fdir_data = "%s/%s/%s/%s" % (fdir_prefix, dataset_tag, year_str, doy_str)
+    fdir_data = f"{fdir_prefix}/{dataset_tag}/{year_str}/{doy_str}"
 
     fdir_server = server + fdir_data
-    webpage = urllib.request.urlopen("%s.csv" % fdir_server)
+    webpage = urllib.request.urlopen(f"{fdir_server}.csv")
     content = webpage.read().decode("utf-8")
     lines = content.split("\n")
 
@@ -3781,19 +3770,13 @@ def download_modis_https(
     for line in lines:
         filename = line.strip().split(",")[0]
         if filename_tag in filename:
-            fname_server = "%s/%s" % (fdir_server, filename)
-            fname_local = "%s/%s" % (fdir_out, filename)
+            fname_server = f"{fdir_server}/{filename}"
+            fname_local = f"{fdir_out}/{filename}"
             fnames_local.append(fname_local)
             if command_line_tool == "curl":
-                command = (
-                    "mkdir -p %s && curl -H 'Authorization: Bearer %s' -L -C - '%s' -o '%s'"
-                    % (fdir_out, app_key, fname_server, fname_local)
-                )
+                command = f"mkdir -p {fdir_out} && curl -H 'Authorization: Bearer {app_key}' -L -C - '{fname_server}' -o '{fname_local}'"
             elif command_line_tool == "wget":
-                command = (
-                    'mkdir -p %s && wget -c "%s" --header "Authorization: Bearer %s" -O %s'
-                    % (fdir_out, fname_server, app_key, fname_local)
-                )
+                command = f'mkdir -p {fdir_out} && wget -c "{fname_server}" --header "Authorization: Bearer {app_key}" -O {fname_local}'
             commands.append(command)
 
     if not run:
@@ -3808,7 +3791,7 @@ def download_modis_https(
     else:
         for i, command in enumerate(commands):
             er3t.common.logger.info(
-                "Message [download_modis_https]: Downloading %s ..." % fnames_local[i]
+                f"Message [download_modis_https]: Downloading {fnames_local[i]} ..."
             )
             os.system(command)
 
@@ -3827,14 +3810,12 @@ def download_modis_https(
                 f = SD(fname_local, SDC.READ)
                 f.end()
                 er3t.common.logger.info(
-                    "Message [download_modis_https]: '%s' has been downloaded.\n"
-                    % fname_local
+                    f"Message [download_modis_https]: '{fname_local}' has been downloaded.\n"
                 )
 
             else:
                 er3t.common.logger.info(
-                    "Warning [download_modis_https]: Do not support check for '%s'. Do not know whether '%s' has been successfully downloaded.\n"
-                    % (data_format, fname_local)
+                    f"Warning [download_modis_https]: Do not support check for '{data_format}'. Do not know whether '{fname_local}' has been successfully downloaded.\n"
                 )
 
     return fnames_local
@@ -3865,9 +3846,9 @@ def get_filename_tag(
 
     satID = satID.lower()
     data_tags = dict(terra="MOD03", aqua="MYD03")
-    filename = "%s_%s.txt" % (data_tags[satID], date.strftime("%Y-%m-%d"))
+    filename = f"{data_tags[satID]}_{date.strftime('%Y-%m-%d')}.txt"
 
-    fname = "%s/%s/%4.4d/%s" % (fdir_prefix, satID.upper(), date.year, filename)
+    fname = f"{fdir_prefix}/{satID.upper()}/{int(date.year):04d}/{filename}"
 
     fname_server = server + fname
 
@@ -3876,9 +3857,7 @@ def get_filename_tag(
         password = os.environ["EARTHDATA_PASSWORD"]
     except Exception as err:
         exit(
-            "Error   [get_filename_tag]: {}\nCannot find environment variables 'EARTHDATA_USERNAME' and 'EARTHDATA_PASSWORD'.".format(
-                err
-            )
+            f"Error   [get_filename_tag]: {err}\nCannot find environment variables 'EARTHDATA_USERNAME' and 'EARTHDATA_PASSWORD'."
         )
 
     try:
@@ -3889,11 +3868,7 @@ def get_filename_tag(
             if r.ok:
                 content = r.content.decode("utf-8")
     except Exception as err:
-        exit(
-            "Error   [get_filename_tag]: {}\nCannot access {}.".format(
-                err, fname_server
-            )
-        )
+        exit(f"Error   [get_filename_tag]: {err}\nCannot access {fname_server}.")
 
     dtype = [
         "|S41",
@@ -4090,11 +4065,11 @@ def get_sinusoidal_grid_tag(lon, lat, verbose=False):
                 & (xy_in[:, 1] <= grid_y[index_v])
             )
             if logic.sum() > 0:
-                tile_tag = "h%2.2dv%2.2d" % (index_h, index_v)
+                tile_tag = f"h{int(index_h):02d}v{int(index_v):02d}"
                 if verbose:
                     er3t.common.logger.info(
-                        "Message [get_sinusoidal_grid_tag]: '%s' contains %d/%d."
-                        % (tile_tag, logic.sum(), logic.size)
+                        f"Message [get_sinusoidal_grid_tag]: '{tile_tag}' "
+                        f"contains {logic.sum()}/{logic.size}."
                     )
                 tile_tags.append(tile_tag)
 

@@ -90,21 +90,21 @@ class mca_sca:
         f = open(fname, "wb")
         f.write(
             struct.pack(
-                "<%df" % self.pha.data["ang"]["data"].size,
+                f"<{int(self.pha.data['ang']['data'].size)}f",
                 *self.pha.data["ang"]["data"].flatten(order="F"),
             )
         )
         for i in range(self.nml["Sca_npf"]["data"]):
             f.write(
                 struct.pack(
-                    "<%df" % self.pha.data["pha"]["data"][:, i].size,
+                    f"<{int(self.pha.data['pha']['data'][:, i].size)}f",
                     *self.pha.data["pha"]["data"][:, i].flatten(order="F"),
                 )
             )
         f.close()
 
         if not self.quiet:
-            er3t.common.logger.info("Message [mca_sca]: File <%s> is created." % fname)
+            er3t.common.logger.info(f"Message [mca_sca]: File <{fname}> is created.")
 
     def save_h5(self, fname):
         fname = os.path.abspath(fname)
@@ -121,7 +121,7 @@ class mca_sca:
         f.close()
 
         if not self.quiet:
-            er3t.common.logger.info("Message [mca_sca]: File <%s> is created." % fname)
+            er3t.common.logger.info(f"Message [mca_sca]: File <{fname}> is created.")
 
 
 if __name__ == "__main__":

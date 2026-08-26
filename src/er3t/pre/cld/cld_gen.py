@@ -173,10 +173,7 @@ class cld_gen_hem:
                 self.min_dist = obj.min_dist
                 self.w2h_ratio = obj.w2h_ratio
             else:
-                msg = (
-                    "Error [cld_gen_hem]: <%s> is not the correct pickle file to load."
-                    % fname
-                )
+                msg = f"Error [cld_gen_hem]: <{fname}> is not the correct pickle file to load."
                 raise OSError(msg)
 
     def run(self):
@@ -442,10 +439,7 @@ class cld_gen_hem:
             self.space_3d[index_x_s:index_x_e, index_y_s:index_y_e, :][logic_cloud0] = 1
 
             if w2h_ratio < cloud0["w2h_ratio"] and self.verbose:
-                msg = (
-                    "Warning [cld_gen_hem]: Cloud %2.2d is taller than before, cloud top might be cutted."
-                    % cloud0["ID"]
-                )
+                msg = f"Warning [cld_gen_hem]: Cloud {int(cloud0['ID']):02d} is taller than before, cloud top might be cutted."
                 warnings.warn(msg)
 
             cloud0["w2h_ratio"] = w2h_ratio
@@ -460,9 +454,8 @@ class cld_gen_hem:
         dnx, dny, dnz = coarsen
 
         if (self.Nx % dnx != 0) or (self.Ny % dny != 0) or (self.Nz % dnz != 0):
-            msg = (
-                "Error [cld_gen_hem]: The original dimension %s is not divisible with %s, please check input (dnx, dny, dnz)."
-                % (str(self.lay["temperature"]["data"].shape), str(coarsen))
+            msg = "Error [cld_gen_hem]: The original dimension {} is not divisible with {}, please check input (dnx, dny, dnz).".format(
+                str(self.lay["temperature"]["data"].shape), str(coarsen)
             )
             raise ValueError(msg)
         else:
@@ -662,10 +655,7 @@ class cld_gen_hom:
                 self.dy = obj.dy
                 self.dz = obj.dz
             else:
-                msg = (
-                    "Error [cld_gen_hom]: <%s> is not the correct pickle file to load."
-                    % fname
-                )
+                msg = f"Error [cld_gen_hom]: <{fname}> is not the correct pickle file to load."
                 raise OSError(msg)
 
     def run(self, cot0, cer0, atm_obj=None):
@@ -872,10 +862,7 @@ class cld_gen_cop:
             self.run(cot, cer, cth, cgt, dz)
 
         else:
-            msg = (
-                "\nError [cld_gen_cop]: Please check if <%s> exists or provide <cot> to proceed."
-                % self.fname
-            )
+            msg = f"\nError [cld_gen_cop]: Please check if <{self.fname}> exists or provide <cot> to proceed."
             raise OSError(msg)
 
     def load(self, fname):
@@ -891,10 +878,7 @@ class cld_gen_cop:
                 self.lay = obj.lay
                 self.lev = obj.lev
             else:
-                msg = (
-                    "\nError [cld_gen_cop]: <%s> is not the correct pickle file to load."
-                    % fname
-                )
+                msg = f"\nError [cld_gen_cop]: <{fname}> is not the correct pickle file to load."
                 raise OSError(msg)
 
     def run(self, cot, cer, cth, cgt, dz):

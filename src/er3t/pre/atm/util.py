@@ -148,7 +148,7 @@ def modify_h2o(
     for i, vname in enumerate(new_vars):
         new_data[:, i] = atm0[vname]["data"][::-1]
 
-    np.savetxt("ARISE_ATM_%s.txt" % date.strftime("%Y%m%d"), new_data)
+    np.savetxt("ARISE_ATM_{}.txt".format(date.strftime("%Y%m%d")), new_data)
 
 
 def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
@@ -235,10 +235,7 @@ def interp_pres_from_alt_temp(pres, alt, temp, alt_inp, temp_inp):
             rescale = dpm / (aa + bb * pl[indices]).sum()
 
             if np.abs(rescale - 1.0) > 0.1:
-                msg = (
-                    "\nWarning [interp_pres_from_alt_temp]: Pressure smoothing failed at %.1f to %.1f km, rescaled with %f ..."
-                    % (h[i], h[i + 1], rescale)
-                )
+                msg = f"\nWarning [interp_pres_from_alt_temp]: Pressure smoothing failed at {h[i]:.1f} to {h[i + 1]:.1f} km, rescaled with {rescale:f} ..."
                 warnings.warn(msg)
             else:
                 dp[indices] = rescale * (aa + bb * pl[indices])

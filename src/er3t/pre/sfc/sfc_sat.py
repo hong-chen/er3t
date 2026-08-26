@@ -61,8 +61,7 @@ class sfc_sat:
 
         else:
             sys.exit(
-                "Error   [sfc_sat]: Please check if '%s' exists or provide 'sat_obj' to proceed."
-                % self.fname
+                f"Error   [sfc_sat]: Please check if '{self.fname}' exists or provide 'sat_obj' to proceed."
             )
 
     def load(self, fname):
@@ -70,9 +69,7 @@ class sfc_sat:
             obj = pickle.load(f)
             if hasattr(obj, "data"):
                 if self.verbose:
-                    er3t.common.logger.info(
-                        "Message [sfc_sat]: Loading '%s' ..." % fname
-                    )
+                    er3t.common.logger.info(f"Message [sfc_sat]: Loading '{fname}' ...")
                 self.fname = obj.fname
                 self.extent = obj.extent
                 self.data = obj.data
@@ -80,8 +77,7 @@ class sfc_sat:
                 self.Ny = obj.Ny
             else:
                 sys.exit(
-                    "Error   [sfc_sat]: '%s' is not the correct 'pickle' file to load."
-                    % fname
+                    f"Error   [sfc_sat]: '{fname}' is not the correct 'pickle' file to load."
                 )
 
     def run(self):
@@ -92,7 +88,7 @@ class sfc_sat:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [sfc_sat]: Saving object into '%s' ..." % fname
+                    f"Message [sfc_sat]: Saving object into '{fname}' ..."
                 )
             pickle.dump(self, f)
 

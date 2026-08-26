@@ -93,7 +93,7 @@ def load_h5(fname):
 
         for key in obj.keys():
             item = obj[key]
-            path = "{prefix}/{key}".format(prefix=prefix, key=key)
+            path = f"{prefix}/{key}"
             if isinstance(item, h5py.Dataset):
                 yield path
             elif isinstance(item, h5py.Group):
@@ -173,26 +173,25 @@ def send_email(content=None, files=None, receiver="me@hongchen.cz"):
     sender_password = "er3t@cuboulder"
 
     msg = MIMEMultipart()
-    msg["Subject"] = "%s@%s: %s" % (os.getlogin(), socket.gethostname(), sys.argv[0])
+    msg["Subject"] = f"{os.getlogin()}@{socket.gethostname()}: {sys.argv[0]}"
     msg["From"] = "er3t"
     msg["To"] = receiver
 
     if content is None:
         content = "No message."
-    msg_detl = "Details:\nName: %s/%s\nPID: %d\nTime: %s" % (
-        os.getcwd(),
-        sys.argv[0],
-        os.getpid(),
-        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    msg_detl = (
+        f"Details:\nName: {os.getcwd()}/{sys.argv[0]}\n"
+        f"PID: {os.getpid()}\n"
+        f"Time: {datetime.datetime.now():%Y-%m-%d %H:%M:%S}"
     )
-    msg_body = "%s\n\n%s\n" % (content, msg_detl)
+    msg_body = f"{content}\n\n{msg_detl}\n"
     msg.attach(MIMEText(msg_body))
 
     for fname in files or []:
         with open(fname, "rb") as f:
             part = MIMEApplication(f.read(), Name=os.path.basename(fname))
-        part["Content-Disposition"] = 'attachment; filename="%s"' % os.path.basename(
-            fname
+        part["Content-Disposition"] = (
+            f'attachment; filename="{os.path.basename(fname)}"'
         )
         msg.attach(part)
 
@@ -228,9 +227,9 @@ def nice_array_str(array1d, numPerLine=6, useSci=False):
         for iNum in range(numPerLine):
             num0 = array1d[iLine * numPerLine + iNum]
             if useSci:
-                lineS += "  %18.8e" % num0
+                lineS += f"  {num0:18.8e}"
             else:
-                lineS += "  %18.8g" % num0
+                lineS += f"  {num0:18.8g}"
         lineS += "\n"
         niceString += lineS
 
@@ -239,9 +238,9 @@ def nice_array_str(array1d, numPerLine=6, useSci=False):
         for iNum in range(numRest):
             num0 = array1d[numLine * numPerLine + iNum]
             if useSci:
-                lineS += "  %18.8e" % num0
+                lineS += f"  {num0:18.8e}"
             else:
-                lineS += "  %18.8g" % num0
+                lineS += f"  {num0:18.8g}"
         lineS += "\n"
         niceString += lineS
 
@@ -818,7 +817,7 @@ def get_doy_tag(date, day_interval=8):
 
     doys = np.arange(1, day_total + 1, day_interval)
 
-    doy_tag = "%3.3d" % doys[np.argmin(np.abs(doys - doy))]
+    doy_tag = f"{int(doys[np.argmin(np.abs(doys - doy))]):03d}"
 
     return doy_tag
 
@@ -899,13 +898,11 @@ def downscale(ndarray, new_shape, operation="mean"):
     operation = operation.lower()
     if operation not in ["sum", "mean", "max", "median"]:
         raise ValueError(
-            "Error [downscale]: Operation of '%s' not supported." % operation
+            f"Error [downscale]: Operation of '{operation}' not supported."
         )
     if ndarray.ndim != len(new_shape):
         raise ValueError(
-            "Error [downscale]: Shape mismatch: {} -> {}".format(
-                ndarray.shape, new_shape
-            )
+            f"Error [downscale]: Shape mismatch: {ndarray.shape} -> {new_shape}"
         )
 
     compression_pairs = [(d, c // d) for d, c in zip(new_shape, ndarray.shape)]
@@ -1023,7 +1020,7 @@ def cal_sol_ang(julian_day, longitude, latitude, altitude):
         jday = julian_day[i]
 
         dtime_i = (dateRef + datetime.timedelta(days=jday - jdayRef)).replace(
-            tzinfo=datetime.timezone.utc
+            tzinfo=datetime.UTC
         )
 
         sza_i = 90.0 - pysolar.solar.get_altitude(
@@ -1296,7 +1293,7 @@ def cal_geodesic_lonlat(lon0, lat0, dist, azimuth):
 def parse_geojson(geojson_fpath):
     import json
 
-    with open(geojson_fpath, "r") as f:
+    with open(geojson_fpath) as f:
         data = json.load(f)
         # n_coords = len(data['features'][0]['geometry']['coordinates'][0])
 
@@ -1362,10 +1359,7 @@ def region_parser(extent, lons, lats, geojson_fpath):
 
         # check to make sure extent is correct
         if (extent[0] >= extent[1]) or (extent[2] >= extent[3]):
-            msg = (
-                "Error [region_parser]: The given extents of lon/lat are incorrect: %s.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North."
-                % extent
-            )
+            msg = f"Error [region_parser]: The given extents of lon/lat are incorrect: {extent}.\nPlease check to make sure extent is passed as `lon1 lon2 lat1 lat2` format i.e. West, East, South, North."
             er3t.common.logger.info(msg)
             sys.exit()
 
@@ -1417,7 +1411,7 @@ def unpack_uint_to_bits(uint_array, num_bits, bitorder="big"):
     """
 
     # convert to right dtype
-    uint_array = uint_array.astype("uint{}".format(num_bits))
+    uint_array = uint_array.astype(f"uint{num_bits}")
 
     if num_bits == 8:  # just use numpy
         bits = np.unpackbits(uint_array.flatten(), bitorder=bitorder)

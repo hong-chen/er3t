@@ -38,6 +38,7 @@ randomseed
 
 # exceptions for er3t
 future_dev
+!src/er3t/sat/download/earthdata.py
 !tests
 !tests/*.py
 !dev

@@ -47,7 +47,7 @@ def cal_xsec_o3_molina(
     t_ref=273.13,
     slit_func=None,
     method="auto",
-    fname="%s/crs/crs_o3_mol_cf.dat" % er3t.common.fdir_data_abs,
+    fname=f"{er3t.common.fdir_data_abs}/crs/crs_o3_mol_cf.dat",
 ):
     reference = "\nO₃ Absorption Cross Section (Molina and Molina, 1986):\n- Molina, L. T. and Molina, M. J.: Absolute Absorption Cross Sections of Ozone in the 185- to 350-nm Wavelength Range, J. Geophys. Res.-Atmos., 91, 4719, https://doi.org/10.1029/JD091iD13p14501, 1986."
     add_reference(reference)
@@ -72,7 +72,7 @@ def cal_xsec2_o4_greenblatt(
     wvl0,
     slit_func=None,
     method="auto",
-    fname="%s/crs/crs_o4_greenblatt.dat" % er3t.common.fdir_data_abs,
+    fname=f"{er3t.common.fdir_data_abs}/crs/crs_o4_greenblatt.dat",
 ):
     reference = "\nO₂-O₂ Absorption Cross Section (Greenblatt et al., 1990):\n- Greenblatt, G. D., Orlando, J., Burkholder, J. B., and Ravishankara, A. R.: Absorption measurements of oxygen between 330 and 1140 nm, J. Geophys. Res., 95, 18577–18582, https://doi.org/10.1029/JD095iD11p18577, 1990."
     add_reference(reference)
@@ -92,7 +92,7 @@ def cal_xsec_no2_burrows(
     wvl0,
     slit_func=None,
     method="auto",
-    fname="%s/crs/crs_no2_gom.dat" % er3t.common.fdir_data_abs,
+    fname=f"{er3t.common.fdir_data_abs}/crs/crs_no2_gom.dat",
 ):
     reference = "\nNO₂ Absorption Cross Section (Burrows et al., 1998):\n- Burrows, J. P., Dehn, A., Deters, B., Himmelmann, S., Richter, A., Voigt, S., and Orphal, J.: Atmospheric remote-sensing reference data from GOME: 1. Temperature-dependent absorption cross-sections of NO2 in the 231–794 nm range, J. Quant. Spectrosc. Ra., 60, 1025–1031, https://doi.org/10.1016/S0022-4073(97)00197-0, 1998."
     add_reference(reference)
@@ -112,7 +112,7 @@ def cal_solar_kurudz(
     wvl0,
     slit_func=None,
     method="auto",
-    kurudz_file="%s/kurudz_0.1nm.dat" % er3t.common.fdir_data_solar,
+    kurudz_file=f"{er3t.common.fdir_data_solar}/kurudz_0.1nm.dat",
 ):
     reference = "\nKurucz Solar Spectrum (Kurucz, 1992):\n- Kurucz, R. L.: Synthetic infrared spectra, in: Proceedings of the 154th Symposium of the International Astronomical Union (IAU), Tucson, Arizona, 2–6 March 1992, Kluwer, Acad., Norwell, MA, 154, 523–531, https://doi.org/10.1017/S0074180900124805, 1992."
     add_reference(reference)
@@ -138,7 +138,7 @@ def gen_h5_abs_ssfr(fname_h5):
         f = h5py.File(fname_h5, "w")
 
         for sub in ["O3", "CO2", "CH4", "H2O", "O2_cont5"]:
-            fdir = "%s/%s" % (fdir0, sub)
+            fdir = f"{fdir0}/{sub}"
 
             fnames = get_all_files(fdir)
             er3t.common.logger.info(len(fnames))
@@ -157,7 +157,7 @@ def gen_h5_abs_ssfr(fname_h5):
                     and ("test" not in fname)
                 ):
                     group = fname.replace(fdir0, "").replace(
-                        "/%s" % os.path.basename(fname), ""
+                        f"/{os.path.basename(fname)}", ""
                     )
                     if group not in f:
                         g = f.create_group(group)
@@ -169,7 +169,7 @@ def gen_h5_abs_ssfr(fname_h5):
     if True:
         f = h5py.File(fname_h5, "r+")
 
-        fdir = "%s/solar_v1.3" % fdir0
+        fdir = f"{fdir0}/solar_v1.3"
         fnames = get_all_files(fdir)
 
         for fname in fnames:

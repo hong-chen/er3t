@@ -96,8 +96,7 @@ class cld_sat:
 
         else:
             sys.exit(
-                "Error [cld_sat]: Please check if '%s' exists or provide 'sat_obj' to proceed."
-                % self.fname
+                f"Error [cld_sat]: Please check if '{self.fname}' exists or provide 'sat_obj' to proceed."
             )
 
     def load(self, fname):
@@ -105,15 +104,14 @@ class cld_sat:
             obj = pickle.load(f)
             if hasattr(obj, "lev") and hasattr(obj, "lay"):
                 if self.verbose:
-                    er3t.common.logger.info("Message [cld_sat]: loading %s ..." % fname)
+                    er3t.common.logger.info(f"Message [cld_sat]: loading {fname} ...")
                 self.fname = obj.fname
                 self.extent = obj.extent
                 self.lay = obj.lay
                 self.lev = obj.lev
             else:
                 sys.exit(
-                    "Error [cld_sat]: %s is not the correct 'pickle' file to load."
-                    % fname
+                    f"Error [cld_sat]: {fname} is not the correct 'pickle' file to load."
                 )
 
     def run(self, cth, cgt, dz):
@@ -152,7 +150,7 @@ class cld_sat:
         with open(fname, "wb") as f:
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [cld_sat]: saving object into %s ..." % fname
+                    f"Message [cld_sat]: saving object into {fname} ..."
                 )
             pickle.dump(self, f)
 
@@ -315,16 +313,18 @@ class cld_sat:
 
         if (self.Nx % dnx != 0) or (self.Ny % dny != 0) or (self.Nz % dnz != 0):
             sys.exit(
-                "Error [cld_sat]: the original dimension %s is not divisible with %s, please check input (dnx, dny, dnz)."
-                % (str(self.lay["temperature"]["data"].shape), str(coarsen))
+                "Error [cld_sat]: the original dimension {} is not divisible with {}, please check input (dnx, dny, dnz).".format(
+                    str(self.lay["temperature"]["data"].shape), str(coarsen)
+                )
             )
         else:
             new_shape = (self.Nx // dnx, self.Ny // dny, self.Nz // dnz)
 
             if self.verbose:
                 er3t.common.logger.info(
-                    "Message [cld_sat]: Downscaling data from dimension %s to %s ..."
-                    % (str(self.lay["temperature"]["data"].shape), str(new_shape))
+                    "Message [cld_sat]: Downscaling data from dimension {} to {} ...".format(
+                        str(self.lay["temperature"]["data"].shape), str(new_shape)
+                    )
                 )
 
             self.lay["x"]["data"] = downscale(

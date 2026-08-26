@@ -363,7 +363,7 @@ class oco2_std:
         f.close()
 
         if not self.quiet:
-            er3t.common.logger.info("Message [oco2_std]: File '%s' is created." % fname)
+            er3t.common.logger.info(f"Message [oco2_std]: File '{fname}' is created.")
 
 
 class oco2_met:
@@ -479,7 +479,7 @@ class oco2_met:
         f.close()
 
         if not self.quiet:
-            er3t.common.logger.info("Message [oco2_std]: File '%s' is created." % fname)
+            er3t.common.logger.info(f"Message [oco2_std]: File '{fname}' is created.")
 
 
 def get_fnames_from_web(website, extension):
@@ -503,7 +503,7 @@ def get_fnames_from_web(website, extension):
     try:
         web = urllib.request.urlopen(website)
     except urllib.error.HTTPError:
-        sys.exit("Error   [get_fnames_from_web]: '%s' does not exist." % website)
+        sys.exit(f"Error   [get_fnames_from_web]: '{website}' does not exist.")
     content = web.read()
     bs = BeautifulSoup(content, "html.parser")
 

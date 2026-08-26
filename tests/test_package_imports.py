@@ -69,11 +69,13 @@ def test_core_settings_and_resources_are_explicit():
 
 def test_new_satellite_and_io_boundaries_are_public():
     from er3t.io import load_h5
+    from er3t.sat.download import format_satname
     from er3t.sat.products import get_product_catalog
     from er3t.sat.readers.modis import modis_l1b
 
     catalog = get_product_catalog()
     assert callable(load_h5)
+    assert format_satname("Aqua", "MODIS") == "Aqua|MODIS"
     assert modis_l1b.__name__ == "modis_l1b"
     assert "MOD03" in catalog
 

@@ -26,7 +26,7 @@ __all__ = ["main"]
 def get_data_brief(args):
     fname = os.path.abspath(args.fname[0])
     if not os.path.exists(fname):
-        msg = "\nError [lss]: cannot locate file <{fname}>.".format(fname=fname)
+        msg = f"\nError [lss]: cannot locate file <{fname}>."
         raise OSError(msg)
 
     if args.format is not None:
@@ -38,17 +38,13 @@ def get_data_brief(args):
             words = filename.split(".")
 
             if len(words) == 1:
-                msg = "\nError [lss]: cannot determine the data type of file <{filename}>.".format(
-                    filename=filename
-                )
+                msg = f"\nError [lss]: cannot determine the data type of file <{filename}>."
                 raise ValueError(msg)
             else:
                 dataType = words[-1].lower()
 
         except ValueError:
-            msg = "\nError [lss]: cannot determine the data type of file <{filename}>.".format(
-                filename=filename
-            )
+            msg = f"\nError [lss]: cannot determine the data type of file <{filename}>."
             raise ValueError(msg)
 
     dataTypeDict = {
@@ -68,14 +64,10 @@ def get_data_brief(args):
         "nc4": "netCDF",
     }
 
-    if dataType in dataTypeDict.keys():
+    if dataType in dataTypeDict:
         return fname, dataTypeDict[dataType]
     else:
-        msg = (
-            "\nError [lss]: do NOT support the data type of file '{filename}'.".format(
-                filename=filename
-            )
-        )
+        msg = f"\nError [lss]: do NOT support the data type of file '{filename}'."
         raise ValueError(msg)
 
 
@@ -97,11 +89,11 @@ def get_data_info_nc(fname, dataType="netCDF4"):
         for key in keys:
             try:
                 item = obj.groups[key]
-                path = "{prefix}.groups['{key}']".format(prefix=prefix, key=key)
+                path = f"{prefix}.groups['{key}']"
                 yield from get_variable_names(item, prefix=path)
             except KeyError:
                 item = obj.variables[key]
-                path = "{prefix}.variables['{key}']".format(prefix=prefix, key=key)
+                path = f"{prefix}.variables['{key}']"
                 yield path, item
 
     try:
@@ -113,7 +105,7 @@ def get_data_info_nc(fname, dataType="netCDF4"):
     try:
         f = Dataset(fname, "r")
     except Exception:
-        msg = "\nError [lss]: cannot access <{fname}>.".format(fname=fname)
+        msg = f"\nError [lss]: cannot access <{fname}>."
         raise OSError(msg)
 
     if dataType.upper() == "HDF4":
@@ -134,7 +126,7 @@ def get_data_info_nc(fname, dataType="netCDF4"):
     data_info["!FILE!"] = "(1,)"
     for attr in f.ncattrs():
         attr0 = f.getncattr(attr)
-        data_info["!FILE!|%s" % (attr)] = attr0
+        data_info[f"!FILE!|{attr}"] = attr0
 
     for i, vname in enumerate(vnames):
         data_info[vname] = str(objs[i].shape)
@@ -144,9 +136,9 @@ def get_data_info_nc(fname, dataType="netCDF4"):
                 attr0 = str(attr0, encoding="utf-8")
             else:
                 attr0 = str(attr0)
-            data_info["%s|%s" % (vname, attr)] = attr0
+            data_info[f"{vname}|{attr}"] = attr0
         if hasattr(objs[i], "dimensions"):
-            data_info["%s|dims" % (vname)] = str(objs[i].dimensions)
+            data_info[f"{vname}|dims"] = str(objs[i].dimensions)
 
     f.close()
 
@@ -168,7 +160,7 @@ def get_data_info_h5(fname, dataType="HDF5"):
 
         for key in obj.keys():
             item = obj[key]
-            path = "{prefix}/{key}".format(prefix=prefix, key=key)
+            path = f"{prefix}/{key}"
             if isinstance(item, h5py.Dataset):
                 yield path
             elif isinstance(item, h5py.Group):
@@ -183,7 +175,7 @@ def get_data_info_h5(fname, dataType="HDF5"):
     try:
         f = h5py.File(fname, "r")
     except Exception:
-        msg = "\nError [lss]: cannot access <{fname}>.".format(fname=fname)
+        msg = f"\nError [lss]: cannot access <{fname}>."
         raise OSError(msg)
 
     vnames = []
@@ -195,7 +187,7 @@ def get_data_info_h5(fname, dataType="HDF5"):
     data_info["!FILE!"] = "(1,)"
     for attr in f.attrs.keys():
         attr0 = f.attrs[attr]
-        data_info["!FILE!|%s" % (attr)] = attr0
+        data_info[f"!FILE!|{attr}"] = attr0
 
     for vname in vnames:
         obj = f[vname]
@@ -203,13 +195,13 @@ def get_data_info_h5(fname, dataType="HDF5"):
         for attr in obj.attrs.keys():
             attr0 = obj.attrs[attr]
             if "_LIST" in attr:
-                data_info["%s|%s" % (vname, attr)] = attr0.shape
+                data_info[f"{vname}|{attr}"] = attr0.shape
             else:
                 if isinstance(attr0, (bytes, bytearray)):
                     attr0 = str(attr0, encoding="utf-8")
                 else:
                     attr0 = str(attr0)
-                data_info["%s|%s" % (vname, attr)] = attr0
+                data_info[f"{vname}|{attr}"] = attr0
 
     f.close()
 
@@ -226,7 +218,7 @@ def get_data_info_h4(fname, dataType="HDF4"):
     try:
         f = SD(fname, SDC.READ)
     except Exception:
-        msg = "\nError [lss]: cannot access <{fname}>.".format(fname=fname)
+        msg = f"\nError [lss]: cannot access <{fname}>."
         raise OSError(msg)
 
     vnames = f.datasets().keys()
@@ -246,7 +238,7 @@ def get_data_info_h4(fname, dataType="HDF4"):
                 attr0 = str(attr0, encoding="utf-8")
             else:
                 attr0 = str(attr0)
-            data_info["%s|%s" % (vname, attr)] = attr0
+            data_info[f"{vname}|{attr}"] = attr0
 
     f.end()
 
@@ -264,7 +256,7 @@ def get_data_info_idl(fname, dataType="IDL"):
     try:
         f = scipy.io.readsav(fname)
     except Exception:
-        msg = "\nError [lss]: cannot access <{fname}>.".format(fname=fname)
+        msg = f"\nError [lss]: cannot access <{fname}>."
         raise OSError(msg)
 
     vnames0 = f.keys()
@@ -274,7 +266,7 @@ def get_data_info_idl(fname, dataType="IDL"):
         if isinstance(obj, numpy.recarray):
             vnames1 = obj.dtype.names
             for vname1 in vnames1:
-                vname = "{vname0}.{vname1}[0]".format(vname0=vname0, vname1=vname1)
+                vname = f"{vname0}.{vname1}[0]"
                 obj_new = obj[vname1][0]
                 if isinstance(obj_new, numpy.ndarray):
                     data_info[vname] = str(obj_new.shape)
@@ -322,23 +314,21 @@ def process_data_info(data_info):
                 and len(data_info[vname]) > 2
                 and (data_info[vname].replace(" ", "") != "(1,)")
             ):
-                data_info_new["%3d. %s" % (i, vname)] = "Dataset  {shape}".format(
-                    shape=data_info[vname]
-                )
+                data_info_new[f"{int(i):3}. {vname}"] = f"Dataset  {data_info[vname]}"
             else:
-                data_info_new["%3d. %s" % (i, vname)] = "Data     1"
+                data_info_new[f"{int(i):3}. {vname}"] = "Data     1"
             j = 1
         else:
-            data_info_new["  %3d.%02d|'%s'" % (i, j, vname.split("|")[-1])] = data_info[
-                vname
-            ]
+            data_info_new[f"  {int(i):3}.{int(j):02}|'{vname.split('|')[-1]}'"] = (
+                data_info[vname]
+            )
             j += 1
 
     return data_info_new
 
 
 def generate_message(data_info, dataType, dash_extra=2):
-    header = "+ %s\n" % dataType
+    header = f"+ {dataType}\n"
     footer = "-"
 
     vnames = list(data_info.keys())
@@ -348,9 +338,7 @@ def generate_message(data_info, dataType, dash_extra=2):
     for i, vname in enumerate(vnames):
         dashed_line = "─" * (Nmax - len(vname))
         info = data_info[vname]
-        line = "{vname} {dashed_line} : {info}\n".format(
-            vname=vname, dashed_line=dashed_line, info=info
-        )
+        line = f"{vname} {dashed_line} : {info}\n"
         body += line
         if (i < len(vnames) - 1) and ("|" not in vnames[i + 1]):
             body += "\n\n"

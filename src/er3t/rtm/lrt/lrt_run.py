@@ -23,7 +23,7 @@ def lrt_run(init, verbose=False, *, log_session=True):
     f = open(init.input_file, "w")
     for key in init.input_dict.keys():
         if key not in init.mute_list:
-            content = "%-20s %s\n" % (key, init.input_dict[key])
+            content = f"{key:20} {init.input_dict[key]}\n"
             f.write(content)
 
     if init.input_dict_extra is not None:
@@ -32,9 +32,9 @@ def lrt_run(init, verbose=False, *, log_session=True):
                 if "_add" in key:
                     ind = key.index("_add")
                     key_write = key[:ind]
-                    content = "%-20s %s\n" % (key_write, init.input_dict_extra[key])
+                    content = f"{key_write:20} {init.input_dict_extra[key]}\n"
                 else:
-                    content = "%-20s %s\n" % (key, init.input_dict_extra[key])
+                    content = f"{key:20} {init.input_dict_extra[key]}\n"
                 f.write(content)
 
     if verbose:
@@ -45,9 +45,7 @@ def lrt_run(init, verbose=False, *, log_session=True):
     f.close()
 
     # Run libRadtran "$ uvspec < input.txt > output.txt"
-    os.system(
-        "%s < %s > %s" % (init.executable_file, init.input_file, init.output_file)
-    )
+    os.system(f"{init.executable_file} < {init.input_file} > {init.output_file}")
 
 
 def lrt_run_mp(inits, Ncpu=None):
