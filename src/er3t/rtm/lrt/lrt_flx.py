@@ -52,9 +52,12 @@ class lrt_init_mono_flx:
         self.mute_list = mute_list
 
         # executable file
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         self.executable_file = lrt_cfg["executable_file"]
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # input file
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if input_file is None:
             dtime_tmp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             input_file = "lrt_input_%s.txt" % dtime_tmp
@@ -64,8 +67,10 @@ class lrt_init_mono_flx:
                     % input_file
                 )
         self.input_file = input_file
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # output file
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if output_file is None:
             output_file = "lrt_output_%s.txt" % dtime_tmp
             if verbose:
@@ -74,32 +79,41 @@ class lrt_init_mono_flx:
                     % output_file
                 )
         self.output_file = output_file
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # date
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if date is None:
             date = datetime.date.today()
             if verbose:
                 er3t.common.logger.info(
                     "Message [lrt_init_mono]: <date> is missing, assigning date = datetime.date.today()."
                 )
+        day_of_year = date.timetuple().tm_yday
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # surface albedo
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if surface_albedo is None:
             surface_albedo = 0.03
             if verbose:
                 er3t.common.logger.info(
                     "Message [lrt_init_mono]: <surface_albedo> is missing, assigning surface_albedo = 0.03."
                 )
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # solar zenith angle
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if solar_zenith_angle is None:
             solar_zenith_angle = 0.0
             if verbose:
                 er3t.common.logger.info(
                     "Message [lrt_init_mono]: <solar_zenith_angle> is missing, assigning solar_zenith_angle = 0.0."
                 )
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # wavelength
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if wavelength is None:
             wavelength = 500.0
             if verbose:
@@ -107,6 +121,7 @@ class lrt_init_mono_flx:
                     "Message [lrt_init_mono]: <wavelength> is missing, assigning wavelength = 500.0."
                 )
         self.Nx = 1
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
         # slit function
         if wavelength < 950.0:
@@ -122,6 +137,7 @@ class lrt_init_mono_flx:
             )
 
         # output altitude
+        #╭────────────────────────────────────────────────────────────────────────────╮#
         if output_altitude is None:
             output_altitude = "TOA"
             if verbose:
@@ -135,8 +151,8 @@ class lrt_init_mono_flx:
             else:
                 output_altitude = str(output_altitude)
         self.Ny = len(output_altitude.split())
+        #╰────────────────────────────────────────────────────────────────────────────╯#
 
-        day_of_year = date.timetuple().tm_yday
         wavelength_s = np.round(
             wavelength - wavelength_half_width - spectral_resolution,
             decimals=int(-math.log10(spectral_resolution)),

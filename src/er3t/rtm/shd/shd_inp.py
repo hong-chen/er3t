@@ -71,6 +71,8 @@ def load_shd_inp_nml():
                 "shdom-run_%s" % datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
             ),
             ("PROPFILE", "shdom-prp.txt"),
+            ("PROPERTY_VERTICAL_GRID", "LAYER"),
+            ("PROPERTY_TEMPERATURE_GRID", "LEVEL"),
             ("SFCFILE", "NONE"),
             ("CKDFILE", "NONE"),
             ("INSAVEFILE", "NONE"),
