@@ -12,6 +12,7 @@ import numpy as np
 from scipy import interpolate
 import er3t.common
 from er3t.core.numerics import nice_array_str
+from er3t.rtm.shd._vertical import remap_cloud_layers
 
 __all__ = [
     "cal_shd_saa",
@@ -163,33 +164,43 @@ def gen_ext_file(
     cld0,
     postfix=".sHdOmNG-ext",
     fname_atm_1d=None,
+    zgrid=None,
+    temperature=None,
 ):
     # retrieve optical properties
     # ╭────────────────────────────────────────────────────────────────────────────╮#
-    cer = cld0.lay["cer"]["data"]
-    ext = cld0.lay["extinction"]["data"] * 1000.0
+    if zgrid is None:
+        zgrid = np.asarray(cld0.lay["altitude"]["data"])
+    else:
+        zgrid = np.asarray(zgrid)
 
-    # zgrid = cld0.lay['altitude']['data'] + cld0.lay['thickness']['data']/2.0
-    zgrid = cld0.lev["altitude"]["data"][1:]
-    # zgrid = cld0.lev['altitude']['data'][:-1]
+    source_cer = np.asarray(cld0.lay["cer"]["data"])
+    valid_cer = source_cer[np.isfinite(source_cer) & (source_cer > 0.0)]
+    cer_fill = float(np.nanmedian(valid_cer)) if valid_cer.size else 1.0
+    cer, _ = remap_cloud_layers(cld0, zgrid, "cer", fill_value=cer_fill)
+    ext, _ = remap_cloud_layers(cld0, zgrid, "extinction", fill_value=0.0)
+    cer = np.where(np.isfinite(cer) & (cer > 0.0), cer, cer_fill)
+    ext = np.nan_to_num(ext, nan=0.0, posinf=0.0, neginf=0.0) * 1000.0
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # generate extinction file
     # ╭────────────────────────────────────────────────────────────────────────────╮#
-    temp = cld0.lay["temperature"]["data"]
+    if temperature is None:
+        temp = np.asarray(cld0.lay["temperature"]["data"])
+        temp = np.nanmean(temp, axis=(0, 1))
+    else:
+        temp = np.asarray(temperature)
 
     Nx, Ny, Nz = ext.shape
+    if temp.shape != (Nz,):
+        raise ValueError("One temperature is required for each propgen midpoint.")
 
     with open(fname, "w") as f:
         f.write("2 parameter extinction file for SHDOM\n")
-        f.write("%d %d %d\n" % ext.shape)
+        f.write(f"{Nx} {Ny} {Nz}\n")
         f.write(f"{cld0.lay['dx']['data']:.8e} {cld0.lay['dy']['data']:.8e}\n")
         f.write(f"{' '.join([str(f'{alt0:.6f}') for alt0 in zgrid])}\n")
-        f.write(
-            "{}\n".format(
-                " ".join([str(f"{np.nanmean(temp[:, :, iz]):.4f}") for iz in range(Nz)])
-            )
-        )
+        f.write(f"{' '.join(f'{value:.4f}' for value in temp)}\n")
 
         f.write("! The following provides information for interpreting binary data:\n")
         f.write(f"! {postfix}\n")
@@ -213,49 +224,69 @@ def gen_lwc_file(
     fname,
     cld0,
     q_factor=2.0,
+    zgrid=None,
+    temperature=None,
 ):
     # retrieve optical properties
     # ╭────────────────────────────────────────────────────────────────────────────╮#
-    cer = cld0.lay["cer"]["data"]
+    if zgrid is None:
+        zgrid = np.asarray(cld0.lay["altitude"]["data"])
+    else:
+        zgrid = np.asarray(zgrid)
+
+    source_cer = np.asarray(cld0.lay["cer"]["data"])
+    valid_cer = source_cer[np.isfinite(source_cer) & (source_cer > 0.0)]
+    cer_fill = float(np.nanmedian(valid_cer)) if valid_cer.size else 1.0
+    cer, cloud_layer = remap_cloud_layers(
+        cld0, zgrid, "cer", fill_value=cer_fill
+    )
+    extinction, _ = remap_cloud_layers(
+        cld0, zgrid, "extinction", fill_value=0.0
+    )
+    cer = np.where(np.isfinite(cer) & (cer > 0.0), cer, cer_fill)
+    extinction = np.nan_to_num(
+        extinction, nan=0.0, posinf=0.0, neginf=0.0
+    )
 
     const0 = 0.75 * q_factor / (1000.0 * 1.0e-6)
-    lwc = cld0.lay["extinction"]["data"] / (const0 / cer) * 1000.0
+    lwc = extinction / (const0 / cer) * 1000.0
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 
     # generate LWC file
     # ╭────────────────────────────────────────────────────────────────────────────╮#
-    temp = cld0.lay["temperature"]["data"]
+    if temperature is None:
+        temp = np.asarray(cld0.lay["temperature"]["data"])
+        temp = np.nanmean(temp, axis=(0, 1))
+    else:
+        temp = np.asarray(temperature)
 
     Nx, Ny, Nz = lwc.shape
+    if temp.shape != (Nz,):
+        raise ValueError("One temperature is required for each propgen midpoint.")
 
     with open(fname, "w") as f:
         f.write("2 parameter LWC file for SHDOM\n")
-        f.write("%d %d %d\n" % lwc.shape)
+        f.write(f"{Nx} {Ny} {Nz}\n")
         f.write(f"{cld0.lay['dx']['data']:.8e} {cld0.lay['dy']['data']:.8e}\n")
         f.write(
             "{}\n".format(
-                " ".join([str(f"{alt0:.6f}") for alt0 in cld0.lay["altitude"]["data"]])
+                " ".join(f"{alt0:.6f}" for alt0 in zgrid)
             )
         )
         f.write(
-            f"{' '.join([str(f'{np.mean(temp[:, :, iz]):.4f}') for iz in range(Nz)])}\n"
+            f"{' '.join(f'{value:.4f}' for value in temp)}\n"
         )
 
         # save gridded data into ascii file
         # ╭──────────────────────────────────────────────────────────────╮#
         for ix in np.arange(Nx):
             for iy in np.arange(Ny):
-                for iz in np.arange(Nz):
-                    f.write(
-                        "%d %d %d %.6e %.6e\n"
-                        % (
-                            (ix + 1),
-                            (iy + 1),
-                            (iz + 1),
-                            lwc[ix, iy, iz],
-                            cer[ix, iy, iz],
+                for iz in np.flatnonzero(cloud_layer):
+                    if lwc[ix, iy, iz] > 0.0:
+                        f.write(
+                            f"{ix + 1} {iy + 1} {iz + 1} "
+                            f"{lwc[ix, iy, iz]:.6e} {cer[ix, iy, iz]:.6e}\n"
                         )
-                    )
         # ╰──────────────────────────────────────────────────────────────╯#
     # ╰────────────────────────────────────────────────────────────────────────────╯#
 

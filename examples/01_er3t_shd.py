@@ -152,6 +152,8 @@ def example_01_rad_atm1d_clear_over_land(
     atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname=f"{fdir}/shdom-ckd.txt", overwrite=overwrite)
     atm_1ds = [atm1d0]
 
+    # aeria3d uses physical cloud layers bounded by atmospheric levels.  The
+    # wrapper writes LAYER optical properties and LEVEL temperatures by default.
     atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname=f"{fdir}/shdom-prp.txt", fname_atm_1d=atm1d0.fname, overwrite=overwrite)
     atm_3ds = [atm3d0]
     #╰────────────────────────────────────────────────────────────────────────────╯#

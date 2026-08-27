@@ -37,7 +37,10 @@ class shdom_ng:
 
         Nrun=     : keyword argument, integer, number of runs to calculate mean/std statistics, default=1
 
-        solver=   : keyword argument, integer, 0:3d mode, 1:partial-3d mode, 2:ipa mode, default=0
+        solver=   : keyword argument, string, SHDOM transport mode; can be '3d'
+                    or 'ipa', default='3d'
+        aeria_solver=: keyword argument, string, aeria3d radiative-transfer
+                      solver; can be 'SHDOM' or 'DISORT', default='SHDOM'
         Ncpu=     : keyword argument, integer, number of CPUs to use, default=1
         overwrite=: keyword argument, boolen, whether to overwrite existing SHDOM output files (rerun SHDOM), default=True
         mp_mode=: keyword argument, string, multiprocessing mode, can be 'py', 'sh', 'mpi', default='py'
@@ -53,6 +56,18 @@ class shdom_ng:
     """
 
     reference = f"\nSHDOM (Evans, 1998):\n- Evans, K. F.: The Spherical Harmonics Discrete Ordinate Method for Three-Dimensional Atmospheric Radiative Transfer, J. Atmos. Sci., 55, 429–446, https://doi.org/10.1175/1520-0469(1998)055<0429:TSHDOM>2.0.CO;2, 1998."
+
+    @staticmethod
+    def _normalize_aeria_solver(aeria_solver):
+        if not isinstance(aeria_solver, str):
+            raise TypeError("aeria_solver must be 'SHDOM' or 'DISORT'.")
+
+        normalized = aeria_solver.strip().upper()
+        if normalized not in {"SHDOM", "DISORT"}:
+            raise ValueError(
+                f"Unsupported aeria_solver={aeria_solver!r}; expected 'SHDOM' or 'DISORT'."
+            )
+        return normalized
 
     def __init__(
         self,
@@ -82,6 +97,7 @@ class shdom_ng:
         sensor_ypos=0.5,
         target="flux",
         solver="3d",
+        aeria_solver="SHDOM",
         comment=False,
         overwrite=True,
         force=False,
@@ -132,6 +148,8 @@ class shdom_ng:
         self.sensor_altitude = sensor_altitude
         self.sensor_xpos = sensor_xpos
         self.sensor_ypos = sensor_ypos
+
+        self.aeria_solver = self._normalize_aeria_solver(aeria_solver)
 
         solver = solver.lower()
         if solver in ["3d", "3 d", "three d"]:
@@ -273,11 +291,20 @@ class shdom_ng:
         for ig in range(self.Ng_):
             self.nml[ig]["_header"] = "&SHDOMINPUT"
             self.nml[ig]["RUNNAME"] = f"shdom-run_g-{ig:03d}"
+            self.nml[ig]["SOLVER"] = self.aeria_solver
             self.nml[ig]["PROPFILE"] = self.fname_prp
+            self.nml[ig]["PROPERTY_VERTICAL_GRID"] = "LAYER"
+            self.nml[ig]["PROPERTY_OPTICAL_GRID"] = "LAYER"
+            self.nml[ig]["PROPERTY_TEMPERATURE_GRID"] = "LEVEL"
+            self.nml[ig]["PROPERTY_LAYER_ADAPTER"] = "CONSERVATIVE"
             self.nml[ig]["SFCFILE"] = self.fname_sfc
             self.nml[ig]["CKDFILE"] = self.fname_ckd
 
-            if self.overwrite and self.force:
+            if self.aeria_solver == "DISORT":
+                # aeria3d's DISORT application does not use SHDOM restart files.
+                self.nml[ig]["INSAVEFILE"] = "NONE"
+                self.nml[ig]["OUTSAVEFILE"] = "NONE"
+            elif self.overwrite and self.force:
                 self.nml[ig]["INSAVEFILE"] = "NONE"
                 self.nml[ig]["OUTSAVEFILE"] = self.fnames_sav[ig]
             else:
@@ -611,7 +638,7 @@ class shdom_ng:
         )
         er3t.common.logger.info("                     General Information")
         er3t.common.logger.info(
-            f"                   Simulation : {self.solver} {self.target.title()}"
+            f"                   Simulation : {self.aeria_solver} / {self.solver} {self.target.title()}"
         )
         er3t.common.logger.info(f"                   Wavelength : {self.wvl_info}")
 

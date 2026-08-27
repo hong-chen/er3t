@@ -2,12 +2,18 @@ import os
 import sys
 import copy
 import struct
+import subprocess
 import h5py
 import numpy as np
 from scipy import interpolate
 
 import er3t
 from er3t.core.numerics import cal_mol_ext_atm
+from er3t.rtm.shd._vertical import (
+    convert_propgen_to_layer_level,
+    merged_level_grid,
+    temperatures_on_grid,
+)
 
 __all__ = ["shd_atm_1d", "shd_atm_3d"]
 
@@ -39,7 +45,6 @@ class shd_atm_1d:
         verbose=False,
         quiet=False,
     ):
-        self.fname = fname
         self.overwrite = overwrite
         self.verbose = verbose
         self.quiet = quiet
@@ -61,10 +66,12 @@ class shd_atm_1d:
         self.Ng = self.abs.Ng
         self.wvl_info = self.abs.wvl_info
 
-        self.pre_shd_1d_atm()
+        self.pre_shd_1d_atm(alt_toa=alt_toa)
 
         if fname is None:
             fname = "shdom-ckd.txt"
+        fname = os.fspath(fname)
+        self.fname = fname
 
         if not self.overwrite:
             if (not os.path.exists(fname)) and (not force):
@@ -73,11 +80,13 @@ class shd_atm_1d:
         else:
             self.gen_shd_ckd_file(fname, self.atm, self.abs, alt_toa=alt_toa)
 
-    def pre_shd_1d_atm(self):
+    def pre_shd_1d_atm(self, alt_toa=30.0):
         self.nml = {}
 
+        self.z_levels = merged_level_grid(self.atm, alt_toa=alt_toa)
+
         self.nml["NZ"] = {
-            "data": self.atm.lay["altitude"]["data"].size,
+            "data": self.z_levels.size,
             "name": "Nz",
             "units": "N/A",
         }
@@ -97,7 +106,7 @@ class shd_atm_1d:
         }
 
         self.nml["GNDTEMP"] = {
-            "data": self.atm.lay["temperature"]["data"][0],
+            "data": self.atm.lev["temperature"]["data"][0],
             "units": "K",
             "name": "Surface Temperature",
         }
@@ -152,11 +161,11 @@ class shd_atm_1d:
             # ╭────────────────────────────────────────────────────────────────────────────╮#
             # altitude
             # ╭──────────────────────────────────────────────────────────────╮#
-            # alt = atm0.lay['altitude']['data'][::-1]
-            # thickness = atm0.lay['thickness']['data'][::-1]
-            # zgrid = alt + thickness/2.0
             thickness = atm0.lay["thickness"]["data"][::-1]
-            zgrid = atm0.lev["altitude"]["data"][1:][::-1]
+            # CKD profiles remain level-interpolated in aeria3d.  Place the
+            # layer-mean coefficients at their physical midpoints so sampling
+            # at a model-cell midpoint returns the original layer value.
+            zgrid = atm0.lay["altitude"]["data"][::-1]
             # ╰──────────────────────────────────────────────────────────────╯#
 
             # gas scattering
@@ -179,7 +188,6 @@ class shd_atm_1d:
                 atm_abs = np.concatenate(
                     (atm_abs, np.zeros((1, indices_sort.size), dtype=np.float32))
                 )
-                self.nml["NZ"]["data"] += 1
             # ╰──────────────────────────────────────────────────────────────╯#
 
             # add toa (z=alt_toa[100.0] km)
@@ -190,7 +198,6 @@ class shd_atm_1d:
                 atm_abs = np.concatenate(
                     (np.zeros((1, indices_sort.size), dtype=np.float32), atm_abs)
                 )
-                self.nml["NZ"]["data"] += 1
             # ╰──────────────────────────────────────────────────────────────╯#
             # ╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -262,7 +269,6 @@ class shd_atm_3d:
         quiet=False,
         fname_atm_1d=None,
     ):
-        self.fname = fname
         self.overwrite = overwrite
         self.verbose = verbose
         self.quiet = quiet
@@ -302,6 +308,8 @@ class shd_atm_3d:
 
         if fname is None:
             fname = "shdom-prp.txt"
+        fname = os.fspath(fname)
+        self.fname = fname
 
         if not self.overwrite:
             if (not os.path.exists(fname)) and (not force):
@@ -340,47 +348,20 @@ class shd_atm_3d:
             "name": "Surface Temperature",
         }
 
-        # zgrid_atm = self.atm.lay['altitude']['data']+self.atm.lay['thickness']['data']/2.0
-        zgrid_atm = self.atm.lev["altitude"]["data"][1:]
+        self.z_levels = merged_level_grid(self.atm, self.cld, alt_toa=alt_toa)
+        self.z_layers = 0.5 * (self.z_levels[:-1] + self.z_levels[1:])
+        self.temperature_levels = temperatures_on_grid(self.atm, self.z_levels)
+        self.temperature_layers = temperatures_on_grid(self.atm, self.z_layers)
 
-        temp_atm = self.atm.lay["temperature"]["data"]
-
-        # zgrid_cld = self.cld.lay['altitude']['data']+self.cld.lay['thickness']['data']/2.0
-        zgrid_cld = self.cld.lev["altitude"]["data"][1:]
-        # zgrid_cld = self.cld.lev['altitude']['data'][:-1]
-
-        logic_z_extra = np.logical_not(
-            np.array(
-                [
-                    np.any(np.abs(zgrid_atm[i] - zgrid_cld) < 1.0e-6)
-                    for i in range(zgrid_atm.size)
-                ]
-            )
-        )
-        self.Nz_extra = logic_z_extra.sum()
-        self.z_extra = "{}".format(
-            "\n".join(
-                [
-                    "{:.4e} {:.4e}".format(*tuple(item))
-                    for item in zip(zgrid_atm[logic_z_extra], temp_atm[logic_z_extra])
-                ]
-            )
-        )
-        if (zgrid_atm[0] >= 1.0e-6) and (zgrid_cld[0] >= 1.0e-6):
-            self.z_extra = "{:.4e} {:.4e}\n{}".format(
-                0.0,
-                self.atm.lev["temperature"]["data"][0],
-                self.z_extra,
-            )
-            self.Nz_extra += 1
-
-        # thickness0 = self.atm.lay['thickness']['data'][-1]
-        # if (zgrid_atm[-1]<=(alt_toa-1.0e-6-thickness0)) and (zgrid_cld[-1]<=(alt_toa-1.0e-6-thickness0)):
-        #     self.z_extra = '%s\n%.4e %.4e' % (self.z_extra, zgrid_atm[-1]+thickness0, self.atm.lev['temperature']['data'][-1])
-        #     self.Nz_extra += 1
+        # propgen receives one optical sample at each physical layer midpoint.
+        # The generated file is converted to LAYER optics / LEVEL temperature
+        # ownership after phase-function mixing, so no shifted extra levels are
+        # needed.
+        self.Nz_extra = 0
+        self.z_extra = ""
 
         self.nml["NZ"] = {
-            "data": self.Nz_extra + self.cld.lay["altitude"]["data"].size,
+            "data": self.z_levels.size,
             "name": "Nz",
             "units": "N/A",
         }
@@ -395,7 +376,6 @@ class shd_atm_3d:
         asy_tol=1.0e-2,
         pha_tol=1.0e-1,
         pol_tag="U",
-        put_exe="put",
         prp_exe="propgen",
         fname_atm_1d=None,
     ):
@@ -407,12 +387,32 @@ class shd_atm_3d:
         else:
             fname_mie = er3t.rtm.shd.gen_mie_file_wc(wavelength, wavelength)
 
+        property_path = os.path.abspath(fname)
         if fname_atm_1d is not None:
+            property_name = os.path.basename(property_path)
+            ext_name = property_name.replace("prp", "ext")
+            if ext_name == property_name:
+                stem, suffix = os.path.splitext(property_name)
+                ext_name = f"{stem}-ext{suffix}"
             fname_inp = er3t.rtm.shd.gen_ext_file(
-                fname.replace("prp", "ext"), cld0, fname_atm_1d=fname_atm_1d
+                os.path.join(os.path.dirname(property_path), ext_name),
+                cld0,
+                fname_atm_1d=fname_atm_1d,
+                zgrid=self.z_layers,
+                temperature=self.temperature_layers,
             )
         else:
-            fname_inp = er3t.rtm.shd.gen_lwc_file(fname.replace("prp", "lwc"), cld0)
+            property_name = os.path.basename(property_path)
+            lwc_name = property_name.replace("prp", "lwc")
+            if lwc_name == property_name:
+                stem, suffix = os.path.splitext(property_name)
+                lwc_name = f"{stem}-lwc{suffix}"
+            fname_inp = er3t.rtm.shd.gen_lwc_file(
+                os.path.join(os.path.dirname(property_path), lwc_name),
+                cld0,
+                zgrid=self.z_layers,
+                temperature=self.temperature_layers,
+            )
 
         if len(self.z_extra) > 5000:
             msg = f"<z_extra> [length={len(self.z_extra)}] is greater than 5000-character-limit."
@@ -421,36 +421,44 @@ class shd_atm_3d:
 
         wavelength /= 1000.0
 
-        command = (
-            '%s "1"\
- "%s" "1" "F" "%s"\
- "%d" "%.4e" "%.4e"\
- "%15.8e" "%.4f"\
- "%d" "%s"\
- "%s" "%s"\
- | %s'
-            % (
-                put_exe,
-                fname_mie,
-                fname_inp,
-                Npha_max,
-                asy_tol,
-                pha_tol,
-                wavelength,
-                atm0.lev["pressure"]["data"][0],
-                self.Nz_extra,
-                self.z_extra,
-                pol_tag,
-                fname,
-                prp_exe,
-            )
-        )
+        propgen_input = [
+            "1",
+            os.fspath(fname_mie),
+            "1",
+            "F",
+            os.fspath(fname_inp),
+            str(Npha_max),
+            f"{asy_tol:.4e}",
+            f"{pha_tol:.4e}",
+            f"{wavelength:.8e}",
+            f"{atm0.lev['pressure']['data'][0]:.4f}",
+            str(self.Nz_extra),
+        ]
+        if self.z_extra:
+            propgen_input.extend(self.z_extra.splitlines())
+        propgen_input.extend([pol_tag, fname])
 
         if not self.quiet:
             msg = f"Creating 3D property file <{fname}> for SHDOM ..."
             er3t.common.logger.info(msg)
 
-        os.system(command)
+        try:
+            subprocess.run(
+                [prp_exe],
+                input="\n".join(propgen_input) + "\n",
+                text=True,
+                check=True,
+            )
+        except (OSError, subprocess.CalledProcessError) as error:
+            raise RuntimeError(f"propgen failed while creating <{fname}>.") from error
+        if not os.path.exists(fname):
+            raise RuntimeError(f"propgen did not create <{fname}>.")
+
+        convert_propgen_to_layer_level(
+            fname,
+            self.z_levels,
+            self.temperature_levels,
+        )
 
         if not self.quiet:
             msg = f"File <{fname}> is created."

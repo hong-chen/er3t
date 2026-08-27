@@ -22,7 +22,7 @@ name_tag = '00_er3t_bmk'
 
 runSHDOM_      = True
 runlibRadtran_ = True
-runMCARaTS_    = False
+runMCARaTS_    = True
 
 
 def dst_flux_one(
@@ -239,6 +239,96 @@ def shd_flux_one(
             split_acc=1e-6,
             surface=params['surface_albedo'],
             solver=solver,
+            aeria_solver='SHDOM',
+            Ncpu=1,
+            mp_mode='mpi',
+            overwrite=overwrite,
+            force=True,
+            )
+
+    fname = shd0.fnames_out[0]
+    out0_ = er3t.rtm.shd.get_shd_data_out(fname)[:, :, :, 0, :]
+    Nx, Ny, Nz, Nv = out0_.shape
+    out0 = np.zeros((Nz, Nv), dtype=np.float32)
+    for iz in np.arange(Nz):
+        for iv in np.arange(Nv):
+            out0[iz, iv] = np.mean(out0_[:, :, iz, iv])
+
+    data = {
+      'f_up': out0[:, 0],\
+      'f_down': (out0[:, 1]+out0[:, 2]),\
+      'f_net': (out0[:, 1]+out0[:, 2]-out0[:, 0]),\
+      'f_down_diffuse': out0[:, 1],\
+      'f_down_direct': out0[:, 2],\
+            }
+
+    return data
+
+def dis_flux_one(
+        params,
+        solver='IPA',
+        f_toa=None,
+        overwrite=False,
+        ):
+
+    """
+    A test run for clear sky case
+    """
+
+    _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    fdir_tmp = f"tmp-data/{name_tag}/{_metadata['Function']}/cot-{params['cloud_optical_thickness']:04.1f}_cer-{params['cloud_effective_radius']:04.1f}/{params['wavelength']:04.0f}"
+    if not os.path.exists(fdir_tmp):
+        os.makedirs(fdir_tmp)
+
+    fname_atm = f"{fdir_tmp}/atm.pk"
+    atm0      = er3t.pre.atm.atm_atmmod(levels=params['output_altitude'], fname=fname_atm, fname_atmmod=params['atmosphere_file'], overwrite=overwrite)
+
+    fname_abs = f"{fdir_tmp}/abs.pk"
+    abs0      = er3t.pre.abs.abs_rep(wavelength=params['wavelength'], fname=fname_abs, target='medium', atm_obj=atm0, overwrite=overwrite)
+    if f_toa is not None:
+        f_toa_ = (abs0.coef['solar']['data']*abs0.coef['weight']['data']).sum()
+        abs0.coef['solar']['data'] = f_toa/f_toa_ * abs0.coef['solar']['data']
+
+    fname_cld = f"{fdir_tmp}/cld.pk"
+    cld0 = er3t.pre.cld.cld_gen_cop(
+            fname=fname_cld,
+            cot=np.array([params['cloud_optical_thickness']]).reshape((1, 1)),
+            cer=np.array([params['cloud_effective_radius']]).reshape((1, 1)),
+            cth=np.array([params['cloud_top_height']]).reshape((1, 1)),
+            cgt=np.array([params['cloud_geometric_thickness']]).reshape((1, 1)),
+            dz=0.2,
+            extent_xy=[0.0, 1.0, 0.0, 1.0],
+            atm_obj=atm0,
+            overwrite=overwrite
+            )
+
+    atm1d0  = er3t.rtm.shd.shd_atm_1d(atm_obj=atm0, abs_obj=abs0, fname=f"{fdir_tmp}/shdom-ckd.txt", overwrite=overwrite)
+    atm_1ds   = [atm1d0]
+
+    atm3d0  = er3t.rtm.shd.shd_atm_3d(atm_obj=atm0, abs_obj=abs0, cld_obj=cld0, fname=f"{fdir_tmp}/shdom-prp.txt", fname_atm_1d=atm1d0.fname, overwrite=overwrite)
+    atm_3ds = [atm3d0]
+
+    fdir = f"{fdir_tmp}/flux_{solver.lower()}"
+    if (not overwrite) and (not os.path.exists(fdir)):
+        overwrite = True
+
+    shd0 = er3t.rtm.shd.shdom_ng(
+            date=params['date'],
+            atm_1ds=atm_1ds,
+            atm_3ds=atm_3ds,
+            fdir=fdir,
+            target='flux',
+            Niter=200,
+            Nmu=16,
+            Nphi=32,
+            solar_zenith_angle=params['solar_zenith_angle'],
+            sensor_dx=cld0.lay['dx']['data'],
+            sensor_dy=cld0.lay['dy']['data'],
+            sol_acc=1e-6,
+            split_acc=1e-6,
+            surface=params['surface_albedo'],
+            solver=solver,
+            aeria_solver='DISORT',
             Ncpu=1,
             mp_mode='mpi',
             overwrite=overwrite,
@@ -292,10 +382,17 @@ def test_100_flux_one(
 
     data_shd = shd_flux_one(params, f_toa=f_toa, overwrite=runSHDOM_)
 
+    data_dis = dis_flux_one(params, f_toa=f_toa, overwrite=runSHDOM_)
+
+    data_shd = shd_flux_one(params, f_toa=f_toa, overwrite=runSHDOM_)
+
     data_mca = mca_flux_one(params, f_toa=f_toa, overwrite=runMCARaTS_)
 
+    error_dis_up = np.nanmean(np.abs(data_dst['f_up']-data_dis['f_up'])/data_dst['f_up']*100.0)
     error_shd_up = np.nanmean(np.abs(data_dst['f_up']-data_shd['f_up'])/data_dst['f_up']*100.0)
     error_mca_up = np.nanmean(np.abs(data_dst['f_up']-data_mca['f_up'])/data_dst['f_up']*100.0)
+
+    error_dis_net = np.nanmean(np.abs(data_dst['f_net']-data_dis['f_net'])/data_dst['f_net']*100.0)
     error_shd_net = np.nanmean(np.abs(data_dst['f_net']-data_shd['f_net'])/data_dst['f_net']*100.0)
     error_mca_net = np.nanmean(np.abs(data_dst['f_net']-data_mca['f_net'])/data_dst['f_net']*100.0)
 
@@ -307,12 +404,19 @@ def test_100_flux_one(
         fig.suptitle('COT=%.1f, CER=%.1f $\\mu m$' % (params['cloud_optical_thickness'], params['cloud_effective_radius']))
         #╭──────────────────────────────────────────────────────────────╮#
         ax1 = fig.add_subplot(121)
+
         ax1.plot(data_dst['f_up']          , params['output_altitude'], color='black', lw=1.0, alpha=1.0, ls='-', zorder=0)
         ax1.plot(data_dst['f_down_diffuse'], params['output_altitude'], color='black', lw=1.0, alpha=1.0, ls='-', zorder=0)
+
         ax1.fill_betweenx(params['output_altitude'], data_mca['f_up']-data_mca['f_up_std']                    , data_mca['f_up']+data_mca['f_up_std']                    , color='blue', lw=0.2, alpha=1.0, zorder=1)
         ax1.fill_betweenx(params['output_altitude'], data_mca['f_down_diffuse']-data_mca['f_down_diffuse_std'], data_mca['f_down_diffuse']+data_mca['f_down_diffuse_std'], color='blue', lw=0.2, alpha=1.0, zorder=1)
+
         ax1.plot(data_shd['f_up']          , params['output_altitude'], color='red', lw=0.5, alpha=1.0, ls='-', zorder=2)
         ax1.plot(data_shd['f_down_diffuse'], params['output_altitude'], color='red', lw=0.5, alpha=1.0, ls='-', zorder=2)
+
+        ax1.plot(data_dis['f_up']          , params['output_altitude'], color='green', lw=1.0, alpha=1.0, ls='-', zorder=0)
+        ax1.plot(data_dis['f_down_diffuse'], params['output_altitude'], color='green', lw=1.0, alpha=1.0, ls='-', zorder=0)
+
         ax1.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax1.set_xlabel('Flux Density [$\\mathrm{W m^{-2} nm^{-1}}$]')
         ax1.set_ylabel('Altitude [km]')
@@ -322,12 +426,19 @@ def test_100_flux_one(
         ax1.set_xlim((0.0, 0.1*(f_toa//0.1 + 1)))
 
         ax2 = fig.add_subplot(122)
+
         ax2.plot(data_dst['f_net']        , params['output_altitude'], color='black', lw=1.0, alpha=1.0, ls='-', zorder=0)
         ax2.plot(data_dst['f_down_direct'], params['output_altitude'], color='black', lw=1.0, alpha=1.0, ls='-', zorder=0)
+
         ax2.fill_betweenx(params['output_altitude'], data_mca['f_net']-data_mca['f_net_std']                , data_mca['f_net']+data_mca['f_net_std']                , color='blue', lw=0.2, alpha=1.0, zorder=1)
         ax2.fill_betweenx(params['output_altitude'], data_mca['f_down_direct']-data_mca['f_down_direct_std'], data_mca['f_down_direct']+data_mca['f_down_direct_std'], color='blue', lw=0.2, alpha=1.0, zorder=1)
+
         ax2.plot(data_shd['f_net']        , params['output_altitude'], color='red', lw=0.5, alpha=1.0, ls='-', zorder=2)
         ax2.plot(data_shd['f_down_direct'], params['output_altitude'], color='red', lw=0.5, alpha=1.0, ls='-', zorder=2)
+
+        ax2.plot(data_dis['f_net']        , params['output_altitude'], color='green', lw=0.5, alpha=1.0, ls='-', zorder=2)
+        ax2.plot(data_dis['f_down_direct'], params['output_altitude'], color='green', lw=0.5, alpha=1.0, ls='-', zorder=2)
+
         ax2.set_ylim((params['output_altitude'][0], params['output_altitude'][-1]))
         ax2.set_xlabel('Flux Density [$\\mathrm{W m^{-2} nm^{-1}}$]')
         ax2.set_title('Down Direct & Net')
@@ -341,16 +452,18 @@ def test_100_flux_one(
         #╰──────────────────────────────────────────────────────────────╯#
 
         patches_legend = [
-                          mpatches.Patch(color='black', label='libRadtran (cDISORT)'), \
+                          mpatches.Patch(color='black', label='libRadtran-cDISORT'), \
                           mpatches.Patch(color='blue' , label='MCARaTS (%.1f%%)' % error_mca_up), \
-                          mpatches.Patch(color='red'  , label='SHDOM (%.1f%%)' % error_shd_up), \
+                          mpatches.Patch(color='red'  , label='AERIA3D-SHDOM (%.1f%%)' % error_shd_up), \
+                          mpatches.Patch(color='green', label='AERIA3D-DISORT (%.1f%%)' % error_dis_up), \
                          ]
         ax1.legend(handles=patches_legend, loc='upper center', fontsize=12)
 
         patches_legend = [
-                          mpatches.Patch(color='black', label='libRadtran'), \
+                          mpatches.Patch(color='black', label='libRadtran-cDISORT'), \
                           mpatches.Patch(color='blue' , label='MCARaTS (%.1f%%)' % error_mca_net), \
-                          mpatches.Patch(color='red'  , label='SHDOM (%.1f%%)' % error_shd_net), \
+                          mpatches.Patch(color='red'  , label='AERIA3D-SHDOM (%.1f%%)' % error_shd_net), \
+                          mpatches.Patch(color='green', label='AERIA3D-DISORT (%.1f%%)' % error_dis_net), \
                          ]
         ax2.legend(handles=patches_legend, loc='upper center', fontsize=12)
 
@@ -359,8 +472,8 @@ def test_100_flux_one(
         fig.subplots_adjust(hspace=0.3, wspace=0.3)
         _metadata = {'Computer': os.uname()[1], 'Script': os.path.abspath(__file__), 'Function':sys._getframe().f_code.co_name, 'Date':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         fig.savefig('%4.4d_%s_%06.1fnm_cot-%05.1f_cer-%05.1f.png' % (icount, _metadata['Function'], params['wavelength'], params['cloud_optical_thickness'], params['cloud_effective_radius']), bbox_inches='tight', metadata=_metadata)
-        plt.show()
-        # plt.close()
+        # plt.show()
+        plt.close()
         #╰──────────────────────────────────────────────────────────────╯#
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
@@ -1179,14 +1292,15 @@ if __name__ == '__main__':
         # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='ocean', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 0.0, 1.0, 100, surface='land', plot=True, overwrite=True)
         # test_100_rad_one(556.0, 10.0, 12.0, 100, surface='ocean', plot=True, overwrite=True)
-        test_100_flux_one(556.0, 2.0, 12.0, 100, plot=True, overwrite=True)
+        # test_100_flux_one(556.0, 2.0, 12.0, 100, plot=True, overwrite=True)
 
-        # icount = 0
-        # for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
+        icount = 0
+        for cot in np.concatenate((np.arange(0.0, 1.0, 0.2), np.arange(1.0, 8.1, 2.0), np.arange(10.0, 50.1, 5.0))):
         # for cot in np.arange(25.0, 50.1, 5.0):
-        #     for cer in np.arange(1.0, 25.1, 2.0):
-        #         test_100_flux_one(2130.0, cot, cer, icount, plot=True, overwrite=False)
-        #         icount += 1
+            for cer in np.arange(1.0, 25.1, 2.0):
+                # test_100_flux_one(2130.0, cot, cer, icount, plot=True, overwrite=False)
+                test_100_flux_one(556.0, cot, cer, icount, plot=True, overwrite=False)
+                icount += 1
 
         # test_100_flux_one(2131.0, 50.0, 9.0, 100, plot=True, overwrite=True)
 

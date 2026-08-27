@@ -38,7 +38,8 @@ def load_shd_inp_nml():
                    NX and NY are the number of grid points horizontally;
                      (for periodic boundaries there is actually an extra plane
                       of grid points on the horizontal boundaries)
-                   NZ is the number grid cells vertically (>1);
+                   NZ is the number of vertical boundary levels (>1), so there
+                   are NZ-1 physical layers;
 
     NMU, NPHI  : number of discrete ordinates covering -1<mu<1 and 0<phi<2π
 
@@ -72,9 +73,13 @@ def load_shd_inp_nml():
                     datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
                 ),
             ),
+            ("SOLVER", "SHDOM"),
             ("PROPFILE", "shdom-prp.txt"),
             ("PROPERTY_VERTICAL_GRID", "LAYER"),
+            ("PROPERTY_OPTICAL_GRID", "LAYER"),
             ("PROPERTY_TEMPERATURE_GRID", "LEVEL"),
+            # ("PROPERTY_LAYER_ADAPTER", "CONSERVATIVE"),
+            ("PROPERTY_LAYER_ADAPTER", "INTERFACE"),
             ("SFCFILE", "NONE"),
             ("CKDFILE", "NONE"),
             ("INSAVEFILE", "NONE"),
@@ -229,7 +234,18 @@ def load_shd_inp_nml_info():
                 "RUNNAME",
                 "label for the run (also for multiple processor log file names)",
             ),
+            ("SOLVER", "aeria3d solver backend: SHDOM or DISORT"),
             ("PROPFILE", "name of the input medium property file"),
+            (
+                "PROPERTY_VERTICAL_GRID",
+                "vertical ownership compatibility setting (LAYER by default)",
+            ),
+            ("PROPERTY_OPTICAL_GRID", "optical properties are cell-owned layers"),
+            ("PROPERTY_TEMPERATURE_GRID", "temperatures are boundary-owned levels"),
+            (
+                "PROPERTY_LAYER_ADAPTER",
+                "adapter used by nodal solver paths for layer optical properties",
+            ),
             ("SFCFILE", "name of the input surface property file (or NONE)"),
             ("CKDFILE", "name of the input correlated k-distribution file (or NONE)"),
             ("INSAVEFILE", "name of the input binary save file (or NONE)"),
