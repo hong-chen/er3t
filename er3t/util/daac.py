@@ -65,10 +65,9 @@ def get_token_earthdata():
     try:
         token = os.environ['EARTHDATA_TOKEN']
     except KeyError:
-        token = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImhvY2g0MjQwIiwiZXhwIjoxNzM5NTYyODkzLCJpYXQiOjE3MzQzNzg4OTMsImlzcyI6Imh0dHBzOi8vdXJzLmVhcnRoZGF0YS5uYXNhLmdvdiIsImlkZW50aXR5X3Byb3ZpZGVyIjoiZWRsX29wcyIsImFzc3VyYW5jZV9sZXZlbCI6Mn0.4Kl8rPSIex6ib0aue0qQkhafOvnJZETO9fwxr5cXYNauQ1cxP40jbgypV5R2BRCFlxEsJHT1G-9S6ipnZ-O2FQyJGFF1Tu8oe4HSz-yFET2waS3OZ0pp9ca3jwPz-1byatscxoVneys7CgDPxuTq5XHIo6ooDxEK5k_LfDH6qti8NpMWITNHd11t96H0C6AuDBfVDU5CYENpvg1YnD7_nasi2H4o78cEiypmapG86vQYvN7dV-idrs3BJ4sk7lgnIXYlU3rPYGLTJCXgIEMjandZpzoEBos58Er59Bwft-BCepmNbYO4xRh-4yyzNGOd06SIhbWk7i_pIO_X7JRx8g'
+        token = None
 
-
-        msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+        msg = '\nWarning [get_earthdata_token]: EARTHDATA_TOKEN is not set. Falling back to .netrc / username-password authentication.'
         warnings.warn(msg)
 
     return token
@@ -135,21 +134,24 @@ def get_command_earthdata(
     if token_mode: # recommended
 
         token = get_token_earthdata()
-        header = '"Authorization: Bearer %s"' % token
-
-        if verbose:
-            options = {
-                    'curl': '--header %s --connect-timeout 60.0 --retry 1 --max-time 60.0 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
-                    'wget': '--header=%s --continue --timeout=60 --tries=2 --show-progress --output-document="%s" "%s"' % (header, fname_save, fname_target),
-                    }
+        if token is None:
+            token_mode = False
         else:
-            options = {
-                    'curl': '-sS --no-progress-bar --header %s --connect-timeout 60.0 --max-time 60.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
-                    'wget': '--header=%s --continue --timeout=60 --tries=2  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
-                    }
+            header = '"Authorization: Bearer %s"' % token
+
+            if verbose:
+                options = {
+                        'curl': '--header %s --connect-timeout 60.0 --retry 1 --max-time 60.0 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                        'wget': '--header=%s --continue --timeout=60 --tries=2 --show-progress --output-document="%s" "%s"' % (header, fname_save, fname_target),
+                        }
+            else:
+                options = {
+                        'curl': '-sS --no-progress-bar --header %s --connect-timeout 60.0 --max-time 60.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                        'wget': '--header=%s --continue --timeout=60 --tries=2  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
+                        }
 
 
-    else:
+    if not token_mode:
 
         secret = gen_file_earthdata()
 
@@ -187,8 +189,10 @@ def get_fname_geometa(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     if server == 'https://ladsweb.modaps.eosdis.nasa.gov':
         fnames_geometa = {
-               'Aqua|MODIS': '%s/archive/geoMeta/7/AQUA/%4.4d/MYD03_%s.txt'                 % (server, date.year, date_s),
-               'Terra|MODIS': '%s/archive/geoMeta/7/TERRA/%4.4d/MOD03_%s.txt'               % (server, date.year, date_s),
+               # MODIS science products use Collection 7, but the geoMeta text files remain
+               # published under Collection 61 on LAADS/NRT.
+               'Aqua|MODIS': '%s/archive/geoMeta/61/AQUA/%4.4d/MYD03_%s.txt'                % (server, date.year, date_s),
+               'Terra|MODIS': '%s/archive/geoMeta/61/TERRA/%4.4d/MOD03_%s.txt'              % (server, date.year, date_s),
                'SNPP|VIIRS': '%s/archive/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_%s.txt'       % (server, date.year, date_s),
                'NOAA20|VIIRS': '%s/archive/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_%s.txt' % (server, date.year, date_s),
                'NOAA21|VIIRS': '%s/archive/geoMetaVIIRS/5200/NOAA-21/%4.4d/VJ203MOD_%s.txt' % (server, date.year, date_s),
@@ -199,8 +203,8 @@ def get_fname_geometa(
     #╭────────────────────────────────────────────────────────────────────────────╮#
     elif server == 'https://nrt3.modaps.eosdis.nasa.gov':
         fnames_geometa = {
-               'Aqua|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/7/AQUA/%4.4d/MYD03_%s.txt'                % (server, date.year, date_s),
-               'Terra|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/7/TERRA/%4.4d/MOD03_%s.txt'              % (server, date.year, date_s),
+               'Aqua|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/AQUA/%4.4d/MYD03_%s.txt'              % (server, date.year, date_s),
+               'Terra|MODIS': '%s/api/v2/content/archives/geoMetaMODIS/61/TERRA/%4.4d/MOD03_%s.txt'            % (server, date.year, date_s),
                'SNPP|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5200/NPP/%4.4d/VNP03MOD_NRT_%s.txt'       % (server, date.year, date_s),
                'NOAA20|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5201/NOAA-20/%4.4d/VJ103MOD_NRT_%s.txt' % (server, date.year, date_s),
                'NOAA21|VIIRS': '%s/api/v2/content/archives/geoMetaVIIRS/5200/NOAA-21/%4.4d/VJ203MOD_NRT_%s.txt' % (server, date.year, date_s),
@@ -296,49 +300,74 @@ def get_online_file(
 
     if download:
 
-        # fname_save = '%s/%s' % (fdir_save, filename)
-        primary_command, backup_command = get_command_earthdata(fname_file,
-                                                                filename=filename,
-                                                                fdir_save=fdir_save,
-                                                                primary_tool=primary_tool,
-                                                                backup_tool=backup_tool,
-                                                                verbose=verbose)
-        # attempt to download using primary tool first.
-        # if that does not work, try again with primary tool.
-        # as a last resort, attempt with backup tool.
-        try:
-            # delete local version of the geometa first as this seems to cause issues downstream
-            if (geometa is True) or (csv is True): # they can be None so make True explicit
-                delete_file(fname_file, filename=filename, fdir_save=fdir_save)
-            # if primary_tool == 'wget': # force wget to timeout
-            #     primary_command = "timeout 60 " + primary_command
+        # delete local version of the geometa first as this seems to cause issues downstream
+        if (geometa is True) or (csv is True): # they can be None so make True explicit
+            delete_file(fname_file, filename=filename, fdir_save=fdir_save)
 
-            os.system(primary_command)
-            content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
-        except Exception as message:
-            print(message, "\n")
-            print("Message [get_online_file]: Failed to download/read {},\nAttempting again...".format(fname_file))
+        token = get_token_earthdata()
 
+        # When a bearer token is available, requests handles the LAADS redirect/auth
+        # chain more reliably than the shell downloaders for geoMeta and csv metadata.
+        if token is not None:
             try:
+                response = requests.get(
+                    fname_file,
+                    headers={'Authorization': 'Bearer %s' % token},
+                    timeout=60,
+                    allow_redirects=True,
+                )
+                response.raise_for_status()
+
+                os.makedirs(fdir_save, exist_ok=True)
+                fname_save = os.path.join(fdir_save, filename)
+                with open(fname_save, 'w') as f:
+                    f.write(response.text)
+
+                content = response.text
+            except Exception:
+                content = None
+
+        else:
+            primary_command, backup_command = get_command_earthdata(fname_file,
+                                                                    filename=filename,
+                                                                    fdir_save=fdir_save,
+                                                                    primary_tool=primary_tool,
+                                                                    backup_tool=backup_tool,
+                                                                    verbose=verbose)
+
+            # attempt to download using primary tool first.
+            # if that does not work, try again with primary tool.
+            # as a last resort, attempt with backup tool.
+            try:
+                # if primary_tool == 'wget': # force wget to timeout
+                #     primary_command = "timeout 60 " + primary_command
+
                 os.system(primary_command)
                 content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
             except Exception as message:
                 print(message, "\n")
-                print("Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(fname_file))
-                delete_file(fname_file, filename=filename, fdir_save=fdir_save)
+                print("Message [get_online_file]: Failed to download/read {},\nAttempting again...".format(fname_file))
 
                 try:
-                    # if backup_tool == 'wget':
-                    #     backup_command = "timeout 60 " + backup_command
-                    # print("Executing following operation as a backup...\n{}".format(backup_command))
-
-                    os.system(backup_command)
+                    os.system(primary_command)
                     content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
                 except Exception as message:
                     print(message, "\n")
-                    msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(fname_file)
+                    print("Message [get_online_file]: Failed to download/read {},\nAttempting with backup tool...".format(fname_file))
                     delete_file(fname_file, filename=filename, fdir_save=fdir_save)
-                    return None
+
+                    try:
+                        # if backup_tool == 'wget':
+                        #     backup_command = "timeout 60 " + backup_command
+                        # print("Executing following operation as a backup...\n{}".format(backup_command))
+
+                        os.system(backup_command)
+                        content = get_local_file(fname_file, filename=filename, fdir_save=fdir_save)
+                    except Exception as message:
+                        print(message, "\n")
+                        msg = "Message [get_online_file]: Failed to download/read {},\nTry again later.".format(fname_file)
+                        delete_file(fname_file, filename=filename, fdir_save=fdir_save)
+                        return None
 
     else:
 
@@ -380,6 +409,39 @@ def get_online_file(
         content = None
 
     return content
+
+
+def download_earthdata_file(
+        fname_server,
+        fname_local,
+        token=None,
+        timeout=120,
+        ):
+    """Download an Earthdata file with requests when a bearer token is available."""
+
+    if token is None:
+        token = get_token_earthdata()
+
+    if token is None:
+        return False
+
+    os.makedirs(os.path.dirname(fname_local), exist_ok=True)
+
+    response = requests.get(
+        fname_server,
+        headers={'Authorization': 'Bearer %s' % token},
+        timeout=timeout,
+        allow_redirects=True,
+        stream=True,
+    )
+    response.raise_for_status()
+
+    with open(fname_local, 'wb') as f_:
+        for chunk in response.iter_content(chunk_size=1024 * 1024):
+            if chunk:
+                f_.write(chunk)
+
+    return True
 
 
 
@@ -1338,6 +1400,7 @@ def download_laads_https(
 
     # get download commands
     #╭────────────────────────────────────────────────────────────────────────────╮#
+    token = get_token_earthdata()
     exist_count = 0 # to prevent re-downloading. TODO: Add `overwrite` option instead for user
     lines = content.split('\n')
     primary_commands = []
@@ -1354,9 +1417,13 @@ def download_laads_https(
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)
-                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
-                primary_commands.append(primary_command)
-                backup_commands.append(backup_command)
+                if token is not None:
+                    primary_commands.append(None)
+                    backup_commands.append(None)
+                else:
+                    primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, verbose=verbose)
+                    primary_commands.append(primary_command)
+                    backup_commands.append(backup_command)
 
     print("Message [download_laads_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -1372,17 +1439,36 @@ def download_laads_https(
 
             if verbose:
                 print('Message [download_laads_https]: Downloading %s ...' % fname_local)
-            os.system(primary_commands[i])
 
-            # if primary command fails, execute backup command.
-            # if that fails again, then delete the file and remove from list
-            if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
-                os.system(backup_commands[i])
+            if token is not None:
+                try:
+                    download_earthdata_file(
+                        fname_server='%s/%s' % (fdir_server, os.path.basename(fname_local)),
+                        fname_local=fname_local,
+                        token=token,
+                        timeout=120,
+                    )
+                except Exception:
+                    delete_file(fname_local, filename=os.path.basename(fname_local), fdir_local=fdir_out, fdir_save=fdir_out)
+                    fnames_local.remove(fname_local)
+                    continue
 
                 if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
                     print("Message [download_laads_https]: Could not complete the download of or something is wrong with {}...deleting...".format(fname_local))
                     os.remove(fname_local)
                     fnames_local.remove(fname_local) #remove from list
+            else:
+                os.system(primary_commands[i])
+
+                # if primary command fails, execute backup command.
+                # if that fails again, then delete the file and remove from list
+                if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                    os.system(backup_commands[i])
+
+                    if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                        print("Message [download_laads_https]: Could not complete the download of or something is wrong with {}...deleting...".format(fname_local))
+                        os.remove(fname_local)
+                        fnames_local.remove(fname_local) #remove from list
     else:
 
         print('Message [download_laads_https]: The commands to run are:')
@@ -1463,6 +1549,7 @@ def download_lance_https(
 
     # get download commands
     #╭────────────────────────────────────────────────────────────────────────────╮#
+    token = get_token_earthdata()
     exist_count = 0
     lines = content.split('\n')
     primary_commands = []
@@ -1481,9 +1568,13 @@ def download_lance_https(
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)
-                primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, primary_tool='curl', backup_tool='wget', verbose=verbose)
-                primary_commands.append(primary_command)
-                backup_commands.append('timeout 60 ' + backup_command) # force timeout for wget
+                if token is not None:
+                    primary_commands.append(None)
+                    backup_commands.append(None)
+                else:
+                    primary_command, backup_command = get_command_earthdata(fname_server, filename=filename, fdir_save=fdir_out, primary_tool='curl', backup_tool='wget', verbose=verbose)
+                    primary_commands.append(primary_command)
+                    backup_commands.append('timeout 60 ' + backup_command) # force timeout for wget
 
     print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #╰────────────────────────────────────────────────────────────────────────────╯#
@@ -1498,17 +1589,36 @@ def download_lance_https(
 
             if verbose:
                 print('Message [download_lance_https]: Downloading %s ...' % fname_local)
-            os.system(primary_commands[i])
 
-            # if primary command fails, execute backup command.
-            # if that fails again, then delete the file and remove from list
-            if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
-                os.system(backup_commands[i])
+            if token is not None:
+                try:
+                    download_earthdata_file(
+                        fname_server='%s/api/v2/content%s/%s' % (server, fdir_data, os.path.basename(fname_local)),
+                        fname_local=fname_local,
+                        token=token,
+                        timeout=120,
+                    )
+                except Exception:
+                    delete_file(fname_local, filename=os.path.basename(fname_local), fdir_local=fdir_out, fdir_save=fdir_out)
+                    fnames_local.remove(fname_local)
+                    continue
 
                 if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
                     print("Message [download_lance_https]: Could not complete the download of or something is wrong with {}...deleting...".format(fname_local))
                     os.remove(fname_local)
                     fnames_local.remove(fname_local) #remove from list
+            else:
+                os.system(primary_commands[i])
+
+                # if primary command fails, execute backup command.
+                # if that fails again, then delete the file and remove from list
+                if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                    os.system(backup_commands[i])
+
+                    if not final_file_check(fname_local, data_format=data_format, verbose=verbose):
+                        print("Message [download_lance_https]: Could not complete the download of or something is wrong with {}...deleting...".format(fname_local))
+                        os.remove(fname_local)
+                        fnames_local.remove(fname_local) #remove from list
     else:
 
         print('Message [download_lance_https]: The commands to run are:')
