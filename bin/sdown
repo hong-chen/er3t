@@ -53,6 +53,10 @@ import numpy as np
 import datetime
 import multiprocessing
 
+_repo_root_ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _repo_root_ not in sys.path:
+    sys.path.insert(0, _repo_root_)
+
 import er3t.util.daac
 import er3t.util.util
 import er3t.common
@@ -512,6 +516,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, extent
                                                                     start_dt_hhmm=start_dt_hhmm,
                                                                     end_dt_hhmm=end_dt_hhmm,
                                                                     verbose=True)
+                    fnames[product_info['dict_key']] += p_fnames
 
                 else:
                     for filename_tag in filename_tags_03:
@@ -521,7 +526,7 @@ def run(date, start_dt_hhmm, end_dt_hhmm, lons, lats, fdir_out, nrt, iou, extent
                                                                     day_interval=1,
                                                                     fdir_out=fdir_out,
                                                                     verbose=verbose)
-                    fnames[product_info['dict_key']] += p_fnames
+                        fnames[product_info['dict_key']] += p_fnames
 
         else:
             msg = 'Error [sdown]: Cannot recognize satellite product from the given tag <%s>, abort...\nCurrently, only the following satellite products are supported by <sdown>:\n%s' % (product, '\n'.join(er3t.common._sat_tags_support_.keys()))
