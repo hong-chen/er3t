@@ -85,6 +85,75 @@ MODIS_L1B_HKM_1KM_BANDS_DEFAULT = {1: 650,
                                    7: 2130
                                     }
 
+
+def _is_netcdf_modis_file(fname):
+    return os.path.splitext(fname)[1].lower() in ['.nc', '.nc4', '.netcdf', '.netcdf4']
+
+
+def _get_nc_group(root, group_path):
+    group = root
+    for part in group_path:
+        matches = [
+            g for g in group.groups.values()
+            if g.name.rsplit('/', 1)[-1].lower() == part.lower()
+        ]
+        if len(matches) == 0:
+            return None
+        group = matches[0]
+    return group
+
+
+def _find_nc_variable(root, var_name, group_paths=None):
+    if var_name in root.variables:
+        return root.variables[var_name]
+
+    if group_paths is None:
+        group_paths = [
+            ('HDFEOS', 'SWATHS', 'MODIS_Swath_Type_GEO', 'Geolocation Fields'),
+            ('HDFEOS', 'SWATHS', 'MODIS_SWATH_Type_GEO', 'Geolocation Fields'),
+            ('HDFEOS', 'SWATHS', 'MODIS_Swath_Type_GEO', 'Data Fields'),
+            ('HDFEOS', 'SWATHS', 'MODIS_SWATH_Type_GEO', 'Data Fields'),
+            ('HDFEOS', 'SWATHS', 'MODIS_Swath_Type_L1B', 'Geolocation Fields'),
+            ('HDFEOS', 'SWATHS', 'MODIS_SWATH_Type_L1B', 'Geolocation Fields'),
+            ('HDFEOS', 'SWATHS', 'MODIS_Swath_Type_L1B', 'Data Fields'),
+            ('HDFEOS', 'SWATHS', 'MODIS_SWATH_Type_L1B', 'Data Fields'),
+            ('HDFEOS', 'ADDITIONAL', 'FILE_ATTRIBUTES'),
+        ]
+
+    for group_path in group_paths:
+        group = _get_nc_group(root, group_path)
+        if (group is not None) and (var_name in group.variables):
+            return group.variables[var_name]
+
+    for group in root.groups.values():
+        result = _find_nc_variable(group, var_name, group_paths=[])
+        if result is not None:
+            return result
+
+    return None
+
+
+def _open_modis_file(fname):
+    if _is_netcdf_modis_file(fname):
+        import netCDF4 as nc
+        return 'nc', nc.Dataset(fname, 'r')
+
+    from pyhdf.SD import SD, SDC
+    return 'hdf', SD(fname, SDC.READ)
+
+
+def _close_modis_file(file_obj, backend):
+    if backend == 'nc':
+        file_obj.close()
+    else:
+        file_obj.end()
+
+
+def _read_modis_variable(file_obj, backend, var_name):
+    if backend == 'nc':
+        return _find_nc_variable(file_obj, var_name)
+    return file_obj.select(var_name)
+
 # reader for MODIS (Moderate Resolution Imaging Spectroradiometer)
 #╭────────────────────────────────────────────────────────────────────────────╮#
 
@@ -151,29 +220,23 @@ class modis_03:
         self.logic
         """
 
-        try:
-            from pyhdf.SD import SD, SDC
-        except ImportError:
-            msg = 'Warning [modis_03]: To use \'modis_03\', \'pyhdf\' needs to be installed.'
-            raise ImportError(msg)
-
-        f     = SD(fname, SDC.READ)
+        backend, f = _open_modis_file(fname)
 
         # lon lat
-        lat0       = f.select('Latitude')
-        lon0       = f.select('Longitude')
+        lat0       = _read_modis_variable(f, backend, 'Latitude')
+        lon0       = _read_modis_variable(f, backend, 'Longitude')
 
-        sza0       = f.select('SolarZenith')
-        saa0       = f.select('SolarAzimuth')
-        vza0       = f.select('SensorZenith')
-        vaa0       = f.select('SensorAzimuth')
+        sza0       = _read_modis_variable(f, backend, 'SolarZenith')
+        saa0       = _read_modis_variable(f, backend, 'SolarAzimuth')
+        vza0       = _read_modis_variable(f, backend, 'SensorZenith')
+        vaa0       = _read_modis_variable(f, backend, 'SensorAzimuth')
 
 
         # 1. If region (extent=) is specified, filter data within the specified region
         # 2. If region (extent=) is not specified, filter invalid data
         #╭────────────────────────────────────────────────────────────────────────────╮#
-        lon = lon0[:]
-        lat = lat0[:]
+        lon = get_data_nc(lon0, replace_fill_value=np.nan) if backend == 'nc' else lon0[:]
+        lat = get_data_nc(lat0, replace_fill_value=np.nan) if backend == 'nc' else lat0[:]
 
         if self.extent is None:
             lon_range = [-180.0, 180.0]
@@ -191,10 +254,16 @@ class modis_03:
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
         #╭────────────────────────────────────────────────────────────────────────────╮#
-        sza = get_data_h4(sza0)
-        saa = get_data_h4(saa0)
-        vza = get_data_h4(vza0)
-        vaa = get_data_h4(vaa0)
+        if backend == 'nc':
+            sza = get_data_nc(sza0, replace_fill_value=np.nan)
+            saa = get_data_nc(saa0, replace_fill_value=np.nan)
+            vza = get_data_nc(vza0, replace_fill_value=np.nan)
+            vaa = get_data_nc(vaa0, replace_fill_value=np.nan)
+        else:
+            sza = get_data_h4(sza0)
+            saa = get_data_h4(saa0)
+            vza = get_data_h4(vza0)
+            vaa = get_data_h4(vaa0)
 
         if not self.keep_dims:
             sza = sza[logic]
@@ -202,7 +271,7 @@ class modis_03:
             vza = vza[logic]
             vaa = vaa[logic]
 
-        f.end()
+        _close_modis_file(f, backend)
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         if hasattr(self, 'data'):
@@ -231,26 +300,25 @@ class modis_03:
 
     def read_vars(self, fname, vnames=[]):
 
-        try:
-            from pyhdf.SD import SD, SDC
-        except ImportError:
-            msg = 'Warning [modis_03]: To use \'modis_03\', \'pyhdf\' needs to be installed.'
-            raise ImportError(msg)
-
+        backend, f = _open_modis_file(fname)
         logic = self.logic[fname]['1km']
-
-        f     = SD(fname, SDC.READ)
 
         for vname in vnames:
 
-            data0 = f.select(vname)
-            data  = get_data_h4(data0)[logic]
-            if vname.lower() in self.data.keys():
-                self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.attributes()['units'])
+            data0 = _read_modis_variable(f, backend, vname)
+            if backend == 'nc':
+                data = get_data_nc(data0, replace_fill_value=np.nan)[logic]
+                units = getattr(data0, 'units', 'N/A')
             else:
-                self.data[vname.lower()] = dict(name=vname, data=data, units=data0.attributes()['units'])
+                data = get_data_h4(data0)[logic]
+                units = data0.attributes()['units']
 
-        f.end()
+            if vname.lower() in self.data.keys():
+                self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=units)
+            else:
+                self.data[vname.lower()] = dict(name=vname, data=data, units=units)
+
+        _close_modis_file(f, backend)
 
 
 
@@ -334,37 +402,139 @@ class modis_l1b:
             self.read(fname)
 
 
-    def _get_250_500_attrs(self, hdf_dset_250, hdf_dset_500):
-        rad_off = hdf_dset_250.attributes()['radiance_offsets']         + hdf_dset_500.attributes()['radiance_offsets']
-        rad_sca = hdf_dset_250.attributes()['radiance_scales']          + hdf_dset_500.attributes()['radiance_scales']
-        ref_off = hdf_dset_250.attributes()['reflectance_offsets']      + hdf_dset_500.attributes()['reflectance_offsets']
-        ref_sca = hdf_dset_250.attributes()['reflectance_scales']       + hdf_dset_500.attributes()['reflectance_scales']
-        cnt_off = hdf_dset_250.attributes()['corrected_counts_offsets'] + hdf_dset_500.attributes()['corrected_counts_offsets']
-        cnt_sca = hdf_dset_250.attributes()['corrected_counts_scales']  + hdf_dset_500.attributes()['corrected_counts_scales']
+    def _get_attribute(self, dset, name, backend):
+        if backend == 'nc':
+            value = getattr(dset, name)
+        else:
+            value = dset.attributes()[name]
+        return np.asarray(value).ravel()
+
+
+    def _concatenate_attributes(self, *values):
+        arrays = [np.asarray(value).ravel() for value in values if value is not None]
+        if len(arrays) == 0:
+            return np.array([], dtype=np.float64)
+        return np.concatenate(arrays)
+
+
+    def _get_250_500_attrs(self, hdf_dset_250, hdf_dset_500, backend='hdf'):
+        rad_off = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'radiance_offsets', backend),
+            self._get_attribute(hdf_dset_500, 'radiance_offsets', backend),
+        )
+        rad_sca = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'radiance_scales', backend),
+            self._get_attribute(hdf_dset_500, 'radiance_scales', backend),
+        )
+        ref_off = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'reflectance_offsets', backend),
+            self._get_attribute(hdf_dset_500, 'reflectance_offsets', backend),
+        )
+        ref_sca = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'reflectance_scales', backend),
+            self._get_attribute(hdf_dset_500, 'reflectance_scales', backend),
+        )
+        cnt_off = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'corrected_counts_offsets', backend),
+            self._get_attribute(hdf_dset_500, 'corrected_counts_offsets', backend),
+        )
+        cnt_sca = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'corrected_counts_scales', backend),
+            self._get_attribute(hdf_dset_500, 'corrected_counts_scales', backend),
+        )
         return rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca
 
 
-    def _get_250_500_uct(self, hdf_uct_250, hdf_uct_500):
-        uct_spc = hdf_uct_250.attributes()['specified_uncertainty'] + hdf_uct_500.attributes()['specified_uncertainty']
-        uct_sca = hdf_uct_250.attributes()['scaling_factor']        + hdf_uct_500.attributes()['scaling_factor']
+    def _get_250_500_uct(self, hdf_uct_250, hdf_uct_500, backend='hdf'):
+        uct_spc = self._concatenate_attributes(
+            self._get_attribute(hdf_uct_250, 'specified_uncertainty', backend),
+            self._get_attribute(hdf_uct_500, 'specified_uncertainty', backend),
+        )
+        uct_sca = self._concatenate_attributes(
+            self._get_attribute(hdf_uct_250, 'scaling_factor', backend),
+            self._get_attribute(hdf_uct_500, 'scaling_factor', backend),
+        )
         return uct_spc, uct_sca
 
-    def _get_250_500_1km_attrs(self, hdf_dset_250, hdf_dset_500, hdf_dset_1km_solar, hdf_dset_1km_emissive):
-        num_emissive_bands = len(hdf_dset_1km_emissive.attributes()['radiance_scales'])
+    def _get_250_500_1km_attrs(self, hdf_dset_250, hdf_dset_500, hdf_dset_1km_solar, hdf_dset_1km_emissive, backend='hdf'):
+        num_emissive_bands = len(self._get_attribute(hdf_dset_1km_emissive, 'radiance_scales', backend))
 
-        rad_off = hdf_dset_250.attributes()['radiance_offsets']    + hdf_dset_500.attributes()['radiance_offsets']    + hdf_dset_1km_solar.attributes()['radiance_offsets'] + hdf_dset_1km_emissive.attributes()['radiance_offsets']
-        rad_sca = hdf_dset_250.attributes()['radiance_scales']     + hdf_dset_500.attributes()['radiance_scales']     + hdf_dset_1km_solar.attributes()['radiance_scales'] + hdf_dset_1km_emissive.attributes()['radiance_scales']
-        ref_off = hdf_dset_250.attributes()['reflectance_offsets'] + hdf_dset_500.attributes()['reflectance_offsets'] + hdf_dset_1km_solar.attributes()['reflectance_offsets'] + list(np.full(-99, num_emissive_bands))
-        ref_sca = hdf_dset_250.attributes()['reflectance_scales']  + hdf_dset_500.attributes()['reflectance_scales']  + hdf_dset_1km_solar.attributes()['reflectance_scales'] + list(np.ones(num_emissive_bands))
-        cnt_off = hdf_dset_250.attributes()['corrected_counts_offsets'] + hdf_dset_500.attributes()['corrected_counts_offsets'] + hdf_dset_1km_solar.attributes()['corrected_counts_offsets'] + list(np.full(num_emissive_bands, -99))
-        cnt_sca = hdf_dset_250.attributes()['corrected_counts_scales'] + hdf_dset_500.attributes()['corrected_counts_scales'] + hdf_dset_1km_solar.attributes()['corrected_counts_scales'] + list(np.ones(num_emissive_bands))
+        rad_off = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'radiance_offsets', backend),
+            self._get_attribute(hdf_dset_500, 'radiance_offsets', backend),
+            self._get_attribute(hdf_dset_1km_solar, 'radiance_offsets', backend),
+            self._get_attribute(hdf_dset_1km_emissive, 'radiance_offsets', backend),
+        )
+        rad_sca = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'radiance_scales', backend),
+            self._get_attribute(hdf_dset_500, 'radiance_scales', backend),
+            self._get_attribute(hdf_dset_1km_solar, 'radiance_scales', backend),
+            self._get_attribute(hdf_dset_1km_emissive, 'radiance_scales', backend),
+        )
+        ref_off = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'reflectance_offsets', backend),
+            self._get_attribute(hdf_dset_500, 'reflectance_offsets', backend),
+            self._get_attribute(hdf_dset_1km_solar, 'reflectance_offsets', backend),
+            np.full(num_emissive_bands, -99, dtype=np.float64),
+        )
+        ref_sca = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'reflectance_scales', backend),
+            self._get_attribute(hdf_dset_500, 'reflectance_scales', backend),
+            self._get_attribute(hdf_dset_1km_solar, 'reflectance_scales', backend),
+            np.ones(num_emissive_bands, dtype=np.float64),
+        )
+        cnt_off = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'corrected_counts_offsets', backend),
+            self._get_attribute(hdf_dset_500, 'corrected_counts_offsets', backend),
+            self._get_attribute(hdf_dset_1km_solar, 'corrected_counts_offsets', backend),
+            np.full(num_emissive_bands, -99, dtype=np.float64),
+        )
+        cnt_sca = self._concatenate_attributes(
+            self._get_attribute(hdf_dset_250, 'corrected_counts_scales', backend),
+            self._get_attribute(hdf_dset_500, 'corrected_counts_scales', backend),
+            self._get_attribute(hdf_dset_1km_solar, 'corrected_counts_scales', backend),
+            np.ones(num_emissive_bands, dtype=np.float64),
+        )
         return rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca
 
-    def _get_250_500_1km_uct(self, hdf_uct_250, hdf_uct_500, hdf_uct_1km_solar, hdf_uct_1km_emissive):
-        uct_spc = hdf_uct_250.attributes()['specified_uncertainty'] + hdf_uct_500.attributes()['specified_uncertainty'] + hdf_uct_1km_solar.attributes()['specified_uncertainty'] + hdf_uct_1km_emissive.attributes()['specified_uncertainty']
-        uct_sca = hdf_uct_250.attributes()['scaling_factor']        + hdf_uct_500.attributes()['scaling_factor']        + hdf_uct_1km_solar.attributes()['scaling_factor'] + hdf_uct_1km_emissive.attributes()['scaling_factor']
+    def _get_250_500_1km_uct(self, hdf_uct_250, hdf_uct_500, hdf_uct_1km_solar, hdf_uct_1km_emissive, backend='hdf'):
+        uct_spc = self._concatenate_attributes(
+            self._get_attribute(hdf_uct_250, 'specified_uncertainty', backend),
+            self._get_attribute(hdf_uct_500, 'specified_uncertainty', backend),
+            self._get_attribute(hdf_uct_1km_solar, 'specified_uncertainty', backend),
+            self._get_attribute(hdf_uct_1km_emissive, 'specified_uncertainty', backend),
+        )
+        uct_sca = self._concatenate_attributes(
+            self._get_attribute(hdf_uct_250, 'scaling_factor', backend),
+            self._get_attribute(hdf_uct_500, 'scaling_factor', backend),
+            self._get_attribute(hdf_uct_1km_solar, 'scaling_factor', backend),
+            self._get_attribute(hdf_uct_1km_emissive, 'scaling_factor', backend),
+        )
         return uct_spc, uct_sca
 
+
+    def _get_geolocation_logic(self, fname, resolution='1km'):
+        if self.f03 is None:
+            raise ValueError('A MODIS geolocation object is required to read this product.')
+
+        fname_match = find_fname_match(fname, self.f03.logic.keys())
+        if fname_match is None:
+            if len(self.f03.logic) == 1:
+                fname_match = next(iter(self.f03.logic.keys()))
+            else:
+                msg = (
+                    "Error [modis_l1b]: Geolocation file does not match the current MODIS granule. "
+                    "The L1B file '%s' does not share the same granule tag as the provided MOD03 logic. "
+                    "Provide a geolocation file for the same MODIS granule or read without `f03`."
+                    % os.path.basename(fname)
+                )
+                raise ValueError(msg)
+
+        if resolution not in self.f03.logic[fname_match]:
+            msg = "Error [modis_l1b]: Geolocation object does not contain a '%s' logic entry for '%s'." % (resolution, os.path.basename(fname_match))
+            raise ValueError(msg)
+
+        return self.f03.logic[fname_match][resolution]
 
     def read(self, fname):
 
@@ -381,13 +551,7 @@ class modis_l1b:
                 ['uct']
     """
 
-        try:
-            from pyhdf.SD import SD, SDC
-        except ImportError:
-            msg = 'Warning [modis_l1b]: To use \'modis_l1b\', \'pyhdf\' needs to be installed.'
-            raise ImportError(msg)
-
-        f     = SD(fname, SDC.READ)
+        backend, f = _open_modis_file(fname)
 
         # when resolution equals to 250 m
         if check_equal(self.resolution, 0.25):
@@ -395,16 +559,16 @@ class modis_l1b:
                 lon0  = self.f03.data['lon']['data']
                 lat0  = self.f03.data['lat']['data']
             else:
-                lat0  = f.select('Latitude')
-                lon0  = f.select('Longitude')
+                lat0  = _read_modis_variable(f, backend, 'Latitude')
+                lon0  = _read_modis_variable(f, backend, 'Longitude')
 
             # band info
-            band_numbers = list(f.select('Band_250M')[:])
+            band_numbers = list((_read_modis_variable(f, backend, 'Band_250M')[:]))
             band_dict = dict(zip(band_numbers, np.arange(0, len(band_numbers))))
 
-            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
-            raw0      = f.select('EV_250_RefSB')
-            uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
+            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False) if backend == 'hdf' else upscale_modis_lonlat(get_data_nc(lon0, replace_fill_value=np.nan), get_data_nc(lat0, replace_fill_value=np.nan), scale=4, extra_grid=False)
+            raw0      = _read_modis_variable(f, backend, 'EV_250_RefSB')
+            uct0      = _read_modis_variable(f, backend, 'EV_250_RefSB_Uncert_Indexes')
 
             if self.extent is None:
                 lon_range = [-180.0, 180.0]
@@ -420,17 +584,17 @@ class modis_l1b:
                 lat       = lat[logic]
 
             # save offsets and scaling factors
-            rad_off = raw0.attributes()['radiance_offsets']
-            rad_sca = raw0.attributes()['radiance_scales']
+            rad_off = raw0.attributes()['radiance_offsets'] if backend == 'hdf' else getattr(raw0, 'radiance_offsets')
+            rad_sca = raw0.attributes()['radiance_scales'] if backend == 'hdf' else getattr(raw0, 'radiance_scales')
 
-            ref_off = raw0.attributes()['reflectance_offsets']
-            ref_sca = raw0.attributes()['reflectance_scales']
+            ref_off = raw0.attributes()['reflectance_offsets'] if backend == 'hdf' else getattr(raw0, 'reflectance_offsets')
+            ref_sca = raw0.attributes()['reflectance_scales'] if backend == 'hdf' else getattr(raw0, 'reflectance_scales')
 
-            cnt_off = raw0.attributes()['corrected_counts_offsets']
-            cnt_sca = raw0.attributes()['corrected_counts_scales']
+            cnt_off = raw0.attributes()['corrected_counts_offsets'] if backend == 'hdf' else getattr(raw0, 'corrected_counts_offsets')
+            cnt_sca = raw0.attributes()['corrected_counts_scales'] if backend == 'hdf' else getattr(raw0, 'corrected_counts_scales')
 
-            uct_spc = uct0.attributes()['specified_uncertainty']
-            uct_sca = uct0.attributes()['scaling_factor']
+            uct_spc = uct0.attributes()['specified_uncertainty'] if backend == 'hdf' else getattr(uct0, 'specified_uncertainty')
+            uct_sca = uct0.attributes()['scaling_factor'] if backend == 'hdf' else getattr(uct0, 'scaling_factor')
             do_region = True
 
         # when resolution equals to 500 m
@@ -439,26 +603,26 @@ class modis_l1b:
                 lon0  = self.f03.data['lon']['data']
                 lat0  = self.f03.data['lat']['data']
             else:
-                lat0  = f.select('Latitude')
-                lon0  = f.select('Longitude')
+                lat0  = _read_modis_variable(f, backend, 'Latitude')
+                lon0  = _read_modis_variable(f, backend, 'Longitude')
 
 
-            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
-            raw0_250  = f.select('EV_250_Aggr500_RefSB')
-            uct0_250  = f.select('EV_250_Aggr500_RefSB_Uncert_Indexes')
-            raw0_500  = f.select('EV_500_RefSB')
-            uct0_500  = f.select('EV_500_RefSB_Uncert_Indexes')
+            lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False) if backend == 'hdf' else upscale_modis_lonlat(get_data_nc(lon0, replace_fill_value=np.nan), get_data_nc(lat0, replace_fill_value=np.nan), scale=2, extra_grid=False)
+            raw0_250  = _read_modis_variable(f, backend, 'EV_250_Aggr500_RefSB')
+            uct0_250  = _read_modis_variable(f, backend, 'EV_250_Aggr500_RefSB_Uncert_Indexes')
+            raw0_500  = _read_modis_variable(f, backend, 'EV_500_RefSB')
+            uct0_500  = _read_modis_variable(f, backend, 'EV_500_RefSB_Uncert_Indexes')
 
             # save offsets and scaling factors (from both QKM and HKM bands)
-            rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca = self._get_250_500_attrs(raw0_250, raw0_500)
-            uct_spc, uct_sca                                     = self._get_250_500_uct(uct0_250, uct0_500)
+            rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca = self._get_250_500_attrs(raw0_250, raw0_500, backend=backend)
+            uct_spc, uct_sca                                     = self._get_250_500_uct(uct0_250, uct0_500, backend=backend)
 
             # combine QKM and HKM bands
             raw0      = np.vstack([raw0_250, raw0_500])
             uct0      = np.vstack([uct0_250, uct0_500])
 
             # band info
-            band_numbers = list(f.select('Band_250M')[:]) + list(f.select('Band_500M')[:])
+            band_numbers = list((_read_modis_variable(f, backend, 'Band_250M')[:])) + list((_read_modis_variable(f, backend, 'Band_500M')[:]))
             band_dict = dict(zip(band_numbers, np.arange(0, len(band_numbers))))
 
             do_region = True
@@ -479,31 +643,31 @@ class modis_l1b:
         # when resolution equals to 1000 m
         elif check_equal(self.resolution, 1.0):
             if self.f03 is not None:
-                raw0_250           = f.select('EV_250_Aggr1km_RefSB')
-                uct0_250           = f.select('EV_250_Aggr1km_RefSB_Uncert_Indexes')
-                raw0_500           = f.select('EV_500_Aggr1km_RefSB')
-                uct0_500           = f.select('EV_500_Aggr1km_RefSB_Uncert_Indexes')
-                raw0_1km_solar     = f.select('EV_1KM_RefSB')
-                uct0_1km_solar     = f.select('EV_1KM_RefSB_Uncert_Indexes')
-                raw0_1km_emissive  = f.select('EV_1KM_Emissive')
-                uct0_1km_emissive  = f.select('EV_1KM_Emissive_Uncert_Indexes')
+                raw0_250           = _read_modis_variable(f, backend, 'EV_250_Aggr1km_RefSB')
+                uct0_250           = _read_modis_variable(f, backend, 'EV_250_Aggr1km_RefSB_Uncert_Indexes')
+                raw0_500           = _read_modis_variable(f, backend, 'EV_500_Aggr1km_RefSB')
+                uct0_500           = _read_modis_variable(f, backend, 'EV_500_Aggr1km_RefSB_Uncert_Indexes')
+                raw0_1km_solar     = _read_modis_variable(f, backend, 'EV_1KM_RefSB')
+                uct0_1km_solar     = _read_modis_variable(f, backend, 'EV_1KM_RefSB_Uncert_Indexes')
+                raw0_1km_emissive  = _read_modis_variable(f, backend, 'EV_1KM_Emissive')
+                uct0_1km_emissive  = _read_modis_variable(f, backend, 'EV_1KM_Emissive_Uncert_Indexes')
 
                 # save offsets and scaling factors (from both QKM and HKM and 1KM solar and emissive bands)
-                rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca = self._get_250_500_1km_attrs(raw0_250, raw0_500, raw0_1km_solar, raw0_1km_emissive)
-                uct_spc, uct_sca                                     = self._get_250_500_1km_uct(uct0_250, uct0_500, uct0_1km_solar, uct0_1km_emissive)
+                rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca = self._get_250_500_1km_attrs(raw0_250, raw0_500, raw0_1km_solar, raw0_1km_emissive, backend=backend)
+                uct_spc, uct_sca                                     = self._get_250_500_1km_uct(uct0_250, uct0_500, uct0_1km_solar, uct0_1km_emissive, backend=backend)
 
                 # combine QKM and HKM and 1KM bands
                 raw0      = np.vstack([raw0_250, raw0_500, raw0_1km_solar, raw0_1km_emissive])
                 uct0      = np.vstack([uct0_250, uct0_500, uct0_1km_solar, uct0_1km_emissive])
 
                 # band info
-                band_numbers = list(f.select('Band_250M')[:]) + list(f.select('Band_500M')[:]) + list(f.select('Band_1KM_RefSB')[:]) + list(f.select('Band_1KM_Emissive')[:])
+                band_numbers = list((_read_modis_variable(f, backend, 'Band_250M')[:])) + list((_read_modis_variable(f, backend, 'Band_500M')[:])) + list((_read_modis_variable(f, backend, 'Band_1KM_RefSB')[:])) + list((_read_modis_variable(f, backend, 'Band_1KM_Emissive')[:]))
                 band_dict = dict(zip(band_numbers, np.arange(0, len(band_numbers))))
 
                 do_region = False
                 lon       = self.f03.data['lon']['data']
                 lat       = self.f03.data['lat']['data']
-                logic     = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
+                logic     = self._get_geolocation_logic(fname, resolution='1km')
             else:
                 sys.exit('Error   [modis_l1b]: 1KM product reader has not been implemented without geolocation file being specified.')
 
@@ -543,7 +707,7 @@ class modis_l1b:
             uct_pct[band_counter]   = uct_spc[band_idx] * np.exp(uct[band_idx] / uct_sca[band_idx]) # convert to percentage
             wvl[band_counter]       = MODIS_L1B_HKM_1KM_BANDS[i]
 
-        f.end()
+        _close_modis_file(f, backend)
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -714,7 +878,19 @@ class modis_l2:
         else:
             lon       = self.f03.data['lon']['data']
             lat       = self.f03.data['lat']['data']
-            logic_1km = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
+            fname_match = find_fname_match(fname, self.f03.logic.keys())
+            if fname_match is None:
+                if len(self.f03.logic) == 1:
+                    fname_match = next(iter(self.f03.logic.keys()))
+                else:
+                    msg = (
+                        "Error [modis_l2]: Geolocation file does not match the current MODIS granule. "
+                        "The L2 file '%s' does not share the same granule tag as the provided MOD03 logic. "
+                        "Provide a geolocation file for the same MODIS granule or read without `f03`."
+                        % os.path.basename(fname)
+                    )
+                    raise ValueError(msg)
+            logic_1km = self.f03.logic[fname_match]['1km']
 
 
         lon_5km   = lon0[:]
@@ -1010,7 +1186,19 @@ class modis_35_l2:
         else:
             lon       = self.f03.data['lon']['data']
             lat       = self.f03.data['lat']['data']
-            logic_1km = self.f03.logic[find_fname_match(fname, self.f03.logic.keys())]['1km']
+            fname_match = find_fname_match(fname, self.f03.logic.keys())
+            if fname_match is None:
+                if len(self.f03.logic) == 1:
+                    fname_match = next(iter(self.f03.logic.keys()))
+                else:
+                    msg = (
+                        "Error [modis_35_l2]: Geolocation file does not match the current MODIS granule. "
+                        "The L2 file '%s' does not share the same granule tag as the provided MOD03 logic. "
+                        "Provide a geolocation file for the same MODIS granule or read without `f03`."
+                        % os.path.basename(fname)
+                    )
+                    raise ValueError(msg)
+            logic_1km = self.f03.logic[fname_match]['1km']
         #╰────────────────────────────────────────────────────────────────────────────╯#
 
         lon_5km   = lon0[:]
@@ -2818,7 +3006,7 @@ def download_modis_https(
             if data_format is None:
                 data_format = os.path.basename(fname_local).split('.')[-1]
 
-            if data_format == 'hdf':
+            if data_format in ['hdf', 'hdf4']:
 
                 try:
                     from pyhdf.SD import SD, SDC
@@ -2828,6 +3016,18 @@ def download_modis_https(
 
                 f = SD(fname_local, SDC.READ)
                 f.end()
+                print('Message [download_modis_https]: \'%s\' has been downloaded.\n' % fname_local)
+
+            elif data_format in ['nc', 'nc4', 'netcdf', 'netcdf4']:
+
+                try:
+                    import netCDF4 as nc
+                except ImportError:
+                    msg = 'Warning [download_modis_https]: To use \'download_modis_https\' with netCDF MODIS files, \'netCDF4\' needs to be installed.'
+                    raise ImportError(msg)
+
+                with nc.Dataset(fname_local, 'r') as f:
+                    pass
                 print('Message [download_modis_https]: \'%s\' has been downloaded.\n' % fname_local)
 
             else:
@@ -3047,6 +3247,9 @@ def get_sinusoidal_grid_tag(lon, lat, verbose=False):
 def find_fname_match(fname0, fnames, index_s=1, index_e=3):
 
     filename0 = os.path.basename(fname0)
+    if filename0 in fnames:
+        return filename0
+
     pattern  = '.'.join(filename0.split('.')[index_s:index_e+1])
 
     fname_match = None

@@ -325,11 +325,19 @@ def get_data_h4(hdf_dset, init_dtype=None, replace_fill_value=np.nan):
 def get_data_nc(nc_dset, replace_fill_value=np.nan):
 
     nc_dset.set_auto_maskandscale(True)
-    data  = nc_dset[:]
+    data = nc_dset[:]
 
-    if replace_fill_value is not None:
-        data = data.astype('float32')
-        data.filled(fill_value=replace_fill_value)
+    if isinstance(data, np.ma.MaskedArray):
+        if replace_fill_value is None:
+            data = data.filled()
+        else:
+            data = data.astype('float32', copy=False)
+            data = data.filled(replace_fill_value)
+    elif replace_fill_value is not None:
+        try:
+            data = np.asarray(data, dtype='float32')
+        except (TypeError, ValueError):
+            data = np.asarray(data)
 
     return data
 
@@ -1017,8 +1025,8 @@ def g_alt_calc(g0, lat, z):
     """
     Calculate the gravity acceleration at z.
 
-    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
-    
+    according to Eq. 10 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
+
     Input:
         g0: gravity acceleration at the surface (m/s^2)
         lat: latitude (degrees)
@@ -1055,7 +1063,7 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
         lat = atm0.lat
     except AttributeError:
         lat = 0.0 # default latitude is 0 degree
-        
+
     g0 = g0_calc(lat) # m/s^2
     g0 = g0_calc(0) # m/s^2
     z = atm0.lay['altitude']['data']
@@ -1067,10 +1075,10 @@ def cal_mol_ext_atm(wv0, atm0, method='atm'):
     p_lev = atm0.lev['pressure']['data'] * 1000 # convert to dyne/cm^2
     dp_lev = (p_lev[:-1]-p_lev[1:]) # convert to dyne/cm^2
     crs = mol_ext_wvl(wv0)
-    
+
     # original calculation
     # tauray = 0.00210966*(crs)*(p_lev[:-1]-p_lev[1:])/1013.25
-        
+
     if method == 'sfc':
         const_sfc = p_lev[0] * A_ / (g0 * ma[0]) * 1e-28
         tauray = const_sfc*(crs)*(p_lev[:-1]-p_lev[1:])/p_lev[0]
@@ -1089,8 +1097,8 @@ def mol_ext_wvl(wv0):
     """
     Calculate the rayleigh scattering cross-section for given wavelength.
 
-    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999. 
-    
+    according to Eq. 29 of Bodhaine et al, `On Rayleigh optical depth calculations', J. Atm. Ocean Technol., 16, 1854-1861, 1999.
+
     Input:
         wv0: wavelength (in microns)
     """
@@ -1098,11 +1106,11 @@ def mol_ext_wvl(wv0):
     num = 1.0455996 - 341.29061*wv0**(-2.0) - 0.90230850*wv0**2.0
     den = 1.0 + 0.0027059889*wv0**(-2.0) - 85.968563*wv0**2.0
     crs = num/den
-    
+
     return crs   # in 10^-28 cm^2/molecule
 
-  
-  
+
+
 def cal_mol_ext(wv0, pz1, pz2):
 
     """
@@ -1120,7 +1128,7 @@ def cal_mol_ext(wv0, pz1, pz2):
     """
 
     tauray = 0.00210966 * mol_ext_wvl(wv0) * (pz1-pz2) / 1013.25
-    
+
     return tauray
 
 
