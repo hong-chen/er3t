@@ -53,7 +53,32 @@ import numpy as np
 import datetime
 import multiprocessing
 
-_repo_root_ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+def _resolve_repo_root():
+    """Use the active environment's package location when available.
+
+    The CLI can be copied or wrapped from a different checkout (for example, a
+    separate project directory), so prefer a repo root that actually contains the
+    installed `er3t` package before falling back to the script directory.
+    """
+    env_override = os.environ.get('ER3T_REPO_ROOT')
+    if env_override:
+        candidate = os.path.abspath(os.path.expanduser(env_override))
+        if os.path.isfile(os.path.join(candidate, 'er3t', '__init__.py')):
+            return candidate
+
+    for entry in sys.path:
+        if not entry:
+            candidate = os.getcwd()
+        else:
+            candidate = os.path.abspath(os.path.expanduser(entry))
+
+        if os.path.isfile(os.path.join(candidate, 'er3t', '__init__.py')):
+            return candidate
+
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
+_repo_root_ = _resolve_repo_root()
 if _repo_root_ not in sys.path:
     sys.path.insert(0, _repo_root_)
 
