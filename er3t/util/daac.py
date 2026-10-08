@@ -563,6 +563,27 @@ def get_nsidc_file_list(
 
 
 
+def print_download_summary(label, total_downloads, skipped_count, verbose=True):
+    """Emit a single batch summary for a download pass.
+
+    This keeps the informational message centralized so it is printed exactly once
+    for the aggregated list of files, instead of once per file in a loop.
+    """
+    if not verbose:
+        return
+
+    if total_downloads == 0 and skipped_count == 0:
+        return
+
+    print(
+        "Message [{}]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(
+            label,
+            total_downloads,
+            skipped_count,
+        )
+    )
+
+
 def final_file_check(fname_local, data_format, verbose):
     """
     Check if the file has been successfully downloaded.
@@ -1424,8 +1445,12 @@ def download_laads_https(
                     primary_commands.append(primary_command)
                     backup_commands.append(backup_command)
 
-    if verbose:
-        print("Message [download_laads_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
+    print_download_summary(
+        'download_laads_https',
+        len(fnames_local),
+        exist_count,
+        verbose=verbose,
+    )
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -1575,8 +1600,12 @@ def download_lance_https(
                     primary_commands.append(primary_command)
                     backup_commands.append('timeout 60 ' + backup_command) # force timeout for wget
 
-    if verbose:
-        print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
+    print_download_summary(
+        'download_lance_https',
+        len(fnames_local),
+        exist_count,
+        verbose=verbose,
+    )
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # run/print command
@@ -1711,8 +1740,12 @@ def download_nsidc_https(
                 primary_commands.append(primary_command)
                 backup_commands.append(backup_command)
 
-    if verbose:
-        print("Message [download_nsidc_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
+    print_download_summary(
+        'download_nsidc_https',
+        len(fnames_local),
+        exist_count,
+        verbose=verbose,
+    )
     #\----------------------------------------------------------------------------/#
 
     # run/print command
