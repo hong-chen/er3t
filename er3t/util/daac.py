@@ -1413,7 +1413,6 @@ def download_laads_https(
             fname_server = '%s/%s' % (fdir_server, filename)
             fname_local  = '%s/%s' % (fdir_out, filename)
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
-                print("Message [download_laads_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)
@@ -1425,7 +1424,8 @@ def download_laads_https(
                     primary_commands.append(primary_command)
                     backup_commands.append(backup_command)
 
-    print("Message [download_laads_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
+    if verbose:
+        print("Message [download_laads_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
 
@@ -1564,7 +1564,6 @@ def download_lance_https(
 
 
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
-                print("Message [download_lance_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)
@@ -1576,7 +1575,8 @@ def download_lance_https(
                     primary_commands.append(primary_command)
                     backup_commands.append('timeout 60 ' + backup_command) # force timeout for wget
 
-    print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
+    if verbose:
+        print("Message [download_lance_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #╰────────────────────────────────────────────────────────────────────────────╯#
 
     # run/print command
@@ -1704,7 +1704,6 @@ def download_nsidc_https(
 
             fname_local  = '%s/%s' % (fdir_out, filename)
             if os.path.isfile(fname_local) and final_file_check(fname_local, data_format=data_format, verbose=verbose):
-                print("Message [download_nsidc_https]: File {} already exists and looks good. Will not re-download this file.".format(fname_local))
                 exist_count += 1
             else:
                 fnames_local.append(fname_local)
@@ -1712,7 +1711,8 @@ def download_nsidc_https(
                 primary_commands.append(primary_command)
                 backup_commands.append(backup_command)
 
-    print("Message [download_nsidc_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
+    if verbose:
+        print("Message [download_nsidc_https]: Total of {} will be downloaded. {} will be skipped as they already exist and work as advertised.".format(len(fnames_local), exist_count))
     #\----------------------------------------------------------------------------/#
 
     # run/print command
