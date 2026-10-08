@@ -250,6 +250,26 @@ _sat_tags_support_ = {
                   'reference': 'Ackerman, S., et al., 2019. MODIS/Aqua Cloud Mask and Spectral Test Results 5-Min L2 Swath 1km, Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: https://dx.doi.org/10.5067/VIIRS/CLDMSK_L2_MODIS_Aqua.001',
                 },
 
+        'MYD_CLDPROP_L2': {
+                'dataset_tag': '5111/CLDPROP_L2_MODIS_Aqua',
+                   'dict_key': 'myd_cldprop_l2',
+                'description': 'MODIS Aqua Continuity Cloud Properties (MVCM) 5-Min Swath 1 km',
+                    # 'website': 'https://doi.org/10.5067/VIIRS/CLDPROP_L2_VIIRS_SNPP.011',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'Platnick, S., et al., 2017. VIIRS Atmosphere L2 Cloud Properties Product. Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: http://dx.doi.org/10.5067/VIIRS/CLDPROP_L2_VIIRS_SNPP.001',
+                },
+
+        'Aqua_CLDPROP_L2': {
+                'dataset_tag': '5111/CLDPROP_L2_MODIS_Aqua',
+                   'dict_key': 'myd_cldprop_l2',
+                'description': 'MODIS Aqua Continuity Cloud Properties (MVCM) 5-Min Swath 1 km',
+                    # 'website': 'https://doi.org/10.5067/VIIRS/CLDPROP_L2_VIIRS_SNPP.011',
+                  'satellite': 'Aqua',
+                 'instrument': 'MODIS',
+                  'reference': 'Platnick, S., et al., 2017. VIIRS Atmosphere L2 Cloud Properties Product. Version-1. NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) Distributed Active Archive Center (DAAC), Goddard Space Flight Center, USA: http://dx.doi.org/10.5067/VIIRS/CLDPROP_L2_VIIRS_SNPP.001',
+                },
+
         'MOD09': {
                 'dataset_tag': '61/MOD09',
                    'dict_key': 'mod_09',
