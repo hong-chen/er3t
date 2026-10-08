@@ -53,34 +53,63 @@ import numpy as np
 import datetime
 import multiprocessing
 
-def _resolve_repo_root():
-    """Use the active environment's package location when available.
+def _resolve_repo_root(script_file=None):
+    """Choose the repo root that owns the currently running `sdown` script.
 
-    The CLI can be copied or wrapped from a different checkout (for example, a
-    separate project directory), so prefer a repo root that actually contains the
-    installed `er3t` package before falling back to the script directory.
+    This avoids importing a stale `er3t` checkout from another project directory
+    (for example a copied script under `er3t-sifsat` while an older repo is on
+    `PYTHONPATH` or from a previous editable install).
     """
+    if script_file is None:
+        script_file = __file__
+
+    script_dir = os.path.abspath(os.path.dirname(script_file))
+    script_repo = os.path.abspath(os.path.join(script_dir, '..'))
+    if os.path.isfile(os.path.join(script_repo, 'er3t', '__init__.py')):
+        repo_root = script_repo
+    else:
+        repo_root = None
+
     env_override = os.environ.get('ER3T_REPO_ROOT')
-    if env_override:
+    if repo_root is None and env_override:
         candidate = os.path.abspath(os.path.expanduser(env_override))
         if os.path.isfile(os.path.join(candidate, 'er3t', '__init__.py')):
-            return candidate
+            repo_root = candidate
 
+    if repo_root is None:
+        for entry in sys.path:
+            if not entry:
+                candidate = os.getcwd()
+            else:
+                candidate = os.path.abspath(os.path.expanduser(entry))
+
+            if os.path.isfile(os.path.join(candidate, 'er3t', '__init__.py')):
+                repo_root = candidate
+                break
+
+    if repo_root is None:
+        repo_root = script_repo
+
+    # Strip stale `er3t` package paths from the process so a copied wrapper script
+    # cannot accidentally import code from a different repo checkout.
+    cleaned_paths = []
     for entry in sys.path:
-        if not entry:
-            candidate = os.getcwd()
-        else:
-            candidate = os.path.abspath(os.path.expanduser(entry))
+        normalized = os.path.abspath(os.path.expanduser(entry)) if entry else os.getcwd()
+        if os.path.isdir(os.path.join(normalized, 'er3t')) and normalized != repo_root:
+            continue
+        cleaned_paths.append(entry)
+    sys.path[:] = cleaned_paths
 
-        if os.path.isfile(os.path.join(candidate, 'er3t', '__init__.py')):
-            return candidate
-
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    return repo_root
 
 
 _repo_root_ = _resolve_repo_root()
 if _repo_root_ not in sys.path:
     sys.path.insert(0, _repo_root_)
+
+for name in list(sys.modules):
+    if name == 'er3t' or name.startswith('er3t.'):
+        del sys.modules[name]
 
 import er3t.util.daac
 import er3t.util.util
