@@ -824,7 +824,7 @@ class viirs_cldprop_l2:
 
         # Retrieve 1. ctp, 2. cth, 3. cot, 4. cer, 5. cwp, and select regional extent
         ctp           = get_data_nc(ctp0, replace_fill_value=None)[logic_extent]
-        cth           = get_data_nc(cth0, replace_fill_value=None)[logic_extent]
+        cth           = get_data_nc(cth0, replace_fill_value=None)[logic_extent].astype('float64')
 
         cot0_data     = get_data_nc(cot0)[logic_extent]
         cer0_data     = get_data_nc(cer0)[logic_extent]
@@ -847,7 +847,7 @@ class viirs_cldprop_l2:
         cer_uct = cer_uct0_data.copy()
         cwp_uct = cwp_uct0_data.copy()
 
-        pcl = np.zeros_like(cot, dtype=np.uint8)
+        pcl = np.zeros_like(cot, dtype=np.uint8) # pcl will already be subselected to logic_extent shape
 
         # Mark negative (invalid) retrievals with clear-sky values
         logic_invalid          = (cot0_data < 0.0) | (cer0_data < 0.0) | (cwp0_data < 0.0) | (ctp == 0)
@@ -868,7 +868,16 @@ class viirs_cldprop_l2:
         # When the standard retrieval identifies a pixel as being clear-sky AND the corresponding PCL retrieval says it is cloudy,
         # we give credence to the PCL retrieval and mark the pixel with PCL-retrieved values
 
-        logic_pcl      = ((cot0_data == 0.0) | (cer0_data == 0.0) | (cwp0_data == 0.0)) & \
+        # IMPORTANT NOTE: July 30, 2025 Update
+        # We are changing the PCL logic to use `<=` for the standard retrieval checks instead of `==`
+        # as part of the logic. This is because there are cases where the standard retrieval fails
+        # but the PCL retrieval remains valid. In effect, this overrides the `logic_invalid` above
+        # but improves overall cloud retrievals and reduces high COT bias by including cloud edges
+        # and sub-pixel cloud retrievals. Especially liquid clouds over ocean.
+        # However, more checks are required.
+        # Refer Platnick et al. (2016): https://doi.org/10.1109/TGRS.2016.2610522
+
+        logic_pcl      = ((cot0_data <= 0.0) | (cer0_data <= 0.0) | (cwp0_data <= 0.0)) & \
                          ((cot1_data > 0.0)  & (cer1_data > 0.0)  & (cwp1_data > 0.0))
 
         pcl[logic_pcl] = 1
@@ -878,8 +887,6 @@ class viirs_cldprop_l2:
 
         f.close()
         #╰────────────────────────────────────────────────────────────────────────────╯#
-
-        pcl = pcl[logic_extent]
 
         # save the data
         if hasattr(self, 'data'):
@@ -1291,7 +1298,7 @@ class viirs_09:
         params = [i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands] # list of dataset names
 
         if len(search_terms_with_bands) != len(params):
-            print('Warning [viirs_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
+            raise IndexError('Error [viirs_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
 
         # use the first param to get shape
         data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
@@ -1299,13 +1306,16 @@ class viirs_09:
         wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
 
         # loop through bands, scale and offset each param and store in tau
+        # IMPORTANT NOTE: params could have a different order than self.bands and search_terms_with_bands
+        # so indexing is tricky if using params. instead, we will use search_terms_with_bands which has the desired order
+        # as requested by the user in self.bands
         for idx, band_num in enumerate(self.bands):
             if len(band_num) != 3:
                 band_key = band_num[0] + '0{}'.format(band_num[1]) # pad 0 for dictionary indexing
             else:
                 band_key = band_num
 
-            surface_reflectance[idx] = get_data_h4(hdf_obj.select(params[idx]))
+            surface_reflectance[idx] = get_data_h4(hdf_obj.select(search_terms_with_bands[idx]))
             wvl[idx] = VIIRS_ALL_BANDS[band_key]
 
 

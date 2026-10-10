@@ -1020,11 +1020,30 @@ class modis_35_l2:
         lat_5km   = lat_5km[logic_5km]
 
         # Get cloud mask and flag fields
-        #╭────────────────────────────────────────────────────────────────────────────╮#
+        #/-----------------------------\#
+
+        if '_FillValue' in cld_msk0.attributes().keys():
+            cld_msk_fill_value = cld_msk0.attributes()['_FillValue']
+        else:
+            cld_msk_fill_value = 0
+
+        if '_FillValue' in qa0.attributes().keys():
+            qa_fill_value = qa0.attributes()['_FillValue']
+        else:
+            qa_fill_value = 0
+
         cm0_data = get_data_h4(cld_msk0)
         qa0_data = get_data_h4(qa0)
         cm = cm0_data.copy()
         qa = qa0_data.copy()
+
+        # negative integers need to be reampped according to ATBD
+        cm[cm < 0] = cm[cm < 0] + 256
+        qa[qa < 0] = qa[qa < 0] + 256
+
+        # turn nans into fill values
+        cm = np.nan_to_num(cm, cld_msk_fill_value)
+        qa = np.nan_to_num(qa, qa_fill_value)
 
         cm = cm[0, :, :] # read only the first of 6 bytes; rest will be supported in the future if needed
         cm = np.array(cm[logic_1km], dtype='uint8')
@@ -1035,6 +1054,7 @@ class modis_35_l2:
         qa = qa[:, :, 0] # read only the first byte for confidence (indexed differently from cloud mask SDS)
         qa = np.array(qa[logic_1km], dtype='uint8')
         qa = qa.reshape((qa.size, 1))
+        qa[qa < 0] = qa[qa < 0] + 256 # negative integers need to be reampped according to ATBD
         use_qa, confidence_qa = self.quality_assurance(qa, byte=0)
 
         f.end()
@@ -1612,7 +1632,7 @@ class modis_09:
         search_terms_with_bands = [search_term + ' ' + 'Band {}'.format(str(band)) for band in self.bands]
         params = [i for i in list(hdf_obj.datasets().keys()) if i in search_terms_with_bands] # list of dataset names
         if len(search_terms_with_bands) != len(params):
-            print('Warning [modis_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
+            raise IndexError('Error [modis_09]: Not all bands were extracted. Check self.bands and self.resolution inputs')
 
         # use the first param to get shape
         data_shape = tuple(hdf_obj.select(params[0]).dimensions().values())
@@ -1620,8 +1640,11 @@ class modis_09:
         wvl = np.zeros(len(self.bands), dtype='uint16') # wavelengths
 
         # loop through bands, scale and offset each param and store in tau
+        # IMPORTANT NOTE: params could have a different order than self.bands and search_terms_with_bands
+        # so indexing is tricky if using params. instead, we will use search_terms_with_bands which has the desired order
+        # as requested by the user in self.bands
         for idx, band_num in enumerate(self.bands):
-            surface_reflectance[idx] = get_data_h4(hdf_obj.select(params[idx]))
+            surface_reflectance[idx] = get_data_h4(hdf_obj.select(search_terms_with_bands[idx]))
             wvl[idx] = MODIS_L1B_HKM_1KM_BANDS[band_num]
 
         if self.ancillary_qa:
