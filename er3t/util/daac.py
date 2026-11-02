@@ -65,9 +65,19 @@ def get_token_earthdata():
     try:
         token = os.environ['EARTHDATA_TOKEN']
     except KeyError:
-        token = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImhvY2g0MjQwIiwiZXhwIjoxNzY5NDg3MTg1LCJpYXQiOjE3NjQzMDMxODUsImlzcyI6Imh0dHBzOi8vdXJzLmVhcnRoZGF0YS5uYXNhLmdvdiIsImlkZW50aXR5X3Byb3ZpZGVyIjoiZWRsX29wcyIsImFjciI6ImVkbCIsImFzc3VyYW5jZV9sZXZlbCI6M30.RJzt4cEw1n3YhdP4QrNfgEKU2Dz5-OirYOiXCHCxU4Ac0j6Petyr_qp571RndjpJDn8jd50_VezAUIEIpGk-fCuqdCUxLkHko-fgt4ccsVgOdTmONk0ANyRNIVvz5JjPq8NZlqSo2mCQeeTf3snHKXLRl1uensgrB4-meDktRz86HbugUcZ5R88aHQiqk9csMcgodPHdW7kPb3S7oRczBCd2awv0GpMzkMteRxSsZeyvNyRk99mbbrVCVGwiAc2x_z5XwfLUq2vMCGLawQtp4jPwBMKEd3Peb-ZY2sHYXQ5ZrCL9D5pELNs-_YR8vYOnbPPlfJpHrJNOjkX0MW4YFw'
-
-        msg = '\nWarning [get_earthdata_token]: Please get a token by following the instructions at\nhttps://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens\nThen add the following to the source file of your shell, e.g. \'~/.bashrc\'(Unix) or \'~/.zshrc\'(Mac),\nexport EARTHDATA_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"\n'
+        # Libera L2 fix (2026-10-22, Sebastian Schmidt): no hardcoded
+        # fallback token -- a live-looking bearer token was embedded here
+        # before. Per policy, every user sets their own EARTHDATA_TOKEN in
+        # their own shell rc file; nothing is ever hardcoded.
+        token = None
+        msg = (
+            '\nWarning [get_earthdata_token]: EARTHDATA_TOKEN not set.'
+            '\nGet a token at https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens'
+            '\nThen add to your shell rc file:'
+            '\n    bash/zsh (~/.bashrc or ~/.zshrc): export EARTHDATA_TOKEN="<your-token-here>"'
+            '\n    csh/tcsh (~/.cshrc):              setenv EARTHDATA_TOKEN "<your-token-here>"'
+            '\n'
+        )
         warnings.warn(msg)
 
     return token
@@ -138,12 +148,12 @@ def get_command_earthdata(
 
         if verbose:
             options = {
-                    'curl': '--header %s --connect-timeout 60.0 --retry 1 --max-time 60.0 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                    'curl': '--header %s --connect-timeout 60.0 --retry 1 --max-time 1800.0 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
                     'wget': '--header=%s --continue --timeout=60 --tries=2 --show-progress --output-document="%s" "%s"' % (header, fname_save, fname_target),
                     }
         else:
             options = {
-                    'curl': '-sS --no-progress-bar --header %s --connect-timeout 60.0 --max-time 60.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
+                    'curl': '-sS --no-progress-bar --header %s --connect-timeout 60.0 --max-time 1800.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (header, fname_save, fname_target),
                     'wget': '--header=%s --continue --timeout=60 --tries=2  --quiet --output-document="%s" "%s"' % (header, fname_save, fname_target),
                     }
 
@@ -154,12 +164,12 @@ def get_command_earthdata(
 
         if verbose:
             options = {
-                    'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 60.0 --max-time 60.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                    'curl': '--netrc --cookie-jar %s --cookie %s --connect-timeout 60.0 --max-time 1800.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                     'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --keep-session-cookies --content-disposition --timeout=60 --tries=2 --show-progress --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                     }
         else:
             options = {
-                'curl': '-s --netrc --cookie-jar %s --cookie %s --connect-timeout 60.0 --max-time 60.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
+                'curl': '-s --netrc --cookie-jar %s --cookie %s --connect-timeout 60.0 --max-time 1800.0 --retry 1 --location --continue-at - --output "%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                 'wget': '--continue --load-cookies=%s --save-cookies=%s --auth-no-challenge --quiet --keep-session-cookies --content-disposition --timeout=60 --tries=2 --output-document="%s" "%s"' % (secret['cookies'], secret['cookies'], fname_save, fname_target),
                 }
 

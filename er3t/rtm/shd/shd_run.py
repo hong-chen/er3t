@@ -85,8 +85,18 @@ class shd_run:
             if not os.path.exists(fdir_out):
                 os.system('mkdir -p %s' % fdir_out)
 
-            if (Ncpu > 1) and has_mpi:
-                command = 'mpirun --oversubscribe -np %d %s %s' % (Ncpu, executable, input_file)
+            # Libera L2 fix (2026-10-22, Sebastian Schmidt): always route
+            # through mpirun when MPI is available, Ncpu=1 included. A
+            # genuinely single-process run still exercises SHDOM's own
+            # "if (Nproc_ .eq. 1) then ... return" early-out inside the
+            # Fortran, but the binary gets the MPI runtime it actually
+            # needs to run at all instead of being invoked bare -- an
+            # MPI-linked `shdom` build (e.g. `make mpi`, no separate
+            # serial build) silently produced one NaN ray followed by
+            # SHDOM's never-overwritten -1 fill value at Ncpu=1, not a
+            # real solve.
+            if has_mpi:
+                command = 'mpirun --oversubscribe -np %d %s %s' % (max(Ncpu, 1), executable, input_file)
             else:
                 command = '%s %s' % (executable, input_file)
 

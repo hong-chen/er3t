@@ -92,6 +92,7 @@ class shdom_ng:
 
                  target              = "flux",                  \
                  solver              = "3d",                    \
+                 bcflag              = 0,                       \
 
                  comment             = False,                   \
                  overwrite           = True,                    \
@@ -121,6 +122,13 @@ class shdom_ng:
         self.overwrite = overwrite
         self.force     = force
         self.mp_mode   = mp_mode.lower()
+        # Libera L2 fix (2026-10-22, Sebastian Schmidt): bcflag is now a
+        # real, overridable parameter instead of hardcoded. Periodic BC
+        # (bcflag=0, the original default -- unchanged) is not physically
+        # appropriate for a single isolated tile cut out of a larger scene;
+        # a non-zero bcflag lets the caller request an open boundary. Set
+        # before nml_init() runs below, which is where it's consumed.
+        self.bcflag    = bcflag
 
         self.surface = surface
         if isinstance(self.surface, float) or isinstance(self.surface, np.float32) or isinstance(self.surface, np.float64):
@@ -333,7 +341,7 @@ class shdom_ng:
             else:
                 self.nml[ig]['NPHI']  = self.Nphi
 
-            self.nml[ig]['BCFLAG'] = 0
+            self.nml[ig]['BCFLAG'] = self.bcflag
 
             if (self.solver == "3D"):
                 self.nml[ig]['IPFLAG'] = 0
