@@ -59,7 +59,7 @@ echo "Complete ==============================================="
 
 echo
 
-if [ -f .venv/bin/activate]
+if [ -f .venv/bin/activate ]
 then
     source .venv/bin/activate
 fi
