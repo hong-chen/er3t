@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # pack data
 # tar -czf er3t-data.tar.gz er3t/data
 
