@@ -72,7 +72,11 @@ def get_token_earthdata():
         token = None
         msg = (
             '\nWarning [get_earthdata_token]: EARTHDATA_TOKEN not set.'
-            '\nGet a token at https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-laads-daac-tokens'
+            '\nGet a token at https://urs.earthdata.nasa.gov/ -- log in, then use the'
+            '\n"Generate Token" tab (or go directly to'
+            '\nhttps://urs.earthdata.nasa.gov/users/<your-username>/user_tokens).'
+            '\nNOT the ladsweb.modaps.eosdis.nasa.gov "LAADS DAAC tokens" page some'
+            '\nolder docs point to -- that page is dead as of 2026-11.'
             '\nThen add to your shell rc file:'
             '\n    bash/zsh (~/.bashrc or ~/.zshrc): export EARTHDATA_TOKEN="<your-token-here>"'
             '\n    csh/tcsh (~/.cshrc):              setenv EARTHDATA_TOKEN "<your-token-here>"'
